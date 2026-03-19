@@ -321,7 +321,6 @@ export default function App() {
   const [newEvent, setNewEvent]         = useState({date:"",title:"",detail:"",stocks:"",pred:"up",predReason:""});
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
-  const [brainLoading, setBrainLoading]   = useState(false);
   const [cloudSync, setCloudSync]         = useState(false);
 
   // boot
@@ -916,7 +915,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
           <div>
             <div style={{fontSize:9,color:C.textMute,letterSpacing:"0.15em",textTransform:"uppercase",fontWeight:500}}>
-              
+              <span style={{color:cloudSync?C.olive:C.textMute}}>{cloudSync?"☁":"⚡"}</span>
               {saved && <span style={{color:C.olive,marginLeft:8,fontWeight:600}}>{saved}</span>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -961,7 +960,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 
         <div style={{display:"flex",gap:0,overflowX:"auto",paddingBottom:0,marginTop:4}}>
           {TABS.map(t=>(
-            <button key={t.k} onClick={()=>setTab(t.k)} style={{
+            <button key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
               background:"transparent",
               color: tab===t.k ? C.text : C.textMute,
               border:"none",
@@ -1331,11 +1330,14 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 
           {dailyReport && <>
             {/* 今日損益摘要 */}
-            <div style={{...card,marginBottom:10,
+            <div id="daily-report-top" style={{...card,marginBottom:10,
               borderLeft:`3px solid ${dailyReport.totalTodayPnl>=0?C.up:C.down}88`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
-                  <div style={lbl}>{dailyReport.date} 收盤分析</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <button onClick={()=>setDailyReport(null)} style={{fontSize:10,padding:"2px 8px",borderRadius:4,border:`1px solid ${C.border}`,background:"transparent",color:C.textMute,cursor:"pointer"}}>← 返回</button>
+                    <div style={lbl}>{dailyReport.date} 收盤分析</div>
+                  </div>
                   <div style={{fontSize:9,color:C.textMute}}>{dailyReport.time} 更新</div>
                 </div>
                 <div style={{textAlign:"right"}}>
@@ -1543,9 +1545,14 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
             <div style={{...card}}>
               <div style={lbl}>歷史分析記錄</div>
               {(analysisHistory||[]).slice(0,10).map(r=>(
-                <div key={r.id} onClick={()=>setDailyReport(r)}
+                <div key={r.id} onClick={()=>{
+                    setDailyReport(r);
+                    setTimeout(()=>document.getElementById("daily-report-top")?.scrollIntoView({behavior:"smooth"}),50);
+                  }}
                   style={{display:"flex",justifyContent:"space-between",alignItems:"center",
                     padding:"8px 0",cursor:"pointer",
+                    background:dailyReport?.id===r.id?C.subtle:"transparent",
+                    borderRadius:6, paddingLeft:6, paddingRight:6,
                     borderBottom:`1px solid ${C.borderSub}`}}>
                   <div>
                     <span style={{fontSize:12,color:C.text}}>{r.date}</span>
@@ -1760,7 +1767,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
               </div>
             </div>
           ) : (
-            (tradeLog||[]).map(log=>(
+            [...(tradeLog||[])].sort((a,b)=>b.id-a.id).map(log=>(
               <div key={log.id} style={{...card,marginBottom:10,
                 borderLeft:`2px solid ${log.action==="買進" ? C.up+"88" : C.down+"88"}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>

@@ -751,26 +751,28 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     setTimeout(() => setSaved(""), 2500);
   };
 
-  // ── 收盤後自動觸發檢查（每分鐘檢查，不只啟動時一次）──────────────
+  // ── 收盤後自動觸發（一次性，不重複呼叫 API）─────────────────────
   useEffect(() => {
     if (!ready) return;
-    const check = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      const min = now.getMinutes();
-      const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
-      const day = now.getDay();
-      // 週一到五，13:30 之後，今天還沒分析過
-      if (day >= 1 && day <= 5 && (hour > 13 || (hour === 13 && min >= 30))) {
-        const ah = analysisHistory || [];
-        if (!ah.find(r => r.date === today)) {
-          runDailyAnalysis();
-        }
-      }
-    };
-    check(); // 立即檢查一次
-    const timer = setInterval(check, 60000); // 每分鐘檢查
-    return () => clearInterval(timer);
+    const now = new Date();
+    const day = now.getDay();
+    if (day < 1 || day > 5) return; // 週末不觸發
+    const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
+    const ah = analysisHistory || [];
+    if (ah.find(r => r.date === today)) return; // 今天已分析過
+
+    const nowMs = now.getTime();
+    const target = new Date(now); target.setHours(13, 30, 0, 0);
+    const targetMs = target.getTime();
+
+    if (nowMs >= targetMs) {
+      // 已過 13:30，立即觸發一次
+      runDailyAnalysis();
+    } else {
+      // 還沒到 13:30，設定定時器等到那個時刻
+      const timer = setTimeout(() => runDailyAnalysis(), targetMs - nowMs);
+      return () => clearTimeout(timer);
+    }
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // file

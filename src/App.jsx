@@ -309,13 +309,25 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  // daily analysis
+  const [analyzing, setAnalyzing]       = useState(false);
+  const [dailyReport, setDailyReport]   = useState(null);
+  const [analysisHistory, setAnalysisHistory] = useState(null);
+  const [newsEvents, setNewsEvents]     = useState(null);
+  const [reviewingEvent, setReviewingEvent] = useState(null);
+  const [reviewForm, setReviewForm]     = useState({actual:"up",actualNote:"",lessons:""});
+
   // boot
   useEffect(() => {
     (async () => {
       const h = await load("pf-holdings-v2", INIT_HOLDINGS);
       const l = await load("pf-log-v2", []);
       const t = await load("pf-targets-v1", INIT_TARGETS);
-      setHoldings(h); setTradeLog(l); setTargets(t); setReady(true);
+      const ne = await load("pf-news-events-v1", NEWS_EVENTS);
+      const ah = await load("pf-analysis-history-v1", []);
+      setHoldings(h); setTradeLog(l); setTargets(t);
+      setNewsEvents(ne); setAnalysisHistory(ah);
+      setReady(true);
     })();
   }, []);
 
@@ -323,6 +335,8 @@ export default function App() {
   useEffect(() => { if (ready && holdings) save("pf-holdings-v2", holdings); }, [holdings, ready]);
   useEffect(() => { if (ready && tradeLog) save("pf-log-v2",      tradeLog); }, [tradeLog,  ready]);
   useEffect(() => { if (ready && targets)  save("pf-targets-v1",  targets);  }, [targets,   ready]);
+  useEffect(() => { if (ready && newsEvents) save("pf-news-events-v1", newsEvents); }, [newsEvents, ready]);
+  useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
 
   // derived
   const H = holdings || [];
@@ -398,6 +412,216 @@ export default function App() {
     }
     setRefreshing(false);
   };
+
+  // ── 每日收盤分析 ─────────────────────────────────────────────────
+  const runDailyAnalysis = async () => {
+    if (analyzing) return;
+    setAnalyzing(true);
+    try {
+      // 1. 取得最新股價
+      const codes = H.map(h => h.code);
+      const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
+      const exCh = queries.join('|');
+      const url = import.meta.env.DEV
+        ? `/api/twse/stock/api/getStockInfo.jsp?ex_ch=${exCh}&json=1&delay=0`
+        : `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const priceMap = {};
+      if (data.msgArray) {
+        data.msgArray.forEach(item => {
+          const latest = parseFloat(item.z);
+          const yClose = parseFloat(item.y);
+          const price = (!isNaN(latest) && latest > 0) ? latest : (!isNaN(yClose) && yClose > 0) ? yClose : null;
+          const yesterday = (!isNaN(yClose) && yClose > 0) ? yClose : null;
+          if (price && !priceMap[item.c]) {
+            priceMap[item.c] = { price, yesterday, change: yesterday ? price - yesterday : 0, changePct: yesterday ? ((price / yesterday - 1) * 100) : 0 };
+          }
+        });
+      }
+
+      // 2. 計算每檔今日漲跌
+      const changes = H.map(h => {
+        const pm = priceMap[h.code];
+        return {
+          code: h.code, name: h.name, type: h.type,
+          price: pm?.price || h.price,
+          yesterday: pm?.yesterday || h.price,
+          change: pm?.change || 0,
+          changePct: pm?.changePct || 0,
+          cost: h.cost, qty: h.qty,
+          todayPnl: pm ? Math.round(pm.change * h.qty) : 0,
+          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : h.pnl,
+          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : h.pct,
+        };
+      }).sort((a, b) => b.changePct - a.changePct);
+
+      const totalTodayPnl = changes.reduce((s, c) => s + c.todayPnl, 0);
+
+      // 3. 事件連動分析
+      const NE = newsEvents || NEWS_EVENTS;
+      const today = new Date().toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
+      const pendingEvents = NE.filter(e => e.status === "pending");
+      const eventCorrelations = pendingEvents.map(e => {
+        const relatedStocks = e.stocks.map(s => {
+          const code = s.match(/\d+/)?.[0];
+          const ch = changes.find(c => c.code === code);
+          return ch ? { name: ch.name, code: ch.code, changePct: ch.changePct, change: ch.change } : null;
+        }).filter(Boolean);
+        return { ...e, relatedStocks };
+      }).filter(e => e.relatedStocks.length > 0 && e.relatedStocks.some(s => Math.abs(s.changePct) > 1));
+
+      // 4. 異常波動（漲跌幅 > 3%）
+      const anomalies = changes.filter(c => Math.abs(c.changePct) > 3);
+
+      // 5. 需要復盤的事件（日期已過但未標記結果）
+      const needsReview = pendingEvents.filter(e => {
+        if (!e.date.match(/^\d{4}\/\d{2}/)) return false;
+        return e.date <= today;
+      });
+
+      // 6. 呼叫 Claude API 產生策略分析
+      let aiInsight = null;
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      if (apiKey) {
+        try {
+          const holdingSummary = changes.map(c =>
+            `${c.name}(${c.code}) 今日${c.changePct >= 0 ? "+" : ""}${c.changePct.toFixed(2)}% 累計${c.totalPct >= 0 ? "+" : ""}${c.totalPct}%`
+          ).join("\n");
+          const eventSummary = pendingEvents.map(e =>
+            `[${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}`
+          ).join("\n");
+          const anomalySummary = anomalies.length > 0
+            ? anomalies.map(a => `${a.name} ${a.changePct >= 0 ? "+" : ""}${a.changePct.toFixed(2)}%`).join(", ")
+            : "無";
+
+          const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514", max_tokens: 1200,
+              system: `你是一位專業的台股策略分析師。用戶是積極型事件驅動交易者，持有股票+權證，專注電子科技族群。
+請用繁體中文，以精準簡潔的風格分析今日收盤表現。格式：
+
+## 今日總結
+（一句話概括）
+
+## 事件連動分析
+（哪些股價變動與待觀察事件有關聯？邏輯是什麼？）
+
+## 風險提醒
+（需要注意什麼？有沒有預測可能出錯的訊號？）
+
+## 明日觀察重點
+（明天盤中應該關注什麼？）
+
+## 操作建議
+（具體的買賣建議或等待條件）`,
+              messages: [{
+                role: "user",
+                content: `今日日期：${today}
+今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
+
+持倉明細：
+${holdingSummary}
+
+異常波動（>3%）：${anomalySummary}
+
+待觀察事件：
+${eventSummary}
+
+請分析今日收盤表現，事件連動，並給出策略建議。`
+              }]
+            })
+          });
+          const aiData = await aiRes.json();
+          aiInsight = aiData.content?.[0]?.text || null;
+        } catch (e) {
+          console.error("AI 分析失敗:", e);
+        }
+      }
+
+      // 7. 組裝報告
+      const report = {
+        id: Date.now(),
+        date: today,
+        time: new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }),
+        totalTodayPnl,
+        changes,
+        anomalies,
+        eventCorrelations,
+        needsReview,
+        aiInsight,
+      };
+
+      setDailyReport(report);
+      setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
+
+      // 同步更新持倉價格
+      setHoldings(prev => (prev || []).map(h => {
+        const pm = priceMap[h.code];
+        if (!pm) return h;
+        const newValue = Math.round(pm.price * h.qty);
+        const newPnl = Math.round((pm.price - h.cost) * h.qty);
+        const newPct = Math.round((pm.price / h.cost - 1) * 10000) / 100;
+        return { ...h, price: pm.price, value: newValue, pnl: newPnl, pct: newPct };
+      }));
+
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error("收盤分析失敗:", err);
+      setSaved("❌ 分析失敗");
+      setTimeout(() => setSaved(""), 3000);
+    }
+    setAnalyzing(false);
+  };
+
+  // ── 事件復盤 ─────────────────────────────────────────────────────
+  const submitReview = (eventId) => {
+    setNewsEvents(prev => {
+      const arr = [...(prev || NEWS_EVENTS)];
+      const idx = arr.findIndex(e => e.id === eventId);
+      if (idx < 0) return arr;
+      arr[idx] = {
+        ...arr[idx],
+        status: "past",
+        actual: reviewForm.actual,
+        actualNote: reviewForm.actualNote,
+        correct: arr[idx].pred === reviewForm.actual,
+        lessons: reviewForm.lessons,
+        reviewDate: new Date().toLocaleDateString("zh-TW"),
+      };
+      return arr;
+    });
+    setReviewingEvent(null);
+    setReviewForm({ actual: "up", actualNote: "", lessons: "" });
+    setSaved("✅ 復盤已儲存");
+    setTimeout(() => setSaved(""), 2500);
+  };
+
+  // ── 收盤後自動觸發檢查 ───────────────────────────────────────────
+  useEffect(() => {
+    if (!ready) return;
+    const now = new Date();
+    const hour = now.getHours();
+    const min = now.getMinutes();
+    const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
+    const day = now.getDay();
+    // 週一到五，13:30 之後，今天還沒分析過
+    if (day >= 1 && day <= 5 && (hour > 13 || (hour === 13 && min >= 30))) {
+      const ah = analysisHistory || [];
+      if (!ah.find(r => r.date === today)) {
+        // 自動觸發收盤分析
+        runDailyAnalysis();
+      }
+    }
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // file
   const processFile = (file) => {
@@ -518,6 +742,7 @@ export default function App() {
     {k:"watchlist",label:"觀察股"},
     {k:"events",   label:`行事曆${urgentCount>0?" ·":""}`},
     {k:"news",     label:"事件分析"},
+    {k:"daily",    label:analyzing?"分析中...":"收盤分析"},
     {k:"trade",    label:"上傳成交"},
     {k:"log",      label:"交易日誌"},
   ];
@@ -835,6 +1060,184 @@ export default function App() {
           })}
         </>}
 
+        {/* ══════════ DAILY ANALYSIS ══════════ */}
+        {tab==="daily" && <>
+          {/* 手動觸發按鈕 */}
+          {!dailyReport && !analyzing && (
+            <div style={{...card,textAlign:"center",padding:"28px 16px",marginBottom:12}}>
+              <div style={{fontSize:28,marginBottom:10,opacity:0.4}}>◎</div>
+              <div style={{fontSize:13,color:C.textSec,fontWeight:500,marginBottom:6}}>每日收盤分析</div>
+              <div style={{fontSize:11,color:C.textMute,marginBottom:16,lineHeight:1.7}}>
+                分析今日股價變動與事件連動性<br/>自動比對持倉漲跌、異常波動、策略建議
+              </div>
+              <button onClick={runDailyAnalysis} style={{
+                padding:"12px 28px",borderRadius:10,border:"none",
+                background:`linear-gradient(135deg,${C.blue}cc,${C.olive}cc)`,
+                color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",
+                letterSpacing:"0.03em"}}>
+                開始今日收盤分析
+              </button>
+              <div style={{fontSize:10,color:C.textMute,marginTop:10}}>
+                週一至五 13:30 後會自動觸發
+              </div>
+            </div>
+          )}
+
+          {analyzing && (
+            <div style={{...card,textAlign:"center",padding:"36px 16px"}}>
+              <div style={{fontSize:13,color:C.amber,fontWeight:500,animation:"pulse 1.5s ease-in-out infinite"}}>
+                正在分析今日收盤數據...
+              </div>
+              <div style={{fontSize:11,color:C.textMute,marginTop:8}}>取得股價 → 比對事件 → AI策略分析</div>
+            </div>
+          )}
+
+          {dailyReport && <>
+            {/* 今日損益摘要 */}
+            <div style={{...card,marginBottom:10,
+              borderLeft:`3px solid ${dailyReport.totalTodayPnl>=0?C.up:C.down}88`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={lbl}>{dailyReport.date} 收盤分析</div>
+                  <div style={{fontSize:9,color:C.textMute}}>{dailyReport.time} 更新</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:9,color:C.textMute}}>今日損益</div>
+                  <div style={{fontSize:20,fontWeight:700,color:pc(dailyReport.totalTodayPnl)}}>
+                    {dailyReport.totalTodayPnl>=0?"+":""}{dailyReport.totalTodayPnl.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 持倉漲跌排行 */}
+            <div style={{...card,marginBottom:10}}>
+              <div style={lbl}>持倉今日漲跌</div>
+              {dailyReport.changes.map((c,i)=>(
+                <div key={c.code} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                  padding:"8px 0",borderBottom:i<dailyReport.changes.length-1?`1px solid ${C.borderSub}`:"none"}}>
+                  <div>
+                    <span style={{fontSize:12,fontWeight:500,color:C.text}}>{c.name}</span>
+                    <span style={{fontSize:9,color:C.textMute,marginLeft:5}}>{c.code}</span>
+                    {c.type!=="股票"&&<span style={{fontSize:9,marginLeft:5,padding:"1px 5px",borderRadius:3,
+                      background:C.amberBg,color:C.amber}}>{c.type}</span>}
+                  </div>
+                  <div style={{textAlign:"right",display:"flex",gap:12,alignItems:"center"}}>
+                    <span style={{fontSize:11,color:C.textMute}}>{c.price?.toLocaleString()}</span>
+                    <span style={{fontSize:12,fontWeight:600,color:pc(c.changePct),minWidth:55,textAlign:"right"}}>
+                      {c.changePct>=0?"+":""}{c.changePct.toFixed(2)}%
+                    </span>
+                    <span style={{fontSize:10,color:pc(c.todayPnl),minWidth:50,textAlign:"right"}}>
+                      {c.todayPnl>=0?"+":""}{c.todayPnl.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 異常波動 */}
+            {dailyReport.anomalies.length>0 && (
+              <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.amber}88`}}>
+                <div style={{...lbl,color:C.amber}}>異常波動 ({">"}3%)</div>
+                {dailyReport.anomalies.map(a=>(
+                  <div key={a.code} style={{display:"flex",justifyContent:"space-between",padding:"6px 0"}}>
+                    <span style={{fontSize:12,color:C.text}}>{a.name}</span>
+                    <span style={{fontSize:12,fontWeight:600,color:pc(a.changePct)}}>
+                      {a.changePct>=0?"+":""}{a.changePct.toFixed(2)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 事件連動 */}
+            {dailyReport.eventCorrelations.length>0 && (
+              <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.teal}88`}}>
+                <div style={{...lbl,color:C.teal}}>事件連動分析</div>
+                {dailyReport.eventCorrelations.map(ec=>(
+                  <div key={ec.id} style={{marginBottom:10,background:C.subtle,borderRadius:7,padding:"9px 11px"}}>
+                    <div style={{fontSize:11,fontWeight:500,color:C.text,marginBottom:4}}>{ec.title}</div>
+                    <div style={{fontSize:10,color:C.textMute,marginBottom:6}}>{ec.date}</div>
+                    {ec.relatedStocks.map(s=>(
+                      <div key={s.code} style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}>
+                        <span style={{fontSize:10,color:C.textSec}}>{s.name}</span>
+                        <span style={{fontSize:10,fontWeight:600,color:pc(s.changePct)}}>
+                          {s.changePct>=0?"+":""}{s.changePct.toFixed(2)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 需要復盤的事件 */}
+            {dailyReport.needsReview.length>0 && (
+              <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.up}88`}}>
+                <div style={{...lbl,color:C.up}}>需要復盤 · {dailyReport.needsReview.length}件</div>
+                {dailyReport.needsReview.map(e=>(
+                  <div key={e.id} style={{marginBottom:8}}>
+                    <div style={{fontSize:11,fontWeight:500,color:C.text}}>{e.title}</div>
+                    <div style={{fontSize:10,color:C.textMute}}>{e.date} — 預測{e.pred==="up"?"看漲":"看跌"}</div>
+                    <button onClick={()=>{setTab("news");setExpandedNews(new Set([e.id]))}}
+                      style={{marginTop:4,padding:"4px 10px",borderRadius:5,border:`1px solid ${C.olive}55`,
+                        background:"transparent",color:C.olive,fontSize:10,cursor:"pointer"}}>
+                      前往復盤
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* AI 策略分析 */}
+            {dailyReport.aiInsight && (
+              <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.lavender}88`}}>
+                <div style={{...lbl,color:C.lavender}}>AI 策略分析</div>
+                <div style={{fontSize:11,color:C.textSec,lineHeight:2,whiteSpace:"pre-wrap"}}>
+                  {dailyReport.aiInsight}
+                </div>
+              </div>
+            )}
+
+            {!dailyReport.aiInsight && !import.meta.env.VITE_ANTHROPIC_API_KEY && (
+              <div style={{...card,marginBottom:10,background:C.subtle}}>
+                <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
+                  設定 VITE_ANTHROPIC_API_KEY 可啟用 AI 策略分析
+                </div>
+              </div>
+            )}
+
+            {/* 重新分析 */}
+            <button onClick={runDailyAnalysis} disabled={analyzing} style={{
+              width:"100%",padding:"11px",borderRadius:8,border:`1px solid ${C.border}`,
+              background:"transparent",color:C.textMute,fontSize:11,cursor:"pointer",
+              marginBottom:16}}>
+              重新分析
+            </button>
+          </>}
+
+          {/* 歷史分析 */}
+          {(analysisHistory||[]).length>0 && (
+            <div style={{...card}}>
+              <div style={lbl}>歷史分析記錄</div>
+              {(analysisHistory||[]).slice(0,10).map(r=>(
+                <div key={r.id} onClick={()=>setDailyReport(r)}
+                  style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"8px 0",cursor:"pointer",
+                    borderBottom:`1px solid ${C.borderSub}`}}>
+                  <div>
+                    <span style={{fontSize:12,color:C.text}}>{r.date}</span>
+                    <span style={{fontSize:10,color:C.textMute,marginLeft:6}}>{r.time}</span>
+                  </div>
+                  <span style={{fontSize:12,fontWeight:600,color:pc(r.totalTodayPnl)}}>
+                    {r.totalTodayPnl>=0?"+":""}{r.totalTodayPnl.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>}
+
         {/* ══════════ UPLOAD ══════════ */}
         {tab==="trade" && <>
           {!parsed && (
@@ -1070,10 +1473,11 @@ export default function App() {
 
         {/* ══════════ NEWS ANALYSIS ══════════ */}
         {tab==="news" && (()=>{
-          const past    = NEWS_EVENTS.filter(e=>e.status==="past").sort((a,b)=>b.id-a.id);
-          const pending = NEWS_EVENTS.filter(e=>e.status==="pending").sort((a,b)=>a.id-b.id);
-          const hits    = NEWS_EVENTS.filter(e=>e.correct===true).length;
-          const misses  = NEWS_EVENTS.filter(e=>e.correct===false).length;
+          const NE = newsEvents || NEWS_EVENTS;
+          const past    = NE.filter(e=>e.status==="past").sort((a,b)=>b.id-a.id);
+          const pending = NE.filter(e=>e.status==="pending").sort((a,b)=>a.id-b.id);
+          const hits    = NE.filter(e=>e.correct===true).length;
+          const misses  = NE.filter(e=>e.correct===false).length;
 
           const predIcon = (p) => p==="up"?"↑":p==="down"?"↓":"—";
           const predLabel= (p) => p==="up"?"看漲":p==="down"?"看跌":"中性";
@@ -1179,6 +1583,80 @@ export default function App() {
                           {predIcon(e.actual)} 實際{predLabel(e.actual)} — {isCorrect?"預測正確":"預測有誤"}
                         </div>
                         <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>{e.actualNote}</div>
+                      </div>
+                    )}
+
+                    {/* 復盤教訓（若有） */}
+                    {e.lessons && (
+                      <div style={{background:C.blueBg,border:`1px solid ${C.blue}33`,
+                        borderRadius:7,padding:"9px 11px",marginTop:8}}>
+                        <div style={{fontSize:9,color:C.blue,fontWeight:600,marginBottom:3}}>策略覆盤教訓</div>
+                        <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>{e.lessons}</div>
+                      </div>
+                    )}
+
+                    {/* 復盤按鈕（待觀察事件） */}
+                    {e.status==="pending" && (
+                      <button onClick={(ev)=>{ev.stopPropagation();setReviewingEvent(e.id);setReviewForm({actual:"up",actualNote:"",lessons:""})}}
+                        style={{marginTop:10,width:"100%",padding:"9px",
+                          background:C.olive+"22",border:`1px solid ${C.olive}55`,
+                          borderRadius:8,color:C.olive,fontSize:11,fontWeight:500,cursor:"pointer"}}>
+                        標記結果 · 撰寫復盤
+                      </button>
+                    )}
+
+                    {/* 復盤表單 */}
+                    {reviewingEvent===e.id && (
+                      <div onClick={ev=>ev.stopPropagation()}
+                        style={{marginTop:10,background:C.subtle,borderRadius:8,padding:12,
+                          border:`1px solid ${C.blue}44`}}>
+                        <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:10}}>撰寫完整復盤</div>
+
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>實際走勢</div>
+                          <div style={{display:"flex",gap:6}}>
+                            {["up","down","neutral"].map(v=>(
+                              <button key={v} onClick={()=>setReviewForm(p=>({...p,actual:v}))}
+                                style={{flex:1,padding:"6px",borderRadius:6,fontSize:10,fontWeight:500,cursor:"pointer",
+                                  background:reviewForm.actual===v?(v==="up"?C.upBg:v==="down"?C.downBg:C.subtle):"transparent",
+                                  color:reviewForm.actual===v?(v==="up"?C.up:v==="down"?C.down:C.textSec):C.textMute,
+                                  border:`1px solid ${reviewForm.actual===v?(v==="up"?C.up+"55":v==="down"?C.down+"55":C.border):C.border}`}}>
+                                {v==="up"?"↑ 漲":v==="down"?"↓ 跌":"— 中性"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>發生了什麼？股價怎麼走？</div>
+                          <textarea value={reviewForm.actualNote} onChange={ev=>setReviewForm(p=>({...p,actualNote:ev.target.value}))}
+                            placeholder="描述事件結果和股價反應..."
+                            style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                              borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
+                              minHeight:60,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                        </div>
+
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>策略覆盤：問題出在哪？學到什麼？下次怎麼改？</div>
+                          <textarea value={reviewForm.lessons} onChange={ev=>setReviewForm(p=>({...p,lessons:ev.target.value}))}
+                            placeholder="進場理由回顧、策略偏差、改進方向..."
+                            style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                              borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
+                              minHeight:60,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                        </div>
+
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>setReviewingEvent(null)}
+                            style={{flex:1,padding:"9px",background:"transparent",border:`1px solid ${C.border}`,
+                              borderRadius:7,color:C.textMute,fontSize:11,cursor:"pointer"}}>取消</button>
+                          <button onClick={()=>submitReview(e.id)}
+                            disabled={!reviewForm.actualNote.trim()}
+                            style={{flex:2,padding:"9px",borderRadius:7,border:"none",fontSize:11,fontWeight:500,cursor:"pointer",
+                              background:reviewForm.actualNote.trim()?C.olive+"cc":C.subtle,
+                              color:reviewForm.actualNote.trim()?"#fff":C.textMute}}>
+                            確認送出復盤
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

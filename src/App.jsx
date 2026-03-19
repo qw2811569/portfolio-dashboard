@@ -319,6 +319,9 @@ export default function App() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvent, setNewEvent]         = useState({date:"",title:"",detail:"",stocks:"",pred:"up",predReason:""});
   const [reversalConditions, setReversalConditions] = useState(null);
+  const [strategyBrain, setStrategyBrain] = useState(null);
+  const [brainLoading, setBrainLoading]   = useState(false);
+  const [cloudSync, setCloudSync]         = useState(false);
 
   // boot
   useEffect(() => {
@@ -329,9 +332,16 @@ export default function App() {
       const ne = await load("pf-news-events-v1", NEWS_EVENTS);
       const ah = await load("pf-analysis-history-v1", []);
       const rc = await load("pf-reversal-v1", {});
+      const sb = await load("pf-brain-v1", null);
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
+      setStrategyBrain(sb);
       setReady(true);
+      // 嘗試從雲端同步策略大腦
+      try {
+        const cloudBrain = await fetch("/api/brain?action=brain").then(r=>r.json());
+        if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
+      } catch(e) { /* 離線也能用 localStorage 版本 */ }
     })();
   }, []);
 
@@ -342,6 +352,7 @@ export default function App() {
   useEffect(() => { if (ready && newsEvents) save("pf-news-events-v1", newsEvents); }, [newsEvents, ready]);
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
   useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
+  useEffect(() => { if (ready && strategyBrain) save("pf-brain-v1", strategyBrain); }, [strategyBrain, ready]);
 
   // derived
   const H = holdings || [];
@@ -486,7 +497,7 @@ export default function App() {
         return e.date <= today;
       });
 
-      // 6. 呼叫 Claude API 產生策略分析
+      // 6. 呼叫 Claude API 產生策略分析（含策略大腦上下文）
       let aiInsight = null;
       try {
         const holdingSummary = changes.map(c =>
@@ -499,11 +510,36 @@ export default function App() {
           ? anomalies.map(a => `${a.name} ${a.changePct >= 0 ? "+" : ""}${a.changePct.toFixed(2)}%`).join(", ")
           : "無";
 
+        // 組裝策略大腦上下文
+        const brain = strategyBrain;
+        const brainContext = brain ? `
+══ 策略大腦（累積知識庫）══
+核心策略規則：
+${(brain.rules||[]).map((r,i)=>`${i+1}. ${r}`).join("\n")}
+
+歷史教訓：
+${(brain.lessons||[]).slice(-10).map(l=>`- [${l.date}] ${l.text}`).join("\n")}
+
+勝率統計：${brain.stats?.hitRate||"尚無"}
+常犯錯誤：${(brain.commonMistakes||[]).join("、")||"尚無"}
+══════════════════════════` : "";
+
+        // 反轉追蹤上下文
+        const revContext = losers.length > 0 ? `
+反轉追蹤持股：
+${losers.map(h=>{
+  const rc = (reversalConditions||{})[h.code];
+  return `${h.name}(${h.code}) ${h.pct}% | 反轉條件：${rc?.signal||"未設定"} | 停損：${rc?.stopLoss||"未設定"}`;
+}).join("\n")}` : "";
+
         const aiRes = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            systemPrompt: `你是一位專業的台股策略分析師。用戶是積極型事件驅動交易者，持有股票+權證，專注電子科技族群。
+            systemPrompt: `你是一位專業的台股策略分析師，也是用戶的長期策略顧問。
+你擁有用戶過去所有分析的記憶（策略大腦），必須基於累積的教訓和規則來給出建議。
+用戶是積極型事件驅動交易者，持有股票+權證，專注電子科技族群。
+
 請用繁體中文，以精準簡潔的風格分析今日收盤表現。格式：
 
 ## 今日總結
@@ -512,16 +548,24 @@ export default function App() {
 ## 事件連動分析
 （哪些股價變動與待觀察事件有關聯？邏輯是什麼？）
 
+## 反轉追蹤
+（虧損持股今日表現如何？有沒有接近反轉訊號？）
+
 ## 風險提醒
-（需要注意什麼？有沒有預測可能出錯的訊號？）
+（基於策略大腦的歷史教訓，需要注意什麼？）
 
 ## 明日觀察重點
 （明天盤中應該關注什麼？）
 
 ## 操作建議
-（具體的買賣建議或等待條件）`,
+（具體的買賣建議或等待條件）
+
+## 策略進化建議
+（基於今日表現，策略大腦應該新增或修改什麼規則？）`,
             userPrompt: `今日日期：${today}
 今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
+${brainContext}
+${revContext}
 
 持倉明細：
 ${holdingSummary}
@@ -531,7 +575,7 @@ ${holdingSummary}
 待觀察事件：
 ${eventSummary}
 
-請分析今日收盤表現，事件連動，並給出策略建議。`
+請分析今日收盤表現，事件連動，並給出策略建議。特別注意策略大腦中的歷史教訓。`
           })
         });
         const aiData = await aiRes.json();
@@ -555,6 +599,59 @@ ${eventSummary}
 
       setDailyReport(report);
       setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
+
+      // 8. 策略大腦進化 — 讓 AI 更新策略知識庫
+      if (aiInsight) {
+        try {
+          const NE = newsEvents || NEWS_EVENTS;
+          const pastEvents = NE.filter(e => e.status === "past");
+          const hits = pastEvents.filter(e => e.correct === true).length;
+          const total = pastEvents.filter(e => e.correct !== null).length;
+
+          const brainRes = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemPrompt: `你是策略知識庫管理器。根據今日分析結果，更新策略大腦。
+回傳**純JSON**格式（不要markdown code block），結構：
+{"rules":["規則1","規則2",...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期"}
+
+規則：基於累積經驗的核心交易策略（最多15條，去掉過時的）
+教訓：今日新增的具體教訓（只加新的，保留舊的）
+常犯錯誤：反覆出現的錯誤模式`,
+              userPrompt: `今日分析：
+${aiInsight}
+
+現有策略大腦：
+${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], stats: {} })}
+
+預測命中率：${hits}/${total}
+今日損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
+
+請更新策略大腦，保留有效的舊規則，加入今日新教訓。`
+            })
+          });
+          const brainData = await brainRes.json();
+          const brainText = brainData.content?.[0]?.text || "";
+          const cleanBrain = brainText.replace(/```json|```/g, "").trim();
+          const newBrain = JSON.parse(cleanBrain);
+          setStrategyBrain(newBrain);
+          // 同步到雲端
+          fetch("/api/brain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "save-brain", data: newBrain })
+          }).catch(() => {});
+          // 同步分析報告到雲端
+          fetch("/api/brain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "save-analysis", data: report })
+          }).catch(() => {});
+        } catch (e) {
+          console.error("策略大腦更新失敗:", e);
+        }
+      }
 
       // 同步更新持倉價格
       setHoldings(prev => (prev || []).map(h => {
@@ -1320,6 +1417,65 @@ ${eventSummary}
               重新分析
             </button>
           </>}
+
+          {/* 策略大腦 */}
+          {strategyBrain && (
+            <div style={{...card,marginBottom:12,borderLeft:`3px solid ${C.lavender}88`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{...lbl,color:C.lavender,marginBottom:0}}>策略大腦</div>
+                <span style={{fontSize:9,color:C.textMute}}>
+                  更新：{strategyBrain.lastUpdate||"—"} | 分析次數：{strategyBrain.stats?.totalAnalyses||0}
+                </span>
+              </div>
+
+              {(strategyBrain.rules||[]).length>0 && (
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:10,color:C.amber,fontWeight:600,marginBottom:5}}>核心策略規則</div>
+                  {strategyBrain.rules.map((r,i)=>(
+                    <div key={i} style={{fontSize:11,color:C.textSec,lineHeight:1.8,
+                      padding:"3px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                      {i+1}. {r}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(strategyBrain.commonMistakes||[]).length>0 && (
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:10,color:C.up,fontWeight:600,marginBottom:5}}>常犯錯誤（警醒）</div>
+                  {strategyBrain.commonMistakes.map((m,i)=>(
+                    <div key={i} style={{fontSize:11,color:C.textSec,lineHeight:1.8}}>⚠ {m}</div>
+                  ))}
+                </div>
+              )}
+
+              {(strategyBrain.lessons||[]).length>0 && (
+                <div>
+                  <div style={{fontSize:10,color:C.olive,fontWeight:600,marginBottom:5}}>
+                    最近教訓（共 {strategyBrain.lessons.length} 條）
+                  </div>
+                  {strategyBrain.lessons.slice(-5).reverse().map((l,i)=>(
+                    <div key={i} style={{fontSize:10,color:C.textMute,lineHeight:1.7,
+                      padding:"4px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                      <span style={{color:C.textSec}}>[{l.date}]</span> {l.text}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{fontSize:10,color:C.lavender,marginTop:8,fontWeight:500}}>
+                命中率：{strategyBrain.stats?.hitRate||"計算中"}
+              </div>
+            </div>
+          )}
+
+          {!strategyBrain && (
+            <div style={{...card,marginBottom:12,textAlign:"center",padding:"16px"}}>
+              <div style={{fontSize:11,color:C.textMute}}>
+                執行第一次收盤分析後，策略大腦將自動建立並持續進化
+              </div>
+            </div>
+          )}
 
           {/* 歷史分析 */}
           {(analysisHistory||[]).length>0 && (

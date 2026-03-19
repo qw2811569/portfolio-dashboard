@@ -311,6 +311,7 @@ export default function App() {
 
   // daily analysis
   const [analyzing, setAnalyzing]       = useState(false);
+  const [analyzeStep, setAnalyzeStep]   = useState("");
   const [dailyReport, setDailyReport]   = useState(null);
   const [analysisHistory, setAnalysisHistory] = useState(null);
   const [newsEvents, setNewsEvents]     = useState(null);
@@ -337,10 +338,17 @@ export default function App() {
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setStrategyBrain(sb);
       setReady(true);
-      // 嘗試從雲端同步策略大腦
+      // 嘗試從雲端同步（策略大腦 + 歷史分析 + 事件資料）
       try {
-        const cloudBrain = await fetch("/api/brain?action=brain").then(r=>r.json());
+        const [cloudBrain, cloudHist, cloudEvents] = await Promise.all([
+          fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
+          fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:[]})),
+          fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
+        ]);
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
+        if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
+        if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
+        setCloudSync(true);
       } catch(e) { /* 離線也能用 localStorage 版本 */ }
     })();
   }, []);
@@ -349,7 +357,13 @@ export default function App() {
   useEffect(() => { if (ready && holdings) save("pf-holdings-v2", holdings); }, [holdings, ready]);
   useEffect(() => { if (ready && tradeLog) save("pf-log-v2",      tradeLog); }, [tradeLog,  ready]);
   useEffect(() => { if (ready && targets)  save("pf-targets-v1",  targets);  }, [targets,   ready]);
-  useEffect(() => { if (ready && newsEvents) save("pf-news-events-v1", newsEvents); }, [newsEvents, ready]);
+  useEffect(() => {
+    if (ready && newsEvents) {
+      save("pf-news-events-v1", newsEvents);
+      // 同步事件到雲端
+      fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:newsEvents})}).catch(()=>{});
+    }
+  }, [newsEvents, ready]);
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
   useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
   useEffect(() => { if (ready && strategyBrain) save("pf-brain-v1", strategyBrain); }, [strategyBrain, ready]);
@@ -384,7 +398,6 @@ export default function App() {
       const codes = H.map(h => h.code);
       // 同時嘗試上市(tse)和上櫃(otc)，API 只會回傳有效的
       const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-      // dev 用 Vite proxy，production 用 Vercel serverless function
       const exCh = queries.join('|');
       const url = import.meta.env.DEV
         ? `/api/twse/stock/api/getStockInfo.jsp?ex_ch=${exCh}&json=1&delay=0`
@@ -414,9 +427,17 @@ export default function App() {
           return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
         }));
 
+        const updated = Object.keys(priceMap).length;
+        const total = codes.length;
+        const missed = codes.filter(c => !priceMap[c]);
         setLastUpdate(new Date());
-        setSaved("✅ 股價已更新");
-        setTimeout(() => setSaved(""), 2500);
+        if (missed.length > 0 && missed.length < total) {
+          const missedNames = missed.map(c => { const h = H.find(x=>x.code===c); return h ? h.name : c; }).join("、");
+          setSaved(`✅ ${updated}/${total} 檔已更新（${missedNames} 無即時報價）`);
+        } else {
+          setSaved(`✅ ${updated} 檔股價已更新`);
+        }
+        setTimeout(() => setSaved(""), 4000);
       } else {
         setSaved("⚠️ 無法取得報價（可能非交易時間）");
         setTimeout(() => setSaved(""), 3000);
@@ -433,6 +454,7 @@ export default function App() {
   const runDailyAnalysis = async () => {
     if (analyzing) return;
     setAnalyzing(true);
+    setAnalyzeStep("取得即時股價...");
     try {
       // 1. 取得最新股價
       const codes = H.map(h => h.code);
@@ -498,6 +520,7 @@ export default function App() {
       });
 
       // 6. 呼叫 Claude API 產生策略分析（含策略大腦上下文）
+      setAnalyzeStep("AI 策略分析中（約15-30秒）...");
       let aiInsight = null;
       try {
         const holdingSummary = changes.map(c =>
@@ -601,6 +624,7 @@ ${eventSummary}
       setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
 
       // 8. 策略大腦進化 — 讓 AI 更新策略知識庫
+      setAnalyzeStep("策略大腦進化中...");
       if (aiInsight) {
         try {
           const NE = newsEvents || NEWS_EVENTS;
@@ -670,6 +694,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       setTimeout(() => setSaved(""), 3000);
     }
     setAnalyzing(false);
+    setAnalyzeStep("");
   };
 
   // ── 事件復盤 ─────────────────────────────────────────────────────
@@ -726,22 +751,26 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     setTimeout(() => setSaved(""), 2500);
   };
 
-  // ── 收盤後自動觸發檢查 ───────────────────────────────────────────
+  // ── 收盤後自動觸發檢查（每分鐘檢查，不只啟動時一次）──────────────
   useEffect(() => {
     if (!ready) return;
-    const now = new Date();
-    const hour = now.getHours();
-    const min = now.getMinutes();
-    const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
-    const day = now.getDay();
-    // 週一到五，13:30 之後，今天還沒分析過
-    if (day >= 1 && day <= 5 && (hour > 13 || (hour === 13 && min >= 30))) {
-      const ah = analysisHistory || [];
-      if (!ah.find(r => r.date === today)) {
-        // 自動觸發收盤分析
-        runDailyAnalysis();
+    const check = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const min = now.getMinutes();
+      const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
+      const day = now.getDay();
+      // 週一到五，13:30 之後，今天還沒分析過
+      if (day >= 1 && day <= 5 && (hour > 13 || (hour === 13 && min >= 30))) {
+        const ah = analysisHistory || [];
+        if (!ah.find(r => r.date === today)) {
+          runDailyAnalysis();
+        }
       }
-    }
+    };
+    check(); // 立即檢查一次
+    const timer = setInterval(check, 60000); // 每分鐘檢查
+    return () => clearInterval(timer);
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // file
@@ -872,6 +901,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         textarea::placeholder,input::placeholder{color:${C.textMute}}
         input,textarea,button{font-family:inherit;-webkit-appearance:none}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+          @keyframes progress{0%{width:5%}50%{width:70%}100%{width:95%}}
         @media(max-width:480px){
           body{font-size:14px}
         }
@@ -1288,9 +1318,12 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           {analyzing && (
             <div style={{...card,textAlign:"center",padding:"36px 16px"}}>
               <div style={{fontSize:13,color:C.amber,fontWeight:500,animation:"pulse 1.5s ease-in-out infinite"}}>
-                正在分析今日收盤數據...
+                {analyzeStep || "正在分析今日收盤數據..."}
               </div>
-              <div style={{fontSize:11,color:C.textMute,marginTop:8}}>取得股價 → 比對事件 → AI策略分析</div>
+              <div style={{fontSize:11,color:C.textMute,marginTop:8}}>取得股價 → 比對事件 → AI策略分析 → 大腦進化</div>
+              <div style={{width:"100%",height:3,background:C.borderSub,borderRadius:2,marginTop:12,overflow:"hidden"}}>
+                <div style={{height:"100%",background:C.amber,borderRadius:2,animation:"progress 8s ease-in-out infinite",width:"70%"}} />
+              </div>
             </div>
           )}
 
@@ -1463,8 +1496,34 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
                 </div>
               )}
 
-              <div style={{fontSize:10,color:C.lavender,marginTop:8,fontWeight:500}}>
-                命中率：{strategyBrain.stats?.hitRate||"計算中"}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10}}>
+                <div style={{fontSize:10,color:C.lavender,fontWeight:500}}>
+                  命中率：{strategyBrain.stats?.hitRate||"計算中"}
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>{
+                    const json = JSON.stringify(strategyBrain, null, 2);
+                    const blob = new Blob([json], {type:"application/json"});
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `strategy-brain-${new Date().toISOString().slice(0,10)}.json`;
+                    a.click();
+                  }} style={{fontSize:9,padding:"3px 8px",borderRadius:4,border:`1px solid ${C.border}`,background:"transparent",color:C.textMute,cursor:"pointer"}}>
+                    匯出
+                  </button>
+                  <button onClick={()=>{
+                    if (confirm("確定要重置策略大腦？所有累積的規則和教訓將被清除。")) {
+                      setStrategyBrain(null);
+                      save("pf-brain-v1", null);
+                      fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-brain",data:null})}).catch(()=>{});
+                    }
+                  }} style={{fontSize:9,padding:"3px 8px",borderRadius:4,border:`1px solid ${C.up}44`,background:"transparent",color:C.up,cursor:"pointer"}}>
+                    重置
+                  </button>
+                </div>
+              </div>
+              <div style={{fontSize:9,color:cloudSync?C.olive:C.textMute,marginTop:6}}>
+                {cloudSync ? "☁ 已雲端同步" : "⚡ 本機模式"}
               </div>
             </div>
           )}

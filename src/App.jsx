@@ -316,6 +316,9 @@ export default function App() {
   const [newsEvents, setNewsEvents]     = useState(null);
   const [reviewingEvent, setReviewingEvent] = useState(null);
   const [reviewForm, setReviewForm]     = useState({actual:"up",actualNote:"",lessons:""});
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [newEvent, setNewEvent]         = useState({date:"",title:"",detail:"",stocks:"",pred:"up",predReason:""});
+  const [reversalConditions, setReversalConditions] = useState(null);
 
   // boot
   useEffect(() => {
@@ -325,8 +328,9 @@ export default function App() {
       const t = await load("pf-targets-v1", INIT_TARGETS);
       const ne = await load("pf-news-events-v1", NEWS_EVENTS);
       const ah = await load("pf-analysis-history-v1", []);
+      const rc = await load("pf-reversal-v1", {});
       setHoldings(h); setTradeLog(l); setTargets(t);
-      setNewsEvents(ne); setAnalysisHistory(ah);
+      setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setReady(true);
     })();
   }, []);
@@ -337,6 +341,7 @@ export default function App() {
   useEffect(() => { if (ready && targets)  save("pf-targets-v1",  targets);  }, [targets,   ready]);
   useEffect(() => { if (ready && newsEvents) save("pf-news-events-v1", newsEvents); }, [newsEvents, ready]);
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
+  useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
 
   // derived
   const H = holdings || [];
@@ -483,30 +488,22 @@ export default function App() {
 
       // 6. 呼叫 Claude API 產生策略分析
       let aiInsight = null;
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-      if (apiKey) {
-        try {
-          const holdingSummary = changes.map(c =>
-            `${c.name}(${c.code}) 今日${c.changePct >= 0 ? "+" : ""}${c.changePct.toFixed(2)}% 累計${c.totalPct >= 0 ? "+" : ""}${c.totalPct}%`
-          ).join("\n");
-          const eventSummary = pendingEvents.map(e =>
-            `[${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}`
-          ).join("\n");
-          const anomalySummary = anomalies.length > 0
-            ? anomalies.map(a => `${a.name} ${a.changePct >= 0 ? "+" : ""}${a.changePct.toFixed(2)}%`).join(", ")
-            : "無";
+      try {
+        const holdingSummary = changes.map(c =>
+          `${c.name}(${c.code}) 今日${c.changePct >= 0 ? "+" : ""}${c.changePct.toFixed(2)}% 累計${c.totalPct >= 0 ? "+" : ""}${c.totalPct}%`
+        ).join("\n");
+        const eventSummary = pendingEvents.map(e =>
+          `[${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}`
+        ).join("\n");
+        const anomalySummary = anomalies.length > 0
+          ? anomalies.map(a => `${a.name} ${a.changePct >= 0 ? "+" : ""}${a.changePct.toFixed(2)}%`).join(", ")
+          : "無";
 
-          const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": apiKey,
-              "anthropic-version": "2023-06-01",
-              "anthropic-dangerous-direct-browser-access": "true",
-            },
-            body: JSON.stringify({
-              model: "claude-sonnet-4-20250514", max_tokens: 1200,
-              system: `你是一位專業的台股策略分析師。用戶是積極型事件驅動交易者，持有股票+權證，專注電子科技族群。
+        const aiRes = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemPrompt: `你是一位專業的台股策略分析師。用戶是積極型事件驅動交易者，持有股票+權證，專注電子科技族群。
 請用繁體中文，以精準簡潔的風格分析今日收盤表現。格式：
 
 ## 今日總結
@@ -523,9 +520,7 @@ export default function App() {
 
 ## 操作建議
 （具體的買賣建議或等待條件）`,
-              messages: [{
-                role: "user",
-                content: `今日日期：${today}
+            userPrompt: `今日日期：${today}
 今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
 
 持倉明細：
@@ -537,14 +532,12 @@ ${holdingSummary}
 ${eventSummary}
 
 請分析今日收盤表現，事件連動，並給出策略建議。`
-              }]
-            })
-          });
-          const aiData = await aiRes.json();
-          aiInsight = aiData.content?.[0]?.text || null;
-        } catch (e) {
-          console.error("AI 分析失敗:", e);
-        }
+          })
+        });
+        const aiData = await aiRes.json();
+        aiInsight = aiData.content?.[0]?.text || null;
+      } catch (e) {
+        console.error("AI 分析失敗:", e);
       }
 
       // 7. 組裝報告
@@ -605,6 +598,37 @@ ${eventSummary}
     setTimeout(() => setSaved(""), 2500);
   };
 
+  // ── 新增事件 ─────────────────────────────────────────────────────
+  const addEvent = () => {
+    if (!newEvent.title.trim() || !newEvent.date.trim()) return;
+    const evt = {
+      id: Date.now(),
+      date: newEvent.date,
+      status: "pending",
+      title: newEvent.title,
+      detail: newEvent.detail,
+      stocks: newEvent.stocks.split(/[,，、]/).map(s => s.trim()).filter(Boolean),
+      pred: newEvent.pred,
+      predReason: newEvent.predReason,
+      actual: null, actualNote: "", correct: null,
+    };
+    setNewsEvents(prev => [...(prev || NEWS_EVENTS), evt]);
+    setNewEvent({ date: "", title: "", detail: "", stocks: "", pred: "up", predReason: "" });
+    setShowAddEvent(false);
+    setSaved("✅ 事件已新增");
+    setTimeout(() => setSaved(""), 2500);
+  };
+
+  // ── 反轉條件更新 ─────────────────────────────────────────────────
+  const updateReversal = (code, conditions) => {
+    setReversalConditions(prev => ({
+      ...(prev || {}),
+      [code]: { ...conditions, updatedAt: new Date().toLocaleDateString("zh-TW") },
+    }));
+    setSaved("✅ 反轉條件已儲存");
+    setTimeout(() => setSaved(""), 2500);
+  };
+
   // ── 收盤後自動觸發檢查 ───────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
@@ -638,20 +662,13 @@ ${eventSummary}
     if (!b64) return;
     setParsing(true); setParseErr(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{
-          "Content-Type":"application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY || "",
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+      const res = await fetch("/api/parse", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:600,
-          system: PARSE_PROMPT,
-          messages:[{role:"user", content:[
-            {type:"image", source:{type:"base64", media_type:"image/jpeg", data:b64}},
-            {type:"text",  text:"解析這張成交截圖"}
-          ]}]
+          systemPrompt: PARSE_PROMPT,
+          base64: b64,
+          mediaType: "image/jpeg",
         })
       });
       const data = await res.json();
@@ -753,8 +770,14 @@ ${eventSummary}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box}
-        textarea::placeholder{color:${C.textMute}}
+        html{-webkit-text-size-adjust:100%}
+        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+        textarea::placeholder,input::placeholder{color:${C.textMute}}
+        input,textarea,button{font-family:inherit;-webkit-appearance:none}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        @media(max-width:480px){
+          body{font-size:14px}
+        }
       `}</style>
 
       {/* ── HEADER ── */}
@@ -877,6 +900,88 @@ ${eventSummary}
               ))}
             </div>
           </div>
+
+          {/* 反轉追蹤（虧損持股） */}
+          {losers.length>0 && (
+            <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.amber}88`}}>
+              <div style={{...lbl,color:C.amber}}>反轉追蹤 · {losers.length}檔等待中</div>
+              {losers.map(h=>{
+                const rc = (reversalConditions||{})[h.code];
+                const [editing, setEditing] = [
+                  reviewingEvent===`rev-${h.code}`,
+                  (v)=>setReviewingEvent(v?`rev-${h.code}`:null)
+                ];
+                return <div key={h.code} style={{marginTop:8,padding:"8px 0",
+                  borderBottom:`1px solid ${C.borderSub}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <span style={{fontSize:12,fontWeight:500,color:C.text}}>{h.name}</span>
+                      <span style={{fontSize:10,color:C.down,marginLeft:6}}>{h.pct}%</span>
+                    </div>
+                    <button onClick={()=>setEditing(!editing)} style={{
+                      padding:"3px 9px",borderRadius:5,fontSize:9,cursor:"pointer",
+                      background:rc?C.olive+"22":"transparent",
+                      border:`1px solid ${rc?C.olive+"55":C.border}`,
+                      color:rc?C.olive:C.textMute}}>
+                      {rc?"查看條件":"設定反轉條件"}
+                    </button>
+                  </div>
+                  {rc && !editing && (
+                    <div style={{fontSize:10,color:C.textSec,marginTop:4,lineHeight:1.7}}>
+                      反轉訊號：{rc.signal} | 目標：{rc.target} | 停損：{rc.stopLoss}
+                    </div>
+                  )}
+                  {editing && (()=>{
+                    const draft = rc || {signal:"",target:"",stopLoss:"",note:""};
+                    return <div style={{marginTop:8,background:C.subtle,borderRadius:7,padding:10}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                        <div>
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:2}}>反轉目標價</div>
+                          <input defaultValue={draft.target} id={`rv-t-${h.code}`}
+                            placeholder="如 130"
+                            style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                              borderRadius:6,padding:"6px 8px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}/>
+                        </div>
+                        <div>
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:2}}>停損價</div>
+                          <input defaultValue={draft.stopLoss} id={`rv-s-${h.code}`}
+                            placeholder="如 85"
+                            style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                              borderRadius:6,padding:"6px 8px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}/>
+                        </div>
+                      </div>
+                      <div style={{marginBottom:6}}>
+                        <div style={{fontSize:9,color:C.textMute,marginBottom:2}}>反轉訊號（什麼條件出現代表反轉？）</div>
+                        <input defaultValue={draft.signal} id={`rv-g-${h.code}`}
+                          placeholder="如：月營收連續兩月成長、法人轉買超"
+                          style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                            borderRadius:6,padding:"6px 8px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}/>
+                      </div>
+                      <div style={{marginBottom:8}}>
+                        <div style={{fontSize:9,color:C.textMute,marginBottom:2}}>備註</div>
+                        <input defaultValue={draft.note} id={`rv-n-${h.code}`}
+                          placeholder="其他觀察..."
+                          style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
+                            borderRadius:6,padding:"6px 8px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}/>
+                      </div>
+                      <button onClick={()=>{
+                        updateReversal(h.code, {
+                          signal: document.getElementById(`rv-g-${h.code}`).value,
+                          target: document.getElementById(`rv-t-${h.code}`).value,
+                          stopLoss: document.getElementById(`rv-s-${h.code}`).value,
+                          note: document.getElementById(`rv-n-${h.code}`).value,
+                        });
+                        setEditing(false);
+                      }} style={{width:"100%",padding:"8px",borderRadius:6,border:"none",
+                        background:C.olive+"cc",color:"#fff",fontSize:11,fontWeight:500,cursor:"pointer"}}>
+                        儲存反轉條件
+                      </button>
+                    </div>;
+                  })()}
+                </div>;
+              })}
+            </div>
+          )}
 
           {/* 排序 + 列表 */}
           <div style={{display:"flex",gap:5,marginBottom:10,alignItems:"center"}}>
@@ -1199,10 +1304,10 @@ ${eventSummary}
               </div>
             )}
 
-            {!dailyReport.aiInsight && !import.meta.env.VITE_ANTHROPIC_API_KEY && (
+            {!dailyReport.aiInsight && (
               <div style={{...card,marginBottom:10,background:C.subtle}}>
                 <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
-                  設定 VITE_ANTHROPIC_API_KEY 可啟用 AI 策略分析
+                  AI 分析未產生（請確認 Vercel 已設定 ANTHROPIC_API_KEY）
                 </div>
               </div>
             )}
@@ -1681,6 +1786,82 @@ ${eventSummary}
                 </div>
               ))}
             </div>
+
+            {/* 新增事件按鈕 */}
+            <button onClick={()=>setShowAddEvent(!showAddEvent)} style={{
+              width:"100%",padding:"10px",marginBottom:10,borderRadius:8,
+              background:showAddEvent?C.subtle:C.blue+"22",
+              border:`1px solid ${showAddEvent?C.border:C.blue+"55"}`,
+              color:showAddEvent?C.textMute:C.blue,fontSize:11,fontWeight:500,cursor:"pointer"}}>
+              {showAddEvent?"取消":"＋ 新增事件（法說會、財報、營收、催化劑）"}
+            </button>
+
+            {showAddEvent && (
+              <div style={{...card,marginBottom:12,borderLeft:`2px solid ${C.blue}88`}}>
+                <div style={{...lbl,color:C.blue}}>新增事件</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
+                  <div>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>日期</div>
+                    <input value={newEvent.date} onChange={e=>setNewEvent(p=>({...p,date:e.target.value}))}
+                      placeholder="如 2026/04/01"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                        borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>相關個股（逗號分隔）</div>
+                    <input value={newEvent.stocks} onChange={e=>setNewEvent(p=>({...p,stocks:e.target.value}))}
+                      placeholder="如 台燿 6274, 晶豪科 3006"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                        borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                  </div>
+                </div>
+                <div style={{marginBottom:7}}>
+                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件標題</div>
+                  <input value={newEvent.title} onChange={e=>setNewEvent(p=>({...p,title:e.target.value}))}
+                    placeholder="如：台燿 Q1 財報法說會"
+                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                      borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                </div>
+                <div style={{marginBottom:7}}>
+                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件細節</div>
+                  <textarea value={newEvent.detail} onChange={e=>setNewEvent(p=>({...p,detail:e.target.value}))}
+                    placeholder="關鍵觀察重點..."
+                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                      borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
+                      minHeight:50,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                </div>
+                <div style={{marginBottom:7}}>
+                  <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>預測方向</div>
+                  <div style={{display:"flex",gap:6}}>
+                    {["up","down","neutral"].map(v=>(
+                      <button key={v} onClick={()=>setNewEvent(p=>({...p,pred:v}))}
+                        style={{flex:1,padding:"6px",borderRadius:6,fontSize:10,fontWeight:500,cursor:"pointer",
+                          background:newEvent.pred===v?(v==="up"?C.upBg:v==="down"?C.downBg:C.subtle):"transparent",
+                          color:newEvent.pred===v?(v==="up"?C.up:v==="down"?C.down:C.textSec):C.textMute,
+                          border:`1px solid ${newEvent.pred===v?(v==="up"?C.up+"55":v==="down"?C.down+"55":C.border):C.border}`}}>
+                        {v==="up"?"↑ 看漲":v==="down"?"↓ 看跌":"— 中性"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>預測邏輯</div>
+                  <textarea value={newEvent.predReason} onChange={e=>setNewEvent(p=>({...p,predReason:e.target.value}))}
+                    placeholder="為什麼這樣預測？依據是什麼？"
+                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                      borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
+                      minHeight:50,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                </div>
+                <button onClick={addEvent}
+                  disabled={!newEvent.title.trim()||!newEvent.date.trim()}
+                  style={{width:"100%",padding:"10px",borderRadius:8,border:"none",fontSize:12,
+                    fontWeight:500,cursor:newEvent.title.trim()&&newEvent.date.trim()?"pointer":"not-allowed",
+                    background:newEvent.title.trim()&&newEvent.date.trim()?C.blue+"cc":C.subtle,
+                    color:newEvent.title.trim()&&newEvent.date.trim()?"#fff":C.textMute}}>
+                  新增事件
+                </button>
+              </div>
+            )}
 
             {/* 待觀察 */}
             <div style={{

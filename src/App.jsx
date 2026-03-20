@@ -751,6 +751,91 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     setTimeout(() => setSaved(""), 2500);
   };
 
+  // ── 生成週報素材（供 Podcast / Claude.ai 使用）────────────────
+  const generateWeeklyReport = () => {
+    const today = new Date().toLocaleDateString("zh-TW");
+    const NE = newsEvents || NEWS_EVENTS;
+    const pastEvents = NE.filter(e => e.status === "past");
+    const pendingEvents = NE.filter(e => e.status === "pending");
+    const hits = pastEvents.filter(e => e.correct === true).length;
+    const total = pastEvents.filter(e => e.correct !== null).length;
+
+    // 持倉摘要
+    const holdingLines = H.map(h =>
+      `${h.name}(${h.code}) | 現價${h.price} | 成本${h.cost} | 損益${h.pnl>=0?"+":""}${h.pnl}(${h.pct>=0?"+":""}${h.pct}%) | ${h.type}`
+    ).join("\n");
+
+    // 近期分析
+    const recentAnalyses = (analysisHistory || []).slice(0, 7).map(r =>
+      `【${r.date} ${r.time}】損益${r.totalTodayPnl>=0?"+":""}${r.totalTodayPnl}\n${r.aiInsight ? r.aiInsight.slice(0, 500) + (r.aiInsight.length > 500 ? "..." : "") : "（無 AI 分析）"}`
+    ).join("\n\n---\n\n");
+
+    // 事件預測紀錄
+    const eventLines = pastEvents.map(e =>
+      `[${e.correct?"✓準確":"✗失誤"}] ${e.date} ${e.title}\n  預測：${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"} | 結果：${e.actualNote}`
+    ).join("\n");
+
+    const pendingLines = pendingEvents.map(e =>
+      `[⏳] ${e.date} ${e.title}\n  預測：${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"} | 理由：${e.predReason}`
+    ).join("\n");
+
+    // 策略大腦
+    const brain = strategyBrain;
+    const brainSection = brain ? `
+## 策略大腦
+核心規則：
+${(brain.rules||[]).map((r,i)=>`${i+1}. ${r}`).join("\n")}
+
+常犯錯誤：${(brain.commonMistakes||[]).join("、")||"無"}
+命中率：${brain.stats?.hitRate||"計算中"}
+累計分析次數：${brain.stats?.totalAnalyses||0}
+
+最近教訓：
+${(brain.lessons||[]).slice(-5).map(l=>`- [${l.date}] ${l.text}`).join("\n")}` : "";
+
+    const report = `# 持倉看板週報素材
+生成日期：${today}
+總成本：${totalCost.toLocaleString()} | 總市值：${totalVal.toLocaleString()} | 損益：${totalPnl>=0?"+":""}${totalPnl.toLocaleString()}（${retPct>=0?"+":""}${retPct.toFixed(2)}%）
+持股數：${H.length} 檔 | 事件預測命中率：${total>0?Math.round(hits/total*100)+"%（"+hits+"/"+total+"）":"尚無數據"}
+
+## 持倉明細
+${holdingLines}
+
+## 觀察股
+${INIT_WATCHLIST.map(w=>`${w.name}(${w.code}) | 現價${w.price} | 目標${w.target} | 狀態：${w.status}`).join("\n")}
+
+## 事件預測紀錄
+已驗證（${pastEvents.length} 筆）：
+${eventLines || "無"}
+
+待驗證（${pendingEvents.length} 筆）：
+${pendingLines || "無"}
+${brainSection}
+
+## 近 7 日收盤分析
+${recentAnalyses || "尚無分析紀錄"}
+
+---
+以上為持倉看板自動生成的週報素材，請根據這些數據撰寫 Podcast 腳本。`;
+
+    return report;
+  };
+
+  const copyWeeklyReport = async () => {
+    const report = generateWeeklyReport();
+    try {
+      await navigator.clipboard.writeText(report);
+      setSaved("✅ 週報素材已複製到剪貼簿");
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = report; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      setSaved("✅ 週報素材已複製");
+    }
+    setTimeout(() => setSaved(""), 3000);
+  };
+
   // 收盤分析完全手動觸發，不自動執行
 
   // file
@@ -915,6 +1000,15 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
                 transition:"all 0.2s", whiteSpace:"nowrap",
               }}>
                 {refreshing ? "更新中..." : "⟳ 刷新股價"}
+              </button>
+              <button onClick={copyWeeklyReport} style={{
+                background: C.lavBg,
+                color: C.lavender,
+                border:`1px solid ${C.lavender}55`,
+                borderRadius:20, padding:"4px 12px", fontSize:10, fontWeight:500,
+                cursor:"pointer", transition:"all 0.2s", whiteSpace:"nowrap",
+              }}>
+                📋 週報素材
               </button>
               {lastUpdate && !refreshing && (
                 <span style={{fontSize:9,color:C.textMute}}>

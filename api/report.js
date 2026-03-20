@@ -1,10 +1,11 @@
 // Vercel Serverless Function — 週報素材 API
 // 回傳純文字格式，供 Claude.ai 或其他 AI 直接讀取
-import { list, head } from '@vercel/blob';
+import { list } from '@vercel/blob';
+
+const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 
 async function readBlob(blob) {
-  const meta = await head(blob.url);
-  const r = await fetch(meta.downloadUrl);
+  const r = await fetch(blob.url);
   return r.json();
 }
 
@@ -15,12 +16,14 @@ export default async function handler(req, res) {
 
   if (req.method !== "GET") return res.status(405).send("Method not allowed");
 
+  const opts = { token: TOKEN };
+
   try {
     const [brainRes, histRes, evtRes, holdRes] = await Promise.all([
-      list({ prefix: 'strategy-brain.json' }),
-      list({ prefix: 'analysis-history/' }),
-      list({ prefix: 'events.json' }),
-      list({ prefix: 'holdings.json' }),
+      list({ prefix: 'strategy-brain.json', ...opts }),
+      list({ prefix: 'analysis-history/', ...opts }),
+      list({ prefix: 'events.json', ...opts }),
+      list({ prefix: 'holdings.json', ...opts }),
     ]);
 
     let brain = null;

@@ -62,21 +62,21 @@ export default async function handler(req, res) {
         const { blobs } = await list({ prefix: BRAIN_KEY });
         for (const blob of blobs) await del(blob.url);
         if (data) {
-          await put(BRAIN_KEY, JSON.stringify(data), { contentType: 'application/json' });
+          await put(BRAIN_KEY, JSON.stringify(data), { contentType: 'application/json', access: 'private' });
         }
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-analysis") {
         const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
-        await put(key, JSON.stringify(data), { contentType: 'application/json' });
+        await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'private' });
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-events") {
         const { blobs } = await list({ prefix: 'events.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('events.json', JSON.stringify(data), { contentType: 'application/json' });
+        await put('events.json', JSON.stringify(data), { contentType: 'application/json', access: 'private' });
         return res.status(200).json({ ok: true });
       }
 
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       if (action === "save-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json' });
+        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json', access: 'private' });
         return res.status(200).json({ ok: true });
       }
 

@@ -98,6 +98,23 @@ export default async function handler(req, res) {
         return res.status(200).json({ events: await r.json() });
       }
 
+      if (action === "save-holdings") {
+        const { blobs } = await list({ prefix: 'holdings.json' });
+        for (const blob of blobs) await del(blob.url);
+        await put('holdings.json', JSON.stringify(data), {
+          contentType: 'application/json',
+          access: 'public',
+        });
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === "load-holdings") {
+        const { blobs } = await list({ prefix: 'holdings.json' });
+        if (blobs.length === 0) return res.status(200).json({ holdings: null });
+        const r = await fetch(blobs[0].url);
+        return res.status(200).json({ holdings: await r.json() });
+      }
+
       return res.status(400).json({ error: "未知 action" });
     }
 

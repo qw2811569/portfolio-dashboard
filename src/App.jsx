@@ -340,21 +340,36 @@ export default function App() {
       setReady(true);
       // 嘗試從雲端同步（策略大腦 + 歷史分析 + 事件資料）
       try {
-        const [cloudBrain, cloudHist, cloudEvents] = await Promise.all([
+        const [cloudBrain, cloudHist, cloudEvents, cloudHoldings] = await Promise.all([
           fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
           fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:[]})),
-          fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-holdings"})}).then(r=>r.json()).catch(()=>({holdings:null})),
         ]);
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
         if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
+        if (cloudHoldings.holdings) { setHoldings(cloudHoldings.holdings); save("pf-holdings-v2", cloudHoldings.holdings); }
         setCloudSync(true);
+        // 如果雲端沒有持倉數據，把本機的推上去
+        if (!cloudHoldings.holdings && h) {
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:h})}).catch(()=>{});
+        }
+        // 如果雲端沒有事件數據，把本機的推上去
+        if (!cloudEvents.events && ne) {
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:ne})}).catch(()=>{});
+        }
       } catch(e) { /* 離線也能用 localStorage 版本 */ }
     })();
   }, []);
 
   // auto-save
-  useEffect(() => { if (ready && holdings) save("pf-holdings-v2", holdings); }, [holdings, ready]);
+  useEffect(() => {
+    if (ready && holdings) {
+      save("pf-holdings-v2", holdings);
+      fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:holdings})}).catch(()=>{});
+    }
+  }, [holdings, ready]);
   useEffect(() => { if (ready && tradeLog) save("pf-log-v2",      tradeLog); }, [tradeLog,  ready]);
   useEffect(() => { if (ready && targets)  save("pf-targets-v1",  targets);  }, [targets,   ready]);
   useEffect(() => {

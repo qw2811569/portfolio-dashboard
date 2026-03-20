@@ -10,6 +10,12 @@ async function readBlob(blob) {
 }
 
 export default async function handler(req, res) {
+  // 沒有 t 參數時自動 redirect 加上時間戳，破解 Claude.ai 的 URL 快取
+  if (!req.query.t) {
+    const ts = Date.now();
+    return res.redirect(302, `/api/report?t=${ts}`);
+  }
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");

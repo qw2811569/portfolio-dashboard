@@ -99,24 +99,29 @@ export default async function handler(req, res) {
       }
 
       if (action === "load-holdings") {
-        const { blobs } = await list({ prefix: 'holdings.json' });
-        if (blobs.length === 0) return res.status(200).json({ holdings: null });
-        const blob = blobs[0];
+        // 列出所有 blob，包括帶隨機後綴的
+        const { blobs } = await list({ prefix: 'holdings' });
+        const allBlobs = blobs.map(b => ({ url: b.url, pathname: b.pathname, size: b.size }));
+
+        // 也測試 put 的回傳值
+        const putResult = await put('holdings-test.json', JSON.stringify({ test: true }), {
+          contentType: 'application/json', access: 'private', addRandomSuffix: false
+        });
+
+        // 嘗試讀取 put 回傳的 URL
         const token = process.env.BLOB_READ_WRITE_TOKEN;
-        // 測試不同授權方式
-        const tests = {};
-        for (const [name, headers] of [
-          ['bearer', { Authorization: `Bearer ${token}` }],
-          ['x-token', { 'x-vercel-blob-token': token }],
-          ['both', { Authorization: `Bearer ${token}`, 'x-vercel-blob-token': token }],
-          ['none', {}],
-        ]) {
-          try {
-            const r = await fetch(blob.url, { headers });
-            tests[name] = { status: r.status, body: (await r.text()).substring(0, 100) };
-          } catch (e) { tests[name] = { error: e.message }; }
-        }
-        return res.status(200).json({ blobUrl: blob.url, tests });
+        const r = await fetch(putResult.url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // 清理測試 blob
+        await del(putResult.url);
+
+        return res.status(200).json({
+          allBlobs,
+          putResult: { url: putResult.url, downloadUrl: putResult.downloadUrl, pathname: putResult.pathname },
+          fetchTest: { status: r.status, body: (await r.text()).substring(0, 200) },
+        });
       }
 
       return res.status(400).json({ error: "未知 action" });

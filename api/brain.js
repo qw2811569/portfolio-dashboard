@@ -107,26 +107,44 @@ export default async function handler(req, res) {
         return res.status(200).json({ holdings: await readBlob(blobs[0]) });
       }
 
-      // 臨時：從舊 private store 遷移資料到新 public store
+      // 臨時：從舊 private store 讀取並遷移到新 public store
       if (action === "migrate") {
         const oldToken = process.env.BLOB_READ_WRITE_TOKEN;
         const oldOpts = { token: oldToken };
         const results = {};
-        // 嘗試用 copy 搬移舊 store 的 blob 到新 store
+
         for (const prefix of ['holdings.json', 'events.json']) {
           try {
             const { blobs } = await list({ prefix, ...oldOpts });
-            if (blobs.length > 0) {
-              // 嘗試 copy 到新 public store
-              const copied = await copy(blobs[0].url, prefix, {
-                access: 'public', token: TOKEN, addRandomSuffix: false,
-              });
-              results[prefix] = { ok: true, newUrl: copied.url };
-            } else {
-              results[prefix] = { ok: false, reason: 'no blobs' };
+            if (blobs.length === 0) { results[prefix] = 'no blobs'; continue; }
+            const blob = blobs[0];
+
+            // 方法1: copy 在舊 store 內部到新路徑名
+            const tempName = `migrated-${prefix}`;
+            const copied = await copy(blob.url, tempName, {
+              access: 'private', ...oldOpts, addRandomSuffix: false,
+            });
+
+            // 方法2: 用 head 取 downloadUrl 再 fetch
+            const { head: headFn } = await import('@vercel/blob');
+            const meta = await headFn(blob.url, oldOpts);
+
+            // 嘗試多種方式讀取
+            const attempts = {};
+            for (const [name, url] of [
+              ['downloadUrl', meta.downloadUrl],
+              ['blobUrl', blob.url],
+              ['copiedUrl', copied.url],
+              ['copiedDownloadUrl', copied.downloadUrl],
+            ]) {
+              try {
+                const r = await fetch(url);
+                attempts[name] = { status: r.status, body: (await r.text()).substring(0, 100) };
+              } catch (e) { attempts[name] = { error: e.message }; }
             }
+            results[prefix] = attempts;
           } catch (e) {
-            results[prefix] = { ok: false, error: e.message };
+            results[prefix] = { error: e.message };
           }
         }
         return res.status(200).json({ migrate: results });

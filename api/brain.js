@@ -1,6 +1,6 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage (Public) 持久化策略知識庫
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, copy } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const BRAIN_KEY = 'strategy-brain.json';
@@ -112,12 +112,24 @@ export default async function handler(req, res) {
         const oldToken = process.env.BLOB_READ_WRITE_TOKEN;
         const oldOpts = { token: oldToken };
         const results = {};
-        // 列出舊 store 所有 blob
-        for (const prefix of ['holdings.json', 'events.json', 'strategy-brain.json', 'analysis-history/']) {
-          const { blobs } = await list({ prefix, ...oldOpts });
-          results[prefix] = blobs.map(b => ({ url: b.url, pathname: b.pathname, size: b.size }));
+        // 嘗試用 copy 搬移舊 store 的 blob 到新 store
+        for (const prefix of ['holdings.json', 'events.json']) {
+          try {
+            const { blobs } = await list({ prefix, ...oldOpts });
+            if (blobs.length > 0) {
+              // 嘗試 copy 到新 public store
+              const copied = await copy(blobs[0].url, prefix, {
+                access: 'public', token: TOKEN, addRandomSuffix: false,
+              });
+              results[prefix] = { ok: true, newUrl: copied.url };
+            } else {
+              results[prefix] = { ok: false, reason: 'no blobs' };
+            }
+          } catch (e) {
+            results[prefix] = { ok: false, error: e.message };
+          }
         }
-        return res.status(200).json({ oldStoreBlobs: results });
+        return res.status(200).json({ migrate: results });
       }
 
       return res.status(400).json({ error: "未知 action" });

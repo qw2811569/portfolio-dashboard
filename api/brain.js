@@ -94,7 +94,17 @@ export default async function handler(req, res) {
       if (action === "load-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         if (blobs.length === 0) return res.status(200).json({ holdings: null });
-        return res.status(200).json({ holdings: await readBlob(blobs[0]) });
+        const blob = blobs[0];
+        const meta = await head(blob.url);
+        return res.status(200).json({
+          debug: {
+            blobUrl: blob.url,
+            blobDownloadUrl: blob.downloadUrl,
+            headUrl: meta.url,
+            headDownloadUrl: meta.downloadUrl,
+            blobKeys: Object.keys(blob),
+          }
+        });
       }
 
       return res.status(400).json({ error: "未知 action" });

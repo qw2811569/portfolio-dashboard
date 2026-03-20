@@ -349,12 +349,16 @@ export default function App() {
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
         if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
-        if (cloudHoldings.holdings) { setHoldings(cloudHoldings.holdings); save("pf-holdings-v2", cloudHoldings.holdings); }
-        setCloudSync(true);
-        // 如果雲端沒有持倉數據，把本機的推上去
-        if (!cloudHoldings.holdings && h) {
-          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:h})}).catch(()=>{});
+        // 持倉同步：本機數量較多時以本機為準（避免雲端殘留測試資料覆蓋真實持倉）
+        const cloudH = cloudHoldings.holdings;
+        const localH = h;
+        if (cloudH && Array.isArray(cloudH) && (!localH || cloudH.length >= localH.length)) {
+          setHoldings(cloudH); save("pf-holdings-v2", cloudH);
+        } else if (localH && Array.isArray(localH) && localH.length > 0) {
+          // 本機資料較完整，推上雲端
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:localH})}).catch(()=>{});
         }
+        setCloudSync(true);
         // 如果雲端沒有事件數據，把本機的推上去
         if (!cloudEvents.events && ne) {
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:ne})}).catch(()=>{});

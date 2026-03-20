@@ -89,8 +89,16 @@ export default async function handler(req, res) {
       if (action === "save-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json', ...opts });
         for (const blob of blobs) await del(blob.url, opts);
-        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
+        if (data) {
+          await put('holdings.json', JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
+        }
         return res.status(200).json({ ok: true });
+      }
+
+      if (action === "clear-holdings") {
+        const { blobs } = await list({ prefix: 'holdings.json', ...opts });
+        for (const blob of blobs) await del(blob.url, opts);
+        return res.status(200).json({ ok: true, deleted: blobs.length });
       }
 
       if (action === "load-holdings") {

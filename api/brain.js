@@ -1,6 +1,6 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage (Public) 持久化策略知識庫
-import { put, list, del, copy } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const BRAIN_KEY = 'strategy-brain.json';
@@ -95,59 +95,10 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
-      if (action === "clear-holdings") {
-        const { blobs } = await list({ prefix: 'holdings.json', ...opts });
-        for (const blob of blobs) await del(blob.url, opts);
-        return res.status(200).json({ ok: true, deleted: blobs.length });
-      }
-
       if (action === "load-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json', ...opts });
         if (blobs.length === 0) return res.status(200).json({ holdings: null });
         return res.status(200).json({ holdings: await readBlob(blobs[0]) });
-      }
-
-      // 臨時：從舊 private store 讀取並遷移到新 public store
-      if (action === "migrate") {
-        const oldToken = process.env.BLOB_READ_WRITE_TOKEN;
-        const oldOpts = { token: oldToken };
-        const results = {};
-
-        for (const prefix of ['holdings.json', 'events.json']) {
-          try {
-            const { blobs } = await list({ prefix, ...oldOpts });
-            if (blobs.length === 0) { results[prefix] = 'no blobs'; continue; }
-            const blob = blobs[0];
-
-            // 方法1: copy 在舊 store 內部到新路徑名
-            const tempName = `migrated-${prefix}`;
-            const copied = await copy(blob.url, tempName, {
-              access: 'private', ...oldOpts, addRandomSuffix: false,
-            });
-
-            // 方法2: 用 head 取 downloadUrl 再 fetch
-            const { head: headFn } = await import('@vercel/blob');
-            const meta = await headFn(blob.url, oldOpts);
-
-            // 嘗試多種方式讀取
-            const attempts = {};
-            for (const [name, url] of [
-              ['downloadUrl', meta.downloadUrl],
-              ['blobUrl', blob.url],
-              ['copiedUrl', copied.url],
-              ['copiedDownloadUrl', copied.downloadUrl],
-            ]) {
-              try {
-                const r = await fetch(url);
-                attempts[name] = { status: r.status, body: (await r.text()).substring(0, 100) };
-              } catch (e) { attempts[name] = { error: e.message }; }
-            }
-            results[prefix] = attempts;
-          } catch (e) {
-            results[prefix] = { error: e.message };
-          }
-        }
-        return res.status(200).json({ migrate: results });
       }
 
       return res.status(400).json({ error: "未知 action" });

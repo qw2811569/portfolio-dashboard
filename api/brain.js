@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // GET — 讀取策略大腦
+    // GET — 讀取
     if (req.method === "GET") {
       const { action } = req.query;
 
@@ -36,7 +36,6 @@ export default async function handler(req, res) {
       }
 
       if (action === "all") {
-        // 匯出全部資料
         const { blobs: brainBlobs } = await list({ prefix: BRAIN_KEY });
         const { blobs: histBlobs } = await list({ prefix: HISTORY_PREFIX });
         let brain = null;
@@ -60,34 +59,24 @@ export default async function handler(req, res) {
       const { action, data } = req.body;
 
       if (action === "save-brain") {
-        // 先刪除舊的
         const { blobs } = await list({ prefix: BRAIN_KEY });
         for (const blob of blobs) await del(blob.url);
-        // 寫入新的
-        await put(BRAIN_KEY, JSON.stringify(data), {
-          contentType: 'application/json',
-          access: 'public',
-        });
+        if (data) {
+          await put(BRAIN_KEY, JSON.stringify(data), { contentType: 'application/json' });
+        }
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-analysis") {
         const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
-        await put(key, JSON.stringify(data), {
-          contentType: 'application/json',
-          access: 'public',
-        });
+        await put(key, JSON.stringify(data), { contentType: 'application/json' });
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-events") {
-        // 刪除舊的
         const { blobs } = await list({ prefix: 'events.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('events.json', JSON.stringify(data), {
-          contentType: 'application/json',
-          access: 'public',
-        });
+        await put('events.json', JSON.stringify(data), { contentType: 'application/json' });
         return res.status(200).json({ ok: true });
       }
 
@@ -101,10 +90,7 @@ export default async function handler(req, res) {
       if (action === "save-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('holdings.json', JSON.stringify(data), {
-          contentType: 'application/json',
-          access: 'public',
-        });
+        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json' });
         return res.status(200).json({ ok: true });
       }
 

@@ -99,29 +99,23 @@ export default async function handler(req, res) {
       }
 
       if (action === "load-holdings") {
-        // 列出所有 blob，包括帶隨機後綴的
-        const { blobs } = await list({ prefix: 'holdings' });
-        const allBlobs = blobs.map(b => ({ url: b.url, pathname: b.pathname, size: b.size }));
-
-        // 也測試 put 的回傳值
-        const putResult = await put('holdings-test.json', JSON.stringify({ test: true }), {
-          contentType: 'application/json', access: 'private', addRandomSuffix: false
-        });
-
-        // 嘗試讀取 put 回傳的 URL
+        const { blobs } = await list({ prefix: 'holdings.json' });
+        if (blobs.length === 0) return res.status(200).json({ holdings: null });
+        const blob = blobs[0];
         const token = process.env.BLOB_READ_WRITE_TOKEN;
-        const r = await fetch(putResult.url, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // 清理測試 blob
-        await del(putResult.url);
-
-        return res.status(200).json({
-          allBlobs,
-          putResult: { url: putResult.url, downloadUrl: putResult.downloadUrl, pathname: putResult.pathname },
-          fetchTest: { status: r.status, body: (await r.text()).substring(0, 200) },
-        });
+        // 測試 Vercel Blob API 下載端點
+        const tests = {};
+        for (const [name, url] of [
+          ['api-download', `https://vercel.com/api/blob/download?url=${encodeURIComponent(blob.url)}`],
+          ['api-get', `https://vercel.com/api/blob?url=${encodeURIComponent(blob.url)}`],
+          ['pathname', `https://p6zab0gnjublhvyz.private.blob.vercel-storage.com/holdings.json?token=${token}`],
+        ]) {
+          try {
+            const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+            tests[name] = { status: r.status, body: (await r.text()).substring(0, 300) };
+          } catch (e) { tests[name] = { error: e.message }; }
+        }
+        return res.status(200).json({ tests });
       }
 
       return res.status(400).json({ error: "未知 action" });

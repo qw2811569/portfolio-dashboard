@@ -898,7 +898,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
               {saved && <span style={{color:C.olive,marginLeft:8,fontWeight:600}}>{saved}</span>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:21,fontWeight:600,color:C.text,marginTop:2,letterSpacing:"-0.01em"}}>持倉看板</span>
+              <span style={{fontSize:21,fontWeight:600,color:C.text,marginTop:2,letterSpacing:"-0.01em"}}>持倉看</span>
               <button onClick={refreshPrices} disabled={refreshing} style={{
                 background: refreshing ? C.subtle : C.blue+"22",
                 color: refreshing ? C.textMute : C.blue,

@@ -1,15 +1,14 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage 持久化策略知識庫
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, head } from '@vercel/blob';
 
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
 
-// 讀取 private blob — 需要帶 token 授權
+// 讀取 private blob — 用 head() 取得 downloadUrl
 async function readBlob(blob) {
-  const r = await fetch(blob.url, {
-    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-  });
+  const meta = await head(blob.url);
+  const r = await fetch(meta.downloadUrl);
   return r.json();
 }
 
@@ -61,21 +60,21 @@ export default async function handler(req, res) {
         const { blobs } = await list({ prefix: BRAIN_KEY });
         for (const blob of blobs) await del(blob.url);
         if (data) {
-          await put(BRAIN_KEY, JSON.stringify(data), { contentType: 'application/json', access: 'private' });
+          await put(BRAIN_KEY, JSON.stringify(data), { contentType: 'application/json', access: 'private', addRandomSuffix: false });
         }
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-analysis") {
         const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
-        await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'private' });
+        await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'private', addRandomSuffix: false });
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-events") {
         const { blobs } = await list({ prefix: 'events.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('events.json', JSON.stringify(data), { contentType: 'application/json', access: 'private' });
+        await put('events.json', JSON.stringify(data), { contentType: 'application/json', access: 'private', addRandomSuffix: false });
         return res.status(200).json({ ok: true });
       }
 
@@ -88,23 +87,14 @@ export default async function handler(req, res) {
       if (action === "save-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         for (const blob of blobs) await del(blob.url);
-        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json', access: 'private' });
+        await put('holdings.json', JSON.stringify(data), { contentType: 'application/json', access: 'private', addRandomSuffix: false });
         return res.status(200).json({ ok: true });
       }
 
       if (action === "load-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         if (blobs.length === 0) return res.status(200).json({ holdings: null });
-        // debug: 顯示 blob 資訊和 fetch 結果
-        const blob = blobs[0];
-        const r = await fetch(blob.url, {
-          headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-        });
-        const text = await r.text();
-        return res.status(200).json({
-          debug: { url: blob.url, status: r.status, bodyPreview: text.substring(0, 500) },
-          holdings: text ? JSON.parse(text) : null,
-        });
+        return res.status(200).json({ holdings: await readBlob(blobs[0]) });
       }
 
       return res.status(400).json({ error: "未知 action" });

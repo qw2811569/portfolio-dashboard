@@ -885,10 +885,17 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         @media(max-width:480px){
           body{font-size:14px}
         }
+        @media(min-width:768px){
+          body{font-size:16px}
+          .app-shell{max-width:720px;margin:0 auto;zoom:1.15}
+        }
+        @media(min-width:1200px){
+          .app-shell{max-width:800px;zoom:1.25}
+        }
       `}</style>
 
       {/* ── HEADER ── */}
-      <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,
+      <div className="app-shell" style={{background:C.card,borderBottom:`1px solid ${C.border}`,
         padding:"16px 16px 0",position:"sticky",top:0,zIndex:10}}>
 
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
@@ -898,7 +905,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
               {saved && <span style={{color:C.olive,marginLeft:8,fontWeight:600}}>{saved}</span>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:21,fontWeight:600,color:C.text,marginTop:2,letterSpacing:"-0.01em"}}>持倉看</span>
+              <span style={{fontSize:21,fontWeight:600,color:C.text,marginTop:2,letterSpacing:"-0.01em"}}>持倉看板</span>
               <button onClick={refreshPrices} disabled={refreshing} style={{
                 background: refreshing ? C.subtle : C.blue+"22",
                 color: refreshing ? C.textMute : C.blue,
@@ -953,7 +960,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         </div>
       </div>
 
-      <div style={{padding:"14px 14px"}}>
+      <div className="app-shell" style={{padding:"14px 14px"}}>
 
         {/* ══════════ HOLDINGS ══════════ */}
         {tab==="holdings" && <>

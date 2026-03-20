@@ -1,5 +1,5 @@
 // Vercel Serverless Function — 週報素材 API
-// 回傳純文字格式，供 Claude.ai 或其他 AI 直接讀取
+// 回傳 HTML 頁面，讓 Claude.ai 的 web fetch 能正確解析
 import { list } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
@@ -9,18 +9,12 @@ async function readBlob(blob) {
   return r.json();
 }
 
-export default async function handler(req, res) {
-  // 沒有 t 參數時自動 redirect 加上時間戳，破解 Claude.ai 的 URL 快取
-  if (!req.query.t) {
-    const ts = Date.now();
-    return res.redirect(302, `/api/report?t=${ts}`);
-  }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
 
   if (req.method !== "GET") return res.status(405).send("Method not allowed");
 
@@ -48,9 +42,10 @@ export default async function handler(req, res) {
     let holdings = null;
     if (holdRes.blobs.length > 0) holdings = await readBlob(holdRes.blobs[0]);
 
-    // 組裝報告
+    // 組裝 HTML 報告
     const today = new Date().toLocaleDateString("zh-TW");
-    let report = `# 持倉看板週報素材\n生成日期：${today}\n\n`;
+    let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>持倉看板週報素材</title></head><body>`;
+    html += `<h1>持倉看板週報素材</h1><p>生成日期：${today}</p>`;
 
     if (holdings && Array.isArray(holdings) && holdings.length > 0) {
       const totalCost = holdings.reduce((s, h) => s + (h.cost * h.qty), 0);
@@ -58,41 +53,40 @@ export default async function handler(req, res) {
       const totalPnl = holdings.reduce((s, h) => s + h.pnl, 0);
       const retPct = totalCost > 0 ? (totalPnl / totalCost * 100).toFixed(2) : "0";
 
-      report += `## 投資組合總覽\n`;
-      report += `總成本：${Math.round(totalCost).toLocaleString()} | 總市值：${totalVal.toLocaleString()} | 損益：${totalPnl >= 0 ? "+" : ""}${totalPnl.toLocaleString()}（${retPct}%）\n`;
-      report += `持股數：${holdings.length} 檔\n\n`;
+      html += `<h2>投資組合總覽</h2>`;
+      html += `<p>總成本：${Math.round(totalCost).toLocaleString()} | 總市值：${totalVal.toLocaleString()} | 損益：${totalPnl >= 0 ? "+" : ""}${totalPnl.toLocaleString()}（${retPct}%）</p>`;
+      html += `<p>持股數：${holdings.length} 檔</p>`;
 
-      report += `## 持倉明細\n`;
+      html += `<h2>持倉明細</h2><table><tr><th>名稱</th><th>類型</th><th>數量</th><th>成本</th><th>現價</th><th>市值</th><th>損益</th><th>報酬率</th></tr>`;
       holdings.forEach(h => {
-        report += `${h.name}(${h.code}) | ${h.type} | ${h.qty}股 | 成本${h.cost} | 現價${h.price} | 市值${h.value} | 損益${h.pnl >= 0 ? "+" : ""}${h.pnl}(${h.pct >= 0 ? "+" : ""}${h.pct}%)\n`;
+        html += `<tr><td>${esc(h.name)}(${esc(h.code)})</td><td>${esc(h.type)}</td><td>${h.qty}股</td><td>${h.cost}</td><td>${h.price}</td><td>${h.value}</td><td>${h.pnl >= 0 ? "+" : ""}${h.pnl}</td><td>${h.pct >= 0 ? "+" : ""}${h.pct}%</td></tr>`;
       });
-      report += `\n`;
+      html += `</table>`;
 
       const winners = holdings.filter(h => h.pnl > 0).sort((a, b) => b.pct - a.pct);
       const losers = holdings.filter(h => h.pnl < 0).sort((a, b) => a.pct - b.pct);
-      if (winners.length > 0) report += `獲利排行：${winners.map(h => `${h.name}(+${h.pct}%)`).join("、")}\n`;
-      if (losers.length > 0) report += `虧損排行：${losers.map(h => `${h.name}(${h.pct}%)`).join("、")}\n`;
-      report += `\n`;
+      if (winners.length > 0) html += `<p><strong>獲利排行：</strong>${winners.map(h => `${esc(h.name)}(+${h.pct}%)`).join("、")}</p>`;
+      if (losers.length > 0) html += `<p><strong>虧損排行：</strong>${losers.map(h => `${esc(h.name)}(${h.pct}%)`).join("、")}</p>`;
     } else {
-      report += `## 持倉明細\n（尚未同步）\n\n`;
+      html += `<h2>持倉明細</h2><p>（尚未同步）</p>`;
     }
 
     if (brain) {
-      report += `## 策略大腦\n`;
-      report += `累計分析：${brain.stats?.totalAnalyses || 0} 次 | 命中率：${brain.stats?.hitRate || "計算中"} | 更新：${brain.lastUpdate || "—"}\n\n`;
+      html += `<h2>策略大腦</h2>`;
+      html += `<p>累計分析：${brain.stats?.totalAnalyses || 0} 次 | 命中率：${brain.stats?.hitRate || "計算中"} | 更新：${brain.lastUpdate || "—"}</p>`;
       if (brain.rules?.length > 0) {
-        report += `核心規則：\n`;
-        brain.rules.forEach((r, i) => { report += `${i + 1}. ${r}\n`; });
-        report += `\n`;
+        html += `<h3>核心規則</h3><ol>`;
+        brain.rules.forEach(r => { html += `<li>${esc(r)}</li>`; });
+        html += `</ol>`;
       }
-      if (brain.commonMistakes?.length > 0) report += `常犯錯誤：${brain.commonMistakes.join("、")}\n\n`;
+      if (brain.commonMistakes?.length > 0) html += `<p><strong>常犯錯誤：</strong>${brain.commonMistakes.map(esc).join("、")}</p>`;
       if (brain.lessons?.length > 0) {
-        report += `最近教訓：\n`;
-        brain.lessons.slice(-5).forEach(l => { report += `- [${l.date}] ${l.text}\n`; });
-        report += `\n`;
+        html += `<h3>最近教訓</h3><ul>`;
+        brain.lessons.slice(-5).forEach(l => { html += `<li>[${esc(l.date)}] ${esc(l.text)}</li>`; });
+        html += `</ul>`;
       }
     } else {
-      report += `## 策略大腦\n（尚未建立）\n\n`;
+      html += `<h2>策略大腦</h2><p>（尚未建立）</p>`;
     }
 
     if (events && Array.isArray(events)) {
@@ -101,36 +95,36 @@ export default async function handler(req, res) {
       const hits = past.filter(e => e.correct === true).length;
       const total = past.filter(e => e.correct !== null).length;
 
-      report += `## 事件預測\n`;
-      report += `命中率：${total > 0 ? Math.round(hits / total * 100) + "%（" + hits + "/" + total + "）" : "尚無"}\n\n`;
+      html += `<h2>事件預測</h2>`;
+      html += `<p>命中率：${total > 0 ? Math.round(hits / total * 100) + "%（" + hits + "/" + total + "）" : "尚無"}</p>`;
 
       if (past.length > 0) {
-        report += `已驗證：\n`;
+        html += `<h3>已驗證</h3><ul>`;
         past.forEach(e => {
-          report += `[${e.correct ? "✓" : "✗"}] ${e.date} ${e.title} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${e.actualNote || "—"}\n`;
+          html += `<li>[${e.correct ? "✓" : "✗"}] ${esc(e.date)} ${esc(e.title)} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${esc(e.actualNote || "—")}</li>`;
         });
-        report += `\n`;
+        html += `</ul>`;
       }
       if (pending.length > 0) {
-        report += `待驗證：\n`;
+        html += `<h3>待驗證</h3><ul>`;
         pending.forEach(e => {
-          report += `[⏳] ${e.date} ${e.title} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${e.predReason || "—"}\n`;
+          html += `<li>[⏳] ${esc(e.date)} ${esc(e.title)} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${esc(e.predReason || "—")}</li>`;
         });
-        report += `\n`;
+        html += `</ul>`;
       }
     }
 
     if (history.length > 0) {
-      report += `## 近 7 日分析\n\n`;
+      html += `<h2>近 7 日分析</h2>`;
       history.forEach(r => {
-        report += `【${r.date} ${r.time}】損益${r.totalTodayPnl >= 0 ? "+" : ""}${r.totalTodayPnl}\n`;
-        if (r.aiInsight) report += `${r.aiInsight}\n`;
-        report += `\n---\n\n`;
+        html += `<h3>【${esc(r.date)} ${esc(r.time)}】損益${r.totalTodayPnl >= 0 ? "+" : ""}${r.totalTodayPnl}</h3>`;
+        if (r.aiInsight) html += `<p>${esc(r.aiInsight)}</p>`;
+        html += `<hr>`;
       });
     }
 
-    report += `---\n以上為持倉看板自動生成的週報素材。\n`;
-    return res.status(200).send(report);
+    html += `<hr><p>以上為持倉看板自動生成的週報素材。</p></body></html>`;
+    return res.status(200).send(html);
   } catch (err) {
     return res.status(500).send(`錯誤: ${err.message}`);
   }

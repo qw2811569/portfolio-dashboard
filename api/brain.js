@@ -5,10 +5,17 @@ import { put, list, del, head } from '@vercel/blob';
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
 
-// 讀取 private blob — 用 head() 取得 downloadUrl
+// 讀取 private blob
 async function readBlob(blob) {
-  const meta = await head(blob.url);
-  const r = await fetch(meta.downloadUrl);
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  // 嘗試多種授權方式
+  const r = await fetch(blob.url, {
+    headers: {
+      'x-vercel-blob-token': token,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!r.ok) throw new Error(`Blob read failed: ${r.status} ${r.statusText}`);
   return r.json();
 }
 
@@ -95,16 +102,21 @@ export default async function handler(req, res) {
         const { blobs } = await list({ prefix: 'holdings.json' });
         if (blobs.length === 0) return res.status(200).json({ holdings: null });
         const blob = blobs[0];
-        const meta = await head(blob.url);
-        return res.status(200).json({
-          debug: {
-            blobUrl: blob.url,
-            blobDownloadUrl: blob.downloadUrl,
-            headUrl: meta.url,
-            headDownloadUrl: meta.downloadUrl,
-            blobKeys: Object.keys(blob),
-          }
-        });
+        const token = process.env.BLOB_READ_WRITE_TOKEN;
+        // 測試不同授權方式
+        const tests = {};
+        for (const [name, headers] of [
+          ['bearer', { Authorization: `Bearer ${token}` }],
+          ['x-token', { 'x-vercel-blob-token': token }],
+          ['both', { Authorization: `Bearer ${token}`, 'x-vercel-blob-token': token }],
+          ['none', {}],
+        ]) {
+          try {
+            const r = await fetch(blob.url, { headers });
+            tests[name] = { status: r.status, body: (await r.text()).substring(0, 100) };
+          } catch (e) { tests[name] = { error: e.message }; }
+        }
+        return res.status(200).json({ blobUrl: blob.url, tests });
       }
 
       return res.status(400).json({ error: "未知 action" });

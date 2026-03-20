@@ -1,6 +1,12 @@
 // Vercel Serverless Function — 週報素材 API
 // 回傳純文字格式，供 Claude.ai 或其他 AI 直接讀取
-import { list } from '@vercel/blob';
+import { list, getDownloadUrl } from '@vercel/blob';
+
+async function readBlob(blob) {
+  const url = getDownloadUrl(blob.url);
+  const r = await fetch(url);
+  return r.json();
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -10,7 +16,6 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method not allowed");
 
   try {
-    // 同時讀取所有資料
     const [brainRes, histRes, evtRes, holdRes] = await Promise.all([
       list({ prefix: 'strategy-brain.json' }),
       list({ prefix: 'analysis-history/' }),
@@ -18,39 +23,24 @@ export default async function handler(req, res) {
       list({ prefix: 'holdings.json' }),
     ]);
 
-    // 策略大腦
     let brain = null;
-    if (brainRes.blobs.length > 0) {
-      const r = await fetch(brainRes.blobs[0].downloadUrl);
-      brain = await r.json();
-    }
+    if (brainRes.blobs.length > 0) brain = await readBlob(brainRes.blobs[0]);
 
-    // 分析歷史（最近 7 筆）
     const history = [];
     for (const blob of histRes.blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 7)) {
-      const r = await fetch(blob.downloadUrl);
-      history.push(await r.json());
+      history.push(await readBlob(blob));
     }
 
-    // 事件資料
     let events = null;
-    if (evtRes.blobs.length > 0) {
-      const r = await fetch(evtRes.blobs[0].downloadUrl);
-      events = await r.json();
-    }
+    if (evtRes.blobs.length > 0) events = await readBlob(evtRes.blobs[0]);
 
-    // 持倉資料
     let holdings = null;
-    if (holdRes.blobs.length > 0) {
-      const r = await fetch(holdRes.blobs[0].downloadUrl);
-      holdings = await r.json();
-    }
+    if (holdRes.blobs.length > 0) holdings = await readBlob(holdRes.blobs[0]);
 
-    // 組裝純文字報告
+    // 組裝報告
     const today = new Date().toLocaleDateString("zh-TW");
     let report = `# 持倉看板週報素材\n生成日期：${today}\n\n`;
 
-    // 持倉明細
     if (holdings && Array.isArray(holdings) && holdings.length > 0) {
       const totalCost = holdings.reduce((s, h) => s + (h.cost * h.qty), 0);
       const totalVal = holdings.reduce((s, h) => s + h.value, 0);
@@ -67,96 +57,70 @@ export default async function handler(req, res) {
       });
       report += `\n`;
 
-      // 獲利/虧損排行
       const winners = holdings.filter(h => h.pnl > 0).sort((a, b) => b.pct - a.pct);
       const losers = holdings.filter(h => h.pnl < 0).sort((a, b) => a.pct - b.pct);
-      if (winners.length > 0) {
-        report += `獲利排行：${winners.map(h => `${h.name}(+${h.pct}%)`).join("、")}\n`;
-      }
-      if (losers.length > 0) {
-        report += `虧損排行：${losers.map(h => `${h.name}(${h.pct}%)`).join("、")}\n`;
-      }
+      if (winners.length > 0) report += `獲利排行：${winners.map(h => `${h.name}(+${h.pct}%)`).join("、")}\n`;
+      if (losers.length > 0) report += `虧損排行：${losers.map(h => `${h.name}(${h.pct}%)`).join("、")}\n`;
       report += `\n`;
     } else {
-      report += `## 持倉明細\n（持倉數據尚未同步到雲端，請先在看板上刷新一次股價）\n\n`;
+      report += `## 持倉明細\n（尚未同步）\n\n`;
     }
 
-    // 策略大腦
     if (brain) {
       report += `## 策略大腦\n`;
-      report += `累計分析次數：${brain.stats?.totalAnalyses || 0}\n`;
-      report += `命中率：${brain.stats?.hitRate || "計算中"}\n`;
-      report += `最後更新：${brain.lastUpdate || "—"}\n\n`;
-
+      report += `累計分析：${brain.stats?.totalAnalyses || 0} 次 | 命中率：${brain.stats?.hitRate || "計算中"} | 更新：${brain.lastUpdate || "—"}\n\n`;
       if (brain.rules?.length > 0) {
-        report += `核心策略規則：\n`;
+        report += `核心規則：\n`;
         brain.rules.forEach((r, i) => { report += `${i + 1}. ${r}\n`; });
         report += `\n`;
       }
-
-      if (brain.commonMistakes?.length > 0) {
-        report += `常犯錯誤：${brain.commonMistakes.join("、")}\n\n`;
-      }
-
+      if (brain.commonMistakes?.length > 0) report += `常犯錯誤：${brain.commonMistakes.join("、")}\n\n`;
       if (brain.lessons?.length > 0) {
         report += `最近教訓：\n`;
         brain.lessons.slice(-5).forEach(l => { report += `- [${l.date}] ${l.text}\n`; });
         report += `\n`;
       }
     } else {
-      report += `## 策略大腦\n（尚未執行過收盤分析，策略大腦為空）\n\n`;
+      report += `## 策略大腦\n（尚未建立）\n\n`;
     }
 
-    // 事件預測
     if (events && Array.isArray(events)) {
       const past = events.filter(e => e.status === "past");
       const pending = events.filter(e => e.status === "pending");
       const hits = past.filter(e => e.correct === true).length;
       const total = past.filter(e => e.correct !== null).length;
 
-      report += `## 事件預測紀錄\n`;
-      report += `總命中率：${total > 0 ? Math.round(hits / total * 100) + "%（" + hits + "/" + total + "）" : "尚無數據"}\n\n`;
+      report += `## 事件預測\n`;
+      report += `命中率：${total > 0 ? Math.round(hits / total * 100) + "%（" + hits + "/" + total + "）" : "尚無"}\n\n`;
 
       if (past.length > 0) {
-        report += `已驗證（${past.length} 筆）：\n`;
+        report += `已驗證：\n`;
         past.forEach(e => {
-          report += `[${e.correct ? "✓準確" : "✗失誤"}] ${e.date} ${e.title}\n`;
-          report += `  預測：${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | 結果：${e.actualNote || "—"}\n`;
-          if (e.lessons) report += `  教訓：${e.lessons}\n`;
+          report += `[${e.correct ? "✓" : "✗"}] ${e.date} ${e.title} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${e.actualNote || "—"}\n`;
         });
         report += `\n`;
       }
-
       if (pending.length > 0) {
-        report += `待驗證（${pending.length} 筆）：\n`;
+        report += `待驗證：\n`;
         pending.forEach(e => {
-          report += `[⏳] ${e.date} ${e.title}\n`;
-          report += `  預測：${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | 理由：${e.predReason || "—"}\n`;
+          report += `[⏳] ${e.date} ${e.title} — ${e.pred === "up" ? "看漲" : e.pred === "down" ? "看跌" : "中性"} | ${e.predReason || "—"}\n`;
         });
         report += `\n`;
       }
-    } else {
-      report += `## 事件預測紀錄\n（事件數據尚未同步到雲端）\n\n`;
     }
 
-    // 近期分析
     if (history.length > 0) {
-      report += `## 近 7 日收盤分析\n\n`;
+      report += `## 近 7 日分析\n\n`;
       history.forEach(r => {
         report += `【${r.date} ${r.time}】損益${r.totalTodayPnl >= 0 ? "+" : ""}${r.totalTodayPnl}\n`;
-        if (r.aiInsight) {
-          report += `${r.aiInsight}\n`;
-        }
+        if (r.aiInsight) report += `${r.aiInsight}\n`;
         report += `\n---\n\n`;
       });
-    } else {
-      report += `## 近 7 日收盤分析\n（尚無分析紀錄）\n\n`;
     }
 
-    report += `---\n以上為持倉看板自動生成的週報素材，請根據這些數據撰寫 Podcast 腳本。\n`;
-
+    report += `---\n以上為持倉看板自動生成的週報素材。\n`;
     return res.status(200).send(report);
   } catch (err) {
-    return res.status(500).send(`生成週報失敗: ${err.message}`);
+    return res.status(500).send(`錯誤: ${err.message}`);
   }
 }

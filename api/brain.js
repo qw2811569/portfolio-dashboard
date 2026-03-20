@@ -1,10 +1,16 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage 持久化策略知識庫
-// 所有裝置共用同一份策略大腦
-import { put, list, del } from '@vercel/blob';
+import { put, list, del, getDownloadUrl } from '@vercel/blob';
 
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
+
+// 讀取 private blob 內容的 helper
+async function readBlob(blob) {
+  const url = getDownloadUrl(blob.url);
+  const r = await fetch(url);
+  return r.json();
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -20,8 +26,7 @@ export default async function handler(req, res) {
       if (action === "brain") {
         const { blobs } = await list({ prefix: BRAIN_KEY });
         if (blobs.length === 0) return res.status(200).json({ brain: null });
-        const response = await fetch(blobs[0].url);
-        const brain = await response.json();
+        const brain = await readBlob(blobs[0]);
         return res.status(200).json({ brain });
       }
 
@@ -29,8 +34,7 @@ export default async function handler(req, res) {
         const { blobs } = await list({ prefix: HISTORY_PREFIX });
         const history = [];
         for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
-          const response = await fetch(blob.downloadUrl);
-          history.push(await response.json());
+          history.push(await readBlob(blob));
         }
         return res.status(200).json({ history });
       }
@@ -39,15 +43,9 @@ export default async function handler(req, res) {
         const { blobs: brainBlobs } = await list({ prefix: BRAIN_KEY });
         const { blobs: histBlobs } = await list({ prefix: HISTORY_PREFIX });
         let brain = null;
-        if (brainBlobs.length > 0) {
-          const r = await fetch(brainBlobs[0].url);
-          brain = await r.json();
-        }
+        if (brainBlobs.length > 0) brain = await readBlob(brainBlobs[0]);
         const history = [];
-        for (const blob of histBlobs) {
-          const r = await fetch(blob.downloadUrl);
-          history.push(await r.json());
-        }
+        for (const blob of histBlobs) history.push(await readBlob(blob));
         return res.status(200).json({ brain, history });
       }
 
@@ -83,8 +81,7 @@ export default async function handler(req, res) {
       if (action === "load-events") {
         const { blobs } = await list({ prefix: 'events.json' });
         if (blobs.length === 0) return res.status(200).json({ events: null });
-        const r = await fetch(blobs[0].url);
-        return res.status(200).json({ events: await r.json() });
+        return res.status(200).json({ events: await readBlob(blobs[0]) });
       }
 
       if (action === "save-holdings") {
@@ -97,8 +94,7 @@ export default async function handler(req, res) {
       if (action === "load-holdings") {
         const { blobs } = await list({ prefix: 'holdings.json' });
         if (blobs.length === 0) return res.status(200).json({ holdings: null });
-        const r = await fetch(blobs[0].url);
-        return res.status(200).json({ holdings: await r.json() });
+        return res.status(200).json({ holdings: await readBlob(blobs[0]) });
       }
 
       return res.status(400).json({ error: "未知 action" });

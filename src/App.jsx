@@ -297,6 +297,7 @@ export default function App() {
   const [sortBy,      setSortBy]      = useState("value");
   const [filterType,  setFilterType]  = useState("全部");
   const [showAll,     setShowAll]     = useState(false);
+  const [expandedStock, setExpandedStock] = useState(null);
   const [expandedNews, setExpandedNews] = useState(new Set());
   const toggleNews = (id) => setExpandedNews(prev => {
     const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s;
@@ -1108,61 +1109,128 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
               const tp     = T ? avgTarget(h.code) : null;
               const upside = tp && h.price ? ((tp - h.price) / h.price * 100) : null;
               const isNew  = T?.isNew;
+              const isExpanded = expandedStock === h.code;
+              const NE = newsEvents || NEWS_EVENTS;
+              const relatedEvents = NE.filter(e => e.stocks?.some(s => s.includes(h.code)));
+              const hits = relatedEvents.filter(e => e.correct === true).length;
+              const misses = relatedEvents.filter(e => e.correct === false).length;
+              const pending = relatedEvents.filter(e => e.correct == null).length;
               return (
               <div key={h.code} style={{
-                display:"flex", alignItems:"flex-start", justifyContent:"space-between",
                 padding:"10px 0",
                 borderBottom: i<displayed.length-1 ? `1px solid ${C.borderSub}` : "none"}}>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
-                    <span style={{fontSize:13,fontWeight:600,color:C.text}}>{h.name}</span>
-                    <span style={{fontSize:9,color:C.textMute}}>{h.code}</span>
-                    {h.type!=="股票"&&(
-                      <span style={{fontSize:9,padding:"1px 6px",borderRadius:3,
-                        background: h.type==="權證" ? C.amberBg : C.blueBg,
-                        color: h.type==="權證" ? C.amber : C.blue,
-                        fontWeight:500}}>{h.type}</span>
-                    )}
-                    {h.expire&&<span style={{fontSize:9,color:C.amber,fontWeight:500}}>到期{h.expire}</span>}
-                    {h.alert&&<span style={{fontSize:9,color:C.up,fontWeight:600}}>{h.alert}</span>}
-                    {isNew&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:3,
-                      background:C.tealBg,color:C.teal,fontWeight:600,
-                      animation:"pulse 1.5s ease-in-out infinite"}}>目標價更新</span>}
-                  </div>
-                  <div style={{fontSize:10,color:C.textMute,marginTop:2}}>
-                    {h.qty}股 · 成本{h.cost?.toLocaleString()} · 現{h.price?.toLocaleString()}
-                  </div>
-                  {/* 目標價進度條 */}
-                  {tp && (
-                    <div style={{marginTop:5}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                        <span style={{fontSize:9,color:C.textMute}}>
-                          目標 {tp.toLocaleString()}
-                          {T?.reports?.length>1 && <span style={{color:C.textMute}}> ({T.reports.length}家均)</span>}
+                <div onClick={()=>setExpandedStock(isExpanded?null:h.code)}
+                  style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", cursor:"pointer"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+                      <span style={{fontSize:13,fontWeight:600,color:C.text}}>{h.name}</span>
+                      <span style={{fontSize:9,color:C.textMute}}>{h.code}</span>
+                      {h.type!=="股票"&&(
+                        <span style={{fontSize:9,padding:"1px 6px",borderRadius:3,
+                          background: h.type==="權證" ? C.amberBg : C.blueBg,
+                          color: h.type==="權證" ? C.amber : C.blue,
+                          fontWeight:500}}>{h.type}</span>
+                      )}
+                      {h.expire&&<span style={{fontSize:9,color:C.amber,fontWeight:500}}>到期{h.expire}</span>}
+                      {h.alert&&<span style={{fontSize:9,color:C.up,fontWeight:600}}>{h.alert}</span>}
+                      {isNew&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:3,
+                        background:C.tealBg,color:C.teal,fontWeight:600,
+                        animation:"pulse 1.5s ease-in-out infinite"}}>目標價更新</span>}
+                      {relatedEvents.length>0 && (
+                        <span style={{fontSize:9,padding:"1px 6px",borderRadius:3,
+                          background:C.lavBg,color:C.lavender,fontWeight:500}}>
+                          {hits>0&&`✓${hits}`}{misses>0&&` ✗${misses}`}{pending>0&&` ⏳${pending}`}
                         </span>
-                        <span style={{fontSize:9,fontWeight:600,
-                          color: upside>=0 ? C.up : C.down}}>
-                          {upside>=0?"+":""}{upside?.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div style={{background:C.subtle,borderRadius:3,height:3,width:"100%",overflow:"hidden"}}>
-                        <div style={{
-                          width:`${Math.min(Math.max((h.price/tp)*100,0),100)}%`,
-                          height:"100%",
-                          background: upside>=15 ? C.up+"99"
-                            : upside>=0  ? C.amber+"99"
-                            : C.down+"99",
-                          borderRadius:3,
-                        }}/>
-                      </div>
+                      )}
                     </div>
-                  )}
+                    <div style={{fontSize:10,color:C.textMute,marginTop:2}}>
+                      {h.qty}股 · 成本{h.cost?.toLocaleString()} · 現{h.price?.toLocaleString()}
+                      <span style={{marginLeft:6,color:C.textMute,fontSize:9}}>{isExpanded?"▲":"▼"}</span>
+                    </div>
+                    {/* 目標價進度條 */}
+                    {tp && (
+                      <div style={{marginTop:5}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                          <span style={{fontSize:9,color:C.textMute}}>
+                            目標 {tp.toLocaleString()}
+                            {T?.reports?.length>1 && <span style={{color:C.textMute}}> ({T.reports.length}家均)</span>}
+                          </span>
+                          <span style={{fontSize:9,fontWeight:600,
+                            color: upside>=0 ? C.up : C.down}}>
+                            {upside>=0?"+":""}{upside?.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div style={{background:C.subtle,borderRadius:3,height:3,width:"100%",overflow:"hidden"}}>
+                          <div style={{
+                            width:`${Math.min(Math.max((h.price/tp)*100,0),100)}%`,
+                            height:"100%",
+                            background: upside>=15 ? C.up+"99"
+                              : upside>=0  ? C.amber+"99"
+                              : C.down+"99",
+                            borderRadius:3,
+                          }}/>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{textAlign:"right",minWidth:70,paddingLeft:8}}>
+                    <div style={{fontSize:12,fontWeight:600,color:C.textSec}}>{h.value?.toLocaleString()}</div>
+                    <div style={{fontSize:11,fontWeight:600,color:pc(h.pnl)}}>{h.pnl>=0?"+":""}{h.pnl?.toLocaleString()}</div>
+                    <div style={{fontSize:10,color:pc(h.pct)}}>{h.pct>=0?"+":""}{h.pct?.toFixed(1)}%</div>
+                  </div>
                 </div>
-                <div style={{textAlign:"right",minWidth:70,paddingLeft:8}}>
-                  <div style={{fontSize:12,fontWeight:600,color:C.textSec}}>{h.value?.toLocaleString()}</div>
-                  <div style={{fontSize:11,fontWeight:600,color:pc(h.pnl)}}>{h.pnl>=0?"+":""}{h.pnl?.toLocaleString()}</div>
-                  <div style={{fontSize:10,color:pc(h.pct)}}>{h.pct>=0?"+":""}{h.pct?.toFixed(1)}%</div>
-                </div>
+                {/* 展開：個股策略追蹤 */}
+                {isExpanded && (
+                  <div style={{marginTop:10,padding:"10px 12px",background:C.subtle,borderRadius:10}}>
+                    {relatedEvents.length === 0 ? (
+                      <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
+                        尚無相關事件預測紀錄
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                          <div style={{fontSize:10,color:C.lavender,fontWeight:600}}>策略追蹤（{relatedEvents.length} 筆）</div>
+                          <div style={{fontSize:10}}>
+                            {hits>0&&<span style={{color:C.olive,marginRight:8}}>準確 {hits}</span>}
+                            {misses>0&&<span style={{color:C.up,marginRight:8}}>失誤 {misses}</span>}
+                            {pending>0&&<span style={{color:C.textMute}}>待驗證 {pending}</span>}
+                            {(hits+misses)>0&&<span style={{color:C.amber,marginLeft:8,fontWeight:600}}>
+                              勝率 {Math.round(hits/(hits+misses)*100)}%
+                            </span>}
+                          </div>
+                        </div>
+                        {relatedEvents.map(e=>(
+                          <div key={e.id} style={{padding:"8px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:11,fontWeight:500,color:C.text}}>{e.title}</div>
+                                <div style={{fontSize:9,color:C.textMute,marginTop:2}}>{e.date}</div>
+                              </div>
+                              <div style={{display:"flex",gap:4,alignItems:"center",flexShrink:0}}>
+                                <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,
+                                  background:e.pred==="up"?C.upBg:e.pred==="down"?C.downBg:C.blueBg,
+                                  color:e.pred==="up"?C.up:e.pred==="down"?C.down:C.blue}}>
+                                  預測{e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}
+                                </span>
+                                {e.correct===true && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.oliveBg,color:C.olive,fontWeight:600}}>✓ 準確</span>}
+                                {e.correct===false && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.upBg,color:C.up,fontWeight:600}}>✗ 失誤</span>}
+                                {e.correct==null && e.status==="pending" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>待驗證</span>}
+                              </div>
+                            </div>
+                            <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
+                            {e.actualNote && <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.6,
+                              borderLeft:`2px solid ${e.correct?C.olive:C.up}66`,paddingLeft:8}}>
+                              結果：{e.actualNote}
+                            </div>}
+                            {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
+                              教訓：{e.lessons}
+                            </div>}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               );
             })}
@@ -1194,34 +1262,102 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
             const prog=Math.min(w.price/w.target*100,100);
             const sc = w.sc==="#f59e0b"?C.amber:w.sc==="#22c55e"?C.olive:C.up;
             const bgTints=[C.card,C.cardBlue,C.cardAmber];
+            const isWExp = expandedStock === `w-${w.code}`;
+            const NE = newsEvents || NEWS_EVENTS;
+            const wEvents = NE.filter(e => e.stocks?.some(s => s.includes(w.code)));
+            const wHits = wEvents.filter(e => e.correct === true).length;
+            const wMisses = wEvents.filter(e => e.correct === false).length;
+            const wPending = wEvents.filter(e => e.correct == null).length;
             return <div key={w.code} style={{...card, background:bgTints[wi%3], marginBottom:10}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div>
-                  <div style={{fontSize:16,fontWeight:600,color:C.text}}>{w.name}
-                    <span style={{fontSize:10,color:C.textMute,fontWeight:400,marginLeft:6}}>{w.code}</span>
+              <div onClick={()=>setExpandedStock(isWExp?null:`w-${w.code}`)} style={{cursor:"pointer"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div>
+                    <div style={{fontSize:16,fontWeight:600,color:C.text}}>{w.name}
+                      <span style={{fontSize:10,color:C.textMute,fontWeight:400,marginLeft:6}}>{w.code}</span>
+                      {wEvents.length>0 && (
+                        <span style={{fontSize:9,padding:"1px 6px",borderRadius:3,marginLeft:6,
+                          background:C.lavBg,color:C.lavender,fontWeight:500}}>
+                          {wHits>0&&`✓${wHits}`}{wMisses>0&&` ✗${wMisses}`}{wPending>0&&` ⏳${wPending}`}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{fontSize:10,color:C.textMute,marginTop:2}}>
+                      {w.catalyst} <span style={{fontSize:9}}>{isWExp?"▲":"▼"}</span>
+                    </div>
                   </div>
-                  <div style={{fontSize:10,color:C.textMute,marginTop:2}}>{w.catalyst}</div>
+                  <span style={{background:sc+"22",color:sc,fontSize:10,fontWeight:500,
+                    padding:"3px 11px",borderRadius:20}}>{w.status}</span>
                 </div>
-                <span style={{background:sc+"22",color:sc,fontSize:10,fontWeight:500,
-                  padding:"3px 11px",borderRadius:20}}>{w.status}</span>
-              </div>
-              <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
-                {[["現價",w.price.toLocaleString(),C.textSec],
-                  ["目標價",w.target.toLocaleString(),C.olive],
-                  ["潛在漲幅","+"+upside+"%",C.blue]].map(([l,v,c])=>(
-                  <div key={l}>
-                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{l}</div>
-                    <div style={{fontSize:17,fontWeight:600,color:c}}>{v}</div>
+                <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
+                  {[["現價",w.price.toLocaleString(),C.textSec],
+                    ["目標價",w.target.toLocaleString(),C.olive],
+                    ["潛在漲幅","+"+upside+"%",C.blue]].map(([l,v,c])=>(
+                    <div key={l}>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{l}</div>
+                      <div style={{fontSize:17,fontWeight:600,color:c}}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{marginTop:12}}>
+                  <div style={{background:C.subtle,borderRadius:3,height:3}}>
+                    <div style={{width:`${prog}%`,height:"100%",
+                      background:`linear-gradient(90deg,${C.blue}88,${C.olive}88)`,borderRadius:3}}/>
                   </div>
-                ))}
-              </div>
-              <div style={{marginTop:12}}>
-                <div style={{background:C.subtle,borderRadius:3,height:3}}>
-                  <div style={{width:`${prog}%`,height:"100%",
-                    background:`linear-gradient(90deg,${C.blue}88,${C.olive}88)`,borderRadius:3}}/>
                 </div>
+                <div style={{fontSize:10,color:C.textMute,marginTop:9,lineHeight:1.7}}>{w.note}</div>
               </div>
-              <div style={{fontSize:10,color:C.textMute,marginTop:9,lineHeight:1.7}}>{w.note}</div>
+              {/* 展開：觀察股策略追蹤 */}
+              {isWExp && (
+                <div style={{marginTop:10,padding:"10px 12px",background:C.bg,borderRadius:10}}>
+                  {wEvents.length === 0 ? (
+                    <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
+                      尚無相關事件預測紀錄
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <div style={{fontSize:10,color:C.lavender,fontWeight:600}}>策略追蹤（{wEvents.length} 筆）</div>
+                        <div style={{fontSize:10}}>
+                          {wHits>0&&<span style={{color:C.olive,marginRight:8}}>準確 {wHits}</span>}
+                          {wMisses>0&&<span style={{color:C.up,marginRight:8}}>失誤 {wMisses}</span>}
+                          {wPending>0&&<span style={{color:C.textMute}}>待驗證 {wPending}</span>}
+                          {(wHits+wMisses)>0&&<span style={{color:C.amber,marginLeft:8,fontWeight:600}}>
+                            勝率 {Math.round(wHits/(wHits+wMisses)*100)}%
+                          </span>}
+                        </div>
+                      </div>
+                      {wEvents.map(e=>(
+                        <div key={e.id} style={{padding:"8px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:11,fontWeight:500,color:C.text}}>{e.title}</div>
+                              <div style={{fontSize:9,color:C.textMute,marginTop:2}}>{e.date}</div>
+                            </div>
+                            <div style={{display:"flex",gap:4,alignItems:"center",flexShrink:0}}>
+                              <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,
+                                background:e.pred==="up"?C.upBg:e.pred==="down"?C.downBg:C.blueBg,
+                                color:e.pred==="up"?C.up:e.pred==="down"?C.down:C.blue}}>
+                                預測{e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}
+                              </span>
+                              {e.correct===true && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.oliveBg,color:C.olive,fontWeight:600}}>✓ 準確</span>}
+                              {e.correct===false && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.upBg,color:C.up,fontWeight:600}}>✗ 失誤</span>}
+                              {e.correct==null && e.status==="pending" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>待驗證</span>}
+                            </div>
+                          </div>
+                          <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
+                          {e.actualNote && <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.6,
+                            borderLeft:`2px solid ${e.correct?C.olive:C.up}66`,paddingLeft:8}}>
+                            結果：{e.actualNote}
+                          </div>}
+                          {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
+                            教訓：{e.lessons}
+                          </div>}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </div>;
           })}
         </>}
@@ -1409,7 +1545,12 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
             {/* AI 策略分析 */}
             {dailyReport.aiInsight && (
               <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.lavender}88`}}>
-                <div style={{...lbl,color:C.lavender}}>AI 策略分析</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <div style={{...lbl,color:C.lavender,marginBottom:0}}>AI 策略分析</div>
+                  <span style={{fontSize:10,color:C.textMute,background:C.subtle,padding:"2px 8px",borderRadius:4}}>
+                    {dailyReport.date} {dailyReport.time}
+                  </span>
+                </div>
                 <div style={{fontSize:11,color:C.textSec,lineHeight:2,whiteSpace:"pre-wrap"}}>
                   {dailyReport.aiInsight}
                 </div>

@@ -337,8 +337,7 @@ export default function App() {
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setStrategyBrain(sb);
-      setReady(true);
-      // 嘗試從雲端同步（策略大腦 + 歷史分析 + 事件資料）
+      // 先從雲端同步，完成後才 setReady（避免 auto-save 覆蓋雲端資料）
       try {
         const [cloudBrain, cloudHist, cloudEvents, cloudHoldings] = await Promise.all([
           fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
@@ -349,21 +348,19 @@ export default function App() {
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
         if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
-        // 持倉同步：本機數量較多時以本機為準（避免雲端殘留測試資料覆蓋真實持倉）
+        // 持倉同步：雲端有資料就用雲端，否則推本機
         const cloudH = cloudHoldings.holdings;
-        const localH = h;
-        if (cloudH && Array.isArray(cloudH) && (!localH || cloudH.length >= localH.length)) {
+        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0) {
           setHoldings(cloudH); save("pf-holdings-v2", cloudH);
-        } else if (localH && Array.isArray(localH) && localH.length > 0) {
-          // 本機資料較完整，推上雲端
-          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:localH})}).catch(()=>{});
+        } else if (h && Array.isArray(h) && h.length > 0) {
+          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:h})}).catch(()=>{});
         }
         setCloudSync(true);
-        // 如果雲端沒有事件數據，把本機的推上去
         if (!cloudEvents.events && ne) {
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:ne})}).catch(()=>{});
         }
       } catch(e) { /* 離線也能用 localStorage 版本 */ }
+      setReady(true);
     })();
   }, []);
 

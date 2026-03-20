@@ -107,6 +107,19 @@ export default async function handler(req, res) {
         return res.status(200).json({ holdings: await readBlob(blobs[0]) });
       }
 
+      // 臨時：從舊 private store 遷移資料到新 public store
+      if (action === "migrate") {
+        const oldToken = process.env.BLOB_READ_WRITE_TOKEN;
+        const oldOpts = { token: oldToken };
+        const results = {};
+        // 列出舊 store 所有 blob
+        for (const prefix of ['holdings.json', 'events.json', 'strategy-brain.json', 'analysis-history/']) {
+          const { blobs } = await list({ prefix, ...oldOpts });
+          results[prefix] = blobs.map(b => ({ url: b.url, pathname: b.pathname, size: b.size }));
+        }
+        return res.status(200).json({ oldStoreBlobs: results });
+      }
+
       return res.status(400).json({ error: "未知 action" });
     }
 

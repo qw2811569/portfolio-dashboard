@@ -21,28 +21,28 @@ export default async function handler(req, res) {
     // 策略大腦
     let brain = null;
     if (brainRes.blobs.length > 0) {
-      const r = await fetch(brainRes.blobs[0].url);
+      const r = await fetch(brainRes.blobs[0].downloadUrl);
       brain = await r.json();
     }
 
     // 分析歷史（最近 7 筆）
     const history = [];
     for (const blob of histRes.blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 7)) {
-      const r = await fetch(blob.url);
+      const r = await fetch(blob.downloadUrl);
       history.push(await r.json());
     }
 
     // 事件資料
     let events = null;
     if (evtRes.blobs.length > 0) {
-      const r = await fetch(evtRes.blobs[0].url);
+      const r = await fetch(evtRes.blobs[0].downloadUrl);
       events = await r.json();
     }
 
     // 持倉資料
     let holdings = null;
     if (holdRes.blobs.length > 0) {
-      const r = await fetch(holdRes.blobs[0].url);
+      const r = await fetch(holdRes.blobs[0].downloadUrl);
       holdings = await r.json();
     }
 

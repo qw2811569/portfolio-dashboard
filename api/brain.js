@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         const { blobs } = await list({ prefix: HISTORY_PREFIX });
         const history = [];
         for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
-          const response = await fetch(blob.url);
+          const response = await fetch(blob.downloadUrl);
           history.push(await response.json());
         }
         return res.status(200).json({ history });
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         }
         const history = [];
         for (const blob of histBlobs) {
-          const r = await fetch(blob.url);
+          const r = await fetch(blob.downloadUrl);
           history.push(await r.json());
         }
         return res.status(200).json({ brain, history });

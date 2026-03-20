@@ -750,29 +750,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     setTimeout(() => setSaved(""), 2500);
   };
 
-  // ── 收盤後自動觸發（一次性，不重複呼叫 API）─────────────────────
-  useEffect(() => {
-    if (!ready) return;
-    const now = new Date();
-    const day = now.getDay();
-    if (day < 1 || day > 5) return; // 週末不觸發
-    const today = now.toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
-    const ah = analysisHistory || [];
-    if (ah.find(r => r.date === today)) return; // 今天已分析過
-
-    const nowMs = now.getTime();
-    const target = new Date(now); target.setHours(13, 30, 0, 0);
-    const targetMs = target.getTime();
-
-    if (nowMs >= targetMs) {
-      // 已過 13:30，立即觸發一次
-      runDailyAnalysis();
-    } else {
-      // 還沒到 13:30，設定定時器等到那個時刻
-      const timer = setTimeout(() => runDailyAnalysis(), targetMs - nowMs);
-      return () => clearTimeout(timer);
-    }
-  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 收盤分析完全手動觸發，不自動執行
 
   // file
   const processFile = (file) => {
@@ -1311,7 +1289,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
                 開始今日收盤分析
               </button>
               <div style={{fontSize:10,color:C.textMute,marginTop:10}}>
-                週一至五 13:30 後會自動觸發
+                收盤後按下即可開始分析
               </div>
             </div>
           )}

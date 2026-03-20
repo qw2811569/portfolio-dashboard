@@ -1,14 +1,15 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage 持久化策略知識庫
-import { put, list, del, getDownloadUrl } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
 
-// 讀取 private blob 內容的 helper
+// 讀取 private blob — 需要帶 token 授權
 async function readBlob(blob) {
-  const url = getDownloadUrl(blob.url);
-  const r = await fetch(url);
+  const r = await fetch(blob.url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+  });
   return r.json();
 }
 

@@ -1,10 +1,11 @@
 // Vercel Serverless Function — 週報素材 API
 // 回傳純文字格式，供 Claude.ai 或其他 AI 直接讀取
-import { list, getDownloadUrl } from '@vercel/blob';
+import { list } from '@vercel/blob';
 
 async function readBlob(blob) {
-  const url = getDownloadUrl(blob.url);
-  const r = await fetch(url);
+  const r = await fetch(blob.url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+  });
   return r.json();
 }
 

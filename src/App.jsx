@@ -2981,6 +2981,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         })()}
 
       </div>
+      <div style={{textAlign:"center",padding:"8px 0",fontSize:9,color:C.textMute,opacity:0.5}}>v2024.03.21b · bg:{C.bg}</div>
     </div>
   );
 }

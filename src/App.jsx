@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ── 目標價資料庫（分析師共識）─────────────────────────────────────
 // reports: [{firm, target, date}]  avg 自動計算
@@ -274,13 +274,13 @@ const C = {
 };
 
 const TYPE_COLOR = {
-  法說:"#c47b72",
-  財報:"#7a90a8",
-  營收:"#6a9098",
-  催化:"#8a9e7a",
-  操作:"#b8926a",
-  總經:"#a09080",
-  權證:"#b8926a",
+  法說:"#f87171",  // red-400
+  財報:"#60a5fa",  // blue-400
+  營收:"#2dd4bf",  // teal-400
+  催化:"#4ade80",  // green-400
+  操作:"#fbbf24",  // amber-400
+  總經:"#a78bfa",  // violet-400
+  權證:"#fb923c",  // orange-400
 };
 
 const MEMO_Q = {
@@ -364,6 +364,7 @@ export default function App() {
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
   const [cloudSync, setCloudSync]         = useState(false);
+  const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
 
   // boot
   useEffect(() => {
@@ -811,7 +812,11 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
   };
 
   // ── 事件復盤 ─────────────────────────────────────────────────────
-  const submitReview = (eventId) => {
+  const submitReview = async (eventId) => {
+    const NE = newsEvents || NEWS_EVENTS;
+    const evt = NE.find(e => e.id === eventId);
+    const wasCorrect = evt ? evt.pred === reviewForm.actual : null;
+
     setNewsEvents(prev => {
       const arr = [...(prev || NEWS_EVENTS)];
       const idx = arr.findIndex(e => e.id === eventId);
@@ -828,9 +833,56 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       return arr;
     });
     setReviewingEvent(null);
+    const savedLessons = reviewForm.lessons;
+    const savedNote = reviewForm.actualNote;
     setReviewForm({ actual: "up", actualNote: "", lessons: "" });
-    setSaved("✅ 復盤已儲存");
-    setTimeout(() => setSaved(""), 2500);
+    setSaved("✅ 復盤已儲存，策略整合中...");
+
+    // 將復盤心得整合進策略大腦（AI 驗證+歸納）
+    if (evt && strategyBrain && (savedLessons || savedNote)) {
+      try {
+        const brainRes = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            systemPrompt: `你是策略知識庫管理器。用戶剛完成一筆事件復盤，你要：
+1. 評估用戶的覆盤心得是否合理（用戶不一定正確，需要糾正偏差）
+2. 從這次復盤中提取可學習的策略教訓
+3. 更新策略大腦的規則和教訓
+
+回傳**純JSON**格式（不要markdown code block），結構：
+{"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
+            userPrompt: `事件：${evt.title}
+預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
+實際走勢：${reviewForm.actual==="up"?"上漲":"下跌"} — ${savedNote}
+預測${wasCorrect?"正確":"錯誤"}
+用戶覆盤心得：${savedLessons || "（未填）"}
+
+現有策略大腦：
+${JSON.stringify(strategyBrain)}
+
+請更新策略大腦，特別注意：用戶的覆盤不一定客觀，如果有歸因偏差請指出。`
+          })
+        });
+        const brainData = await brainRes.json();
+        const brainText = brainData.content?.[0]?.text || "";
+        const cleanBrain = brainText.replace(/```json|```/g, "").trim();
+        const newBrain = JSON.parse(cleanBrain);
+        const feedback = newBrain.reviewFeedback;
+        delete newBrain.reviewFeedback;
+        setStrategyBrain(newBrain);
+        fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({action:"save-brain",data:newBrain})}).catch(()=>{});
+        setSaved(feedback ? `🧠 ${feedback}` : "✅ 策略大腦已更新");
+        setTimeout(() => setSaved(""), 6000);
+      } catch (e) {
+        console.error("復盤整合策略大腦失敗:", e);
+        setSaved("✅ 復盤已儲存");
+        setTimeout(() => setSaved(""), 2500);
+      }
+    } else {
+      setTimeout(() => setSaved(""), 2500);
+    }
   };
 
   // ── 新增事件 ─────────────────────────────────────────────────────
@@ -1058,12 +1110,54 @@ ${recentAnalyses || "尚無分析紀錄"}
       fontFamily:"sans-serif",fontSize:13}}>載入中...</div>
   );
 
+  // AutoResearch
+  const [researching, setResearching] = useState(false);
+  const [researchTarget, setResearchTarget] = useState(null); // null=portfolio, code=single
+  const [researchResults, setResearchResults] = useState(null);
+  const [researchHistory, setResearchHistory] = useState([]);
+
+  const runResearch = async (mode, targetStock) => {
+    if (researching) return;
+    setResearching(true);
+    setResearchTarget(mode === "single" ? targetStock?.code : "PORTFOLIO");
+    try {
+      const stocks = mode === "single" && targetStock
+        ? [targetStock]
+        : H.map(h => ({ code:h.code, name:h.name, price:h.price, cost:h.cost, pnl:h.pnl, pct:h.pct, type:h.type }));
+      const res = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stocks,
+          holdings: H,
+          meta: STOCK_META,
+          brain: strategyBrain,
+          mode,
+        }),
+      });
+      const data = await res.json();
+      if (data.results?.length > 0) {
+        setResearchResults(data.results[0]);
+        setResearchHistory(prev => [data.results[0], ...prev].slice(0, 20));
+        setSaved("✅ 研究完成");
+      } else {
+        setSaved("⚠️ 研究無結果");
+      }
+    } catch (e) {
+      console.error("AutoResearch failed:", e);
+      setSaved("❌ 研究失敗");
+    }
+    setResearching(false);
+    setTimeout(() => setSaved(""), 3000);
+  };
+
   const TABS = [
     {k:"holdings", label:"持倉"},
     {k:"watchlist",label:"觀察股"},
     {k:"events",   label:`行事曆${urgentCount>0?" ·":""}`},
     {k:"news",     label:"事件分析"},
     {k:"daily",    label:analyzing?"分析中...":"收盤分析"},
+    {k:"research", label:researching?"研究中...":"深度研究"},
     {k:"trade",    label:"上傳成交"},
     {k:"log",      label:"交易日誌"},
   ];
@@ -1086,6 +1180,14 @@ ${recentAnalyses || "尚無分析紀錄"}
         /* subtle card hover */
         .card-h:hover{border-color:rgba(255,255,255,0.12)!important;background:#1e1e22!important}
         .card-h{transition:all 0.15s ease}
+        /* smooth chip buttons */
+        button{-webkit-tap-highlight-color:transparent}
+        /* scroll smooth */
+        html{scroll-behavior:smooth}
+        /* prettier scrollbar */
+        ::-webkit-scrollbar{width:4px;height:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
         @media(max-width:480px){
           body{font-size:14px}
         }
@@ -1545,6 +1647,13 @@ ${recentAnalyses || "尚無分析紀錄"}
                 {/* 展開：個股策略追蹤 */}
                 {isExpanded && (
                   <div style={{marginTop:10,padding:"10px 12px",background:C.subtle,borderRadius:10}}>
+                    <button onClick={(ev)=>{ev.stopPropagation();setTab("research");runResearch("single",h)}}
+                      disabled={researching}
+                      style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:6,
+                        border:`1px solid ${C.teal}55`,background:C.teal+"18",
+                        color:C.teal,fontSize:10,fontWeight:500,cursor:researching?"not-allowed":"pointer"}}>
+                      🔬 深度研究 {h.name}
+                    </button>
                     {relatedEvents.length === 0 ? (
                       <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
                         尚無相關事件預測紀錄
@@ -2061,6 +2170,123 @@ ${recentAnalyses || "尚無分析紀錄"}
           )}
         </>}
 
+        {/* ══════════ RESEARCH (AutoResearch) ══════════ */}
+        {tab==="research" && <>
+          <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.teal}88`}}>
+            <div style={{...lbl,color:C.teal,marginBottom:6}}>AutoResearch · 自動深度研究</div>
+            <div style={{fontSize:11,color:C.textSec,lineHeight:1.7,marginBottom:10}}>
+              借鑒 Karpathy 的 autoresearch 概念：AI 自主進行多輪迭代研究，
+              從基本面→風險催化→策略建議，逐步深入分析每檔持股。
+            </div>
+
+            <div style={{display:"flex",gap:6,marginBottom:10}}>
+              <button onClick={()=>runResearch("portfolio")} disabled={researching}
+                style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
+                  cursor:researching?"not-allowed":"pointer",
+                  background:researching?C.subtle:C.teal+"cc",
+                  color:researching?C.textMute:"#fff"}}>
+                {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
+              </button>
+            </div>
+
+            {/* 個股研究選擇 */}
+            <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>或選擇個股深度研究（3 輪迭代）：</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {H.map(h => {
+                const m = STOCK_META[h.code];
+                const color = m ? IND_COLOR[m.industry] || C.textMute : C.textMute;
+                const isTarget = researching && researchTarget === h.code;
+                return <button key={h.code}
+                  onClick={()=>runResearch("single", h)}
+                  disabled={researching}
+                  style={{fontSize:9,padding:"4px 8px",borderRadius:6,cursor:researching?"not-allowed":"pointer",
+                    background:isTarget?color+"33":C.card,
+                    border:`1px solid ${isTarget?color:C.border}`,
+                    color:isTarget?color:C.textSec,
+                    whiteSpace:"nowrap"}}>
+                  {isTarget?"研究中...":h.name}
+                </button>;
+              })}
+            </div>
+          </div>
+
+          {/* 研究進度 */}
+          {researching && (
+            <div style={{...card,marginBottom:10,textAlign:"center",padding:"20px 14px"}}>
+              <div style={{fontSize:12,color:C.teal,fontWeight:500,marginBottom:6,animation:"pulse 2s infinite"}}>
+                AI 正在進行{researchTarget==="PORTFOLIO"?"全組合":"個股"}深度研究...
+              </div>
+              <div style={{fontSize:10,color:C.textMute}}>
+                {researchTarget==="PORTFOLIO"
+                  ? `逐一分析 ${H.length} 檔持股 + 組合策略，預計 1-2 分鐘`
+                  : "3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒"}
+              </div>
+              <div style={{marginTop:10,height:3,background:C.subtle,borderRadius:2,overflow:"hidden"}}>
+                <div style={{height:"100%",background:C.teal,borderRadius:2,animation:"progress 15s ease-in-out infinite",width:"70%"}} />
+              </div>
+            </div>
+          )}
+
+          {/* 研究結果 */}
+          {researchResults && !researching && (
+            <div style={{marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{...lbl,marginBottom:0,color:C.teal}}>
+                  {researchResults.name} · {researchResults.date}
+                </div>
+                {researchResults.priceAtResearch && (
+                  <span style={{fontSize:10,color:C.textMute}}>
+                    研究時股價 {researchResults.priceAtResearch}
+                  </span>
+                )}
+              </div>
+
+              {researchResults.rounds?.map((round, i) => (
+                <div key={i} style={{...card,marginBottom:6,borderLeft:`2px solid ${[C.blue,C.amber,C.teal][i%3]}88`}}>
+                  <div style={{fontSize:10,fontWeight:600,color:[C.blue,C.amber,C.teal][i%3],marginBottom:6}}>
+                    Round {i+1}：{round.title}
+                  </div>
+                  <div style={{fontSize:11,color:C.textSec,lineHeight:2,whiteSpace:"pre-wrap"}}>
+                    {round.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 歷史研究 */}
+          {researchHistory.length > 0 && (
+            <div style={card}>
+              <div style={lbl}>歷史研究記錄</div>
+              {researchHistory.map((r, i) => (
+                <div key={r.timestamp || i}
+                  onClick={() => setResearchResults(r)}
+                  style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"8px 6px",cursor:"pointer",borderRadius:6,
+                    background:researchResults?.timestamp===r.timestamp?C.subtle:"transparent",
+                    borderBottom:`1px solid ${C.borderSub}`}}>
+                  <div>
+                    <span style={{fontSize:12,color:C.text}}>{r.name}</span>
+                    <span style={{fontSize:10,color:C.textMute,marginLeft:6}}>{r.date}</span>
+                  </div>
+                  <span style={{fontSize:9,color:C.textMute}}>
+                    {r.rounds?.length || 0} 輪分析
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!researchResults && !researching && researchHistory.length === 0 && (
+            <div style={{...card,textAlign:"center",padding:"24px"}}>
+              <div style={{fontSize:11,color:C.textMute,lineHeight:1.8}}>
+                點擊上方按鈕開始第一次深度研究。<br/>
+                AI 將自主進行多輪迭代分析，像研究員一樣逐步深入。
+              </div>
+            </div>
+          )}
+        </>}
+
         {/* ══════════ UPLOAD ══════════ */}
         {tab==="trade" && <>
           {!parsed && (
@@ -2157,8 +2383,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{fontSize:12,fontWeight:500,color:C.blue,marginBottom:8}}>
                   Q{memoStep+1}/{qs.length}. {qs[memoStep]}
                 </div>
-                <textarea value={memoIn} onChange={e=>setMemoIn(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&memoIn.trim()){e.preventDefault();submitMemo();}}}
+                <textarea value={memoIn}
+                  onCompositionStart={()=>{composingRef.current=true}}
+                  onCompositionEnd={e=>{composingRef.current=false;setMemoIn(e.target.value)}}
+                  onChange={e=>{if(!composingRef.current)setMemoIn(e.target.value)}}
+                  onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!composingRef.current&&memoIn.trim()){e.preventDefault();submitMemo();}}}
                   placeholder="輸入你的想法... (Enter送出)"
                   style={{width:"100%", background:C.subtle, border:`1px solid ${C.border}`,
                     borderRadius:8, padding:"10px", color:C.text, fontSize:12,
@@ -2310,7 +2539,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           const tints = [C.card, C.cardBlue, C.cardAmber, C.cardOlive, C.cardRose];
           const tint  = (i) => tints[i % tints.length];
 
-          const EventRow = ({e, idx}) => {
+          const renderEvent = (e, idx) => {
             const open   = expandedNews.has(e.id);
             const isCorrect = e.correct;
             const borderC = e.status==="past"
@@ -2318,7 +2547,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               : predC(e.pred)+"55";
 
             return (
-              <div
+              <div key={e.id}
                 onClick={()=>toggleNews(e.id)}
                 style={{
                   background: tint(idx),
@@ -2430,7 +2659,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
                     {/* 復盤表單 */}
                     {reviewingEvent===e.id && (
-                      <div onClick={ev=>ev.stopPropagation()}
+                      <div onClick={ev=>ev.stopPropagation()} onTouchStart={ev=>ev.stopPropagation()}
                         style={{marginTop:10,background:C.subtle,borderRadius:8,padding:12,
                           border:`1px solid ${C.blue}44`}}>
                         <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:10}}>撰寫完整復盤</div>
@@ -2451,21 +2680,52 @@ ${recentAnalyses || "尚無分析紀錄"}
                         </div>
 
                         <div style={{marginBottom:10}}>
-                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>發生了什麼？股價怎麼走？</div>
-                          <textarea value={reviewForm.actualNote} onChange={ev=>setReviewForm(p=>({...p,actualNote:ev.target.value}))}
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>發生了什麼？（點選快填或自行輸入）</div>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
+                            {["如預期上漲，符合邏輯","超預期大漲，市場過熱","不如預期，漲幅有限",
+                              "與預測相反，大跌","橫盤震盪，方向不明","利多出盡，衝高回落",
+                              "跳空突破，量能放大","緩跌破支撐，止跌不明"].map(chip=>(
+                              <button key={chip} onClick={()=>setReviewForm(p=>({...p,actualNote:p.actualNote?p.actualNote+"；"+chip:chip}))}
+                                style={{fontSize:9,padding:"3px 8px",borderRadius:12,cursor:"pointer",
+                                  background:C.card,border:`1px solid ${C.border}`,color:C.textSec,
+                                  whiteSpace:"nowrap"}}>
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+                          <textarea value={reviewForm.actualNote}
+                            onCompositionStart={()=>{composingRef.current=true}}
+                            onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
+                            onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
                             placeholder="描述事件結果和股價反應..."
                             style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
                               borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
-                              minHeight:60,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                              minHeight:50,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
                         </div>
 
                         <div style={{marginBottom:10}}>
-                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>策略覆盤：問題出在哪？學到什麼？下次怎麼改？</div>
-                          <textarea value={reviewForm.lessons} onChange={ev=>setReviewForm(p=>({...p,lessons:ev.target.value}))}
+                          <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>策略覆盤（點選快填或自行輸入）</div>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
+                            {["進場時機正確","出場太慢，錯過高點","倉位太重，應該減碼",
+                              "該停損沒停","預測邏輯正確但時間點偏差","受市場情緒影響判斷",
+                              "資訊不足就進場","完美執行策略","下次應等回檔再進",
+                              "應加碼但猶豫錯過"].map(chip=>(
+                              <button key={chip} onClick={()=>setReviewForm(p=>({...p,lessons:p.lessons?p.lessons+"；"+chip:chip}))}
+                                style={{fontSize:9,padding:"3px 8px",borderRadius:12,cursor:"pointer",
+                                  background:C.card,border:`1px solid ${C.border}`,color:C.textSec,
+                                  whiteSpace:"nowrap"}}>
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+                          <textarea value={reviewForm.lessons}
+                            onCompositionStart={()=>{composingRef.current=true}}
+                            onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,lessons:ev.target.value}))}}
+                            onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,lessons:ev.target.value}))}}
                             placeholder="進場理由回顧、策略偏差、改進方向..."
                             style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
                               borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
-                              minHeight:60,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
+                              minHeight:50,outline:"none",fontFamily:"inherit",lineHeight:1.7}}/>
                         </div>
 
                         <div style={{display:"flex",gap:6}}>
@@ -2542,7 +2802,10 @@ ${recentAnalyses || "尚無分析紀錄"}
                 </div>
                 <div style={{marginBottom:7}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件細節</div>
-                  <textarea value={newEvent.detail} onChange={e=>setNewEvent(p=>({...p,detail:e.target.value}))}
+                  <textarea value={newEvent.detail}
+                    onCompositionStart={()=>{composingRef.current=true}}
+                    onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,detail:e.target.value}))}}
+                    onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,detail:e.target.value}))}}
                     placeholder="關鍵觀察重點..."
                     style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
                       borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
@@ -2564,7 +2827,10 @@ ${recentAnalyses || "尚無分析紀錄"}
                 </div>
                 <div style={{marginBottom:10}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>預測邏輯</div>
-                  <textarea value={newEvent.predReason} onChange={e=>setNewEvent(p=>({...p,predReason:e.target.value}))}
+                  <textarea value={newEvent.predReason}
+                    onCompositionStart={()=>{composingRef.current=true}}
+                    onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,predReason:e.target.value}))}}
+                    onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,predReason:e.target.value}))}}
                     placeholder="為什麼這樣預測？依據是什麼？"
                     style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
                       borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
@@ -2589,11 +2855,11 @@ ${recentAnalyses || "尚無分析紀錄"}
               <div style={{...lbl, marginBottom:0}}>待觀察 · {pending.length} 件</div>
               <span style={{fontSize:9,color:C.textMute}}>點擊展開詳情</span>
             </div>
-            {pending.map((e,i)=><EventRow key={e.id} e={e} idx={i}/>)}
+            {pending.map((e,i)=> renderEvent(e, i))}
 
             {/* 已發生 */}
             <div style={{...lbl, marginBottom:8, marginTop:16}}>已發生 · 驗證 {hits+misses}/{past.length} 件</div>
-            {past.map((e,i)=><EventRow key={e.id} e={e} idx={i}/>)}
+            {past.map((e,i)=> renderEvent(e, i))}
           </>;
         })()}
 

@@ -520,6 +520,20 @@ export default function App() {
     }
   }, [strategyBrain, ready]);
   useEffect(() => {
+    const lastAnalysisSyncAt = readSyncAt("pf-analysis-cloud-sync-at");
+    const shouldFetchAnalysis = (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
+    if (!shouldFetchAnalysis) return;
+    fetch("/api/brain?action=history")
+      .then(r=>r.json())
+      .then(data => {
+        if (!data.history?.length) return;
+        setAnalysisHistory(data.history);
+        save("pf-analysis-history-v1", data.history);
+        writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
+      })
+      .catch(()=>{});
+  }, [tab]);
+  useEffect(() => {
     const lastResearchSyncAt = readSyncAt("pf-research-cloud-sync-at");
     const shouldFetchResearch = tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchResearch) return;

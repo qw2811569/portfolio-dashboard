@@ -1,10 +1,11 @@
 // Vercel Serverless Function — AutoResearch 自主進化系統
 // 借鑒 karpathy/autoresearch：AI 自主多輪迭代，累積進化
 // 不只研究股票，而是審視整個投資系統並自我改善
-import { put, list } from '@vercel/blob';
+import { put, list, get, del } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
+const RESEARCH_INDEX_KEY = 'research-index.json';
 
 async function callClaude(system, user, maxTokens = 4000) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -25,6 +26,33 @@ async function callClaude(system, user, maxTokens = 4000) {
   return data.content?.[0]?.text || "";
 }
 
+async function readPath(pathname) {
+  const result = await get(pathname, { access: 'public', token: TOKEN });
+  if (!result || result.statusCode !== 200 || !result.stream) return null;
+  return new Response(result.stream).json();
+}
+
+async function replaceSingleton(pathname, data) {
+  try {
+    await del(pathname, { token: TOKEN });
+  } catch {}
+  await put(pathname, JSON.stringify(data), {
+    access: 'public',
+    token: TOKEN,
+    contentType: 'application/json',
+    addRandomSuffix: false,
+  });
+}
+
+async function updateResearchIndex(report) {
+  if (!TOKEN) return;
+  const current = (await readPath(RESEARCH_INDEX_KEY)) || [];
+  const next = [report, ...current.filter(item => item.timestamp !== report.timestamp)]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 30);
+  await replaceSingleton(RESEARCH_INDEX_KEY, next);
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -36,6 +64,11 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
       const { code } = req.query;
+      const cachedReports = (await readPath(RESEARCH_INDEX_KEY)) || [];
+      if (cachedReports.length > 0) {
+        const reports = code ? cachedReports.filter(r => r.code === code).slice(0, 10) : cachedReports.slice(0, 10);
+        return res.status(200).json({ reports });
+      }
       const prefix = code ? `research/${code}/` : 'research/';
       const blobs = await list({ prefix, token: TOKEN });
       const reports = [];
@@ -113,7 +146,10 @@ export default async function handler(req, res) {
         ],
         meta: m, priceAtResearch: s.price,
       };
-      if (TOKEN) await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+      if (TOKEN) {
+        await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+        await updateResearchIndex(report);
+      }
       results.push(report);
 
     } else if (mode === "evolve") {
@@ -196,7 +232,10 @@ ${histSummary}
         ],
         newBrain: parsedBrain,
       };
-      if (TOKEN) await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+      if (TOKEN) {
+        await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+        await updateResearchIndex(report);
+      }
       results.push(report);
 
     } else if (mode === "portfolio") {
@@ -232,7 +271,10 @@ ${histSummary}
         ],
         stockSummaries,
       };
-      if (TOKEN) await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+      if (TOKEN) {
+        await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
+        await updateResearchIndex(report);
+      }
       results.push(report);
     }
 

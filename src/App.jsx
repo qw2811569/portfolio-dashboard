@@ -232,55 +232,55 @@ const NEWS_EVENTS = [
 ];
 
 
-// 背景層 — shadcn/magicui 風格：極簡中性 + 精緻細節
+// 配色 — 大地色系：Dark Slate Grey / Stormy Teal / Powder Petal / Tomato Jam / Bitter Chocolate
 const C = {
-  bg:        "#09090b",   // shadcn zinc-950
-  card:      "#18181b",   // zinc-900
-  cardHover: "#27272a",   // zinc-800
-  subtle:    "#27272a",   // zinc-800
-  border:    "rgba(255,255,255,0.08)",   // shadcn-style subtle border
-  borderSub: "rgba(255,255,255,0.04)",
+  bg:        "#1B2D2A",   // 深墨綠（Dark Slate Grey 加深）
+  card:      "#283D3B",   // Dark Slate Grey
+  cardHover: "#304845",   // hover
+  subtle:    "#304845",   // subtle bg
+  border:    "rgba(237,221,212,0.10)",   // Powder Petal 基調邊框
+  borderSub: "rgba(237,221,212,0.05)",
 
-  // 跳色卡片（極subtle的色調偏移）
-  cardBlue:  "#0f1520",
-  cardAmber: "#1a1508",
-  cardOlive: "#0f1a0f",
-  cardRose:  "#1a0f0f",
+  // 跳色卡片（同色系微偏移）
+  cardBlue:  "#1e3535",
+  cardAmber: "#2e3128",
+  cardOlive: "#243835",
+  cardRose:  "#332e2b",
 
-  // 文字
-  text:      "#fafafa",   // zinc-50
-  textSec:   "#a1a1aa",   // zinc-400
-  textMute:  "#71717a",   // zinc-500
+  // 文字 — Powder Petal 系列
+  text:      "#EDDDD4",   // Powder Petal
+  textSec:   "#C4B5AD",   // 減淡 Petal
+  textMute:  "#7A6F69",   // 暗灰棕
 
-  // 台股慣例
-  up:        "#f87171",   // red-400（漲/獲利）
-  upBg:      "#f8717115",
-  down:      "#4ade80",   // green-400（跌/虧損）
-  downBg:    "#4ade8015",
+  // 台股慣例：紅漲綠跌
+  up:        "#C44536",   // Tomato Jam（漲/獲利）
+  upBg:      "#C4453618",
+  down:      "#197278",   // Stormy Teal（跌/虧損）
+  downBg:    "#19727818",
 
-  // 功能色 — 更飽和、更現代
-  blue:      "#60a5fa",   // blue-400
-  blueBg:    "#60a5fa15",
-  amber:     "#fbbf24",   // amber-400
-  amberBg:   "#fbbf2415",
-  teal:      "#2dd4bf",   // teal-400
-  tealBg:    "#2dd4bf15",
-  olive:     "#4ade80",   // green-400
-  oliveBg:   "#4ade8015",
-  lavender:  "#a78bfa",   // violet-400
-  lavBg:     "#a78bfa15",
-  stone:     "#a1a1aa",
-  urgent:    "#f87171",
+  // 功能色 — 大地色系衍生
+  blue:      "#197278",   // Stormy Teal（互動/連結）
+  blueBg:    "#19727818",
+  amber:     "#D4956B",   // 暖琥珀
+  amberBg:   "#D4956B18",
+  teal:      "#2AABB3",   // 亮青（與 Stormy Teal 區分）
+  tealBg:    "#2AABB318",
+  olive:     "#4A8C6F",   // 森林綠
+  oliveBg:   "#4A8C6F18",
+  lavender:  "#9B8579",   // 暖棕
+  lavBg:     "#9B857918",
+  stone:     "#7A6F69",
+  urgent:    "#C44536",   // Tomato Jam
 };
 
 const TYPE_COLOR = {
-  法說:"#f87171",  // red-400
-  財報:"#60a5fa",  // blue-400
-  營收:"#2dd4bf",  // teal-400
-  催化:"#4ade80",  // green-400
-  操作:"#fbbf24",  // amber-400
-  總經:"#a78bfa",  // violet-400
-  權證:"#fb923c",  // orange-400
+  法說:"#C44536",  // Tomato Jam
+  財報:"#197278",  // Stormy Teal
+  營收:"#4A8C6F",  // 森林綠
+  催化:"#D4956B",  // 暖琥珀
+  操作:"#EDDDD4",  // Powder Petal
+  總經:"#9B8579",  // 暖棕
+  權證:"#772E25",  // Bitter Chocolate
 };
 
 const MEMO_Q = {

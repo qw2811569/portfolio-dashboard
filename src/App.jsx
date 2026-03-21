@@ -6,11 +6,12 @@ function Md({ text, color }) {
   const lines = text.split("\n");
   const els = [];
   let listItems = [];
+  const textColor = color || C.textSec;
   const flushList = () => {
     if (listItems.length > 0) {
       els.push(h("ul", { key: `ul-${els.length}`, style: { margin: "4px 0 8px 6px", padding: 0, listStyle: "none" } },
-        listItems.map((li, j) => h("li", { key: j, style: { fontSize: 11, color: color || "#C4B5AD", lineHeight: 1.8, paddingLeft: 12, position: "relative" } },
-          h("span", { style: { position: "absolute", left: 0, color: "#8A7E78" } }, "·"), renderInline(li)
+        listItems.map((li, j) => h("li", { key: j, style: { fontSize: 11, color: textColor, lineHeight: 1.8, paddingLeft: 12, position: "relative" } },
+          h("span", { style: { position: "absolute", left: 0, color: C.textMute } }, "·"), renderInline(li)
         ))
       ));
       listItems = [];
@@ -25,7 +26,7 @@ function Md({ text, color }) {
     let m, last = 0;
     while ((m = rx.exec(rest)) !== null) {
       if (m.index > last) parts.push(h("span", { key: k++ }, rest.slice(last, m.index)));
-      if (m[1]) parts.push(h("strong", { key: k++, style: { color: "#EDDDD4", fontWeight: 600 } }, m[1]));
+      if (m[1]) parts.push(h("strong", { key: k++, style: { color: C.text, fontWeight: 600 } }, m[1]));
       else if (m[2]) parts.push(h("em", { key: k++, style: { fontStyle: "italic" } }, m[2]));
       last = m.index + m[0].length;
     }
@@ -39,22 +40,22 @@ function Md({ text, color }) {
       const lvl = line.match(/^(#+)/)[1].length;
       const txt = line.replace(/^#+\s*/, "");
       const sz = lvl === 1 ? 14 : lvl === 2 ? 12 : 11;
-      els.push(h("div", { key: `h-${i}`, style: { fontSize: sz, fontWeight: 600, color: "#EDDDD4", marginTop: lvl === 1 ? 12 : 8, marginBottom: 4 } }, renderInline(txt)));
+      els.push(h("div", { key: `h-${i}`, style: { fontSize: sz, fontWeight: 600, color: C.text, marginTop: lvl === 1 ? 12 : 8, marginBottom: 4 } }, renderInline(txt)));
     } else if (/^[-*]\s/.test(line.trim())) {
       listItems.push(line.trim().replace(/^[-*]\s*/, ""));
     } else if (/^\d+\.\s/.test(line.trim())) {
       flushList();
       const txt = line.trim().replace(/^\d+\.\s*/, "");
       const num = line.trim().match(/^(\d+)\./)[1];
-      els.push(h("div", { key: `ol-${i}`, style: { fontSize: 11, color: color || "#C4B5AD", lineHeight: 1.8, paddingLeft: 12, position: "relative", marginBottom: 2 } },
-        h("span", { style: { position: "absolute", left: 0, color: "#8A7E78", fontSize: 10 } }, `${num}.`), renderInline(txt)
+      els.push(h("div", { key: `ol-${i}`, style: { fontSize: 11, color: textColor, lineHeight: 1.8, paddingLeft: 12, position: "relative", marginBottom: 2 } },
+        h("span", { style: { position: "absolute", left: 0, color: C.textMute, fontSize: 10 } }, `${num}.`), renderInline(txt)
       ));
     } else if (line.trim() === "") {
       flushList();
       els.push(h("div", { key: `br-${i}`, style: { height: 4 } }));
     } else {
       flushList();
-      els.push(h("div", { key: `p-${i}`, style: { fontSize: 11, color: color || "#C4B5AD", lineHeight: 1.8, marginBottom: 2 } }, renderInline(line)));
+      els.push(h("div", { key: `p-${i}`, style: { fontSize: 11, color: textColor, lineHeight: 1.8, marginBottom: 2 } }, renderInline(line)));
     }
   }
   flushList();
@@ -303,17 +304,19 @@ const NEWS_EVENTS = [
 //   原色用於填充(按鈕bg、badge bg)；提亮版用於文字
 const C = {
   bg:        "#283D3B",   // Dark Slate Grey — 60% 主背景
-  card:      "#324B48",   // 卡片浮層（bg 亮 12%）
-  cardHover: "#3C5755",   // hover 狀態
-  subtle:    "#2F4744",   // 微妙背景
+  card:      "#3B5A57",   // 卡片浮層（拉開與 bg 的層次）
+  cardHover: "#476B68",   // hover 狀態
+  subtle:    "#314B49",   // 微妙背景
   border:    "rgba(237,221,212,0.12)",   // Powder Petal 基調
   borderSub: "rgba(237,221,212,0.06)",
+  borderStrong: "rgba(237,221,212,0.16)",
+  borderSoft: "rgba(237,221,212,0.08)",
 
   // 跳色卡片（微色調偏移，增加視覺層次）
-  cardBlue:  "#2E4D50",
-  cardAmber: "#3D4840",
-  cardOlive: "#304C44",
-  cardRose:  "#3D4240",
+  cardBlue:  "#355B60",
+  cardAmber: "#4A5348",
+  cardOlive: "#36574D",
+  cardRose:  "#4B4E49",
 
   // 文字 — Powder Petal 系列（主文字 9:1+）
   text:      "#EDDDD4",   // Powder Petal
@@ -327,18 +330,19 @@ const C = {
   downBg:    "#19727822",
 
   // 功能色 — 提亮版用於文字，原色用於填充
-  blue:      "#2BB5BE",   // Stormy Teal 提亮（互動）
-  blueBg:    "#19727822",
+  blue:      "#6CCFE0",   // 偏藍互動色
+  blueBg:    "#6CCFE022",
   amber:     "#E0A87D",   // 暖琥珀提亮
   amberBg:   "#D4956B22",
-  teal:      "#2BB5BE",   // 亮青
-  tealBg:    "#19727822",
+  teal:      "#2BB5BE",   // 偏綠青資訊色
+  tealBg:    "#2BB5BE22",
   olive:     "#5DA882",   // 森林綠提亮
   oliveBg:   "#4A8C6F22",
   lavender:  "#B59E91",   // 暖棕提亮
   lavBg:     "#9B857922",
   stone:     "#8A7E78",
   urgent:    "#E8584A",
+  onFill:    "#EDDDD4",
 
   // 原色（用於按鈕填充、badge 背景等面積色塊）
   fillTeal:    "#197278",
@@ -1274,7 +1278,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box}
         html{-webkit-text-size-adjust:100%}
-        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:#283D3B}
+        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:${C.bg}}
         textarea::placeholder,input::placeholder{color:${C.textMute}}
         input,textarea,button{font-family:inherit;-webkit-appearance:none}
         /* tabular numbers for financial data */
@@ -1283,7 +1287,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @keyframes progress{0%{width:5%}50%{width:70%}100%{width:95%}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         /* subtle card hover */
-        .card-h:hover{border-color:rgba(237,221,212,0.15)!important;background:#3C5755!important}
+        .card-h:hover{border-color:${C.borderStrong}!important;background:${C.cardHover}!important}
         .card-h{transition:all 0.15s ease}
         /* smooth chip buttons */
         button{-webkit-tap-highlight-color:transparent}
@@ -1292,7 +1296,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         /* prettier scrollbar */
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:rgba(237,221,212,0.15);border-radius:4px}
+        ::-webkit-scrollbar-thumb{background:${C.borderStrong};border-radius:4px}
         @media(max-width:480px){
           body{font-size:14px}
         }
@@ -1306,7 +1310,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       `}</style>
 
       {/* ── HEADER ── */}
-      <div className="app-shell" style={{background:`${C.card}e6`,borderBottom:`1px solid rgba(237,221,212,0.08)`,
+      <div className="app-shell" style={{background:`${C.card}e6`,borderBottom:`1px solid ${C.borderSoft}`,
         padding:"10px 14px 0",position:"sticky",top:0,zIndex:10,
         backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)"}}>
 
@@ -1632,7 +1636,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         });
                         setEditing(false);
                       }} style={{width:"100%",padding:"8px",borderRadius:6,border:"none",
-                        background:C.fillTeal+"dd",color:"#fff",fontSize:11,fontWeight:500,cursor:"pointer"}}>
+                        background:C.fillTeal+"dd",color:C.onFill,fontSize:11,fontWeight:500,cursor:"pointer"}}>
                         儲存反轉條件
                       </button>
                     </div>;
@@ -1997,7 +2001,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <button onClick={runDailyAnalysis} style={{
                 padding:"10px 24px",borderRadius:8,border:"none",
                 background:`linear-gradient(135deg,${C.blue}cc,${C.olive}cc)`,
-                color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",
+                color:C.onFill,fontSize:12,fontWeight:600,cursor:"pointer",
                 letterSpacing:"0.03em"}}>
                 開始今日收盤分析
               </button>
@@ -2287,14 +2291,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                 style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:600,
                   cursor:researching?"not-allowed":"pointer",
                   background:researching && researchTarget==="EVOLVE"?C.subtle:`linear-gradient(135deg,${C.fillTomato},${C.fillChoco})`,
-                  color:researching && researchTarget==="EVOLVE"?C.textMute:"#fff"}}>
+                  color:researching && researchTarget==="EVOLVE"?C.textMute:C.onFill}}>
                 {researching && researchTarget==="EVOLVE" ? "系統進化中..." : "🧬 系統自我進化"}
               </button>
               <button onClick={()=>runResearch("portfolio")} disabled={researching}
                 style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
                   cursor:researching?"not-allowed":"pointer",
                   background:researching && researchTarget==="PORTFOLIO"?C.subtle:C.fillTeal+"dd",
-                  color:researching && researchTarget==="PORTFOLIO"?C.textMute:"#fff"}}>
+                  color:researching && researchTarget==="PORTFOLIO"?C.textMute:C.onFill}}>
                 {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
               </button>
             </div>
@@ -2430,7 +2434,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               </div>
               {img && (
                 <button onClick={parseShot} disabled={parsing} style={{
-                  width:"100%",padding:"13px",border:"none",borderRadius:10,
+                  width:"100%",padding:"13px",borderRadius:10,
                   background: parsing ? C.subtle : C.cardHover,
                   color: parsing ? C.textMute : C.text,
                   border: `1px solid ${parsing ? C.border : C.amber+"66"}`,
@@ -2515,7 +2519,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   background: memoIn.trim()
                     ? (memoStep===qs.length-1 ? C.fillTeal+"dd" : C.fillTeal+"dd")
                     : C.subtle,
-                  color: memoIn.trim() ? "#fff" : C.textMute,
+                  color: memoIn.trim() ? C.onFill : C.textMute,
                   fontSize:13, fontWeight:500, cursor:memoIn.trim()?"pointer":"not-allowed",
                   letterSpacing:"0.02em"}}>
                   {memoStep===qs.length-1 ? "完成備忘 · 更新持倉" : `下一題 (${memoStep+1}/${qs.length})`}
@@ -2586,7 +2590,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   style={{
                     width:"100%",padding:"10px",border:"none",borderRadius:8,
                     background: tpCode.trim()&&tpVal ? C.fillTeal+"dd" : C.subtle,
-                    color: tpCode.trim()&&tpVal ? "#fff" : C.textMute,
+                    color: tpCode.trim()&&tpVal ? C.onFill : C.textMute,
                     fontSize:12,fontWeight:500,cursor:tpCode.trim()&&tpVal?"pointer":"not-allowed",
                   }}>
                   新增 / 更新目標價
@@ -2853,7 +2857,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             disabled={!reviewForm.actualNote.trim()}
                             style={{flex:2,padding:"9px",borderRadius:7,border:"none",fontSize:11,fontWeight:500,cursor:"pointer",
                               background:reviewForm.actualNote.trim()?C.fillTeal+"dd":C.subtle,
-                              color:reviewForm.actualNote.trim()?"#fff":C.textMute}}>
+                              color:reviewForm.actualNote.trim()?C.onFill:C.textMute}}>
                             確認送出復盤
                           </button>
                         </div>
@@ -2958,7 +2962,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   style={{width:"100%",padding:"10px",borderRadius:8,border:"none",fontSize:12,
                     fontWeight:500,cursor:newEvent.title.trim()&&newEvent.date.trim()?"pointer":"not-allowed",
                     background:newEvent.title.trim()&&newEvent.date.trim()?C.fillTeal+"dd":C.subtle,
-                    color:newEvent.title.trim()&&newEvent.date.trim()?"#fff":C.textMute}}>
+                    color:newEvent.title.trim()&&newEvent.date.trim()?C.onFill:C.textMute}}>
                   新增事件
                 </button>
               </div>

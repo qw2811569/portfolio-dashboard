@@ -1104,17 +1104,17 @@ ${recentAnalyses || "尚無分析紀錄"}
 
   const qs = parsed?.trades?.[0] ? (MEMO_Q[parsed.trades[0].action]||MEMO_Q["買進"]) : [];
 
-  if (!ready) return (
-    <div style={{background:C.bg,minHeight:"100vh",display:"flex",
-      alignItems:"center",justifyContent:"center",color:C.textMute,
-      fontFamily:"sans-serif",fontSize:13}}>載入中...</div>
-  );
-
   // AutoResearch
   const [researching, setResearching] = useState(false);
   const [researchTarget, setResearchTarget] = useState(null); // null=portfolio, code=single
   const [researchResults, setResearchResults] = useState(null);
   const [researchHistory, setResearchHistory] = useState([]);
+
+  if (!ready) return (
+    <div style={{background:C.bg,minHeight:"100vh",display:"flex",
+      alignItems:"center",justifyContent:"center",color:C.textMute,
+      fontFamily:"sans-serif",fontSize:13}}>載入中...</div>
+  );
 
   const runResearch = async (mode, targetStock) => {
     if (researching) return;

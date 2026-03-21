@@ -437,6 +437,11 @@ export default function App() {
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
   const [cloudSync, setCloudSync]         = useState(false);
+  // AutoResearch state（必須在 useEffect 之前宣告）
+  const [researching, setResearching] = useState(false);
+  const [researchTarget, setResearchTarget] = useState(null);
+  const [researchResults, setResearchResults] = useState(null);
+  const [researchHistory, setResearchHistory] = useState(null);
   const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
 
   // boot
@@ -1196,12 +1201,6 @@ ${recentAnalyses || "尚無分析紀錄"}
   };
 
   const qs = parsed?.trades?.[0] ? (MEMO_Q[parsed.trades[0].action]||MEMO_Q["買進"]) : [];
-
-  // AutoResearch
-  const [researching, setResearching] = useState(false);
-  const [researchTarget, setResearchTarget] = useState(null);
-  const [researchResults, setResearchResults] = useState(null);
-  const [researchHistory, setResearchHistory] = useState(null); // null=未載入, []=空
 
   if (!ready) return (
     <div style={{background:C.bg,minHeight:"100vh",display:"flex",

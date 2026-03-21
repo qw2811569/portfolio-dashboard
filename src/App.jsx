@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, createElement as h } from "react";
+import { C, A, alpha } from "./theme.js";
 
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
 function Md({ text, color }) {
@@ -115,17 +116,17 @@ const STOCK_META = {
 
 // 產業色彩映射 — 提亮版（文字用，需在 #283D3B 上可讀）
 const IND_COLOR = {
-  "AI/伺服器": "#2BB5BE",   // Teal 提亮
-  "光通訊":     "#3CC8D0",   // 亮青
-  "PCB/材料":   "#E0A87D",   // 暖琥珀提亮
-  "IC/記憶體":  "#B59E91",   // 暖棕提亮
-  "被動元件":   "#D4956B",   // 橙棕
-  "重電":       "#E8584A",   // Tomato 提亮
-  "營建":       "#5DA882",   // 森林綠提亮
-  "精密機械":   "#8A7E78",   // 石灰棕
-  "連接器":     "#3DB5A8",   // 青綠提亮
-  "中國ETF":    "#C97B8A",   // 乾燥玫瑰提亮
-  "半導體設備": "#C4783C",   // Chocolate 提亮
+  "AI/伺服器": C.teal,
+  "光通訊": C.cyan,
+  "PCB/材料": C.amber,
+  "IC/記憶體": C.lavender,
+  "被動元件": C.orange,
+  "重電": C.up,
+  "營建": C.olive,
+  "精密機械": C.stone,
+  "連接器": C.mint,
+  "中國ETF": C.rose,
+  "半導體設備": C.choco,
 };
 
 // ── 初始持倉 ────────────────────────────────────────────────────
@@ -153,9 +154,9 @@ const INIT_HOLDINGS = [
 ];
 
 const INIT_WATCHLIST = [
-  { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      sc:"#D4956B", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
-  { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    sc:"#4A8C6F", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
-  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  sc:"#C44536", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
+  { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      scKey:"amber", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
+  { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    scKey:"olive", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
+  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  scKey:"up", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
 ];
 
 const EVENTS = [
@@ -295,69 +296,14 @@ const NEWS_EVENTS = [
 
 
 // ── 配色系統 ──────────────────────────────────────────────────────
-// 基底5色：Dark Slate Grey #283D3B / Stormy Teal #197278 / Powder Petal #EDDDD4
-//          Tomato Jam #C44536 / Bitter Chocolate #772E25
-//
-// 設計原則：
-//   60% 背景(#283D3B) / 30% 卡片(比bg亮10-15%) / 10% 強調色
-//   文字色必須在背景上達到 WCAG AA 4.5:1 對比度
-//   原色用於填充(按鈕bg、badge bg)；提亮版用於文字
-const C = {
-  bg:        "#283D3B",   // Dark Slate Grey — 60% 主背景
-  card:      "#3B5A57",   // 卡片浮層（拉開與 bg 的層次）
-  cardHover: "#476B68",   // hover 狀態
-  subtle:    "#314B49",   // 微妙背景
-  border:    "rgba(237,221,212,0.12)",   // Powder Petal 基調
-  borderSub: "rgba(237,221,212,0.06)",
-  borderStrong: "rgba(237,221,212,0.16)",
-  borderSoft: "rgba(237,221,212,0.08)",
-
-  // 跳色卡片（微色調偏移，增加視覺層次）
-  cardBlue:  "#355B60",
-  cardAmber: "#4A5348",
-  cardOlive: "#36574D",
-  cardRose:  "#4B4E49",
-
-  // 文字 — Powder Petal 系列（主文字 9:1+）
-  text:      "#EDDDD4",   // Powder Petal
-  textSec:   "#C4B5AD",   // 減淡（~6:1）
-  textMute:  "#8A7E78",   // 暗灰棕（~3:1，僅限大字/標籤）
-
-  // 台股慣例 — 提亮版確保文字可讀（≥4.5:1）
-  up:        "#E8584A",   // Tomato Jam 提亮（漲/獲利）
-  upBg:      "#C4453622",
-  down:      "#2BB5BE",   // Stormy Teal 提亮（跌/虧損）
-  downBg:    "#19727822",
-
-  // 功能色 — 提亮版用於文字，原色用於填充
-  blue:      "#6CCFE0",   // 偏藍互動色
-  blueBg:    "#6CCFE022",
-  amber:     "#E0A87D",   // 暖琥珀提亮
-  amberBg:   "#D4956B22",
-  teal:      "#2BB5BE",   // 偏綠青資訊色
-  tealBg:    "#2BB5BE22",
-  olive:     "#5DA882",   // 森林綠提亮
-  oliveBg:   "#4A8C6F22",
-  lavender:  "#B59E91",   // 暖棕提亮
-  lavBg:     "#9B857922",
-  stone:     "#8A7E78",
-  urgent:    "#E8584A",
-  onFill:    "#EDDDD4",
-
-  // 原色（用於按鈕填充、badge 背景等面積色塊）
-  fillTeal:    "#197278",
-  fillTomato:  "#C44536",
-  fillChoco:   "#772E25",
-};
-
 const TYPE_COLOR = {
-  法說:"#E8584A",  // Tomato 提亮
-  財報:"#2BB5BE",  // Teal 提亮
-  營收:"#5DA882",  // 森林綠提亮
-  催化:"#E0A87D",  // 暖琥珀提亮
-  操作:"#EDDDD4",  // Powder Petal
-  總經:"#B59E91",  // 暖棕提亮
-  權證:"#C4783C",  // Chocolate 提亮
+  法說: C.up,
+  財報: C.teal,
+  營收: C.olive,
+  催化: C.amber,
+  操作: C.text,
+  總經: C.lavender,
+  權證: C.choco,
 };
 
 const MEMO_Q = {
@@ -374,8 +320,30 @@ targetPriceUpdates：如果截圖中有提到分析師目標價或研究報告�
 const pc    = (p) => p==null ? C.textMute : p>=0 ? C.up : C.down;
 const pcBg  = (p) => p==null ? "transparent" : p>=0 ? C.upBg : C.downBg;
 const fmtN  = (n) => n==null?"—":Math.abs(n)>=10000?(n/10000).toFixed(1)+"萬":n.toLocaleString();
-const card  = { background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 14px" };
+const card  = {
+  background:C.card,
+  border:`1px solid ${C.border}`,
+  borderRadius:10,
+  padding:"12px 14px",
+  boxShadow:`${C.insetLine}, ${C.shadow}`,
+};
 const lbl   = { fontSize:10, color:C.textMute, letterSpacing:"0.06em", fontWeight:600, marginBottom:5 };
+const ghostBtn = {
+  borderRadius:20,
+  padding:"4px 11px",
+  fontSize:9,
+  fontWeight:500,
+  cursor:"pointer",
+  whiteSpace:"nowrap",
+  transition:"all 0.18s ease",
+};
+const metricCard = {
+  background:C.card,
+  border:`1px solid ${C.border}`,
+  borderRadius:8,
+  padding:"8px 11px",
+  boxShadow:`${C.insetLine}, ${C.shadow}`,
+};
 
 async function load(key, fallback) {
   try {
@@ -1291,6 +1259,12 @@ ${recentAnalyses || "尚無分析紀錄"}
         .card-h{transition:all 0.15s ease}
         /* smooth chip buttons */
         button{-webkit-tap-highlight-color:transparent}
+        .ui-btn{transition:transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease}
+        .ui-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:${C.focusRing}}
+        .ui-card{transition:transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease}
+        .ui-card:hover{transform:translateY(-1px);border-color:${C.borderStrong};background:${C.cardHover}}
+        .seg{scrollbar-width:none}
+        .seg::-webkit-scrollbar{display:none}
         /* scroll smooth */
         html{scroll-behavior:smooth}
         /* prettier scrollbar */
@@ -1310,30 +1284,29 @@ ${recentAnalyses || "尚無分析紀錄"}
       `}</style>
 
       {/* ── HEADER ── */}
-      <div className="app-shell" style={{background:`${C.card}e6`,borderBottom:`1px solid ${C.borderSoft}`,
+      <div className="app-shell" style={{background:`${C.shell}f0`,borderBottom:`1px solid ${C.borderSoft}`,
         padding:"10px 14px 0",position:"sticky",top:0,zIndex:10,
-        backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)"}}>
+        boxShadow:C.shellShadow,
+        backdropFilter:"blur(16px) saturate(160%)",WebkitBackdropFilter:"blur(16px) saturate(160%)"}}>
 
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
             <span style={{color:cloudSync?C.olive:C.textMute,fontSize:9}}>{cloudSync?"☁":"⚡"}</span>
             <span style={{fontSize:19,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>持倉看板</span>
             {saved && <span style={{color:C.olive,fontSize:9,fontWeight:600}}>{saved}</span>}
-            <button onClick={refreshPrices} disabled={refreshing} style={{
-              background: refreshing ? C.subtle : C.blue+"22",
+            <button className="ui-btn" onClick={refreshPrices} disabled={refreshing} style={{
+              background: refreshing ? C.subtle : alpha(C.blue, A.faint),
               color: refreshing ? C.textMute : C.blue,
-              border:`1px solid ${refreshing ? C.border : C.blue+"55"}`,
-              borderRadius:20, padding:"3px 10px", fontSize:9, fontWeight:500,
+              border:`1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
+              ...ghostBtn,
               cursor: refreshing ? "not-allowed" : "pointer",
-              whiteSpace:"nowrap",
             }}>
               {refreshing ? "更新中..." : "⟳ 刷新"}
             </button>
-            <button onClick={copyWeeklyReport} style={{
+            <button className="ui-btn" onClick={copyWeeklyReport} style={{
               background: C.lavBg, color: C.lavender,
-              border:`1px solid ${C.lavender}55`,
-              borderRadius:20, padding:"3px 10px", fontSize:9, fontWeight:500,
-              cursor:"pointer", whiteSpace:"nowrap",
+              border:`1px solid ${alpha(C.lavender, A.strongLine)}`,
+              ...ghostBtn,
             }}>
               📋 週報
             </button>
@@ -1355,7 +1328,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
         {/* today alert */}
         {urgentCount>0 && (
-          <div style={{background:C.upBg,border:`1px solid ${C.up}44`,
+          <div style={{background:C.upBg,border:`1px solid ${alpha(C.up, A.line)}`,
             borderLeft:`3px solid ${C.up}`,
             borderRadius:6,padding:"5px 10px",marginBottom:8,
             fontSize:10,color:C.up,lineHeight:1.6,fontWeight:500}}>
@@ -1363,15 +1336,16 @@ ${recentAnalyses || "尚無分析紀錄"}
           </div>
         )}
 
-        <div style={{display:"flex",gap:0,overflowX:"auto",paddingBottom:0}}>
+        <div className="seg" style={{display:"flex",gap:6,overflowX:"auto",padding:"2px 0 6px"}}>
           {TABS.map(t=>(
-            <button key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
-              background:"transparent",
+            <button className="ui-btn" key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
+              background:tab===t.k ? alpha(C.text, "10") : "transparent",
               color: tab===t.k ? C.text : C.textMute,
-              border:"none",
-              borderBottom: tab===t.k ? `2px solid ${C.amber}` : "2px solid transparent",
-              padding:"7px 11px",
-              fontSize:11, fontWeight: tab===t.k ? 600 : 400,
+              border:`1px solid ${tab===t.k ? C.borderStrong : "transparent"}`,
+              boxShadow:tab===t.k ? C.insetLine : "none",
+              borderRadius:999,
+              padding:"7px 13px",
+              fontSize:11, fontWeight: tab===t.k ? 600 : 500,
               cursor:"pointer", whiteSpace:"nowrap",
             }}>{t.label}</button>
           ))}
@@ -1387,9 +1361,9 @@ ${recentAnalyses || "尚無分析紀錄"}
             {[["總成本",totalCost.toLocaleString(),C.textSec],
               ["總市值",totalVal.toLocaleString(),C.blue],
               ["持股數",H.length+"檔",C.lavender]].map(([l,v,c])=>(
-              <div key={l} style={{background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"7px 10px"}}>
+              <div key={l} className="ui-card" style={metricCard}>
                 <div style={{fontSize:9,color:C.textMute,letterSpacing:"0.08em"}}>{l}</div>
-                <div className="tn" style={{fontSize:14,fontWeight:600,color:c,marginTop:2}}>{v}</div>
+                <div className="tn" style={{fontSize:14,fontWeight:600,color:l==="總市值"?C.text:l==="持股數"?C.textSec:c,marginTop:2}}>{v}</div>
               </div>
             ))}
           </div>
@@ -1447,7 +1421,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               </div>
 
               {/* 產業標籤 */}
-              <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                 {indArr.map(([ind, val]) => {
                   const pct = (val/indTotal*100).toFixed(0);
                   const count = H_.filter(h => STOCK_META[h.code]?.industry === ind).length;
@@ -1455,7 +1429,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   return <span key={ind} style={{
                     display:"inline-flex",alignItems:"center",gap:4,
                     fontSize:10,padding:"3px 8px",borderRadius:6,
-                    background:color+"18",border:`1px solid ${color}33`,color,
+                    background:C.subtle,border:`1px solid ${C.border}`,color:C.textSec,
                   }}>
                     <span style={{width:6,height:6,borderRadius:3,background:color,flexShrink:0}}/>
                     {ind} {count}檔 {pct}%
@@ -1465,7 +1439,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
               {/* 產業重複警告 */}
               {warnings.length > 0 && (
-                <div style={{background:C.amberBg,border:`1px solid ${C.amber}33`,
+                <div style={{background:C.amberBg,border:`1px solid ${alpha(C.amber, A.soft)}`,
                   borderRadius:6,padding:"6px 10px",marginBottom:8,fontSize:10,color:C.amber,lineHeight:1.6}}>
                   ⚠ 產業集中：{warnings.map(([ind])=>{
                     const count = H_.filter(h => STOCK_META[h.code]?.industry === ind).length;
@@ -1513,11 +1487,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                 const pct=h.value/totalVal*100;
                 return <div key={h.code} style={{
                   display:"flex",alignItems:"center",gap:5,
-                  background:topColors[i]+"14",border:`1px solid ${topColors[i]}33`,
+                  background:C.subtle,border:`1px solid ${C.border}`,
                   borderRadius:20,padding:"4px 10px",
                 }}>
                   <span style={{fontSize:11,color:C.textSec,fontWeight:500}}>{h.name}</span>
-                  <span style={{fontSize:11,fontWeight:700,color:topColors[i]}}>{pct.toFixed(1)}%</span>
+                  <span style={{fontSize:11,fontWeight:700,color:C.text}}>{pct.toFixed(1)}%</span>
                 </div>;
               })}
             </div>
@@ -1525,7 +1499,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
           {/* 勝負摘要 */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
-            <div style={{...card,borderLeft:`3px solid ${C.up}88`,padding:"8px 10px"}}>
+            <div style={{...card,borderLeft:`3px solid ${alpha(C.up, A.glow)}`,padding:"8px 10px"}}>
               <div style={{...lbl,color:C.up,marginBottom:3}}>獲利 {winners.length}檔</div>
               {winners.slice(0,3).map(h=>(
                 <div key={h.code} style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
@@ -1534,7 +1508,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 </div>
               ))}
             </div>
-            <div style={{...card,borderLeft:`3px solid ${C.down}88`,padding:"8px 10px"}}>
+            <div style={{...card,borderLeft:`3px solid ${alpha(C.down, A.glow)}`,padding:"8px 10px"}}>
               <div style={{...lbl,color:C.down,marginBottom:3}}>虧損 {losers.length}檔</div>
               {losers.slice(0,3).map(h=>(
                 <div key={h.code} style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
@@ -1547,7 +1521,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
           {/* 反轉追蹤（虧損持股）— 可收合 */}
           {losers.length>0 && (
-            <div style={{...card,marginBottom:8,borderLeft:`3px solid ${C.amber}88`,padding:"8px 10px"}}>
+            <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.amber, A.glow)}`,padding:"8px 10px"}}>
               <div onClick={()=>setShowReversal(p=>!p)} style={{
                 display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
                 <div style={{...lbl,color:C.amber,marginBottom:0}}>反轉追蹤 · {losers.length}檔</div>
@@ -1559,8 +1533,8 @@ ${recentAnalyses || "尚無分析紀錄"}
                   {losers.map(h=>{
                     const rc = (reversalConditions||{})[h.code];
                     return <span key={h.code} style={{fontSize:10,padding:"2px 8px",borderRadius:12,
-                      background:rc?C.olive+"18":C.subtle,
-                      border:`1px solid ${rc?C.olive+"33":C.borderSub}`,
+                      background:rc?alpha(C.olive, A.tint):C.subtle,
+                      border:`1px solid ${rc?alpha(C.olive, A.soft):C.borderSub}`,
                       color:rc?C.olive:C.textMute}}>
                       {h.name} {h.pct}% {rc?"✓":""}
                     </span>;
@@ -1583,8 +1557,8 @@ ${recentAnalyses || "尚無分析紀錄"}
                     </div>
                     <button onClick={()=>setEditing(!editing)} style={{
                       padding:"3px 9px",borderRadius:5,fontSize:9,cursor:"pointer",
-                      background:rc?C.olive+"22":"transparent",
-                      border:`1px solid ${rc?C.olive+"55":C.border}`,
+                      background:rc?alpha(C.olive, A.faint):"transparent",
+                      border:`1px solid ${rc?alpha(C.olive, A.strongLine):C.border}`,
                       color:rc?C.olive:C.textMute}}>
                       {rc?"查看條件":"設定反轉條件"}
                     </button>
@@ -1636,7 +1610,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         });
                         setEditing(false);
                       }} style={{width:"100%",padding:"8px",borderRadius:6,border:"none",
-                        background:C.fillTeal+"dd",color:C.onFill,fontSize:11,fontWeight:500,cursor:"pointer"}}>
+                        background:alpha(C.fillTeal, A.pressed),color:C.onFill,fontSize:11,fontWeight:500,cursor:"pointer"}}>
                         儲存反轉條件
                       </button>
                     </div>;
@@ -1653,7 +1627,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <button key={k} onClick={()=>setSortBy(k)} style={{
                 background: sortBy===k ? C.subtle : "transparent",
                 color: sortBy===k ? C.amber : C.textMute,
-                border:`1px solid ${sortBy===k ? C.amber+"66" : C.border}`,
+                border:`1px solid ${sortBy===k ? alpha(C.amber, A.accent) : C.border}`,
                 borderRadius:20, padding:"3px 11px", fontSize:10, fontWeight:500, cursor:"pointer",
               }}>{l}</button>
             ))}
@@ -1686,7 +1660,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                       {/* 產業標籤 */}
                       {meta && (
                         <span style={{fontSize:8,padding:"1px 5px",borderRadius:3,
-                          background:indColor+"18",color:indColor,fontWeight:500,
+                          background:alpha(indColor, A.tint),color:indColor,fontWeight:500,
                           borderLeft:`2px solid ${indColor}`}}>{meta.industry}</span>
                       )}
                       {h.type!=="股票"&&(
@@ -1738,9 +1712,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <div style={{
                             width:`${Math.min(Math.max((h.price/tp)*100,0),100)}%`,
                             height:"100%",
-                            background: upside>=15 ? C.up+"99"
-                              : upside>=0  ? C.amber+"99"
-                              : C.down+"99",
+                            background: upside>=15 ? alpha(C.up, A.solid)
+                              : upside>=0  ? alpha(C.amber, A.solid)
+                              : alpha(C.down, A.solid),
                             borderRadius:3,
                           }}/>
                         </div>
@@ -1759,7 +1733,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                     <button onClick={(ev)=>{ev.stopPropagation();setTab("research");runResearch("single",h)}}
                       disabled={researching}
                       style={{width:"100%",padding:"8px",marginBottom:8,borderRadius:6,
-                        border:`1px solid ${C.teal}55`,background:C.teal+"18",
+                        border:`1px solid ${alpha(C.teal, A.strongLine)}`,background:alpha(C.teal, A.tint),
                         color:C.teal,fontSize:10,fontWeight:500,cursor:researching?"not-allowed":"pointer"}}>
                       🔬 深度研究 {h.name}
                     </button>
@@ -1800,7 +1774,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             </div>
                             <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
                             {e.actualNote && <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.6,
-                              borderLeft:`2px solid ${e.correct?C.olive:C.up}66`,paddingLeft:8}}>
+                              borderLeft:`2px solid ${alpha(e.correct?C.olive:C.up, A.accent)}`,paddingLeft:8}}>
                               結果：{e.actualNote}
                             </div>}
                             {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
@@ -1827,7 +1801,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
         {/* ══════════ WATCHLIST ══════════ */}
         {tab==="watchlist" && <>
-          <div style={{...card,borderLeft:`3px solid ${C.up}`,marginBottom:8}}>
+            <div style={{...card,borderLeft:`3px solid ${alpha(C.up, A.accent)}`,marginBottom:8}}>
             <div style={{fontSize:9,color:C.up,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>今日</div>
             <div style={{fontSize:14,fontWeight:600,color:C.text,marginTop:3}}>
               台燿 6274 — 今日法說會
@@ -1841,7 +1815,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           {INIT_WATCHLIST.map((w,wi)=>{
             const upside=((w.target-w.price)/w.price*100).toFixed(1);
             const prog=Math.min(w.price/w.target*100,100);
-            const sc = w.sc==="#f59e0b"?C.amber:w.sc==="#22c55e"?C.olive:C.up;
+            const sc = C[w.scKey] || C.up;
             const bgTints=[C.card,C.cardBlue,C.cardAmber];
             const isWExp = expandedStock === `w-${w.code}`;
             const NE = newsEvents || NEWS_EVENTS;
@@ -1866,13 +1840,13 @@ ${recentAnalyses || "尚無分析紀錄"}
                       {w.catalyst} <span style={{fontSize:9}}>{isWExp?"▲":"▼"}</span>
                     </div>
                   </div>
-                  <span style={{background:sc+"22",color:sc,fontSize:10,fontWeight:500,
-                    padding:"3px 11px",borderRadius:20}}>{w.status}</span>
+                  <span style={{background:C.subtle,color:C.textSec,fontSize:10,fontWeight:500,
+                    border:`1px solid ${C.border}`,padding:"3px 11px",borderRadius:20}}>{w.status}</span>
                 </div>
                 <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
-                  {[["現價",w.price.toLocaleString(),C.textSec],
-                    ["目標價",w.target.toLocaleString(),C.olive],
-                    ["潛在漲幅","+"+upside+"%",C.blue]].map(([l,v,c])=>(
+                  {[["現價",w.price.toLocaleString(),C.text],
+                    ["目標價",w.target.toLocaleString(),C.textSec],
+                    ["潛在漲幅","+"+upside+"%",C.text]].map(([l,v,c])=>(
                     <div key={l}>
                       <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{l}</div>
                       <div style={{fontSize:17,fontWeight:600,color:c}}>{v}</div>
@@ -1882,7 +1856,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginTop:12}}>
                   <div style={{background:C.subtle,borderRadius:3,height:3}}>
                     <div style={{width:`${prog}%`,height:"100%",
-                      background:`linear-gradient(90deg,${C.blue}88,${C.olive}88)`,borderRadius:3}}/>
+                      background:`linear-gradient(90deg,${alpha(C.blue, A.accent)},${alpha(C.olive, A.accent)})`,borderRadius:3}}/>
                   </div>
                 </div>
                 <div style={{fontSize:10,color:C.textMute,marginTop:9,lineHeight:1.7}}>{w.note}</div>
@@ -1927,7 +1901,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                           </div>
                           <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
                           {e.actualNote && <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.6,
-                            borderLeft:`2px solid ${e.correct?C.olive:C.up}66`,paddingLeft:8}}>
+                            borderLeft:`2px solid ${alpha(e.correct?C.olive:C.up, A.accent)}`,paddingLeft:8}}>
                             結果：{e.actualNote}
                           </div>}
                           {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
@@ -1959,9 +1933,9 @@ ${recentAnalyses || "尚無分析紀錄"}
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
             {["全部",...Object.keys(TYPE_COLOR)].map(t=>(
               <button key={t} onClick={()=>setFilterType(t)} style={{
-                background: filterType===t ? (TYPE_COLOR[t]+"33"||C.subtle) : "transparent",
-                color: filterType===t ? (TYPE_COLOR[t]||C.text) : C.textMute,
-                border:`1px solid ${filterType===t?(TYPE_COLOR[t]+"66"||C.border):C.border}`,
+                background: filterType===t ? C.subtleElev : "transparent",
+                color: filterType===t ? C.text : C.textMute,
+                border:`1px solid ${filterType===t?C.borderStrong:C.border}`,
                 borderRadius:20,padding:"3px 11px",fontSize:10,fontWeight:500,cursor:"pointer",
               }}>{t}</button>
             ))}
@@ -1970,10 +1944,10 @@ ${recentAnalyses || "尚無分析紀錄"}
           {filteredEvents.map((e,i)=>{
             const tc = TYPE_COLOR[e.type]||C.textMute;
             return <div key={i} style={{...card,marginBottom:7,
-              borderLeft:`2px solid ${e.urgent ? C.up : tc+"66"}`}}>
+              borderLeft:`2px solid ${e.urgent ? C.up : alpha(tc, A.accent)}`}}>
               <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                 <div style={{minWidth:48}}>
-                  <div style={{background: e.urgent ? C.upBg : tc+"18",
+                  <div style={{background: e.urgent ? C.upBg : alpha(tc, A.tint),
                     color: e.urgent ? C.up : tc,
                     fontSize:9,fontWeight:600,padding:"2px 5px",borderRadius:4,
                     textAlign:"center",marginBottom:3}}>{e.type}</div>
@@ -2000,7 +1974,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               </div>
               <button onClick={runDailyAnalysis} style={{
                 padding:"10px 24px",borderRadius:8,border:"none",
-                background:`linear-gradient(135deg,${C.blue}cc,${C.olive}cc)`,
+                background:`linear-gradient(135deg,${alpha(C.blue, A.overlay)},${alpha(C.olive, A.overlay)})`,
                 color:C.onFill,fontSize:12,fontWeight:600,cursor:"pointer",
                 letterSpacing:"0.03em"}}>
                 開始今日收盤分析
@@ -2023,7 +1997,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           {dailyReport && <>
             {/* 今日損益摘要 — 點擊展開/收合 */}
             <div id="daily-report-top" style={{...card,marginBottom:8,
-              borderLeft:`3px solid ${dailyReport.totalTodayPnl>=0?C.up:C.down}88`,cursor:"pointer"}}
+              borderLeft:`3px solid ${alpha(dailyReport.totalTodayPnl>=0?C.up:C.down, A.glow)}`,cursor:"pointer"}}
               onClick={()=>setDailyExpanded(p=>!p)}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -2077,7 +2051,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
               {/* 異常波動 */}
               {dailyReport.anomalies.length>0 && (
-                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${C.amber}88`}}>
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.amber, A.glow)}`}}>
                   <div style={{...lbl,color:C.amber}}>異常波動 ({">"}3%)</div>
                   {dailyReport.anomalies.map(a=>(
                     <div key={a.code} style={{display:"flex",justifyContent:"space-between",padding:"6px 0"}}>
@@ -2092,7 +2066,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
               {/* 事件連動 */}
               {dailyReport.eventCorrelations.length>0 && (
-                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${C.teal}88`}}>
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.teal, A.glow)}`}}>
                   <div style={{...lbl,color:C.teal}}>事件連動分析</div>
                   {dailyReport.eventCorrelations.map(ec=>(
                     <div key={ec.id} style={{marginBottom:10,background:C.subtle,borderRadius:7,padding:"9px 11px"}}>
@@ -2113,14 +2087,14 @@ ${recentAnalyses || "尚無分析紀錄"}
 
               {/* 需要復盤的事件 */}
               {dailyReport.needsReview.length>0 && (
-                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${C.up}88`}}>
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.up, A.glow)}`}}>
                   <div style={{...lbl,color:C.up}}>需要復盤 · {dailyReport.needsReview.length}件</div>
                   {dailyReport.needsReview.map(e=>(
                     <div key={e.id} style={{marginBottom:8}}>
                       <div style={{fontSize:11,fontWeight:500,color:C.text}}>{e.title}</div>
                       <div style={{fontSize:10,color:C.textMute}}>{e.date} — 預測{e.pred==="up"?"看漲":"看跌"}</div>
                       <button onClick={(ev)=>{ev.stopPropagation();setTab("news");setExpandedNews(new Set([e.id]))}}
-                        style={{marginTop:4,padding:"4px 10px",borderRadius:5,border:`1px solid ${C.olive}55`,
+                        style={{marginTop:4,padding:"4px 10px",borderRadius:5,border:`1px solid ${alpha(C.olive, A.strongLine)}`,
                           background:"transparent",color:C.olive,fontSize:10,cursor:"pointer"}}>
                         前往復盤
                       </button>
@@ -2131,7 +2105,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
               {/* AI 策略分析 */}
               {dailyReport.aiInsight && (
-                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${C.lavender}88`}}>
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.lavender, A.glow)}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                     <div style={{...lbl,color:C.lavender,marginBottom:0}}>AI 策略分析</div>
                     <span style={{fontSize:10,color:C.textMute,background:C.subtle,padding:"2px 8px",borderRadius:4}}>
@@ -2163,7 +2137,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           {/* 策略大腦 — 可收合 */}
           {strategyBrain && (()=>{
             const brainOpen = expandedStock === "brain";
-            return <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.lavender}88`,padding:"8px 10px"}}>
+            return <div style={{...card,marginBottom:10,borderLeft:`3px solid ${alpha(C.lavender, A.glow)}`,padding:"8px 10px"}}>
               <div onClick={()=>setExpandedStock(brainOpen?null:"brain")} style={{
                 display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2232,7 +2206,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         save("pf-brain-v1", null);
                         fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-brain",data:null})}).catch(()=>{});
                       }
-                    }} style={{fontSize:9,padding:"2px 7px",borderRadius:4,border:`1px solid ${C.up}44`,background:"transparent",color:C.up,cursor:"pointer"}}>
+                    }} style={{fontSize:9,padding:"2px 7px",borderRadius:4,border:`1px solid ${alpha(C.up, A.line)}`,background:"transparent",color:C.up,cursor:"pointer"}}>
                       重置
                     </button>
                   </div>
@@ -2279,7 +2253,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
         {/* ══════════ RESEARCH (AutoResearch) ══════════ */}
         {tab==="research" && <>
-          <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.teal}88`}}>
+          <div style={{...card,marginBottom:10,borderLeft:`3px solid ${alpha(C.teal, A.glow)}`}}>
             <div style={{...lbl,color:C.teal,marginBottom:6}}>AutoResearch · 自主進化系統</div>
             <div style={{fontSize:11,color:C.textSec,lineHeight:1.7,marginBottom:10}}>
               借鑒 Karpathy autoresearch：AI 不只研究個股，更能審視你的整個投資系統 —
@@ -2297,7 +2271,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <button onClick={()=>runResearch("portfolio")} disabled={researching}
                 style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
                   cursor:researching?"not-allowed":"pointer",
-                  background:researching && researchTarget==="PORTFOLIO"?C.subtle:C.fillTeal+"dd",
+                  background:researching && researchTarget==="PORTFOLIO"?C.subtle:alpha(C.fillTeal, A.pressed),
                   color:researching && researchTarget==="PORTFOLIO"?C.textMute:C.onFill}}>
                 {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
               </button>
@@ -2314,7 +2288,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   onClick={()=>runResearch("single", h)}
                   disabled={researching}
                   style={{fontSize:9,padding:"4px 8px",borderRadius:6,cursor:researching?"not-allowed":"pointer",
-                    background:isTarget?color+"33":C.card,
+                    background:isTarget?alpha(color, A.soft):C.card,
                     border:`1px solid ${isTarget?color:C.border}`,
                     color:isTarget?color:C.textSec,
                     whiteSpace:"nowrap"}}>
@@ -2360,7 +2334,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               </div>
 
               {researchResults.rounds?.map((round, i) => (
-                <div key={i} style={{...card,marginBottom:6,borderLeft:`2px solid ${[C.blue,C.amber,C.teal][i%3]}88`}}>
+                <div key={i} style={{...card,marginBottom:6,borderLeft:`2px solid ${alpha([C.blue,C.amber,C.teal][i%3], A.glow)}`}}>
                   <div style={{fontSize:10,fontWeight:600,color:[C.blue,C.amber,C.teal][i%3],marginBottom:6}}>
                     Round {i+1}：{round.title}
                   </div>
@@ -2417,9 +2391,10 @@ ${recentAnalyses || "尚無分析紀錄"}
                 onDragLeave={()=>setDragOver(false)}
                 onDrop={e=>{e.preventDefault();setDragOver(false);processFile(e.dataTransfer.files[0])}}
                 onClick={()=>document.getElementById("fi").click()}
-                style={{border:`1px dashed ${dragOver?C.blue:C.border}`,
+                className="ui-card"
+                style={{border:`1px dashed ${dragOver?C.borderStrong:C.border}`,
                   borderRadius:12,padding:"28px 16px",textAlign:"center",cursor:"pointer",
-                  background:dragOver?C.subtle:C.card,marginBottom:12,transition:"all 0.2s"}}>
+                  background:dragOver?C.subtleElev:C.card,marginBottom:12,transition:"all 0.2s"}}>
                 <input id="fi" type="file" accept="image/*"
                   onChange={e=>processFile(e.target.files[0])} style={{display:"none"}}/>
                 {img ? (
@@ -2433,18 +2408,18 @@ ${recentAnalyses || "尚無分析紀錄"}
                 )}
               </div>
               {img && (
-                <button onClick={parseShot} disabled={parsing} style={{
+                <button className="ui-btn" onClick={parseShot} disabled={parsing} style={{
                   width:"100%",padding:"13px",borderRadius:10,
                   background: parsing ? C.subtle : C.cardHover,
                   color: parsing ? C.textMute : C.text,
-                  border: `1px solid ${parsing ? C.border : C.amber+"66"}`,
+                  border: `1px solid ${parsing ? C.border : alpha(C.amber, A.accent)}`,
                   fontSize:13, fontWeight:500, cursor:parsing?"not-allowed":"pointer",
                   letterSpacing:"0.02em"}}>
                   {parsing ? "解析中..." : "解析這筆交易"}
                 </button>
               )}
               {parseErr && <div style={{marginTop:10, background:C.upBg,
-                border:`1px solid ${C.up}44`, borderRadius:10,
+                border:`1px solid ${alpha(C.up, A.line)}`, borderRadius:10,
                 padding:12, fontSize:12, color:C.up}}>
                 {parseErr}
               </div>}
@@ -2477,7 +2452,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   </div>
                 ))}
                 {parsed.targetPriceUpdates?.length>0 && (
-                  <div style={{marginTop:10,background:C.tealBg,border:`1px solid ${C.teal}44`,
+                  <div style={{marginTop:10,background:C.tealBg,border:`1px solid ${alpha(C.teal, A.line)}`,
                     borderRadius:7,padding:"8px 10px"}}>
                     <div style={{fontSize:9,color:C.teal,fontWeight:600,marginBottom:4}}>
                       偵測到目標價更新
@@ -2492,7 +2467,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 {parsed.note && <div style={{fontSize:10,color:C.textMute,marginTop:8}}>{parsed.note}</div>}
               </div>
 
-              <div style={{...card,borderLeft:`2px solid ${C.blue}88`}}>
+              <div style={{...card,borderLeft:`2px solid ${alpha(C.blue, A.glow)}`}}>
                 <div style={lbl}>交易備忘錄</div>
                 {memoAns.map((a,i)=>(
                   <div key={i} style={{marginBottom:12}}>
@@ -2517,7 +2492,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <button onClick={submitMemo} disabled={!memoIn.trim()} style={{
                   width:"100%", padding:"12px", border:"none", borderRadius:8,
                   background: memoIn.trim()
-                    ? (memoStep===qs.length-1 ? C.fillTeal+"dd" : C.fillTeal+"dd")
+                    ? alpha(C.fillTeal, A.pressed)
                     : C.subtle,
                   color: memoIn.trim() ? C.onFill : C.textMute,
                   fontSize:13, fontWeight:500, cursor:memoIn.trim()?"pointer":"not-allowed",
@@ -2556,7 +2531,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               setTpCode(""); setTpFirm(""); setTpVal("");
             };
             return (
-              <div style={{...card,marginTop:14,borderLeft:`2px solid ${C.teal}66`}}>
+              <div style={{...card,marginTop:14,borderLeft:`2px solid ${alpha(C.teal, A.accent)}`}}>
                 <div style={lbl}>手動更新目標價</div>
                 <div style={{fontSize:11,color:C.textMute,marginBottom:10,lineHeight:1.6}}>
                   收到新研究報告時，直接在這裡更新。系統會自動計算多家均值。
@@ -2589,7 +2564,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   disabled={!tpCode.trim()||!tpVal}
                   style={{
                     width:"100%",padding:"10px",border:"none",borderRadius:8,
-                    background: tpCode.trim()&&tpVal ? C.fillTeal+"dd" : C.subtle,
+                    background: tpCode.trim()&&tpVal ? alpha(C.fillTeal, A.pressed) : C.subtle,
                     color: tpCode.trim()&&tpVal ? C.onFill : C.textMute,
                     fontSize:12,fontWeight:500,cursor:tpCode.trim()&&tpVal?"pointer":"not-allowed",
                   }}>
@@ -2613,7 +2588,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           ) : (
             [...(tradeLog||[])].sort((a,b)=>b.id-a.id).map(log=>(
               <div key={log.id} style={{...card,marginBottom:8,
-                borderLeft:`2px solid ${log.action==="買進" ? C.up+"88" : C.down+"88"}`}}>
+                borderLeft:`2px solid ${alpha(log.action==="買進" ? C.up : C.down, A.glow)}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <div style={{display:"flex",alignItems:"center",gap:7}}>
                     <span style={{
@@ -2664,8 +2639,8 @@ ${recentAnalyses || "尚無分析紀錄"}
             const open   = expandedNews.has(e.id);
             const isCorrect = e.correct;
             const borderC = e.status==="past"
-              ? (isCorrect===true ? C.olive+"99" : isCorrect===false ? C.up+"99" : C.border)
-              : predC(e.pred)+"55";
+              ? (isCorrect===true ? alpha(C.olive, A.solid) : isCorrect===false ? alpha(C.up, A.solid) : C.border)
+              : alpha(predC(e.pred), A.strongLine);
 
             return (
               <div key={e.id}
@@ -2748,8 +2723,8 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {/* 實際結果（已發生） */}
                     {e.actualNote && (
                       <div style={{
-                        background: isCorrect ? C.oliveBg+"88" : C.upBg+"88",
-                        border:`1px solid ${isCorrect ? C.olive+"44":C.up+"44"}`,
+                        background: isCorrect ? alpha(C.oliveBg, A.glow) : alpha(C.upBg, A.glow),
+                        border:`1px solid ${isCorrect ? alpha(C.olive, A.line):alpha(C.up, A.line)}`,
                         borderRadius:7, padding:"9px 11px", marginTop:8,
                       }}>
                         <div style={{fontSize:9,color: isCorrect?C.olive:C.up,fontWeight:600,marginBottom:3,letterSpacing:"0.05em"}}>
@@ -2761,7 +2736,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
                     {/* 復盤教訓（若有） */}
                     {e.lessons && (
-                      <div style={{background:C.blueBg,border:`1px solid ${C.blue}33`,
+                      <div style={{background:C.blueBg,border:`1px solid ${alpha(C.blue, A.soft)}`,
                         borderRadius:7,padding:"9px 11px",marginTop:8}}>
                         <div style={{fontSize:9,color:C.blue,fontWeight:600,marginBottom:3}}>策略覆盤教訓</div>
                         <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>{e.lessons}</div>
@@ -2772,7 +2747,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {e.status==="pending" && (
                       <button onClick={(ev)=>{ev.stopPropagation();setReviewingEvent(e.id);setReviewForm({actual:"up",actualNote:"",lessons:""})}}
                         style={{marginTop:10,width:"100%",padding:"9px",
-                          background:C.olive+"22",border:`1px solid ${C.olive}55`,
+                          background:alpha(C.olive, A.faint),border:`1px solid ${alpha(C.olive, A.strongLine)}`,
                           borderRadius:8,color:C.olive,fontSize:11,fontWeight:500,cursor:"pointer"}}>
                         標記結果 · 撰寫復盤
                       </button>
@@ -2782,7 +2757,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {reviewingEvent===e.id && (
                       <div onClick={ev=>ev.stopPropagation()} onTouchStart={ev=>ev.stopPropagation()}
                         style={{marginTop:10,background:C.subtle,borderRadius:8,padding:12,
-                          border:`1px solid ${C.blue}44`}}>
+                          border:`1px solid ${alpha(C.blue, A.line)}`}}>
                         <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:10}}>撰寫完整復盤</div>
 
                         <div style={{marginBottom:10}}>
@@ -2793,7 +2768,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                                 style={{flex:1,padding:"6px",borderRadius:6,fontSize:10,fontWeight:500,cursor:"pointer",
                                   background:reviewForm.actual===v?(v==="up"?C.upBg:v==="down"?C.downBg:C.subtle):"transparent",
                                   color:reviewForm.actual===v?(v==="up"?C.up:v==="down"?C.down:C.textSec):C.textMute,
-                                  border:`1px solid ${reviewForm.actual===v?(v==="up"?C.up+"55":v==="down"?C.down+"55":C.border):C.border}`}}>
+                                  border:`1px solid ${reviewForm.actual===v?(v==="up"?alpha(C.up, A.strongLine):v==="down"?alpha(C.down, A.strongLine):C.border):C.border}`}}>
                                 {v==="up"?"↑ 漲":v==="down"?"↓ 跌":"— 中性"}
                               </button>
                             ))}
@@ -2856,7 +2831,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <button onClick={()=>submitReview(e.id)}
                             disabled={!reviewForm.actualNote.trim()}
                             style={{flex:2,padding:"9px",borderRadius:7,border:"none",fontSize:11,fontWeight:500,cursor:"pointer",
-                              background:reviewForm.actualNote.trim()?C.fillTeal+"dd":C.subtle,
+                              background:reviewForm.actualNote.trim()?alpha(C.fillTeal, A.pressed):C.subtle,
                               color:reviewForm.actualNote.trim()?C.onFill:C.textMute}}>
                             確認送出復盤
                           </button>
@@ -2889,14 +2864,14 @@ ${recentAnalyses || "尚無分析紀錄"}
             {/* 新增事件按鈕 */}
             <button onClick={()=>setShowAddEvent(!showAddEvent)} style={{
               width:"100%",padding:"10px",marginBottom:10,borderRadius:8,
-              background:showAddEvent?C.subtle:C.blue+"22",
-              border:`1px solid ${showAddEvent?C.border:C.blue+"55"}`,
+              background:showAddEvent?C.subtle:alpha(C.blue, A.faint),
+              border:`1px solid ${showAddEvent?C.border:alpha(C.blue, A.strongLine)}`,
               color:showAddEvent?C.textMute:C.blue,fontSize:11,fontWeight:500,cursor:"pointer"}}>
               {showAddEvent?"取消":"＋ 新增事件（法說會、財報、營收、催化劑）"}
             </button>
 
             {showAddEvent && (
-              <div style={{...card,marginBottom:12,borderLeft:`2px solid ${C.blue}88`}}>
+              <div style={{...card,marginBottom:12,borderLeft:`2px solid ${alpha(C.blue, A.glow)}`}}>
                 <div style={{...lbl,color:C.blue}}>新增事件</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
                   <div>
@@ -2940,7 +2915,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         style={{flex:1,padding:"6px",borderRadius:6,fontSize:10,fontWeight:500,cursor:"pointer",
                           background:newEvent.pred===v?(v==="up"?C.upBg:v==="down"?C.downBg:C.subtle):"transparent",
                           color:newEvent.pred===v?(v==="up"?C.up:v==="down"?C.down:C.textSec):C.textMute,
-                          border:`1px solid ${newEvent.pred===v?(v==="up"?C.up+"55":v==="down"?C.down+"55":C.border):C.border}`}}>
+                          border:`1px solid ${newEvent.pred===v?(v==="up"?alpha(C.up, A.strongLine):v==="down"?alpha(C.down, A.strongLine):C.border):C.border}`}}>
                         {v==="up"?"↑ 看漲":v==="down"?"↓ 看跌":"— 中性"}
                       </button>
                     ))}
@@ -2961,7 +2936,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   disabled={!newEvent.title.trim()||!newEvent.date.trim()}
                   style={{width:"100%",padding:"10px",borderRadius:8,border:"none",fontSize:12,
                     fontWeight:500,cursor:newEvent.title.trim()&&newEvent.date.trim()?"pointer":"not-allowed",
-                    background:newEvent.title.trim()&&newEvent.date.trim()?C.fillTeal+"dd":C.subtle,
+                    background:newEvent.title.trim()&&newEvent.date.trim()?alpha(C.fillTeal, A.pressed):C.subtle,
                     color:newEvent.title.trim()&&newEvent.date.trim()?C.onFill:C.textMute}}>
                   新增事件
                 </button>

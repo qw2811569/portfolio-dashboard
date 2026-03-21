@@ -344,6 +344,8 @@ const metricCard = {
   padding:"8px 11px",
   boxShadow:`${C.insetLine}, ${C.shadow}`,
 };
+const CLOUD_SYNC_TTL = 1000 * 60 * 30;
+const CLOUD_SAVE_DEBOUNCE = 1000 * 20;
 
 async function load(key, fallback) {
   try {
@@ -354,6 +356,12 @@ async function load(key, fallback) {
 async function save(key, data) {
   try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
+const readSyncAt = (key) => {
+  try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
+};
+const writeSyncAt = (key, value) => {
+  try { localStorage.setItem(key, String(value)); } catch {}
+};
 
 // ── Main ─────────────────────────────────────────────────────────
 export default function App() {
@@ -417,7 +425,29 @@ export default function App() {
   const [researchResults, setResearchResults] = useState(null);
   const [researchHistory, setResearchHistory] = useState(null);
   const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
+  const cloudSaveTimersRef = useRef({});
+  const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const deferredQuery = useDeferredValue(scanQuery);
+  const scheduleCloudSave = (action, data, successMsg) => {
+    if (!cloudSyncStateRef.current.enabled) return;
+    clearTimeout(cloudSaveTimersRef.current[action]);
+    cloudSaveTimersRef.current[action] = setTimeout(async () => {
+      try {
+        await fetch("/api/brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, data })
+        });
+        const now = Date.now();
+        cloudSyncStateRef.current.syncedAt = now;
+        writeSyncAt("pf-cloud-sync-at", now);
+        if (successMsg) {
+          setSaved(successMsg);
+          setTimeout(() => setSaved(""), 2000);
+        }
+      } catch {}
+    }, CLOUD_SAVE_DEBOUNCE);
+  };
 
   // boot
   useEffect(() => {
@@ -433,38 +463,36 @@ export default function App() {
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setStrategyBrain(sb); setResearchHistory(rh);
-      // 先從雲端同步，完成後才 setReady（避免 auto-save 覆蓋雲端資料）
+      setReady(true);
+
+      const lastCloudSyncAt = readSyncAt("pf-cloud-sync-at");
+      const shouldSyncCloud = !lastCloudSyncAt || (Date.now() - lastCloudSyncAt > CLOUD_SYNC_TTL);
+      cloudSyncStateRef.current = { enabled: true, syncedAt: lastCloudSyncAt };
+
+      // 冷卻時間內直接用 localStorage，避免每次開頁都打 Blob
+      if (!shouldSyncCloud) {
+        setCloudSync(true);
+        return;
+      }
+
       try {
-        const [cloudBrain, cloudHist, cloudEvents, cloudHoldings, cloudResearch] = await Promise.all([
+        const [cloudBrain, cloudEvents, cloudHoldings] = await Promise.all([
           fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
-          fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:[]})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-holdings"})}).then(r=>r.json()).catch(()=>({holdings:null})),
-          fetch("/api/research").then(r=>r.json()).catch(()=>({reports:[]})),
         ]);
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
-        if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
-        // 合併雲端研究紀錄與本機紀錄（去重、按時間排序）
-        if (cloudResearch.reports?.length > 0) {
-          const merged = [...(rh||[]), ...cloudResearch.reports];
-          const unique = merged.filter((r,i,arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
-            .sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
-          setResearchHistory(unique); save("pf-research-history-v1", unique);
-        }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
-        // 持倉同步：雲端有資料就用雲端，否則推本機
+        // 持倉同步：雲端有資料就用雲端，否則保留本機，避免每次開頁都回寫 Blob
         const cloudH = cloudHoldings.holdings;
         if (cloudH && Array.isArray(cloudH) && cloudH.length > 0) {
           setHoldings(cloudH); save("pf-holdings-v2", cloudH);
-        } else if (h && Array.isArray(h) && h.length > 0) {
-          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:h})}).catch(()=>{});
         }
+        const syncedAt = Date.now();
+        cloudSyncStateRef.current.syncedAt = syncedAt;
+        writeSyncAt("pf-cloud-sync-at", syncedAt);
         setCloudSync(true);
-        if (!cloudEvents.events && ne) {
-          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:ne})}).catch(()=>{});
-        }
       } catch(e) { /* 離線也能用 localStorage 版本 */ }
-      setReady(true);
     })();
   }, []);
 
@@ -472,7 +500,7 @@ export default function App() {
   useEffect(() => {
     if (ready && holdings) {
       save("pf-holdings-v2", holdings);
-      fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-holdings",data:holdings})}).catch(()=>{});
+      scheduleCloudSave("save-holdings", holdings);
     }
   }, [holdings, ready]);
   useEffect(() => { if (ready && tradeLog) save("pf-log-v2",      tradeLog); }, [tradeLog,  ready]);
@@ -480,13 +508,37 @@ export default function App() {
   useEffect(() => {
     if (ready && newsEvents) {
       save("pf-news-events-v1", newsEvents);
-      // 同步事件到雲端
-      fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-events",data:newsEvents})}).catch(()=>{});
+      scheduleCloudSave("save-events", newsEvents);
     }
   }, [newsEvents, ready]);
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
   useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
-  useEffect(() => { if (ready && strategyBrain) save("pf-brain-v1", strategyBrain); }, [strategyBrain, ready]);
+  useEffect(() => {
+    if (ready && strategyBrain) {
+      save("pf-brain-v1", strategyBrain);
+      scheduleCloudSave("save-brain", strategyBrain);
+    }
+  }, [strategyBrain, ready]);
+  useEffect(() => {
+    const lastResearchSyncAt = readSyncAt("pf-research-cloud-sync-at");
+    const shouldFetchResearch = tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
+    if (!shouldFetchResearch) return;
+    fetch("/api/research")
+      .then(r=>r.json())
+      .then(data => {
+        if (!data.reports?.length) return;
+        const merged = [...(researchHistory || []), ...data.reports];
+        const unique = merged.filter((r,i,arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
+          .sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
+        setResearchHistory(unique);
+        save("pf-research-history-v1", unique);
+        writeSyncAt("pf-research-cloud-sync-at", Date.now());
+      })
+      .catch(()=>{});
+  }, [tab]);
+  useEffect(() => () => {
+    Object.values(cloudSaveTimersRef.current).forEach(clearTimeout);
+  }, []);
   useEffect(() => { if (ready && researchHistory) save("pf-research-history-v1", researchHistory); }, [researchHistory, ready]);
 
   // derived
@@ -877,12 +929,6 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
           const newBrain = JSON.parse(cleanBrain);
           setStrategyBrain(newBrain);
-          // 同步到雲端
-          fetch("/api/brain", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "save-brain", data: newBrain })
-          }).catch(() => {});
           // 同步分析報告到雲端
           fetch("/api/brain", {
             method: "POST",
@@ -974,8 +1020,6 @@ ${JSON.stringify(strategyBrain)}
         const feedback = newBrain.reviewFeedback;
         delete newBrain.reviewFeedback;
         setStrategyBrain(newBrain);
-        fetch("/api/brain", {method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({action:"save-brain",data:newBrain})}).catch(()=>{});
         setSaved(feedback ? `🧠 ${feedback}` : "✅ 策略大腦已更新");
         setTimeout(() => setSaved(""), 6000);
       } catch (e) {

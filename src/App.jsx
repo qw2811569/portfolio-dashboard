@@ -449,19 +449,28 @@ export default function App() {
       const ah = await load("pf-analysis-history-v1", []);
       const rc = await load("pf-reversal-v1", {});
       const sb = await load("pf-brain-v1", null);
+      const rh = await load("pf-research-history-v1", []);
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
-      setStrategyBrain(sb);
+      setStrategyBrain(sb); setResearchHistory(rh);
       // 先從雲端同步，完成後才 setReady（避免 auto-save 覆蓋雲端資料）
       try {
-        const [cloudBrain, cloudHist, cloudEvents, cloudHoldings] = await Promise.all([
+        const [cloudBrain, cloudHist, cloudEvents, cloudHoldings, cloudResearch] = await Promise.all([
           fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
           fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:[]})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-holdings"})}).then(r=>r.json()).catch(()=>({holdings:null})),
+          fetch("/api/research").then(r=>r.json()).catch(()=>({reports:[]})),
         ]);
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
         if (cloudHist.history?.length > 0) { setAnalysisHistory(cloudHist.history); save("pf-analysis-history-v1", cloudHist.history); }
+        // 合併雲端研究紀錄與本機紀錄（去重、按時間排序）
+        if (cloudResearch.reports?.length > 0) {
+          const merged = [...(rh||[]), ...cloudResearch.reports];
+          const unique = merged.filter((r,i,arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
+            .sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
+          setResearchHistory(unique); save("pf-research-history-v1", unique);
+        }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
         // 持倉同步：雲端有資料就用雲端，否則推本機
         const cloudH = cloudHoldings.holdings;
@@ -498,6 +507,7 @@ export default function App() {
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
   useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
   useEffect(() => { if (ready && strategyBrain) save("pf-brain-v1", strategyBrain); }, [strategyBrain, ready]);
+  useEffect(() => { if (ready && researchHistory) save("pf-research-history-v1", researchHistory); }, [researchHistory, ready]);
 
   // derived
   const H = holdings || [];
@@ -780,12 +790,22 @@ ${changes.map(c => {
 待觀察事件：
 ${eventSummary}
 
+${ (researchHistory||[]).length > 0 ? `
+══ 近期深度研究摘要 ══
+${(researchHistory||[]).slice(0,5).map(r => {
+  const summary = r.rounds?.map(rd => rd.title).join(" → ") || "";
+  const lastRound = r.rounds?.[r.rounds.length-1]?.content?.slice(0,200) || "";
+  return `[${r.date}] ${r.name}(${r.code}) ${summary}\n摘要：${lastRound}...`;
+}).join("\n\n")}
+══════════════════════════
+` : ""}
 請分析今日收盤表現，事件連動，並給出策略建議。
 特別注意：
 1. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略
 2. 指出產業重複風險和建議調整方向
 3. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議
-4. 特別注意策略大腦中的歷史教訓。`
+4. 特別注意策略大腦中的歷史教訓
+5. 如果有深度研究結果，結合研究結論給出更精準的操作建議。`
           })
         });
         const aiData = await aiRes.json();
@@ -1179,9 +1199,9 @@ ${recentAnalyses || "尚無分析紀錄"}
 
   // AutoResearch
   const [researching, setResearching] = useState(false);
-  const [researchTarget, setResearchTarget] = useState(null); // null=portfolio, code=single
+  const [researchTarget, setResearchTarget] = useState(null);
   const [researchResults, setResearchResults] = useState(null);
-  const [researchHistory, setResearchHistory] = useState([]);
+  const [researchHistory, setResearchHistory] = useState(null); // null=未載入, []=空
 
   if (!ready) return (
     <div style={{background:C.bg,minHeight:"100vh",display:"flex",
@@ -1218,7 +1238,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       if (data.results?.length > 0) {
         const result = data.results[0];
         setResearchResults(result);
-        setResearchHistory(prev => [result, ...prev].slice(0, 20));
+        setResearchHistory(prev => [result, ...(prev||[])].slice(0, 30));
         // evolve 模式：自動更新策略大腦
         if (mode === "evolve" && result.newBrain) {
           setStrategyBrain(result.newBrain);
@@ -2348,10 +2368,13 @@ ${recentAnalyses || "尚無分析紀錄"}
           )}
 
           {/* 歷史研究 */}
-          {researchHistory.length > 0 && (
+          {(researchHistory||[]).length > 0 && (
             <div style={card}>
-              <div style={lbl}>歷史研究記錄</div>
-              {researchHistory.map((r, i) => (
+              <div style={{...lbl,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span>歷史研究記錄</span>
+                <span style={{fontSize:9,color:C.textMute,fontWeight:400}}>{(researchHistory||[]).length} 筆</span>
+              </div>
+              {(researchHistory||[]).map((r, i) => (
                 <div key={r.timestamp || i}
                   onClick={() => setResearchResults(r)}
                   style={{display:"flex",justifyContent:"space-between",alignItems:"center",
@@ -2359,7 +2382,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                     background:researchResults?.timestamp===r.timestamp?C.subtle:"transparent",
                     borderBottom:`1px solid ${C.borderSub}`}}>
                   <div>
-                    <span style={{fontSize:12,color:C.text}}>{r.name}</span>
+                    <span style={{fontSize:12,color:r.mode==="evolve"?C.up:C.text}}>
+                      {r.mode==="evolve"?"🧬 ":"🔬 "}{r.name}
+                    </span>
                     <span style={{fontSize:10,color:C.textMute,marginLeft:6}}>{r.date}</span>
                   </div>
                   <span style={{fontSize:9,color:C.textMute}}>
@@ -2370,7 +2395,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             </div>
           )}
 
-          {!researchResults && !researching && researchHistory.length === 0 && (
+          {!researchResults && !researching && (researchHistory||[]).length === 0 && (
             <div style={{...card,textAlign:"center",padding:"24px"}}>
               <div style={{fontSize:11,color:C.textMute,lineHeight:1.8}}>
                 點擊上方按鈕開始第一次深度研究。<br/>

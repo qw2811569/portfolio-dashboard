@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createElement as h } from "react";
+import { useState, useEffect, useRef, useDeferredValue, createElement as h } from "react";
 import { C, A, alpha } from "./theme.js";
 
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
@@ -379,6 +379,8 @@ export default function App() {
 
   // dashboard UI
   const [sortBy,      setSortBy]      = useState("value");
+  const [scanQuery,   setScanQuery]   = useState("");
+  const [scanFilter,  setScanFilter]  = useState("全部");
   const [filterType,  setFilterType]  = useState("全部");
   const [showAll,     setShowAll]     = useState(false);
   const [showReversal, setShowReversal] = useState(false);
@@ -415,6 +417,7 @@ export default function App() {
   const [researchResults, setResearchResults] = useState(null);
   const [researchHistory, setResearchHistory] = useState(null);
   const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
+  const deferredQuery = useDeferredValue(scanQuery);
 
   // boot
   useEffect(() => {
@@ -500,11 +503,41 @@ export default function App() {
     if(sortBy==="pct")   return b.pct-a.pct;
     return 0;
   });
-  const displayed = showAll ? sorted : sorted.slice(0,12);
+  const scanRows = sorted.map(h => {
+    const meta = STOCK_META[h.code];
+    const T = targets?.[h.code];
+    const relatedEvents = (newsEvents || NEWS_EVENTS).filter(e => e.stocks?.some(s => s.includes(h.code)));
+    const hasPending = relatedEvents.some(e => e.correct == null);
+    const priority = h.alert || T?.isNew ? "A" : (hasPending || h.pnl < 0 ? "B" : "C");
+    const needsAttention = priority !== "C";
+    return { h, meta, T, relatedEvents, hasPending, needsAttention, priority };
+  });
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const filteredRows = scanRows.filter(({ h, meta, T, relatedEvents, hasPending, needsAttention }) => {
+    const matchQuery = !normalizedQuery || [
+      h.name,
+      h.code,
+      meta?.industry,
+      meta?.strategy,
+      meta?.position,
+    ].filter(Boolean).some(v => String(v).toLowerCase().includes(normalizedQuery));
+    if (!matchQuery) return false;
+    if (scanFilter === "全部") return true;
+    if (scanFilter === "需處理") return needsAttention;
+    if (scanFilter === "虧損") return h.pnl < 0;
+    if (scanFilter === "待驗證") return hasPending;
+    if (scanFilter === "目標更新") return Boolean(T?.isNew);
+    if (scanFilter === "權證") return h.type === "權證";
+    return true;
+  });
+  const displayed = showAll ? filteredRows : filteredRows.slice(0,12);
   const top5 = [...H].sort((a,b)=>b.value-a.value).slice(0,5);
   const topColors = [C.blue, C.amber, C.lavender, C.olive, C.teal];
   const winners = H.filter(h=>h.pnl>0).sort((a,b)=>b.pct-a.pct);
   const losers  = H.filter(h=>h.pnl<0).sort((a,b)=>a.pct-b.pct);
+  const attentionCount = scanRows.filter(r => r.needsAttention).length;
+  const pendingCount = scanRows.filter(r => r.hasPending).length;
+  const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
 
   const filteredEvents = filterType==="全部" ? EVENTS : EVENTS.filter(e=>e.type===filterType);
 
@@ -1620,8 +1653,50 @@ ${recentAnalyses || "尚無分析紀錄"}
             </div>
           )}
 
+          {/* 快速掃描工具 */}
+          <div style={{...card,marginBottom:8,padding:"10px 12px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:8,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontSize:10,color:C.textMute,letterSpacing:"0.06em",fontWeight:600}}>快速掃描</div>
+                <div style={{fontSize:12,color:C.textSec,marginTop:2}}>
+                  先找出需要處理的股票，再決定要不要展開細看
+                </div>
+              </div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[
+                  ["需處理", `${attentionCount} 檔`],
+                  ["待驗證", `${pendingCount} 檔`],
+                  ["目標更新", `${targetUpdateCount} 檔`],
+                ].map(([l,v])=>(
+                  <div key={l} style={{background:C.subtle,border:`1px solid ${C.border}`,borderRadius:999,padding:"4px 10px"}}>
+                    <span style={{fontSize:9,color:C.textMute}}>{l}</span>
+                    <span style={{fontSize:10,color:C.text,marginLeft:6,fontWeight:600}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:8}}>
+              <input
+                value={scanQuery}
+                onChange={e=>setScanQuery(e.target.value)}
+                placeholder="搜尋股票、代碼、產業、策略..."
+                style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}
+              />
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-end"}}>
+                {["全部","需處理","待驗證","目標更新","虧損","權證"].map(k=>(
+                  <button key={k} className="ui-btn" onClick={()=>{setScanFilter(k);setShowAll(false);}} style={{
+                    background: scanFilter===k ? C.subtleElev : "transparent",
+                    color: scanFilter===k ? C.text : C.textMute,
+                    border:`1px solid ${scanFilter===k ? C.borderStrong : C.border}`,
+                    borderRadius:999,padding:"5px 10px",fontSize:10,fontWeight:500,cursor:"pointer",
+                  }}>{k}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 排序 + 列表 */}
-          <div style={{display:"flex",gap:5,marginBottom:6,alignItems:"center"}}>
+          <div style={{display:"flex",gap:5,marginBottom:6,alignItems:"center",flexWrap:"wrap"}}>
             <span style={{fontSize:10,color:C.textMute}}>排序：</span>
             {[["value","市值"],["pnl","損益"],["pct","報酬%"]].map(([k,l])=>(
               <button key={k} onClick={()=>setSortBy(k)} style={{
@@ -1631,25 +1706,24 @@ ${recentAnalyses || "尚無分析紀錄"}
                 borderRadius:20, padding:"3px 11px", fontSize:10, fontWeight:500, cursor:"pointer",
               }}>{l}</button>
             ))}
+            <span style={{fontSize:10,color:C.textMute,marginLeft:"auto"}}>
+              顯示 {displayed.length} / {filteredRows.length} 檔
+            </span>
           </div>
 
           <div style={card}>
-            {displayed.map((h,i)=>{
-              const T      = targets?.[h.code];
+            {displayed.map(({ h, meta, T, relatedEvents, hasPending, needsAttention, priority },i)=>{
               const tp     = T ? avgTarget(h.code) : null;
               const upside = tp && h.price ? ((tp - h.price) / h.price * 100) : null;
               const isNew  = T?.isNew;
               const isExpanded = expandedStock === h.code;
-              const NE = newsEvents || NEWS_EVENTS;
-              const relatedEvents = NE.filter(e => e.stocks?.some(s => s.includes(h.code)));
               const hits = relatedEvents.filter(e => e.correct === true).length;
               const misses = relatedEvents.filter(e => e.correct === false).length;
               const pending = relatedEvents.filter(e => e.correct == null).length;
-              const meta = STOCK_META[h.code];
               const indColor = meta ? (IND_COLOR[meta.industry]||C.textMute) : C.textMute;
               return (
               <div key={h.code} style={{
-                padding:"7px 0",
+                padding:"9px 0",
                 borderBottom: i<displayed.length-1 ? `1px solid ${C.borderSub}` : "none"}}>
                 <div onClick={()=>setExpandedStock(isExpanded?null:h.code)}
                   style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", cursor:"pointer"}}>
@@ -1681,6 +1755,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                       {isNew&&<span style={{fontSize:8,padding:"1px 5px",borderRadius:3,
                         background:C.tealBg,color:C.teal,fontWeight:600,
                         animation:"pulse 1.5s ease-in-out infinite"}}>目標價更新</span>}
+                      {needsAttention && !h.alert && !isNew && (
+                        <span style={{fontSize:8,padding:"1px 5px",borderRadius:3,background:C.amberBg,color:C.amber,fontWeight:600}}>
+                          需留意
+                        </span>
+                      )}
                       {relatedEvents.length>0 && (
                         <span style={{fontSize:8,padding:"1px 5px",borderRadius:3,
                           background:C.lavBg,color:C.lavender,fontWeight:500}}>
@@ -1695,9 +1774,26 @@ ${recentAnalyses || "尚無分析紀錄"}
                       </span>}
                       <span style={{marginLeft:4,color:C.textMute,fontSize:9}}>{isExpanded?"▲":"▼"}</span>
                     </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:C.textSec}}>
+                        市值 {h.value?.toLocaleString()}
+                      </span>
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(h.pnl)}}>
+                        損益 {h.pnl>=0?"+":""}{h.pnl?.toLocaleString()}
+                      </span>
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(h.pct)}}>
+                        報酬 {h.pct>=0?"+":""}{h.pct?.toFixed(1)}%
+                      </span>
+                      {tp && <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:upside>=0?C.up:C.down}}>
+                        目標差 {upside>=0?"+":""}{upside?.toFixed(1)}%
+                      </span>}
+                      {hasPending && <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:C.lavender}}>
+                        事件待驗證 {pending}
+                      </span>}
+                    </div>
                     {/* 目標價進度條 */}
                     {tp && (
-                      <div style={{marginTop:3}}>
+                      <div style={{marginTop:7}}>
                         <div style={{display:"flex",justifyContent:"space-between",marginBottom:1}}>
                           <span style={{fontSize:9,color:C.textMute}}>
                             目標 {tp.toLocaleString()}
@@ -1721,10 +1817,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                       </div>
                     )}
                   </div>
-                  <div className="tn" style={{textAlign:"right",minWidth:70,paddingLeft:8}}>
-                    <div style={{fontSize:12,fontWeight:600,color:C.textSec}}>{h.value?.toLocaleString()}</div>
-                    <div style={{fontSize:11,fontWeight:600,color:pc(h.pnl)}}>{h.pnl>=0?"+":""}{h.pnl?.toLocaleString()}</div>
-                    <div style={{fontSize:10,color:pc(h.pct)}}>{h.pct>=0?"+":""}{h.pct?.toFixed(1)}%</div>
+                  <div className="tn" style={{textAlign:"right",minWidth:84,paddingLeft:10}}>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:2}}>掃描優先度</div>
+                    <div style={{fontSize:17,fontWeight:700,color:priority==="A"?C.amber:priority==="B"?C.lavender:C.textSec,lineHeight:1}}>
+                      {priority}
+                    </div>
+                    <div style={{fontSize:9,color:C.textMute,marginTop:4}}>
+                      {priority==="A" ? "先看" : priority==="B" ? "追蹤中" : "穩定"}
+                    </div>
                   </div>
                 </div>
                 {/* 展開：個股策略追蹤 */}

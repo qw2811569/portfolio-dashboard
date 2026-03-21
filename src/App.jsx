@@ -51,19 +51,19 @@ const STOCK_META = {
   "8227":   { industry:"光通訊",      strategy:"成長股",    period:"中長", position:"衛星", leader:"小型" },
 };
 
-// 產業色彩映射 — 大地色系衍生
+// 產業色彩映射 — 提亮版（文字用，需在 #283D3B 上可讀）
 const IND_COLOR = {
-  "AI/伺服器": "#197278",   // Stormy Teal
-  "光通訊":     "#2AABB3",   // 亮青
-  "PCB/材料":   "#D4956B",   // 暖琥珀
-  "IC/記憶體":  "#9B8579",   // 暖棕
-  "被動元件":   "#C4783C",   // 橙棕
-  "重電":       "#C44536",   // Tomato Jam
-  "營建":       "#4A8C6F",   // 森林綠
-  "精密機械":   "#7A6F69",   // 石灰棕
-  "連接器":     "#2A9D8F",   // 青綠
-  "中國ETF":    "#B56576",   // 乾燥玫瑰
-  "半導體設備": "#772E25",   // Bitter Chocolate
+  "AI/伺服器": "#2BB5BE",   // Teal 提亮
+  "光通訊":     "#3CC8D0",   // 亮青
+  "PCB/材料":   "#E0A87D",   // 暖琥珀提亮
+  "IC/記憶體":  "#B59E91",   // 暖棕提亮
+  "被動元件":   "#D4956B",   // 橙棕
+  "重電":       "#E8584A",   // Tomato 提亮
+  "營建":       "#5DA882",   // 森林綠提亮
+  "精密機械":   "#8A7E78",   // 石灰棕
+  "連接器":     "#3DB5A8",   // 青綠提亮
+  "中國ETF":    "#C97B8A",   // 乾燥玫瑰提亮
+  "半導體設備": "#C4783C",   // Chocolate 提亮
 };
 
 // ── 初始持倉 ────────────────────────────────────────────────────
@@ -232,55 +232,67 @@ const NEWS_EVENTS = [
 ];
 
 
-// 配色 — 大地色系：Dark Slate Grey / Stormy Teal / Powder Petal / Tomato Jam / Bitter Chocolate
+// ── 配色系統 ──────────────────────────────────────────────────────
+// 基底5色：Dark Slate Grey #283D3B / Stormy Teal #197278 / Powder Petal #EDDDD4
+//          Tomato Jam #C44536 / Bitter Chocolate #772E25
+//
+// 設計原則：
+//   60% 背景(#283D3B) / 30% 卡片(比bg亮10-15%) / 10% 強調色
+//   文字色必須在背景上達到 WCAG AA 4.5:1 對比度
+//   原色用於填充(按鈕bg、badge bg)；提亮版用於文字
 const C = {
-  bg:        "#1B2D2A",   // 深墨綠（Dark Slate Grey 加深）
-  card:      "#283D3B",   // Dark Slate Grey
-  cardHover: "#304845",   // hover
-  subtle:    "#304845",   // subtle bg
-  border:    "rgba(237,221,212,0.10)",   // Powder Petal 基調邊框
-  borderSub: "rgba(237,221,212,0.05)",
+  bg:        "#283D3B",   // Dark Slate Grey — 60% 主背景
+  card:      "#324B48",   // 卡片浮層（bg 亮 12%）
+  cardHover: "#3C5755",   // hover 狀態
+  subtle:    "#2F4744",   // 微妙背景
+  border:    "rgba(237,221,212,0.12)",   // Powder Petal 基調
+  borderSub: "rgba(237,221,212,0.06)",
 
-  // 跳色卡片（同色系微偏移）
-  cardBlue:  "#1e3535",
-  cardAmber: "#2e3128",
-  cardOlive: "#243835",
-  cardRose:  "#332e2b",
+  // 跳色卡片（微色調偏移，增加視覺層次）
+  cardBlue:  "#2E4D50",
+  cardAmber: "#3D4840",
+  cardOlive: "#304C44",
+  cardRose:  "#3D4240",
 
-  // 文字 — Powder Petal 系列
+  // 文字 — Powder Petal 系列（主文字 9:1+）
   text:      "#EDDDD4",   // Powder Petal
-  textSec:   "#C4B5AD",   // 減淡 Petal
-  textMute:  "#7A6F69",   // 暗灰棕
+  textSec:   "#C4B5AD",   // 減淡（~6:1）
+  textMute:  "#8A7E78",   // 暗灰棕（~3:1，僅限大字/標籤）
 
-  // 台股慣例：紅漲綠跌
-  up:        "#C44536",   // Tomato Jam（漲/獲利）
-  upBg:      "#C4453618",
-  down:      "#197278",   // Stormy Teal（跌/虧損）
-  downBg:    "#19727818",
+  // 台股慣例 — 提亮版確保文字可讀（≥4.5:1）
+  up:        "#E8584A",   // Tomato Jam 提亮（漲/獲利）
+  upBg:      "#C4453622",
+  down:      "#2BB5BE",   // Stormy Teal 提亮（跌/虧損）
+  downBg:    "#19727822",
 
-  // 功能色 — 大地色系衍生
-  blue:      "#197278",   // Stormy Teal（互動/連結）
-  blueBg:    "#19727818",
-  amber:     "#D4956B",   // 暖琥珀
-  amberBg:   "#D4956B18",
-  teal:      "#2AABB3",   // 亮青（與 Stormy Teal 區分）
-  tealBg:    "#2AABB318",
-  olive:     "#4A8C6F",   // 森林綠
-  oliveBg:   "#4A8C6F18",
-  lavender:  "#9B8579",   // 暖棕
-  lavBg:     "#9B857918",
-  stone:     "#7A6F69",
-  urgent:    "#C44536",   // Tomato Jam
+  // 功能色 — 提亮版用於文字，原色用於填充
+  blue:      "#2BB5BE",   // Stormy Teal 提亮（互動）
+  blueBg:    "#19727822",
+  amber:     "#E0A87D",   // 暖琥珀提亮
+  amberBg:   "#D4956B22",
+  teal:      "#2BB5BE",   // 亮青
+  tealBg:    "#19727822",
+  olive:     "#5DA882",   // 森林綠提亮
+  oliveBg:   "#4A8C6F22",
+  lavender:  "#B59E91",   // 暖棕提亮
+  lavBg:     "#9B857922",
+  stone:     "#8A7E78",
+  urgent:    "#E8584A",
+
+  // 原色（用於按鈕填充、badge 背景等面積色塊）
+  fillTeal:    "#197278",
+  fillTomato:  "#C44536",
+  fillChoco:   "#772E25",
 };
 
 const TYPE_COLOR = {
-  法說:"#C44536",  // Tomato Jam
-  財報:"#197278",  // Stormy Teal
-  營收:"#4A8C6F",  // 森林綠
-  催化:"#D4956B",  // 暖琥珀
+  法說:"#E8584A",  // Tomato 提亮
+  財報:"#2BB5BE",  // Teal 提亮
+  營收:"#5DA882",  // 森林綠提亮
+  催化:"#E0A87D",  // 暖琥珀提亮
   操作:"#EDDDD4",  // Powder Petal
-  總經:"#9B8579",  // 暖棕
-  權證:"#772E25",  // Bitter Chocolate
+  總經:"#B59E91",  // 暖棕提亮
+  權證:"#C4783C",  // Chocolate 提亮
 };
 
 const MEMO_Q = {
@@ -1169,7 +1181,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box}
         html{-webkit-text-size-adjust:100%}
-        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:#1B2D2A}
+        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:#283D3B}
         textarea::placeholder,input::placeholder{color:${C.textMute}}
         input,textarea,button{font-family:inherit;-webkit-appearance:none}
         /* tabular numbers for financial data */
@@ -1178,7 +1190,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @keyframes progress{0%{width:5%}50%{width:70%}100%{width:95%}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         /* subtle card hover */
-        .card-h:hover{border-color:rgba(237,221,212,0.15)!important;background:#304845!important}
+        .card-h:hover{border-color:rgba(237,221,212,0.15)!important;background:#3C5755!important}
         .card-h{transition:all 0.15s ease}
         /* smooth chip buttons */
         button{-webkit-tap-highlight-color:transparent}
@@ -1527,7 +1539,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         });
                         setEditing(false);
                       }} style={{width:"100%",padding:"8px",borderRadius:6,border:"none",
-                        background:C.olive+"cc",color:"#fff",fontSize:11,fontWeight:500,cursor:"pointer"}}>
+                        background:C.fillTeal+"dd",color:"#fff",fontSize:11,fontWeight:500,cursor:"pointer"}}>
                         儲存反轉條件
                       </button>
                     </div>;
@@ -2183,7 +2195,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <button onClick={()=>runResearch("portfolio")} disabled={researching}
                 style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
                   cursor:researching?"not-allowed":"pointer",
-                  background:researching?C.subtle:C.teal+"cc",
+                  background:researching?C.subtle:C.fillTeal+"dd",
                   color:researching?C.textMute:"#fff"}}>
                 {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
               </button>
@@ -2396,7 +2408,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <button onClick={submitMemo} disabled={!memoIn.trim()} style={{
                   width:"100%", padding:"12px", border:"none", borderRadius:8,
                   background: memoIn.trim()
-                    ? (memoStep===qs.length-1 ? C.olive+"cc" : C.blue+"cc")
+                    ? (memoStep===qs.length-1 ? C.fillTeal+"dd" : C.fillTeal+"dd")
                     : C.subtle,
                   color: memoIn.trim() ? "#fff" : C.textMute,
                   fontSize:13, fontWeight:500, cursor:memoIn.trim()?"pointer":"not-allowed",
@@ -2468,7 +2480,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   disabled={!tpCode.trim()||!tpVal}
                   style={{
                     width:"100%",padding:"10px",border:"none",borderRadius:8,
-                    background: tpCode.trim()&&tpVal ? C.teal+"cc" : C.subtle,
+                    background: tpCode.trim()&&tpVal ? C.fillTeal+"dd" : C.subtle,
                     color: tpCode.trim()&&tpVal ? "#fff" : C.textMute,
                     fontSize:12,fontWeight:500,cursor:tpCode.trim()&&tpVal?"pointer":"not-allowed",
                   }}>
@@ -2735,7 +2747,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <button onClick={()=>submitReview(e.id)}
                             disabled={!reviewForm.actualNote.trim()}
                             style={{flex:2,padding:"9px",borderRadius:7,border:"none",fontSize:11,fontWeight:500,cursor:"pointer",
-                              background:reviewForm.actualNote.trim()?C.olive+"cc":C.subtle,
+                              background:reviewForm.actualNote.trim()?C.fillTeal+"dd":C.subtle,
                               color:reviewForm.actualNote.trim()?"#fff":C.textMute}}>
                             確認送出復盤
                           </button>
@@ -2840,7 +2852,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   disabled={!newEvent.title.trim()||!newEvent.date.trim()}
                   style={{width:"100%",padding:"10px",borderRadius:8,border:"none",fontSize:12,
                     fontWeight:500,cursor:newEvent.title.trim()&&newEvent.date.trim()?"pointer":"not-allowed",
-                    background:newEvent.title.trim()&&newEvent.date.trim()?C.blue+"cc":C.subtle,
+                    background:newEvent.title.trim()&&newEvent.date.trim()?C.fillTeal+"dd":C.subtle,
                     color:newEvent.title.trim()&&newEvent.date.trim()?"#fff":C.textMute}}>
                   新增事件
                 </button>

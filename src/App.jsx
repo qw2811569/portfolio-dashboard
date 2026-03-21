@@ -1192,27 +1192,40 @@ ${recentAnalyses || "尚無分析紀錄"}
   const runResearch = async (mode, targetStock) => {
     if (researching) return;
     setResearching(true);
-    setResearchTarget(mode === "single" ? targetStock?.code : "PORTFOLIO");
+    setResearchTarget(mode === "evolve" ? "EVOLVE" : mode === "single" ? targetStock?.code : "PORTFOLIO");
     try {
       const stocks = mode === "single" && targetStock
         ? [targetStock]
         : H.map(h => ({ code:h.code, name:h.name, price:h.price, cost:h.cost, pnl:h.pnl, pct:h.pct, type:h.type }));
+      const body = {
+        stocks,
+        holdings: H,
+        meta: STOCK_META,
+        brain: strategyBrain,
+        mode,
+      };
+      // evolve 模式需要事件紀錄和分析歷史
+      if (mode === "evolve") {
+        body.events = (newsEvents || []).slice(0, 20);
+        body.analysisHistory = (analysisHistory || []).slice(0, 10);
+      }
       const res = await fetch("/api/research", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stocks,
-          holdings: H,
-          meta: STOCK_META,
-          brain: strategyBrain,
-          mode,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.results?.length > 0) {
-        setResearchResults(data.results[0]);
-        setResearchHistory(prev => [data.results[0], ...prev].slice(0, 20));
-        setSaved("✅ 研究完成");
+        const result = data.results[0];
+        setResearchResults(result);
+        setResearchHistory(prev => [result, ...prev].slice(0, 20));
+        // evolve 模式：自動更新策略大腦
+        if (mode === "evolve" && result.newBrain) {
+          setStrategyBrain(result.newBrain);
+          setSaved("✅ 系統進化完成 · 策略大腦已更新");
+        } else {
+          setSaved("✅ 研究完成");
+        }
       } else {
         setSaved("⚠️ 研究無結果");
       }
@@ -2244,18 +2257,25 @@ ${recentAnalyses || "尚無分析紀錄"}
         {/* ══════════ RESEARCH (AutoResearch) ══════════ */}
         {tab==="research" && <>
           <div style={{...card,marginBottom:10,borderLeft:`3px solid ${C.teal}88`}}>
-            <div style={{...lbl,color:C.teal,marginBottom:6}}>AutoResearch · 自動深度研究</div>
+            <div style={{...lbl,color:C.teal,marginBottom:6}}>AutoResearch · 自主進化系統</div>
             <div style={{fontSize:11,color:C.textSec,lineHeight:1.7,marginBottom:10}}>
-              借鑒 Karpathy 的 autoresearch 概念：AI 自主進行多輪迭代研究，
-              從基本面→風險催化→策略建議，逐步深入分析每檔持股。
+              借鑒 Karpathy autoresearch：AI 不只研究個股，更能審視你的整個投資系統 —
+              決策品質、認知盲點、情緒模式、策略一致性 — 並自動進化策略大腦。
             </div>
 
             <div style={{display:"flex",gap:6,marginBottom:10}}>
+              <button onClick={()=>runResearch("evolve")} disabled={researching}
+                style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:600,
+                  cursor:researching?"not-allowed":"pointer",
+                  background:researching && researchTarget==="EVOLVE"?C.subtle:`linear-gradient(135deg,${C.fillTomato},${C.fillChoco})`,
+                  color:researching && researchTarget==="EVOLVE"?C.textMute:"#fff"}}>
+                {researching && researchTarget==="EVOLVE" ? "系統進化中..." : "🧬 系統自我進化"}
+              </button>
               <button onClick={()=>runResearch("portfolio")} disabled={researching}
                 style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
                   cursor:researching?"not-allowed":"pointer",
-                  background:researching?C.subtle:C.fillTeal+"dd",
-                  color:researching?C.textMute:"#fff"}}>
+                  background:researching && researchTarget==="PORTFOLIO"?C.subtle:C.fillTeal+"dd",
+                  color:researching && researchTarget==="PORTFOLIO"?C.textMute:"#fff"}}>
                 {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
               </button>
             </div>
@@ -2284,11 +2304,15 @@ ${recentAnalyses || "尚無分析紀錄"}
           {/* 研究進度 */}
           {researching && (
             <div style={{...card,marginBottom:10,textAlign:"center",padding:"20px 14px"}}>
-              <div style={{fontSize:12,color:C.teal,fontWeight:500,marginBottom:6,animation:"pulse 2s infinite"}}>
-                AI 正在進行{researchTarget==="PORTFOLIO"?"全組合":"個股"}深度研究...
+              <div style={{fontSize:12,color:researchTarget==="EVOLVE"?C.up:C.teal,fontWeight:500,marginBottom:6,animation:"pulse 2s infinite"}}>
+                {researchTarget==="EVOLVE"
+                  ? "AI 正在審視你的投資系統並自我進化..."
+                  : `AI 正在進行${researchTarget==="PORTFOLIO"?"全組合":"個股"}深度研究...`}
               </div>
               <div style={{fontSize:10,color:C.textMute}}>
-                {researchTarget==="PORTFOLIO"
+                {researchTarget==="EVOLVE"
+                  ? "3 輪迭代：系統診斷 → 進化建議 → 策略大腦更新，預計 1-2 分鐘"
+                  : researchTarget==="PORTFOLIO"
                   ? `逐一分析 ${H.length} 檔持股 + 組合策略，預計 1-2 分鐘`
                   : "3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒"}
               </div>

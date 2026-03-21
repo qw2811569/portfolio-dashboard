@@ -51,19 +51,19 @@ const STOCK_META = {
   "8227":   { industry:"光通訊",      strategy:"成長股",    period:"中長", position:"衛星", leader:"小型" },
 };
 
-// 產業色彩映射
+// 產業色彩映射 — 大地色系衍生
 const IND_COLOR = {
-  "AI/伺服器": "#818cf8",   // indigo
-  "光通訊":     "#22d3ee",   // cyan
-  "PCB/材料":   "#fb923c",   // orange
-  "IC/記憶體":  "#a78bfa",   // violet
-  "被動元件":   "#fbbf24",   // amber
-  "重電":       "#f87171",   // red
-  "營建":       "#4ade80",   // green
-  "精密機械":   "#94a3b8",   // slate
-  "連接器":     "#2dd4bf",   // teal
-  "中國ETF":    "#f472b6",   // pink
-  "半導體設備": "#c084fc",   // purple
+  "AI/伺服器": "#197278",   // Stormy Teal
+  "光通訊":     "#2AABB3",   // 亮青
+  "PCB/材料":   "#D4956B",   // 暖琥珀
+  "IC/記憶體":  "#9B8579",   // 暖棕
+  "被動元件":   "#C4783C",   // 橙棕
+  "重電":       "#C44536",   // Tomato Jam
+  "營建":       "#4A8C6F",   // 森林綠
+  "精密機械":   "#7A6F69",   // 石灰棕
+  "連接器":     "#2A9D8F",   // 青綠
+  "中國ETF":    "#B56576",   // 乾燥玫瑰
+  "半導體設備": "#772E25",   // Bitter Chocolate
 };
 
 // ── 初始持倉 ────────────────────────────────────────────────────
@@ -91,9 +91,9 @@ const INIT_HOLDINGS = [
 ];
 
 const INIT_WATCHLIST = [
-  { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      sc:"#f59e0b", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
-  { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    sc:"#22c55e", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
-  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  sc:"#ef4444", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
+  { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      sc:"#D4956B", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
+  { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    sc:"#4A8C6F", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
+  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  sc:"#C44536", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
 ];
 
 const EVENTS = [
@@ -1169,7 +1169,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box}
         html{-webkit-text-size-adjust:100%}
-        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:#09090b}
+        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:#1B2D2A}
         textarea::placeholder,input::placeholder{color:${C.textMute}}
         input,textarea,button{font-family:inherit;-webkit-appearance:none}
         /* tabular numbers for financial data */
@@ -1178,7 +1178,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         @keyframes progress{0%{width:5%}50%{width:70%}100%{width:95%}}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
         /* subtle card hover */
-        .card-h:hover{border-color:rgba(255,255,255,0.12)!important;background:#1e1e22!important}
+        .card-h:hover{border-color:rgba(237,221,212,0.15)!important;background:#304845!important}
         .card-h{transition:all 0.15s ease}
         /* smooth chip buttons */
         button{-webkit-tap-highlight-color:transparent}
@@ -1187,7 +1187,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         /* prettier scrollbar */
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px}
+        ::-webkit-scrollbar-thumb{background:rgba(237,221,212,0.15);border-radius:4px}
         @media(max-width:480px){
           body{font-size:14px}
         }
@@ -1201,7 +1201,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       `}</style>
 
       {/* ── HEADER ── */}
-      <div className="app-shell" style={{background:`${C.card}e6`,borderBottom:`1px solid rgba(255,255,255,0.06)`,
+      <div className="app-shell" style={{background:`${C.card}e6`,borderBottom:`1px solid rgba(237,221,212,0.08)`,
         padding:"10px 14px 0",position:"sticky",top:0,zIndex:10,
         backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)"}}>
 

@@ -716,9 +716,7 @@ export default function App() {
       // 同時嘗試上市(tse)和上櫃(otc)，API 只會回傳有效的
       const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
       const exCh = queries.join('|');
-      const url = import.meta.env.DEV
-        ? `/api/twse/stock/api/getStockInfo.jsp?ex_ch=${exCh}&json=1&delay=0`
-        : `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
+      const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -777,9 +775,7 @@ export default function App() {
       const codes = H.map(h => h.code);
       const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
       const exCh = queries.join('|');
-      const url = import.meta.env.DEV
-        ? `/api/twse/stock/api/getStockInfo.jsp?ex_ch=${exCh}&json=1&delay=0`
-        : `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
+      const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -2832,6 +2828,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   Q{memoStep+1}/{qs.length}. {qs[memoStep]}
                 </div>
                 <textarea value={memoIn}
+                  onFocus={()=>{composingRef.current=false}}
                   onCompositionStart={()=>{composingRef.current=true}}
                   onCompositionEnd={e=>{composingRef.current=false;setMemoIn(e.target.value)}}
                   onChange={e=>{if(!composingRef.current)setMemoIn(e.target.value)}}
@@ -3142,6 +3139,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             ))}
                           </div>
                           <textarea value={reviewForm.actualNote}
+                            onFocus={()=>{composingRef.current=false}}
                             onCompositionStart={()=>{composingRef.current=true}}
                             onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
                             onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
@@ -3167,6 +3165,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             ))}
                           </div>
                           <textarea value={reviewForm.lessons}
+                            onFocus={()=>{composingRef.current=false}}
                             onCompositionStart={()=>{composingRef.current=true}}
                             onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,lessons:ev.target.value}))}}
                             onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,lessons:ev.target.value}))}}
@@ -3251,6 +3250,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginBottom:7}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件細節</div>
                   <textarea value={newEvent.detail}
+                    onFocus={()=>{composingRef.current=false}}
                     onCompositionStart={()=>{composingRef.current=true}}
                     onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,detail:e.target.value}))}}
                     onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,detail:e.target.value}))}}
@@ -3276,6 +3276,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginBottom:10}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>預測邏輯</div>
                   <textarea value={newEvent.predReason}
+                    onFocus={()=>{composingRef.current=false}}
                     onCompositionStart={()=>{composingRef.current=true}}
                     onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,predReason:e.target.value}))}}
                     onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,predReason:e.target.value}))}}

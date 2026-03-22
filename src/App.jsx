@@ -463,6 +463,8 @@ export default function App() {
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setStrategyBrain(sb); setResearchHistory(rh);
+      // 從歷史記錄還原最近一次收盤分析，避免重開頁面看不到
+      if (ah && ah.length > 0) setDailyReport(ah[0]);
       setReady(true);
 
       const lastCloudSyncAt = readSyncAt("pf-cloud-sync-at");
@@ -476,10 +478,12 @@ export default function App() {
       }
 
       try {
-        const [cloudBrain, cloudEvents, cloudHoldings] = await Promise.all([
+        const [cloudBrain, cloudEvents, cloudHoldings, cloudHistory, cloudResearch] = await Promise.all([
           fetch("/api/brain?action=brain").then(r=>r.json()).catch(()=>({brain:null})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-events"})}).then(r=>r.json()).catch(()=>({events:null})),
           fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"load-holdings"})}).then(r=>r.json()).catch(()=>({holdings:null})),
+          fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:null})),
+          fetch("/api/research").then(r=>r.json()).catch(()=>({reports:null})),
         ]);
         if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
         if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
@@ -487,6 +491,20 @@ export default function App() {
         const cloudH = cloudHoldings.holdings;
         if (cloudH && Array.isArray(cloudH) && cloudH.length > 0) {
           setHoldings(cloudH); save("pf-holdings-v2", cloudH);
+        }
+        // 分析歷史同步：雲端有就用雲端
+        if (cloudHistory.history?.length) {
+          setAnalysisHistory(cloudHistory.history);
+          save("pf-analysis-history-v1", cloudHistory.history);
+          writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
+          // 一併還原最近收盤分析
+          setDailyReport(cloudHistory.history[0]);
+        }
+        // 研究歷史同步
+        if (cloudResearch.reports?.length) {
+          setResearchHistory(cloudResearch.reports);
+          save("pf-research-history-v1", cloudResearch.reports);
+          writeSyncAt("pf-research-cloud-sync-at", Date.now());
         }
         const syncedAt = Date.now();
         cloudSyncStateRef.current.syncedAt = syncedAt;
@@ -906,6 +924,13 @@ ${(researchHistory||[]).slice(0,5).map(r => {
       setDailyReport(report);
       setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
 
+      // 同步分析報告到雲端（不管大腦進化成不成功都要存）
+      fetch("/api/brain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save-analysis", data: report })
+      }).catch(() => {});
+
       // 8. 策略大腦進化 — 讓 AI 更新策略知識庫
       setAnalyzeStep("策略大腦進化中...");
       if (aiInsight) {
@@ -943,12 +968,6 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
           const newBrain = JSON.parse(cleanBrain);
           setStrategyBrain(newBrain);
-          // 同步分析報告到雲端
-          fetch("/api/brain", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "save-analysis", data: report })
-          }).catch(() => {});
         } catch (e) {
           console.error("策略大腦更新失敗:", e);
         }

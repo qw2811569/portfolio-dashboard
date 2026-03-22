@@ -2,10 +2,54 @@
 // 借鑒 karpathy/autoresearch：AI 自主多輪迭代，累積進化
 // 不只研究股票，而是審視整個投資系統並自我改善
 import { put, list, del } from '@vercel/blob';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join } from 'path';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const RESEARCH_INDEX_KEY = 'research-index.json';
+const DATA_DIR = join(process.cwd(), 'data');
+
+// ── 本地檔案讀寫 ──
+function localPath(key) { return join(DATA_DIR, key.replace(/\//g, '__')); }
+
+function readLocal(key) {
+  try {
+    const p = localPath(key);
+    if (!existsSync(p)) return null;
+    return JSON.parse(readFileSync(p, 'utf-8'));
+  } catch { return null; }
+}
+
+function writeLocal(key, data) {
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    writeFileSync(localPath(key), JSON.stringify(data, null, 2));
+  } catch {}
+}
+
+async function read(key) {
+  const local = readLocal(key);
+  if (local) return local;
+  try {
+    const { blobs } = await list({ prefix: key, limit: 1, token: TOKEN });
+    if (!blobs.length) return null;
+    const r = await fetch(blobs[0].url);
+    const data = await r.json();
+    writeLocal(key, data);
+    return data;
+  } catch { return null; }
+}
+
+async function write(key, data) {
+  writeLocal(key, data);
+  try {
+    try { await del(key, { token: TOKEN }); } catch {}
+    await put(key, JSON.stringify(data), {
+      access: 'public', token: TOKEN, contentType: 'application/json', addRandomSuffix: false,
+    });
+  } catch {}
+}
 
 async function callClaude(system, user, maxTokens = 4000) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -26,34 +70,12 @@ async function callClaude(system, user, maxTokens = 4000) {
   return data.content?.[0]?.text || "";
 }
 
-async function readPath(pathname) {
-  try {
-    const { blobs } = await list({ prefix: pathname, limit: 1, token: TOKEN });
-    if (!blobs.length) return null;
-    const r = await fetch(blobs[0].url);
-    return r.json();
-  } catch { return null; }
-}
-
-async function replaceSingleton(pathname, data) {
-  try {
-    await del(pathname, { token: TOKEN });
-  } catch {}
-  await put(pathname, JSON.stringify(data), {
-    access: 'public',
-    token: TOKEN,
-    contentType: 'application/json',
-    addRandomSuffix: false,
-  });
-}
-
 async function updateResearchIndex(report) {
-  if (!TOKEN) return;
-  const current = (await readPath(RESEARCH_INDEX_KEY)) || [];
+  const current = readLocal(RESEARCH_INDEX_KEY) || [];
   const next = [report, ...current.filter(item => item.timestamp !== report.timestamp)]
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 30);
-  await replaceSingleton(RESEARCH_INDEX_KEY, next);
+  await write(RESEARCH_INDEX_KEY, next);
 }
 
 export default async function handler(req, res) {
@@ -63,13 +85,13 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (!API_KEY) return res.status(500).json({ error: "未設定 ANTHROPIC_API_KEY" });
 
-  // GET: 讀取歷史研究報告
+  // GET: 讀取歷史研究報告（本地優先）
   if (req.method === "GET") {
     try {
       const { code } = req.query;
-      const cachedReports = (await readPath(RESEARCH_INDEX_KEY)) || [];
-      if (cachedReports.length > 0) {
-        const reports = code ? cachedReports.filter(r => r.code === code).slice(0, 10) : cachedReports.slice(0, 10);
+      const cached = (await read(RESEARCH_INDEX_KEY)) || [];
+      if (cached.length > 0) {
+        const reports = code ? cached.filter(r => r.code === code).slice(0, 10) : cached.slice(0, 10);
         return res.status(200).json({ reports });
       }
       const prefix = code ? `research/${code}/` : 'research/';
@@ -79,9 +101,9 @@ export default async function handler(req, res) {
         const r = await fetch(blob.url);
         reports.push(await r.json());
       }
+      if (reports.length > 0) writeLocal(RESEARCH_INDEX_KEY, reports);
       return res.status(200).json({ reports });
     } catch {
-      // Blob 掛掉回空值，讓前端用 localStorage
       return res.status(200).json({ reports: [] });
     }
   }
@@ -150,9 +172,10 @@ export default async function handler(req, res) {
         ],
         meta: m, priceAtResearch: s.price,
       };
+      writeLocal(`research/${s.code}/${Date.now()}.json`, report);
+      await updateResearchIndex(report);
       if (TOKEN) {
-        await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
-        await updateResearchIndex(report);
+        try { await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
 
@@ -236,9 +259,10 @@ ${histSummary}
         ],
         newBrain: parsedBrain,
       };
+      writeLocal(`research/EVOLVE/${Date.now()}.json`, report);
+      await updateResearchIndex(report);
       if (TOKEN) {
-        await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
-        await updateResearchIndex(report);
+        try { await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
 
@@ -275,9 +299,10 @@ ${histSummary}
         ],
         stockSummaries,
       };
+      writeLocal(`research/PORTFOLIO/${Date.now()}.json`, report);
+      await updateResearchIndex(report);
       if (TOKEN) {
-        await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' });
-        await updateResearchIndex(report);
+        try { await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
     }

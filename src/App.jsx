@@ -346,6 +346,19 @@ const metricCard = {
 };
 const CLOUD_SYNC_TTL = 1000 * 60 * 30;
 const CLOUD_SAVE_DEBOUNCE = 1000 * 20;
+const LOCAL_BACKUP_FIELDS = [
+  { key: "pf-holdings-v2", alias: "holdings" },
+  { key: "pf-log-v2", alias: "tradeLog" },
+  { key: "pf-targets-v1", alias: "targets" },
+  { key: "pf-news-events-v1", alias: "newsEvents" },
+  { key: "pf-analysis-history-v1", alias: "analysisHistory" },
+  { key: "pf-daily-report-v1", alias: "dailyReport" },
+  { key: "pf-reversal-v1", alias: "reversalConditions" },
+  { key: "pf-brain-v1", alias: "strategyBrain" },
+  { key: "pf-research-history-v1", alias: "researchHistory" },
+];
+const LOCAL_BACKUP_KEY_SET = new Set(LOCAL_BACKUP_FIELDS.map(item => item.key));
+const LOCAL_BACKUP_ALIAS_TO_KEY = Object.fromEntries(LOCAL_BACKUP_FIELDS.map(item => [item.alias, item.key]));
 
 async function load(key, fallback) {
   try {
@@ -362,6 +375,61 @@ const readSyncAt = (key) => {
 const writeSyncAt = (key, value) => {
   try { localStorage.setItem(key, String(value)); } catch {}
 };
+
+function downloadJson(filename, payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function normalizeBackupStorage(payload) {
+  if (!payload) return null;
+
+  if (Array.isArray(payload)) {
+    const looksLikeHistory = payload.every(item => item && typeof item === "object" && (item.id != null || item.date || item.aiInsight));
+    return looksLikeHistory ? { "pf-analysis-history-v1": payload } : null;
+  }
+
+  if (typeof payload !== "object") return null;
+
+  if (payload.storage && typeof payload.storage === "object" && !Array.isArray(payload.storage)) {
+    return normalizeBackupStorage(payload.storage);
+  }
+
+  const mapEntries = (source) => {
+    const mapped = {};
+    for (const [rawKey, value] of Object.entries(source || {})) {
+      const key = LOCAL_BACKUP_ALIAS_TO_KEY[rawKey] || (LOCAL_BACKUP_KEY_SET.has(rawKey) ? rawKey : null);
+      if (key) mapped[key] = value;
+    }
+    return mapped;
+  };
+
+  if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+    const mapped = mapEntries(payload.data);
+    if (Object.keys(mapped).length > 0) return mapped;
+  }
+
+  const directMapped = mapEntries(payload);
+  if (Object.keys(directMapped).length > 0) return directMapped;
+
+  const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || payload.stats;
+  if (looksLikeBrain) return { "pf-brain-v1": payload };
+
+  const looksLikeDailyReport = payload.totalTodayPnl != null || Array.isArray(payload.changes) || typeof payload.aiInsight === "string";
+  if (looksLikeDailyReport) {
+    return {
+      "pf-daily-report-v1": payload,
+      "pf-analysis-history-v1": [payload],
+    };
+  }
+
+  return null;
+}
 
 // ── Main ─────────────────────────────────────────────────────────
 export default function App() {
@@ -427,6 +495,7 @@ export default function App() {
   const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
+  const backupFileInputRef = useRef(null);
   const deferredQuery = useDeferredValue(scanQuery);
   const scheduleCloudSave = (action, data, successMsg) => {
     if (!cloudSyncStateRef.current.enabled) return;
@@ -1194,6 +1263,78 @@ ${recentAnalyses || "尚無分析紀錄"}
     setTimeout(() => setSaved(""), 3000);
   };
 
+  const exportLocalBackup = () => {
+    try {
+      const storage = {};
+      LOCAL_BACKUP_FIELDS.forEach(({ key }) => {
+        const raw = localStorage.getItem(key);
+        if (raw == null) return;
+        storage[key] = JSON.parse(raw);
+      });
+      if (Object.keys(storage).length === 0) {
+        setSaved("⚠️ 目前沒有可匯出的本機資料");
+        setTimeout(() => setSaved(""), 3000);
+        return;
+      }
+      downloadJson(`portfolio-backup-${new Date().toISOString().slice(0, 10)}.json`, {
+        version: 1,
+        app: "portfolio-dashboard",
+        exportedAt: new Date().toISOString(),
+        origin: window.location.origin,
+        storage,
+      });
+      setSaved("✅ 本機備份已匯出");
+      setTimeout(() => setSaved(""), 3000);
+    } catch (err) {
+      console.error("匯出備份失敗:", err);
+      setSaved("❌ 匯出失敗");
+      setTimeout(() => setSaved(""), 3000);
+    }
+  };
+
+  const importLocalBackup = async (ev) => {
+    const file = ev.target.files?.[0];
+    ev.target.value = "";
+    if (!file) return;
+    if (!confirm("匯入會覆蓋這個瀏覽器目前的本機資料；未包含在備份檔內的項目不會被改動。確定繼續？")) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const storage = normalizeBackupStorage(parsed);
+
+      if (!storage || Object.keys(storage).length === 0) {
+        throw new Error("備份檔內沒有可識別的資料");
+      }
+
+      for (const { key } of LOCAL_BACKUP_FIELDS) {
+        if (!Object.prototype.hasOwnProperty.call(storage, key)) continue;
+        await save(key, storage[key]);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-holdings-v2")) setHoldings(storage["pf-holdings-v2"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-log-v2")) setTradeLog(storage["pf-log-v2"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-targets-v1")) setTargets(storage["pf-targets-v1"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-news-events-v1")) setNewsEvents(storage["pf-news-events-v1"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-analysis-history-v1")) setAnalysisHistory(storage["pf-analysis-history-v1"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-reversal-v1")) setReversalConditions(storage["pf-reversal-v1"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-brain-v1")) setStrategyBrain(storage["pf-brain-v1"]);
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-research-history-v1")) setResearchHistory(storage["pf-research-history-v1"]);
+
+      if (Object.prototype.hasOwnProperty.call(storage, "pf-daily-report-v1")) {
+        setDailyReport(storage["pf-daily-report-v1"]);
+      } else if (Object.prototype.hasOwnProperty.call(storage, "pf-analysis-history-v1")) {
+        setDailyReport(storage["pf-analysis-history-v1"]?.[0] || null);
+      }
+
+      setSaved(`✅ 已匯入 ${Object.keys(storage).length} 項本機資料`);
+      setTimeout(() => setSaved(""), 4000);
+    } catch (err) {
+      console.error("匯入備份失敗:", err);
+      alert(`匯入失敗：${err.message || "JSON 格式不正確"}`);
+    }
+  };
+
   // 收盤分析完全手動觸發，不自動執行
 
   // file
@@ -1433,6 +1574,27 @@ ${recentAnalyses || "尚無分析紀錄"}
             }}>
               📋 週報
             </button>
+            <button className="ui-btn" onClick={exportLocalBackup} style={{
+              background: C.oliveBg, color: C.olive,
+              border:`1px solid ${alpha(C.olive, A.strongLine)}`,
+              ...ghostBtn,
+            }}>
+              備份
+            </button>
+            <button className="ui-btn" onClick={() => backupFileInputRef.current?.click()} style={{
+              background: C.subtle, color: C.textSec,
+              border:`1px solid ${C.border}`,
+              ...ghostBtn,
+            }}>
+              匯入
+            </button>
+            <input
+              ref={backupFileInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={importLocalBackup}
+              style={{ display: "none" }}
+            />
             {lastUpdate && !refreshing && (
               <span style={{fontSize:9,color:C.textMute}}>
                 {lastUpdate.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}

@@ -1,13 +1,39 @@
 // Vercel Serverless Function — 策略大腦讀寫
-// 使用 Vercel Blob Storage (Public) 持久化策略知識庫
+// 本地檔案優先，Blob 為備份
 import { put, list, del } from '@vercel/blob';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
 const HISTORY_INDEX_KEY = 'analysis-history-index.json';
+const DATA_DIR = join(process.cwd(), 'data');
 
-// 用 list + fetch 讀單一檔（get() 對 public store 會 403）
+// ── 本地檔案讀寫 ──
+function localPath(key) { return join(DATA_DIR, key.replace(/\//g, '__')); }
+
+function readLocal(key) {
+  try {
+    const p = localPath(key);
+    if (!existsSync(p)) return null;
+    return JSON.parse(readFileSync(p, 'utf-8'));
+  } catch { return null; }
+}
+
+function writeLocal(key, data) {
+  try {
+    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+    writeFileSync(localPath(key), JSON.stringify(data, null, 2));
+  } catch {}
+}
+
+// ── Blob 讀寫（best-effort）──
+async function readBlob(blob) {
+  const r = await fetch(blob.url);
+  return r.json();
+}
+
 async function readPath(pathname, opts) {
   try {
     const { blobs } = await list({ prefix: pathname, limit: 1, ...opts });
@@ -17,31 +43,35 @@ async function readPath(pathname, opts) {
   } catch { return null; }
 }
 
-// Public blob 可以直接 fetch URL 讀取（列表用途）
-async function readBlob(blob) {
-  const r = await fetch(blob.url);
-  return r.json();
-}
-
 async function replaceSingleton(pathname, data, opts) {
-  try {
-    await del(pathname, opts);
-  } catch {}
+  try { await del(pathname, opts); } catch {}
   if (data == null) return;
   await put(pathname, JSON.stringify(data), {
-    contentType: 'application/json',
-    access: 'public',
-    addRandomSuffix: false,
-    ...opts,
+    contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts,
   });
 }
 
+// ── 讀取策略：本地優先 → Blob 補缺 ──
+async function read(key, opts) {
+  const local = readLocal(key);
+  if (local) return local;
+  const cloud = await readPath(key, opts);
+  if (cloud) writeLocal(key, cloud); // 拉回本地快取
+  return cloud;
+}
+
+// ── 寫入策略：本地一定寫，Blob best-effort ──
+async function write(key, data, opts) {
+  writeLocal(key, data);
+  try { await replaceSingleton(key, data, opts); } catch {}
+}
+
 async function updateHistoryIndex(report, opts) {
-  const current = (await readPath(HISTORY_INDEX_KEY, opts)) || [];
+  const current = readLocal(HISTORY_INDEX_KEY) || [];
   const next = [report, ...current.filter(item => item.id !== report.id)]
     .sort((a, b) => b.id - a.id)
     .slice(0, 30);
-  await replaceSingleton(HISTORY_INDEX_KEY, next, opts);
+  await write(HISTORY_INDEX_KEY, next, opts);
 }
 
 export default async function handler(req, res) {
@@ -58,20 +88,19 @@ export default async function handler(req, res) {
       const { action } = req.query;
 
       if (action === "brain") {
-        const brain = await readPath(BRAIN_KEY, opts);
-        return res.status(200).json({ brain });
+        return res.status(200).json({ brain: await read(BRAIN_KEY, opts) });
       }
 
       if (action === "history") {
-        const cachedHistory = await readPath(HISTORY_INDEX_KEY, opts);
-        if (cachedHistory) return res.status(200).json({ history: cachedHistory });
+        const cached = await read(HISTORY_INDEX_KEY, opts);
+        if (cached && cached.length > 0) return res.status(200).json({ history: cached });
         try {
           const { blobs } = await list({ prefix: HISTORY_PREFIX, ...opts });
           const history = [];
           for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
             history.push(await readBlob(blob));
           }
-          await replaceSingleton(HISTORY_INDEX_KEY, history, opts).catch(() => {});
+          if (history.length > 0) writeLocal(HISTORY_INDEX_KEY, history);
           return res.status(200).json({ history });
         } catch {
           return res.status(200).json({ history: [] });
@@ -79,8 +108,8 @@ export default async function handler(req, res) {
       }
 
       if (action === "all") {
-        const brain = await readPath(BRAIN_KEY, opts);
-        const history = (await readPath(HISTORY_INDEX_KEY, opts)) || [];
+        const brain = await read(BRAIN_KEY, opts);
+        const history = (await read(HISTORY_INDEX_KEY, opts)) || [];
         return res.status(200).json({ brain, history });
       }
 
@@ -92,35 +121,36 @@ export default async function handler(req, res) {
       const { action, data } = req.body;
 
       if (action === "save-brain") {
-        try { await replaceSingleton(BRAIN_KEY, data, opts); } catch {}
+        await write(BRAIN_KEY, data, opts);
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-analysis") {
+        const key = `${HISTORY_PREFIX}${data.date}-${data.id}.json`;
+        writeLocal(key, data);
         try {
-          const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
           await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
-          await updateHistoryIndex(data, opts);
         } catch {}
+        await updateHistoryIndex(data, opts);
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-events") {
-        try { await replaceSingleton('events.json', data, opts); } catch {}
+        await write('events.json', data, opts);
         return res.status(200).json({ ok: true });
       }
 
       if (action === "load-events") {
-        return res.status(200).json({ events: await readPath('events.json', opts) });
+        return res.status(200).json({ events: await read('events.json', opts) });
       }
 
       if (action === "save-holdings") {
-        try { await replaceSingleton('holdings.json', data, opts); } catch {}
+        await write('holdings.json', data, opts);
         return res.status(200).json({ ok: true });
       }
 
       if (action === "load-holdings") {
-        return res.status(200).json({ holdings: await readPath('holdings.json', opts) });
+        return res.status(200).json({ holdings: await read('holdings.json', opts) });
       }
 
       return res.status(400).json({ error: "未知 action" });
@@ -128,7 +158,6 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
-    // Blob 掛掉也回 200 + 空值，讓前端用 localStorage
     return res.status(200).json({ brain: null, history: [], events: null, holdings: null });
   }
 }

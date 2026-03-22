@@ -80,8 +80,9 @@ export default async function handler(req, res) {
         reports.push(await r.json());
       }
       return res.status(200).json({ reports });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
+    } catch {
+      // Blob 掛掉回空值，讓前端用 localStorage
+      return res.status(200).json({ reports: [] });
     }
   }
 

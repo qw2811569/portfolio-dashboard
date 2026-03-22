@@ -460,11 +460,12 @@ export default function App() {
       const rc = await load("pf-reversal-v1", {});
       const sb = await load("pf-brain-v1", null);
       const rh = await load("pf-research-history-v1", []);
+      const dr = await load("pf-daily-report-v1", null);
       setHoldings(h); setTradeLog(l); setTargets(t);
       setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
       setStrategyBrain(sb); setResearchHistory(rh);
-      // 從歷史記錄還原最近一次收盤分析，避免重開頁面看不到
-      if (ah && ah.length > 0) setDailyReport(ah[0]);
+      // 從 localStorage 還原最近收盤分析
+      setDailyReport(dr || (ah && ah.length > 0 ? ah[0] : null));
       setReady(true);
 
       const lastCloudSyncAt = readSyncAt("pf-cloud-sync-at");
@@ -485,25 +486,31 @@ export default function App() {
           fetch("/api/brain?action=history").then(r=>r.json()).catch(()=>({history:null})),
           fetch("/api/research").then(r=>r.json()).catch(()=>({reports:null})),
         ]);
-        if (cloudBrain.brain) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
-        if (cloudEvents.events) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
-        // 持倉同步：雲端有資料就用雲端，否則保留本機，避免每次開頁都回寫 Blob
+        // 雲端同步策略：本地優先，雲端只補缺（合併不覆蓋）
+        if (cloudBrain.brain && !sb) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
+        if (cloudEvents.events && (!ne || ne.length === 0)) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
         const cloudH = cloudHoldings.holdings;
-        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0) {
+        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!h || h.length === 0)) {
           setHoldings(cloudH); save("pf-holdings-v2", cloudH);
         }
-        // 分析歷史同步：雲端有就用雲端
+        // 分析歷史：合併本地+雲端，去重
         if (cloudHistory.history?.length) {
-          setAnalysisHistory(cloudHistory.history);
-          save("pf-analysis-history-v1", cloudHistory.history);
+          const merged = [...(ah || []), ...cloudHistory.history];
+          const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
+            .sort((a, b) => b.id - a.id).slice(0, 30);
+          setAnalysisHistory(unique);
+          save("pf-analysis-history-v1", unique);
           writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
-          // 一併還原最近收盤分析
-          setDailyReport(cloudHistory.history[0]);
+          // 如果本地沒有 dailyReport，從合併結果補上
+          if (!dr && unique.length > 0) setDailyReport(unique[0]);
         }
-        // 研究歷史同步
+        // 研究歷史：合併本地+雲端，去重
         if (cloudResearch.reports?.length) {
-          setResearchHistory(cloudResearch.reports);
-          save("pf-research-history-v1", cloudResearch.reports);
+          const merged = [...(rh || []), ...cloudResearch.reports];
+          const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
+            .sort((a, b) => b.timestamp - a.timestamp).slice(0, 30);
+          setResearchHistory(unique);
+          save("pf-research-history-v1", unique);
           writeSyncAt("pf-research-cloud-sync-at", Date.now());
         }
         const syncedAt = Date.now();
@@ -530,6 +537,7 @@ export default function App() {
     }
   }, [newsEvents, ready]);
   useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
+  useEffect(() => { if (ready && dailyReport) save("pf-daily-report-v1", dailyReport); }, [dailyReport, ready]);
   useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
   useEffect(() => {
     if (ready && strategyBrain) {
@@ -545,8 +553,13 @@ export default function App() {
       .then(r=>r.json())
       .then(data => {
         if (!data.history?.length) return;
-        setAnalysisHistory(data.history);
-        save("pf-analysis-history-v1", data.history);
+        setAnalysisHistory(prev => {
+          const merged = [...(prev || []), ...data.history];
+          const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
+            .sort((a, b) => b.id - a.id).slice(0, 30);
+          save("pf-analysis-history-v1", unique);
+          return unique;
+        });
         writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
       })
       .catch(()=>{});

@@ -65,13 +65,17 @@ export default async function handler(req, res) {
       if (action === "history") {
         const cachedHistory = await readPath(HISTORY_INDEX_KEY, opts);
         if (cachedHistory) return res.status(200).json({ history: cachedHistory });
-        const { blobs } = await list({ prefix: HISTORY_PREFIX, ...opts });
-        const history = [];
-        for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
-          history.push(await readBlob(blob));
+        try {
+          const { blobs } = await list({ prefix: HISTORY_PREFIX, ...opts });
+          const history = [];
+          for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
+            history.push(await readBlob(blob));
+          }
+          await replaceSingleton(HISTORY_INDEX_KEY, history, opts).catch(() => {});
+          return res.status(200).json({ history });
+        } catch {
+          return res.status(200).json({ history: [] });
         }
-        await replaceSingleton(HISTORY_INDEX_KEY, history, opts);
-        return res.status(200).json({ history });
       }
 
       if (action === "all") {
@@ -88,19 +92,21 @@ export default async function handler(req, res) {
       const { action, data } = req.body;
 
       if (action === "save-brain") {
-        await replaceSingleton(BRAIN_KEY, data, opts);
+        try { await replaceSingleton(BRAIN_KEY, data, opts); } catch {}
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-analysis") {
-        const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
-        await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
-        await updateHistoryIndex(data, opts);
+        try {
+          const key = `${HISTORY_PREFIX}${data.date}-${Date.now()}.json`;
+          await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
+          await updateHistoryIndex(data, opts);
+        } catch {}
         return res.status(200).json({ ok: true });
       }
 
       if (action === "save-events") {
-        await replaceSingleton('events.json', data, opts);
+        try { await replaceSingleton('events.json', data, opts); } catch {}
         return res.status(200).json({ ok: true });
       }
 
@@ -109,7 +115,7 @@ export default async function handler(req, res) {
       }
 
       if (action === "save-holdings") {
-        await replaceSingleton('holdings.json', data, opts);
+        try { await replaceSingleton('holdings.json', data, opts); } catch {}
         return res.status(200).json({ ok: true });
       }
 
@@ -122,6 +128,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    // Blob 掛掉也回 200 + 空值，讓前端用 localStorage
+    return res.status(200).json({ brain: null, history: [], events: null, holdings: null });
   }
 }

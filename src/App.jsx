@@ -492,11 +492,11 @@ export default function App() {
   const [researchTarget, setResearchTarget] = useState(null);
   const [researchResults, setResearchResults] = useState(null);
   const [researchHistory, setResearchHistory] = useState(null);
-  const composingRef = useRef(false); // 追蹤 IME 注音輸入狀態
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const backupFileInputRef = useRef(null);
   const deferredQuery = useDeferredValue(scanQuery);
+  const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
   const scheduleCloudSave = (action, data, successMsg) => {
     if (!cloudSyncStateRef.current.enabled) return;
     clearTimeout(cloudSaveTimersRef.current[action]);
@@ -2828,11 +2828,13 @@ ${recentAnalyses || "尚無分析紀錄"}
                   Q{memoStep+1}/{qs.length}. {qs[memoStep]}
                 </div>
                 <textarea value={memoIn}
-                  onFocus={()=>{composingRef.current=false}}
-                  onCompositionStart={()=>{composingRef.current=true}}
-                  onCompositionEnd={e=>{composingRef.current=false;setMemoIn(e.target.value)}}
-                  onChange={e=>{if(!composingRef.current)setMemoIn(e.target.value)}}
-                  onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!composingRef.current&&memoIn.trim()){e.preventDefault();submitMemo();}}}
+                  onChange={e=>setMemoIn(e.target.value)}
+                  onKeyDown={e=>{
+                    if (e.key==="Enter" && !e.shiftKey && !isImeComposing(e) && memoIn.trim()) {
+                      e.preventDefault();
+                      submitMemo();
+                    }
+                  }}
                   placeholder="輸入你的想法... (Enter送出)"
                   style={{width:"100%", background:C.subtle, border:`1px solid ${C.border}`,
                     borderRadius:8, padding:"10px", color:C.text, fontSize:12,
@@ -3139,10 +3141,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             ))}
                           </div>
                           <textarea value={reviewForm.actualNote}
-                            onFocus={()=>{composingRef.current=false}}
-                            onCompositionStart={()=>{composingRef.current=true}}
-                            onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
-                            onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,actualNote:ev.target.value}))}}
+                            onChange={ev=>setReviewForm(p=>({...p,actualNote:ev.target.value}))}
                             placeholder="描述事件結果和股價反應..."
                             style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
                               borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
@@ -3165,10 +3164,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                             ))}
                           </div>
                           <textarea value={reviewForm.lessons}
-                            onFocus={()=>{composingRef.current=false}}
-                            onCompositionStart={()=>{composingRef.current=true}}
-                            onCompositionEnd={ev=>{composingRef.current=false;setReviewForm(p=>({...p,lessons:ev.target.value}))}}
-                            onChange={ev=>{if(!composingRef.current)setReviewForm(p=>({...p,lessons:ev.target.value}))}}
+                            onChange={ev=>setReviewForm(p=>({...p,lessons:ev.target.value}))}
                             placeholder="進場理由回顧、策略偏差、改進方向..."
                             style={{width:"100%",background:C.card,border:`1px solid ${C.border}`,
                               borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
@@ -3250,10 +3246,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginBottom:7}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件細節</div>
                   <textarea value={newEvent.detail}
-                    onFocus={()=>{composingRef.current=false}}
-                    onCompositionStart={()=>{composingRef.current=true}}
-                    onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,detail:e.target.value}))}}
-                    onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,detail:e.target.value}))}}
+                    onChange={e=>setNewEvent(p=>({...p,detail:e.target.value}))}
                     placeholder="關鍵觀察重點..."
                     style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
                       borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",
@@ -3276,10 +3269,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginBottom:10}}>
                   <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>預測邏輯</div>
                   <textarea value={newEvent.predReason}
-                    onFocus={()=>{composingRef.current=false}}
-                    onCompositionStart={()=>{composingRef.current=true}}
-                    onCompositionEnd={e=>{composingRef.current=false;setNewEvent(p=>({...p,predReason:e.target.value}))}}
-                    onChange={e=>{if(!composingRef.current)setNewEvent(p=>({...p,predReason:e.target.value}))}}
+                    onChange={e=>setNewEvent(p=>({...p,predReason:e.target.value}))}
                     placeholder="為什麼這樣預測？依據是什麼？"
                     style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
                       borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"none",

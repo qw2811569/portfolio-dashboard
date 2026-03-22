@@ -1,17 +1,20 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 使用 Vercel Blob Storage (Public) 持久化策略知識庫
-import { put, list, del, get } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const BRAIN_KEY = 'strategy-brain.json';
 const HISTORY_PREFIX = 'analysis-history/';
 const HISTORY_INDEX_KEY = 'analysis-history-index.json';
 
-// 直接用 pathname 讀單一檔，避免先 list() 再找 blob
+// 用 list + fetch 讀單一檔（get() 對 public store 會 403）
 async function readPath(pathname, opts) {
-  const result = await get(pathname, { access: 'public', ...opts });
-  if (!result || result.statusCode !== 200 || !result.stream) return null;
-  return new Response(result.stream).json();
+  try {
+    const { blobs } = await list({ prefix: pathname, limit: 1, ...opts });
+    if (!blobs.length) return null;
+    const r = await fetch(blobs[0].url);
+    return r.json();
+  } catch { return null; }
 }
 
 // Public blob 可以直接 fetch URL 讀取（列表用途）

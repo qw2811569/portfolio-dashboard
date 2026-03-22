@@ -1,7 +1,7 @@
 // Vercel Serverless Function — AutoResearch 自主進化系統
 // 借鑒 karpathy/autoresearch：AI 自主多輪迭代，累積進化
 // 不只研究股票，而是審視整個投資系統並自我改善
-import { put, list, get, del } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -27,9 +27,12 @@ async function callClaude(system, user, maxTokens = 4000) {
 }
 
 async function readPath(pathname) {
-  const result = await get(pathname, { access: 'public', token: TOKEN });
-  if (!result || result.statusCode !== 200 || !result.stream) return null;
-  return new Response(result.stream).json();
+  try {
+    const { blobs } = await list({ prefix: pathname, limit: 1, token: TOKEN });
+    if (!blobs.length) return null;
+    const r = await fetch(blobs[0].url);
+    return r.json();
+  } catch { return null; }
 }
 
 async function replaceSingleton(pathname, data) {

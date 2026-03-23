@@ -30,6 +30,7 @@
 - 實作任務清單：[docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md)
 - Claude 台股分析工具手冊：[docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md)
 - Holding dossier / 資料更新架構：[docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md)
+- 客戶報告製作手冊：[docs/superpowers/specs/2026-03-24-client-report-production-playbook.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-client-report-production-playbook.md)
 
 ## 已完成的重點
 

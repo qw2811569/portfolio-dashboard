@@ -1073,6 +1073,8 @@ export default function App() {
   const [reviewForm, setReviewForm]     = useState(() => createDefaultReviewForm());
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvent, setNewEvent]         = useState(() => createDefaultEventDraft());
+  const [calendarMonth, setCalendarMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [showCalendar, setShowCalendar] = useState(false);
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
   const [portfolioNotes, setPortfolioNotes] = useState(() => clonePortfolioNotes());
@@ -1563,6 +1565,49 @@ export default function App() {
     };
   }, [activePortfolioId, newsEvents, ready, tab, viewMode]);
 
+  // ── 啟動時自動靜默刷新股價（Phase 1: 不依賴收盤分析） ──
+  const autoRefreshDoneRef = useRef({});
+  useEffect(() => {
+    if (!ready || !Array.isArray(holdings) || holdings.length === 0) return;
+    if (viewMode !== PORTFOLIO_VIEW_MODE) return;
+    // 每個組合每次 session 只自動刷一次
+    const key = activePortfolioId;
+    if (autoRefreshDoneRef.current[key]) return;
+    autoRefreshDoneRef.current[key] = true;
+
+    // 靜默刷新，不顯示 toast
+    (async () => {
+      try {
+        const codes = holdings.map(h => h.code);
+        const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
+        const exCh = queries.join('|');
+        const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
+        const data = await res.json();
+        if (!data.msgArray || data.msgArray.length === 0) return;
+
+        const priceMap = {};
+        data.msgArray.forEach(item => {
+          const price = extractBestPrice(item);
+          if (price && !priceMap[item.c]) priceMap[item.c] = price;
+        });
+
+        if (Object.keys(priceMap).length > 0) {
+          setHoldings(prev => (prev || []).map(h => {
+            const newPrice = priceMap[h.code];
+            if (newPrice == null) return h;
+            const newValue = Math.round(newPrice * h.qty);
+            const newPnl = Math.round((newPrice - h.cost) * h.qty);
+            const newPct = Math.round((newPrice / h.cost - 1) * 10000) / 100;
+            return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
+          }));
+          setLastUpdate(new Date());
+        }
+      } catch (err) {
+        console.warn("自動刷新股價失敗（靜默）:", err);
+      }
+    })();
+  }, [ready, holdings, activePortfolioId, viewMode]);
+
   // derived
   const H = Array.isArray(holdings) ? holdings : [];
   const W = Array.isArray(watchlist) ? watchlist : [];
@@ -1924,32 +1969,49 @@ export default function App() {
     await savePortfolioData(OWNER_PORTFOLIO_ID, "brain-v1", nextOwnerBrain);
   };
 
+  // ── 從 TWSE MIS API 回應中提取最佳股價 ──────────────────────────
+  // z=最新成交 h=今高 l=今低 y=昨收 o=今開
+  // 收盤後 z 可能是 "-"，需要多層 fallback
+  const extractBestPrice = (item) => {
+    const tryParse = (v) => { const n = parseFloat(v); return (!isNaN(n) && n > 0) ? n : null; };
+    // 優先順序：最新成交 → 今高（代表今天有交易）→ 今開 → 昨收
+    return tryParse(item.z) || tryParse(item.h) || tryParse(item.o) || tryParse(item.y) || null;
+  };
+  const extractYesterday = (item) => {
+    const n = parseFloat(item.y); return (!isNaN(n) && n > 0) ? n : null;
+  };
+
   // ── 刷新即時股價（TWSE MIS API）───────────────────────────────
   const refreshPrices = async () => {
     if (refreshing) return;
     setRefreshing(true);
     try {
       const codes = H.map(h => h.code);
-      // 同時嘗試上市(tse)和上櫃(otc)，API 只會回傳有效的
-      const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-      const exCh = queries.join('|');
-      const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.msgArray && data.msgArray.length > 0) {
-        const priceMap = {};
-        data.msgArray.forEach(item => {
-          // z = 最新成交價（盤中），y = 昨收價（盤前/收盤後）
-          const latest = parseFloat(item.z);
-          const yClose = parseFloat(item.y);
-          const price = (!isNaN(latest) && latest > 0) ? latest
-                      : (!isNaN(yClose) && yClose > 0) ? yClose : null;
-          if (price && !priceMap[item.c]) {
-            priceMap[item.c] = price;
+      // 分批查詢：避免 URL 過長，每批最多 15 檔（30 queries）
+      const batchSize = 15;
+      const priceMap = {};
+      for (let i = 0; i < codes.length; i += batchSize) {
+        const batch = codes.slice(i, i + batchSize);
+        const queries = batch.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
+        const exCh = queries.join('|');
+        const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.msgArray) {
+            data.msgArray.forEach(item => {
+              const price = extractBestPrice(item);
+              if (price && !priceMap[item.c]) {
+                priceMap[item.c] = price;
+              }
+            });
           }
-        });
+        } catch (batchErr) {
+          console.warn(`批次 ${i / batchSize + 1} 查詢失敗:`, batchErr);
+        }
+      }
 
+      if (Object.keys(priceMap).length > 0) {
         setHoldings(prev => (prev || []).map(h => {
           const newPrice = priceMap[h.code];
           if (newPrice == null) return h;
@@ -1964,7 +2026,7 @@ export default function App() {
         const missed = codes.filter(c => !priceMap[c]);
         setLastUpdate(new Date());
         if (missed.length > 0 && missed.length < total) {
-          const missedNames = missed.map(c => { const h = H.find(x=>x.code===c); return h ? h.name : c; }).join("、");
+          const missedNames = missed.map(c => { const h2 = H.find(x=>x.code===c); return h2 ? `${h2.name}(${h2.type})` : c; }).join("、");
           setSaved(`✅ ${updated}/${total} 檔已更新（${missedNames} 無即時報價）`);
         } else {
           setSaved(`✅ ${updated} 檔股價已更新`);
@@ -1999,10 +2061,8 @@ export default function App() {
       const priceMap = {};
       if (data.msgArray) {
         data.msgArray.forEach(item => {
-          const latest = parseFloat(item.z);
-          const yClose = parseFloat(item.y);
-          const price = (!isNaN(latest) && latest > 0) ? latest : (!isNaN(yClose) && yClose > 0) ? yClose : null;
-          const yesterday = (!isNaN(yClose) && yClose > 0) ? yClose : null;
+          const price = extractBestPrice(item);
+          const yesterday = extractYesterday(item);
           if (price && !priceMap[item.c]) {
             priceMap[item.c] = { price, yesterday, change: yesterday ? price - yesterday : 0, changePct: yesterday ? ((price / yesterday - 1) * 100) : 0 };
           }
@@ -2053,6 +2113,8 @@ export default function App() {
       setAnalyzeStep("AI 策略分析中（約15-30秒）...");
       let aiInsight = null;
       let aiError = null;
+      let eventAssessments = [];
+      let brainUpdatedInline = false;
       try {
         const holdingSummary = changes.map(c => {
           const h = (holdings||[]).find(x => x.code === c.code) || {};
@@ -2063,7 +2125,7 @@ export default function App() {
           return `${typeTag}${indTag} ${c.name}(${c.code}) 今日${c.changePct >= 0 ? "+" : ""}${c.changePct.toFixed(2)}% 累計${c.totalPct >= 0 ? "+" : ""}${c.totalPct}% 市值${h.value||0}${alertTag}`;
         }).join("\n");
         const eventSummary = pendingEvents.map(e =>
-          `[${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"}`
+          `[eventId:${e.id}] [${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"} — 狀態:${e.status}`
         ).join("\n");
         const anomalySummary = anomalies.length > 0
           ? anomalies.map(a => `${a.name} ${a.changePct >= 0 ? "+" : ""}${a.changePct.toFixed(2)}%`).join(", ")
@@ -2164,7 +2226,26 @@ ${losers.map(h=>{
 （明天盤中關注重點 + 具體買賣建議或等待條件）
 
 ## 🧠 策略進化建議
-（基於今日表現，策略大腦應該新增或修改什麼規則？）`,
+（基於今日表現，策略大腦應該新增或修改什麼規則？）
+
+## 📋 EVENT_ASSESSMENTS
+最後，針對每一個待觀察事件輸出結構化評估。必須用以下 JSON 格式，用 \`\`\`json 包裹：
+\`\`\`json
+[{"eventId":"事件ID（原樣回傳）","title":"事件標題","todayImpact":"positive/negative/neutral/none","confidence":0.0到1.0,"note":"一句話說明今日與此事件的關聯","suggestClose":true或false,"suggestCloseReason":"若建議結案，說明原因"}]
+\`\`\`
+- todayImpact: positive=今日股價走勢符合事件預期, negative=相反, neutral=無明顯影響, none=無關
+- confidence: 你對此評估的信心度(0-1)
+- suggestClose: 是否建議結案（事件已充分反映或已失效）
+
+## 🧬 BRAIN_UPDATE
+最後，根據今日分析結果更新策略大腦。用 \`\`\`json 包裹，結構：
+\`\`\`json
+{"rules":["規則1","規則2"...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期"}
+\`\`\`
+- rules：最多15條，去掉過時的，加入今日新發現的策略
+- lessons：保留舊的+加入今日新教訓（只加有意義的）
+- commonMistakes：反覆出現的錯誤模式
+- stats：更新勝率統計`,
             userPrompt: `今日日期：${today}
 今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
 ${notesContext}
@@ -2187,31 +2268,81 @@ ${changes.map(c => {
 待觀察事件：
 ${eventSummary}
 
-${ (researchHistory||[]).length > 0 ? `
-══ 近期深度研究摘要 ══
-${(researchHistory||[]).slice(0,5).map(r => {
-  const summary = r.rounds?.map(rd => rd.title).join(" → ") || "";
-  const lastRound = r.rounds?.[r.rounds.length-1]?.content?.slice(0,200) || "";
-  return `[${r.date}] ${r.name}(${r.code}) ${summary}\n摘要：${lastRound}...`;
+${ (() => {
+  // 智慧引用：只引用當前持倉相關的研究，且優先最近的
+  const holdingCodes = new Set(H.map(h => h.code));
+  const allResearch = researchHistory || [];
+  // 先過濾出跟持倉有關的研究
+  const relevant = allResearch.filter(r => holdingCodes.has(r.code));
+  // 再加上最近 2 份不相關的研究（可能是 watchlist 的）
+  const nonRelevant = allResearch.filter(r => !holdingCodes.has(r.code)).slice(0, 2);
+  const toShow = [...relevant, ...nonRelevant].slice(0, 8);
+  if (toShow.length === 0) return "";
+  // 異常波動的股票研究要特別標註
+  const anomalyCodes = new Set(anomalies.map(a => a.code));
+  return `
+══ 深度研究摘要（持倉相關優先）══
+${toShow.map(r => {
+  const isAnomalyStock = anomalyCodes.has(r.code);
+  const lastRound = r.rounds?.[r.rounds.length - 1];
+  const conclusion = lastRound?.content?.match(/(?:結論|建議|策略)[：:]\s*(.{0,300})/)?.[1]
+    || lastRound?.content?.slice(0, 300) || "";
+  const flag = isAnomalyStock ? " ⚡今日異常波動" : "";
+  return `[${r.date}] ${r.name}(${r.code})${flag}
+結論：${conclusion}${conclusion.length >= 300 ? "..." : ""}`;
 }).join("\n\n")}
 ══════════════════════════
-` : ""}
+`;
+})()}
 請分析今日收盤表現，事件連動，並給出策略建議。
 特別注意：
 1. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略
 2. 指出產業重複風險和建議調整方向
 3. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議
 4. 特別注意策略大腦中的歷史教訓
-5. 如果有深度研究結果，結合研究結論給出更精準的操作建議。`
+5. 如果有深度研究結果，結合研究結論給出更精準的操作建議。
+6. 在 BRAIN_UPDATE 段落中，基於今日分析更新策略大腦的規則和教訓。
+
+預測命中率：${(() => { const NE = newsEvents || NEWS_EVENTS; const pe = NE.filter(isClosedEvent); const h2 = pe.filter(e => e.correct === true).length; const t2 = pe.filter(e => e.correct !== null).length; return `${h2}/${t2}`; })()}`
           })
         });
         const aiData = await aiRes.json();
         if (!aiRes.ok) {
           throw new Error(aiData?.detail || aiData?.error || `AI 分析失敗 (${aiRes.status})`);
         }
-        aiInsight = aiData.content?.[0]?.text || null;
-        if (!aiInsight) {
+        const rawInsight = aiData.content?.[0]?.text || null;
+        if (!rawInsight) {
           aiError = "AI 有回應，但沒有產出可顯示的文字內容";
+        } else {
+          let displayText = rawInsight;
+
+          // 提取結構化事件評估 JSON
+          const eventMatch = displayText.match(/## 📋 EVENT_ASSESSMENTS[\s\S]*?```json\s*([\s\S]*?)```/);
+          if (eventMatch) {
+            try {
+              const assessments = JSON.parse(eventMatch[1].trim());
+              if (Array.isArray(assessments)) eventAssessments = assessments;
+            } catch (parseErr) { console.warn("事件評估 JSON 解析失敗:", parseErr); }
+          }
+
+          // 提取策略大腦更新 JSON（合併呼叫：分析+大腦進化一次完成）
+          const brainMatch = displayText.match(/## 🧬 BRAIN_UPDATE[\s\S]*?```json\s*([\s\S]*?)```/);
+          if (brainMatch) {
+            try {
+              const brainJson = JSON.parse(brainMatch[1].trim());
+              if (brainJson && typeof brainJson === "object" && brainJson.rules) {
+                const newBrain = mergeBrainPreservingCoachLessons(brainJson, strategyBrain);
+                setStrategyBrain(newBrain);
+                brainUpdatedInline = true;
+              }
+            } catch (parseErr) { console.warn("大腦更新 JSON 解析失敗:", parseErr); }
+          }
+
+          // 移除 JSON 段落，只顯示人類可讀的分析
+          aiInsight = displayText
+            .replace(/## 📋 EVENT_ASSESSMENTS[\s\S]*?(?=## 🧬 BRAIN_UPDATE|$)/, "")
+            .replace(/## 🧬 BRAIN_UPDATE[\s\S]*$/, "")
+            .trim();
         }
       } catch (e) {
         console.error("AI 分析失敗:", e);
@@ -2230,6 +2361,7 @@ ${(researchHistory||[]).slice(0,5).map(r => {
         needsReview,
         aiInsight,
         aiError,
+        eventAssessments,
       };
 
       setDailyReport(report);
@@ -2244,14 +2376,15 @@ ${(researchHistory||[]).slice(0,5).map(r => {
         }).catch(() => {});
       }
 
-      // 8. 策略大腦進化 — 讓 AI 更新策略知識庫
-      setAnalyzeStep("策略大腦進化中...");
-      if (aiInsight) {
+      // 8. 策略大腦進化 — 已合併到主要 AI 呼叫（BRAIN_UPDATE 段）
+      //    如果合併呼叫成功提取了 brain JSON，則跳過額外 API call
+      if (aiInsight && !brainUpdatedInline) {
+        setAnalyzeStep("策略大腦進化中（fallback）...");
         try {
-          const NE = newsEvents || NEWS_EVENTS;
-          const pastEvents = NE.filter(isClosedEvent);
-          const hits = pastEvents.filter(e => e.correct === true).length;
-          const total = pastEvents.filter(e => e.correct !== null).length;
+          const NE2 = newsEvents || NEWS_EVENTS;
+          const pastEvents = NE2.filter(isClosedEvent);
+          const hits2 = pastEvents.filter(e => e.correct === true).length;
+          const total2 = pastEvents.filter(e => e.correct !== null).length;
 
           const brainRes = await fetch("/api/analyze", {
             method: "POST",
@@ -2270,7 +2403,7 @@ ${aiInsight}
 現有策略大腦：
 ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], stats: {} })}
 
-預測命中率：${hits}/${total}
+預測命中率：${hits2}/${total2}
 今日損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
 
 請更新策略大腦，保留有效的舊規則，加入今日新教訓。`
@@ -2282,7 +2415,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const newBrain = mergeBrainPreservingCoachLessons(JSON.parse(cleanBrain), strategyBrain);
           setStrategyBrain(newBrain);
         } catch (e) {
-          console.error("策略大腦更新失敗:", e);
+          console.error("策略大腦更新失敗（fallback）:", e);
         }
       }
 
@@ -2389,6 +2522,63 @@ ${JSON.stringify(currentBrain)}
     } else {
       setTimeout(() => setSaved(""), 2500);
     }
+  };
+
+  // ── 大腦整理（遺忘/合併/淘汰過時教訓）─────────────────────────
+  const [brainCleaning, setBrainCleaning] = useState(false);
+  const cleanupBrain = async () => {
+    if (brainCleaning || !strategyBrain) return;
+    setBrainCleaning(true);
+    try {
+      const brain = strategyBrain;
+      const lessonCount = (brain.lessons || []).length;
+      const coachCount = (brain.coachLessons || []).length;
+      const ruleCount = (brain.rules || []).length;
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: `你是策略知識庫整理器。用戶的策略大腦已累積大量規則和教訓，你要進行一次全面整理。
+
+任務：
+1. 規則（rules）：合併重複的規則，刪除矛盾的規則，保留最有效的。最多 12 條。
+2. 教訓（lessons）：合併類似的教訓，淘汰超過 90 天且不再適用的教訓。保留最近 30 條。
+3. 常犯錯誤（commonMistakes）：去重合併，保留仍然需要警惕的。最多 5 條。
+4. 跨組合教練教訓（coachLessons）：超過 180 天的降級，只保留最近 50 條。
+5. 產生一份「整理摘要」說明你做了什麼改動。
+
+回傳**純JSON**格式：
+{"rules":[...],"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","cleanupSummary":"整理摘要"}`,
+          userPrompt: `今日日期：${toSlashDate()}
+
+目前策略大腦：
+${JSON.stringify(brain)}
+
+統計：
+- ${ruleCount} 條規則
+- ${lessonCount} 條教訓
+- ${coachCount} 條跨組合教訓
+- ${(brain.commonMistakes || []).length} 條常犯錯誤
+
+請進行全面整理，重點淘汰過時的教訓，合併重複規則。`
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "";
+      const cleanText = text.replace(/```json|```/g, "").trim();
+      const newBrain = mergeBrainPreservingCoachLessons(JSON.parse(cleanText), brain);
+      const summary = newBrain.cleanupSummary || "整理完成";
+      delete newBrain.cleanupSummary;
+      setStrategyBrain(newBrain);
+      setSaved(`🧹 ${summary}`);
+      setTimeout(() => setSaved(""), 6000);
+    } catch (err) {
+      console.error("大腦整理失敗:", err);
+      setSaved("❌ 大腦整理失敗");
+      setTimeout(() => setSaved(""), 3000);
+    }
+    setBrainCleaning(false);
   };
 
   // ── 新增事件 ─────────────────────────────────────────────────────
@@ -4200,6 +4390,42 @@ ${recentAnalyses || "尚無分析紀錄"}
                 </div>
               )}
 
+              {/* AI 結構化事件評估 */}
+              {(dailyReport.eventAssessments||[]).length>0 && (
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.blue, A.glow)}`}}>
+                  <div style={{...lbl,color:C.blue}}>AI 事件評估 · {dailyReport.eventAssessments.length}件</div>
+                  {dailyReport.eventAssessments.map((ea,i)=>{
+                    const impactColor = ea.todayImpact==="positive"?C.up:ea.todayImpact==="negative"?C.down:C.textMute;
+                    const impactLabel = ea.todayImpact==="positive"?"正面":ea.todayImpact==="negative"?"負面":ea.todayImpact==="neutral"?"中性":"無關";
+                    return (
+                      <div key={ea.eventId||i} style={{marginBottom:8,background:C.subtle,borderRadius:7,padding:"9px 11px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                          <span style={{fontSize:11,fontWeight:500,color:C.text}}>{ea.title}</span>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:impactColor+"22",color:impactColor,fontWeight:600}}>{impactLabel}</span>
+                            {ea.suggestClose && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.amberBg,color:C.amber,fontWeight:600}}>建議結案</span>}
+                          </div>
+                        </div>
+                        <div style={{fontSize:10,color:C.textSec,marginBottom:2}}>{ea.note}</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <span style={{fontSize:9,color:C.textMute}}>信心度 {Math.round((ea.confidence||0)*100)}%</span>
+                          {ea.suggestClose && ea.suggestCloseReason && (
+                            <span style={{fontSize:9,color:C.amber}}>{ea.suggestCloseReason}</span>
+                          )}
+                        </div>
+                        {ea.suggestClose && (
+                          <button onClick={(ev)=>{ev.stopPropagation();setTab("news");setExpandedNews(new Set([Number(ea.eventId)]))}}
+                            style={{marginTop:4,padding:"4px 10px",borderRadius:5,border:`1px solid ${alpha(C.olive, A.strongLine)}`,
+                              background:"transparent",color:C.olive,fontSize:10,cursor:"pointer"}}>
+                            前往結案
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* 需要復盤的事件 */}
               {dailyReport.needsReview.length>0 && (
                 <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.up, A.glow)}`}}>
@@ -4316,6 +4542,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {cloudSync ? "☁ 已雲端同步" : "⚡ 本機模式"} · {strategyBrain.lastUpdate||"—"}
                   </span>
                   <div style={{display:"flex",gap:6}}>
+                    <button onClick={cleanupBrain} disabled={brainCleaning}
+                      style={{fontSize:9,padding:"2px 7px",borderRadius:4,border:`1px solid ${alpha(C.teal, A.line)}`,
+                        background:"transparent",color:brainCleaning?C.textMute:C.teal,cursor:brainCleaning?"not-allowed":"pointer"}}>
+                      {brainCleaning?"整理中...":"整理大腦"}
+                    </button>
                     <button onClick={()=>{
                       const json = JSON.stringify(strategyBrain, null, 2);
                       const blob = new Blob([json], {type:"application/json"});
@@ -4823,9 +5054,18 @@ ${recentAnalyses || "尚無分析紀錄"}
                         color: isCorrect ? C.olive : C.up,
                       }}>{isCorrect ? "✓ 正確" : "✗ 有誤"}</span>
                     )}
-                    {e.status==="tracking" && (
-                      <span style={{fontSize:9,color:C.blue,fontWeight:600}}>追蹤中</span>
-                    )}
+                    {e.status==="tracking" && (() => {
+                      const days = trackingMetrics?.trackingDays;
+                      const isOverdue = days != null && days > 14;
+                      const isWarning = days != null && days > 7 && !isOverdue;
+                      return <>
+                        <span style={{fontSize:9,color:isOverdue?C.up:isWarning?C.amber:C.blue,fontWeight:600}}>
+                          追蹤中{days != null ? ` · ${days}天` : ""}
+                        </span>
+                        {isOverdue && <span style={{fontSize:8,padding:"1px 5px",borderRadius:3,background:C.upBg,color:C.up,fontWeight:600}}>逾期未結案</span>}
+                        {isWarning && <span style={{fontSize:8,padding:"1px 5px",borderRadius:3,background:C.amberBg,color:C.amber,fontWeight:600}}>即將逾期</span>}
+                      </>;
+                    })()}
                     {e.status==="pending" && (
                       <span style={{fontSize:9,color:C.textMute,fontWeight:500}}>待驗證</span>
                     )}
@@ -5035,6 +5275,100 @@ ${recentAnalyses || "尚無分析紀錄"}
               ))}
             </div>
 
+            {/* 行事曆視圖 */}
+            <button onClick={()=>setShowCalendar(p=>!p)} style={{
+              width:"100%",padding:"8px",marginBottom:8,borderRadius:8,
+              background:showCalendar?C.subtle:C.card,
+              border:`1px solid ${C.border}`,
+              color:showCalendar?C.textMute:C.textSec,fontSize:10,fontWeight:500,cursor:"pointer"}}>
+              {showCalendar?"收合行事曆":"展開行事曆"}
+            </button>
+
+            {showCalendar && (() => {
+              const { year: cYear, month: cMonth } = calendarMonth;
+              const firstDay = new Date(cYear, cMonth, 1).getDay(); // 0=Sun
+              const daysInMonth = new Date(cYear, cMonth + 1, 0).getDate();
+              const monthLabel = `${cYear} 年 ${cMonth + 1} 月`;
+              const allEvents = [...pending, ...tracking, ...past];
+              // 建立日期→事件映射
+              const dateEventMap = {};
+              allEvents.forEach(e => {
+                if (!e.date) return;
+                const parts = e.date.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+                if (!parts) return;
+                const [, ey, em, ed] = parts;
+                if (parseInt(ey) === cYear && parseInt(em) - 1 === cMonth) {
+                  const day = parseInt(ed);
+                  if (!dateEventMap[day]) dateEventMap[day] = [];
+                  dateEventMap[day].push(e);
+                }
+              });
+              const todayD = new Date();
+              const isToday = (d) => todayD.getFullYear() === cYear && todayD.getMonth() === cMonth && todayD.getDate() === d;
+              const cells = [];
+              for (let i = 0; i < firstDay; i++) cells.push(null);
+              for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+              return (
+                <div style={{...card, marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <button onClick={()=>setCalendarMonth(p => {
+                      const m = p.month - 1;
+                      return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m };
+                    })} style={{background:"transparent",border:"none",color:C.textSec,fontSize:14,cursor:"pointer",padding:"4px 8px"}}>◀</button>
+                    <span style={{fontSize:12,fontWeight:600,color:C.text}}>{monthLabel}</span>
+                    <button onClick={()=>setCalendarMonth(p => {
+                      const m = p.month + 1;
+                      return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m };
+                    })} style={{background:"transparent",border:"none",color:C.textSec,fontSize:14,cursor:"pointer",padding:"4px 8px"}}>▶</button>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,textAlign:"center"}}>
+                    {["日","一","二","三","四","五","六"].map(d=>(
+                      <div key={d} style={{fontSize:9,color:C.textMute,padding:"4px 0",fontWeight:600}}>{d}</div>
+                    ))}
+                    {cells.map((d, i) => {
+                      if (d === null) return <div key={`e${i}`}/>;
+                      const evts = dateEventMap[d] || [];
+                      const hasTracking = evts.some(e => e.status === "tracking");
+                      const hasPending = evts.some(e => e.status === "pending");
+                      const hasClosed = evts.some(e => isClosedEvent(e));
+                      const hasCorrect = evts.some(e => e.correct === true);
+                      const hasWrong = evts.some(e => e.correct === false);
+                      return (
+                        <div key={d}
+                          onClick={()=>{ if (evts.length > 0) setExpandedNews(new Set(evts.map(e=>e.id))); }}
+                          style={{
+                            padding:"4px 2px", borderRadius:6, cursor: evts.length > 0 ? "pointer" : "default",
+                            background: isToday(d) ? alpha(C.blue, A.faint) : evts.length > 0 ? C.subtle : "transparent",
+                            border: isToday(d) ? `1px solid ${alpha(C.blue, A.strongLine)}` : "1px solid transparent",
+                            minHeight: 32,
+                          }}>
+                          <div style={{fontSize:10,color: isToday(d)?C.blue:C.text,fontWeight: isToday(d)?700:400}}>{d}</div>
+                          {evts.length > 0 && (
+                            <div style={{display:"flex",justifyContent:"center",gap:2,marginTop:2,flexWrap:"wrap"}}>
+                              {hasPending && <div style={{width:5,height:5,borderRadius:"50%",background:C.textMute}}/>}
+                              {hasTracking && <div style={{width:5,height:5,borderRadius:"50%",background:C.blue}}/>}
+                              {hasCorrect && <div style={{width:5,height:5,borderRadius:"50%",background:C.olive}}/>}
+                              {hasWrong && <div style={{width:5,height:5,borderRadius:"50%",background:C.up}}/>}
+                              {hasClosed && !hasCorrect && !hasWrong && <div style={{width:5,height:5,borderRadius:"50%",background:C.textSec}}/>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{display:"flex",gap:12,marginTop:8,justifyContent:"center"}}>
+                    {[["待追蹤",C.textMute],["追蹤中",C.blue],["正確",C.olive],["有誤",C.up]].map(([l,c])=>(
+                      <div key={l} style={{display:"flex",alignItems:"center",gap:3}}>
+                        <div style={{width:5,height:5,borderRadius:"50%",background:c}}/>
+                        <span style={{fontSize:8,color:C.textMute}}>{l}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* 新增事件按鈕 */}
             <button onClick={()=>setShowAddEvent(!showAddEvent)} style={{
               width:"100%",padding:"10px",marginBottom:10,borderRadius:8,
@@ -5123,7 +5457,38 @@ ${recentAnalyses || "尚無分析紀錄"}
             </div>
             {pending.map((e,i)=> renderEvent(e, i))}
 
-            <div style={{...lbl, marginBottom:8, marginTop:16}}>追蹤中 · {tracking.length} 件</div>
+            {/* 復盤超時提醒 banner */}
+            {(() => {
+              const overdueEvents = tracking.filter(e => {
+                const m = getEventTrackingMetrics(e);
+                return m?.trackingDays != null && m.trackingDays > 14;
+              });
+              return overdueEvents.length > 0 ? (
+                <div style={{background:C.upBg,border:`1px solid ${alpha(C.up, A.strongLine)}`,borderRadius:8,padding:"10px 12px",marginBottom:8,marginTop:16}}>
+                  <div style={{fontSize:11,fontWeight:600,color:C.up,marginBottom:4}}>
+                    {overdueEvents.length} 件追蹤事件已超過 14 天未結案
+                  </div>
+                  {overdueEvents.map(e => {
+                    const m = getEventTrackingMetrics(e);
+                    return (
+                      <div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0"}}>
+                        <div>
+                          <span style={{fontSize:10,color:C.text}}>{e.title}</span>
+                          <span style={{fontSize:9,color:C.textMute,marginLeft:6}}>已追蹤 {m?.trackingDays} 天</span>
+                        </div>
+                        <button onClick={(ev)=>{ev.stopPropagation();openEventReview(e.id)}}
+                          style={{padding:"3px 8px",borderRadius:4,border:`1px solid ${alpha(C.olive, A.strongLine)}`,
+                            background:"transparent",color:C.olive,fontSize:9,cursor:"pointer",fontWeight:600}}>
+                          快速結案
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null;
+            })()}
+
+            <div style={{...lbl, marginBottom:8, marginTop:tracking.length > 0 ? 8 : 16}}>追蹤中 · {tracking.length} 件</div>
             {tracking.map((e,i)=> renderEvent(e, pending.length + i))}
 
             {/* 已發生 */}

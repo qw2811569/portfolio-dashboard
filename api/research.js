@@ -110,7 +110,7 @@ export default async function handler(req, res) {
 
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { stocks, holdings, meta, brain, events, analysisHistory, mode } = req.body;
+  const { stocks, holdings, meta, brain, events, analysisHistory, mode, persist = true } = req.body;
 
   try {
     const today = new Date().toLocaleDateString("zh-TW");
@@ -172,9 +172,11 @@ export default async function handler(req, res) {
         ],
         meta: m, priceAtResearch: s.price,
       };
-      writeLocal(`research/${s.code}/${Date.now()}.json`, report);
-      await updateResearchIndex(report);
-      if (TOKEN) {
+      if (persist) {
+        writeLocal(`research/${s.code}/${Date.now()}.json`, report);
+        await updateResearchIndex(report);
+      }
+      if (persist && TOKEN) {
         try { await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
@@ -245,7 +247,7 @@ ${histSummary}
       } catch(e) { /* 解析失敗就不更新 */ }
 
       // 存新版策略大腦
-      if (parsedBrain && TOKEN) {
+      if (persist && parsedBrain && TOKEN) {
         await put(`strategy-brain.json`, JSON.stringify(parsedBrain), { access: 'public', token: TOKEN, contentType: 'application/json' });
       }
 
@@ -259,9 +261,11 @@ ${histSummary}
         ],
         newBrain: parsedBrain,
       };
-      writeLocal(`research/EVOLVE/${Date.now()}.json`, report);
-      await updateResearchIndex(report);
-      if (TOKEN) {
+      if (persist) {
+        writeLocal(`research/EVOLVE/${Date.now()}.json`, report);
+        await updateResearchIndex(report);
+      }
+      if (persist && TOKEN) {
         try { await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
@@ -299,9 +303,11 @@ ${histSummary}
         ],
         stockSummaries,
       };
-      writeLocal(`research/PORTFOLIO/${Date.now()}.json`, report);
-      await updateResearchIndex(report);
-      if (TOKEN) {
+      if (persist) {
+        writeLocal(`research/PORTFOLIO/${Date.now()}.json`, report);
+        await updateResearchIndex(report);
+      }
+      if (persist && TOKEN) {
         try { await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);

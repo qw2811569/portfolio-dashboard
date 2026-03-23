@@ -372,6 +372,30 @@ const DEFAULT_PORTFOLIO_NOTES = {
   preferences: "",
   customNotes: "",
 };
+const EMPTY_STRATEGY_BRAIN = {
+  rules: [],
+  lessons: [],
+  commonMistakes: [],
+  stats: {},
+  lastUpdate: null,
+  coachLessons: [],
+};
+const EVENT_HISTORY_LIMIT = 90;
+const DEFAULT_REVIEW_FORM = {
+  actual: "up",
+  actualNote: "",
+  lessons: "",
+  exitDate: null,
+  priceAtExit: null,
+};
+const DEFAULT_NEW_EVENT = {
+  date: "",
+  title: "",
+  detail: "",
+  stocks: "",
+  pred: "up",
+  predReason: "",
+};
 const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
   { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
@@ -407,8 +431,200 @@ function clonePortfolioNotes() {
   return { ...DEFAULT_PORTFOLIO_NOTES };
 }
 
+function createEmptyStrategyBrain() {
+  return {
+    rules: [],
+    lessons: [],
+    commonMistakes: [],
+    stats: {},
+    lastUpdate: null,
+    coachLessons: [],
+  };
+}
+
+function normalizeStrategyBrain(value, { allowEmpty = false } = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return allowEmpty ? createEmptyStrategyBrain() : null;
+  }
+
+  const normalized = createEmptyStrategyBrain();
+  normalized.rules = Array.isArray(value.rules) ? value.rules.filter(Boolean) : [];
+  normalized.lessons = Array.isArray(value.lessons)
+    ? value.lessons
+      .filter(item => item && typeof item.text === "string" && item.text.trim())
+      .map(item => ({ date: item.date || toSlashDate(), text: item.text.trim() }))
+    : [];
+  normalized.commonMistakes = Array.isArray(value.commonMistakes) ? value.commonMistakes.filter(Boolean) : [];
+  normalized.stats = value.stats && typeof value.stats === "object" && !Array.isArray(value.stats) ? { ...value.stats } : {};
+  normalized.lastUpdate = typeof value.lastUpdate === "string" ? value.lastUpdate : null;
+  normalized.coachLessons = Array.isArray(value.coachLessons)
+    ? value.coachLessons
+      .filter(item => item && typeof item.text === "string" && item.text.trim())
+      .map(item => ({
+        date: item.date || toSlashDate(),
+        text: item.text.trim(),
+        source: item.source || "",
+        sourcePortfolioId: item.sourcePortfolioId || "",
+        sourceEventId: item.sourceEventId ?? null,
+      }))
+    : [];
+
+  const hasContent =
+    normalized.rules.length > 0 ||
+    normalized.lessons.length > 0 ||
+    normalized.commonMistakes.length > 0 ||
+    normalized.coachLessons.length > 0 ||
+    Object.keys(normalized.stats).length > 0 ||
+    Boolean(normalized.lastUpdate);
+
+  return hasContent || allowEmpty ? normalized : null;
+}
+
+function formatPortfolioNotesContext(notes) {
+  const normalized = notes && typeof notes === "object" ? { ...DEFAULT_PORTFOLIO_NOTES, ...notes } : DEFAULT_PORTFOLIO_NOTES;
+  const lines = [
+    normalized.riskProfile ? `風險屬性：${normalized.riskProfile}` : null,
+    normalized.preferences ? `操作偏好：${normalized.preferences}` : null,
+    normalized.customNotes ? `自訂備註：${normalized.customNotes}` : null,
+  ].filter(Boolean);
+  return lines.length > 0 ? `個人備註：\n${lines.join("\n")}` : "個人備註：無";
+}
+
+function createDefaultReviewForm(overrides = {}) {
+  return { ...DEFAULT_REVIEW_FORM, ...overrides };
+}
+
+function createDefaultEventDraft(overrides = {}) {
+  return { ...DEFAULT_NEW_EVENT, ...overrides };
+}
+
 function isClosedEvent(event) {
   return CLOSED_EVENT_STATUSES.has(event?.status);
+}
+
+function toSlashDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}/${month}/${day}`;
+}
+
+function parseSlashDate(value) {
+  const match = String(value || "").trim().match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (
+    date.getFullYear() !== Number(match[1]) ||
+    date.getMonth() !== Number(match[2]) - 1 ||
+    date.getDate() !== Number(match[3])
+  ) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function daysBetween(fromValue, toValue = new Date()) {
+  const from = fromValue instanceof Date ? new Date(fromValue) : parseSlashDate(fromValue);
+  const to = toValue instanceof Date ? new Date(toValue) : parseSlashDate(toValue);
+  if (!from || !to) return null;
+  from.setHours(0, 0, 0, 0);
+  to.setHours(0, 0, 0, 0);
+  return Math.round((to - from) / (1000 * 60 * 60 * 24));
+}
+
+function getEventStockCodes(event) {
+  return Array.from(new Set(
+    (event?.stocks || [])
+      .map(stock => String(stock).match(/\d{4,6}[A-Z]?L?/i)?.[0] || null)
+      .filter(Boolean)
+  ));
+}
+
+function normalizePriceRecord(value, event) {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const codes = getEventStockCodes(event);
+    return codes.length === 1 ? { [codes[0]]: value } : null;
+  }
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  const entries = Object.entries(value)
+    .map(([code, price]) => [code, Number(price)])
+    .filter(([, price]) => Number.isFinite(price) && price > 0);
+  return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
+function normalizePriceHistory(value, event) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(entry => {
+      if (!entry || typeof entry !== "object") return null;
+      const date = typeof entry.date === "string" ? entry.date : null;
+      const prices = normalizePriceRecord(entry.prices, event);
+      if (!date || !prices) return null;
+      return { date, prices };
+    })
+    .filter(Boolean)
+    .slice(-EVENT_HISTORY_LIMIT);
+}
+
+function averagePriceRecord(value) {
+  const prices = Object.values(value || {})
+    .map(Number)
+    .filter(price => Number.isFinite(price) && price > 0);
+  if (prices.length === 0) return null;
+  return prices.reduce((sum, price) => sum + price, 0) / prices.length;
+}
+
+function inferEventActual(priceAtEvent, priceAtExit) {
+  const entryAvg = averagePriceRecord(priceAtEvent);
+  const exitAvg = averagePriceRecord(priceAtExit);
+  if (!entryAvg || !exitAvg) return null;
+  const pct = ((exitAvg / entryAvg) - 1) * 100;
+  if (Math.abs(pct) <= 1) return "neutral";
+  return pct > 0 ? "up" : "down";
+}
+
+function appendPriceHistory(history, date, prices) {
+  const next = Array.isArray(history) ? [...history] : [];
+  const idx = next.findIndex(item => item?.date === date);
+  const record = { date, prices };
+  if (idx >= 0) next[idx] = record;
+  else next.push(record);
+  return next.slice(-EVENT_HISTORY_LIMIT);
+}
+
+function normalizeEventRecord(event) {
+  if (!event || typeof event !== "object") return null;
+  const status = event.status === "tracking" ? "tracking" : isClosedEvent(event) ? "closed" : "pending";
+  const priceAtEvent = normalizePriceRecord(event.priceAtEvent, event);
+  const priceAtExit = normalizePriceRecord(event.priceAtExit, event);
+  const reviewDate = event.reviewDate || null;
+  const eventDate = event.eventDate || (status === "closed" ? event.date || reviewDate || null : null);
+  const trackingStart = event.trackingStart || eventDate || null;
+  const exitDate = event.exitDate || (status === "closed" ? reviewDate || null : null);
+  const actual = ["up", "down", "neutral"].includes(event.actual) ? event.actual : inferEventActual(priceAtEvent, priceAtExit);
+
+  return {
+    ...event,
+    status,
+    stocks: Array.isArray(event.stocks) ? event.stocks.filter(Boolean) : [],
+    eventDate,
+    trackingStart,
+    exitDate,
+    priceAtEvent,
+    priceAtExit,
+    priceHistory: normalizePriceHistory(event.priceHistory, event),
+    actual: actual || null,
+    actualNote: event.actualNote || "",
+    correct: typeof event.correct === "boolean" ? event.correct : null,
+    lessons: event.lessons || "",
+    reviewDate,
+  };
+}
+
+function normalizeNewsEvents(items) {
+  return (Array.isArray(items) ? items : [])
+    .map(normalizeEventRecord)
+    .filter(Boolean);
 }
 
 function normalizePortfolios(value) {
@@ -467,6 +683,12 @@ const writeSyncAt = (key, value) => {
 
 async function savePortfolioData(pid, suffix, data) {
   return save(pfKey(pid, suffix), data);
+}
+
+function removePortfolioData(pid) {
+  for (const field of PORTFOLIO_STORAGE_FIELDS) {
+    try { localStorage.removeItem(pfKey(pid, field.suffix)); } catch {}
+  }
 }
 
 async function loadPortfolioData(pid, suffix, fallback) {
@@ -727,14 +949,15 @@ export default function App() {
   const [analysisHistory, setAnalysisHistory] = useState(null);
   const [newsEvents, setNewsEvents]     = useState(null);
   const [reviewingEvent, setReviewingEvent] = useState(null);
-  const [reviewForm, setReviewForm]     = useState({actual:"up",actualNote:"",lessons:""});
+  const [reviewForm, setReviewForm]     = useState(() => createDefaultReviewForm());
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [newEvent, setNewEvent]         = useState({date:"",title:"",detail:"",stocks:"",pred:"up",predReason:""});
+  const [newEvent, setNewEvent]         = useState(() => createDefaultEventDraft());
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
   const [portfolioNotes, setPortfolioNotes] = useState(() => clonePortfolioNotes());
   const [cloudSync, setCloudSync]         = useState(false);
   const [portfolioSwitching, setPortfolioSwitching] = useState(false);
+  const [showPortfolioManager, setShowPortfolioManager] = useState(false);
   // AutoResearch state（必須在 useEffect 之前宣告）
   const [researching, setResearching] = useState(false);
   const [researchTarget, setResearchTarget] = useState(null);
@@ -745,6 +968,7 @@ export default function App() {
     fromPid: OWNER_PORTFOLIO_ID,
     toPid: OWNER_PORTFOLIO_ID,
   });
+  const eventLifecycleSyncRef = useRef(false);
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const backupFileInputRef = useRef(null);
@@ -756,10 +980,10 @@ export default function App() {
     setHoldings(snapshot.holdings);
     setTradeLog(snapshot.tradeLog);
     setTargets(snapshot.targets);
-    setNewsEvents(snapshot.newsEvents);
+    setNewsEvents(normalizeNewsEvents(snapshot.newsEvents));
     setAnalysisHistory(snapshot.analysisHistory);
     setReversalConditions(snapshot.reversalConditions);
-    setStrategyBrain(snapshot.strategyBrain);
+    setStrategyBrain(normalizeStrategyBrain(snapshot.strategyBrain));
     setResearchHistory(snapshot.researchHistory);
     setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
     setDailyReport(snapshot.dailyReport || (snapshot.analysisHistory && snapshot.analysisHistory.length > 0 ? snapshot.analysisHistory[0] : null));
@@ -831,9 +1055,9 @@ export default function App() {
     setExpandedStock(null);
     setExpandedNews(new Set());
     setReviewingEvent(null);
-    setReviewForm({ actual: "up", actualNote: "", lessons: "" });
+    setReviewForm(createDefaultReviewForm());
     setShowAddEvent(false);
-    setNewEvent({ date: "", title: "", detail: "", stocks: "", pred: "up", predReason: "" });
+    setNewEvent(createDefaultEventDraft());
     setResearchTarget(null);
     setResearchResults(null);
     setTpCode("");
@@ -900,6 +1124,130 @@ export default function App() {
     setSaved(`✅ 已新增組合「${name}」`);
     setTimeout(() => setSaved(""), 3000);
   };
+  const openOverview = async () => {
+    if (portfolioSwitching || viewMode === OVERVIEW_VIEW_MODE) return;
+
+    setPortfolioSwitching(true);
+    portfolioTransitionRef.current = {
+      isHydrating: true,
+      fromPid: activePortfolioId,
+      toPid: activePortfolioId,
+    };
+
+    try {
+      await flushCurrentPortfolio();
+      resetTransientUiState();
+      setViewMode(OVERVIEW_VIEW_MODE);
+      setCloudStateForPortfolio(activePortfolioId, OVERVIEW_VIEW_MODE);
+      await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
+      await save(VIEW_MODE_KEY, OVERVIEW_VIEW_MODE);
+    } catch (err) {
+      console.error("切換總覽模式失敗:", err);
+      setSaved("❌ 無法開啟總覽");
+      setTimeout(() => setSaved(""), 3000);
+    } finally {
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: activePortfolioId,
+        toPid: activePortfolioId,
+      };
+      setPortfolioSwitching(false);
+    }
+  };
+  const exitOverview = async () => {
+    if (portfolioSwitching || viewMode !== OVERVIEW_VIEW_MODE) return;
+
+    setPortfolioSwitching(true);
+    portfolioTransitionRef.current = {
+      isHydrating: true,
+      fromPid: activePortfolioId,
+      toPid: activePortfolioId,
+    };
+
+    try {
+      resetTransientUiState();
+      await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
+      await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+      await loadPortfolio(activePortfolioId, PORTFOLIO_VIEW_MODE);
+    } catch (err) {
+      console.error("離開總覽模式失敗:", err);
+      setSaved("❌ 無法返回組合");
+      setTimeout(() => setSaved(""), 3000);
+    } finally {
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: activePortfolioId,
+        toPid: activePortfolioId,
+      };
+      setPortfolioSwitching(false);
+    }
+  };
+  const renamePortfolio = async (pid) => {
+    const current = portfolios.find(item => item.id === pid);
+    if (!current) return;
+    const rawName = window.prompt("新的組合名稱", current.name);
+    const name = rawName?.trim();
+    if (!name || name === current.name) return;
+
+    const nextPortfolios = portfolios.map(item => item.id === pid ? { ...item, name } : item);
+    setPortfolios(nextPortfolios);
+    await save(PORTFOLIOS_KEY, nextPortfolios);
+    setSaved(`✅ 已更新組合名稱為「${name}」`);
+    setTimeout(() => setSaved(""), 3000);
+  };
+  const deletePortfolio = async (pid) => {
+    const current = portfolios.find(item => item.id === pid);
+    if (!current || pid === OWNER_PORTFOLIO_ID) return;
+    if (!window.confirm(`確定要刪除組合「${current.name}」？這會清掉該組合的本機資料。`)) return;
+
+    let nextPid = activePortfolioId;
+    setPortfolioSwitching(true);
+    portfolioTransitionRef.current = {
+      isHydrating: true,
+      fromPid: activePortfolioId,
+      toPid: activePortfolioId,
+    };
+
+    try {
+      if (viewMode === PORTFOLIO_VIEW_MODE && pid === activePortfolioId) {
+        await flushCurrentPortfolio(pid);
+      }
+
+      removePortfolioData(pid);
+      const nextPortfolios = portfolios.filter(item => item.id !== pid);
+      nextPid = nextPortfolios.some(item => item.id === OWNER_PORTFOLIO_ID)
+        ? OWNER_PORTFOLIO_ID
+        : nextPortfolios[0]?.id || OWNER_PORTFOLIO_ID;
+
+      setPortfolios(nextPortfolios);
+      await save(PORTFOLIOS_KEY, nextPortfolios);
+
+      if (pid === activePortfolioId) {
+        resetTransientUiState();
+        await save(ACTIVE_PORTFOLIO_KEY, nextPid);
+        await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+        await loadPortfolio(nextPid, PORTFOLIO_VIEW_MODE);
+      } else {
+        await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
+        await save(VIEW_MODE_KEY, viewMode);
+        setCloudStateForPortfolio(activePortfolioId, viewMode);
+      }
+
+      setSaved(`✅ 已刪除組合「${current.name}」`);
+      setTimeout(() => setSaved(""), 3000);
+    } catch (err) {
+      console.error("刪除組合失敗:", err);
+      setSaved("❌ 刪除組合失敗");
+      setTimeout(() => setSaved(""), 3000);
+    } finally {
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: nextPid,
+        toPid: nextPid,
+      };
+      setPortfolioSwitching(false);
+    }
+  };
 
   // boot
   useEffect(() => {
@@ -950,8 +1298,16 @@ export default function App() {
           fetch("/api/research").then(r=>r.json()).catch(()=>({reports:null})),
         ]);
         // 雲端同步策略：本地優先，雲端只補缺（合併不覆蓋）
-        if (cloudBrain.brain && !snapshot.strategyBrain) { setStrategyBrain(cloudBrain.brain); savePortfolioData(pid, "brain-v1", cloudBrain.brain); }
-        if (cloudEvents.events && (!snapshot.newsEvents || snapshot.newsEvents.length === 0)) { setNewsEvents(cloudEvents.events); savePortfolioData(pid, "news-events-v1", cloudEvents.events); }
+        if (cloudBrain.brain && !snapshot.strategyBrain) {
+          const normalizedBrain = normalizeStrategyBrain(cloudBrain.brain);
+          setStrategyBrain(normalizedBrain);
+          savePortfolioData(pid, "brain-v1", normalizedBrain);
+        }
+        if (cloudEvents.events && (!snapshot.newsEvents || snapshot.newsEvents.length === 0)) {
+          const normalizedEvents = normalizeNewsEvents(cloudEvents.events);
+          setNewsEvents(normalizedEvents);
+          savePortfolioData(pid, "news-events-v1", normalizedEvents);
+        }
         const cloudH = cloudHoldings.holdings;
         if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!snapshot.holdings || snapshot.holdings.length === 0)) {
           setHoldings(cloudH); savePortfolioData(pid, "holdings-v2", cloudH);
@@ -1010,7 +1366,7 @@ export default function App() {
   }, [activePortfolioId, canPersistPortfolioData, strategyBrain]);
   useEffect(() => {
     const lastAnalysisSyncAt = readSyncAt("pf-analysis-cloud-sync-at");
-    const shouldFetchAnalysis = activePortfolioId === OWNER_PORTFOLIO_ID && (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
+    const shouldFetchAnalysis = canUseCloud && (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchAnalysis) return;
     fetch("/api/brain?action=history")
       .then(r=>r.json())
@@ -1026,10 +1382,10 @@ export default function App() {
         writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
       })
       .catch(()=>{});
-  }, [activePortfolioId, tab]);
+  }, [activePortfolioId, canUseCloud, tab]);
   useEffect(() => {
     const lastResearchSyncAt = readSyncAt("pf-research-cloud-sync-at");
-    const shouldFetchResearch = activePortfolioId === OWNER_PORTFOLIO_ID && tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
+    const shouldFetchResearch = canUseCloud && tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchResearch) return;
     fetch("/api/research")
       .then(r=>r.json())
@@ -1043,12 +1399,43 @@ export default function App() {
         writeSyncAt("pf-research-cloud-sync-at", Date.now());
       })
       .catch(()=>{});
-  }, [activePortfolioId, researchHistory, tab]);
+  }, [activePortfolioId, canUseCloud, researchHistory, tab]);
   useEffect(() => () => {
     Object.values(cloudSaveTimersRef.current).forEach(clearTimeout);
   }, []);
   useEffect(() => { if (canPersistPortfolioData && researchHistory) savePortfolioData(activePortfolioId, "research-history-v1", researchHistory); }, [activePortfolioId, canPersistPortfolioData, researchHistory]);
   useEffect(() => { if (canPersistPortfolioData && portfolioNotes) savePortfolioData(activePortfolioId, "notes-v1", portfolioNotes); }, [activePortfolioId, canPersistPortfolioData, portfolioNotes]);
+  useEffect(() => {
+    const shouldSyncLifecycle =
+      ready &&
+      viewMode === PORTFOLIO_VIEW_MODE &&
+      !portfolioTransitionRef.current.isHydrating &&
+      Array.isArray(newsEvents) &&
+      newsEvents.length > 0 &&
+      ["holdings", "events", "news", "daily"].includes(tab);
+    if (!shouldSyncLifecycle || eventLifecycleSyncRef.current) return;
+
+    let cancelled = false;
+    eventLifecycleSyncRef.current = true;
+
+    (async () => {
+      try {
+        const nextEvents = await syncEventLifecycle(newsEvents);
+        if (cancelled) return;
+        const currentJson = JSON.stringify(normalizeNewsEvents(newsEvents));
+        const nextJson = JSON.stringify(nextEvents);
+        if (currentJson !== nextJson) {
+          setNewsEvents(nextEvents);
+        }
+      } finally {
+        eventLifecycleSyncRef.current = false;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activePortfolioId, newsEvents, ready, tab, viewMode]);
 
   // derived
   const H = holdings || [];
@@ -1056,11 +1443,20 @@ export default function App() {
   const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
   const totalPnl  = H.reduce((s,h)=>s+h.pnl,0);
   const retPct    = totalCost>0 ? totalPnl/totalCost*100 : 0;
+  const getPortfolioSnapshot = (portfolioId) => {
+    const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
+    const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
+    const eventsValue = useLiveState ? (newsEvents || []) : readStorageValue(pfKey(portfolioId, "news-events-v1"));
+    const notesValue = useLiveState ? portfolioNotes : readStorageValue(pfKey(portfolioId, "notes-v1"));
+    return {
+      holdings: Array.isArray(holdingsValue) ? holdingsValue : getPortfolioFallback(portfolioId, "holdings-v2"),
+      newsEvents: normalizeNewsEvents(Array.isArray(eventsValue) ? eventsValue : getPortfolioFallback(portfolioId, "news-events-v1")),
+      notes: notesValue && typeof notesValue === "object" ? { ...clonePortfolioNotes(), ...notesValue } : clonePortfolioNotes(),
+    };
+  };
   const portfolioSummaries = portfolios.map(portfolio => {
-    const storedHoldings = portfolio.id === activePortfolioId
-      ? H
-      : readStorageValue(pfKey(portfolio.id, "holdings-v2"));
-    const rows = Array.isArray(storedHoldings) ? storedHoldings : getPortfolioFallback(portfolio.id, "holdings-v2");
+    const snapshot = getPortfolioSnapshot(portfolio.id);
+    const rows = snapshot.holdings;
     const holdingCount = Array.isArray(rows) ? rows.length : 0;
     const portfolioValue = (rows || []).reduce((sum, item) => sum + (Number(item.value) || 0), 0);
     const portfolioCost = (rows || []).reduce((sum, item) => sum + ((Number(item.cost) || 0) * (Number(item.qty) || 0)), 0);
@@ -1075,6 +1471,50 @@ export default function App() {
     };
   });
   const activePortfolio = portfolioSummaries.find(item => item.id === activePortfolioId) || portfolioSummaries[0] || null;
+  const overviewPortfolios = portfolioSummaries.map(portfolio => {
+    const snapshot = getPortfolioSnapshot(portfolio.id);
+    const pendingEvents = (snapshot.newsEvents || []).filter(event => !isClosedEvent(event));
+    return {
+      ...portfolio,
+      holdings: snapshot.holdings,
+      newsEvents: snapshot.newsEvents,
+      notes: snapshot.notes,
+      pendingEvents,
+    };
+  });
+  const overviewTotalValue = overviewPortfolios.reduce((sum, portfolio) => sum + portfolio.totalValue, 0);
+  const overviewTotalPnl = overviewPortfolios.reduce((sum, portfolio) => sum + portfolio.totalPnl, 0);
+  const overviewTotalCost = overviewPortfolios.reduce((sum, portfolio) => sum + (portfolio.totalValue - portfolio.totalPnl), 0);
+  const overviewRetPct = overviewTotalCost > 0 ? (overviewTotalPnl / overviewTotalCost) * 100 : 0;
+  const displayedTotalPnl = viewMode === OVERVIEW_VIEW_MODE ? overviewTotalPnl : totalPnl;
+  const displayedRetPct = viewMode === OVERVIEW_VIEW_MODE ? overviewRetPct : retPct;
+  const overviewDuplicateHoldings = (() => {
+    const byCode = new Map();
+    overviewPortfolios.forEach(portfolio => {
+      (portfolio.holdings || []).forEach(item => {
+        const existing = byCode.get(item.code) || { code: item.code, name: item.name, totalValue: 0, portfolios: [] };
+        existing.totalValue += Number(item.value) || 0;
+        existing.portfolios.push({
+          id: portfolio.id,
+          name: portfolio.name,
+          qty: Number(item.qty) || 0,
+          value: Number(item.value) || 0,
+          pnl: Number(item.pnl) || 0,
+        });
+        byCode.set(item.code, existing);
+      });
+    });
+    return Array.from(byCode.values())
+      .filter(item => item.portfolios.length > 1)
+      .sort((a, b) => b.portfolios.length - a.portfolios.length || b.totalValue - a.totalValue);
+  })();
+  const overviewPendingItems = overviewPortfolios
+    .flatMap(portfolio => portfolio.pendingEvents.map(event => ({
+      ...event,
+      portfolioId: portfolio.id,
+      portfolioName: portfolio.name,
+    })))
+    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
   const urgentCount = EVENTS.filter(e=>e.urgent).length;
 
   const sorted = [...H].sort((a,b)=>{
@@ -1105,7 +1545,7 @@ export default function App() {
     if (scanFilter === "全部") return true;
     if (scanFilter === "需處理") return needsAttention;
     if (scanFilter === "虧損") return h.pnl < 0;
-    if (scanFilter === "待驗證") return hasPending;
+    if (scanFilter === "待處理") return hasPending;
     if (scanFilter === "目標更新") return Boolean(T?.isNew);
     if (scanFilter === "權證") return h.type === "權證";
     return true;
@@ -1120,6 +1560,157 @@ export default function App() {
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
 
   const filteredEvents = filterType==="全部" ? EVENTS : EVENTS.filter(e=>e.type===filterType);
+  const fetchMarketPriceMap = async (codes) => {
+    const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
+    if (normalizedCodes.length === 0) return {};
+
+    const queries = normalizedCodes.flatMap(code => [`tse_${code}.tw`, `otc_${code}.tw`]);
+    const exCh = queries.join("|");
+    const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
+    const data = await res.json();
+    const priceMap = {};
+
+    (data.msgArray || []).forEach(item => {
+      const latest = parseFloat(item.z);
+      const yClose = parseFloat(item.y);
+      const price = (!Number.isNaN(latest) && latest > 0)
+        ? latest
+        : (!Number.isNaN(yClose) && yClose > 0 ? yClose : null);
+      if (price && !priceMap[item.c]) {
+        priceMap[item.c] = price;
+      }
+    });
+
+    return priceMap;
+  };
+  const buildEventPriceRecord = (event, priceMap) => {
+    const codes = getEventStockCodes(event);
+    const entries = codes
+      .map(code => [code, priceMap?.[code]])
+      .filter(([, price]) => Number.isFinite(price) && price > 0);
+    return entries.length > 0 ? Object.fromEntries(entries) : null;
+  };
+  const formatEventPriceRecord = (prices) => {
+    if (!prices) return "—";
+    return Object.entries(prices)
+      .map(([code, price]) => `${code} ${Number(price).toFixed(1)}`)
+      .join(" / ");
+  };
+  const getEventTrackingMetrics = (event) => {
+    const latestEntry = Array.isArray(event?.priceHistory) && event.priceHistory.length > 0
+      ? event.priceHistory[event.priceHistory.length - 1]
+      : null;
+    const currentPrices = latestEntry?.prices || event?.priceAtExit || null;
+    const entryAvg = averagePriceRecord(event?.priceAtEvent);
+    const currentAvg = averagePriceRecord(currentPrices);
+    const changePct = entryAvg && currentAvg ? ((currentAvg / entryAvg) - 1) * 100 : null;
+    const trackingDays = daysBetween(event?.trackingStart || event?.eventDate);
+    return {
+      latestDate: latestEntry?.date || event?.exitDate || null,
+      currentPrices,
+      entryAvg,
+      currentAvg,
+      changePct,
+      trackingDays,
+    };
+  };
+  const syncEventLifecycle = async (events = newsEvents) => {
+    const normalizedEvents = normalizeNewsEvents(events);
+    if (normalizedEvents.length === 0) return normalizedEvents;
+
+    const today = toSlashDate();
+    const duePending = normalizedEvents.filter(event => {
+      if (event.status !== "pending") return false;
+      const scheduled = parseSlashDate(event.date);
+      return scheduled && scheduled.getTime() <= parseSlashDate(today).getTime();
+    });
+    const trackingEvents = normalizedEvents.filter(event => event.status === "tracking");
+    const priceCodes = Array.from(new Set([
+      ...duePending.flatMap(getEventStockCodes),
+      ...trackingEvents.flatMap(getEventStockCodes),
+    ]));
+
+    if (priceCodes.length === 0) return normalizedEvents;
+
+    let priceMap = {};
+    try {
+      priceMap = await fetchMarketPriceMap(priceCodes);
+    } catch (err) {
+      console.error("事件追蹤價格抓取失敗:", err);
+      return normalizedEvents;
+    }
+
+    return normalizedEvents.map(event => {
+      if (event.status === "pending") {
+        const scheduled = parseSlashDate(event.date);
+        if (!scheduled || scheduled.getTime() > parseSlashDate(today).getTime()) return event;
+        const priceAtEvent = buildEventPriceRecord(event, priceMap);
+        if (!priceAtEvent) return event;
+        return {
+          ...event,
+          status: "tracking",
+          eventDate: today,
+          trackingStart: today,
+          priceAtEvent,
+          priceHistory: appendPriceHistory(event.priceHistory, today, priceAtEvent),
+        };
+      }
+
+      if (event.status === "tracking") {
+        const latestPrices = buildEventPriceRecord(event, priceMap);
+        if (!latestPrices) return event;
+        return {
+          ...event,
+          priceHistory: appendPriceHistory(event.priceHistory, today, latestPrices),
+        };
+      }
+
+      return event;
+    });
+  };
+  const openEventReview = async (event, domEvent) => {
+    domEvent?.stopPropagation?.();
+    if (!event) return;
+
+    if (event.status !== "tracking") {
+      setReviewingEvent(event.id);
+      setReviewForm(createDefaultReviewForm({ actual: event.actual || "up" }));
+      return;
+    }
+
+    try {
+      const exitPrices = buildEventPriceRecord(event, await fetchMarketPriceMap(getEventStockCodes(event)));
+      if (!exitPrices) {
+        setSaved("⚠️ 暫時抓不到結案價格，請先手動填寫");
+        setTimeout(() => setSaved(""), 3000);
+        setReviewingEvent(event.id);
+        setReviewForm(createDefaultReviewForm({ actual: event.actual || "up" }));
+        return;
+      }
+
+      const exitDate = toSlashDate();
+      const actual = inferEventActual(event.priceAtEvent, exitPrices) || event.actual || "neutral";
+      const entryAvg = averagePriceRecord(event.priceAtEvent);
+      const exitAvg = averagePriceRecord(exitPrices);
+      const changePct = entryAvg && exitAvg ? ((exitAvg / entryAvg) - 1) * 100 : null;
+
+      setReviewingEvent(event.id);
+      setReviewForm(createDefaultReviewForm({
+        actual,
+        actualNote: changePct == null
+          ? ""
+          : `事件日均價 ${entryAvg.toFixed(1)} → 結案均價 ${exitAvg.toFixed(1)}（${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}%）`,
+        exitDate,
+        priceAtExit: exitPrices,
+      }));
+    } catch (err) {
+      console.error("準備事件復盤失敗:", err);
+      setSaved("⚠️ 暫時抓不到結案價格，請先手動填寫");
+      setTimeout(() => setSaved(""), 3000);
+      setReviewingEvent(event.id);
+      setReviewForm(createDefaultReviewForm({ actual: event.actual || "up" }));
+    }
+  };
 
   // ── 刷新即時股價（TWSE MIS API）───────────────────────────────
   const refreshPrices = async () => {
@@ -1227,7 +1818,7 @@ export default function App() {
       // 3. 事件連動分析
       const NE = newsEvents || NEWS_EVENTS;
       const today = new Date().toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
-      const pendingEvents = NE.filter(e => e.status === "pending");
+      const pendingEvents = NE.filter(e => !isClosedEvent(e));
       const eventCorrelations = pendingEvents.map(e => {
         const relatedStocks = e.stocks.map(s => {
           const code = s.match(/\d+/)?.[0];
@@ -1491,27 +2082,30 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
   const submitReview = async (eventId) => {
     const NE = newsEvents || NEWS_EVENTS;
     const evt = NE.find(e => e.id === eventId);
-    const wasCorrect = evt ? evt.pred === reviewForm.actual : null;
+    const submittedForm = { ...reviewForm };
+    const wasCorrect = evt ? evt.pred === submittedForm.actual : null;
 
     setNewsEvents(prev => {
-      const arr = [...(prev || NEWS_EVENTS)];
+      const arr = normalizeNewsEvents(prev || NEWS_EVENTS);
       const idx = arr.findIndex(e => e.id === eventId);
       if (idx < 0) return arr;
       arr[idx] = {
         ...arr[idx],
         status: "closed",
-        actual: reviewForm.actual,
-        actualNote: reviewForm.actualNote,
-        correct: arr[idx].pred === reviewForm.actual,
-        lessons: reviewForm.lessons,
+        exitDate: submittedForm.exitDate || arr[idx].exitDate || toSlashDate(),
+        priceAtExit: submittedForm.priceAtExit || arr[idx].priceAtExit || null,
+        actual: submittedForm.actual,
+        actualNote: submittedForm.actualNote,
+        correct: arr[idx].pred === submittedForm.actual,
+        lessons: submittedForm.lessons,
         reviewDate: new Date().toLocaleDateString("zh-TW"),
       };
       return arr;
     });
     setReviewingEvent(null);
-    const savedLessons = reviewForm.lessons;
-    const savedNote = reviewForm.actualNote;
-    setReviewForm({ actual: "up", actualNote: "", lessons: "" });
+    const savedLessons = submittedForm.lessons;
+    const savedNote = submittedForm.actualNote;
+    setReviewForm(createDefaultReviewForm());
     setSaved("✅ 復盤已儲存，策略整合中...");
 
     // 將復盤心得整合進策略大腦（AI 驗證+歸納）
@@ -1530,7 +2124,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 {"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
             userPrompt: `事件：${evt.title}
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
-實際走勢：${reviewForm.actual==="up"?"上漲":"下跌"} — ${savedNote}
+實際走勢：${submittedForm.actual==="up"?"上漲":submittedForm.actual==="down"?"下跌":"中性"} — ${savedNote}
 預測${wasCorrect?"正確":"錯誤"}
 用戶覆盤心得：${savedLessons || "（未填）"}
 
@@ -1562,7 +2156,7 @@ ${JSON.stringify(strategyBrain)}
   // ── 新增事件 ─────────────────────────────────────────────────────
   const addEvent = () => {
     if (!newEvent.title.trim() || !newEvent.date.trim()) return;
-    const evt = {
+    const evt = normalizeEventRecord({
       id: Date.now(),
       date: newEvent.date,
       status: "pending",
@@ -1571,10 +2165,20 @@ ${JSON.stringify(strategyBrain)}
       stocks: newEvent.stocks.split(/[,，、]/).map(s => s.trim()).filter(Boolean),
       pred: newEvent.pred,
       predReason: newEvent.predReason,
-      actual: null, actualNote: "", correct: null,
-    };
-    setNewsEvents(prev => [...(prev || NEWS_EVENTS), evt]);
-    setNewEvent({ date: "", title: "", detail: "", stocks: "", pred: "up", predReason: "" });
+      eventDate: null,
+      trackingStart: null,
+      exitDate: null,
+      priceAtEvent: null,
+      priceAtExit: null,
+      priceHistory: [],
+      actual: null,
+      actualNote: "",
+      correct: null,
+      lessons: "",
+      reviewDate: null,
+    });
+    setNewsEvents(prev => normalizeNewsEvents([...(prev || NEWS_EVENTS), evt]));
+    setNewEvent(createDefaultEventDraft());
     setShowAddEvent(false);
     setSaved("✅ 事件已新增");
     setTimeout(() => setSaved(""), 2500);
@@ -1595,7 +2199,7 @@ ${JSON.stringify(strategyBrain)}
     const today = new Date().toLocaleDateString("zh-TW");
     const NE = newsEvents || NEWS_EVENTS;
     const pastEvents = NE.filter(isClosedEvent);
-    const pendingEvents = NE.filter(e => e.status === "pending");
+    const pendingEvents = NE.filter(e => !isClosedEvent(e));
     const hits = pastEvents.filter(e => e.correct === true).length;
     const total = pastEvents.filter(e => e.correct !== null).length;
 
@@ -1647,7 +2251,7 @@ ${INIT_WATCHLIST.map(w=>`${w.name}(${w.code}) | 現價${w.price} | 目標${w.tar
 已驗證（${pastEvents.length} 筆）：
 ${eventLines || "無"}
 
-待驗證（${pendingEvents.length} 筆）：
+待處理（${pendingEvents.length} 筆）：
 ${pendingLines || "無"}
 ${brainSection}
 
@@ -2058,17 +2662,189 @@ ${recentAnalyses || "尚無分析紀錄"}
             )}
           </div>
           <div className="tn" style={{textAlign:"right",flexShrink:0,paddingLeft:8}}>
-            <div style={{fontSize:20,fontWeight:700,color:pc(totalPnl),letterSpacing:"-0.02em",lineHeight:1.1}}>
-              {totalPnl>=0?"+":""}{totalPnl.toLocaleString()}
+            <div style={{fontSize:20,fontWeight:700,color:pc(displayedTotalPnl),letterSpacing:"-0.02em",lineHeight:1.1}}>
+              {displayedTotalPnl>=0?"+":""}{Math.round(displayedTotalPnl).toLocaleString()}
             </div>
-            <div style={{fontSize:10,fontWeight:600,color:pc(retPct)}}>
-              {retPct>=0?"+":""}{retPct.toFixed(2)}%
+            <div style={{fontSize:10,fontWeight:600,color:pc(displayedRetPct)}}>
+              {displayedRetPct>=0?"+":""}{displayedRetPct.toFixed(2)}%
             </div>
           </div>
         </div>
 
+        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
+          <span style={{fontSize:9,color:C.textMute,fontWeight:600,letterSpacing:"0.05em"}}>目前組合</span>
+          <select
+            value={activePortfolioId}
+            onChange={e => switchPortfolio(e.target.value)}
+            disabled={!ready || portfolioSwitching}
+            style={{
+              minWidth:190,
+              background:C.subtle,
+              color:C.text,
+              border:`1px solid ${C.border}`,
+              borderRadius:8,
+              padding:"7px 10px",
+              fontSize:11,
+              outline:"none",
+              cursor: portfolioSwitching ? "progress" : "pointer",
+            }}
+          >
+            {portfolioSummaries.map(portfolio => (
+              <option key={portfolio.id} value={portfolio.id}>
+                {portfolio.name} · {portfolio.holdingCount}檔 · {portfolio.retPct >= 0 ? "+" : ""}{portfolio.retPct.toFixed(1)}%
+              </option>
+            ))}
+          </select>
+          <button
+            className="ui-btn"
+            onClick={createPortfolio}
+            disabled={!ready || portfolioSwitching}
+            style={{
+              background:C.cardBlue,
+              color:C.blue,
+              border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+              ...ghostBtn,
+              cursor: !ready || portfolioSwitching ? "not-allowed" : "pointer",
+            }}
+          >
+            {portfolioSwitching ? "切換中..." : "＋ 新組合"}
+          </button>
+          <button
+            className="ui-btn"
+            onClick={viewMode === OVERVIEW_VIEW_MODE ? exitOverview : openOverview}
+            disabled={!ready || portfolioSwitching}
+            style={{
+              background:viewMode === OVERVIEW_VIEW_MODE ? C.cardAmber : C.cardRose,
+              color:viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.text,
+              border:`1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : C.border}`,
+              ...ghostBtn,
+              cursor: !ready || portfolioSwitching ? "not-allowed" : "pointer",
+            }}
+          >
+            {viewMode === OVERVIEW_VIEW_MODE ? "返回組合" : "全部總覽"}
+          </button>
+          <button
+            className="ui-btn"
+            onClick={() => setShowPortfolioManager(prev => !prev)}
+            style={{
+              background:showPortfolioManager ? C.subtleElev : C.subtle,
+              color:C.textSec,
+              border:`1px solid ${showPortfolioManager ? C.borderStrong : C.border}`,
+              ...ghostBtn,
+            }}
+          >
+            {showPortfolioManager ? "收合管理" : "管理組合"}
+          </button>
+          {activePortfolio && (
+            <span style={{fontSize:10,color:C.textSec}}>
+              {viewMode === OVERVIEW_VIEW_MODE
+                ? `全部總覽 · ${portfolios.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
+                : `${activePortfolio.name} · ${activePortfolio.holdingCount} 檔 · 損益 ${activePortfolio.totalPnl >= 0 ? "+" : ""}${Math.round(activePortfolio.totalPnl).toLocaleString()}`}
+            </span>
+          )}
+        </div>
+
+        {showPortfolioManager && (
+          <div style={{...card,marginBottom:8,borderLeft:`2px solid ${alpha(C.teal, A.glow)}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{...lbl,color:C.teal,marginBottom:3}}>組合管理</div>
+                <div style={{fontSize:11,color:C.textSec}}>可以改名、刪除組合，並編輯目前組合的偏好備註。</div>
+              </div>
+              <span style={{fontSize:9,color:C.textMute}}>總覽模式唯讀；切回單一組合才會寫入 notes。</span>
+            </div>
+
+            <div style={{display:"grid",gap:7}}>
+              {portfolioSummaries.map(portfolio => (
+                <div key={portfolio.id} style={{
+                  background: portfolio.id === activePortfolioId ? C.subtleElev : C.subtle,
+                  border:`1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
+                  borderRadius:8,
+                  padding:"10px 12px",
+                }}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                    <div>
+                      <div style={{fontSize:12,color:C.text,fontWeight:600}}>
+                        {portfolio.name}
+                        {portfolio.id === OWNER_PORTFOLIO_ID && <span style={{fontSize:9,color:C.textMute,marginLeft:6}}>owner</span>}
+                        {portfolio.id === activePortfolioId && <span style={{fontSize:9,color:C.teal,marginLeft:6}}>目前</span>}
+                      </div>
+                      <div style={{fontSize:10,color:C.textMute,marginTop:3}}>
+                        {portfolio.holdingCount} 檔 · 損益 {portfolio.totalPnl >= 0 ? "+" : ""}{Math.round(portfolio.totalPnl).toLocaleString()} · 報酬 {portfolio.retPct >= 0 ? "+" : ""}{portfolio.retPct.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      {(portfolio.id !== activePortfolioId || viewMode === OVERVIEW_VIEW_MODE) && (
+                        <button className="ui-btn" onClick={() => switchPortfolio(portfolio.id)} style={{
+                          background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+                          ...ghostBtn,
+                        }}>
+                          打開
+                        </button>
+                      )}
+                      <button className="ui-btn" onClick={() => renamePortfolio(portfolio.id)} style={{
+                        background:C.cardAmber,color:C.amber,border:`1px solid ${alpha(C.amber, A.strongLine)}`,
+                        ...ghostBtn,
+                      }}>
+                        改名
+                      </button>
+                      {portfolio.id !== OWNER_PORTFOLIO_ID && (
+                        <button className="ui-btn" onClick={() => deletePortfolio(portfolio.id)} style={{
+                          background:C.upBg,color:C.up,border:`1px solid ${alpha(C.up, A.strongLine)}`,
+                          ...ghostBtn,
+                        }}>
+                          刪除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {viewMode === PORTFOLIO_VIEW_MODE ? (
+              <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.borderSub}`}}>
+                <div style={{...lbl,marginBottom:8}}>目前組合備註</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  <div>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>風險屬性</div>
+                    <input
+                      value={portfolioNotes.riskProfile || ""}
+                      onChange={e => setPortfolioNotes(prev => ({ ...prev, riskProfile: e.target.value }))}
+                      placeholder="如：保守、波段、可接受回撤"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}
+                    />
+                  </div>
+                  <div>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>操作偏好</div>
+                    <input
+                      value={portfolioNotes.preferences || ""}
+                      onChange={e => setPortfolioNotes(prev => ({ ...prev, preferences: e.target.value }))}
+                      placeholder="如：只做財報前布局、避免權證"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>自訂備註</div>
+                  <textarea
+                    value={portfolioNotes.customNotes || ""}
+                    onChange={e => setPortfolioNotes(prev => ({ ...prev, customNotes: e.target.value }))}
+                    placeholder="這組合的策略限制、委託人要求、特殊提醒..."
+                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"vertical",minHeight:72,outline:"none",fontFamily:"inherit",lineHeight:1.7}}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={{marginTop:12,fontSize:10,color:C.textMute,background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",lineHeight:1.7}}>
+                目前在全部總覽模式，資料維持唯讀。要編輯 notes，先用上方「打開」切回某個單一組合。
+              </div>
+            )}
+          </div>
+        )}
+
         {/* today alert */}
-        {urgentCount>0 && (
+        {viewMode !== OVERVIEW_VIEW_MODE && urgentCount>0 && (
           <div style={{background:C.upBg,border:`1px solid ${alpha(C.up, A.line)}`,
             borderLeft:`3px solid ${C.up}`,
             borderRadius:6,padding:"5px 10px",marginBottom:8,
@@ -2077,26 +2853,184 @@ ${recentAnalyses || "尚無分析紀錄"}
           </div>
         )}
 
-        <div className="seg" style={{display:"flex",gap:6,overflowX:"auto",padding:"2px 0 6px"}}>
-          {TABS.map(t=>(
-            <button className="ui-btn" key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
-              background:tab===t.k ? alpha(C.text, "10") : "transparent",
-              color: tab===t.k ? C.text : C.textMute,
-              border:`1px solid ${tab===t.k ? C.borderStrong : "transparent"}`,
-              boxShadow:tab===t.k ? C.insetLine : "none",
-              borderRadius:999,
-              padding:"7px 13px",
-              fontSize:11, fontWeight: tab===t.k ? 600 : 500,
-              cursor:"pointer", whiteSpace:"nowrap",
-            }}>{t.label}</button>
-          ))}
-        </div>
+        {viewMode === OVERVIEW_VIEW_MODE ? (
+          <div style={{background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:10,color:C.textSec}}>全部總覽模式只讀，不會寫本機資料，也不會同步雲端。</span>
+            <button className="ui-btn" onClick={exitOverview} style={{
+              background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+              ...ghostBtn,
+            }}>
+              返回目前組合
+            </button>
+          </div>
+        ) : (
+          <div className="seg" style={{display:"flex",gap:6,overflowX:"auto",padding:"2px 0 6px"}}>
+            {TABS.map(t=>(
+              <button className="ui-btn" key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
+                background:tab===t.k ? alpha(C.text, "10") : "transparent",
+                color: tab===t.k ? C.text : C.textMute,
+                border:`1px solid ${tab===t.k ? C.borderStrong : "transparent"}`,
+                boxShadow:tab===t.k ? C.insetLine : "none",
+                borderRadius:999,
+                padding:"7px 13px",
+                fontSize:11, fontWeight: tab===t.k ? 600 : 500,
+                cursor:"pointer", whiteSpace:"nowrap",
+              }}>{t.label}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="app-shell" style={{padding:"10px 14px"}}>
 
+        {viewMode === OVERVIEW_VIEW_MODE && <>
+          <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.blue, A.glow)}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{...lbl,color:C.blue,marginBottom:4}}>全部總覽</div>
+                <div style={{fontSize:13,color:C.text,fontWeight:600}}>跨組合檢視目前持倉、重複部位與待處理事件</div>
+                <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.7}}>
+                  這裡只做彙總，不會修改任何組合資料。
+                </div>
+              </div>
+              <button className="ui-btn" onClick={exitOverview} style={{
+                background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+                ...ghostBtn,
+              }}>
+                返回目前組合
+              </button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginTop:10}}>
+              {[
+                ["組合數", `${overviewPortfolios.length}`, C.textSec],
+                ["總市值", Math.round(overviewTotalValue).toLocaleString(), C.blue],
+                ["總損益", `${overviewTotalPnl >= 0 ? "+" : ""}${Math.round(overviewTotalPnl).toLocaleString()}`, pc(overviewTotalPnl)],
+              ].map(([label, value, color]) => (
+                <div key={label} className="ui-card" style={metricCard}>
+                  <div style={{fontSize:9,color:C.textMute,letterSpacing:"0.08em"}}>{label}</div>
+                  <div className="tn" style={{fontSize:14,fontWeight:600,color,marginTop:2}}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{...card,marginBottom:8}}>
+            <div style={lbl}>組合摘要</div>
+            <div style={{display:"grid",gap:8}}>
+              {overviewPortfolios.map(portfolio => {
+                const noteSummary = [portfolio.notes.riskProfile, portfolio.notes.preferences, portfolio.notes.customNotes]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <div key={portfolio.id} style={{
+                    background: portfolio.id === activePortfolioId ? C.subtleElev : C.subtle,
+                    border:`1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
+                    borderRadius:8,
+                    padding:"10px 12px",
+                  }}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:600,color:C.text}}>
+                          {portfolio.name}
+                          {portfolio.id === OWNER_PORTFOLIO_ID && <span style={{fontSize:9,color:C.textMute,marginLeft:6}}>owner</span>}
+                        </div>
+                        <div style={{fontSize:10,color:C.textMute,marginTop:4}}>
+                          {portfolio.holdingCount} 檔 · 待處理事件 {portfolio.pendingEvents.length} 件 · 報酬 {portfolio.retPct >= 0 ? "+" : ""}{portfolio.retPct.toFixed(1)}%
+                        </div>
+                        {noteSummary && (
+                          <div style={{fontSize:10,color:C.textSec,marginTop:6,lineHeight:1.7}}>
+                            {noteSummary}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div className="tn" style={{fontSize:16,fontWeight:700,color:pc(portfolio.totalPnl)}}>
+                          {portfolio.totalPnl >= 0 ? "+" : ""}{Math.round(portfolio.totalPnl).toLocaleString()}
+                        </div>
+                        <button className="ui-btn" onClick={() => switchPortfolio(portfolio.id)} style={{
+                          marginTop:6,
+                          background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+                          ...ghostBtn,
+                        }}>
+                          打開這組
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{...card,marginBottom:8}}>
+            <div style={lbl}>重複持股</div>
+            {overviewDuplicateHoldings.length === 0 ? (
+              <div style={{fontSize:11,color:C.textMute}}>目前沒有跨組合重複持有同一檔股票。</div>
+            ) : (
+              <div style={{display:"grid",gap:8}}>
+                {overviewDuplicateHoldings.map(item => (
+                  <div key={item.code} style={{paddingBottom:8,borderBottom:`1px solid ${C.borderSub}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      <div>
+                        <span style={{fontSize:12,color:C.text,fontWeight:600}}>{item.name}</span>
+                        <span style={{fontSize:10,color:C.textMute,marginLeft:6}}>{item.code}</span>
+                      </div>
+                      <span className="tn" style={{fontSize:10,color:C.textSec}}>合計市值 {Math.round(item.totalValue).toLocaleString()}</span>
+                    </div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
+                      {item.portfolios.map(portfolio => (
+                        <span key={`${item.code}-${portfolio.id}`} style={{
+                          fontSize:9,padding:"2px 8px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:C.textSec,
+                        }}>
+                          {portfolio.name} · {portfolio.qty}股 · {portfolio.pnl >= 0 ? "+" : ""}{Math.round(portfolio.pnl)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={card}>
+            <div style={lbl}>待處理事項</div>
+            {overviewPendingItems.length === 0 ? (
+              <div style={{fontSize:11,color:C.textMute}}>目前所有組合都沒有待處理事件。</div>
+            ) : (
+              <div style={{display:"grid",gap:8}}>
+                {overviewPendingItems.slice(0, 16).map(item => (
+                  <div key={`${item.portfolioId}-${item.id}`} style={{
+                    background:C.subtle,
+                    border:`1px solid ${C.border}`,
+                    borderRadius:8,
+                    padding:"10px 12px",
+                  }}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,flexWrap:"wrap"}}>
+                      <div>
+                        <div style={{fontSize:11,color:C.text,fontWeight:600}}>{item.title}</div>
+                        <div style={{fontSize:10,color:C.textMute,marginTop:4}}>
+                          {item.portfolioName} · {item.date || "未排日期"} · 預測{item.pred === "up" ? "看漲" : item.pred === "down" ? "看跌" : "中性"}
+                        </div>
+                        {item.predReason && (
+                          <div style={{fontSize:10,color:C.textSec,marginTop:6,lineHeight:1.7}}>{item.predReason}</div>
+                        )}
+                      </div>
+                      <button className="ui-btn" onClick={() => switchPortfolio(item.portfolioId)} style={{
+                        background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
+                        ...ghostBtn,
+                      }}>
+                        去處理
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>}
+
         {/* ══════════ HOLDINGS ══════════ */}
-        {tab==="holdings" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="holdings" && <>
           {/* 摘要 */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
             {[["總成本",totalCost.toLocaleString(),C.textSec],
@@ -2373,7 +3307,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[
                   ["需處理", `${attentionCount} 檔`],
-                  ["待驗證", `${pendingCount} 檔`],
+                  ["待處理", `${pendingCount} 檔`],
                   ["目標更新", `${targetUpdateCount} 檔`],
                 ].map(([l,v])=>(
                   <div key={l} style={{background:C.subtle,border:`1px solid ${C.border}`,borderRadius:999,padding:"4px 10px"}}>
@@ -2391,7 +3325,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                 style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}
               />
               <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",justifyContent:"flex-end"}}>
-                {["全部","需處理","待驗證","目標更新","虧損","權證"].map(k=>(
+                {["全部","需處理","待處理","目標更新","虧損","權證"].map(k=>(
                   <button key={k} className="ui-btn" onClick={()=>{setScanFilter(k);setShowAll(false);}} style={{
                     background: scanFilter===k ? C.subtleElev : "transparent",
                     color: scanFilter===k ? C.text : C.textMute,
@@ -2496,7 +3430,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         目標差 {upside>=0?"+":""}{upside?.toFixed(1)}%
                       </span>}
                       {hasPending && <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:C.lavender}}>
-                        事件待驗證 {pending}
+                        事件待處理 {pending}
                       </span>}
                     </div>
                     {/* 目標價進度條 */}
@@ -2556,7 +3490,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <div style={{fontSize:10}}>
                             {hits>0&&<span style={{color:C.olive,marginRight:8}}>準確 {hits}</span>}
                             {misses>0&&<span style={{color:C.up,marginRight:8}}>失誤 {misses}</span>}
-                            {pending>0&&<span style={{color:C.textMute}}>待驗證 {pending}</span>}
+                            {pending>0&&<span style={{color:C.textMute}}>待處理 {pending}</span>}
                             {(hits+misses)>0&&<span style={{color:C.amber,marginLeft:8,fontWeight:600}}>
                               勝率 {Math.round(hits/(hits+misses)*100)}%
                             </span>}
@@ -2578,6 +3512,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                                 {e.correct===true && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.oliveBg,color:C.olive,fontWeight:600}}>✓ 準確</span>}
                                 {e.correct===false && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.upBg,color:C.up,fontWeight:600}}>✗ 失誤</span>}
                                 {e.correct==null && e.status==="pending" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>待驗證</span>}
+                                {e.correct==null && e.status==="tracking" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>追蹤中</span>}
                               </div>
                             </div>
                             <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
@@ -2608,7 +3543,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ WATCHLIST ══════════ */}
-        {tab==="watchlist" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="watchlist" && <>
             <div style={{...card,borderLeft:`3px solid ${alpha(C.up, A.accent)}`,marginBottom:8}}>
             <div style={{fontSize:9,color:C.up,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>今日</div>
             <div style={{fontSize:14,fontWeight:600,color:C.text,marginTop:3}}>
@@ -2683,7 +3618,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         <div style={{fontSize:10}}>
                           {wHits>0&&<span style={{color:C.olive,marginRight:8}}>準確 {wHits}</span>}
                           {wMisses>0&&<span style={{color:C.up,marginRight:8}}>失誤 {wMisses}</span>}
-                          {wPending>0&&<span style={{color:C.textMute}}>待驗證 {wPending}</span>}
+                          {wPending>0&&<span style={{color:C.textMute}}>待處理 {wPending}</span>}
                           {(wHits+wMisses)>0&&<span style={{color:C.amber,marginLeft:8,fontWeight:600}}>
                             勝率 {Math.round(wHits/(wHits+wMisses)*100)}%
                           </span>}
@@ -2705,6 +3640,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                               {e.correct===true && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.oliveBg,color:C.olive,fontWeight:600}}>✓ 準確</span>}
                               {e.correct===false && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.upBg,color:C.up,fontWeight:600}}>✗ 失誤</span>}
                               {e.correct==null && e.status==="pending" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>待驗證</span>}
+                              {e.correct==null && e.status==="tracking" && <span style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.blueBg,color:C.blue}}>追蹤中</span>}
                             </div>
                           </div>
                           <div style={{fontSize:10,color:C.textMute,marginTop:4,lineHeight:1.6}}>{e.predReason}</div>
@@ -2726,7 +3662,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ EVENTS ══════════ */}
-        {tab==="events" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="events" && <>
           <div style={{...card,marginBottom:8}}>
             <div style={lbl}>接力計畫</div>
             <div style={{background:C.subtle,borderRadius:8,padding:"12px 10px",marginTop:6,
@@ -2771,7 +3707,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ DAILY ANALYSIS ══════════ */}
-        {tab==="daily" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="daily" && <>
           {/* 手動觸發按鈕 */}
           {!dailyReport && !analyzing && (
             <div style={{...card,textAlign:"center",padding:"20px 14px",marginBottom:10}}>
@@ -3062,7 +3998,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ RESEARCH (AutoResearch) ══════════ */}
-        {tab==="research" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="research" && <>
           <div style={{...card,marginBottom:10,borderLeft:`3px solid ${alpha(C.teal, A.glow)}`}}>
             <div style={{...lbl,color:C.teal,marginBottom:6}}>AutoResearch · 自主進化系統</div>
             <div style={{fontSize:11,color:C.textSec,lineHeight:1.7,marginBottom:10}}>
@@ -3193,7 +4129,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ UPLOAD ══════════ */}
-        {tab==="trade" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="trade" && <>
           {!parsed && (
             <>
               <div
@@ -3389,7 +4325,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ LOG ══════════ */}
-        {tab==="log" && <>
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="log" && <>
           {(!tradeLog||tradeLog.length===0) ? (
             <div style={{...card,textAlign:"center",padding:"24px 14px"}}>
               <div style={{fontSize:20,marginBottom:6,opacity:0.3}}>◌</div>
@@ -3433,9 +4369,10 @@ ${recentAnalyses || "尚無分析紀錄"}
         </>}
 
         {/* ══════════ NEWS ANALYSIS ══════════ */}
-        {tab==="news" && (()=>{
+        {viewMode !== OVERVIEW_VIEW_MODE && tab==="news" && (()=>{
           const NE = newsEvents || NEWS_EVENTS;
           const past    = NE.filter(isClosedEvent).sort((a,b)=>b.id-a.id);
+          const tracking = NE.filter(e=>e.status==="tracking").sort((a,b)=>a.id-b.id);
           const pending = NE.filter(e=>e.status==="pending").sort((a,b)=>a.id-b.id);
           const hits    = NE.filter(e=>e.correct===true).length;
           const misses  = NE.filter(e=>e.correct===false).length;
@@ -3451,9 +4388,12 @@ ${recentAnalyses || "尚無分析紀錄"}
           const renderEvent = (e, idx) => {
             const open   = expandedNews.has(e.id);
             const isCorrect = e.correct;
+            const trackingMetrics = e.status === "tracking" ? getEventTrackingMetrics(e) : null;
             const borderC = isClosedEvent(e)
               ? (isCorrect===true ? alpha(C.olive, A.solid) : isCorrect===false ? alpha(C.up, A.solid) : C.border)
-              : alpha(predC(e.pred), A.strongLine);
+              : e.status === "tracking"
+                ? alpha(C.blue, A.strongLine)
+                : alpha(predC(e.pred), A.strongLine);
 
             return (
               <div key={e.id}
@@ -3501,6 +4441,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                         color: isCorrect ? C.olive : C.up,
                       }}>{isCorrect ? "✓ 正確" : "✗ 有誤"}</span>
                     )}
+                    {e.status==="tracking" && (
+                      <span style={{fontSize:9,color:C.blue,fontWeight:600}}>追蹤中</span>
+                    )}
                     {e.status==="pending" && (
                       <span style={{fontSize:9,color:C.textMute,fontWeight:500}}>待驗證</span>
                     )}
@@ -3533,6 +4476,45 @@ ${recentAnalyses || "尚無分析紀錄"}
                       <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>{e.predReason}</div>
                     </div>
 
+                    {trackingMetrics && (
+                      <div style={{
+                        background:C.blueBg,
+                        border:`1px solid ${alpha(C.blue, A.soft)}`,
+                        borderRadius:7,
+                        padding:"9px 11px",
+                        marginTop:8,
+                      }}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                          <div style={{fontSize:9,color:C.blue,fontWeight:600,letterSpacing:"0.05em"}}>
+                            追蹤中 · {trackingMetrics.trackingDays != null ? `${trackingMetrics.trackingDays} 天` : "天數計算中"}
+                          </div>
+                          {trackingMetrics.trackingDays != null && trackingMetrics.trackingDays >= 90 && (
+                            <span style={{fontSize:9,color:C.up,fontWeight:600}}>超過 90 天，建議結案</span>
+                          )}
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:8}}>
+                          <div>
+                            <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>事件日價格</div>
+                            <div style={{fontSize:11,color:C.textSec,lineHeight:1.6}}>
+                              {formatEventPriceRecord(e.priceAtEvent)}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>最新價格</div>
+                            <div style={{fontSize:11,color:C.textSec,lineHeight:1.6}}>
+                              {formatEventPriceRecord(trackingMetrics.currentPrices)}
+                            </div>
+                          </div>
+                        </div>
+                        {trackingMetrics.changePct != null && (
+                          <div style={{marginTop:8,fontSize:11,color:trackingMetrics.changePct >= 0 ? C.up : C.down,fontWeight:600}}>
+                            平均變化 {trackingMetrics.changePct >= 0 ? "+" : ""}{trackingMetrics.changePct.toFixed(2)}%
+                            {trackingMetrics.latestDate ? ` · 更新到 ${trackingMetrics.latestDate}` : ""}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* 實際結果（已發生） */}
                     {e.actualNote && (
                       <div style={{
@@ -3557,12 +4539,12 @@ ${recentAnalyses || "尚無分析紀錄"}
                     )}
 
                     {/* 復盤按鈕（待觀察事件） */}
-                    {e.status==="pending" && (
-                      <button onClick={(ev)=>{ev.stopPropagation();setReviewingEvent(e.id);setReviewForm({actual:"up",actualNote:"",lessons:""})}}
+                    {(e.status==="pending" || e.status==="tracking") && (
+                      <button onClick={(ev)=>openEventReview(e, ev)}
                         style={{marginTop:10,width:"100%",padding:"9px",
                           background:alpha(C.olive, A.faint),border:`1px solid ${alpha(C.olive, A.strongLine)}`,
                           borderRadius:8,color:C.olive,fontSize:11,fontWeight:500,cursor:"pointer"}}>
-                        標記結果 · 撰寫復盤
+                        {e.status==="tracking" ? "結案復盤" : "標記結果 · 撰寫復盤"}
                       </button>
                     )}
 
@@ -3634,7 +4616,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         </div>
 
                         <div style={{display:"flex",gap:6}}>
-                          <button onClick={()=>setReviewingEvent(null)}
+                          <button onClick={()=>{setReviewingEvent(null);setReviewForm(createDefaultReviewForm());}}
                             style={{flex:1,padding:"9px",background:"transparent",border:`1px solid ${C.border}`,
                               borderRadius:7,color:C.textMute,fontSize:11,cursor:"pointer"}}>取消</button>
                           <button onClick={()=>submitReview(e.id)}
@@ -3656,10 +4638,11 @@ ${recentAnalyses || "尚無分析紀錄"}
           return <>
             {/* 準確率摘要 */}
             <div style={{
-              display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6, marginBottom:10,
+              display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:6, marginBottom:10,
             }}>
               {[
-                ["已驗證", `${hits+misses}`, C.textSec, C.card],
+                ["待追蹤", `${pending.length}`, C.textSec, C.card],
+                ["追蹤中", `${tracking.length}`, C.blue, C.cardBlue],
                 ["預測正確", `${hits}`, C.up, C.cardRose],
                 ["命中率", hits+misses>0?`${Math.round(hits/(hits+misses)*100)}%`:"—", C.amber, C.cardAmber],
               ].map(([l,v,c,bg])=>(
@@ -3757,6 +4740,9 @@ ${recentAnalyses || "尚無分析紀錄"}
               <span style={{fontSize:9,color:C.textMute}}>點擊展開詳情</span>
             </div>
             {pending.map((e,i)=> renderEvent(e, i))}
+
+            <div style={{...lbl, marginBottom:8, marginTop:16}}>追蹤中 · {tracking.length} 件</div>
+            {tracking.map((e,i)=> renderEvent(e, pending.length + i))}
 
             {/* 已發生 */}
             <div style={{...lbl, marginBottom:8, marginTop:16}}>已發生 · 驗證 {hits+misses}/{past.length} 件</div>

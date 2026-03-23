@@ -3,15 +3,10 @@
 //
 // Preferred env vars:
 // - AI_API_KEY
-// - AI_MODEL
-// - AI_MODE (alias of AI_MODEL)
+// - AI_MODE
 // - AI_API_ENDPOINT
 // - AI_ENABLE_EXTENDED_THINKING
 // - AI_THINKING_BUDGET_TOKENS
-//
-// Backward-compatible fallback:
-// - ANTHROPIC_API_KEY
-// - ANTHROPIC_MODEL
 
 const DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-sonnet-4-20250514";
@@ -30,8 +25,8 @@ export function getAiConfig() {
     displayName: process.env.AI_PROVIDER_NAME || "Claude",
     endpoint: process.env.AI_API_ENDPOINT || DEFAULT_ENDPOINT,
     apiKey,
-    apiKeyEnv: process.env.AI_API_KEY ? "AI_API_KEY" : "ANTHROPIC_API_KEY",
-    model: process.env.AI_MODEL || process.env.AI_MODE || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
+    apiKeyEnv: "AI_API_KEY",
+    model: process.env.AI_MODE || DEFAULT_MODEL,
     apiVersion: process.env.AI_API_VERSION || DEFAULT_VERSION,
     enableExtendedThinking: parseBoolean(process.env.AI_ENABLE_EXTENDED_THINKING),
     thinkingBudgetTokens: Number.isFinite(thinkingBudget) ? thinkingBudget : 2048,
@@ -41,7 +36,7 @@ export function getAiConfig() {
 export function ensureAiConfigured() {
   const config = getAiConfig();
   if (!config.apiKey) {
-    throw new Error("未設定 AI_API_KEY（或相容的 ANTHROPIC_API_KEY）");
+    throw new Error("未設定 AI_API_KEY");
   }
   return config;
 }

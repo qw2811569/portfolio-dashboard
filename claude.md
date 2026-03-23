@@ -114,18 +114,14 @@
 目前支援：
 
 - `AI_API_KEY`
-- `AI_MODEL`
-- `AI_MODE`：`AI_MODEL` 的 alias
+- `AI_MODE`
 - `AI_API_ENDPOINT`
 - `AI_ENABLE_EXTENDED_THINKING`
 - `AI_THINKING_BUDGET_TOKENS`
 
-向後相容：
+目前統一由 `.env` 控制 AI 設定，`.env.local` 不再覆蓋 AI 相關欄位。
 
-- `ANTHROPIC_API_KEY`
-- `ANTHROPIC_MODEL`
-
-目前 `.env` / `.env.local` 已補上：
+`.env` 已補上：
 
 - `AI_MODE=claude-sonnet-4-20250514`
 - `AI_ENABLE_EXTENDED_THINKING=true`

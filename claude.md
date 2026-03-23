@@ -1,6 +1,6 @@
 # Claude Handoff
 
-最後更新：2026-03-23
+最後更新：2026-03-24
 
 ## 專案是什麼
 
@@ -28,6 +28,8 @@
 
 - 設計文件：[docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md)
 - 實作任務清單：[docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md)
+- Claude 台股分析工具手冊：[docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md)
+- Holding dossier / 資料更新架構：[docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md)
 
 ## 已完成的重點
 
@@ -132,6 +134,49 @@
 - 這裡是用 Sonnet 4 的正式 model id
 - 「extended」不是 model id，而是透過 thinking 開關控制
 - 圖片解析 route 預設不開 extended thinking，避免過慢
+
+### 固定操作守則
+
+Claude 在做台股分析時，預設工具組合是 `twsemcp + FinMind + twstock`：
+
+- `twsemcp`：優先用於收盤分析、事件追蹤、官方數據查核
+- `FinMind`：優先用於深度研究、歷史營收 / 財報 / 法人 / 融資融券驗證
+- `twstock`：作為本地 fallback 與簡單技術面補充
+
+資料優先序固定為：
+
+1. `twsemcp` / TWSE 官方資料
+2. `FinMind`
+3. `twstock`
+4. `TradingView`
+5. `Yahoo Finance / stockscreen`
+6. 模型推論
+
+分析規則：
+
+- 若不同來源數字不一致，優先採用較新的官方資料，並標示差異
+- 若屬推論而非直接數據，必須明寫「這是推論」
+- 不可把技術面判斷寫成基本面事實
+- 產出格式固定分成：事實、解讀、動作建議
+
+收盤分析規則：
+
+- 目標是找出今日異常、事件反應、需要復盤的部位，不是重寫整份長報告
+- 優先使用 App 內持倉、事件、analysis history、brain，再補 `twsemcp`
+- 輸出以「今日總結、異常持股、事件追蹤、明日優先觀察」為主
+
+深度研究規則：
+
+- 目標是釐清邏輯、催化劑、風險、時程與操作節點
+- 優先使用 App 內持倉、事件、brain、analysisHistory、researchHistory，再補 `FinMind`
+- 輸出以「核心結論、多頭邏輯、風險與失敗條件、時間軸、操作計畫、是否回寫 brain」為主
+
+底線：
+
+- 沒有資料就明說缺資料，不可硬猜
+- 每個結論都要附條件，不只給看多 / 看空
+- 若研究足以改變策略，必須提出可回寫到 `strategyBrain` 的規則或教訓
+- 詳版規則與工具說明見 [docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md)
 
 ## 本地啟動方式
 

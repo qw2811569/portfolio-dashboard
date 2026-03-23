@@ -1241,6 +1241,47 @@ export default function App() {
     await save(ACTIVE_PORTFOLIO_KEY, pid);
     await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
   };
+  const deleteAnalysisRecord = async (report) => {
+    if (!report?.id || !report?.date) return;
+    if (!window.confirm(`確定要刪除 ${report.date} ${report.time || ""} 的歷史分析記錄？`)) return;
+
+    const nextHistory = (analysisHistory || []).filter(item => item.id !== report.id);
+    const deletingSelectedReport = dailyReport?.id === report.id;
+    const nextDailyReport = deletingSelectedReport ? (nextHistory[0] || null) : dailyReport;
+
+    setAnalysisHistory(nextHistory);
+    if (deletingSelectedReport) {
+      setDailyReport(nextDailyReport);
+      if (!nextDailyReport) setDailyExpanded(false);
+    }
+
+    await savePortfolioData(activePortfolioId, "analysis-history-v1", nextHistory);
+    if (deletingSelectedReport) {
+      await savePortfolioData(activePortfolioId, "daily-report-v1", nextDailyReport);
+    }
+
+    if (canUseCloud) {
+      try {
+        const res = await fetch("/api/brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete-analysis", data: { id: report.id, date: report.date } })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || `刪除失敗 (${res.status})`);
+        const now = Date.now();
+        cloudSyncStateRef.current.syncedAt = now;
+        writeSyncAt("pf-analysis-cloud-sync-at", now);
+      } catch (err) {
+        setSaved("⚠️ 本機已刪除，但雲端刪除失敗");
+        setTimeout(() => setSaved(""), 3000);
+        return;
+      }
+    }
+
+    setSaved("✅ 已刪除歷史分析");
+    setTimeout(() => setSaved(""), 2500);
+  };
   const resetTransientUiState = () => {
     setImg(null);
     setB64(null);
@@ -4695,9 +4736,27 @@ ${recentAnalyses || "尚無分析紀錄"}
                     <span style={{fontSize:12,color:C.text}}>{r.date}</span>
                     <span style={{fontSize:10,color:C.textMute,marginLeft:6}}>{r.time}</span>
                   </div>
-                  <span style={{fontSize:12,fontWeight:600,color:pc(r.totalTodayPnl)}}>
-                    {r.totalTodayPnl>=0?"+":""}{r.totalTodayPnl.toLocaleString()}
-                  </span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:12,fontWeight:600,color:pc(r.totalTodayPnl)}}>
+                      {r.totalTodayPnl>=0?"+":""}{r.totalTodayPnl.toLocaleString()}
+                    </span>
+                    <button
+                      onClick={(ev)=>{
+                        ev.stopPropagation();
+                        deleteAnalysisRecord(r);
+                      }}
+                      style={{
+                        fontSize:10,
+                        padding:"3px 7px",
+                        borderRadius:6,
+                        border:`1px solid ${alpha(C.up, A.line)}`,
+                        background:"transparent",
+                        color:C.up,
+                        cursor:"pointer"
+                      }}>
+                      刪除
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

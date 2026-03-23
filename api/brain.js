@@ -1,8 +1,8 @@
 // Vercel Serverless Function — 策略大腦讀寫
 // 本地檔案優先，Blob 為備份
 import { put, list, del } from '@vercel/blob';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
 const BRAIN_KEY = 'strategy-brain.json';
@@ -25,6 +25,13 @@ function writeLocal(key, data) {
   try {
     if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
     writeFileSync(localPath(key), JSON.stringify(data, null, 2));
+  } catch {}
+}
+
+function deleteLocal(key) {
+  try {
+    const p = localPath(key);
+    if (existsSync(p)) unlinkSync(p);
   } catch {}
 }
 
@@ -72,6 +79,16 @@ async function updateHistoryIndex(report, opts) {
     .sort((a, b) => b.id - a.id)
     .slice(0, 30);
   await write(HISTORY_INDEX_KEY, next, opts);
+}
+
+async function deleteHistoryReport(report, opts) {
+  if (!report?.id || !report?.date) return;
+  const key = `${HISTORY_PREFIX}${report.date}-${report.id}.json`;
+  const current = (await read(HISTORY_INDEX_KEY, opts)) || [];
+  const next = current.filter(item => item.id !== report.id);
+  deleteLocal(key);
+  await write(HISTORY_INDEX_KEY, next, opts);
+  try { await del(key, opts); } catch {}
 }
 
 export default async function handler(req, res) {
@@ -132,6 +149,14 @@ export default async function handler(req, res) {
           await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });
         } catch {}
         await updateHistoryIndex(data, opts);
+        return res.status(200).json({ ok: true });
+      }
+
+      if (action === "delete-analysis") {
+        if (!data?.id || !data?.date) {
+          return res.status(400).json({ error: "缺少要刪除的分析記錄資訊" });
+        }
+        await deleteHistoryReport(data, opts);
         return res.status(200).json({ ok: true });
       }
 

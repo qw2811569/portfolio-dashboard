@@ -153,6 +153,25 @@ const INIT_HOLDINGS = [
   { code:"8227",   name:"巨有科技",      qty:21,   price:128,   cost:146.57, value:2688,  pnl:-403,  pct:-13.08, type:"股票" },
 ];
 
+// ── 金聯成 組合初始持倉 ──────────────────────────────────────────
+const INIT_HOLDINGS_JINLIANCHENG = [
+  { code:"0050",   name:"元大台灣50",       qty:52,     price:75.90,   cost:73.54,   value:3947,     pnl:100,       pct:2.61,    type:"ETF" },
+  { code:"00635U", name:"期元大S&P黃金",     qty:36,     price:50.05,   cost:53.97,   value:1802,     pnl:-162,      pct:-8.35,   type:"ETF" },
+  { code:"00918",  name:"大華優利高填息30",   qty:169,    price:22.58,   cost:23.34,   value:3816,     pnl:-151,      pct:-3.83,   type:"ETF" },
+  { code:"00981A", name:"主動統一台股增長",   qty:309,    price:21.02,   cost:19.22,   value:6495,     pnl:529,       pct:8.91,    type:"ETF" },
+  { code:"2489",   name:"瑞軒",             qty:56000,  price:38.65,   cost:42.27,   value:2164400,  pnl:-212140,   pct:-8.96,   type:"股票" },
+  { code:"3167",   name:"大量",             qty:1000,   price:345.00,  cost:350.50,  value:345000,   pnl:-7024,     pct:-2.00,   type:"股票" },
+  { code:"4562",   name:"穎漢",             qty:7000,   price:32.60,   cost:33.33,   value:228200,   pnl:-6089,     pct:-2.61,   type:"股票" },
+  { code:"6446",   name:"藥華藥",           qty:4100,   price:640.00,  cost:708.32,  value:2624000,  pnl:-291742,   pct:-10.05,  type:"股票" },
+  { code:"7799",   name:"禾榮科",           qty:2951,   price:410.50,  cost:867.69,  value:1211396,  pnl:-1354518,  pct:-52.90,  type:"股票" },
+  { code:"1799",   name:"易威",             qty:59000,  price:37.80,   cost:79.53,   value:2230200,  pnl:-2471836,  pct:-52.68,  type:"股票" },
+  { code:"1815",   name:"富喬",             qty:6000,   price:102.00,  cost:108.74,  value:612000,   pnl:-43134,    pct:-6.61,   type:"股票" },
+  { code:"3491",   name:"昇達科",           qty:140,    price:1450.00, cost:1442.76, value:203000,   pnl:115,       pct:0.06,    type:"股票" },
+  { code:"8074",   name:"鉅橡",             qty:4000,   price:61.10,   cost:66.19,   value:244400,   pnl:-21456,    pct:-8.10,   type:"股票" },
+  { code:"8096",   name:"擎亞",             qty:5500,   price:87.10,   cost:74.80,   value:479050,   pnl:65548,     pct:15.93,   type:"股票" },
+  { code:"7865",   name:"金聯成",           qty:106543, price:49.50,   cost:8.25,    value:5273879,  pnl:4371506,   pct:497.31,  type:"股票" },
+];
+
 const INIT_WATCHLIST = [
   { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      scKey:"amber", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
   { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    scKey:"olive", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
@@ -977,6 +996,29 @@ async function migrateLegacyPortfolioStorageIfNeeded() {
   return true;
 }
 
+async function seedJinlianchengIfNeeded() {
+  const portfolios = await load(PORTFOLIOS_KEY, []);
+  const existing = portfolios.find(p => p.name === "金聯成");
+  if (existing) {
+    const holdings = await loadPortfolioData(existing.id, "holdings-v2", []);
+    if (holdings.length > 0) return; // 已有持倉，不重複 seed
+    await savePortfolioData(existing.id, "holdings-v2", INIT_HOLDINGS_JINLIANCHENG);
+    return;
+  }
+  // 組合不存在 → 建立並 seed
+  const newPf = {
+    id: `p-${Date.now().toString(36)}`,
+    name: "金聯成",
+    isOwner: false,
+    createdAt: todayStorageDate(),
+  };
+  await save(PORTFOLIOS_KEY, [...portfolios, newPf]);
+  for (const field of PORTFOLIO_STORAGE_FIELDS) {
+    await savePortfolioData(newPf.id, field.suffix, field.emptyFallback());
+  }
+  await savePortfolioData(newPf.id, "holdings-v2", INIT_HOLDINGS_JINLIANCHENG);
+}
+
 async function ensurePortfolioRegistry() {
   const storedPortfolios = await load(PORTFOLIOS_KEY, null);
   const portfolios = normalizePortfolios(storedPortfolios);
@@ -1386,6 +1428,7 @@ export default function App() {
       };
 
       await migrateLegacyPortfolioStorageIfNeeded();
+      await seedJinlianchengIfNeeded();
       const registry = await ensurePortfolioRegistry();
       const pid = registry.activePortfolioId;
       const snapshot = await loadPortfolioSnapshot(pid);

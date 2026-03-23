@@ -11,18 +11,18 @@
 
 1. **多組合管理**：支援多人獨立持倉，各自享有完整功能
 2. **事件生命週期強化**：從二段式（待驗證→已驗證）改為三段式（待發生→追蹤中→已結案），加入自動股價追蹤
-3. **策略大腦雙寫**：每人各有完整策略大腦，復盤教訓同步回饋到操盤者的主腦
+3. **策略大腦雙寫**：每人各有完整策略大腦，跨組合教訓同步進操盤者的 `coachLessons`
 
 ## 設計決策紀錄
 
 | 決策 | 選擇 | 理由 |
 |------|------|------|
 | 資料共用策略 | 全部獨立 | 最簡單、最不容易有 bug，交叉比對用唯讀視角處理 |
-| 策略大腦 | 每人完整一顆 + 教訓雙寫到主腦 | 各人累積自己的規則，操盤者也能從所有人的經驗學習 |
+| 策略大腦 | 每人完整一顆 + owner 收 coachLessons | 各人規則與統計不互相污染，操盤者仍可累積跨組合經驗 |
 | 事件驗證 | 自動抓股價 + 追蹤期 + 出場結案 | 不急著當天驗證，追蹤到出場再做最終判定 |
-| 組合切換 | 頂部 dropdown | 包含「全部總覽」彙總視角 |
-| 儲存方案 | 組合包模式（localStorage） | 改動最小、5人規模 localStorage 撐得住（~500KB） |
-| 雲端同步 | 暫不實作 | 先在本地測試通過後再接 Vercel Blob |
+| 組合切換 | 頂部 dropdown + overview mode | 真實 portfolio 與總覽模式分離，避免寫錯 key |
+| 儲存方案 | 組合包模式（localStorage）+ retention | 改動最小，搭配 history 上限與 priceHistory retention 可控 |
+| 雲端同步 | owner-only hard gate | 先保護資料隔離，本地模式穩定後再擴展多組合 Blob |
 | 人數上限 | 不鎖死 | 架構用 portfolioId 索引，可無限擴展 |
 
 ---
@@ -40,29 +40,64 @@ portfolios = [
   { id: "mei", name: "小美", isOwner: false, createdAt: "2026-03-24" },
 ]
 
-// 全域：當前選中
+// 全域：當前選中的真實 portfolio
 // localStorage: "pf-active-portfolio-v1"
 activePortfolioId = "me"
+
+// 全域：當前視角
+// localStorage: "pf-view-mode-v1"
+// 注意：overview 不是 portfolioId，不可拿來組 key
+viewMode = "portfolio" | "overview"
 ```
+
+**關鍵約束**：
+- `activePortfolioId` 只允許真實 portfolio id（如 `me` / `wang`），**永遠不可寫成 `"all"`**
+- 「全部總覽」由 `viewMode === "overview"` 表示，而不是虛構一個 `portfolioId`
+- 任何 save / load / auto-save / cloud sync 都只在 `viewMode === "portfolio"` 時允許執行
 
 ### 1.2 Portfolio-Aware 存取（核心改動）
 
-現有的 `save(key, data)` / `load(key, fallback)` 必須改為 portfolio-aware：
+現有的 `save(key, data)` / `load(key, fallback)` 必須改為 portfolio-aware，但 **不要** 讓 helper 直接依賴 React 當下的 `activePortfolioId`。為了避免切換中途寫錯 key，helper 應該顯式接收 `pid`：
 
 ```js
-// 新增：根據當前組合產生 localStorage key
-function pfKey(suffix) {
-  return `pf-${activePortfolioId}-${suffix}`;
+// 顯式傳入 pid，避免切換過程用到錯的 activePortfolioId
+function pfKey(pid, suffix) {
+  return `pf-${pid}-${suffix}`;
 }
 
-// 所有現有的 save/load 呼叫都要改：
-// 舊: save("pf-holdings-v2", holdings)
-// 新: save(pfKey("holdings-v2"), holdings)
+function savePortfolioData(pid, suffix, data) {
+  return save(pfKey(pid, suffix), data);
+}
 
-// 所有 useEffect auto-save 也要跟著改：
-// 舊: useEffect(() => { save("pf-holdings-v2", holdings); }, [holdings])
-// 新: useEffect(() => { save(pfKey("holdings-v2"), holdings); }, [holdings, activePortfolioId])
+function loadPortfolioData(pid, suffix, fallback) {
+  return load(pfKey(pid, suffix), fallback);
+}
 ```
+
+**auto-save guard 必須一起設計**：
+
+```js
+// 組合切換時，先進入 hydrate 狀態，避免 effect 把舊 state 寫進新 pid
+portfolioTransition = {
+  isHydrating: false,
+  fromPid: "me",
+  toPid: "wang",
+}
+
+// 所有 auto-save effect 都要守這個條件：
+if (!ready) return;
+if (viewMode !== "portfolio") return;
+if (portfolioTransition.isHydrating) return;
+savePortfolioData(activePortfolioId, "holdings-v2", holdings);
+```
+
+也就是說，這次不是單純把：
+- 舊：`save("pf-holdings-v2", holdings)`
+- 改成：`save(pfKey(activePortfolioId, "holdings-v2"), holdings)`
+
+而是要改成：
+- `savePortfolioData(activePortfolioId, "holdings-v2", holdings)`
+- 並在 effect 外層加上 `viewMode` / `isHydrating` guard
 
 **要改的 save/load 呼叫清單**：
 
@@ -77,6 +112,7 @@ function pfKey(suffix) {
 | `pf-daily-report-v1` | `pf-{pid}-daily-report-v1` | 當日報告 |
 | `pf-reversal-v1` | `pf-{pid}-reversal-v1` | 反轉條件 |
 | `pf-research-history-v1` | `pf-{pid}-research-history-v1` | 研究歷史 |
+| `pf-notes-v1` | `pf-{pid}-notes-v1` | 個人備註（新） |
 
 **不隨組合切換的全域 key**：
 
@@ -84,7 +120,11 @@ function pfKey(suffix) {
 |-----|------|
 | `pf-portfolios-v1` | 組合清單 |
 | `pf-active-portfolio-v1` | 當前選中 |
-| `pf-cloud-sync-at` | 全域雲端同步時間戳 |
+| `pf-view-mode-v1` | 當前視角（portfolio / overview） |
+| `pf-cloud-sync-at` | owner 專用雲端同步時間戳 |
+| `pf-analysis-cloud-sync-at` | owner 專用分析同步時間戳 |
+| `pf-research-cloud-sync-at` | owner 專用研究同步時間戳 |
+| `pf-schema-version` | schema / migration 版本旗標 |
 
 **非 owner 組合的 load fallback**：
 ```js
@@ -92,7 +132,7 @@ function pfKey(suffix) {
 // 其他人用空值 fallback
 function loadForPortfolio(pid, suffix, ownerFallback) {
   const fallback = pid === "me" ? ownerFallback : getEmptyFallback(suffix);
-  return load(`pf-${pid}-${suffix}`, fallback);
+  return loadPortfolioData(pid, suffix, fallback);
 }
 
 // 空值 fallback 對照表
@@ -102,6 +142,7 @@ function getEmptyFallback(suffix) {
   if (suffix.includes("targets"))  return {};
   if (suffix.includes("log"))      return [];
   if (suffix.includes("brain"))    return null;
+  if (suffix.includes("notes"))    return { riskProfile: "", preferences: "", customNotes: "" };
   if (suffix.includes("history"))  return [];
   if (suffix.includes("report"))   return null;
   if (suffix.includes("reversal")) return {};
@@ -124,7 +165,10 @@ function getEmptyFallback(suffix) {
 "pf-{pid}-research-history-v1"  → 研究歷史
 ```
 
-每人約 80-120KB，5 人 ≈ 500KB，遠低於 localStorage 5MB 上限。
+每人基礎資料約 80-120KB，但 `priceHistory` 會讓事件資料快速膨脹，因此需要配套 retention：
+- 每筆 event 的 `priceHistory` 最多保留 90 筆（日級）
+- `analysisHistory` / `researchHistory` 維持現有上限 30 筆
+- overview 模式不快取大型衍生資料，只動態彙總 holdings / events
 
 ### 1.4 個人備註結構（新功能）
 
@@ -143,7 +187,7 @@ portfolioNotes = {
 ### 1.5 策略大腦結構
 
 ```js
-// 每人各一顆完整大腦
+// 每人各一顆完整大腦（自己的規則、統計互不污染）
 // localStorage: "pf-{pid}-brain-v1"
 {
   rules: ["規則1", "規則2", ...],
@@ -155,16 +199,26 @@ portfolioNotes = {
   lastUpdate: "2026/04/05"
 }
 
-// 操盤者（me）的大腦額外收所有人的教訓
-// lessons 項目多一個 source 欄位
+// 操盤者（me）的大腦額外收所有人的教訓，但不直接混入自己的 rules/stats
+// 建議新增 coachLessons 欄位，避免「我自己的大腦」被代操對象污染
 {
   ...同上,
-  lessons: [
-    { date: "2026/04/05", text: "教訓內容", source: "老王-台燿法說復盤" },
-    { date: "2026/04/03", text: "教訓內容" },  // 自己的，無 source
+  coachLessons: [
+    {
+      date: "2026/04/05",
+      text: "教訓內容",
+      source: "老王-台燿法說復盤",
+      sourcePortfolioId: "wang",
+      sourceEventId: 1774062104208
+    }
   ]
 }
 ```
+
+**語義規則**：
+- 每個人的 `rules / lessons / commonMistakes / stats` 只反映自己的交易與復盤
+- owner 的 `coachLessons` 只作為「跨組合經驗池」，**不自動回寫到 owner 的 rules / stats**
+- 如果未來要讓 owner AI 吸收他人經驗，應由 prompt 額外摘要 `coachLessons`，而不是直接把他人 lesson 混進 owner 的主 lessons
 
 ### 1.6 事件生命週期（三段式）
 
@@ -172,13 +226,14 @@ portfolioNotes = {
 event = {
   // 沿用欄位
   id, date, title, detail, stocks, pred, predReason,
+  // date = 使用者輸入的「預定事件日」
 
   // 狀態改為三段
   status: "pending" | "tracking" | "closed",
 
   // 新增：追蹤相關
-  eventDate: "2026/04/01",       // 事件實際發生日
-  trackingStart: null,           // 開始追蹤日（事件後約 2 天）
+  eventDate: "2026/04/01",       // 真正採用的事件日（第一個成功抓到價格的交易日）
+  trackingStart: null,           // v1 與 eventDate 相同，保留欄位供未來擴充
   exitDate: null,                // 出場日
   priceAtEvent: null,            // 事件日股價（自動抓）
   priceAtExit: null,             // 出場日股價（自動抓）
@@ -196,6 +251,11 @@ event = {
 ```
 
 **stocks 欄位格式解析**：現有 stocks 格式為 `["晶豪科 3006", "奇鋐 3017"]`，需解析出代碼。複用現有邏輯 `s.match(/\d{4,6}/)?.[0]` 取得股票代碼後查價。
+
+**date / eventDate / trackingStart 的關係**：
+- `date`：使用者建立事件時輸入的預定日期
+- `eventDate`：系統實際用來抓 `priceAtEvent` 的交易日
+- `trackingStart`：v1 直接等於 `eventDate`，保留這個欄位是為了未來若要「事件後 T+2 才開始追蹤」時不必再改 schema
 
 **多股票事件的漲跌判定**：取所有相關股票的平均漲跌幅做為判定依據。
 
@@ -269,13 +329,15 @@ event = {
 ```
 
 - 純唯讀，不可編輯
+- `viewMode` 切到 `"overview"`，但 `activePortfolioId` 保持最後一次真實 portfolio id，不切成 `"all"`
+- overview 模式下禁止任何 auto-save、cloud fetch、cloud save、review submit、daily analysis 寫入
 - 重複持股交叉比對：掃描所有 portfolio 的 holdings，比對 code 欄位
 - 待處理事項：彙總所有 portfolio 的 pending + tracking 事件
 
 ### 2.3 新增/管理組合
 
 - **新增**：表單只填名字，自動產生 id（時間戳或隨機），初始資料為空陣列
-- **管理**：可改名、刪除（二次確認「確定刪除老王的所有資料？」）、匯出單人備份 JSON、編輯個人備註（riskProfile / preferences / customNotes）
+- **管理**：可改名、刪除（二次確認「確定刪除老王的所有資料？」）、匯出單人備份 JSON（含 notes / holdings / events / brain 等）、編輯個人備註（riskProfile / preferences / customNotes）
 - STOCK_META 為全域共用（產業/策略分類跟人無關），不需每人複製
 - EVENTS 常數（硬編碼行事曆，如法說會日期）維持全域共用不分人，因為行事曆是公開資訊
 
@@ -311,12 +373,20 @@ event = {
 
 ```
 用戶選擇「老王」
-  1. saveCurrentPortfolio()     // 把當前所有 state 寫入 "pf-{currentId}-*"
-  2. resetTransientState()      // 重置 UI 暫態（見下方清單）
-  3. setActivePortfolioId("wang")
-  4. loadPortfolio("wang")      // 從 "pf-wang-*" 讀取，更新所有 state
-  5. UI 自動 re-render          // 同步完成，無需 loading
+  1. portfolioTransition.isHydrating = true
+  2. flushCurrentPortfolio()     // 把當前所有 state 寫入 "pf-{currentId}-*"
+  3. resetTransientState()       // 重置 UI 暫態（見下方清單）
+  4. setViewMode("portfolio")
+  5. setActivePortfolioId("wang")
+  6. loadPortfolio("wang")       // 從 "pf-wang-*" 讀取，更新所有 state
+  7. portfolioTransition.isHydrating = false
+  8. UI 自動 re-render           // 同步完成，無需 loading
 ```
+
+**實作約束**：
+- `flushCurrentPortfolio()` 只在 `viewMode === "portfolio"` 時執行
+- 第 1 步到第 7 步之間，所有 auto-save effect 都必須 no-op
+- `loadPortfolio("wang")` 完成前不可發出任何以 `activePortfolioId` 為基礎的雲端請求
 
 **切換時必須重置的 transient UI state**：
 - `reviewingEvent` → null（正在復盤的事件）
@@ -338,24 +408,27 @@ submitReview(eventId)  // 假設當前 portfolio = "wang"
   3. 儲存到 "pf-wang-brain-v1"（老王的大腦）→ via state + auto-save
   4. 直接從 localStorage 讀取 "pf-me-brain-v1"（主腦）
      ↑ 不依賴 React state，避免 race condition
-  5. 把這筆 lesson 加入主腦，帶 source: "老王-{事件標題}"
+  5. 把這筆 lesson 加入主腦的 coachLessons，帶 source / sourcePortfolioId / sourceEventId
   6. 直接寫回 localStorage "pf-me-brain-v1"
   7. 若當前就是 "me"，步驟 3 的 state 更新已包含教訓，跳過 4-6
 ```
 
-**關鍵**：步驟 4-6 直接操作 localStorage 而非 React state，因為當 `activePortfolioId !== "me"` 時，記憶體中的 `strategyBrain` state 存的是當前組合（老王）的大腦，不是主腦。如果透過 auto-save effect 寫入，會把老王的大腦覆蓋到主腦 key。
+**關鍵**：
+- 步驟 4-6 直接操作 localStorage 而非 React state，因為當 `activePortfolioId !== "me"` 時，記憶體中的 `strategyBrain` state 存的是當前組合（老王）的大腦，不是主腦
+- owner 主腦只吸收 `coachLessons`，不自動合併對方的 `rules / commonMistakes / stats`
+- 若未來要做「主腦根據 coachLessons 再進化」，應另開一個 owner-only 分析流程，而不是在 submitReview 當下直接改 owner 規則
 
 ### 3.3 事件狀態轉換流程
 
 ```
 pending → tracking:
-  1. 到了 eventDate（或使用者手動觸發）
+  1. 到了 date（預定事件日，或使用者手動觸發）
   2. 解析 stocks 欄位取得代碼（s.match(/\d{4,6}/)?.[0]）
   3. 抓取相關股票的當日股價 → 填入 priceAtEvent
      - 多股票: priceAtEvent = { "3006": 194.5, "3017": 1905 }
      - 非交易日: 延後至下一個有報價的日期
      - API 失敗: 保持 pending，下次重試
-  4. 設定 trackingStart = 今天
+  4. 設定 eventDate = 今天、trackingStart = 今天
   5. status 改為 "tracking"
   6. 開始記錄 priceHistory（每次 App 開啟時更新）
 
@@ -377,12 +450,35 @@ tracking → closed:
 - 對每個事件的 stocks 解析代碼後抓當日股價（複用現有 price refresh）
 - 若今天的日期尚未記錄，append 到 priceHistory
 - 每筆格式：`{ date: "2026/04/03", prices: { "3006": 510, "3017": 1920 } }`
+- 同一天只允許一筆 priceHistory；若已存在則覆蓋，不重複 append
+- 單一 event 最多保留 90 筆 priceHistory，超過則刪最舊的
 - 不做定時輪詢，避免 API 負擔
 - **超時保護**：追蹤超過 90 天仍未結案，在 UI 顯示提醒但不自動關閉
 
 ### 3.5 雲端同步（暫停）
 
-多組合模式下，雲端同步暫時關閉（`cloudSyncStateRef.current.enabled` 維持現狀但不擴展到新組合）。現有的 `pf-cloud-sync-at`、`pf-analysis-cloud-sync-at`、`pf-research-cloud-sync-at` 三個全域同步時間戳維持不動，只對 "me" 組合的資料生效。等本地測試通過後再擴展。
+多組合模式下，雲端同步採 **owner-only hard gate**，不是「先不擴展」而已，而是程式要明確禁止非 owner 觸發任何雲端資料流。
+
+```js
+const canUseCloud =
+  viewMode === "portfolio" &&
+  activePortfolioId === "me" &&
+  !portfolioTransition.isHydrating;
+
+if (!canUseCloud) {
+  // 不 fetch /api/brain
+  // 不 fetch /api/research
+  // 不 scheduleCloudSave
+  // 不更新 cloud sync timestamps
+}
+```
+
+**具體規則**：
+- boot 階段只有 owner portfolio 會讀 `/api/brain`、`/api/research`
+- auto-save 階段只有 owner portfolio 會 `save-holdings` / `save-events` / `save-brain`
+- `pf-cloud-sync-at`、`pf-analysis-cloud-sync-at`、`pf-research-cloud-sync-at` 視為 owner 專用 key
+- non-owner portfolio 全程只走 localStorage，不共享雲端 fallback
+- overview 模式一律視為 `canUseCloud = false`
 
 ---
 
@@ -390,13 +486,28 @@ tracking → closed:
 
 ### 一次性自動遷移
 
-App 啟動時偵測：若 `pf-portfolios-v1` 不存在但 `pf-holdings-v2` 存在 → 執行遷移。
+App 啟動時偵測：若 `pf-schema-version !== 2` 且任一 legacy key 存在 → 執行遷移。
 
 ```js
 function migrateToPortfolios() {
+  const LEGACY_KEYS = [
+    "pf-holdings-v2",
+    "pf-news-events-v1",
+    "pf-targets-v1",
+    "pf-log-v2",
+    "pf-brain-v1",
+    "pf-analysis-history-v1",
+    "pf-daily-report-v1",
+    "pf-reversal-v1",
+    "pf-research-history-v1",
+  ];
+  const hasLegacyData = LEGACY_KEYS.some(k => localStorage.getItem(k) != null);
+  if (!hasLegacyData) return;
+
   // 1. 建立組合清單
   save("pf-portfolios-v1", [{ id: "me", name: "我", isOwner: true, createdAt: today() }]);
   save("pf-active-portfolio-v1", "me");
+  save("pf-view-mode-v1", "portfolio");
 
   // 2. 搬移現有 key（先寫新 → 再刪舊）
   const MIGRATE_KEYS = [
@@ -430,14 +541,19 @@ function migrateToPortfolios() {
     }));
     save("pf-me-news-events-v1", migrated);
   }
+
+  // 4. 標記 schema version
+  save("pf-schema-version", 2);
 }
 ```
 
 **安全措施**：
 - 先寫新 key，確認成功後才刪舊 key
-- 如果中途失敗（例如 quota），下次啟動時重跑（偵測條件仍然成立）
+- 如果中途失敗（例如 quota），因為 `pf-schema-version` 尚未寫成 2，下次啟動時可安全重跑
 - 遷移過程靜默，使用者無感
 - 事件 status 映射：`"past"` → `"closed"`、`"pending"` 維持不變
+- 遷移條件不能只看 `pf-holdings-v2`，因為有人可能已清空持倉，但仍保有事件 / 大腦 / 分析歷史
+- `notes-v1` 是新功能，舊版無 legacy key，不需搬移；建立新 portfolio 時才初始化預設值
 
 ---
 

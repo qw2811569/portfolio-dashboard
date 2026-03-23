@@ -170,10 +170,13 @@ export default async function handler(req, res) {
       }
       results.push(report);
 
-    } else if (mode === "evolve") {
+    } else if (mode === "evolve" || mode === "portfolio") {
       // ══════════════════════════════════════════════════════════════
-      // ── 系統自我進化：審視整個投資系統，找出改善方向 ──
+      // ── 統一的全組合研究 + 系統進化流程（4 輪迭代）──
       // ══════════════════════════════════════════════════════════════
+      // 合併了舊的 portfolio（個股掃描+組合建議）和 evolve（系統診斷+大腦進化）
+      // 現在不管從哪個按鈕觸發，都走同一個完整流程
+
       const brainCtx = brain ? JSON.stringify(brain) : "（尚未建立）";
       const evtSummary = (events || []).slice(0, 15).map(e =>
         `[${e.correct===true?"✓":e.correct===false?"✗":"⏳"}] ${e.date} ${e.title} 預測${e.pred==="up"?"漲":"跌"} ${e.actualNote||""}`
@@ -181,57 +184,77 @@ export default async function handler(req, res) {
       const histSummary = (analysisHistory || []).slice(0, 5).map(r =>
         `${r.date} 損益${r.totalTodayPnl>=0?"+":""}${r.totalTodayPnl} ${r.aiInsight ? r.aiInsight.slice(0,200)+"..." : ""}`
       ).join("\n---\n");
-      const holdSummary = (stocks || []).map(s => {
+
+      // ── Round 1：個股快掃（由下往上）──
+      const stockSummaries = [];
+      for (const s of (stocks || []).slice(0, 20)) {
         const m = meta?.[s.code] || {};
-        return `${s.name}(${s.code}) ${m.industry}/${m.strategy}/${m.position} 損益${s.pct>=0?"+":""}${s.pct}%`;
-      }).join("\n");
+        const summary = await callClaude(
+          `你是台股分析師。用 100 字內精要分析這檔持股的當前狀態和操作方向。`,
+          `${s.name}(${s.code}) | 產業：${m.industry || "未分類"} | 策略：${m.strategy || "未分類"} | 地位：${m.leader || "未知"}
+現價：${s.price} | 成本：${s.cost} | 損益${s.pct >= 0 ? "+" : ""}${s.pct}%
+請給出：當前狀態（1句）+ 操作方向（1句）+ 信心度(1-10)`,
+          800
+        );
+        stockSummaries.push({ code: s.code, name: s.name, summary, meta: m });
+      }
+      const stockSummaryText = stockSummaries.map(s =>
+        `${s.name}(${s.code})[${s.meta.industry || ""}/${s.meta.position || ""}]: ${s.summary}`
+      ).join("\n\n");
 
-      // Round 1：系統診斷
+      // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
       const diag = await callClaude(
-        `你是投資系統架構師。你要診斷這個交易者的整個投資系統，而不只是個別股票。`,
-        `## 系統全貌
+        `你是投資系統架構師。基於個股研究結果和完整系統資料，診斷這個交易者的投資系統。`,
+        `## 個股研究摘要（Round 1 結果）
+${stockSummaryText}
 
-**持倉組合（${(stocks||[]).length}檔）：**
-${holdSummary}
-
-**策略大腦：**
+## 策略大腦
 ${brainCtx}
 
-**事件預測紀錄：**
-${evtSummary}
+## 事件預測紀錄
+${evtSummary || "（無紀錄）"}
 
-**近期分析紀錄：**
-${histSummary}
+## 近期收盤分析
+${histSummary || "（無紀錄）"}
 
 請診斷這個投資系統：
 1. **決策品質**：從事件預測命中率看，哪些類型的判斷最準？哪些最差？為什麼？
 2. **策略一致性**：策略大腦的規則 vs 實際操作，有沒有言行不一致的地方？
 3. **認知盲點**：從歷史分析看，這個交易者反覆忽略了什麼？
 4. **資金效率**：資金配置是否合理？有沒有資金被困在低效益的部位？
-5. **情緒模式**：從交易紀錄能推斷出什麼情緒傾向？（追高、恐慌出場、過度自信等）`
+5. **情緒模式**：從交易紀錄能推斷出什麼情緒傾向？（追高、恐慌出場、過度自信等）
+6. **個股問題**：根據個股研究摘要，哪幾檔最需要立即行動？`
       );
 
-      // Round 2：進化建議
-      const evolve = await callClaude(
-        `你是投資系統優化顧問。基於診斷結果，提出具體可行的系統改善方案。`,
-        `系統診斷結果：\n${diag}\n\n請提出：
-1. **策略大腦更新建議**：哪些規則要修改？要新增什麼規則？要刪除什麼過時規則？
-2. **持倉結構調整**：具體要怎麼調整？（不只是「分散風險」，要說清楚哪檔換什麼）
-3. **決策流程改善**：進場前應該多問自己什麼問題？出場時常犯的錯誤怎麼防？
-4. **資訊來源優化**：目前的事件追蹤夠不夠？漏掉了哪些重要的觀察角度？
-5. **下週具體行動清單**：按優先順序列出 5 個最應該做的事`
+      // ── Round 3：進化建議 + 組合調整（合併策略建議與系統改善）──
+      const evolveAdvice = await callClaude(
+        `你是投資系統優化顧問兼組合管理專家。基於個股研究和系統診斷，提出完整的改善方案。`,
+        `個股研究摘要：\n${stockSummaryText}\n\n系統診斷結果：\n${diag}\n\n請提出：
+
+## 一、組合層級建議
+1. **組合健康度評分** (1-10)
+2. **最需要行動的 3 檔**（結合個股研究的信心度和系統診斷的問題）
+3. **產業配置調整**（目前配置 vs 建議配置）
+4. **資金調度建議**（具體到哪檔減碼、哪檔加碼、金額比例）
+5. **未來 1 個月最大風險**
+
+## 二、系統改善建議
+1. **策略大腦更新建議**：哪些規則要修改？要新增什麼？要刪除什麼過時規則？
+2. **決策流程改善**：進場前多問什麼問題？出場常犯的錯怎麼防？
+3. **事件追蹤優化**：目前追蹤夠不夠？漏掉哪些重要的觀察角度？
+4. **下週具體行動清單**：按優先順序列出 5 個最應該做的事`
       );
 
-      // Round 3：輸出新版策略大腦（JSON）
-      const newBrain = await callClaude(
-        `基於診斷和進化建議，輸出更新後的策略大腦。回傳**純JSON**（不要markdown code block）。
+      // ── Round 4：更新策略大腦（JSON output）──
+      const newBrainText = await callClaude(
+        `基於所有研究和診斷結果，輸出更新後的策略大腦。回傳**純JSON**（不要markdown code block）。
 結構：{"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
-        `診斷：\n${diag}\n\n進化建議：\n${evolve}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出進化後的策略大腦。保留有效的舊規則，加入新的。`
+        `個股研究：\n${stockSummaryText}\n\n系統診斷：\n${diag}\n\n進化建議：\n${evolveAdvice}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出進化後的策略大腦。保留有效的舊規則，加入新的。`
       );
 
       let parsedBrain = null;
       try {
-        const clean = newBrain.replace(/```json|```/g, "").trim();
+        const clean = newBrainText.replace(/```json|```/g, "").trim();
         parsedBrain = JSON.parse(clean);
       } catch(e) { /* 解析失敗就不更新 */ }
 
@@ -241,13 +264,15 @@ ${histSummary}
       }
 
       const report = {
-        code: "EVOLVE", name: "系統自我進化", date: today, timestamp: Date.now(),
+        code: "EVOLVE", name: "全組合研究 + 系統進化", date: today, timestamp: Date.now(),
         mode: "evolve",
         rounds: [
+          { title: "個股快掃", content: stockSummaries.map(s => `### ${s.name}(${s.code})\n${s.summary}`).join("\n\n") },
           { title: "系統診斷", content: diag },
-          { title: "進化建議", content: evolve },
+          { title: "進化建議 + 組合調整", content: evolveAdvice },
           { title: "策略大腦更新", content: parsedBrain ? `✅ 策略大腦已自動更新\n\n**進化摘要：** ${parsedBrain.evolution || "—"}\n\n**新規則數：** ${parsedBrain.rules?.length || 0}\n**累積教訓：** ${parsedBrain.lessons?.length || 0}` : "⚠️ 策略大腦更新失敗，請手動檢查" },
         ],
+        stockSummaries,
         newBrain: parsedBrain,
       };
       if (persist) {
@@ -256,48 +281,6 @@ ${histSummary}
       }
       if (persist && TOKEN) {
         try { await put(`research/EVOLVE/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
-      }
-      results.push(report);
-
-    } else if (mode === "portfolio") {
-      // ── 全組合研究 ──
-      const stockSummaries = [];
-      for (const s of (stocks || []).slice(0, 20)) {
-        const m = meta?.[s.code] || {};
-        const summary = await callClaude(
-          `你是台股分析師。用 100 字內精要分析這檔持股的當前狀態和操作方向。`,
-          `${s.name}(${s.code}) | 產業：${m.industry} | 策略：${m.strategy} | 地位：${m.leader}
-現價：${s.price} | 成本：${s.cost} | 損益${s.pct >= 0 ? "+" : ""}${s.pct}%
-請給出：當前狀態（1句）+ 操作方向（1句）+ 信心度(1-10)`,
-          800
-        );
-        stockSummaries.push({ code: s.code, name: s.name, summary, meta: m });
-      }
-      const brainCtx = brain ? `策略大腦：${(brain.rules || []).slice(0, 5).join("；")}` : "";
-      const portfolioAnalysis = await callClaude(
-        `你是投資組合管理專家。基於所有個股研究結果，給出組合層級的建議。`,
-        `個股研究摘要：\n${stockSummaries.map(s => `${s.name}(${s.code})[${s.meta.industry}/${s.meta.position}]: ${s.summary}`).join("\n\n")}\n\n${brainCtx}\n\n請分析：
-1. **組合健康度評分** (1-10)
-2. **最需要行動的 3 檔**
-3. **產業配置調整**
-4. **資金調度建議**
-5. **未來 1 個月最大風險**`
-      );
-      const report = {
-        code: "PORTFOLIO", name: "全組合研究", date: today, timestamp: Date.now(),
-        mode: "portfolio",
-        rounds: [
-          { title: "個股研究摘要", content: stockSummaries.map(s => `### ${s.name}(${s.code})\n${s.summary}`).join("\n\n") },
-          { title: "組合策略建議", content: portfolioAnalysis },
-        ],
-        stockSummaries,
-      };
-      if (persist) {
-        writeLocal(`research/PORTFOLIO/${Date.now()}.json`, report);
-        await updateResearchIndex(report);
-      }
-      if (persist && TOKEN) {
-        try { await put(`research/PORTFOLIO/${Date.now()}.json`, JSON.stringify(report), { access: 'public', token: TOKEN, contentType: 'application/json' }); } catch {}
       }
       results.push(report);
     }

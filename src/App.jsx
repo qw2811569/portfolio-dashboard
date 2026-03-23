@@ -2946,7 +2946,7 @@ ${recentAnalyses || "尚無分析紀錄"}
   const runResearch = async (mode, targetStock) => {
     if (researching) return;
     setResearching(true);
-    setResearchTarget(mode === "evolve" ? "EVOLVE" : mode === "single" ? targetStock?.code : "PORTFOLIO");
+    setResearchTarget(mode === "single" ? targetStock?.code : "EVOLVE");
     try {
       const stocks = mode === "single" && targetStock
         ? [targetStock]
@@ -2959,8 +2959,8 @@ ${recentAnalyses || "尚無分析紀錄"}
         mode,
         persist: canUseCloud,
       };
-      // evolve 模式需要事件紀錄和分析歷史
-      if (mode === "evolve") {
+      // evolve / portfolio 模式需要事件紀錄和分析歷史
+      if (mode === "evolve" || mode === "portfolio") {
         body.events = (newsEvents || []).slice(0, 20);
         body.analysisHistory = (analysisHistory || []).slice(0, 10);
       }
@@ -2974,8 +2974,8 @@ ${recentAnalyses || "尚無分析紀錄"}
         const result = data.results[0];
         setResearchResults(result);
         setResearchHistory(prev => [result, ...(prev||[])].slice(0, 30));
-        // evolve 模式：自動更新策略大腦
-        if (mode === "evolve" && result.newBrain) {
+        // evolve / portfolio 模式：自動更新策略大腦
+        if ((mode === "evolve" || mode === "portfolio") && result.newBrain) {
           setStrategyBrain(mergeBrainPreservingCoachLessons(result.newBrain, strategyBrain));
           setSaved("✅ 系統進化完成 · 策略大腦已更新");
         } else {
@@ -4640,18 +4640,11 @@ ${recentAnalyses || "尚無分析紀錄"}
 
             <div style={{display:"flex",gap:6,marginBottom:10}}>
               <button onClick={()=>runResearch("evolve")} disabled={researching}
-                style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:600,
+                style={{flex:1,padding:"13px",borderRadius:8,border:"none",fontSize:13,fontWeight:600,
                   cursor:researching?"not-allowed":"pointer",
                   background:researching && researchTarget==="EVOLVE"?C.subtle:`linear-gradient(135deg,${C.fillTomato},${C.fillChoco})`,
                   color:researching && researchTarget==="EVOLVE"?C.textMute:C.onFill}}>
-                {researching && researchTarget==="EVOLVE" ? "系統進化中..." : "🧬 系統自我進化"}
-              </button>
-              <button onClick={()=>runResearch("portfolio")} disabled={researching}
-                style={{flex:1,padding:"11px",borderRadius:8,border:"none",fontSize:12,fontWeight:500,
-                  cursor:researching?"not-allowed":"pointer",
-                  background:researching && researchTarget==="PORTFOLIO"?C.subtle:alpha(C.fillTeal, A.pressed),
-                  color:researching && researchTarget==="PORTFOLIO"?C.textMute:C.onFill}}>
-                {researching && researchTarget==="PORTFOLIO" ? "全組合研究中..." : "🔬 全組合研究"}
+                {researching && researchTarget==="EVOLVE" ? "全組合研究 + 系統進化中..." : "🧬 全組合研究 + 系統進化"}
               </button>
             </div>
 

@@ -372,14 +372,6 @@ const DEFAULT_PORTFOLIO_NOTES = {
   preferences: "",
   customNotes: "",
 };
-const EMPTY_STRATEGY_BRAIN = {
-  rules: [],
-  lessons: [],
-  commonMistakes: [],
-  stats: {},
-  lastUpdate: null,
-  coachLessons: [],
-};
 const EVENT_HISTORY_LIMIT = 90;
 const DEFAULT_REVIEW_FORM = {
   actual: "up",
@@ -478,6 +470,27 @@ function normalizeStrategyBrain(value, { allowEmpty = false } = {}) {
     Boolean(normalized.lastUpdate);
 
   return hasContent || allowEmpty ? normalized : null;
+}
+
+function mergeBrainPreservingCoachLessons(nextBrain, currentBrain) {
+  const normalizedNext = normalizeStrategyBrain(nextBrain, { allowEmpty: true });
+  const normalizedCurrent = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
+  const coachLessons = normalizedNext?.coachLessons?.length
+    ? normalizedNext.coachLessons
+    : (normalizedCurrent?.coachLessons || []);
+
+  if (!normalizedNext) {
+    if (!coachLessons.length) return null;
+    return {
+      ...createEmptyStrategyBrain(),
+      coachLessons,
+    };
+  }
+
+  return {
+    ...normalizedNext,
+    coachLessons,
+  };
 }
 
 function formatPortfolioNotesContext(notes) {
@@ -776,7 +789,7 @@ function normalizeBackupStorage(payload) {
   const directMapped = mapEntries(payload);
   if (Object.keys(directMapped).length > 0) return directMapped;
 
-  const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || payload.stats;
+  const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || Array.isArray(payload.coachLessons) || payload.stats;
   if (looksLikeBrain) return { [pfKey(OWNER_PORTFOLIO_ID, "brain-v1")]: payload };
 
   const looksLikeDailyReport = payload.totalTodayPnl != null || Array.isArray(payload.changes) || typeof payload.aiInsight === "string";
@@ -1711,6 +1724,36 @@ export default function App() {
       setReviewForm(createDefaultReviewForm({ actual: event.actual || "up" }));
     }
   };
+  const appendCoachLessonToOwnerBrain = async ({ event, note, lesson }) => {
+    if (!event || activePortfolioId === OWNER_PORTFOLIO_ID) return;
+
+    const sourcePortfolio = portfolios.find(item => item.id === activePortfolioId);
+    const text = (lesson || note || "").trim();
+    if (!text) return;
+
+    const ownerBrain = normalizeStrategyBrain(
+      await loadPortfolioData(OWNER_PORTFOLIO_ID, "brain-v1", null),
+      { allowEmpty: true }
+    );
+    const sourceLabel = sourcePortfolio?.name || activePortfolioId;
+    const coachLesson = {
+      date: toSlashDate(),
+      text,
+      source: `${sourceLabel}-${event.title}`,
+      sourcePortfolioId: activePortfolioId,
+      sourceEventId: event.id,
+    };
+    const existing = (ownerBrain.coachLessons || []).filter(item => !(
+      item.sourcePortfolioId === coachLesson.sourcePortfolioId &&
+      item.sourceEventId === coachLesson.sourceEventId
+    ));
+    const nextOwnerBrain = {
+      ...ownerBrain,
+      coachLessons: [...existing, coachLesson].slice(-100),
+    };
+
+    await savePortfolioData(OWNER_PORTFOLIO_ID, "brain-v1", nextOwnerBrain);
+  };
 
   // ── 刷新即時股價（TWSE MIS API）───────────────────────────────
   const refreshPrices = async () => {
@@ -1858,6 +1901,11 @@ export default function App() {
 
         // 組裝策略大腦上下文
         const brain = strategyBrain;
+        const notesContext = formatPortfolioNotesContext(portfolioNotes);
+        const coachContext = activePortfolioId === OWNER_PORTFOLIO_ID && (brain?.coachLessons || []).length > 0 ? `
+跨組合教練教訓：
+${brain.coachLessons.slice(-5).map(item => `- [${item.date}] ${item.source || item.sourcePortfolioId}：${item.text}`).join("\n")}
+` : "";
         const brainContext = brain ? `
 ══ 策略大腦（累積知識庫）══
 核心策略規則：
@@ -1868,6 +1916,7 @@ ${(brain.lessons||[]).slice(-10).map(l=>`- [${l.date}] ${l.text}`).join("\n")}
 
 勝率統計：${brain.stats?.hitRate||"尚無"}
 常犯錯誤：${(brain.commonMistakes||[]).join("、")||"尚無"}
+${coachContext}
 ══════════════════════════` : "";
 
         // 反轉追蹤上下文
@@ -1948,6 +1997,7 @@ ${losers.map(h=>{
 （基於今日表現，策略大腦應該新增或修改什麼規則？）`,
             userPrompt: `今日日期：${today}
 今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
+${notesContext}
 ${brainContext}
 ${revContext}
 
@@ -2051,7 +2101,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const brainData = await brainRes.json();
           const brainText = brainData.content?.[0]?.text || "";
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
-          const newBrain = JSON.parse(cleanBrain);
+          const newBrain = mergeBrainPreservingCoachLessons(JSON.parse(cleanBrain), strategyBrain);
           setStrategyBrain(newBrain);
         } catch (e) {
           console.error("策略大腦更新失敗:", e);
@@ -2108,9 +2158,17 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     setReviewForm(createDefaultReviewForm());
     setSaved("✅ 復盤已儲存，策略整合中...");
 
+    if (evt && (savedLessons || savedNote)) {
+      appendCoachLessonToOwnerBrain({ event: evt, note: savedNote, lesson: savedLessons }).catch(err => {
+        console.error("同步 coachLessons 失敗:", err);
+      });
+    }
+
     // 將復盤心得整合進策略大腦（AI 驗證+歸納）
-    if (evt && strategyBrain && (savedLessons || savedNote)) {
+    if (evt && (savedLessons || savedNote)) {
       try {
+        const currentBrain = normalizeStrategyBrain(strategyBrain, { allowEmpty: true });
+        const notesContext = formatPortfolioNotesContext(portfolioNotes);
         const brainRes = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2123,13 +2181,14 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 回傳**純JSON**格式（不要markdown code block），結構：
 {"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
             userPrompt: `事件：${evt.title}
+${notesContext}
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
 實際走勢：${submittedForm.actual==="up"?"上漲":submittedForm.actual==="down"?"下跌":"中性"} — ${savedNote}
 預測${wasCorrect?"正確":"錯誤"}
 用戶覆盤心得：${savedLessons || "（未填）"}
 
 現有策略大腦：
-${JSON.stringify(strategyBrain)}
+${JSON.stringify(currentBrain)}
 
 請更新策略大腦，特別注意：用戶的覆盤不一定客觀，如果有歸因偏差請指出。`
           })
@@ -2137,9 +2196,10 @@ ${JSON.stringify(strategyBrain)}
         const brainData = await brainRes.json();
         const brainText = brainData.content?.[0]?.text || "";
         const cleanBrain = brainText.replace(/```json|```/g, "").trim();
-        const newBrain = JSON.parse(cleanBrain);
-        const feedback = newBrain.reviewFeedback;
-        delete newBrain.reviewFeedback;
+        const rawBrain = JSON.parse(cleanBrain);
+        const feedback = rawBrain.reviewFeedback;
+        delete rawBrain.reviewFeedback;
+        const newBrain = mergeBrainPreservingCoachLessons(rawBrain, currentBrain);
         setStrategyBrain(newBrain);
         setSaved(feedback ? `🧠 ${feedback}` : "✅ 策略大腦已更新");
         setTimeout(() => setSaved(""), 6000);
@@ -2536,7 +2596,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         setResearchHistory(prev => [result, ...(prev||[])].slice(0, 30));
         // evolve 模式：自動更新策略大腦
         if (mode === "evolve" && result.newBrain) {
-          setStrategyBrain(result.newBrain);
+          setStrategyBrain(mergeBrainPreservingCoachLessons(result.newBrain, strategyBrain));
           setSaved("✅ 系統進化完成 · 策略大腦已更新");
         } else {
           setSaved("✅ 研究完成");
@@ -3924,6 +3984,24 @@ ${recentAnalyses || "尚無分析紀錄"}
                       <div key={i} style={{fontSize:10,color:C.textMute,lineHeight:1.6,
                         padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
                         <span style={{color:C.textSec}}>[{l.date}]</span> {l.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {activePortfolioId === OWNER_PORTFOLIO_ID && (strategyBrain.coachLessons||[]).length>0 && (
+                  <div style={{marginBottom:6}}>
+                    <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:4}}>
+                      跨組合教練教訓（{strategyBrain.coachLessons.length} 條）
+                    </div>
+                    {strategyBrain.coachLessons.slice(-3).reverse().map((lesson, i)=>(
+                      <div key={`${lesson.sourcePortfolioId}-${lesson.sourceEventId}-${i}`} style={{
+                        fontSize:10,color:C.textMute,lineHeight:1.6,padding:"3px 0",
+                        borderBottom:`1px solid ${C.borderSub}`
+                      }}>
+                        <span style={{color:C.textSec}}>[{lesson.date}]</span>{" "}
+                        {lesson.source ? `${lesson.source}：` : ""}
+                        {lesson.text}
                       </div>
                     ))}
                   </div>

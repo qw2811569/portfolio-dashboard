@@ -1,7 +1,24 @@
 # 多組合管理 + 事件追蹤強化 設計文件
 
 > 日期：2026-03-23
-> 狀態：設計完成，待實作
+> 狀態：已同步到程式（2026-03-23），待手動 smoke test
+
+## 實作同步摘要
+
+本文件已對齊目前程式內的 v1 實作，以下能力已落地：
+
+- portfolio-aware localStorage、schema migration、backup/import
+- 安全切組合、overview 唯讀模式、組合新增/改名/刪除
+- owner-only cloud gate（非 owner / overview 不碰 `/api/brain`、`/api/research`）
+- 事件三段式生命週期：`pending / tracking / closed`
+- 非 owner 復盤同步寫入 owner `coachLessons`
+- 個人 notes 已接進每日分析與復盤 prompt
+
+本次也保留幾個 v1 範圍限制：
+
+- 「管理組合」目前沒有單人備份匯出按鈕，仍使用全域 `備份 / 匯入`
+- `tracking` 卡片目前顯示價格摘要與追蹤天數，未畫 sparkline 折線圖
+- `coachLessons` 目前只累積與顯示，不會自動反向進化 owner 的 `rules / stats`
 
 ## 背景與目標
 
@@ -282,18 +299,12 @@ event = {
 
 位置：App 最頂端，標題列區域。
 
+**目前實作**：v1 採「`select + 行動按鈕`」而非客製 dropdown menu，但資料行為相同。
+
 ```
 ┌─────────────────────────────────┐
-│  ▼ 我的組合                      │  ← dropdown trigger
-├─────────────────────────────────┤
-│  ● 我          17檔  +5.2%      │  ← 選中態
-│    老王         8檔  -1.3%      │
-│    小美        12檔  +3.8%      │
-│  ──────────────────────────────  │
-│    📊 全部總覽                   │
-│  ──────────────────────────────  │
-│    ＋ 新增組合                   │
-│    ⚙ 管理組合                   │
+│  [ 我 · 17檔 · +5.2% ▼ ]         │
+│  [＋ 新組合] [全部總覽] [管理組合] │
 └─────────────────────────────────┘
 ```
 
@@ -337,7 +348,8 @@ event = {
 ### 2.3 新增/管理組合
 
 - **新增**：表單只填名字，自動產生 id（時間戳或隨機），初始資料為空陣列
-- **管理**：可改名、刪除（二次確認「確定刪除老王的所有資料？」）、匯出單人備份 JSON（含 notes / holdings / events / brain 等）、編輯個人備註（riskProfile / preferences / customNotes）
+- **管理**：可改名、刪除（二次確認「確定刪除老王的所有資料？」）、編輯個人備註（riskProfile / preferences / customNotes）
+- **單人備份匯出**：v1 尚未做，暫時沿用 header 的全域 `備份 / 匯入`
 - STOCK_META 為全域共用（產業/策略分類跟人無關），不需每人複製
 - EVENTS 常數（硬編碼行事曆，如法說會日期）維持全域共用不分人，因為行事曆是公開資訊
 
@@ -354,16 +366,16 @@ event = {
 │  目前股價：  528  (+4.5%)        │
 │  追蹤天數：  5 天                 │
 │                                  │
-│  505 ──┬──╱──╲──╱── 528        │  ← 簡易折線圖
-│        事件日        今天        │
+│  平均變化：+4.5% · 追蹤 5 天      │
 │                                  │
-│  [ 繼續追蹤 ]    [ 結案復盤 ]    │
+│  [ 結案復盤 ]                    │
 └─────────────────────────────────┘
 ```
 
 - 股價資料來自現有的 price refresh 機制
 - 點「結案復盤」→ 自動帶入 priceAtExit、預填 actual → 進入現有復盤表單
 - 追蹤超過 90 天的事件卡片顯示橙色警告標記
+- v1 尚未繪製折線圖，先以價格摘要 + 追蹤天數表示
 
 ---
 
@@ -445,7 +457,7 @@ tracking → closed:
 
 ### 3.4 priceHistory 更新策略
 
-- 每次 App 開啟、或切換到事件分析 Tab 時
+- 每次 App 開啟、或切換到事件相關使用流程時
 - 掃描所有 status="tracking" 的事件
 - 對每個事件的 stocks 解析代碼後抓當日股價（複用現有 price refresh）
 - 若今天的日期尚未記錄，append 到 priceHistory
@@ -564,9 +576,33 @@ function migrateToPortfolios() {
 - Vercel Blob 雲端同步（測試通過後再接）
 - 多人同時登入/權限控制
 - 組合之間的資料匯入匯出（未來可加）
+- 管理頁中的單人備份匯出
 - 事件的跨組合共用（各自獨立，最簡單）
 - 觀察清單（INIT_WATCHLIST）的多組合化（維持全域共用）
 - EVENTS 常數（行事曆）的多組合化（維持全域共用，公開資訊）
+- tracking 折線圖視覺化（目前只顯示數值摘要）
+
+---
+
+## 六、驗證結果
+
+### 已完成
+
+- `npm run build` 通過
+- 多組合 localStorage key、migration、backup/import 已落地
+- overview 唯讀保護、owner-only cloud gate、coachLessons 雙寫已落地
+
+### 建議手動 smoke test
+
+1. 以既有資料啟動，確認 `me` 畫面與舊版一致
+2. 新增 `wang`，確認預設 holdings/events/brain 為空
+3. `me -> wang -> me` 來回切換，確認資料不互相污染
+4. 切到「全部總覽」，確認：
+   - 看得到各組合摘要 / 重複持股 / 待處理事項
+   - 無法編輯
+   - 不觸發 cloud sync
+5. 在 `wang` 新增事件，等事件轉為 `tracking`，確認 priceHistory 有更新
+6. 在 `wang` 完成復盤，切回 `me`，確認 `coachLessons` 有新增一筆跨組合教訓
 
 ### 未來擴展路徑
 

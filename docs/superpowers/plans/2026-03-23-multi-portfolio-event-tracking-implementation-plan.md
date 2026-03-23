@@ -2,11 +2,18 @@
 
 > 依據設計文件：`docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md`
 > 日期：2026-03-23
-> 狀態：待實作
+> 狀態：程式面完成，待手動 smoke test
 
 ## 目標
 
 把多組合管理與事件追蹤強化拆成可逐步落地的實作順序，優先保護資料隔離，避免在「切組合 / 自動儲存 / 雲端同步」半改狀態下寫錯資料。
+
+## 實作同步摘要
+
+- Phase A-E 已完成並同步到程式
+- 已完成機器驗證：`npm run build`
+- 設計文件已同步：`docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md`
+- 尚待手動 smoke：切組合隔離、overview 唯讀、tracking 追蹤、coachLessons 回寫、owner-only cloud gate
 
 ## 實作原則
 
@@ -16,9 +23,9 @@
 
 ---
 
-## Phase A：資料模型與安全隔離
+## Phase A：資料模型與安全隔離（已完成）
 
-### Task A1：加入 portfolio 基本狀態與 key helper
+### Task A1：加入 portfolio 基本狀態與 key helper（已完成）
 
 - 目標：新增 `portfolios`、`activePortfolioId`、`viewMode`、`portfolioTransition.isHydrating`
 - 檔案：
@@ -31,7 +38,7 @@
   - App 還能正常啟動
   - 尚未切組合前，`me` 的資料讀寫行為與現在一致
 
-### Task A2：補上 schema version 與一次性 migration
+### Task A2：補上 schema version 與一次性 migration（已完成）
 
 - 目標：舊單組合資料可安全搬到 `pf-me-*`
 - 檔案：
@@ -45,7 +52,7 @@
   - 舊資料可搬移一次且可重跑
   - 搬移後 `me` 的既有持倉 / 事件 / 策略大腦仍能正常顯示
 
-### Task A3：讓 backup / import 支援 portfolio-aware key
+### Task A3：讓 backup / import 支援 portfolio-aware key（已完成）
 
 - 目標：本機備份不會只備到舊單組合 key
 - 檔案：
@@ -61,9 +68,9 @@
 
 ---
 
-## Phase B：切組合與總覽模式
+## Phase B：切組合與總覽模式（已完成）
 
-### Task B1：建立 `loadPortfolio(pid)` / `flushCurrentPortfolio()` / `switchPortfolio(pid)`
+### Task B1：建立 `loadPortfolio(pid)` / `flushCurrentPortfolio()` / `switchPortfolio(pid)`（已完成）
 
 - 目標：安全切組合，不把 A 的 state 存進 B
 - 檔案：
@@ -76,7 +83,7 @@
   - 來回切 `me` / `wang`，資料不互相污染
   - 切換途中沒有短暫顯示錯人的資料
 
-### Task B2：所有 auto-save effect 加上 guard
+### Task B2：所有 auto-save effect 加上 guard（已完成）
 
 - 目標：hydrate / overview 期間任何 auto-save 都不寫資料
 - 檔案：
@@ -91,7 +98,7 @@
   - 切組合時 localStorage 不會產生錯的 `pf-{pid}-*`
   - overview 模式完全唯讀
 
-### Task B3：加入頂部組合切換器
+### Task B3：加入頂部組合切換器（已完成）
 
 - 目標：可選擇 `me` / 其他組合 / 全部總覽
 - 檔案：
@@ -104,7 +111,7 @@
   - 能從 UI 切到不同 portfolio
   - overview 不會改寫任何資料
 
-### Task B4：建立 overview mode 頁面
+### Task B4：建立 overview mode 頁面（已完成）
 
 - 目標：彙總所有 portfolio 的 holdings + events
 - 檔案：
@@ -118,7 +125,7 @@
   - overview 只讀
   - 點組合摘要可切回該 portfolio
 
-### Task B5：新增 / 管理組合 UI
+### Task B5：新增 / 管理組合 UI（已完成）
 
 - 目標：可新增、改名、刪除組合，並編輯 notes
 - 檔案：
@@ -134,9 +141,9 @@
 
 ---
 
-## Phase C：owner-only cloud gate
+## Phase C：owner-only cloud gate（已完成）
 
-### Task C1：boot 階段只讓 owner 讀雲端
+### Task C1：boot 階段只讓 owner 讀雲端（已完成）
 
 - 目標：非 owner 與 overview 完全不碰 `/api/brain`、`/api/research`
 - 檔案：
@@ -147,7 +154,7 @@
 - 完成條件：
   - 切到 `wang` 時不會觸發全域 cloud fetch
 
-### Task C2：auto-save 只讓 owner 寫雲端
+### Task C2：auto-save 只讓 owner 寫雲端（已完成）
 
 - 目標：防止非 owner 覆寫現有 Blob singleton
 - 檔案：
@@ -160,9 +167,9 @@
 
 ---
 
-## Phase D：事件模型升級
+## Phase D：事件模型升級（已完成）
 
-### Task D1：升級事件 schema 與 status
+### Task D1：升級事件 schema 與 status（已完成）
 
 - 目標：`pending / tracking / closed`
 - 檔案：
@@ -174,7 +181,7 @@
   - 舊事件仍可顯示
   - 新事件可用新欄位
 
-### Task D2：實作 `pending -> tracking`
+### Task D2：實作 `pending -> tracking`（已完成）
 
 - 目標：事件到日後自動開始追蹤
 - 檔案：
@@ -188,7 +195,7 @@
   - 非交易日可延後到下一個有效報價日
   - API 失敗不會壞資料，只是留在 pending
 
-### Task D3：實作 `priceHistory` 更新與 retention
+### Task D3：實作 `priceHistory` 更新與 retention（已完成）
 
 - 目標：tracking 事件會累積追蹤價格
 - 檔案：
@@ -200,7 +207,7 @@
 - 完成條件：
   - tracking 卡片可顯示目前股價 / 追蹤天數
 
-### Task D4：實作 `tracking -> closed`
+### Task D4：實作 `tracking -> closed`（已完成）
 
 - 目標：結案復盤前自動帶入 exit price 與預填 actual
 - 檔案：
@@ -214,9 +221,9 @@
 
 ---
 
-## Phase E：策略大腦雙寫
+## Phase E：策略大腦雙寫（已完成）
 
-### Task E1：個人策略大腦維持隔離
+### Task E1：個人策略大腦維持隔離（已完成）
 
 - 目標：每個 portfolio 的 brain 只反映自己的交易
 - 檔案：
@@ -227,7 +234,7 @@
 - 完成條件：
   - 切組合後看到的 brain 完全不同
 
-### Task E2：owner 寫入 `coachLessons`
+### Task E2：owner 寫入 `coachLessons`（已完成）
 
 - 目標：跨組合經驗只進 owner 的 `coachLessons`
 - 檔案：
@@ -241,10 +248,13 @@
 
 ---
 
-## Phase F：驗證與收尾
+## Phase F：驗證與收尾（進行中）
 
 ### Task F1：手動驗證清單
 
+- 已完成：
+  - `npm run build`
+- 待手動 smoke：
 - 驗證 `me` 啟動後資料與現在一致
 - 驗證新增 `wang` 後資料預設為空
 - 驗證 `me -> wang -> me` 切換不互相污染
@@ -254,17 +264,23 @@
 - 驗證 tracking / closed 流程可正常復盤
 - 驗證 owner 的 `coachLessons` 有收到他人經驗
 
-### Task F2：文件同步
+### Task F2：文件同步（已完成）
 
 - 檔案：
   - `docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md`
-- 要做：
-  - 如果實作中有與 spec 不同的取捨，回寫 spec
-  - 補上最終資料結構範例與已知限制
+  - `docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md`
+
+## 收尾狀態
+
+- 程式實作：完成
+- 設計文件同步：完成
+- 任務清單同步：完成
+- 自動化驗證：`npm run build` 已通過
+- 人工 smoke test：待執行
 
 ---
 
-## 建議實作順序
+## 實際完成順序
 
 1. `A1 -> A2 -> A3`
 2. `B1 -> B2`
@@ -274,13 +290,13 @@
 6. `E1 -> E2`
 7. `F1 -> F2`
 
-## 建議停點
+## 里程碑
 
-- Stop 1：完成 Phase A + B2  
-  此時資料隔離已安全，可先確認不會毀資料
+- 里程碑 1：完成 Phase A + B2  
+  資料隔離與 hydrate guard 已落地
 
-- Stop 2：完成 Phase C + B4  
-  此時多組合切換與總覽可用，但事件追蹤尚未升級
+- 里程碑 2：完成 Phase C + B4  
+  多組合切換、overview 唯讀、owner-only cloud gate 已可用
 
-- Stop 3：完成全部  
-  才算真正交付 multi-portfolio + tracking 強化
+- 里程碑 3：完成全部  
+  multi-portfolio + tracking + coachLessons 已交付，剩人工 smoke

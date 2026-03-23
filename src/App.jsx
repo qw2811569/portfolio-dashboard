@@ -475,6 +475,10 @@ const CLOUD_SAVE_DEBOUNCE = 1000 * 20;
 const OWNER_PORTFOLIO_ID = "me";
 const PORTFOLIO_VIEW_MODE = "portfolio";
 const OVERVIEW_VIEW_MODE = "overview";
+const MARKET_PRICE_CACHE_KEY = "pf-market-price-cache-v1";
+const MARKET_PRICE_SYNC_KEY = "pf-market-price-sync-v1";
+const MARKET_TIMEZONE = "Asia/Taipei";
+const POST_CLOSE_SYNC_MINUTES = 13 * 60 + 35;
 const CURRENT_SCHEMA_VERSION = 2;
 const PORTFOLIOS_KEY = "pf-portfolios-v1";
 const ACTIVE_PORTFOLIO_KEY = "pf-active-portfolio-v1";
@@ -514,11 +518,26 @@ const DEFAULT_NEW_EVENT = {
   pred: "up",
   predReason: "",
 };
+const DEFAULT_FUNDAMENTAL_DRAFT = {
+  code: "",
+  revenueMonth: "",
+  revenueYoY: "",
+  revenueMoM: "",
+  quarter: "",
+  eps: "",
+  grossMargin: "",
+  roe: "",
+  source: "",
+  updatedAt: "",
+  note: "",
+};
 const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
   { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "targets-v1", alias: "targets", ownerFallback: () => INIT_TARGETS, emptyFallback: () => ({}) },
+  { suffix: "fundamentals-v1", alias: "fundamentals", ownerFallback: () => ({}), emptyFallback: () => ({}), hasLegacy: false },
   { suffix: "watchlist-v1", alias: "watchlist", ownerFallback: () => normalizeWatchlist(INIT_WATCHLIST), emptyFallback: () => [], hasLegacy: false },
+  { suffix: "holding-dossiers-v1", alias: "holdingDossiers", ownerFallback: () => [], emptyFallback: () => [], hasLegacy: false },
   { suffix: "news-events-v1", alias: "newsEvents", ownerFallback: () => NEWS_EVENTS, emptyFallback: () => [] },
   { suffix: "analysis-history-v1", alias: "analysisHistory", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "daily-report-v1", alias: "dailyReport", ownerFallback: () => null, emptyFallback: () => null },
@@ -540,6 +559,143 @@ const CLOSED_EVENT_STATUSES = new Set(["past", "closed"]);
 
 function todayStorageDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function getTaipeiClock(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: MARKET_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hour12: false,
+  }).formatToParts(date);
+  const info = Object.fromEntries(parts.filter(part => part.type !== "literal").map(part => [part.type, part.value]));
+  const hour = Number(info.hour || 0);
+  const minute = Number(info.minute || 0);
+  return {
+    marketDate: `${info.year}-${info.month}-${info.day}`,
+    weekday: info.weekday || "",
+    hour,
+    minute,
+    minutes: hour * 60 + minute,
+    isWeekend: info.weekday === "Sat" || info.weekday === "Sun",
+  };
+}
+
+function parseStoredDate(value) {
+  if (!value || typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function createEmptyMarketPriceCache() {
+  return {
+    marketDate: null,
+    syncedAt: null,
+    source: "twse",
+    status: "idle",
+    prices: {},
+  };
+}
+
+function normalizeMarketPriceCache(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const prices = Object.fromEntries(
+    Object.entries(value.prices || {})
+      .map(([code, quote]) => {
+        if (!quote || typeof quote !== "object" || Array.isArray(quote)) return null;
+        const price = Number(quote.price);
+        const yesterday = Number(quote.yesterday);
+        const change = Number(quote.change);
+        const changePct = Number(quote.changePct);
+        if (!Number.isFinite(price) || price <= 0) return null;
+        return [
+          code,
+          {
+            price,
+            yesterday: Number.isFinite(yesterday) && yesterday > 0 ? yesterday : null,
+            change: Number.isFinite(change) ? change : 0,
+            changePct: Number.isFinite(changePct) ? changePct : 0,
+          },
+        ];
+      })
+      .filter(Boolean)
+  );
+  const normalized = {
+    ...createEmptyMarketPriceCache(),
+    marketDate: typeof value.marketDate === "string" ? value.marketDate : null,
+    syncedAt: typeof value.syncedAt === "string" ? value.syncedAt : null,
+    source: typeof value.source === "string" ? value.source : "twse",
+    status: typeof value.status === "string" ? value.status : "idle",
+    prices,
+  };
+  return normalized.marketDate || normalized.syncedAt || Object.keys(normalized.prices).length > 0 ? normalized : null;
+}
+
+function normalizeMarketPriceSync(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const normalized = {
+    marketDate: typeof value.marketDate === "string" ? value.marketDate : null,
+    syncedAt: typeof value.syncedAt === "string" ? value.syncedAt : null,
+    status: typeof value.status === "string" ? value.status : "idle",
+    codes: Array.isArray(value.codes) ? value.codes.filter(Boolean) : [],
+    failedCodes: Array.isArray(value.failedCodes) ? value.failedCodes.filter(Boolean) : [],
+  };
+  return normalized.marketDate || normalized.syncedAt || normalized.codes.length > 0 || normalized.failedCodes.length > 0 ? normalized : null;
+}
+
+function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
+  const clock = getTaipeiClock(date);
+  if (clock.isWeekend) return { allowed: false, reason: "market-closed", clock };
+  if (clock.minutes < POST_CLOSE_SYNC_MINUTES) return { allowed: false, reason: "before-close", clock };
+  if (syncMeta?.marketDate === clock.marketDate && syncMeta?.status && syncMeta.status !== "idle") {
+    return { allowed: false, reason: "already-synced", clock };
+  }
+  return { allowed: true, reason: "ready", clock };
+}
+
+function applyMarketQuotesToHoldings(rows, quotes) {
+  if (!Array.isArray(rows)) return [];
+  if (!quotes || typeof quotes !== "object") return rows;
+  return rows.map(item => {
+    const quote = quotes[item.code];
+    if (!quote?.price) return item;
+    const nextValue = Math.round(quote.price * item.qty);
+    const nextPnl = Math.round((quote.price - item.cost) * item.qty);
+    const nextPct = Math.round(((quote.price / item.cost) - 1) * 10000) / 100;
+    return {
+      ...item,
+      price: quote.price,
+      value: nextValue,
+      pnl: nextPnl,
+      pct: nextPct,
+    };
+  });
+}
+
+function getCachedQuotesForCodes(cache, codes) {
+  const priceCache = normalizeMarketPriceCache(cache);
+  if (!priceCache || !priceCache.prices) return {};
+  const codeSet = new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean));
+  if (codeSet.size === 0) return {};
+  return Object.fromEntries(
+    Object.entries(priceCache.prices).filter(([code, quote]) => codeSet.has(code) && quote?.price)
+  );
+}
+
+async function fetchJsonWithTimeout(input, init = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function createDefaultPortfolios() {
@@ -654,12 +810,84 @@ function normalizeWatchlist(value) {
     .filter(Boolean);
 }
 
+function normalizeFundamentalsEntry(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const readNumber = (raw) => {
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : null;
+  };
+  const revenueMonth = typeof value.revenueMonth === "string" ? value.revenueMonth.trim() : "";
+  const quarter = typeof value.quarter === "string" ? value.quarter.trim() : "";
+  const updatedAt = typeof value.updatedAt === "string" ? value.updatedAt.trim() : "";
+  const source = typeof value.source === "string" ? value.source.trim() : "";
+  const note = typeof value.note === "string" ? value.note.trim() : "";
+  const normalized = {
+    revenueMonth: revenueMonth || null,
+    revenueYoY: readNumber(value.revenueYoY),
+    revenueMoM: readNumber(value.revenueMoM),
+    eps: readNumber(value.eps),
+    grossMargin: readNumber(value.grossMargin),
+    roe: readNumber(value.roe),
+    quarter: quarter || null,
+    updatedAt: updatedAt || null,
+    source: source || "",
+    note: note || "",
+  };
+  const hasContent = Object.values(normalized).some(item => item !== null && item !== "");
+  return hasContent ? normalized : null;
+}
+
+function normalizeFundamentalsStore(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([code, entry]) => {
+        const normalized = normalizeFundamentalsEntry(entry);
+        return normalized ? [code, normalized] : null;
+      })
+      .filter(Boolean)
+  );
+}
+
+function formatFundamentalsSummary(entry) {
+  const normalized = normalizeFundamentalsEntry(entry);
+  if (!normalized) return "尚未建立";
+  const parts = [
+    normalized.revenueMonth ? `${normalized.revenueMonth} 營收` : null,
+    normalized.revenueYoY != null ? `YoY ${normalized.revenueYoY >= 0 ? "+" : ""}${normalized.revenueYoY.toFixed(1)}%` : null,
+    normalized.revenueMoM != null ? `MoM ${normalized.revenueMoM >= 0 ? "+" : ""}${normalized.revenueMoM.toFixed(1)}%` : null,
+    normalized.eps != null ? `EPS ${normalized.eps.toFixed(2)}` : null,
+    normalized.grossMargin != null ? `毛利率 ${normalized.grossMargin.toFixed(1)}%` : null,
+    normalized.roe != null ? `ROE ${normalized.roe.toFixed(1)}%` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "尚未建立";
+}
+
+function mergeTargetReports(existingReports, incomingReports) {
+  const merged = [...(Array.isArray(existingReports) ? existingReports : [])];
+  (Array.isArray(incomingReports) ? incomingReports : []).forEach(report => {
+    const firm = String(report?.firm || "").trim();
+    const date = String(report?.date || "").trim();
+    const target = Number(report?.target);
+    if (!firm || !Number.isFinite(target) || target <= 0) return;
+    const normalized = { firm, target, date: date || toSlashDate() };
+    const idx = merged.findIndex(item => item?.firm === normalized.firm && String(item?.date || "") === normalized.date);
+    if (idx >= 0) merged[idx] = normalized;
+    else merged.push(normalized);
+  });
+  return merged;
+}
+
 function createDefaultReviewForm(overrides = {}) {
   return { ...DEFAULT_REVIEW_FORM, ...overrides };
 }
 
 function createDefaultEventDraft(overrides = {}) {
   return { ...DEFAULT_NEW_EVENT, ...overrides };
+}
+
+function createDefaultFundamentalDraft(overrides = {}) {
+  return { ...DEFAULT_FUNDAMENTAL_DRAFT, ...overrides };
 }
 
 function isClosedEvent(event) {
@@ -674,7 +902,7 @@ function toSlashDate(date = new Date()) {
 }
 
 function parseSlashDate(value) {
-  const match = String(value || "").trim().match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  const match = String(value || "").trim().match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
   if (!match) return null;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   if (
@@ -789,6 +1017,363 @@ function normalizeNewsEvents(items) {
   return (Array.isArray(items) ? items : [])
     .map(normalizeEventRecord)
     .filter(Boolean);
+}
+
+function parseFlexibleDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value);
+  if (typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const slashDate = parseSlashDate(raw);
+  if (slashDate) return slashDate;
+  const isoDate = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDate) {
+    const date = new Date(Number(isoDate[1]), Number(isoDate[2]) - 1, Number(isoDate[3]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function daysSince(value, now = new Date()) {
+  const parsed = parseFlexibleDate(value);
+  if (!parsed) return null;
+  const current = now instanceof Date ? new Date(now) : parseFlexibleDate(now);
+  if (!current) return null;
+  parsed.setHours(0, 0, 0, 0);
+  current.setHours(0, 0, 0, 0);
+  return Math.round((current - parsed) / (1000 * 60 * 60 * 24));
+}
+
+function computeStaleness(value, thresholdDays, { missingWhenEmpty = true, now = new Date() } = {}) {
+  if (value == null || value === "") return missingWhenEmpty ? "missing" : "stale";
+  const age = daysSince(value, now);
+  if (age == null) return "missing";
+  return age <= thresholdDays ? "fresh" : "stale";
+}
+
+function averageTargetFromEntry(entry) {
+  const reports = Array.isArray(entry?.reports) ? entry.reports : [];
+  const targets = reports
+    .map(report => Number(report?.target))
+    .filter(value => Number.isFinite(value) && value > 0);
+  if (targets.length === 0) return null;
+  return Math.round(targets.reduce((sum, value) => sum + value, 0) / targets.length);
+}
+
+function extractResearchConclusion(report) {
+  const lastRound = Array.isArray(report?.rounds) && report.rounds.length > 0
+    ? report.rounds[report.rounds.length - 1]
+    : null;
+  const content = typeof lastRound?.content === "string" ? lastRound.content : "";
+  const match = content.match(/(?:結論|建議|策略)[：:]\s*(.{0,300})/);
+  return (match?.[1] || content.slice(0, 300) || "").trim();
+}
+
+function buildBrainTokens(holding, meta) {
+  return [
+    holding?.code,
+    holding?.name,
+    meta?.industry,
+    meta?.strategy,
+    meta?.period,
+    meta?.position,
+    meta?.leader,
+    holding?.type,
+  ]
+    .filter(Boolean)
+    .map(token => String(token).trim().toLowerCase())
+    .filter(token => token.length >= 2);
+}
+
+function textMatchesBrainTokens(text, tokens) {
+  const source = String(text || "").toLowerCase();
+  if (!source) return false;
+  return tokens.some(token => source.includes(token));
+}
+
+function summarizeEventForDossier(event) {
+  if (!event) return null;
+  return {
+    id: event.id,
+    date: event.date || null,
+    title: event.title || "",
+    status: event.status || "pending",
+    pred: event.pred || null,
+    actual: event.actual || null,
+    correct: typeof event.correct === "boolean" ? event.correct : null,
+    trackingStart: event.trackingStart || null,
+    exitDate: event.exitDate || null,
+  };
+}
+
+function buildHoldingDossiers({
+  holdings,
+  watchlist,
+  targets,
+  fundamentals,
+  newsEvents,
+  researchHistory,
+  strategyBrain,
+  marketPriceCache,
+  marketPriceSync,
+}) {
+  const rows = Array.isArray(holdings) ? holdings : [];
+  const notesByCode = new Map((Array.isArray(watchlist) ? watchlist : []).map(item => [item.code, item]));
+  const events = normalizeNewsEvents(newsEvents || []);
+  const allResearch = Array.isArray(researchHistory) ? researchHistory : [];
+  const fundamentalsStore = normalizeFundamentalsStore(fundamentals);
+  const brain = normalizeStrategyBrain(strategyBrain, { allowEmpty: true });
+  const now = new Date();
+  const todayClock = getTaipeiClock(now);
+  const marketCache = normalizeMarketPriceCache(marketPriceCache);
+  const marketSync = normalizeMarketPriceSync(marketPriceSync);
+  const buildStamp = marketSync?.syncedAt || marketCache?.syncedAt || null;
+
+  return rows.map(holding => {
+    const meta = STOCK_META[holding.code] || null;
+    const noteRow = notesByCode.get(holding.code) || null;
+    const targetEntry = targets?.[holding.code] || null;
+    const relatedEvents = events.filter(event => getEventStockCodes(event).includes(holding.code));
+    const pendingEvents = relatedEvents.filter(event => event.status === "pending").map(summarizeEventForDossier);
+    const trackingEvents = relatedEvents.filter(event => event.status === "tracking").map(summarizeEventForDossier);
+    const latestClosed = relatedEvents
+      .filter(isClosedEvent)
+      .sort((a, b) => {
+        const aDate = parseFlexibleDate(a.reviewDate || a.exitDate || a.date || 0)?.getTime() || 0;
+        const bDate = parseFlexibleDate(b.reviewDate || b.exitDate || b.date || 0)?.getTime() || 0;
+        return bDate - aDate;
+      })[0] || null;
+
+    const latestResearch = allResearch
+      .filter(report => report?.code === holding.code)
+      .sort((a, b) => {
+        const aTime = Number(a?.timestamp) || parseFlexibleDate(a?.date)?.getTime() || 0;
+        const bTime = Number(b?.timestamp) || parseFlexibleDate(b?.date)?.getTime() || 0;
+        return bTime - aTime;
+      })[0] || null;
+
+    const avgTarget = averageTargetFromEntry(targetEntry);
+    const targetFreshness = targetEntry?.reports?.length ? computeStaleness(targetEntry.updatedAt, 30, { now }) : "missing";
+    const researchFreshness = latestResearch ? computeStaleness(latestResearch.date || latestResearch.timestamp, 30, { now }) : "missing";
+    const fundamentalsEntry = fundamentalsStore[holding.code] || null;
+    const fundamentalFreshness = fundamentalsEntry ? computeStaleness(fundamentalsEntry.updatedAt, 45, { now }) : "missing";
+    const quote = marketCache?.prices?.[holding.code] || null;
+    const failedCodes = Array.isArray(marketSync?.failedCodes) ? marketSync.failedCodes : [];
+    const priceFreshness = quote?.price
+      ? (marketSync?.marketDate === todayClock.marketDate && !failedCodes.includes(holding.code) ? "fresh" : "stale")
+      : "missing";
+
+    const brainTokens = buildBrainTokens(holding, meta);
+    const matchedRules = (brain.rules || []).filter(rule => textMatchesBrainTokens(rule, brainTokens)).slice(0, 5);
+    const matchedMistakes = (brain.commonMistakes || []).filter(item => textMatchesBrainTokens(item, brainTokens)).slice(0, 5);
+    const matchedLessons = (brain.lessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
+    const matchedCoachLessons = (brain.coachLessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
+
+    return {
+      code: holding.code,
+      name: holding.name,
+      position: {
+        qty: holding.qty,
+        cost: holding.cost,
+        price: holding.price,
+        value: holding.value,
+        pnl: holding.pnl,
+        pct: holding.pct,
+        type: holding.type || "股票",
+        alert: holding.alert || "",
+        expire: holding.expire || null,
+        warrantTargetPrice: Number.isFinite(Number(holding.targetPrice)) ? Number(holding.targetPrice) : null,
+      },
+      meta: meta ? { ...meta } : null,
+      thesis: {
+        summary: noteRow?.note || holding.alert || "",
+        catalyst: noteRow?.catalyst || "",
+        status: noteRow?.status || "",
+        holdingPeriod: meta?.period || "",
+      },
+      targets: {
+        avgTarget,
+        reports: Array.isArray(targetEntry?.reports) ? targetEntry.reports : [],
+        updatedAt: targetEntry?.updatedAt || null,
+        isNew: Boolean(targetEntry?.isNew),
+        freshness: targetFreshness,
+      },
+      fundamentals: {
+        revenueMonth: fundamentalsEntry?.revenueMonth || null,
+        revenueYoY: fundamentalsEntry?.revenueYoY ?? null,
+        revenueMoM: fundamentalsEntry?.revenueMoM ?? null,
+        eps: fundamentalsEntry?.eps ?? null,
+        grossMargin: fundamentalsEntry?.grossMargin ?? null,
+        roe: fundamentalsEntry?.roe ?? null,
+        quarter: fundamentalsEntry?.quarter || null,
+        updatedAt: fundamentalsEntry?.updatedAt || null,
+        source: fundamentalsEntry?.source || "",
+        note: fundamentalsEntry?.note || "",
+        freshness: fundamentalFreshness,
+      },
+      events: {
+        pending: pendingEvents,
+        tracking: trackingEvents,
+        latestClosed: latestClosed ? summarizeEventForDossier(latestClosed) : null,
+      },
+      research: latestResearch ? {
+        latestConclusion: extractResearchConclusion(latestResearch),
+        latestAt: latestResearch.date || null,
+        latestTimestamp: latestResearch.timestamp || null,
+        freshness: researchFreshness,
+      } : {
+        latestConclusion: "",
+        latestAt: null,
+        latestTimestamp: null,
+        freshness: "missing",
+      },
+      brainContext: {
+        matchedRules,
+        matchedMistakes,
+        matchedLessons,
+        matchedCoachLessons,
+      },
+      freshness: {
+        price: priceFreshness,
+        targets: targetFreshness,
+        fundamentals: fundamentalFreshness,
+        research: researchFreshness,
+      },
+      sync: {
+        lastBuiltAt: buildStamp,
+        usedMarketDate: marketCache?.marketDate || null,
+        priceSyncStatus: marketSync?.status || "idle",
+      },
+    };
+  });
+}
+
+function normalizeHoldingDossiers(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(item => item && typeof item === "object" && typeof item.code === "string" && typeof item.name === "string")
+    .map(item => ({ ...item }));
+}
+
+function formatPromptNumber(value, digits = 1) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "—";
+  return digits === 0 ? String(Math.round(num)) : num.toFixed(digits);
+}
+
+function formatFreshnessLabel(status) {
+  if (status === "fresh") return "新";
+  if (status === "stale") return "舊";
+  return "缺";
+}
+
+function summarizeTargetReportsForPrompt(reports, limit = 2) {
+  const rows = (Array.isArray(reports) ? reports : [])
+    .map(report => {
+      const firm = report?.firm || "未署名";
+      const target = Number(report?.target);
+      const date = report?.date || "日期未知";
+      if (!Number.isFinite(target) || target <= 0) return null;
+      return `${firm} ${target} (${date})`;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
+}
+
+function summarizeEventListForPrompt(items, limit = 3) {
+  const rows = (Array.isArray(items) ? items : [])
+    .map(event => {
+      const label = event?.title || "未命名事件";
+      const date = event?.date || event?.trackingStart || event?.exitDate || "日期未定";
+      const status = event?.status || "pending";
+      return `${label}(${date}/${status})`;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
+}
+
+function buildDailyHoldingDossierContext(dossier, change) {
+  if (!dossier) return "";
+  const position = dossier.position || {};
+  const meta = dossier.meta || {};
+  const thesis = dossier.thesis || {};
+  const targets = dossier.targets || {};
+  const fundamentals = dossier.fundamentals || {};
+  const events = dossier.events || {};
+  const research = dossier.research || {};
+  const brainContext = dossier.brainContext || {};
+  const freshness = dossier.freshness || {};
+  const typeLabel = position.type || "股票";
+  const expireLabel = position.expire ? ` 到期${position.expire}` : "";
+  const changePct = Number.isFinite(change?.changePct) ? `${change.changePct >= 0 ? "+" : ""}${change.changePct.toFixed(2)}%` : "—";
+  const totalPct = Number.isFinite(change?.totalPct) ? `${change.totalPct >= 0 ? "+" : ""}${change.totalPct.toFixed(2)}%` : "—";
+  const todayPnl = Number.isFinite(change?.todayPnl) ? `${change.todayPnl >= 0 ? "+" : ""}${Math.round(change.todayPnl)}` : "—";
+  const totalPnl = Number.isFinite(change?.totalPnl) ? `${change.totalPnl >= 0 ? "+" : ""}${Math.round(change.totalPnl)}` : "—";
+  const targetLine = targets.avgTarget
+    ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)} | 報告 ${summarizeTargetReportsForPrompt(targets.reports)}`
+    : "目標價：無";
+  const fundamentalsLine = fundamentals.eps != null || fundamentals.grossMargin != null || fundamentals.roe != null || fundamentals.revenueYoY != null
+    ? `財報/營收：${formatFundamentalsSummary(fundamentals)}${fundamentals.source ? ` | 來源 ${fundamentals.source}` : ""}`
+    : "財報/營收：無";
+  const researchLine = research.latestConclusion
+    ? `研究摘要：${research.latestConclusion}`
+    : "研究摘要：無";
+  const ruleLine = (brainContext.matchedRules || []).length > 0
+    ? `相關規則：${brainContext.matchedRules.slice(0, 3).join("；")}`
+    : null;
+  const mistakeLine = (brainContext.matchedMistakes || []).length > 0
+    ? `風險提醒：${brainContext.matchedMistakes.slice(0, 3).join("；")}`
+    : null;
+  return [
+    `【${dossier.name}(${dossier.code})】`,
+    `持倉：${typeLabel}${expireLabel} | 現價 ${formatPromptNumber(change?.price ?? position.price)} 成本 ${formatPromptNumber(position.cost)} | 今日 ${changePct} / ${todayPnl} | 累計 ${totalPct} / ${totalPnl} | 股數 ${formatPromptNumber(position.qty, 0)}`,
+    `定位：${meta.industry || "未分類"} / ${meta.strategy || "未分類"} / ${meta.period || "?"}期 / ${meta.position || "未定"} / ${meta.leader || "未知"}`,
+    thesis.summary ? `thesis：${thesis.summary}` : null,
+    thesis.catalyst ? `催化劑：${thesis.catalyst}` : null,
+    thesis.status ? `目前狀態：${thesis.status}` : null,
+    position.alert ? `持倉提醒：${position.alert}` : null,
+    targetLine,
+    fundamentalsLine,
+    `事件：待觀察 ${summarizeEventListForPrompt(events.pending)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, 2)} | 最近結案 ${events.latestClosed?.title ? `${events.latestClosed.title}(${events.latestClosed.exitDate || events.latestClosed.date || "—"})` : "無"}`,
+    researchLine,
+    ruleLine,
+    mistakeLine,
+    `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
+  ].filter(Boolean).join("\n");
+}
+
+function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
+  if (!dossier) return "";
+  const position = dossier.position || {};
+  const meta = dossier.meta || {};
+  const thesis = dossier.thesis || {};
+  const targets = dossier.targets || {};
+  const fundamentals = dossier.fundamentals || {};
+  const events = dossier.events || {};
+  const research = dossier.research || {};
+  const brainContext = dossier.brainContext || {};
+  const freshness = dossier.freshness || {};
+  const lines = [
+    `【${dossier.name}(${dossier.code})】`,
+    `持倉：${position.type || "股票"} | 現價 ${formatPromptNumber(position.price)} 成本 ${formatPromptNumber(position.cost)} | 累計 ${position.pct >= 0 ? "+" : ""}${formatPromptNumber(position.pct, 2)}% | 股數 ${formatPromptNumber(position.qty, 0)}`,
+    `定位：${meta.industry || "未分類"} / ${meta.strategy || "未分類"} / ${meta.period || "?"}期 / ${meta.position || "未定"} / ${meta.leader || "未知"}`,
+    thesis.summary ? `thesis：${thesis.summary}` : null,
+    thesis.catalyst ? `催化劑：${thesis.catalyst}` : null,
+    thesis.status ? `狀態：${thesis.status}` : null,
+    targets.avgTarget ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)}；${summarizeTargetReportsForPrompt(targets.reports, compact ? 2 : 3)}` : "目標價：無",
+    (fundamentals.eps != null || fundamentals.grossMargin != null || fundamentals.roe != null || fundamentals.revenueYoY != null) ? `財報/營收：${formatFundamentalsSummary(fundamentals)}${fundamentals.source ? `；來源 ${fundamentals.source}` : ""}` : "財報/營收：無",
+    `事件：待觀察 ${summarizeEventListForPrompt(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, compact ? 2 : 3)}`,
+    research.latestConclusion ? `最近研究：${research.latestConclusion}` : "最近研究：無",
+    (brainContext.matchedRules || []).length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join("；")}` : null,
+    (brainContext.matchedMistakes || []).length > 0 ? `常見風險：${brainContext.matchedMistakes.slice(0, compact ? 2 : 4).join("；")}` : null,
+    `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
+  ].filter(Boolean);
+  return lines.join("\n");
 }
 
 function normalizePortfolios(value) {
@@ -1102,7 +1687,9 @@ export default function App() {
   const [holdings,  setHoldings]  = useState(null);
   const [tradeLog,  setTradeLog]  = useState(null);
   const [targets,   setTargets]   = useState(null);
+  const [fundamentals, setFundamentals] = useState(null);
   const [watchlist, setWatchlist] = useState(null);
+  const [holdingDossiers, setHoldingDossiers] = useState(null);
 
   // upload / memo
   const [img, setImg]           = useState(null);
@@ -1132,10 +1719,18 @@ export default function App() {
   const [tpCode, setTpCode] = useState("");
   const [tpFirm, setTpFirm] = useState("");
   const [tpVal,  setTpVal]  = useState("");
+  const [fundamentalDraft, setFundamentalDraft] = useState(() => createDefaultFundamentalDraft());
+  const [enrichingResearchCode, setEnrichingResearchCode] = useState(null);
 
   // refresh prices
   const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(null);
+  const [marketPriceCache, setMarketPriceCache] = useState(() => normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)));
+  const [marketPriceSync, setMarketPriceSync] = useState(() => normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)));
+  const [lastUpdate, setLastUpdate] = useState(() => {
+    const cachedSync = normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY));
+    const cachedPrice = normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY));
+    return parseStoredDate(cachedSync?.syncedAt || cachedPrice?.syncedAt);
+  });
 
   // daily analysis
   const [analyzing, setAnalyzing]       = useState(false);
@@ -1169,16 +1764,19 @@ export default function App() {
   const eventLifecycleSyncRef = useRef(false);
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
+  const priceSyncInFlightRef = useRef(null);
   const backupFileInputRef = useRef(null);
   const deferredQuery = useDeferredValue(scanQuery);
   const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
   const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
   const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
   const applyPortfolioSnapshot = (snapshot) => {
-    setHoldings(snapshot.holdings);
+    setHoldings(applyMarketQuotesToHoldings(snapshot.holdings, marketPriceCache?.prices));
     setTradeLog(snapshot.tradeLog);
     setTargets(snapshot.targets);
+    setFundamentals(normalizeFundamentalsStore(snapshot.fundamentals));
     setWatchlist(normalizeWatchlist(snapshot.watchlist));
+    setHoldingDossiers(normalizeHoldingDossiers(snapshot.holdingDossiers));
     setNewsEvents(normalizeNewsEvents(snapshot.newsEvents));
     setAnalysisHistory(snapshot.analysisHistory);
     setReversalConditions(snapshot.reversalConditions);
@@ -1215,13 +1813,197 @@ export default function App() {
       } catch {}
     }, CLOUD_SAVE_DEBOUNCE);
   };
+  const persistMarketPriceState = async (cache, syncMeta) => {
+    const normalizedCache = normalizeMarketPriceCache(cache);
+    const normalizedSync = normalizeMarketPriceSync(syncMeta);
+    await save(MARKET_PRICE_CACHE_KEY, normalizedCache);
+    await save(MARKET_PRICE_SYNC_KEY, normalizedSync);
+    setMarketPriceCache(normalizedCache);
+    setMarketPriceSync(normalizedSync);
+    const syncedAt = parseStoredDate(normalizedSync?.syncedAt || normalizedCache?.syncedAt);
+    if (syncedAt) setLastUpdate(syncedAt);
+  };
+  const collectTrackedCodes = () => {
+    const codeSet = new Set();
+    const addCode = (value) => {
+      const code = String(value || "").trim();
+      if (code) codeSet.add(code);
+    };
+    const addRows = (rows) => {
+      if (!Array.isArray(rows)) return;
+      rows.forEach(item => addCode(item?.code));
+    };
+    const addEvents = (rows) => {
+      if (!Array.isArray(rows)) return;
+      rows.forEach(event => {
+        getEventStockCodes(event).forEach(code => addCode(code));
+      });
+    };
+
+    portfolios.forEach(portfolio => {
+      const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolio.id === activePortfolioId;
+      const holdingRows = useLiveState ? holdings : readStorageValue(pfKey(portfolio.id, "holdings-v2"));
+      const watchlistRows = useLiveState ? watchlist : readStorageValue(pfKey(portfolio.id, "watchlist-v1"));
+      const eventRows = useLiveState ? newsEvents : readStorageValue(pfKey(portfolio.id, "news-events-v1"));
+      addRows(holdingRows);
+      addRows(watchlistRows);
+      addEvents(eventRows);
+    });
+
+    return Array.from(codeSet);
+  };
+  const fetchPostCloseQuotes = async (codes, timeoutMs = 8000) => {
+    const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
+    if (normalizedCodes.length === 0) return { quotes: {}, failedCodes: [] };
+
+    const batchSize = 15;
+    const quotes = {};
+    const failedCodes = new Set();
+
+    for (let i = 0; i < normalizedCodes.length; i += batchSize) {
+      const batch = normalizedCodes.slice(i, i + batchSize);
+      const queries = batch.flatMap(code => [`tse_${code}.tw`, `otc_${code}.tw`]);
+      const exCh = queries.join("|");
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`, { signal: controller.signal });
+        const data = await res.json();
+        (data.msgArray || []).forEach(item => {
+          const price = extractBestPrice(item);
+          const yesterday = extractYesterday(item);
+          if (!price || quotes[item.c]) return;
+          quotes[item.c] = {
+            price,
+            yesterday,
+            change: yesterday ? price - yesterday : 0,
+            changePct: yesterday ? ((price / yesterday) - 1) * 100 : 0,
+          };
+        });
+      } catch (err) {
+        batch.forEach(code => failedCodes.add(code));
+        console.warn(`收盤價同步批次 ${i / batchSize + 1} 失敗:`, err);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    return {
+      quotes,
+      failedCodes: Array.from(failedCodes).filter(code => !quotes[code]),
+    };
+  };
+  const syncPostClosePrices = async ({ silent = false } = {}) => {
+    if (priceSyncInFlightRef.current) return priceSyncInFlightRef.current;
+
+    const task = (async () => {
+      const cachedSync = normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)) || marketPriceSync;
+      const cachedPrice = normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)) || marketPriceCache;
+      const gate = canRunPostClosePriceSync(new Date(), cachedSync);
+
+      if (!gate.allowed) {
+        if (!silent) {
+          if (gate.reason === "before-close") {
+            setSaved("⚠️ 收盤價僅在台北時間 13:35 後同步");
+          } else if (gate.reason === "market-closed") {
+            setSaved("⚠️ 非交易日，沿用最近收盤價");
+          } else if (cachedSync?.status === "failed") {
+            setSaved("⚠️ 今日已嘗試同步收盤價，沿用既有快取");
+          } else {
+            setSaved("✅ 今日收盤價已同步，避免重複抓取");
+          }
+          setTimeout(() => setSaved(""), 3000);
+        }
+        if (cachedPrice?.prices && viewMode === PORTFOLIO_VIEW_MODE) {
+          setHoldings(prev => applyMarketQuotesToHoldings(prev, cachedPrice.prices));
+        }
+        return cachedPrice;
+      }
+
+      const trackedCodes = collectTrackedCodes();
+      if (trackedCodes.length === 0) {
+        if (!silent) {
+          setSaved("⚠️ 目前沒有可同步的股票代碼");
+          setTimeout(() => setSaved(""), 3000);
+        }
+        return cachedPrice;
+      }
+
+      const syncedAt = new Date().toISOString();
+      const { quotes, failedCodes } = await fetchPostCloseQuotes(trackedCodes);
+      if (Object.keys(quotes).length === 0) {
+        const failedMeta = {
+          marketDate: gate.clock.marketDate,
+          syncedAt,
+          status: "failed",
+          codes: trackedCodes,
+          failedCodes,
+        };
+        await persistMarketPriceState(cachedPrice || createEmptyMarketPriceCache(), failedMeta);
+        if (!silent) {
+          setSaved("⚠️ 今日收盤價同步失敗，沿用既有快取");
+          setTimeout(() => setSaved(""), 3000);
+        }
+        return cachedPrice;
+      }
+
+      const nextCache = {
+        ...(cachedPrice || createEmptyMarketPriceCache()),
+        marketDate: gate.clock.marketDate,
+        syncedAt,
+        source: "twse",
+        status: failedCodes.length > 0 ? "partial" : "fresh",
+        prices: {
+          ...((cachedPrice && cachedPrice.prices) || {}),
+          ...quotes,
+        },
+      };
+      const nextSync = {
+        marketDate: gate.clock.marketDate,
+        syncedAt,
+        status: failedCodes.length > 0 ? "partial" : "success",
+        codes: trackedCodes,
+        failedCodes,
+      };
+
+      await persistMarketPriceState(nextCache, nextSync);
+      if (viewMode === PORTFOLIO_VIEW_MODE) {
+        setHoldings(prev => applyMarketQuotesToHoldings(prev, nextCache.prices));
+      }
+
+      if (!silent) {
+        if (failedCodes.length > 0) {
+          setSaved(`✅ 收盤價已同步（${trackedCodes.length - failedCodes.length}/${trackedCodes.length} 檔成功）`);
+        } else {
+          setSaved(`✅ 今日收盤價已同步（${trackedCodes.length} 檔）`);
+        }
+        setTimeout(() => setSaved(""), 4000);
+      }
+
+      return nextCache;
+    })().finally(() => {
+      priceSyncInFlightRef.current = null;
+    });
+
+    priceSyncInFlightRef.current = task;
+    return task;
+  };
+  const getMarketQuotesForCodes = async (codes, { ensureSynced = true } = {}) => {
+    const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
+    if (normalizedCodes.length === 0) return {};
+    const cache = ensureSynced ? (await syncPostClosePrices({ silent: true })) : (marketPriceCache || normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)));
+    return getCachedQuotesForCodes(cache, normalizedCodes);
+  };
   const flushCurrentPortfolio = async (pid = activePortfolioId) => {
     if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || !pid) return;
     const liveSnapshot = {
       holdings,
       tradeLog,
       targets,
+      fundamentals,
       watchlist,
+      holdingDossiers,
       newsEvents,
       analysisHistory,
       dailyReport,
@@ -1592,7 +2374,45 @@ export default function App() {
   }, [activePortfolioId, canPersistPortfolioData, holdings]);
   useEffect(() => { if (canPersistPortfolioData && tradeLog) savePortfolioData(activePortfolioId, "log-v2", tradeLog); }, [activePortfolioId, canPersistPortfolioData, tradeLog]);
   useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
+  useEffect(() => { if (canPersistPortfolioData && fundamentals) savePortfolioData(activePortfolioId, "fundamentals-v1", fundamentals); }, [activePortfolioId, canPersistPortfolioData, fundamentals]);
   useEffect(() => { if (canPersistPortfolioData && watchlist) savePortfolioData(activePortfolioId, "watchlist-v1", watchlist); }, [activePortfolioId, canPersistPortfolioData, watchlist]);
+  useEffect(() => {
+    if (!canPersistPortfolioData || !holdings) return;
+    const nextDossiers = buildHoldingDossiers({
+      holdings: applyMarketQuotesToHoldings(holdings, marketPriceCache?.prices),
+      watchlist,
+      targets,
+      fundamentals,
+      newsEvents,
+      researchHistory,
+      strategyBrain,
+      marketPriceCache,
+      marketPriceSync,
+    });
+    const prevJson = JSON.stringify(normalizeHoldingDossiers(holdingDossiers));
+    const nextJson = JSON.stringify(nextDossiers);
+    if (prevJson !== nextJson) {
+      setHoldingDossiers(nextDossiers);
+    }
+  }, [
+    activePortfolioId,
+    canPersistPortfolioData,
+    holdingDossiers,
+    holdings,
+    marketPriceCache,
+    marketPriceSync,
+    newsEvents,
+    researchHistory,
+    strategyBrain,
+    targets,
+    fundamentals,
+    watchlist,
+  ]);
+  useEffect(() => {
+    if (canPersistPortfolioData && holdingDossiers) {
+      savePortfolioData(activePortfolioId, "holding-dossiers-v1", holdingDossiers);
+    }
+  }, [activePortfolioId, canPersistPortfolioData, holdingDossiers]);
   useEffect(() => {
     if (canPersistPortfolioData && newsEvents) {
       savePortfolioData(activePortfolioId, "news-events-v1", newsEvents);
@@ -1681,61 +2501,32 @@ export default function App() {
     };
   }, [activePortfolioId, newsEvents, ready, tab, viewMode]);
 
-  // ── 啟動時自動靜默刷新股價（Phase 1: 不依賴收盤分析） ──
-  const autoRefreshDoneRef = useRef({});
-  const holdingsRef = useRef(holdings);
-  holdingsRef.current = holdings;
   useEffect(() => {
     if (!ready || viewMode !== PORTFOLIO_VIEW_MODE) return;
-    // 每個組合每次 session 只自動刷一次
-    const key = activePortfolioId;
-    if (autoRefreshDoneRef.current[key]) return;
-
-    // 延遲 500ms 確保 holdings 已從 localStorage hydrate
-    const timer = setTimeout(() => {
-      const currentHoldings = holdingsRef.current;
-      if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) return;
-      autoRefreshDoneRef.current[key] = true;
-
-      // 靜默刷新，不顯示 toast
-      (async () => {
-        try {
-          const codes = currentHoldings.map(h => h.code);
-          const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-          const exCh = queries.join('|');
-          const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
-          const data = await res.json();
-          if (!data.msgArray || data.msgArray.length === 0) return;
-
-          const priceMap = {};
-          data.msgArray.forEach(item => {
-            const price = extractBestPrice(item);
-            if (price && !priceMap[item.c]) priceMap[item.c] = price;
-          });
-
-          if (Object.keys(priceMap).length > 0) {
-            setHoldings(prev => (prev || []).map(h => {
-              const newPrice = priceMap[h.code];
-              if (newPrice == null) return h;
-              const newValue = Math.round(newPrice * h.qty);
-              const newPnl = Math.round((newPrice - h.cost) * h.qty);
-              const newPct = Math.round((newPrice / h.cost - 1) * 10000) / 100;
-              return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
-            }));
-            setLastUpdate(new Date());
-          }
-        } catch (err) {
-          console.warn("自動刷新股價失敗（靜默）:", err);
-        }
-      })();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [ready, activePortfolioId, viewMode]);
+    syncPostClosePrices({ silent: true }).catch(err => {
+      console.warn("收盤價靜默同步失敗:", err);
+    });
+  }, [ready, viewMode, activePortfolioId]);
 
   // derived
   const H = Array.isArray(holdings) ? holdings : [];
   const W = Array.isArray(watchlist) ? watchlist : [];
+  const D = (() => {
+    const normalized = normalizeHoldingDossiers(holdingDossiers);
+    if (normalized.length > 0) return normalized;
+    return buildHoldingDossiers({
+      holdings: H,
+      watchlist: W,
+      targets,
+      fundamentals,
+      newsEvents,
+      researchHistory,
+      strategyBrain,
+      marketPriceCache,
+      marketPriceSync,
+    });
+  })();
+  const dossierByCode = new Map(D.map(item => [item.code, item]));
   const currentNewsEvents = Array.isArray(newsEvents) ? newsEvents : [];
   const totalVal  = H.reduce((s,h)=>s+h.value,0);
   const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
@@ -1747,7 +2538,10 @@ export default function App() {
     const eventsValue = useLiveState ? (newsEvents || []) : readStorageValue(pfKey(portfolioId, "news-events-v1"));
     const notesValue = useLiveState ? portfolioNotes : readStorageValue(pfKey(portfolioId, "notes-v1"));
     return {
-      holdings: Array.isArray(holdingsValue) ? holdingsValue : getPortfolioFallback(portfolioId, "holdings-v2"),
+      holdings: applyMarketQuotesToHoldings(
+        Array.isArray(holdingsValue) ? holdingsValue : getPortfolioFallback(portfolioId, "holdings-v2"),
+        marketPriceCache?.prices
+      ),
       newsEvents: normalizeNewsEvents(Array.isArray(eventsValue) ? eventsValue : getPortfolioFallback(portfolioId, "news-events-v1")),
       notes: notesValue && typeof notesValue === "object" ? { ...clonePortfolioNotes(), ...notesValue } : clonePortfolioNotes(),
     };
@@ -1910,26 +2704,36 @@ export default function App() {
   const attentionCount = scanRows.filter(r => r.needsAttention).length;
   const pendingCount = scanRows.filter(r => r.hasPending).length;
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
+  const dataRefreshRows = D.map(dossier => {
+    const targetStatus = dossier?.freshness?.targets || "missing";
+    const fundamentalStatus = dossier?.freshness?.fundamentals || "missing";
+    const severity = (targetStatus === "missing" ? 3 : targetStatus === "stale" ? 2 : 0)
+      + (fundamentalStatus === "missing" ? 3 : fundamentalStatus === "stale" ? 2 : 0);
+    return {
+      code: dossier.code,
+      name: dossier.name,
+      targetStatus,
+      fundamentalStatus,
+      severity,
+      targetUpdatedAt: dossier.targets?.updatedAt || null,
+      fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
+    };
+  })
+    .filter(item => item.severity > 0)
+    .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code)));
+  const staleTargetCount = D.filter(item => item?.freshness?.targets === "stale").length;
+  const missingTargetCount = D.filter(item => item?.freshness?.targets === "missing").length;
+  const staleFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "stale").length;
+  const missingFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "missing").length;
 
   const filteredEvents = filterType==="全部" ? EVENTS : EVENTS.filter(e=>e.type===filterType);
   const fetchMarketPriceMap = async (codes) => {
-    const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
-    if (normalizedCodes.length === 0) return {};
-
-    const queries = normalizedCodes.flatMap(code => [`tse_${code}.tw`, `otc_${code}.tw`]);
-    const exCh = queries.join("|");
-    const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
-    const data = await res.json();
-    const priceMap = {};
-
-    (data.msgArray || []).forEach(item => {
-      const price = extractBestPrice(item);
-      if (price && !priceMap[item.c]) {
-        priceMap[item.c] = price;
-      }
-    });
-
-    return priceMap;
+    const quotes = await getMarketQuotesForCodes(codes);
+    return Object.fromEntries(
+      Object.entries(quotes)
+        .map(([code, quote]) => [code, quote?.price])
+        .filter(([, price]) => Number.isFinite(price) && price > 0)
+    );
   };
   const buildEventPriceRecord = (event, priceMap) => {
     const codes = getEventStockCodes(event);
@@ -2107,59 +2911,13 @@ export default function App() {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      const codes = H.map(h => h.code);
-      // 分批查詢：避免 URL 過長，每批最多 15 檔（30 queries）
-      const batchSize = 15;
-      const priceMap = {};
-      for (let i = 0; i < codes.length; i += batchSize) {
-        const batch = codes.slice(i, i + batchSize);
-        const queries = batch.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-        const exCh = queries.join('|');
-        const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
-        try {
-          const res = await fetch(url);
-          const data = await res.json();
-          if (data.msgArray) {
-            data.msgArray.forEach(item => {
-              const price = extractBestPrice(item);
-              if (price && !priceMap[item.c]) {
-                priceMap[item.c] = price;
-              }
-            });
-          }
-        } catch (batchErr) {
-          console.warn(`批次 ${i / batchSize + 1} 查詢失敗:`, batchErr);
-        }
-      }
-
-      if (Object.keys(priceMap).length > 0) {
-        setHoldings(prev => (prev || []).map(h => {
-          const newPrice = priceMap[h.code];
-          if (newPrice == null) return h;
-          const newValue = Math.round(newPrice * h.qty);
-          const newPnl = Math.round((newPrice - h.cost) * h.qty);
-          const newPct = Math.round((newPrice / h.cost - 1) * 10000) / 100;
-          return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
-        }));
-
-        const updated = Object.keys(priceMap).length;
-        const total = codes.length;
-        const missed = codes.filter(c => !priceMap[c]);
-        setLastUpdate(new Date());
-        if (missed.length > 0 && missed.length < total) {
-          const missedNames = missed.map(c => { const h2 = H.find(x=>x.code===c); return h2 ? `${h2.name}(${h2.type})` : c; }).join("、");
-          setSaved(`✅ ${updated}/${total} 檔已更新（${missedNames} 無即時報價）`);
-        } else {
-          setSaved(`✅ ${updated} 檔股價已更新`);
-        }
-        setTimeout(() => setSaved(""), 4000);
-      } else {
-        setSaved("⚠️ 無法取得報價（可能非交易時間）");
-        setTimeout(() => setSaved(""), 3000);
+      const cache = await syncPostClosePrices({ silent: false });
+      if (cache?.prices && Object.keys(cache.prices).length > 0 && viewMode === PORTFOLIO_VIEW_MODE) {
+        setHoldings(prev => applyMarketQuotesToHoldings(prev, cache.prices));
       }
     } catch (err) {
-      console.error('刷新股價失敗:', err);
-      setSaved("❌ 刷新失敗，請稍後再試");
+      console.error("收盤價同步失敗:", err);
+      setSaved("❌ 收盤價同步失敗，請稍後再試");
       setTimeout(() => setSaved(""), 3000);
     }
     setRefreshing(false);
@@ -2169,32 +2927,11 @@ export default function App() {
   const runDailyAnalysis = async () => {
     if (analyzing) return;
     setAnalyzing(true);
-    setAnalyzeStep("取得即時股價...");
+    setAnalyzeStep("讀取收盤價快取...");
     try {
-      // 1. 取得最新股價（分批查詢，避免 URL 過長）
+      // 1. 取得收盤價快取（符合條件時，收盤後每日只同步一次）
       const codes = H.map(h => h.code);
-      const priceMap = {};
-      const batchSize = 15;
-      for (let bi = 0; bi < codes.length; bi += batchSize) {
-        const batch = codes.slice(bi, bi + batchSize);
-        const queries = batch.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-        const exCh = queries.join('|');
-        try {
-          const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
-          const data = await res.json();
-          if (data.msgArray) {
-            data.msgArray.forEach(item => {
-              const price = extractBestPrice(item);
-              const yesterday = extractYesterday(item);
-              if (price && !priceMap[item.c]) {
-                priceMap[item.c] = { price, yesterday, change: yesterday ? price - yesterday : 0, changePct: yesterday ? ((price / yesterday - 1) * 100) : 0 };
-              }
-            });
-          }
-        } catch (batchErr) {
-          console.warn(`收盤分析批次 ${bi / batchSize + 1} 查詢失敗:`, batchErr);
-        }
-      }
+      const priceMap = await getMarketQuotesForCodes(codes);
 
       // 2. 計算每檔今日漲跌
       const changes = H.map(h => {
@@ -2243,14 +2980,26 @@ export default function App() {
       let eventAssessments = [];
       let brainUpdatedInline = false;
       try {
-        const holdingSummary = changes.map(c => {
-          const h = (holdings||[]).find(x => x.code === c.code) || {};
-          const m = STOCK_META[c.code];
-          const typeTag = h.type === "權證" ? `[權證${h.expire ? " 到期:"+h.expire : ""}]` : h.type === "ETF" ? "[ETF槓桿]" : "[股票]";
-          const indTag = m ? `[${m.industry}/${m.strategy}/${m.period}期/${m.position}/${m.leader}]` : "";
-          const alertTag = h.alert ? ` ⚡${h.alert}` : "";
-          return `${typeTag}${indTag} ${c.name}(${c.code}) 今日${c.changePct >= 0 ? "+" : ""}${c.changePct.toFixed(2)}% 累計${c.totalPct >= 0 ? "+" : ""}${c.totalPct}% 市值${h.value||0}${alertTag}`;
-        }).join("\n");
+        const dailyDossiers = changes.map(change => {
+          const base = dossierByCode.get(change.code);
+          if (!base) return null;
+          return {
+            ...base,
+            position: {
+              ...(base.position || {}),
+              price: change.price,
+              value: Math.round(change.price * (Number(base.position?.qty) || 0)),
+              pnl: change.totalPnl,
+              pct: change.totalPct,
+            },
+          };
+        }).filter(Boolean);
+        const holdingSummary = dailyDossiers.length > 0
+          ? dailyDossiers.map(dossier => {
+            const change = changes.find(item => item.code === dossier.code);
+            return buildDailyHoldingDossierContext(dossier, change);
+          }).join("\n\n")
+          : "目前沒有持股 dossier。";
         const eventSummary = pendingEvents.map(e =>
           `[eventId:${e.id}] [${e.date}] ${e.title} — 預測:${e.pred==="up"?"看漲":e.pred==="down"?"看跌":"中性"} — 狀態:${e.status}`
         ).join("\n");
@@ -2379,14 +3128,8 @@ ${notesContext}
 ${brainContext}
 ${revContext}
 
-持倉明細（含產業/策略分類）：
+持倉 dossier（請把這份整合資料當成主要判斷依據；它已經包含持倉、thesis、目標價、事件、研究摘要、策略大腦線索）：
 ${holdingSummary}
-
-個股策略定位：
-${changes.map(c => {
-  const m = STOCK_META[c.code];
-  return m ? `${c.name}(${c.code}): 產業=${m.industry} 策略=${m.strategy} 週期=${m.period} 定位=${m.position} 地位=${m.leader}` : "";
-}).filter(Boolean).join("\n")}
 
 產業集中度警告：AI/伺服器佔5檔(台達電/奇鋐/緯創/晟銘電/創意)、光通訊3檔、PCB材料3檔 — 需評估集中風險
 
@@ -2395,40 +3138,15 @@ ${changes.map(c => {
 待觀察事件：
 ${eventSummary}
 
-${ (() => {
-  // 智慧引用：只引用當前持倉相關的研究，且優先最近的
-  const holdingCodes = new Set(H.map(h => h.code));
-  const allResearch = researchHistory || [];
-  // 先過濾出跟持倉有關的研究
-  const relevant = allResearch.filter(r => holdingCodes.has(r.code));
-  // 再加上最近 2 份不相關的研究（可能是 watchlist 的）
-  const nonRelevant = allResearch.filter(r => !holdingCodes.has(r.code)).slice(0, 2);
-  const toShow = [...relevant, ...nonRelevant].slice(0, 8);
-  if (toShow.length === 0) return "";
-  // 異常波動的股票研究要特別標註
-  const anomalyCodes = new Set(anomalies.map(a => a.code));
-  return `
-══ 深度研究摘要（持倉相關優先）══
-${toShow.map(r => {
-  const isAnomalyStock = anomalyCodes.has(r.code);
-  const lastRound = r.rounds?.[r.rounds.length - 1];
-  const conclusion = lastRound?.content?.match(/(?:結論|建議|策略)[：:]\s*(.{0,300})/)?.[1]
-    || lastRound?.content?.slice(0, 300) || "";
-  const flag = isAnomalyStock ? " ⚡今日異常波動" : "";
-  return `[${r.date}] ${r.name}(${r.code})${flag}
-結論：${conclusion}${conclusion.length >= 300 ? "..." : ""}`;
-}).join("\n\n")}
-══════════════════════════
-`;
-})()}
 請分析今日收盤表現，事件連動，並給出策略建議。
 特別注意：
-1. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略
-2. 指出產業重複風險和建議調整方向
-3. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議
-4. 特別注意策略大腦中的歷史教訓
-5. 如果有深度研究結果，結合研究結論給出更精準的操作建議。
-6. 在 BRAIN_UPDATE 段落中，基於今日分析更新策略大腦的規則和教訓。
+1. 每檔股票都先讀 dossier 的 thesis / 目標價 / 事件 / 研究摘要 / brainContext，再結合今日漲跌，不要只看漲跌幅。
+2. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略。
+3. 如果 dossier 的資料新鮮度是 stale 或 missing，要直接指出不確定性，不要假裝有最新財報或最新投顧數字。
+4. 指出產業重複風險和建議調整方向。
+5. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議。
+6. 特別注意策略大腦中的歷史教訓。
+7. 在 BRAIN_UPDATE 段落中，基於今日分析更新策略大腦的規則和教訓。
 
 預測命中率：${(() => { const NE = newsEvents || NEWS_EVENTS; const pe = NE.filter(isClosedEvent); const h2 = pe.filter(e => e.correct === true).length; const t2 = pe.filter(e => e.correct !== null).length; return `${h2}/${t2}`; })()}`
           })
@@ -2835,6 +3553,128 @@ ${recentAnalyses || "尚無分析紀錄"}
     setTimeout(() => setSaved(""), 3000);
   };
 
+  const upsertTargetReport = ({ code, firm, target, date }, { silent = false, markNew = true } = {}) => {
+    const normalizedCode = String(code || "").trim();
+    const normalizedFirm = String(firm || "").trim() || "手動輸入";
+    const normalizedTarget = Number(target);
+    if (!normalizedCode || !Number.isFinite(normalizedTarget) || normalizedTarget <= 0) return false;
+    const reportDate = String(date || "").trim() || toSlashDate();
+    setTargets(prev => {
+      const existing = (prev || {})[normalizedCode] || { reports: [] };
+      return {
+        ...(prev || {}),
+        [normalizedCode]: {
+          reports: mergeTargetReports(existing.reports, [{ firm: normalizedFirm, target: normalizedTarget, date: reportDate }]),
+          updatedAt: reportDate,
+          isNew: markNew || Boolean(existing.isNew),
+        },
+      };
+    });
+    if (!silent) {
+      setSaved("✅ 目標價已更新");
+      setTimeout(() => setSaved(""), 2200);
+    }
+    return true;
+  };
+
+  const upsertFundamentalsEntry = (code, patch, { silent = false } = {}) => {
+    const normalizedCode = String(code || "").trim();
+    if (!normalizedCode || !patch || typeof patch !== "object") return false;
+    let didPersist = false;
+    setFundamentals(prev => {
+      const existing = normalizeFundamentalsEntry(prev?.[normalizedCode]) || {};
+      const merged = normalizeFundamentalsEntry({
+        ...existing,
+        ...patch,
+        updatedAt: patch.updatedAt || existing.updatedAt || toSlashDate(),
+      });
+      if (!merged) return prev || {};
+      didPersist = true;
+      return {
+        ...(prev || {}),
+        [normalizedCode]: merged,
+      };
+    });
+    if (didPersist && !silent) {
+      setSaved("✅ 財報 / 營收資料已更新");
+      setTimeout(() => setSaved(""), 2200);
+    }
+    return didPersist;
+  };
+
+  const applyStructuredResearchRefresh = (payload, { silent = false } = {}) => {
+    if (!payload || typeof payload !== "object") return false;
+    const code = String(payload.code || "").trim();
+    if (!code) return false;
+    let changed = false;
+    if (payload.fundamentals && typeof payload.fundamentals === "object") {
+      changed = upsertFundamentalsEntry(code, payload.fundamentals, { silent: true }) || changed;
+    }
+    const reports = Array.isArray(payload.targets?.reports) ? payload.targets.reports : [];
+    reports.forEach(report => {
+      changed = upsertTargetReport({ code, ...report }, { silent: true, markNew: true }) || changed;
+    });
+    if (changed && !silent) {
+      setSaved("✅ 研究結果已同步回 dossier");
+      setTimeout(() => setSaved(""), 2500);
+    }
+    return changed;
+  };
+
+  const enrichResearchToDossier = async (report, { silent = false } = {}) => {
+    const code = String(report?.code || "").trim();
+    if (!code || report?.mode !== "single") return false;
+    const targetStock = H.find(item => item.code === code);
+    if (!targetStock) return false;
+
+    setEnrichingResearchCode(code);
+    try {
+      const reportText = (report.rounds || [])
+        .map((round, index) => `## Round ${index + 1} ${round?.title || ""}\n${round?.content || ""}`)
+        .join("\n\n");
+      const dossier = dossierByCode.get(code) || null;
+      const { response, data } = await fetchJsonWithTimeout("/api/research-extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report: {
+            code,
+            name: report?.name || targetStock.name,
+            date: report?.date || toSlashDate(),
+            text: reportText,
+          },
+          stock: {
+            code: targetStock.code,
+            name: targetStock.name,
+            price: targetStock.price,
+            cost: targetStock.cost,
+            qty: targetStock.qty,
+          },
+          dossier,
+        }),
+      }, 8500);
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || `同步失敗 (${response.status})`);
+      }
+      const changed = applyStructuredResearchRefresh({ code, ...data }, { silent });
+      if (!changed && !silent) {
+        setSaved("ℹ️ 這份研究沒有抽到新的財報 / 目標價資料");
+        setTimeout(() => setSaved(""), 2500);
+      }
+      return changed;
+    } catch (err) {
+      console.error("研究資料同步失敗:", err);
+      if (!silent) {
+        const detail = err?.name === "AbortError" ? "同步逾時，稍後再試" : (err?.message || "同步失敗");
+        setSaved(`⚠️ ${detail}`);
+        setTimeout(() => setSaved(""), 2800);
+      }
+      return false;
+    } finally {
+      setEnrichingResearchCode(current => (current === code ? null : current));
+    }
+  };
+
   const exportLocalBackup = () => {
     try {
       const storage = collectPortfolioBackupStorage();
@@ -2847,6 +3687,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         holdings,
         tradeLog,
         targets,
+        fundamentals,
         newsEvents,
         analysisHistory,
         dailyReport,
@@ -3067,11 +3908,28 @@ ${recentAnalyses || "尚無分析紀錄"}
       const stocks = mode === "single" && targetStock
         ? [targetStock]
         : H.map(h => ({ code:h.code, name:h.name, price:h.price, cost:h.cost, pnl:h.pnl, pct:h.pct, type:h.type }));
+      const researchDossiers = stocks.map(stock => {
+        const dossier = dossierByCode.get(stock.code);
+        if (!dossier) return null;
+        return {
+          ...dossier,
+          position: {
+            ...(dossier.position || {}),
+            price: stock.price,
+            pnl: stock.pnl,
+            pct: stock.pct,
+            cost: stock.cost,
+            type: stock.type || dossier.position?.type || "股票",
+          },
+        };
+      }).filter(Boolean);
       const body = {
         stocks,
         holdings: H,
+        holdingDossiers: researchDossiers,
         meta: STOCK_META,
         brain: strategyBrain,
+        portfolioNotes,
         mode,
         persist: canUseCloud,
       };
@@ -3090,6 +3948,11 @@ ${recentAnalyses || "尚無分析紀錄"}
         const result = data.results[0];
         setResearchResults(result);
         setResearchHistory(prev => [result, ...(prev||[])].slice(0, 30));
+        if (mode === "single" && result.code) {
+          enrichResearchToDossier(result, { silent: true }).catch(err => {
+            console.error("背景同步研究資料失敗:", err);
+          });
+        }
         // evolve / portfolio 模式：自動更新策略大腦
         if ((mode === "evolve" || mode === "portfolio") && result.newBrain) {
           setStrategyBrain(mergeBrainPreservingCoachLessons(result.newBrain, strategyBrain));
@@ -3181,7 +4044,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               ...ghostBtn,
               cursor: refreshing ? "not-allowed" : "pointer",
             }}>
-              {refreshing ? "更新中..." : "⟳ 刷新"}
+              {refreshing ? "同步中..." : "⟳ 收盤價"}
             </button>
             <button className="ui-btn" onClick={copyWeeklyReport} style={{
               background: C.lavBg, color: C.lavender,
@@ -5014,70 +5877,149 @@ ${recentAnalyses || "尚無分析紀錄"}
           {/* 手動更新目標價 */}
           {!parsed && !img && (()=>{
             const handleAddTarget = () => {
-              if (!tpCode.trim()||!tpVal) return;
-              const code = tpCode.trim();
-              const target = parseFloat(tpVal);
-              if (isNaN(target)) return;
-              setTargets(prev=>{
-                const existing = (prev||{})[code] || {reports:[]};
-                const firm = tpFirm.trim()||"手動輸入";
-                const already = existing.reports.find(r=>r.firm===firm);
-                const newR = {firm, target, date:new Date().toLocaleDateString("zh-TW")};
-                return {
-                  ...(prev||{}),
-                  [code]: {
-                    reports: already
-                      ? existing.reports.map(r=>r.firm===firm?newR:r)
-                      : [...existing.reports, newR],
-                    updatedAt: new Date().toLocaleDateString("zh-TW"),
-                    isNew: true,
-                  }
-                };
+              const ok = upsertTargetReport({
+                code: tpCode,
+                firm: tpFirm,
+                target: parseFloat(tpVal),
+                date: toSlashDate(),
               });
-              setSaved("✅ 目標價已更新");
-              setTimeout(()=>setSaved(""),2000);
+              if (!ok) return;
               setTpCode(""); setTpFirm(""); setTpVal("");
             };
+            const handleSaveFundamentals = () => {
+              const code = fundamentalDraft.code.trim();
+              if (!code) return;
+              const ok = upsertFundamentalsEntry(code, {
+                revenueMonth: fundamentalDraft.revenueMonth.trim() || null,
+                revenueYoY: fundamentalDraft.revenueYoY === "" ? null : Number(fundamentalDraft.revenueYoY),
+                revenueMoM: fundamentalDraft.revenueMoM === "" ? null : Number(fundamentalDraft.revenueMoM),
+                quarter: fundamentalDraft.quarter.trim() || null,
+                eps: fundamentalDraft.eps === "" ? null : Number(fundamentalDraft.eps),
+                grossMargin: fundamentalDraft.grossMargin === "" ? null : Number(fundamentalDraft.grossMargin),
+                roe: fundamentalDraft.roe === "" ? null : Number(fundamentalDraft.roe),
+                source: fundamentalDraft.source.trim() || "手動整理",
+                updatedAt: fundamentalDraft.updatedAt.trim() || toSlashDate(),
+                note: fundamentalDraft.note.trim(),
+              });
+              if (!ok) return;
+              setFundamentalDraft(createDefaultFundamentalDraft());
+            };
             return (
-              <div style={{...card,marginTop:14,borderLeft:`2px solid ${alpha(C.teal, A.accent)}`}}>
-                <div style={lbl}>手動更新目標價</div>
-                <div style={{fontSize:11,color:C.textMute,marginBottom:10,lineHeight:1.6}}>
-                  收到新研究報告時，直接在這裡更新。系統會自動計算多家均值。
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
-                  <div>
-                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>股票代碼</div>
-                    <input value={tpCode} onChange={e=>setTpCode(e.target.value)}
-                      placeholder="如 3006"
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:14}}>
+                <div style={{...card,borderLeft:`2px solid ${alpha(C.teal, A.accent)}`}}>
+                  <div style={lbl}>手動更新目標價</div>
+                  <div style={{fontSize:11,color:C.textMute,marginBottom:10,lineHeight:1.6}}>
+                    收到新研究報告時，直接在這裡更新。系統會自動計算多家均值。
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>股票代碼</div>
+                      <input value={tpCode} onChange={e=>setTpCode(e.target.value)}
+                        placeholder="如 3006"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                          borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>目標價（元）</div>
+                      <input value={tpVal} onChange={e=>setTpVal(e.target.value)}
+                        placeholder="如 205"
+                        type="number"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
+                          borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>券商 / 來源</div>
+                    <input value={tpFirm} onChange={e=>setTpFirm(e.target.value)}
+                      placeholder="如 元大投顧、FactSet共識"
                       style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
                         borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
                   </div>
-                  <div>
-                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>目標價（元）</div>
-                    <input value={tpVal} onChange={e=>setTpVal(e.target.value)}
-                      placeholder="如 205"
-                      type="number"
-                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
-                        borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                  <button onClick={handleAddTarget}
+                    disabled={!tpCode.trim()||!tpVal}
+                    style={{
+                      width:"100%",padding:"10px",border:"none",borderRadius:8,
+                      background: tpCode.trim()&&tpVal ? alpha(C.fillTeal, A.pressed) : C.subtle,
+                      color: tpCode.trim()&&tpVal ? C.onFill : C.textMute,
+                      fontSize:12,fontWeight:500,cursor:tpCode.trim()&&tpVal?"pointer":"not-allowed",
+                    }}>
+                    新增 / 更新目標價
+                  </button>
+                </div>
+
+                <div style={{...card,borderLeft:`2px solid ${alpha(C.amber, A.accent)}`}}>
+                  <div style={lbl}>手動更新財報 / 營收</div>
+                  <div style={{fontSize:11,color:C.textMute,marginBottom:10,lineHeight:1.6}}>
+                    法說、月營收或財報出來後，把關鍵數字補進來，dossier 就會跟著變新。
                   </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>股票代碼</div>
+                      <input value={fundamentalDraft.code} onChange={e=>setFundamentalDraft(prev => ({ ...prev, code: e.target.value }))}
+                        placeholder="如 6274"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>資料日期</div>
+                      <input value={fundamentalDraft.updatedAt} onChange={e=>setFundamentalDraft(prev => ({ ...prev, updatedAt: e.target.value }))}
+                        placeholder="如 2026/03/24"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:7}}>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>月營收月份</div>
+                      <input value={fundamentalDraft.revenueMonth} onChange={e=>setFundamentalDraft(prev => ({ ...prev, revenueMonth: e.target.value }))}
+                        placeholder="如 2026/03"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>季度</div>
+                      <input value={fundamentalDraft.quarter} onChange={e=>setFundamentalDraft(prev => ({ ...prev, quarter: e.target.value }))}
+                        placeholder="如 2026Q1"
+                        style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:7,marginBottom:7}}>
+                    {[
+                      ["revenueYoY","月營收 YoY %"],
+                      ["revenueMoM","月營收 MoM %"],
+                      ["eps","EPS"],
+                      ["grossMargin","毛利率 %"],
+                      ["roe","ROE %"],
+                    ].map(([key, label])=>(
+                      <div key={key}>
+                        <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{label}</div>
+                        <input value={fundamentalDraft[key]} onChange={e=>setFundamentalDraft(prev => ({ ...prev, [key]: e.target.value }))}
+                          type="number"
+                          placeholder="可留空"
+                          style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{marginBottom:7}}>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>來源</div>
+                    <input value={fundamentalDraft.source} onChange={e=>setFundamentalDraft(prev => ({ ...prev, source: e.target.value }))}
+                      placeholder="如 2026Q1 法說 / 月營收公告 / 手動整理"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>備註</div>
+                    <textarea value={fundamentalDraft.note} onChange={e=>setFundamentalDraft(prev => ({ ...prev, note: e.target.value }))}
+                      placeholder="如：毛利率回升主要來自庫存損失回沖"
+                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit",resize:"vertical",minHeight:68,lineHeight:1.6}}/>
+                  </div>
+                  <button onClick={handleSaveFundamentals}
+                    disabled={!fundamentalDraft.code.trim()}
+                    style={{
+                      width:"100%",padding:"10px",border:"none",borderRadius:8,
+                      background: fundamentalDraft.code.trim() ? alpha(C.fillAmber, A.pressed) : C.subtle,
+                      color: fundamentalDraft.code.trim() ? C.onFill : C.textMute,
+                      fontSize:12,fontWeight:500,cursor:fundamentalDraft.code.trim()?"pointer":"not-allowed",
+                    }}>
+                    儲存財報 / 營收摘要
+                  </button>
                 </div>
-                <div style={{marginBottom:10}}>
-                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>券商 / 來源</div>
-                  <input value={tpFirm} onChange={e=>setTpFirm(e.target.value)}
-                    placeholder="如 元大投顧、FactSet共識"
-                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,
-                      borderRadius:7,padding:"8px 10px",color:C.text,fontSize:12,outline:"none",fontFamily:"inherit"}}/>
-                </div>
-                <button onClick={handleAddTarget}
-                  disabled={!tpCode.trim()||!tpVal}
-                  style={{
-                    width:"100%",padding:"10px",border:"none",borderRadius:8,
-                    background: tpCode.trim()&&tpVal ? alpha(C.fillTeal, A.pressed) : C.subtle,
-                    color: tpCode.trim()&&tpVal ? C.onFill : C.textMute,
-                    fontSize:12,fontWeight:500,cursor:tpCode.trim()&&tpVal?"pointer":"not-allowed",
-                  }}>
-                  新增 / 更新目標價
-                </button>
               </div>
             );
           })()}

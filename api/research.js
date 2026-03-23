@@ -63,6 +63,86 @@ async function updateResearchIndex(report) {
   await write(RESEARCH_INDEX_KEY, next);
 }
 
+function normalizeHoldingDossiers(value) {
+  return Array.isArray(value)
+    ? value.filter(item => item && typeof item === 'object' && typeof item.code === 'string')
+    : [];
+}
+
+function formatPromptNumber(value, digits = 1) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '—';
+  return digits === 0 ? String(Math.round(num)) : num.toFixed(digits);
+}
+
+function formatFreshnessLabel(status) {
+  if (status === 'fresh') return '新';
+  if (status === 'stale') return '舊';
+  return '缺';
+}
+
+function summarizeTargetReports(reports, limit = 2) {
+  const rows = (Array.isArray(reports) ? reports : [])
+    .map(report => {
+      const firm = report?.firm || '未署名';
+      const target = Number(report?.target);
+      const date = report?.date || '日期未知';
+      if (!Number.isFinite(target) || target <= 0) return null;
+      return `${firm} ${target} (${date})`;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join('；') : '無';
+}
+
+function summarizeEventList(items, limit = 3) {
+  const rows = (Array.isArray(items) ? items : [])
+    .map(event => {
+      const label = event?.title || '未命名事件';
+      const date = event?.date || event?.trackingStart || event?.exitDate || '日期未定';
+      const status = event?.status || 'pending';
+      return `${label}(${date}/${status})`;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join('；') : '無';
+}
+
+function formatPortfolioNotesContext(notes) {
+  if (!notes || typeof notes !== 'object') return '個人備註：無';
+  const lines = [
+    notes.riskProfile ? `風險屬性：${notes.riskProfile}` : null,
+    notes.preferences ? `操作偏好：${notes.preferences}` : null,
+    notes.customNotes ? `自訂備註：${notes.customNotes}` : null,
+  ].filter(Boolean);
+  return lines.length > 0 ? `個人備註：\n${lines.join('\n')}` : '個人備註：無';
+}
+
+function buildResearchDossierContext(dossier, { compact = false } = {}) {
+  if (!dossier) return '無 dossier，可依持倉與 meta 基本資料分析。';
+  const position = dossier.position || {};
+  const meta = dossier.meta || {};
+  const thesis = dossier.thesis || {};
+  const targets = dossier.targets || {};
+  const events = dossier.events || {};
+  const research = dossier.research || {};
+  const brainContext = dossier.brainContext || {};
+  const freshness = dossier.freshness || {};
+
+  return [
+    `【${dossier.name}(${dossier.code})】`,
+    `持倉：${position.type || '股票'} | 現價 ${formatPromptNumber(position.price)} 成本 ${formatPromptNumber(position.cost)} | 累計 ${Number(position.pct) >= 0 ? '+' : ''}${formatPromptNumber(position.pct, 2)}% | 股數 ${formatPromptNumber(position.qty, 0)}`,
+    `定位：${meta.industry || '未分類'} / ${meta.strategy || '未分類'} / ${meta.period || '?'}期 / ${meta.position || '未定'} / ${meta.leader || '未知'}`,
+    thesis.summary ? `thesis：${thesis.summary}` : null,
+    thesis.catalyst ? `催化劑：${thesis.catalyst}` : null,
+    thesis.status ? `狀態：${thesis.status}` : null,
+    targets.avgTarget ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)}；${summarizeTargetReports(targets.reports, compact ? 2 : 3)}` : '目標價：無',
+    `事件：待觀察 ${summarizeEventList(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventList(events.tracking, compact ? 2 : 3)}`,
+    research.latestConclusion ? `最近研究：${research.latestConclusion}` : '最近研究：無',
+    Array.isArray(brainContext.matchedRules) && brainContext.matchedRules.length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join('；')}` : null,
+    Array.isArray(brainContext.matchedMistakes) && brainContext.matchedMistakes.length > 0 ? `常見風險：${brainContext.matchedMistakes.slice(0, compact ? 2 : 4).join('；')}` : null,
+    `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
+  ].filter(Boolean).join('\n');
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -99,55 +179,80 @@ export default async function handler(req, res) {
 
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { stocks, holdings, meta, brain, events, analysisHistory, mode, persist = true } = req.body;
+  const {
+    stocks,
+    holdings,
+    holdingDossiers,
+    meta,
+    brain,
+    events,
+    analysisHistory,
+    portfolioNotes,
+    mode,
+    persist = true,
+  } = req.body;
 
   try {
     const today = new Date().toLocaleDateString("zh-TW");
     const results = [];
+    const dossiers = normalizeHoldingDossiers(holdingDossiers);
+    const dossierByCode = new Map(dossiers.map(item => [item.code, item]));
+    const notesContext = formatPortfolioNotesContext(portfolioNotes);
 
     if (mode === "single" && stocks?.length === 1) {
       // ── 單股深度研究：3 輪迭代 ──
       const s = stocks[0];
       const m = meta?.[s.code] || {};
+      const dossier = dossierByCode.get(s.code) || null;
+      const dossierContext = buildResearchDossierContext(dossier);
+      const holdingRow = holdings?.find(h => h.code === s.code) || null;
 
       const round1 = await callClaude(
-        `你是專業的台股研究分析師。針對「${s.name}(${s.code})」進行深度基本面研究。
+        `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
+如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
 產業：${m.industry || "未分類"} | 策略：${m.strategy || "未分類"} | 產業地位：${m.leader || "未知"}`,
-        `請對 ${s.name}(${s.code}) 進行深度基本面分析：
+        `${notesContext}
 
-1. **公司定位與護城河**：主要業務、競爭優勢、市場地位
-2. **財務體質**：近期營收趨勢、毛利率走勢、EPS 軌跡、ROE
+持股 dossier：
+${dossierContext}
+
+請對 ${s.name}(${s.code}) 進行深度基本面分析：
+
+1. **公司定位與護城河**：主要業務、競爭優勢、市場地位，並檢查現有 thesis 是否仍成立
+2. **財務體質**：根據 dossier 內已知資訊評估近期營收趨勢、毛利率走勢、EPS 軌跡、ROE；若缺資料要說明
 3. **產業趨勢**：所處產業的景氣循環位置、未來 1-2 季展望
-4. **法人動向**：三大法人近期買賣超方向、外資持股比率趨勢
-5. **技術面關鍵位置**：支撐、壓力、均線結構
+4. **投顧/目標價支撐**：目前目標價共識是否支持 thesis？若資料偏舊請明講
+5. **技術面與事件驗證點**：支撐、壓力、均線結構，以及最近待觀察事件如何影響判斷
 
 現價：${s.price} | 成本：${s.cost} | 損益：${s.pnl >= 0 ? "+" : ""}${s.pnl}(${s.pct}%)
 
-請用具體數據和邏輯推演，不要空泛描述。`
+請用 dossier 內已有的具體數據和邏輯推演，不要空泛描述。`
       );
 
       const round2 = await callClaude(
         `你是台股風險評估專家。基於前一輪分析結果，進一步挖掘風險和催化劑。`,
-        `前一輪分析結果：\n${round1}\n\n請進一步分析：
+        `${notesContext}
+持股 dossier：\n${dossierContext}\n\n前一輪分析結果：\n${round1}\n\n請進一步分析：
 1. **主要風險因子**：最可能導致下跌的 3 個因素
 2. **催化劑時程**：未來 1-3 個月可能推升股價的事件和時間點
 3. **同業比較**：vs 同產業對手的估值差異
 4. **資金流向**：融資融券變化、周轉率、大戶籌碼
 5. **黑天鵝情境**：最壞情況下的股價目標
 
-現有持倉：${s.code} 持有 ${holdings?.find(h=>h.code===s.code)?.qty || "?"}股，成本 ${s.cost}`
+現有持倉：${s.code} 持有 ${holdingRow?.qty || "?"}股，成本 ${s.cost}`
       );
 
       const brainCtx = brain ? `策略大腦規則：\n${(brain.rules || []).join("\n")}\n常犯錯誤：${(brain.commonMistakes || []).join("、")}` : "";
       const round3 = await callClaude(
         `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
-        `基本面分析：\n${round1}\n\n風險催化劑分析：\n${round2}\n\n${brainCtx}
+        `${notesContext}
+持股 dossier：\n${dossierContext}\n\n基本面分析：\n${round1}\n\n風險催化劑分析：\n${round2}\n\n${brainCtx}
 股票：${s.name}(${s.code}) | 策略定位：${m.strategy}/${m.period}期/${m.position}
 
 請給出：
 1. **研究結論**：一句話總結（看多/看空/中性+信心度1-10）
-2. **操作建議**：具體的買賣策略（何時加碼/減碼/停損，目標價位）
-3. **關鍵觀察指標**：接下來最需要追蹤的 3 個指標/事件
+2. **操作建議**：具體的買賣策略（何時加碼/減碼/停損，目標價位），要明確引用 dossier 中的 thesis / 目標價 / 事件
+3. **關鍵觀察指標**：接下來最需要追蹤的 3 個指標/事件，並標明哪些資料目前偏舊
 4. **持倉調整建議**：是否調整倉位大小、持有週期`
       );
 
@@ -189,11 +294,19 @@ export default async function handler(req, res) {
       const stockSummaries = [];
       for (const s of (stocks || []).slice(0, 20)) {
         const m = meta?.[s.code] || {};
+        const dossier = dossierByCode.get(s.code) || null;
+        const dossierContext = buildResearchDossierContext(dossier, { compact: true });
         const summary = await callClaude(
-          `你是台股分析師。用 100 字內精要分析這檔持股的當前狀態和操作方向。`,
-          `${s.name}(${s.code}) | 產業：${m.industry || "未分類"} | 策略：${m.strategy || "未分類"} | 地位：${m.leader || "未知"}
-現價：${s.price} | 成本：${s.cost} | 損益${s.pct >= 0 ? "+" : ""}${s.pct}%
-請給出：當前狀態（1句）+ 操作方向（1句）+ 信心度(1-10)`,
+          `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。`,
+          `${notesContext}
+${dossierContext}
+
+請給出：
+1. thesis 是否仍成立（1句）
+2. 當前操作方向（1句）
+3. 最大驗證點（1句）
+4. 信心度(1-10)
+如果資料偏舊，請在摘要中直接點出。`,
           800
         );
         stockSummaries.push({ code: s.code, name: s.name, summary, meta: m });
@@ -205,7 +318,9 @@ export default async function handler(req, res) {
       // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
       const diag = await callClaude(
         `你是投資系統架構師。基於個股研究結果和完整系統資料，診斷這個交易者的投資系統。`,
-        `## 個股研究摘要（Round 1 結果）
+        `${notesContext}
+
+## 個股研究摘要（Round 1 結果）
 ${stockSummaryText}
 
 ## 策略大腦
@@ -229,7 +344,7 @@ ${histSummary || "（無紀錄）"}
       // ── Round 3：進化建議 + 組合調整（合併策略建議與系統改善）──
       const evolveAdvice = await callClaude(
         `你是投資系統優化顧問兼組合管理專家。基於個股研究和系統診斷，提出完整的改善方案。`,
-        `個股研究摘要：\n${stockSummaryText}\n\n系統診斷結果：\n${diag}\n\n請提出：
+        `${notesContext}\n\n個股研究摘要：\n${stockSummaryText}\n\n系統診斷結果：\n${diag}\n\n請提出：
 
 ## 一、組合層級建議
 1. **組合健康度評分** (1-10)

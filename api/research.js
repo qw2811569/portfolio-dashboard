@@ -106,6 +106,19 @@ function summarizeEventList(items, limit = 3) {
   return rows.length > 0 ? rows.slice(0, limit).join('；') : '無';
 }
 
+function formatFundamentalsSummary(entry) {
+  if (!entry || typeof entry !== 'object') return '尚未建立';
+  const parts = [
+    entry.revenueMonth ? `${entry.revenueMonth} 營收` : null,
+    Number.isFinite(Number(entry.revenueYoY)) ? `YoY ${Number(entry.revenueYoY) >= 0 ? '+' : ''}${Number(entry.revenueYoY).toFixed(1)}%` : null,
+    Number.isFinite(Number(entry.revenueMoM)) ? `MoM ${Number(entry.revenueMoM) >= 0 ? '+' : ''}${Number(entry.revenueMoM).toFixed(1)}%` : null,
+    Number.isFinite(Number(entry.eps)) ? `EPS ${Number(entry.eps).toFixed(2)}` : null,
+    Number.isFinite(Number(entry.grossMargin)) ? `毛利率 ${Number(entry.grossMargin).toFixed(1)}%` : null,
+    Number.isFinite(Number(entry.roe)) ? `ROE ${Number(entry.roe).toFixed(1)}%` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : '尚未建立';
+}
+
 function formatPortfolioNotesContext(notes) {
   if (!notes || typeof notes !== 'object') return '個人備註：無';
   const lines = [
@@ -122,6 +135,8 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
   const meta = dossier.meta || {};
   const thesis = dossier.thesis || {};
   const targets = dossier.targets || {};
+  const fundamentals = dossier.fundamentals || {};
+  const analyst = dossier.analyst || {};
   const events = dossier.events || {};
   const research = dossier.research || {};
   const brainContext = dossier.brainContext || {};
@@ -135,6 +150,8 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
     thesis.catalyst ? `催化劑：${thesis.catalyst}` : null,
     thesis.status ? `狀態：${thesis.status}` : null,
     targets.avgTarget ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)}；${summarizeTargetReports(targets.reports, compact ? 2 : 3)}` : '目標價：無',
+    (fundamentals.eps != null || fundamentals.grossMargin != null || fundamentals.roe != null || fundamentals.revenueYoY != null) ? `財報/營收：${formatFundamentalsSummary(fundamentals)}${fundamentals.source ? `；來源 ${fundamentals.source}` : ''}` : '財報/營收：無',
+    analyst.latestSummary ? `公開報告：${analyst.latestSummary}` : '公開報告：無',
     `事件：待觀察 ${summarizeEventList(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventList(events.tracking, compact ? 2 : 3)}`,
     research.latestConclusion ? `最近研究：${research.latestConclusion}` : '最近研究：無',
     Array.isArray(brainContext.matchedRules) && brainContext.matchedRules.length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join('；')}` : null,

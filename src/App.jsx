@@ -503,6 +503,8 @@ const DEFAULT_PORTFOLIO_NOTES = {
   customNotes: "",
 };
 const EVENT_HISTORY_LIMIT = 90;
+const REPORT_REFRESH_DAILY_LIMIT = 5;
+const REPORT_EXTRACT_MAX_ITEMS = 2;
 const DEFAULT_REVIEW_FORM = {
   actual: "up",
   actualNote: "",
@@ -537,6 +539,8 @@ const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "targets-v1", alias: "targets", ownerFallback: () => INIT_TARGETS, emptyFallback: () => ({}) },
   { suffix: "fundamentals-v1", alias: "fundamentals", ownerFallback: () => ({}), emptyFallback: () => ({}), hasLegacy: false },
   { suffix: "watchlist-v1", alias: "watchlist", ownerFallback: () => normalizeWatchlist(INIT_WATCHLIST), emptyFallback: () => [], hasLegacy: false },
+  { suffix: "analyst-reports-v1", alias: "analystReports", ownerFallback: () => ({}), emptyFallback: () => ({}), hasLegacy: false },
+  { suffix: "report-refresh-meta-v1", alias: "reportRefreshMeta", ownerFallback: () => ({}), emptyFallback: () => ({}), hasLegacy: false },
   { suffix: "holding-dossiers-v1", alias: "holdingDossiers", ownerFallback: () => [], emptyFallback: () => [], hasLegacy: false },
   { suffix: "news-events-v1", alias: "newsEvents", ownerFallback: () => NEWS_EVENTS, emptyFallback: () => [] },
   { suffix: "analysis-history-v1", alias: "analysisHistory", ownerFallback: () => [], emptyFallback: () => [] },
@@ -849,6 +853,110 @@ function normalizeFundamentalsStore(value) {
   );
 }
 
+function normalizeAnalystReportItem(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const id = String(value.id || "").trim();
+  const title = String(value.title || "").trim();
+  const url = String(value.url || "").trim();
+  if (!id || !title) return null;
+  const target = Number(value.target);
+  const confidence = Number(value.confidence);
+  return {
+    id,
+    title,
+    url,
+    source: String(value.source || "").trim(),
+    publishedAt: String(value.publishedAt || "").trim() || null,
+    snippet: String(value.snippet || "").trim(),
+    summary: String(value.summary || "").trim(),
+    firm: String(value.firm || "").trim(),
+    target: Number.isFinite(target) && target > 0 ? target : null,
+    stance: ["bullish", "neutral", "bearish", "unknown"].includes(value.stance) ? value.stance : "unknown",
+    tags: Array.isArray(value.tags) ? value.tags.filter(Boolean).slice(0, 5) : [],
+    confidence: Number.isFinite(confidence) ? confidence : null,
+    extractedAt: String(value.extractedAt || "").trim() || null,
+    hash: String(value.hash || id).trim(),
+  };
+}
+
+function normalizeAnalystReportsStore(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([code, entry]) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+        const items = Array.isArray(entry.items)
+          ? entry.items.map(normalizeAnalystReportItem).filter(Boolean)
+          : [];
+        const latestPublishedAt = String(entry.latestPublishedAt || "").trim() || null;
+        const latestTargetAt = String(entry.latestTargetAt || "").trim() || null;
+        return [code, {
+          items,
+          latestPublishedAt,
+          latestTargetAt,
+          lastCheckedAt: String(entry.lastCheckedAt || "").trim() || null,
+        }];
+      })
+      .filter(Boolean)
+  );
+}
+
+function normalizeReportRefreshMeta(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const normalized = {};
+  for (const [code, entry] of Object.entries(value)) {
+    if (code === "__daily") {
+      normalized.__daily = {
+        date: String(entry?.date || "").trim() || null,
+        processedCodes: Array.isArray(entry?.processedCodes) ? entry.processedCodes.filter(Boolean) : [],
+        runCount: Number(entry?.runCount) || 0,
+        lastRunAt: String(entry?.lastRunAt || "").trim() || null,
+      };
+      continue;
+    }
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    normalized[code] = {
+      lastCheckedAt: String(entry.lastCheckedAt || "").trim() || null,
+      lastChangedAt: String(entry.lastChangedAt || "").trim() || null,
+      lastStatus: String(entry.lastStatus || "").trim() || "idle",
+      lastMessage: String(entry.lastMessage || "").trim() || "",
+      lastHashes: Array.isArray(entry.lastHashes) ? entry.lastHashes.filter(Boolean).slice(0, 20) : [],
+      checkedDate: String(entry.checkedDate || "").trim() || null,
+    };
+  }
+  return normalized;
+}
+
+function mergeAnalystReportItems(existingItems, nextItems) {
+  const merged = [...(Array.isArray(existingItems) ? existingItems : [])];
+  (Array.isArray(nextItems) ? nextItems : []).forEach(item => {
+    const normalized = normalizeAnalystReportItem(item);
+    if (!normalized) return;
+    const idx = merged.findIndex(existing => existing.id === normalized.id || existing.hash === normalized.hash);
+    if (idx >= 0) merged[idx] = { ...merged[idx], ...normalized };
+    else merged.push(normalized);
+  });
+  return merged
+    .sort((a, b) => {
+      const aTime = parseFlexibleDate(a.publishedAt || a.extractedAt || 0)?.getTime() || 0;
+      const bTime = parseFlexibleDate(b.publishedAt || b.extractedAt || 0)?.getTime() || 0;
+      return bTime - aTime;
+    })
+    .slice(0, 12);
+}
+
+function formatAnalystReportSummary(items, limit = 2) {
+  const rows = (Array.isArray(items) ? items : [])
+    .map(item => {
+      const summary = item.summary || item.title;
+      const source = item.firm || item.source || "公開來源";
+      const target = item.target ? ` 目標價 ${item.target}` : "";
+      return `${source}${target}：${summary}`;
+    })
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
+}
+
 function formatFundamentalsSummary(entry) {
   const normalized = normalizeFundamentalsEntry(entry);
   if (!normalized) return "尚未建立";
@@ -1116,6 +1224,7 @@ function buildHoldingDossiers({
   watchlist,
   targets,
   fundamentals,
+  analystReports,
   newsEvents,
   researchHistory,
   strategyBrain,
@@ -1127,6 +1236,7 @@ function buildHoldingDossiers({
   const events = normalizeNewsEvents(newsEvents || []);
   const allResearch = Array.isArray(researchHistory) ? researchHistory : [];
   const fundamentalsStore = normalizeFundamentalsStore(fundamentals);
+  const analystStore = normalizeAnalystReportsStore(analystReports);
   const brain = normalizeStrategyBrain(strategyBrain, { allowEmpty: true });
   const now = new Date();
   const todayClock = getTaipeiClock(now);
@@ -1162,6 +1272,10 @@ function buildHoldingDossiers({
     const researchFreshness = latestResearch ? computeStaleness(latestResearch.date || latestResearch.timestamp, 30, { now }) : "missing";
     const fundamentalsEntry = fundamentalsStore[holding.code] || null;
     const fundamentalFreshness = fundamentalsEntry ? computeStaleness(fundamentalsEntry.updatedAt, 45, { now }) : "missing";
+    const analystEntry = analystStore[holding.code] || { items: [] };
+    const analystFreshness = analystEntry.items?.length > 0
+      ? computeStaleness(analystEntry.latestPublishedAt || analystEntry.lastCheckedAt, 14, { now })
+      : "missing";
     const quote = marketCache?.prices?.[holding.code] || null;
     const failedCodes = Array.isArray(marketSync?.failedCodes) ? marketSync.failedCodes : [];
     const priceFreshness = quote?.price
@@ -1232,6 +1346,13 @@ function buildHoldingDossiers({
         latestTimestamp: null,
         freshness: "missing",
       },
+      analyst: {
+        latestSummary: formatAnalystReportSummary(analystEntry.items, 2),
+        latestAt: analystEntry.latestPublishedAt || null,
+        latestTargetAt: analystEntry.latestTargetAt || null,
+        items: analystEntry.items || [],
+        freshness: analystFreshness,
+      },
       brainContext: {
         matchedRules,
         matchedMistakes,
@@ -1243,6 +1364,7 @@ function buildHoldingDossiers({
         targets: targetFreshness,
         fundamentals: fundamentalFreshness,
         research: researchFreshness,
+        analyst: analystFreshness,
       },
       sync: {
         lastBuiltAt: buildStamp,
@@ -1304,6 +1426,7 @@ function buildDailyHoldingDossierContext(dossier, change) {
   const thesis = dossier.thesis || {};
   const targets = dossier.targets || {};
   const fundamentals = dossier.fundamentals || {};
+  const analyst = dossier.analyst || {};
   const events = dossier.events || {};
   const research = dossier.research || {};
   const brainContext = dossier.brainContext || {};
@@ -1323,6 +1446,9 @@ function buildDailyHoldingDossierContext(dossier, change) {
   const researchLine = research.latestConclusion
     ? `研究摘要：${research.latestConclusion}`
     : "研究摘要：無";
+  const analystLine = analyst.latestSummary
+    ? `公開報告：${analyst.latestSummary}`
+    : "公開報告：無";
   const ruleLine = (brainContext.matchedRules || []).length > 0
     ? `相關規則：${brainContext.matchedRules.slice(0, 3).join("；")}`
     : null;
@@ -1339,6 +1465,7 @@ function buildDailyHoldingDossierContext(dossier, change) {
     position.alert ? `持倉提醒：${position.alert}` : null,
     targetLine,
     fundamentalsLine,
+    analystLine,
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, 2)} | 最近結案 ${events.latestClosed?.title ? `${events.latestClosed.title}(${events.latestClosed.exitDate || events.latestClosed.date || "—"})` : "無"}`,
     researchLine,
     ruleLine,
@@ -1354,6 +1481,7 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
   const thesis = dossier.thesis || {};
   const targets = dossier.targets || {};
   const fundamentals = dossier.fundamentals || {};
+  const analyst = dossier.analyst || {};
   const events = dossier.events || {};
   const research = dossier.research || {};
   const brainContext = dossier.brainContext || {};
@@ -1367,6 +1495,7 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
     thesis.status ? `狀態：${thesis.status}` : null,
     targets.avgTarget ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)}；${summarizeTargetReportsForPrompt(targets.reports, compact ? 2 : 3)}` : "目標價：無",
     (fundamentals.eps != null || fundamentals.grossMargin != null || fundamentals.roe != null || fundamentals.revenueYoY != null) ? `財報/營收：${formatFundamentalsSummary(fundamentals)}${fundamentals.source ? `；來源 ${fundamentals.source}` : ""}` : "財報/營收：無",
+    analyst.latestSummary ? `公開報告：${analyst.latestSummary}` : "公開報告：無",
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, compact ? 2 : 3)}`,
     research.latestConclusion ? `最近研究：${research.latestConclusion}` : "最近研究：無",
     (brainContext.matchedRules || []).length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join("；")}` : null,
@@ -1689,6 +1818,8 @@ export default function App() {
   const [targets,   setTargets]   = useState(null);
   const [fundamentals, setFundamentals] = useState(null);
   const [watchlist, setWatchlist] = useState(null);
+  const [analystReports, setAnalystReports] = useState(null);
+  const [reportRefreshMeta, setReportRefreshMeta] = useState(null);
   const [holdingDossiers, setHoldingDossiers] = useState(null);
 
   // upload / memo
@@ -1721,6 +1852,8 @@ export default function App() {
   const [tpVal,  setTpVal]  = useState("");
   const [fundamentalDraft, setFundamentalDraft] = useState(() => createDefaultFundamentalDraft());
   const [enrichingResearchCode, setEnrichingResearchCode] = useState(null);
+  const [reportRefreshing, setReportRefreshing] = useState(false);
+  const [reportRefreshStatus, setReportRefreshStatus] = useState("");
 
   // refresh prices
   const [refreshing, setRefreshing] = useState(false);
@@ -1776,6 +1909,8 @@ export default function App() {
     setTargets(snapshot.targets);
     setFundamentals(normalizeFundamentalsStore(snapshot.fundamentals));
     setWatchlist(normalizeWatchlist(snapshot.watchlist));
+    setAnalystReports(normalizeAnalystReportsStore(snapshot.analystReports));
+    setReportRefreshMeta(normalizeReportRefreshMeta(snapshot.reportRefreshMeta));
     setHoldingDossiers(normalizeHoldingDossiers(snapshot.holdingDossiers));
     setNewsEvents(normalizeNewsEvents(snapshot.newsEvents));
     setAnalysisHistory(snapshot.analysisHistory);
@@ -2003,6 +2138,8 @@ export default function App() {
       targets,
       fundamentals,
       watchlist,
+      analystReports,
+      reportRefreshMeta,
       holdingDossiers,
       newsEvents,
       analysisHistory,
@@ -2376,6 +2513,8 @@ export default function App() {
   useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
   useEffect(() => { if (canPersistPortfolioData && fundamentals) savePortfolioData(activePortfolioId, "fundamentals-v1", fundamentals); }, [activePortfolioId, canPersistPortfolioData, fundamentals]);
   useEffect(() => { if (canPersistPortfolioData && watchlist) savePortfolioData(activePortfolioId, "watchlist-v1", watchlist); }, [activePortfolioId, canPersistPortfolioData, watchlist]);
+  useEffect(() => { if (canPersistPortfolioData && analystReports) savePortfolioData(activePortfolioId, "analyst-reports-v1", analystReports); }, [activePortfolioId, analystReports, canPersistPortfolioData]);
+  useEffect(() => { if (canPersistPortfolioData && reportRefreshMeta) savePortfolioData(activePortfolioId, "report-refresh-meta-v1", reportRefreshMeta); }, [activePortfolioId, canPersistPortfolioData, reportRefreshMeta]);
   useEffect(() => {
     if (!canPersistPortfolioData || !holdings) return;
     const nextDossiers = buildHoldingDossiers({
@@ -2383,6 +2522,7 @@ export default function App() {
       watchlist,
       targets,
       fundamentals,
+      analystReports,
       newsEvents,
       researchHistory,
       strategyBrain,
@@ -2407,6 +2547,7 @@ export default function App() {
     targets,
     fundamentals,
     watchlist,
+    analystReports,
   ]);
   useEffect(() => {
     if (canPersistPortfolioData && holdingDossiers) {
@@ -2519,6 +2660,7 @@ export default function App() {
       watchlist: W,
       targets,
       fundamentals,
+      analystReports,
       newsEvents,
       researchHistory,
       strategyBrain,
@@ -2725,6 +2867,44 @@ export default function App() {
   const missingTargetCount = D.filter(item => item?.freshness?.targets === "missing").length;
   const staleFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "stale").length;
   const missingFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "missing").length;
+  const todayRefreshKey = getTaipeiClock(new Date()).marketDate;
+  const reportRefreshCandidates = H.map(holding => {
+    const dossier = dossierByCode.get(holding.code) || null;
+    const refreshEntry = reportRefreshMeta?.[holding.code] || {};
+    const relatedEvents = currentNewsEvents.filter(event => getEventStockCodes(event).includes(holding.code) && !isClosedEvent(event));
+    const targetStatus = dossier?.freshness?.targets || "missing";
+    const analystStatus = dossier?.freshness?.analyst || "missing";
+    const score =
+      (targetStatus === "missing" ? 5 : targetStatus === "stale" ? 3 : 0) +
+      (analystStatus === "missing" ? 4 : analystStatus === "stale" ? 2 : 0) +
+      (relatedEvents.length > 0 ? 2 : 0);
+    return {
+      holding,
+      score,
+      targetStatus,
+      analystStatus,
+      relatedEvents,
+      checkedToday: refreshEntry.checkedDate === todayRefreshKey,
+    };
+  })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score || (b.holding.value || 0) - (a.holding.value || 0));
+  useEffect(() => {
+    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || tab !== "research" || reportRefreshing) return;
+    if (reportRefreshMeta?.__daily?.date === todayRefreshKey) return;
+    if (reportRefreshCandidates.length === 0) return;
+    refreshAnalystReports({ silent: true }).catch(err => {
+      console.error("自動刷新公開報告失敗:", err);
+    });
+  }, [
+    ready,
+    viewMode,
+    tab,
+    reportRefreshing,
+    reportRefreshMeta,
+    todayRefreshKey,
+    reportRefreshCandidates.length,
+  ]);
 
   const filteredEvents = filterType==="全部" ? EVENTS : EVENTS.filter(e=>e.type===filterType);
   const fetchMarketPriceMap = async (codes) => {
@@ -3275,6 +3455,11 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       }));
 
       setLastUpdate(new Date());
+      if (reportRefreshMeta?.__daily?.date !== todayRefreshKey) {
+        refreshAnalystReports({ silent: true, limit: Math.min(3, REPORT_REFRESH_DAILY_LIMIT) }).catch(err => {
+          console.error("收盤分析後刷新公開報告失敗:", err);
+        });
+      }
     } catch (err) {
       console.error("收盤分析失敗:", err);
       setSaved("❌ 分析失敗");
@@ -3675,6 +3860,141 @@ ${recentAnalyses || "尚無分析紀錄"}
     }
   };
 
+  const mergeAnalystReportBatch = (code, payload) => {
+    const normalizedCode = String(code || "").trim();
+    if (!normalizedCode || !payload || typeof payload !== "object") return false;
+    const incomingItems = Array.isArray(payload.items) ? payload.items.map(normalizeAnalystReportItem).filter(Boolean) : [];
+    setAnalystReports(prev => {
+      const current = normalizeAnalystReportsStore(prev);
+      const existing = current[normalizedCode] || { items: [], latestPublishedAt: null, latestTargetAt: null, lastCheckedAt: null };
+      const mergedItems = mergeAnalystReportItems(existing.items, incomingItems);
+      const latestPublishedAt = mergedItems[0]?.publishedAt || existing.latestPublishedAt || null;
+      const latestTargetItem = mergedItems.find(item => Number.isFinite(item?.target));
+      return {
+        ...current,
+        [normalizedCode]: {
+          items: mergedItems,
+          latestPublishedAt,
+          latestTargetAt: latestTargetItem?.publishedAt || existing.latestTargetAt || null,
+          lastCheckedAt: payload.fetchedAt || new Date().toISOString(),
+        },
+      };
+    });
+    incomingItems.filter(item => Number.isFinite(item?.target) && item.target > 0).forEach(item => {
+      upsertTargetReport({
+        code: normalizedCode,
+        firm: item.firm || item.source || "公開報告",
+        target: item.target,
+        date: item.publishedAt || toSlashDate(),
+      }, { silent: true, markNew: true });
+    });
+    return incomingItems.length > 0;
+  };
+
+  const refreshAnalystReports = async ({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) => {
+    if (reportRefreshing) return false;
+    const dailyMeta = reportRefreshMeta?.__daily || {};
+    const processedCodes = new Set(Array.isArray(dailyMeta.processedCodes) ? dailyMeta.processedCodes : []);
+    const candidates = reportRefreshCandidates
+      .filter(item => force || (!item.checkedToday && !processedCodes.has(item.holding.code)))
+      .slice(0, limit);
+
+    if (candidates.length === 0) {
+      if (!silent) {
+        setSaved("ℹ️ 今日報告索引已是最新");
+        setTimeout(() => setSaved(""), 2200);
+      }
+      return false;
+    }
+
+    setReportRefreshing(true);
+    setReportRefreshStatus(`正在刷新公開報告索引（0/${candidates.length}）...`);
+    let changedCodes = 0;
+    const checkedCodes = [];
+    try {
+      for (let i = 0; i < candidates.length; i += 1) {
+        const { holding } = candidates[i];
+        setReportRefreshStatus(`正在刷新公開報告索引（${i + 1}/${candidates.length}）· ${holding.name}`);
+        const existingItems = analystReports?.[holding.code]?.items || [];
+        try {
+          const { response, data } = await fetchJsonWithTimeout("/api/analyst-reports", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: holding.code,
+              name: holding.name,
+              knownHashes: existingItems.map(item => item.id || item.hash).filter(Boolean),
+              maxItems: 6,
+              maxExtract: REPORT_EXTRACT_MAX_ITEMS,
+            }),
+          }, 9000);
+          if (!response.ok) {
+            throw new Error(data?.detail || data?.error || `刷新失敗 (${response.status})`);
+          }
+          const changed = mergeAnalystReportBatch(holding.code, data);
+          if (changed) changedCodes += 1;
+          checkedCodes.push(holding.code);
+          setReportRefreshMeta(prev => {
+            const current = normalizeReportRefreshMeta(prev);
+            const nextProcessed = Array.from(new Set([...(current.__daily?.processedCodes || []), holding.code])).slice(-20);
+            return {
+              ...current,
+              __daily: {
+                date: todayRefreshKey,
+                processedCodes: nextProcessed,
+                runCount: (current.__daily?.runCount || 0) + 1,
+                lastRunAt: new Date().toISOString(),
+              },
+              [holding.code]: {
+                lastCheckedAt: data?.fetchedAt || new Date().toISOString(),
+                lastChangedAt: changed ? (data?.fetchedAt || new Date().toISOString()) : (current[holding.code]?.lastChangedAt || null),
+                lastStatus: changed ? "updated" : "unchanged",
+                lastMessage: changed ? `新增 ${data?.newCount || 0} 則公開報告` : "今日無新報告",
+                lastHashes: Array.isArray(data?.items) ? data.items.map(item => item.id || item.hash).filter(Boolean) : [],
+                checkedDate: todayRefreshKey,
+              },
+            };
+          });
+        } catch (err) {
+          console.error(`公開報告刷新失敗 (${holding.code}):`, err);
+          checkedCodes.push(holding.code);
+          setReportRefreshMeta(prev => {
+            const current = normalizeReportRefreshMeta(prev);
+            const nextProcessed = Array.from(new Set([...(current.__daily?.processedCodes || []), holding.code])).slice(-20);
+            return {
+              ...current,
+              __daily: {
+                date: todayRefreshKey,
+                processedCodes: nextProcessed,
+                runCount: (current.__daily?.runCount || 0) + 1,
+                lastRunAt: new Date().toISOString(),
+              },
+              [holding.code]: {
+                lastCheckedAt: new Date().toISOString(),
+                lastChangedAt: current[holding.code]?.lastChangedAt || null,
+                lastStatus: "failed",
+                lastMessage: err?.message || "刷新失敗",
+                lastHashes: current[holding.code]?.lastHashes || [],
+                checkedDate: todayRefreshKey,
+              },
+            };
+          });
+        }
+      }
+
+      if (!silent) {
+        setSaved(changedCodes > 0
+          ? `✅ 已刷新 ${checkedCodes.length} 檔公開報告索引（${changedCodes} 檔有新資料）`
+          : `ℹ️ 已檢查 ${checkedCodes.length} 檔，今日沒有新的公開報告`);
+        setTimeout(() => setSaved(""), 3200);
+      }
+      return changedCodes > 0;
+    } finally {
+      setReportRefreshing(false);
+      setReportRefreshStatus("");
+    }
+  };
+
   const exportLocalBackup = () => {
     try {
       const storage = collectPortfolioBackupStorage();
@@ -3688,6 +4008,10 @@ ${recentAnalyses || "尚無分析紀錄"}
         tradeLog,
         targets,
         fundamentals,
+        watchlist,
+        analystReports,
+        reportRefreshMeta,
+        holdingDossiers,
         newsEvents,
         analysisHistory,
         dailyReport,
@@ -3949,9 +4273,16 @@ ${recentAnalyses || "尚無分析紀錄"}
         setResearchResults(result);
         setResearchHistory(prev => [result, ...(prev||[])].slice(0, 30));
         if (mode === "single" && result.code) {
-          enrichResearchToDossier(result, { silent: true }).catch(err => {
-            console.error("背景同步研究資料失敗:", err);
-          });
+          enrichResearchToDossier(result, { silent: true })
+            .then(changed => {
+              if (changed) {
+                setSaved("✅ 研究完成 · 已同步目標價 / 財報到持倉");
+                setTimeout(() => setSaved(""), 3200);
+              }
+            })
+            .catch(err => {
+              console.error("背景同步研究資料失敗:", err);
+            });
         }
         // evolve / portfolio 模式：自動更新策略大腦
         if ((mode === "evolve" || mode === "portfolio") && result.newBrain) {
@@ -4778,6 +5109,9 @@ ${recentAnalyses || "尚無分析紀錄"}
               const upside = tp && h.price ? ((tp - h.price) / h.price * 100) : null;
               const isNew  = T?.isNew;
               const isExpanded = expandedStock === h.code;
+              const dossier = dossierByCode.get(h.code) || null;
+              const targetFreshness = dossier?.freshness?.targets || "missing";
+              const fundamentalFreshness = dossier?.freshness?.fundamentals || "missing";
               const hits = relatedEvents.filter(e => e.correct === true).length;
               const misses = relatedEvents.filter(e => e.correct === false).length;
               const pending = relatedEvents.filter(e => e.correct == null).length;
@@ -4898,6 +5232,46 @@ ${recentAnalyses || "尚無分析紀錄"}
                         color:C.teal,fontSize:10,fontWeight:500,cursor:researching?"not-allowed":"pointer"}}>
                       🔬 深度研究 {h.name}
                     </button>
+                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 10px",marginBottom:8}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+                        <div style={{fontSize:10,color:C.text,fontWeight:600}}>Dossier 資料摘要</div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <span style={{fontSize:8,padding:"2px 6px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:targetFreshness==="fresh"?C.olive:targetFreshness==="stale"?C.amber:C.up}}>
+                            目標價 {formatFreshnessLabel(targetFreshness)}
+                          </span>
+                          <span style={{fontSize:8,padding:"2px 6px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:fundamentalFreshness==="fresh"?C.olive:fundamentalFreshness==="stale"?C.amber:C.up}}>
+                            財報 {formatFreshnessLabel(fundamentalFreshness)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{fontSize:10,color:C.textSec,lineHeight:1.7}}>
+                        {dossier?.targets?.reports?.length
+                          ? `目標價：均值 ${dossier.targets.avgTarget || "—"}；${summarizeTargetReportsForPrompt(dossier.targets.reports, 2)}`
+                          : "目標價：尚未建立"}
+                      </div>
+                      <div style={{fontSize:10,color:C.textSec,lineHeight:1.7,marginTop:4}}>
+                        財報 / 營收：{formatFundamentalsSummary(dossier?.fundamentals)}
+                      </div>
+                      <div style={{fontSize:10,color:C.textSec,lineHeight:1.7,marginTop:4}}>
+                        公開報告：{dossier?.analyst?.latestSummary || "尚未建立"}
+                      </div>
+                      {!!dossier?.fundamentals?.source && (
+                        <div style={{fontSize:9,color:C.textMute,marginTop:4}}>
+                          來源：{dossier.fundamentals.source} · 更新 {dossier.fundamentals.updatedAt || "—"}
+                        </div>
+                      )}
+                      {(dossier?.analyst?.items || []).slice(0, 2).map(item => (
+                        <div key={item.id} style={{fontSize:9,color:C.textMute,marginTop:4,lineHeight:1.6}}>
+                          [{item.publishedAt || "—"}] {item.firm || item.source || "公開來源"}
+                          {item.target ? ` · 目標價 ${item.target}` : ""} · {item.summary || item.title}
+                        </div>
+                      ))}
+                      {!!dossier?.fundamentals?.note && (
+                        <div style={{fontSize:9,color:C.textMute,marginTop:4,lineHeight:1.6}}>
+                          備註：{dossier.fundamentals.note}
+                        </div>
+                      )}
+                    </div>
                     {relatedEvents.length === 0 ? (
                       <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
                         尚無相關事件預測紀錄
@@ -5643,7 +6017,18 @@ ${recentAnalyses || "尚無分析紀錄"}
                   color:researching && researchTarget==="EVOLVE"?C.textMute:C.onFill}}>
                 {researching && researchTarget==="EVOLVE" ? "全組合研究 + 系統進化中..." : "🧬 全組合研究 + 系統進化"}
               </button>
+              <button onClick={()=>refreshAnalystReports({ force: true })}
+                disabled={reportRefreshing}
+                style={{padding:"13px 14px",borderRadius:8,border:`1px solid ${alpha(C.amber, A.strongLine)}`,fontSize:12,fontWeight:600,
+                  cursor:reportRefreshing?"not-allowed":"pointer",background:alpha(C.amber, A.tint),color:reportRefreshing?C.textMute:C.amber,whiteSpace:"nowrap"}}>
+                {reportRefreshing ? "刷新中..." : "刷新公開報告"}
+              </button>
             </div>
+            {reportRefreshStatus && (
+              <div style={{fontSize:10,color:C.textMute,marginBottom:8}}>
+                {reportRefreshStatus}
+              </div>
+            )}
 
             {/* 個股研究選擇 */}
             <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>或選擇個股深度研究（3 輪迭代）：</div>
@@ -5665,6 +6050,50 @@ ${recentAnalyses || "尚無分析紀錄"}
               })}
             </div>
           </div>
+
+          {dataRefreshRows.length > 0 && (
+            <div style={{...card,marginBottom:10,borderLeft:`3px solid ${alpha(C.amber, A.accent)}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap",marginBottom:8}}>
+                <div>
+                  <div style={{...lbl,marginBottom:4,color:C.amber}}>資料更新中心</div>
+                  <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>
+                    先補齊 stale / missing 的財報與目標價，AI 之後的分析會更扎實。
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {[
+                    [`目標價缺 ${missingTargetCount}`, C.up],
+                    [`目標價舊 ${staleTargetCount}`, C.amber],
+                    [`財報缺 ${missingFundamentalCount}`, C.up],
+                    [`財報舊 ${staleFundamentalCount}`, C.amber],
+                  ].map(([label, color]) => (
+                    <span key={label} style={{fontSize:9,padding:"4px 8px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color}}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{display:"grid",gap:7}}>
+                {dataRefreshRows.slice(0, 5).map(item => (
+                  <div key={item.code} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,background:C.subtle,border:`1px solid ${C.borderSub}`,borderRadius:8,padding:"8px 10px"}}>
+                    <div>
+                      <div style={{fontSize:11,color:C.text,fontWeight:500}}>{item.name} ({item.code})</div>
+                      <div style={{fontSize:9,color:C.textMute,marginTop:3}}>
+                        目標價：{formatFreshnessLabel(item.targetStatus)} {item.targetUpdatedAt ? `· ${item.targetUpdatedAt}` : ""}　
+                        財報：{formatFreshnessLabel(item.fundamentalStatus)} {item.fundamentalsUpdatedAt ? `· ${item.fundamentalsUpdatedAt}` : ""}
+                      </div>
+                    </div>
+                    <button onClick={()=>runResearch("single", H.find(h => h.code === item.code))}
+                      disabled={researching || !H.find(h => h.code === item.code)}
+                      style={{padding:"7px 10px",borderRadius:7,border:`1px solid ${alpha(C.teal, A.strongLine)}`,background:alpha(C.teal, A.tint),color:C.teal,fontSize:10,fontWeight:500,cursor:researching?"not-allowed":"pointer",whiteSpace:"nowrap"}}>
+                      先研究這檔
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 研究進度 */}
           {researching && (
@@ -5694,11 +6123,20 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{...lbl,marginBottom:0,color:C.teal}}>
                   {researchResults.name} · {researchResults.date}
                 </div>
-                {researchResults.priceAtResearch && (
-                  <span style={{fontSize:10,color:C.textMute}}>
-                    研究時股價 {researchResults.priceAtResearch}
-                  </span>
-                )}
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                  {researchResults.priceAtResearch && (
+                    <span style={{fontSize:10,color:C.textMute}}>
+                      研究時股價 {researchResults.priceAtResearch}
+                    </span>
+                  )}
+                  {researchResults.mode === "single" && (
+                    <button onClick={()=>enrichResearchToDossier(researchResults)}
+                      disabled={enrichingResearchCode === researchResults.code}
+                      style={{padding:"6px 9px",borderRadius:7,border:`1px solid ${alpha(C.amber, A.strongLine)}`,background:alpha(C.amber, A.tint),color:C.amber,fontSize:10,fontWeight:500,cursor:enrichingResearchCode === researchResults.code?"not-allowed":"pointer"}}>
+                      {enrichingResearchCode === researchResults.code ? "同步中..." : "同步到 dossier"}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {researchResults.rounds?.map((round, i) => (

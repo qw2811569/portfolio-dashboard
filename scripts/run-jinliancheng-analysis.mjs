@@ -16,6 +16,8 @@ envContent.split("\n").forEach(line => {
 const API_KEY = envVars.AI_API_KEY || envVars.ANTHROPIC_API_KEY;
 const MODEL = envVars.AI_MODE || "claude-sonnet-4-20250514";
 if (!API_KEY) { console.error("找不到 API key"); process.exit(1); }
+console.log(`🔑 Key: ${API_KEY.substring(0,12)}... (${API_KEY.length} chars)`);
+console.log(`🤖 Model: ${MODEL}`);
 
 // ── 金聯成持倉資料 ──
 const holdings = [

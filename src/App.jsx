@@ -92,6 +92,7 @@ const avgTarget = (code) => {
 
 // ── 產業/策略 metadata ──────────────────────────────────────────
 const STOCK_META = {
+  // ── me 組合 ──
   "00637L": { industry:"中國ETF",     strategy:"ETF/指數",  period:"短中", position:"戰術", leader:"N/A" },
   "039108": { industry:"被動元件",    strategy:"權證",      period:"短",   position:"戰術", leader:"N/A", underlying:"禾伸堂" },
   "053848": { industry:"半導體設備",  strategy:"權證",      period:"短",   position:"戰術", leader:"N/A", underlying:"亞翔" },
@@ -112,6 +113,21 @@ const STOCK_META = {
   "6770":   { industry:"IC/記憶體",   strategy:"景氣循環",  period:"中長", position:"衛星", leader:"二線" },
   "6862":   { industry:"連接器",      strategy:"成長股",    period:"中",   position:"衛星", leader:"小型" },
   "8227":   { industry:"光通訊",      strategy:"成長股",    period:"中長", position:"衛星", leader:"小型" },
+  // ── 金聯成 組合 ──
+  "0050":   { industry:"台股ETF",       strategy:"ETF/指數",  period:"中長", position:"衛星", leader:"N/A" },
+  "00635U": { industry:"商品ETF",       strategy:"ETF/指數",  period:"中",   position:"戰術", leader:"N/A" },
+  "00918":  { industry:"高股息ETF",     strategy:"ETF/指數",  period:"中長", position:"衛星", leader:"N/A" },
+  "00981A": { industry:"主動型ETF",     strategy:"ETF/指數",  period:"中長", position:"衛星", leader:"N/A" },
+  "1799":   { industry:"生技醫療",      strategy:"轉型股",    period:"中",   position:"核心", leader:"小型" },
+  "1815":   { industry:"PCB/材料",      strategy:"景氣循環",  period:"中",   position:"衛星", leader:"二線" },
+  "2489":   { industry:"顯示器/光電",   strategy:"轉型股",    period:"中",   position:"核心", leader:"中型" },
+  "3167":   { industry:"精密機械",      strategy:"成長股",    period:"中",   position:"衛星", leader:"小龍頭" },
+  "4562":   { industry:"精密機械",      strategy:"景氣循環",  period:"中",   position:"衛星", leader:"小型" },
+  "6446":   { industry:"生技醫療",      strategy:"成長股",    period:"中長", position:"核心", leader:"龍頭" },
+  "7799":   { industry:"生技醫療",      strategy:"成長股",    period:"中長", position:"核心", leader:"小龍頭" },
+  "7865":   { industry:"環保/循環",     strategy:"價值股",    period:"中長", position:"核心", leader:"小龍頭" },
+  "8074":   { industry:"PCB/材料",      strategy:"景氣循環",  period:"中",   position:"衛星", leader:"小型" },
+  "8096":   { industry:"電子通路",      strategy:"成長股",    period:"中",   position:"衛星", leader:"中型" },
 };
 
 // 產業色彩映射 — 提亮版（文字用，需在 #283D3B 上可讀）
@@ -127,6 +143,15 @@ const IND_COLOR = {
   "連接器": C.mint,
   "中國ETF": C.rose,
   "半導體設備": C.choco,
+  // 金聯成 組合新增產業
+  "生技醫療": C.up,
+  "台股ETF": C.blue,
+  "高股息ETF": C.blue,
+  "主動型ETF": C.blue,
+  "商品ETF": C.amber,
+  "顯示器/光電": C.rose,
+  "環保/循環": C.olive,
+  "電子通路": C.lavender,
 };
 
 // ── 初始持倉 ────────────────────────────────────────────────────
@@ -996,6 +1021,11 @@ async function migrateLegacyPortfolioStorageIfNeeded() {
   return true;
 }
 
+// 金聯成 組合目標價（僅收錄查到的法人/分析師共識）
+const INIT_TARGETS_JINLIANCHENG = {
+  "6446": { reports:[{firm:"分析師",target:1060,date:"2026/03"}], updatedAt:"2026/03/23", isNew:true },
+};
+
 async function seedJinlianchengIfNeeded() {
   const portfolios = await load(PORTFOLIOS_KEY, []);
   const existing = portfolios.find(p => p.name === "金聯成");
@@ -1003,6 +1033,7 @@ async function seedJinlianchengIfNeeded() {
     const holdings = await loadPortfolioData(existing.id, "holdings-v2", []);
     if (holdings.length > 0) return; // 已有持倉，不重複 seed
     await savePortfolioData(existing.id, "holdings-v2", INIT_HOLDINGS_JINLIANCHENG);
+    await savePortfolioData(existing.id, "targets-v1", INIT_TARGETS_JINLIANCHENG);
     return;
   }
   // 組合不存在 → 建立並 seed
@@ -1017,6 +1048,7 @@ async function seedJinlianchengIfNeeded() {
     await savePortfolioData(newPf.id, field.suffix, field.emptyFallback());
   }
   await savePortfolioData(newPf.id, "holdings-v2", INIT_HOLDINGS_JINLIANCHENG);
+  await savePortfolioData(newPf.id, "targets-v1", INIT_TARGETS_JINLIANCHENG);
 }
 
 async function ensurePortfolioRegistry() {
@@ -3838,7 +3870,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
           <div style={card}>
             {displayed.map(({ h, meta, T, relatedEvents, hasPending, needsAttention, priority },i)=>{
-              const tp     = T ? avgTarget(h.code) : null;
+              const tp     = T?.reports?.length ? Math.round(T.reports.reduce((s,r)=>s+r.target,0)/T.reports.length) : null;
               const upside = tp && h.price ? ((tp - h.price) / h.price * 100) : null;
               const isNew  = T?.isNew;
               const isExpanded = expandedStock === h.code;

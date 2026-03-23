@@ -1419,7 +1419,7 @@ function summarizeEventListForPrompt(items, limit = 3) {
   return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
 }
 
-function buildDailyHoldingDossierContext(dossier, change) {
+function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
   if (!dossier) return "";
   const position = dossier.position || {};
   const meta = dossier.meta || {};
@@ -1433,10 +1433,18 @@ function buildDailyHoldingDossierContext(dossier, change) {
   const freshness = dossier.freshness || {};
   const typeLabel = position.type || "股票";
   const expireLabel = position.expire ? ` 到期${position.expire}` : "";
-  const changePct = Number.isFinite(change?.changePct) ? `${change.changePct >= 0 ? "+" : ""}${change.changePct.toFixed(2)}%` : "—";
-  const totalPct = Number.isFinite(change?.totalPct) ? `${change.totalPct >= 0 ? "+" : ""}${change.totalPct.toFixed(2)}%` : "—";
-  const todayPnl = Number.isFinite(change?.todayPnl) ? `${change.todayPnl >= 0 ? "+" : ""}${Math.round(change.todayPnl)}` : "—";
-  const totalPnl = Number.isFinite(change?.totalPnl) ? `${change.totalPnl >= 0 ? "+" : ""}${Math.round(change.totalPnl)}` : "—";
+
+  // blind 模式：不顯示今日漲跌和現價，只保留成本和基本面
+  const positionLine = blind
+    ? `持倉：${typeLabel}${expireLabel} | 成本 ${formatPromptNumber(position.cost)} | 股數 ${formatPromptNumber(position.qty, 0)}`
+    : (() => {
+        const changePct = Number.isFinite(change?.changePct) ? `${change.changePct >= 0 ? "+" : ""}${change.changePct.toFixed(2)}%` : "—";
+        const totalPct = Number.isFinite(change?.totalPct) ? `${change.totalPct >= 0 ? "+" : ""}${change.totalPct.toFixed(2)}%` : "—";
+        const todayPnl = Number.isFinite(change?.todayPnl) ? `${change.todayPnl >= 0 ? "+" : ""}${Math.round(change.todayPnl)}` : "—";
+        const totalPnl = Number.isFinite(change?.totalPnl) ? `${change.totalPnl >= 0 ? "+" : ""}${Math.round(change.totalPnl)}` : "—";
+        return `持倉：${typeLabel}${expireLabel} | 現價 ${formatPromptNumber(change?.price ?? position.price)} 成本 ${formatPromptNumber(position.cost)} | 今日 ${changePct} / ${todayPnl} | 累計 ${totalPct} / ${totalPnl} | 股數 ${formatPromptNumber(position.qty, 0)}`;
+      })();
+
   const targetLine = targets.avgTarget
     ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)} | 報告 ${summarizeTargetReportsForPrompt(targets.reports)}`
     : "目標價：無";
@@ -1457,7 +1465,7 @@ function buildDailyHoldingDossierContext(dossier, change) {
     : null;
   return [
     `【${dossier.name}(${dossier.code})】`,
-    `持倉：${typeLabel}${expireLabel} | 現價 ${formatPromptNumber(change?.price ?? position.price)} 成本 ${formatPromptNumber(position.cost)} | 今日 ${changePct} / ${todayPnl} | 累計 ${totalPct} / ${totalPnl} | 股數 ${formatPromptNumber(position.qty, 0)}`,
+    positionLine,
     `定位：${meta.industry || "未分類"} / ${meta.strategy || "未分類"} / ${meta.period || "?"}期 / ${meta.position || "未定"} / ${meta.leader || "未知"}`,
     thesis.summary ? `thesis：${thesis.summary}` : null,
     thesis.catalyst ? `催化劑：${thesis.catalyst}` : null,
@@ -3131,6 +3139,31 @@ export default function App() {
 
       const totalTodayPnl = changes.reduce((s, c) => s + c.todayPnl, 0);
 
+      // 2b. 取得大盤 / 電子類指數（用於對照分析，不阻擋主流程）
+      let marketContext = "";
+      try {
+        const idxRes = await fetch(`/api/twse?ex_ch=tse_t00.tw|tse_t01.tw`);
+        const idxData = await idxRes.json();
+        if (idxData?.msgArray?.length > 0) {
+          const indices = idxData.msgArray.map(item => {
+            const price = parseFloat(item.z) || parseFloat(item.pz) || 0;
+            const yesterday = parseFloat(item.y) || 0;
+            const changePct = yesterday > 0 ? ((price - yesterday) / yesterday * 100) : 0;
+            return { name: item.n, price, yesterday, changePct };
+          });
+          const taiex = indices.find(i => i.name?.includes("加權"));
+          const elec = indices.find(i => i.name?.includes("電子"));
+          if (taiex || elec) {
+            marketContext = `\n═══ 大盤環境 ═══\n`;
+            if (taiex) marketContext += `加權指數：${taiex.price.toFixed(2)} (${taiex.changePct >= 0 ? "+" : ""}${taiex.changePct.toFixed(2)}%)\n`;
+            if (elec) marketContext += `電子類指數：${elec.price.toFixed(2)} (${elec.changePct >= 0 ? "+" : ""}${elec.changePct.toFixed(2)}%)\n`;
+            marketContext += `\n判斷指引：個股漲幅 < 類股平均 → 相對弱勢需分析原因；個股漲幅 > 類股平均 → 確認是個股利多還是補漲；大盤大跌但個股抗跌 → 確認是否量縮假象。\n`;
+          }
+        }
+      } catch (idxErr) {
+        console.warn("大盤指數取得失敗（不影響分析）:", idxErr);
+      }
+
       // 3. 事件連動分析
       const NE = newsEvents || NEWS_EVENTS;
       const today = toSlashDate();
@@ -3194,10 +3227,21 @@ export default function App() {
 跨組合教練教訓：
 ${brain.coachLessons.slice(-5).map(item => `- [${item.date}] ${item.source || item.sourcePortfolioId}：${item.text}`).join("\n")}
 ` : "";
+        // 分離 AI 生成 vs 用戶確認的規則
+        const allRules = (brain?.rules || []);
+        const userRules = allRules.filter(r => typeof r === "object" && r.source === "user").map(r => r.text);
+        const aiRules = allRules.filter(r => typeof r === "string" || (typeof r === "object" && r.source !== "user"));
+        const aiRuleTexts = aiRules.map(r => typeof r === "string" ? r : r.text);
+
         const brainContext = brain ? `
 ══ 策略大腦（累積知識庫）══
-核心策略規則：
-${(brain.rules||[]).map((r,i)=>`${i+1}. ${r}`).join("\n")}
+${userRules.length > 0 ? `✅ 已驗證規則（用戶確認）：
+${userRules.map((r,i)=>`${i+1}. ${r}`).join("\n")}
+
+` : ""}🤖 AI 建議規則（尚未驗證，批判性使用）：
+${aiRuleTexts.map((r,i)=>`${i+1}. ${r}`).join("\n")}
+
+⚠️ 注意：AI 建議規則可能存在確認偏差，不要因為「策略大腦這樣說」就不加質疑地套用。
 
 歷史教訓：
 ${(brain.lessons||[]).slice(-10).map(l=>`- [${l.date}] ${l.text}`).join("\n")}
@@ -3215,6 +3259,81 @@ ${losers.map(h=>{
   return `${h.name}(${h.code}) ${h.pct}% | 反轉條件：${rc?.signal||"未設定"} | 停損：${rc?.stopLoss||"未設定"}`;
 }).join("\n")}` : "";
 
+        // ── Phase 2: 盲測預測（不含今日漲跌） ──
+        setAnalyzeStep("盲測預測中（不含今日漲跌）...");
+        const blindHoldingSummary = dailyDossiers.length > 0
+          ? dailyDossiers.map(dossier => {
+            const change = changes.find(item => item.code === dossier.code);
+            return buildDailyHoldingDossierContext(dossier, change, { blind: true });
+          }).join("\n\n")
+          : "目前沒有持股 dossier。";
+
+        let blindPredictions = [];
+        try {
+          const blindRes = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemPrompt: `你是台股策略分析師。以下是持股 dossier（不含今日價格變動）。
+請基於 thesis、催化劑、事件時程、財報趨勢，對每檔持股做出今日方向預判。
+這是盲測——你看不到今日漲跌，必須純粹基於基本面和事件邏輯做判斷。
+
+用 JSON 格式輸出，不要其他文字：
+\`\`\`json
+[{"code":"股票代號","name":"股票名稱","direction":"up/down/flat","confidence":1到10,"reason":"一句話判斷依據","risk":"一句話最大風險"}]
+\`\`\``,
+              userPrompt: `今日日期：${today}
+${notesContext}
+${brainContext}
+
+持倉 dossier（盲測模式，不含今日漲跌）：
+${blindHoldingSummary}
+
+待觀察事件：
+${eventSummary}
+
+請對每檔持股預測今日方向。注意：你看不到今日實際漲跌，必須基於已有資訊做出判斷。`
+            })
+          });
+          const blindData = await blindRes.json();
+          const blindText = blindData.content?.[0]?.text || "";
+          const jsonMatch = blindText.match(/```json\s*([\s\S]*?)```/) || blindText.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+            if (Array.isArray(parsed)) blindPredictions = parsed;
+          }
+        } catch (blindErr) {
+          console.warn("盲測預測失敗（不影響主分析）:", blindErr);
+        }
+
+        // ── 前次分析回顧 ──
+        const prevReport = (analysisHistory || [])[0];
+        const prevReviewBlock = prevReport ? (() => {
+          const prevPreds = prevReport.blindPredictions || [];
+          const prevScores = prevReport.predictionScores;
+          if (prevPreds.length === 0) return "";
+          const accuracy = prevScores?.accuracy != null ? `${Math.round(prevScores.accuracy * 100)}%` : "N/A";
+          const worstMiss = prevScores?.details?.reduce((worst, d) =>
+            (d && Math.abs(d.error || 0) > Math.abs(worst?.error || 0)) ? d : worst, null);
+          const worstLine = worstMiss ? `${worstMiss.name} 預測${worstMiss.predicted}，實際${worstMiss.actual}` : "N/A";
+          return `\n═══ 前次分析回顧 ═══
+上次分析：${prevReport.date}
+上次盲測準確率：${accuracy}
+上次最大失誤：${worstLine}
+請先用 1 句話反思近期預測表現，再開始分析。如果準確率低於 60%，請降低建議的激進程度。\n`;
+        })() : "";
+
+        // ── 盲測結果注入 ──
+        const blindPredBlock = blindPredictions.length > 0 ? `
+═══ 你的盲測預測（已鎖定，不可修改）═══
+${JSON.stringify(blindPredictions, null, 0)}
+
+═══ 分析指引 ═══
+請先用 2-3 句話對比你的盲測預測與下方的實際結果：哪些預測正確？哪些錯了？錯的原因是什麼？
+預測錯誤的股票需要特別深入檢討，不要用「短期波動」帶過。
+` : "";
+
+        setAnalyzeStep("AI 策略分析中（約15-30秒）...");
         const aiRes = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -3264,6 +3383,30 @@ ${losers.map(h=>{
 - 停損原則：跌破進場邏輯=停損，邏輯仍在但技術弱=減碼不清
 - 攤平條件：僅限基本面未變+技術面出現止跌訊號
 
+【反面論證原則（每檔必做）】
+對每一檔持股，你必須完成以下反面論證，否則分析不合格：
+1. 提出一個「現在應該賣出」的最強理由（不能說「暫無」）
+2. 如果 thesis 在 30 天內被證偽，最可能的原因是什麼？
+3. 對於獲利股：這波漲勢可能已經結束的具體訊號是什麼？
+4. 對於虧損股：thesis 可能已經失效的具體證據是什麼？
+
+【禁止用語清單】
+以下用語代表分析偷懶，禁止使用：
+- 「短期震盪不改長期趨勢」→ 必須說明判斷長期趨勢不變的具體依據
+- 「逢低布局」→ 必須給出具體價位和數量
+- 「持續觀察」→ 必須說觀察什麼指標，到什麼日期，達到什麼數值要行動
+- 「基本面不變」→ 必須具體說哪些指標沒變，以及多久沒更新了
+- 「中長期看好」→ 必須給出目標價和預計到達時間
+
+【量化要求】
+所有操作建議必須包含具體數字：
+- 「加碼」→ 在什麼價位、加多少張
+- 「減碼」→ 在什麼價位、減多少張
+- 「停損」→ 停損價位和最大虧損金額
+- 「觀望」→ 觀望條件 + 最長等待期（N 個交易日）
+- 「目標價」→ 到達時間預估
+- 每個操作建議附帶：「如果我錯了，最可能的原因是什麼？」
+
 請用繁體中文，以精準簡潔的風格分析今日收盤表現。格式：
 
 ## 今日總結
@@ -3278,8 +3421,11 @@ ${losers.map(h=>{
 ## ⚠️ 風險與停損追蹤
 （虧損持股評估、權證時間價值風險、整體投組風險）
 
+## ⚔️ 反面論證
+（對每檔持股，提出最強的賣出理由。如果你提不出有力的反面論證，代表你的分析不夠深入，而不是代表這檔股票完美無缺。）
+
 ## 🎯 明日觀察與操作建議
-（明天盤中關注重點 + 具體買賣建議或等待條件）
+（明天盤中關注重點 + 具體買賣建議或等待條件。每個建議必須附帶「如果我錯了」的原因。）
 
 ## 🧠 策略進化建議
 （基於今日表現，策略大腦應該新增或修改什麼規則？）
@@ -3303,8 +3449,10 @@ ${losers.map(h=>{
 - commonMistakes：反覆出現的錯誤模式
 - stats：更新勝率統計`,
             userPrompt: `今日日期：${today}
+${prevReviewBlock}${blindPredBlock}
+═══ 今日實際表現 ═══
 今日持倉損益：${totalTodayPnl >= 0 ? "+" : ""}${totalTodayPnl.toLocaleString()} 元
-${notesContext}
+${marketContext}${notesContext}
 ${brainContext}
 ${revContext}
 
@@ -3320,13 +3468,14 @@ ${eventSummary}
 
 請分析今日收盤表現，事件連動，並給出策略建議。
 特別注意：
-1. 每檔股票都先讀 dossier 的 thesis / 目標價 / 事件 / 研究摘要 / brainContext，再結合今日漲跌，不要只看漲跌幅。
+1. ${blindPredictions.length > 0 ? "先對比盲測預測與實際結果，分析預測正確和錯誤的原因。" : "每檔股票都先讀 dossier 的 thesis / 目標價 / 事件 / 研究摘要 / brainContext，再結合今日漲跌，不要只看漲跌幅。"}
 2. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略。
 3. 如果 dossier 的資料新鮮度是 stale 或 missing，要直接指出不確定性，不要假裝有最新財報或最新投顧數字。
 4. 指出產業重複風險和建議調整方向。
 5. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議。
 6. 特別注意策略大腦中的歷史教訓。
 7. 在 BRAIN_UPDATE 段落中，基於今日分析更新策略大腦的規則和教訓。
+8. 所有操作建議必須帶具體數字（價位、張數、時間），禁止空泛描述。
 
 預測命中率：${(() => { const NE = newsEvents || NEWS_EVENTS; const pe = NE.filter(isClosedEvent); const h2 = pe.filter(e => e.correct === true).length; const t2 = pe.filter(e => e.correct !== null).length; return `${h2}/${t2}`; })()}`
           })
@@ -3374,7 +3523,29 @@ ${eventSummary}
         aiError = e?.message || "AI 分析失敗";
       }
 
-      // 7. 組裝報告
+      // 7. 計算盲測評分
+      const predictionScores = blindPredictions.length > 0 ? (() => {
+        const details = blindPredictions.map(pred => {
+          const actual = changes.find(c => c.code === pred.code);
+          if (!actual) return null;
+          const actualDir = actual.changePct > 0.5 ? "up" : actual.changePct < -0.5 ? "down" : "flat";
+          const predicted = pred.direction;
+          const correct = predicted === actualDir;
+          const dirScore = correct ? 1 : (predicted === "flat" && Math.abs(actual.changePct) > 1) ? -0.5 : predicted !== actualDir ? -1 : 0;
+          return {
+            code: pred.code, name: pred.name || actual.name,
+            predicted, actual: actualDir, actualPct: actual.changePct,
+            confidence: pred.confidence || 5, correct, dirScore,
+            error: Math.abs(actual.changePct),
+          };
+        }).filter(Boolean);
+        const correctCount = details.filter(d => d.correct).length;
+        const accuracy = details.length > 0 ? correctCount / details.length : null;
+        const weightedScore = details.reduce((sum, d) => sum + d.dirScore * (d.confidence / 10), 0);
+        return { details, accuracy, correctCount, total: details.length, weightedScore };
+      })() : null;
+
+      // 8. 組裝報告
       const report = {
         id: Date.now(),
         date: today,
@@ -3387,6 +3558,8 @@ ${eventSummary}
         aiInsight,
         aiError,
         eventAssessments,
+        blindPredictions,
+        predictionScores,
       };
 
       setDailyReport(report);
@@ -3466,6 +3639,81 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       setTimeout(() => setSaved(""), 3000);
     }
     setAnalyzing(false);
+    setAnalyzeStep("");
+  };
+
+  // ── 風險壓力測試 ─────────────────────────────────────────────────
+  const [stressTesting, setStressTesting] = useState(false);
+  const [stressResult, setStressResult] = useState(null);
+  const runStressTest = async () => {
+    if (stressTesting || analyzing) return;
+    setStressTesting(true);
+    setAnalyzeStep("風險壓力測試中...");
+    try {
+      const codes = H.map(h => h.code);
+      const priceMap = await getMarketQuotesForCodes(codes);
+      const changes = H.map(h => {
+        const pm = priceMap[h.code];
+        return {
+          code: h.code, name: h.name, type: h.type,
+          price: pm?.price || h.price, cost: h.cost, qty: h.qty,
+          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : h.pnl,
+          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : h.pct,
+        };
+      });
+      const dailyDossiers = changes.map(change => {
+        const base = dossierByCode.get(change.code);
+        if (!base) return null;
+        return { ...base, position: { ...(base.position || {}), price: change.price, pnl: change.totalPnl, pct: change.totalPct } };
+      }).filter(Boolean);
+      const holdingSummary = dailyDossiers.map(dossier => {
+        const change = changes.find(c => c.code === dossier.code);
+        return buildDailyHoldingDossierContext(dossier, change);
+      }).join("\n\n");
+      const totalValue = changes.reduce((s, c) => s + Math.round(c.price * c.qty), 0);
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemPrompt: `你是風險管理專家，你的唯一任務是找出每一檔持股的致命風險。
+
+規則：
+- 你不能說任何正面的事情。任何正面評論都代表你的分析不夠深入。
+- 對每檔持股，假設它會在未來 30 天下跌 20%，列出最可能的 3 個原因
+- 對每個 thesis，列出 3 個會讓它完全失效的情境
+- 對每個催化劑，說明為什麼它可能不會發生或已被市場定價
+- 計算整體組合在最壞情境下的最大虧損金額
+
+格式：
+
+## 🔴 逐股致命風險
+（每檔持股的最大下行風險，假設未來 30 天跌 20% 的情境分析）
+
+## 💀 Thesis 失效情境
+（每個投資論文可能被完全推翻的 3 個情境）
+
+## ⚡ 催化劑失效風險
+（為什麼你期待的利多可能不會發生）
+
+## 📉 最壞情境計算
+（整體組合的最大虧損金額和比例）
+
+## 🚨 最需要立即行動的 3 檔
+（哪些持股的風險報酬比最差，應該優先處理）
+
+你的分析必須讓持有者感到不安。如果看完後覺得安心，代表分析不夠深入。`,
+          userPrompt: `持倉 dossier：\n${holdingSummary}\n\n目前組合總市值約 ${totalValue.toLocaleString()} 元\n\n請進行全面風險壓力測試。`
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "壓力測試無結果";
+      setStressResult({ date: toSlashDate(), text, totalValue });
+    } catch (err) {
+      console.error("壓力測試失敗:", err);
+      setStressResult({ date: toSlashDate(), text: "❌ 壓力測試失敗: " + (err?.message || ""), totalValue: 0 });
+    }
+    setStressTesting(false);
     setAnalyzeStep("");
   };
 
@@ -5622,13 +5870,22 @@ ${recentAnalyses || "尚無分析紀錄"}
               <div style={{fontSize:10,color:C.textMute,marginBottom:12,lineHeight:1.6}}>
                 分析今日股價變動與事件連動性 · 自動比對持倉漲跌、異常波動、策略建議
               </div>
-              <button onClick={runDailyAnalysis} style={{
-                padding:"10px 24px",borderRadius:8,border:"none",
-                background:`linear-gradient(135deg,${alpha(C.blue, A.overlay)},${alpha(C.olive, A.overlay)})`,
-                color:C.onFill,fontSize:12,fontWeight:600,cursor:"pointer",
-                letterSpacing:"0.03em"}}>
-                開始今日收盤分析
-              </button>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={runDailyAnalysis} style={{
+                  padding:"10px 24px",borderRadius:8,border:"none",
+                  background:`linear-gradient(135deg,${alpha(C.blue, A.overlay)},${alpha(C.olive, A.overlay)})`,
+                  color:C.onFill,fontSize:12,fontWeight:600,cursor:"pointer",
+                  letterSpacing:"0.03em"}}>
+                  開始今日收盤分析
+                </button>
+                <button onClick={runStressTest} disabled={stressTesting || analyzing} style={{
+                  padding:"10px 16px",borderRadius:8,border:`1px solid ${alpha(C.down, 0.4)}`,
+                  background:"transparent",
+                  color:C.down,fontSize:11,fontWeight:600,cursor:stressTesting?"not-allowed":"pointer",
+                  letterSpacing:"0.03em",opacity:stressTesting?0.5:1}}>
+                  {stressTesting ? "測試中..." : "⚠️ 風險壓力測試"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -5641,6 +5898,17 @@ ${recentAnalyses || "尚無分析紀錄"}
               <div style={{width:"100%",height:3,background:C.borderSub,borderRadius:2,marginTop:12,overflow:"hidden"}}>
                 <div style={{height:"100%",background:C.amber,borderRadius:2,animation:"progress 8s ease-in-out infinite",width:"70%"}} />
               </div>
+            </div>
+          )}
+
+          {stressResult && (
+            <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.down, A.glow)}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,cursor:"pointer"}}
+                onClick={()=>setStressResult(null)}>
+                <div style={{fontSize:13,fontWeight:600,color:C.down}}>⚠️ 風險壓力測試 · {stressResult.date}</div>
+                <span style={{fontSize:11,color:C.textMute}}>點擊關閉</span>
+              </div>
+              <div style={{fontSize:12,color:C.textMain,whiteSpace:"pre-wrap",lineHeight:1.8}}>{stressResult.text}</div>
             </div>
           )}
 

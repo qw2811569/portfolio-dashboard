@@ -1567,46 +1567,55 @@ export default function App() {
 
   // ── 啟動時自動靜默刷新股價（Phase 1: 不依賴收盤分析） ──
   const autoRefreshDoneRef = useRef({});
+  const holdingsRef = useRef(holdings);
+  holdingsRef.current = holdings;
   useEffect(() => {
-    if (!ready || !Array.isArray(holdings) || holdings.length === 0) return;
-    if (viewMode !== PORTFOLIO_VIEW_MODE) return;
+    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE) return;
     // 每個組合每次 session 只自動刷一次
     const key = activePortfolioId;
     if (autoRefreshDoneRef.current[key]) return;
-    autoRefreshDoneRef.current[key] = true;
 
-    // 靜默刷新，不顯示 toast
-    (async () => {
-      try {
-        const codes = holdings.map(h => h.code);
-        const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-        const exCh = queries.join('|');
-        const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
-        const data = await res.json();
-        if (!data.msgArray || data.msgArray.length === 0) return;
+    // 延遲 500ms 確保 holdings 已從 localStorage hydrate
+    const timer = setTimeout(() => {
+      const currentHoldings = holdingsRef.current;
+      if (!Array.isArray(currentHoldings) || currentHoldings.length === 0) return;
+      autoRefreshDoneRef.current[key] = true;
 
-        const priceMap = {};
-        data.msgArray.forEach(item => {
-          const price = extractBestPrice(item);
-          if (price && !priceMap[item.c]) priceMap[item.c] = price;
-        });
+      // 靜默刷新，不顯示 toast
+      (async () => {
+        try {
+          const codes = currentHoldings.map(h => h.code);
+          const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
+          const exCh = queries.join('|');
+          const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
+          const data = await res.json();
+          if (!data.msgArray || data.msgArray.length === 0) return;
 
-        if (Object.keys(priceMap).length > 0) {
-          setHoldings(prev => (prev || []).map(h => {
-            const newPrice = priceMap[h.code];
-            if (newPrice == null) return h;
-            const newValue = Math.round(newPrice * h.qty);
-            const newPnl = Math.round((newPrice - h.cost) * h.qty);
-            const newPct = Math.round((newPrice / h.cost - 1) * 10000) / 100;
-            return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
-          }));
-          setLastUpdate(new Date());
+          const priceMap = {};
+          data.msgArray.forEach(item => {
+            const price = extractBestPrice(item);
+            if (price && !priceMap[item.c]) priceMap[item.c] = price;
+          });
+
+          if (Object.keys(priceMap).length > 0) {
+            setHoldings(prev => (prev || []).map(h => {
+              const newPrice = priceMap[h.code];
+              if (newPrice == null) return h;
+              const newValue = Math.round(newPrice * h.qty);
+              const newPnl = Math.round((newPrice - h.cost) * h.qty);
+              const newPct = Math.round((newPrice / h.cost - 1) * 10000) / 100;
+              return { ...h, price: newPrice, value: newValue, pnl: newPnl, pct: newPct };
+            }));
+            setLastUpdate(new Date());
+          }
+        } catch (err) {
+          console.warn("自動刷新股價失敗（靜默）:", err);
         }
-      } catch (err) {
-        console.warn("自動刷新股價失敗（靜默）:", err);
-      }
-    })();
-  }, [ready, holdings, activePortfolioId, viewMode]);
+      })();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [ready, activePortfolioId, viewMode]);
 
   // derived
   const H = Array.isArray(holdings) ? holdings : [];
@@ -1798,11 +1807,7 @@ export default function App() {
     const priceMap = {};
 
     (data.msgArray || []).forEach(item => {
-      const latest = parseFloat(item.z);
-      const yClose = parseFloat(item.y);
-      const price = (!Number.isNaN(latest) && latest > 0)
-        ? latest
-        : (!Number.isNaN(yClose) && yClose > 0 ? yClose : null);
+      const price = extractBestPrice(item);
       if (price && !priceMap[item.c]) {
         priceMap[item.c] = price;
       }
@@ -2050,23 +2055,29 @@ export default function App() {
     setAnalyzing(true);
     setAnalyzeStep("取得即時股價...");
     try {
-      // 1. 取得最新股價
+      // 1. 取得最新股價（分批查詢，避免 URL 過長）
       const codes = H.map(h => h.code);
-      const queries = codes.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
-      const exCh = queries.join('|');
-      const url = `/api/twse?ex_ch=${encodeURIComponent(exCh)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
       const priceMap = {};
-      if (data.msgArray) {
-        data.msgArray.forEach(item => {
-          const price = extractBestPrice(item);
-          const yesterday = extractYesterday(item);
-          if (price && !priceMap[item.c]) {
-            priceMap[item.c] = { price, yesterday, change: yesterday ? price - yesterday : 0, changePct: yesterday ? ((price / yesterday - 1) * 100) : 0 };
+      const batchSize = 15;
+      for (let bi = 0; bi < codes.length; bi += batchSize) {
+        const batch = codes.slice(bi, bi + batchSize);
+        const queries = batch.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]);
+        const exCh = queries.join('|');
+        try {
+          const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`);
+          const data = await res.json();
+          if (data.msgArray) {
+            data.msgArray.forEach(item => {
+              const price = extractBestPrice(item);
+              const yesterday = extractYesterday(item);
+              if (price && !priceMap[item.c]) {
+                priceMap[item.c] = { price, yesterday, change: yesterday ? price - yesterday : 0, changePct: yesterday ? ((price / yesterday - 1) * 100) : 0 };
+              }
+            });
           }
-        });
+        } catch (batchErr) {
+          console.warn(`收盤分析批次 ${bi / batchSize + 1} 查詢失敗:`, batchErr);
+        }
       }
 
       // 2. 計算每檔今日漲跌
@@ -2089,7 +2100,7 @@ export default function App() {
 
       // 3. 事件連動分析
       const NE = newsEvents || NEWS_EVENTS;
-      const today = new Date().toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\//g, "/");
+      const today = toSlashDate();
       const pendingEvents = NE.filter(e => !isClosedEvent(e));
       const eventCorrelations = pendingEvents.map(e => {
         const relatedStocks = e.stocks.map(s => {
@@ -2340,8 +2351,8 @@ ${toShow.map(r => {
 
           // 移除 JSON 段落，只顯示人類可讀的分析
           aiInsight = displayText
-            .replace(/## 📋 EVENT_ASSESSMENTS[\s\S]*?(?=## 🧬 BRAIN_UPDATE|$)/, "")
-            .replace(/## 🧬 BRAIN_UPDATE[\s\S]*$/, "")
+            .replace(/## 📋 EVENT_ASSESSMENTS[\s\S]*?```[\s\S]*?```/g, "")
+            .replace(/## 🧬 BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/g, "")
             .trim();
         }
       } catch (e) {
@@ -2567,9 +2578,10 @@ ${JSON.stringify(brain)}
       const data = await res.json();
       const text = data.content?.[0]?.text || "";
       const cleanText = text.replace(/```json|```/g, "").trim();
-      const newBrain = mergeBrainPreservingCoachLessons(JSON.parse(cleanText), brain);
-      const summary = newBrain.cleanupSummary || "整理完成";
-      delete newBrain.cleanupSummary;
+      const parsed = JSON.parse(cleanText);
+      const summary = parsed.cleanupSummary || "整理完成";
+      delete parsed.cleanupSummary;
+      const newBrain = mergeBrainPreservingCoachLessons(parsed, brain);
       setStrategyBrain(newBrain);
       setSaved(`🧹 ${summary}`);
       setTimeout(() => setSaved(""), 6000);
@@ -4414,7 +4426,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                           )}
                         </div>
                         {ea.suggestClose && (
-                          <button onClick={(ev)=>{ev.stopPropagation();setTab("news");setExpandedNews(new Set([Number(ea.eventId)]))}}
+                          <button onClick={(ev)=>{
+                            ev.stopPropagation();
+                            // 容錯匹配：AI 可能截斷大數字，用 title 做 fallback 匹配
+                            const NE_ = newsEvents || [];
+                            const matched = NE_.find(e2 => String(e2.id) === String(ea.eventId)) || NE_.find(e2 => e2.title === ea.title);
+                            setTab("news");
+                            if (matched) setExpandedNews(new Set([matched.id]));
+                          }}
                             style={{marginTop:4,padding:"4px 10px",borderRadius:5,border:`1px solid ${alpha(C.olive, A.strongLine)}`,
                               background:"transparent",color:C.olive,fontSize:10,cursor:"pointer"}}>
                             前往結案
@@ -5294,7 +5313,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               const dateEventMap = {};
               allEvents.forEach(e => {
                 if (!e.date) return;
-                const parts = e.date.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+                const parts = e.date.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
                 if (!parts) return;
                 const [, ey, em, ed] = parts;
                 if (parseInt(ey) === cYear && parseInt(em) - 1 === cMonth) {
@@ -5476,7 +5495,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <span style={{fontSize:10,color:C.text}}>{e.title}</span>
                           <span style={{fontSize:9,color:C.textMute,marginLeft:6}}>已追蹤 {m?.trackingDays} 天</span>
                         </div>
-                        <button onClick={(ev)=>{ev.stopPropagation();openEventReview(e.id)}}
+                        <button onClick={(ev)=>{ev.stopPropagation();openEventReview(e, ev)}}
                           style={{padding:"3px 8px",borderRadius:4,border:`1px solid ${alpha(C.olive, A.strongLine)}`,
                             background:"transparent",color:C.olive,fontSize:9,cursor:"pointer",fontWeight:600}}>
                           快速結案

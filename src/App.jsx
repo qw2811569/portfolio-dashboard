@@ -1528,7 +1528,20 @@ export default function App() {
       portfolioName: portfolio.name,
     })))
     .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-  const urgentCount = EVENTS.filter(e=>e.urgent).length;
+  const todayAlertItems = H
+    .filter(item => typeof item.alert === "string" && item.alert.trim())
+    .map(item => {
+      const alertText = item.alert.replace(/^⚡\s*/, "").trim();
+      if (!alertText) return null;
+      if (alertText.startsWith("今日")) return `${item.name}${alertText}`;
+      if (alertText.includes("出場區間")) return `${item.name}已到${alertText.replace(/到$/, "")}`;
+      return `${item.name} ${alertText}`;
+    })
+    .filter(Boolean);
+  const urgentCount = todayAlertItems.length;
+  const todayAlertSummary = urgentCount > 2
+    ? `${todayAlertItems.slice(0, 2).join(" · ")} · 另有 ${urgentCount - 2} 項提醒`
+    : todayAlertItems.join(" · ");
 
   const sorted = [...H].sort((a,b)=>{
     if(sortBy==="value") return b.value-a.value;
@@ -2909,7 +2922,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             borderLeft:`3px solid ${C.up}`,
             borderRadius:6,padding:"5px 10px",marginBottom:8,
             fontSize:10,color:C.up,lineHeight:1.6,fontWeight:500}}>
-            今日 · 台燿法說決定加碼或停損 · 晶豪科已到出場區間
+            今日 · {todayAlertSummary}
           </div>
         )}
 

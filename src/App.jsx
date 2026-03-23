@@ -2052,6 +2052,7 @@ export default function App() {
       // 6. 呼叫 Claude API 產生策略分析（含策略大腦上下文）
       setAnalyzeStep("AI 策略分析中（約15-30秒）...");
       let aiInsight = null;
+      let aiError = null;
       try {
         const holdingSummary = changes.map(c => {
           const h = (holdings||[]).find(x => x.code === c.code) || {};
@@ -2205,9 +2206,16 @@ ${(researchHistory||[]).slice(0,5).map(r => {
           })
         });
         const aiData = await aiRes.json();
+        if (!aiRes.ok) {
+          throw new Error(aiData?.detail || aiData?.error || `AI 分析失敗 (${aiRes.status})`);
+        }
         aiInsight = aiData.content?.[0]?.text || null;
+        if (!aiInsight) {
+          aiError = "AI 有回應，但沒有產出可顯示的文字內容";
+        }
       } catch (e) {
         console.error("AI 分析失敗:", e);
+        aiError = e?.message || "AI 分析失敗";
       }
 
       // 7. 組裝報告
@@ -2221,6 +2229,7 @@ ${(researchHistory||[]).slice(0,5).map(r => {
         eventCorrelations,
         needsReview,
         aiInsight,
+        aiError,
       };
 
       setDailyReport(report);
@@ -4109,6 +4118,26 @@ ${recentAnalyses || "尚無分析紀錄"}
               </div>
             </div>
 
+            <button
+              className="ui-btn"
+              onClick={(ev)=>{ev.stopPropagation();runDailyAnalysis()}}
+              disabled={analyzing}
+              style={{
+                width:"100%",
+                padding:"10px 12px",
+                borderRadius:8,
+                border:`1px solid ${analyzing ? C.border : alpha(C.blue, A.strongLine)}`,
+                background:analyzing ? C.subtle : C.cardBlue,
+                color:analyzing ? C.textMute : C.blue,
+                fontSize:11,
+                fontWeight:600,
+                cursor:analyzing ? "not-allowed" : "pointer",
+                marginBottom:8,
+              }}
+            >
+              {analyzing ? (analyzeStep || "分析中...") : "重新分析今日收盤"}
+            </button>
+
             {dailyExpanded && <>
               {/* 持倉漲跌排行 */}
               <div style={{...card,marginBottom:8}}>
@@ -4205,18 +4234,11 @@ ${recentAnalyses || "尚無分析紀錄"}
               {!dailyReport.aiInsight && (
                 <div style={{...card,marginBottom:10,background:C.subtle}}>
                   <div style={{fontSize:11,color:C.textMute,textAlign:"center",padding:"8px 0"}}>
-                    AI 分析未產生（請確認 Vercel 已設定 ANTHROPIC_API_KEY）
+                    AI 分析未產生
+                    {dailyReport.aiError ? `：${dailyReport.aiError}` : "：請確認本地 AI API 金鑰與後端設定"}
                   </div>
                 </div>
               )}
-
-              {/* 重新分析 */}
-              <button onClick={(ev)=>{ev.stopPropagation();runDailyAnalysis()}} disabled={analyzing} style={{
-                width:"100%",padding:"11px",borderRadius:8,border:`1px solid ${C.border}`,
-                background:"transparent",color:C.textMute,fontSize:11,cursor:"pointer",
-                marginBottom:16}}>
-                重新分析
-              </button>
             </>}
           </>}
 

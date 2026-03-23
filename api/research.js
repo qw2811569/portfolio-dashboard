@@ -4,9 +4,9 @@
 import { put, list, del } from '@vercel/blob';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js';
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN;
-const API_KEY = process.env.ANTHROPIC_API_KEY;
 const RESEARCH_INDEX_KEY = 'research-index.json';
 const DATA_DIR = join(process.cwd(), 'data');
 
@@ -52,22 +52,7 @@ async function write(key, data) {
 }
 
 async function callClaude(system, user, maxTokens = 4000) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
-  const data = await res.json();
-  return data.content?.[0]?.text || "";
+  return callAiText({ system, user, maxTokens });
 }
 
 async function updateResearchIndex(report) {
@@ -83,7 +68,11 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (!API_KEY) return res.status(500).json({ error: "未設定 ANTHROPIC_API_KEY" });
+  try {
+    ensureAiConfigured();
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 
   // GET: 讀取歷史研究報告（本地優先）
   if (req.method === "GET") {

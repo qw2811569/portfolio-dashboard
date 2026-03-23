@@ -1,0 +1,217 @@
+# Claude Handoff
+
+最後更新：2026-03-23
+
+## 專案是什麼
+
+這是一個台股投資 / 持倉管理 App，現在已經從單一帳戶升級成：
+
+- 多組合管理
+- 事件追蹤三段式：`pending / tracking / closed`
+- owner-only cloud gate
+- 策略大腦 `coachLessons`
+- portfolio-aware backup / import
+- watchlist 與接力計畫 UI 優化
+
+主要前端仍集中在 [src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx)。
+
+## 目前狀態
+
+整體狀態：
+
+- 多組合 / 事件追蹤主功能已落地
+- 文件已同步到 spec / implementation plan
+- `npm run build` 已通過
+- 尚待人工 smoke test
+
+參考文件：
+
+- 設計文件：[docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md)
+- 實作任務清單：[docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md)
+
+## 已完成的重點
+
+### 1. 多組合資料層
+
+- `activePortfolioId + viewMode` 已分離
+- localStorage 已改成 `pf-{pid}-*`
+- 有 migration、backup/import、hydrate guard
+- overview 是唯讀，不會寫資料
+
+關鍵位置：
+
+- [src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx)
+
+### 2. owner-only cloud gate
+
+- 只有 owner portfolio 會讀寫 `/api/brain`、`/api/research`
+- 非 owner 與 overview 不碰 cloud singleton
+
+### 3. 事件追蹤升級
+
+- schema 已支援 `eventDate / trackingStart / exitDate / priceAtEvent / priceAtExit / priceHistory`
+- 事件可自動從 `pending -> tracking`
+- 結案復盤會預填 exit price 與 actual
+
+### 4. 策略大腦 coachLessons
+
+- 非 owner 的復盤會回寫到 owner 的 `coachLessons`
+- 不污染 owner 原本的 `rules / stats`
+
+### 5. watchlist / 接力計畫 UI
+
+已完成：
+
+- watchlist 改成 per-portfolio storage：`watchlist-v1`
+- watchlist 上方焦點卡改成動態，不再寫死台燿
+- 空組合會顯示空狀態
+- `events` 分頁的接力計畫改成「濃縮摘要 + 展開完整內容」
+
+### 6. AI provider 已集中
+
+現在所有 AI 路由都走同一個 adapter：
+
+- [api/_lib/ai-provider.js](/Users/chenkuichen/APP/test/api/_lib/ai-provider.js)
+
+這代表之後如果要：
+
+- 換 API key
+- 換 model
+- 換 endpoint
+- 開 / 關 extended thinking
+
+優先改這一個檔與 `.env(.local)` 即可。
+
+## AI / API 架構
+
+### 前端會打哪些 API
+
+- `/api/analyze`
+  - 收盤分析
+  - 策略大腦更新
+  - 復盤後策略整合
+- `/api/parse`
+  - 成交截圖解析
+- `/api/research`
+  - 深度研究 / 系統進化
+- `/api/twse`
+  - 即時股價 / 事件追蹤價格
+- `/api/brain`
+  - cloud sync / history / brain / events / holdings
+
+### AI 路由現在都共用同一個 adapter
+
+- [api/analyze.js](/Users/chenkuichen/APP/test/api/analyze.js)
+- [api/parse.js](/Users/chenkuichen/APP/test/api/parse.js)
+- [api/research.js](/Users/chenkuichen/APP/test/api/research.js)
+
+它們都改成透過：
+
+- [api/_lib/ai-provider.js](/Users/chenkuichen/APP/test/api/_lib/ai-provider.js)
+
+### 環境變數
+
+目前支援：
+
+- `AI_API_KEY`
+- `AI_MODEL`
+- `AI_MODE`：`AI_MODEL` 的 alias
+- `AI_API_ENDPOINT`
+- `AI_ENABLE_EXTENDED_THINKING`
+- `AI_THINKING_BUDGET_TOKENS`
+
+向後相容：
+
+- `ANTHROPIC_API_KEY`
+- `ANTHROPIC_MODEL`
+
+目前 `.env` / `.env.local` 已補上：
+
+- `AI_MODE=claude-sonnet-4-20250514`
+- `AI_ENABLE_EXTENDED_THINKING=true`
+- `AI_THINKING_BUDGET_TOKENS=2048`
+
+注意：
+
+- 這裡是用 Sonnet 4 的正式 model id
+- 「extended」不是 model id，而是透過 thinking 開關控制
+- 圖片解析 route 預設不開 extended thinking，避免過慢
+
+## 本地啟動方式
+
+### 完整模式
+
+用：
+
+```bash
+vercel dev
+```
+
+原因：
+
+- 前端除了 `/api/twse`，還會打 `/api/brain`、`/api/research`、`/api/analyze`、`/api/parse`
+- `npm run dev` 只會跑 Vite 前端，不是完整模式
+
+### 前端單跑
+
+```bash
+npm run dev
+```
+
+只適合純前端畫面調整，不適合測完整功能。
+
+## 關鍵檔案
+
+- 主前端：[src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx)
+- AI adapter：[api/_lib/ai-provider.js](/Users/chenkuichen/APP/test/api/_lib/ai-provider.js)
+- AI 分析 route：[api/analyze.js](/Users/chenkuichen/APP/test/api/analyze.js)
+- 截圖解析 route：[api/parse.js](/Users/chenkuichen/APP/test/api/parse.js)
+- 深度研究 route：[api/research.js](/Users/chenkuichen/APP/test/api/research.js)
+- cloud / brain route：[api/brain.js](/Users/chenkuichen/APP/test/api/brain.js)
+- 規格文件：[docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md)
+- 任務清單：[docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md)
+
+## 還沒做完 / 下一步最值得做
+
+優先建議：
+
+1. 手動 smoke test
+2. watchlist 編輯 UI（現在已是 per-portfolio，但還沒有完整新增/編輯/刪除介面）
+3. 接力計畫資料改成可編輯，而不是常數
+4. 做 `LOCAL_ONLY_MODE`，在沒有 AI / cloud 時自動降級
+5. 補 `.env.example`
+
+## 手動 smoke test 清單
+
+至少驗這幾個：
+
+1. `me` 啟動後資料與舊版一致
+2. 新增 `wang` 後資料預設為空
+3. `me -> wang -> me` 切換不互相污染
+4. overview 唯讀且不寫入任何 key
+5. 非 owner 不打 cloud API
+6. 事件 `pending -> tracking -> closed` 正常
+7. 非 owner 復盤後，owner 的 `coachLessons` 有收到資料
+8. watchlist 空組合不會再看到台燿固定卡
+
+## 最近新增但還未提交的變更
+
+目前工作樹重點變更：
+
+- `src/App.jsx`
+- `api/analyze.js`
+- `api/parse.js`
+- `api/research.js`
+- `api/_lib/ai-provider.js`
+
+如果 Claude 要接手，先讀這些檔，再讀 spec / plan。
+
+## 接力建議
+
+如果下一個 Claude 要繼續做事，推薦順序：
+
+1. 先跑 `git status`
+2. 再跑 `npm run build`
+3. 如需完整驗證，跑 `vercel dev`
+4. 先看 [claude.md](/Users/chenkuichen/APP/test/claude.md)、[2026-03-23-multi-portfolio-event-tracking-design.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-23-multi-portfolio-event-tracking-design.md)、[2026-03-23-multi-portfolio-event-tracking-implementation-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-23-multi-portfolio-event-tracking-implementation-plan.md)
+5. 再決定是做 smoke test、UI 收尾，還是部署

@@ -159,6 +159,88 @@ const INIT_WATCHLIST = [
   { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  scKey:"up", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
 ];
 
+const RELAY_PLAN = {
+  title: "2026 三檔接力投資計畫",
+  summary: "晶豪科先收割，力積電等月營收確認，台燿走長波段。",
+  thesis: [
+    "晶豪科是 DDR3 短缺的第一棒，先吃 IC 設計端的漲價爆發。",
+    "力積電是第二棒，等 2H26 代工費上漲反映到營收再加碼。",
+    "台燿是第三棒，走 AI 伺服器 / ASIC / 產能擴張的中長線故事。",
+  ],
+  quickStates: [
+    { label: "現在", text: "晶豪科 175–185 分批出；台燿 450–470 先進 1/3", tone: "up" },
+    { label: "6–7月", text: "力積電等月營收年增顯著加速再加碼", tone: "amber" },
+    { label: "全年", text: "台燿法說確認後續抱，主線看向 2027", tone: "blue" },
+  ],
+  legs: [
+    {
+      code: "3006",
+      name: "晶豪科",
+      role: "第一棒",
+      tone: "up",
+      status: "出場管理",
+      window: "現在 - Q2 財報前",
+      action: "175–185 元分批出，不等 200 元",
+      trigger: "Q2 財報前 1–2 週最遲全部出清",
+      stop: "148 元",
+      bullets: [
+        "DDR3 短缺題材爆發，4Q25 EPS 3.68 元遠超預期。",
+        "2026 Q2 可能是獲利高峰，之後毛利率有被代工費擠壓風險。",
+        "市場反應前先收割，避免高峰過後回吐。",
+      ],
+    },
+    {
+      code: "6770",
+      name: "力積電",
+      role: "第二棒",
+      tone: "amber",
+      status: "待命觀察",
+      window: "晶豪科出場後 / 約 6–7 月",
+      action: "看到月營收年增明顯加速再加碼",
+      trigger: "DDR3 漲價開始反映到代工端財報",
+      stop: "進場前重設技術停損",
+      bullets: [
+        "吃的是第二段：晶豪科上游漲價流入力積電營收。",
+        "同一題材，但從成本端承壓切換到代工端受益。",
+        "沒看到營收轉強前，先不急著加碼。",
+      ],
+    },
+    {
+      code: "6274",
+      name: "台燿",
+      role: "第三棒",
+      tone: "blue",
+      status: "分批布局",
+      window: "現在 - 2027",
+      action: "450–470 先進 1/3；法說後再決定是否補齊",
+      trigger: "3/18 法說確認毛利率回沖與展望",
+      stop: "430 元",
+      bullets: [
+        "AI 伺服器 CCL、800G 交換器與 ASIC 升級是主線。",
+        "Q1→Q4 EPS 預估逐季加速，和晶豪科前高後低互補。",
+        "若法說樂觀可補齊，若保守就縮小部位或停損觀望。",
+      ],
+    },
+  ],
+  riskMatrix: [
+    { scenario: "全部如預期", action: "晶豪科 Q2 前出；力積電 6–7 月加碼；台燿續抱至 2027。" },
+    { scenario: "晶豪科跌破 148", action: "立即停損，力積電先不加碼，台燿獨立評估。" },
+    { scenario: "台燿法說保守", action: "不影響晶豪科 / 力積電主線，台燿縮小部位或停損 430。" },
+    { scenario: "大盤系統性崩跌", action: "晶豪科先砍保現金，力積電零股不動，台燿嚴守 430。" },
+  ],
+  indicators: [
+    { code: "3006", name: "晶豪科", when: "每月 10 日 / 5–6 月", what: "月營收是否維持高檔；市場是否提前反映 Q2 高峰。" },
+    { code: "6770", name: "力積電", when: "6–7 月月營收", what: "年增率是否顯著加速（>30% 更有說服力）。" },
+    { code: "6274", name: "台燿", when: "3/18 法說 / 每季財報 / 泰國二期", what: "毛利率回沖、EPS 是否逐季加速、產能是否如期達標。" },
+  ],
+  allocations: [
+    { phase: "現在（3月）", target: "晶豪科", plan: "用緯創賣出資金，分批完成約 17 張部位。" },
+    { phase: "現在（3月）", target: "台燿", plan: "新資金先進三分之一，法說後再決定補足。" },
+    { phase: "6–7月後", target: "力積電 / 台燿", plan: "晶豪科獲利分流，一部分轉力積電，一部分視台燿法說補足。" },
+  ],
+};
+const RELAY_PLAN_CODES = new Set(RELAY_PLAN.legs.map(item => item.code));
+
 const EVENTS = [
   { date:"今日",    label:"台燿 6274 — Q4財報法說會",     sub:"毛利率+展望樂觀→補齊2/3；差→停損430",          urgent:true,  type:"法說" },
   { date:"今日",    label:"晶豪科 194.5元 — 超出場區間",  sub:"目標175–185元已超過，考慮今日分批賣出",         urgent:true,  type:"操作" },
@@ -392,6 +474,7 @@ const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
   { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "targets-v1", alias: "targets", ownerFallback: () => INIT_TARGETS, emptyFallback: () => ({}) },
+  { suffix: "watchlist-v1", alias: "watchlist", ownerFallback: () => normalizeWatchlist(INIT_WATCHLIST), emptyFallback: () => [], hasLegacy: false },
   { suffix: "news-events-v1", alias: "newsEvents", ownerFallback: () => NEWS_EVENTS, emptyFallback: () => [] },
   { suffix: "analysis-history-v1", alias: "analysisHistory", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "daily-report-v1", alias: "dailyReport", ownerFallback: () => null, emptyFallback: () => null },
@@ -501,6 +584,30 @@ function formatPortfolioNotesContext(notes) {
     normalized.customNotes ? `自訂備註：${normalized.customNotes}` : null,
   ].filter(Boolean);
   return lines.length > 0 ? `個人備註：\n${lines.join("\n")}` : "個人備註：無";
+}
+
+function normalizeWatchlist(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => {
+      if (!item || typeof item !== "object") return null;
+      const code = String(item.code || "").trim();
+      const name = String(item.name || "").trim();
+      if (!code || !name) return null;
+      const price = Number(item.price);
+      const target = Number(item.target);
+      return {
+        code,
+        name,
+        price: Number.isFinite(price) && price > 0 ? price : 0,
+        target: Number.isFinite(target) && target > 0 ? target : 0,
+        status: typeof item.status === "string" ? item.status : "",
+        catalyst: typeof item.catalyst === "string" ? item.catalyst : "",
+        scKey: typeof item.scKey === "string" ? item.scKey : "blue",
+        note: typeof item.note === "string" ? item.note : "",
+      };
+    })
+    .filter(Boolean);
 }
 
 function createDefaultReviewForm(overrides = {}) {
@@ -921,6 +1028,7 @@ export default function App() {
   const [holdings,  setHoldings]  = useState(null);
   const [tradeLog,  setTradeLog]  = useState(null);
   const [targets,   setTargets]   = useState(null);
+  const [watchlist, setWatchlist] = useState(null);
 
   // upload / memo
   const [img, setImg]           = useState(null);
@@ -971,6 +1079,7 @@ export default function App() {
   const [cloudSync, setCloudSync]         = useState(false);
   const [portfolioSwitching, setPortfolioSwitching] = useState(false);
   const [showPortfolioManager, setShowPortfolioManager] = useState(false);
+  const [relayPlanExpanded, setRelayPlanExpanded] = useState(false);
   // AutoResearch state（必須在 useEffect 之前宣告）
   const [researching, setResearching] = useState(false);
   const [researchTarget, setResearchTarget] = useState(null);
@@ -993,6 +1102,7 @@ export default function App() {
     setHoldings(snapshot.holdings);
     setTradeLog(snapshot.tradeLog);
     setTargets(snapshot.targets);
+    setWatchlist(normalizeWatchlist(snapshot.watchlist));
     setNewsEvents(normalizeNewsEvents(snapshot.newsEvents));
     setAnalysisHistory(snapshot.analysisHistory);
     setReversalConditions(snapshot.reversalConditions);
@@ -1035,6 +1145,7 @@ export default function App() {
       holdings,
       tradeLog,
       targets,
+      watchlist,
       newsEvents,
       analysisHistory,
       dailyReport,
@@ -1076,6 +1187,7 @@ export default function App() {
     setTpCode("");
     setTpFirm("");
     setTpVal("");
+    setRelayPlanExpanded(false);
   };
   const loadPortfolio = async (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
     const snapshot = await loadPortfolioSnapshot(pid);
@@ -1362,6 +1474,7 @@ export default function App() {
   }, [activePortfolioId, canPersistPortfolioData, holdings]);
   useEffect(() => { if (canPersistPortfolioData && tradeLog) savePortfolioData(activePortfolioId, "log-v2", tradeLog); }, [activePortfolioId, canPersistPortfolioData, tradeLog]);
   useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
+  useEffect(() => { if (canPersistPortfolioData && watchlist) savePortfolioData(activePortfolioId, "watchlist-v1", watchlist); }, [activePortfolioId, canPersistPortfolioData, watchlist]);
   useEffect(() => {
     if (canPersistPortfolioData && newsEvents) {
       savePortfolioData(activePortfolioId, "news-events-v1", newsEvents);
@@ -1451,7 +1564,9 @@ export default function App() {
   }, [activePortfolioId, newsEvents, ready, tab, viewMode]);
 
   // derived
-  const H = holdings || [];
+  const H = Array.isArray(holdings) ? holdings : [];
+  const W = Array.isArray(watchlist) ? watchlist : [];
+  const currentNewsEvents = Array.isArray(newsEvents) ? newsEvents : [];
   const totalVal  = H.reduce((s,h)=>s+h.value,0);
   const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
   const totalPnl  = H.reduce((s,h)=>s+h.pnl,0);
@@ -1542,6 +1657,47 @@ export default function App() {
   const todayAlertSummary = urgentCount > 2
     ? `${todayAlertItems.slice(0, 2).join(" · ")} · 另有 ${urgentCount - 2} 項提醒`
     : todayAlertItems.join(" · ");
+  const watchlistRows = W.map((item, index) => {
+    const relatedEvents = currentNewsEvents.filter(event => event.stocks?.some(stock => stock.includes(item.code)));
+    const trackingCount = relatedEvents.filter(event => event.status === "tracking").length;
+    const pendingCount = relatedEvents.filter(event => event.status === "pending").length;
+    const hits = relatedEvents.filter(event => event.correct === true).length;
+    const misses = relatedEvents.filter(event => event.correct === false).length;
+    const isUrgent = /⚡|今日/.test(item.status || "");
+    const primaryEvent =
+      relatedEvents.find(event => event.status === "tracking") ||
+      relatedEvents.find(event => event.status === "pending") ||
+      relatedEvents[0] ||
+      null;
+    const upside = item.price > 0 && item.target > 0 ? ((item.target - item.price) / item.price) * 100 : null;
+    const summary = primaryEvent?.title || item.catalyst || item.note || "持續觀察";
+    const action = isUrgent
+      ? "今天先看事件結果，再決定是否加碼、續抱或停損。"
+      : trackingCount > 0
+        ? "目前已進入追蹤期，優先看價格與事件驗證。"
+        : pendingCount > 0
+          ? "先保留觀察，等事件落地再加大部位。"
+          : item.note || "暫列觀察名單，還不急著動作。";
+    const priority = (isUrgent ? 5 : 0) + (trackingCount > 0 ? 3 : 0) + (pendingCount > 0 ? 2 : 0) + (upside != null && upside >= 20 ? 1 : 0);
+    return {
+      item,
+      index,
+      relatedEvents,
+      trackingCount,
+      pendingCount,
+      hits,
+      misses,
+      primaryEvent,
+      upside,
+      summary,
+      action,
+      priority,
+    };
+  });
+  const watchlistFocus = watchlistRows.length > 0
+    ? [...watchlistRows].sort((a, b) => b.priority - a.priority || (b.upside ?? -999) - (a.upside ?? -999))[0]
+    : null;
+  const showRelayPlan = activePortfolioId === OWNER_PORTFOLIO_ID || H.some(item => RELAY_PLAN_CODES.has(item.code)) || W.some(item => RELAY_PLAN_CODES.has(item.code));
 
   const sorted = [...H].sort((a,b)=>{
     if(sortBy==="value") return b.value-a.value;
@@ -2318,7 +2474,7 @@ ${(brain.lessons||[]).slice(-5).map(l=>`- [${l.date}] ${l.text}`).join("\n")}` :
 ${holdingLines}
 
 ## 觀察股
-${INIT_WATCHLIST.map(w=>`${w.name}(${w.code}) | 現價${w.price} | 目標${w.target} | 狀態：${w.status}`).join("\n")}
+${W.length > 0 ? W.map(w=>`${w.name}(${w.code}) | 現價${w.price} | 目標${w.target || "未設定"} | 狀態：${w.status || "觀察中"}`).join("\n") : "無"}
 
 ## 事件預測紀錄
 已驗證（${pastEvents.length} 筆）：
@@ -3617,52 +3773,77 @@ ${recentAnalyses || "尚無分析紀錄"}
 
         {/* ══════════ WATCHLIST ══════════ */}
         {viewMode !== OVERVIEW_VIEW_MODE && tab==="watchlist" && <>
-            <div style={{...card,borderLeft:`3px solid ${alpha(C.up, A.accent)}`,marginBottom:8}}>
-            <div style={{fontSize:9,color:C.up,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>今日</div>
-            <div style={{fontSize:14,fontWeight:600,color:C.text,marginTop:3}}>
-              台燿 6274 — 今日法說會
+          {watchlistFocus && (
+            <div style={{...card,borderLeft:`3px solid ${alpha(C.teal, A.accent)}`,marginBottom:8,background:C.cardBlue}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:9,color:C.teal,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>焦點觀察</div>
+                  <div style={{fontSize:15,fontWeight:600,color:C.text,marginTop:3,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+                    <span>{watchlistFocus.item.name} {watchlistFocus.item.code}</span>
+                    <span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:C.subtle,border:`1px solid ${C.border}`,color:C.textSec}}>
+                      {watchlistFocus.item.status || (watchlistFocus.trackingCount > 0 ? "追蹤中" : "觀察中")}
+                    </span>
+                  </div>
+                  <div style={{fontSize:10,color:C.textSec,marginTop:5,lineHeight:1.7}}>
+                    {watchlistFocus.summary}
+                  </div>
+                  <div style={{fontSize:10,color:C.textMute,marginTop:5,lineHeight:1.7}}>
+                    {watchlistFocus.action}
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                  <span style={{fontSize:9,padding:"4px 8px",borderRadius:20,background:C.subtle,color:C.textSec,border:`1px solid ${C.borderSub}`}}>
+                    現價 {watchlistFocus.item.price ? watchlistFocus.item.price.toLocaleString() : "—"}
+                  </span>
+                  <span style={{fontSize:9,padding:"4px 8px",borderRadius:20,background:C.subtle,color:C.textSec,border:`1px solid ${C.borderSub}`}}>
+                    目標 {watchlistFocus.item.target ? watchlistFocus.item.target.toLocaleString() : "未設定"}
+                  </span>
+                  <span style={{fontSize:9,padding:"4px 8px",borderRadius:20,background:C.subtle,color:C.textSec,border:`1px solid ${C.borderSub}`}}>
+                    {watchlistFocus.upside != null ? `潛在 ${watchlistFocus.upside >= 0 ? "+" : ""}${watchlistFocus.upside.toFixed(1)}%` : `事件 ${watchlistFocus.relatedEvents.length} 筆`}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div style={{fontSize:10,color:C.textSec,marginTop:4,lineHeight:1.7}}>
-              毛利率回沖 + 展望樂觀 → 補齊剩餘 2/3 部位<br/>
-              展望保守 → 停損 430 元
-            </div>
-          </div>
+          )}
 
-          {INIT_WATCHLIST.map((w,wi)=>{
-            const upside=((w.target-w.price)/w.price*100).toFixed(1);
-            const prog=Math.min(w.price/w.target*100,100);
+          {watchlistRows.length === 0 ? (
+            <div style={{...card,textAlign:"center",padding:"24px 14px"}}>
+              <div style={{fontSize:20,marginBottom:6,opacity:0.3}}>◌</div>
+              <div style={{fontSize:12,color:C.textMute,fontWeight:400}}>
+                這個組合目前沒有觀察股<br/>
+                <span style={{fontSize:10}}>後續若要做多組合觀察名單，再把 watchlist 編輯功能補上。</span>
+              </div>
+            </div>
+          ) : watchlistRows.map(({ item:w, index:wi, relatedEvents:wEvents, hits:wHits, misses:wMisses, pendingCount, trackingCount, upside },) => {
+            const upsideText = upside != null ? `${upside >= 0 ? "+" : ""}${upside.toFixed(1)}%` : "—";
+            const prog = w.target > 0 && w.price > 0 ? Math.min(w.price / w.target * 100, 100) : 0;
             const sc = C[w.scKey] || C.up;
             const bgTints=[C.card,C.cardBlue,C.cardAmber];
             const isWExp = expandedStock === `w-${w.code}`;
-            const NE = newsEvents || NEWS_EVENTS;
-            const wEvents = NE.filter(e => e.stocks?.some(s => s.includes(w.code)));
-            const wHits = wEvents.filter(e => e.correct === true).length;
-            const wMisses = wEvents.filter(e => e.correct === false).length;
-            const wPending = wEvents.filter(e => e.correct == null).length;
             return <div key={w.code} style={{...card, background:bgTints[wi%3], marginBottom:8}}>
               <div onClick={()=>setExpandedStock(isWExp?null:`w-${w.code}`)} style={{cursor:"pointer"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                  <div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
+                  <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:16,fontWeight:600,color:C.text}}>{w.name}
                       <span style={{fontSize:10,color:C.textMute,fontWeight:400,marginLeft:6}}>{w.code}</span>
                       {wEvents.length>0 && (
                         <span style={{fontSize:9,padding:"1px 6px",borderRadius:3,marginLeft:6,
                           background:C.lavBg,color:C.lavender,fontWeight:500}}>
-                          {wHits>0&&`✓${wHits}`}{wMisses>0&&` ✗${wMisses}`}{wPending>0&&` ⏳${wPending}`}
+                          {wHits>0&&`✓${wHits}`}{wMisses>0&&` ✗${wMisses}`}{pendingCount>0&&` ⏳${pendingCount}`}{trackingCount>0&&` 👁${trackingCount}`}
                         </span>
                       )}
                     </div>
-                    <div style={{fontSize:10,color:C.textMute,marginTop:2}}>
-                      {w.catalyst} <span style={{fontSize:9}}>{isWExp?"▲":"▼"}</span>
+                    <div style={{fontSize:10,color:C.textMute,marginTop:2,lineHeight:1.6}}>
+                      {w.catalyst || "尚未補上催化劑"} <span style={{fontSize:9}}>{isWExp?"▲":"▼"}</span>
                     </div>
                   </div>
                   <span style={{background:C.subtle,color:C.textSec,fontSize:10,fontWeight:500,
-                    border:`1px solid ${C.border}`,padding:"3px 11px",borderRadius:20}}>{w.status}</span>
+                    border:`1px solid ${C.border}`,padding:"3px 11px",borderRadius:20,flexShrink:0}}>{w.status || "觀察中"}</span>
                 </div>
                 <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
-                  {[["現價",w.price.toLocaleString(),C.text],
-                    ["目標價",w.target.toLocaleString(),C.textSec],
-                    ["潛在漲幅","+"+upside+"%",C.text]].map(([l,v,c])=>(
+                  {[["現價",w.price ? w.price.toLocaleString() : "—",C.text],
+                    ["目標價",w.target ? w.target.toLocaleString() : "未設定",C.textSec],
+                    ["潛在漲幅",upsideText,C.text]].map(([l,v,c])=>(
                     <div key={l}>
                       <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{l}</div>
                       <div style={{fontSize:17,fontWeight:600,color:c}}>{v}</div>
@@ -3672,10 +3853,10 @@ ${recentAnalyses || "尚無分析紀錄"}
                 <div style={{marginTop:12}}>
                   <div style={{background:C.subtle,borderRadius:3,height:3}}>
                     <div style={{width:`${prog}%`,height:"100%",
-                      background:`linear-gradient(90deg,${alpha(C.blue, A.accent)},${alpha(C.olive, A.accent)})`,borderRadius:3}}/>
+                      background:`linear-gradient(90deg,${alpha(sc, A.accent)},${alpha(C.olive, A.accent)})`,borderRadius:3}}/>
                   </div>
                 </div>
-                <div style={{fontSize:10,color:C.textMute,marginTop:9,lineHeight:1.7}}>{w.note}</div>
+                <div style={{fontSize:10,color:C.textMute,marginTop:9,lineHeight:1.7}}>{w.note || "尚未補上觀察重點。"}</div>
               </div>
               {/* 展開：觀察股策略追蹤 */}
               {isWExp && (
@@ -3691,7 +3872,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         <div style={{fontSize:10}}>
                           {wHits>0&&<span style={{color:C.olive,marginRight:8}}>準確 {wHits}</span>}
                           {wMisses>0&&<span style={{color:C.up,marginRight:8}}>失誤 {wMisses}</span>}
-                          {wPending>0&&<span style={{color:C.textMute}}>待處理 {wPending}</span>}
+                          {(pendingCount + trackingCount)>0&&<span style={{color:C.textMute}}>待處理 {pendingCount + trackingCount}</span>}
                           {(wHits+wMisses)>0&&<span style={{color:C.amber,marginLeft:8,fontWeight:600}}>
                             勝率 {Math.round(wHits/(wHits+wMisses)*100)}%
                           </span>}
@@ -3736,16 +3917,104 @@ ${recentAnalyses || "尚無分析紀錄"}
 
         {/* ══════════ EVENTS ══════════ */}
         {viewMode !== OVERVIEW_VIEW_MODE && tab==="events" && <>
-          <div style={{...card,marginBottom:8}}>
-            <div style={lbl}>接力計畫</div>
-            <div style={{background:C.subtle,borderRadius:8,padding:"12px 10px",marginTop:6,
-              fontFamily:"monospace",fontSize:11,lineHeight:2.2,color:C.textMute}}>
-              <span style={{color:C.up}}>3月</span>{" ── "}<span style={{color:C.amber}}>6月</span>{" ── "}<span style={{color:C.blue}}>9月</span>{" ── 12月"}<br/>
-              <span style={{color:C.up}}>晶豪科 出場中 ▶</span><br/>
-              {"                "}<span style={{color:C.amber}}>力積電 加碼評估 ──────▶</span><br/>
-              {"                "}<span style={{color:C.blue}}>台燿 布局中 ─────────────▶</span>
+          {showRelayPlan && (
+            <div style={{...card,marginBottom:8,background:C.cardBlue,borderLeft:`3px solid ${alpha(C.teal, A.accent)}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:9,color:C.teal,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"}}>接力計畫</div>
+                  <div style={{fontSize:15,fontWeight:600,color:C.text,marginTop:3}}>{RELAY_PLAN.title}</div>
+                  <div style={{fontSize:10,color:C.textSec,marginTop:4,lineHeight:1.7}}>
+                    {RELAY_PLAN.summary}
+                  </div>
+                </div>
+                <button className="ui-btn" onClick={()=>setRelayPlanExpanded(v=>!v)} style={{
+                  ...ghostBtn,
+                  background:relayPlanExpanded ? C.subtleElev : alpha(C.teal, A.faint),
+                  color:relayPlanExpanded ? C.text : C.teal,
+                  border:`1px solid ${relayPlanExpanded ? C.borderStrong : alpha(C.teal, A.strongLine)}`,
+                }}>
+                  {relayPlanExpanded ? "收合" : "展開完整計畫"}
+                </button>
+              </div>
+
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10}}>
+                {RELAY_PLAN.quickStates.map(item=>(
+                  <span key={item.label} style={{
+                    fontSize:9,padding:"4px 8px",borderRadius:20,
+                    background:alpha(C[item.tone] || C.text, A.tint),
+                    color:C[item.tone] || C.text,
+                    border:`1px solid ${alpha(C[item.tone] || C.text, A.soft)}`,
+                  }}>
+                    {item.label} · {item.text}
+                  </span>
+                ))}
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(168px, 1fr))",gap:8,marginTop:10}}>
+                {RELAY_PLAN.legs.map(leg=>(
+                  <div key={leg.code} style={{background:C.subtle,border:`1px solid ${C.border}`,borderLeft:`2px solid ${alpha(C[leg.tone] || C.text, A.accent)}`,borderRadius:9,padding:"10px 11px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:600,color:C.text}}>{leg.name} <span style={{fontSize:9,color:C.textMute,fontWeight:400}}>{leg.code}</span></div>
+                        <div style={{fontSize:9,color:C.textMute,marginTop:2}}>{leg.role} · {leg.window}</div>
+                      </div>
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:20,background:alpha(C[leg.tone] || C.text, A.tint),color:C[leg.tone] || C.text}}>
+                        {leg.status}
+                      </span>
+                    </div>
+                    <div style={{fontSize:11,color:C.text,marginTop:9,fontWeight:500,lineHeight:1.6}}>{leg.action}</div>
+                    <div style={{fontSize:10,color:C.textSec,marginTop:6,lineHeight:1.7}}>
+                      觸發：{leg.trigger}<br/>
+                      防守：{leg.stop}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {relayPlanExpanded && (
+                <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.borderSub}`}}>
+                  <div style={{fontSize:10,color:C.textMute,fontWeight:600,marginBottom:6}}>核心邏輯</div>
+                  <div style={{display:"grid",gap:6}}>
+                    {RELAY_PLAN.thesis.map(item=>(
+                      <div key={item} style={{fontSize:10,color:C.textSec,lineHeight:1.7,background:C.subtle,border:`1px solid ${C.borderSub}`,borderRadius:8,padding:"8px 10px"}}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{fontSize:10,color:C.textMute,fontWeight:600,marginTop:10,marginBottom:6}}>關鍵觀察</div>
+                  <div style={{display:"grid",gap:6}}>
+                    {RELAY_PLAN.indicators.map(item=>(
+                      <div key={`${item.code}-${item.when}`} style={{background:C.subtle,border:`1px solid ${C.borderSub}`,borderRadius:8,padding:"8px 10px"}}>
+                        <div style={{fontSize:10,color:C.text,fontWeight:500}}>{item.name} · {item.when}</div>
+                        <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.7}}>{item.what}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{fontSize:10,color:C.textMute,fontWeight:600,marginTop:10,marginBottom:6}}>情境矩陣</div>
+                  <div style={{display:"grid",gap:6}}>
+                    {RELAY_PLAN.riskMatrix.map(item=>(
+                      <div key={item.scenario} style={{background:C.subtle,border:`1px solid ${C.borderSub}`,borderRadius:8,padding:"8px 10px"}}>
+                        <div style={{fontSize:10,color:C.text,fontWeight:500}}>{item.scenario}</div>
+                        <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.7}}>{item.action}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{fontSize:10,color:C.textMute,fontWeight:600,marginTop:10,marginBottom:6}}>資金配置</div>
+                  <div style={{display:"grid",gap:6}}>
+                    {RELAY_PLAN.allocations.map(item=>(
+                      <div key={`${item.phase}-${item.target}`} style={{background:C.subtle,border:`1px solid ${C.borderSub}`,borderRadius:8,padding:"8px 10px"}}>
+                        <div style={{fontSize:10,color:C.text,fontWeight:500}}>{item.phase} · {item.target}</div>
+                        <div style={{fontSize:10,color:C.textSec,marginTop:3,lineHeight:1.7}}>{item.plan}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
             {["全部",...Object.keys(TYPE_COLOR)].map(t=>(

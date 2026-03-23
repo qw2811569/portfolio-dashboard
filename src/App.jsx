@@ -346,19 +346,108 @@ const metricCard = {
 };
 const CLOUD_SYNC_TTL = 1000 * 60 * 30;
 const CLOUD_SAVE_DEBOUNCE = 1000 * 20;
-const LOCAL_BACKUP_FIELDS = [
-  { key: "pf-holdings-v2", alias: "holdings" },
-  { key: "pf-log-v2", alias: "tradeLog" },
-  { key: "pf-targets-v1", alias: "targets" },
-  { key: "pf-news-events-v1", alias: "newsEvents" },
-  { key: "pf-analysis-history-v1", alias: "analysisHistory" },
-  { key: "pf-daily-report-v1", alias: "dailyReport" },
-  { key: "pf-reversal-v1", alias: "reversalConditions" },
-  { key: "pf-brain-v1", alias: "strategyBrain" },
-  { key: "pf-research-history-v1", alias: "researchHistory" },
+const OWNER_PORTFOLIO_ID = "me";
+const PORTFOLIO_VIEW_MODE = "portfolio";
+const OVERVIEW_VIEW_MODE = "overview";
+const CURRENT_SCHEMA_VERSION = 2;
+const PORTFOLIOS_KEY = "pf-portfolios-v1";
+const ACTIVE_PORTFOLIO_KEY = "pf-active-portfolio-v1";
+const VIEW_MODE_KEY = "pf-view-mode-v1";
+const SCHEMA_VERSION_KEY = "pf-schema-version";
+const GLOBAL_SYNC_KEYS = [
+  "pf-cloud-sync-at",
+  "pf-analysis-cloud-sync-at",
+  "pf-research-cloud-sync-at",
 ];
-const LOCAL_BACKUP_KEY_SET = new Set(LOCAL_BACKUP_FIELDS.map(item => item.key));
-const LOCAL_BACKUP_ALIAS_TO_KEY = Object.fromEntries(LOCAL_BACKUP_FIELDS.map(item => [item.alias, item.key]));
+const GLOBAL_SYNC_KEY_SET = new Set(GLOBAL_SYNC_KEYS);
+const BACKUP_GLOBAL_KEYS = [
+  PORTFOLIOS_KEY,
+  ACTIVE_PORTFOLIO_KEY,
+  VIEW_MODE_KEY,
+  SCHEMA_VERSION_KEY,
+];
+const BACKUP_GLOBAL_KEY_SET = new Set(BACKUP_GLOBAL_KEYS);
+const DEFAULT_PORTFOLIO_NOTES = {
+  riskProfile: "",
+  preferences: "",
+  customNotes: "",
+};
+const PORTFOLIO_STORAGE_FIELDS = [
+  { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
+  { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
+  { suffix: "targets-v1", alias: "targets", ownerFallback: () => INIT_TARGETS, emptyFallback: () => ({}) },
+  { suffix: "news-events-v1", alias: "newsEvents", ownerFallback: () => NEWS_EVENTS, emptyFallback: () => [] },
+  { suffix: "analysis-history-v1", alias: "analysisHistory", ownerFallback: () => [], emptyFallback: () => [] },
+  { suffix: "daily-report-v1", alias: "dailyReport", ownerFallback: () => null, emptyFallback: () => null },
+  { suffix: "reversal-v1", alias: "reversalConditions", ownerFallback: () => ({}), emptyFallback: () => ({}) },
+  { suffix: "brain-v1", alias: "strategyBrain", ownerFallback: () => null, emptyFallback: () => null },
+  { suffix: "research-history-v1", alias: "researchHistory", ownerFallback: () => [], emptyFallback: () => [] },
+  { suffix: "notes-v1", alias: "portfolioNotes", ownerFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), emptyFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), hasLegacy: false },
+];
+const PORTFOLIO_SUFFIX_TO_FIELD = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.suffix, item]));
+const PORTFOLIO_ALIAS_TO_SUFFIX = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.alias, item.suffix]));
+const LEGACY_STORAGE_KEYS = PORTFOLIO_STORAGE_FIELDS
+  .filter(item => item.hasLegacy !== false)
+  .map(item => `pf-${item.suffix}`);
+const GLOBAL_STORAGE_KEYS = [
+  ...BACKUP_GLOBAL_KEYS,
+  ...GLOBAL_SYNC_KEYS,
+];
+const CLOSED_EVENT_STATUSES = new Set(["past", "closed"]);
+
+function todayStorageDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function createDefaultPortfolios() {
+  return [{ id: OWNER_PORTFOLIO_ID, name: "我", isOwner: true, createdAt: todayStorageDate() }];
+}
+
+function clonePortfolioNotes() {
+  return { ...DEFAULT_PORTFOLIO_NOTES };
+}
+
+function isClosedEvent(event) {
+  return CLOSED_EVENT_STATUSES.has(event?.status);
+}
+
+function normalizePortfolios(value) {
+  const source = Array.isArray(value) ? value : [];
+  const normalized = [];
+  const seen = new Set();
+
+  for (const item of source) {
+    if (!item || typeof item.id !== "string" || typeof item.name !== "string" || seen.has(item.id)) continue;
+    seen.add(item.id);
+    normalized.push({
+      id: item.id,
+      name: item.name,
+      isOwner: item.id === OWNER_PORTFOLIO_ID ? true : Boolean(item.isOwner),
+      createdAt: item.createdAt || todayStorageDate(),
+    });
+  }
+
+  if (!seen.has(OWNER_PORTFOLIO_ID)) {
+    normalized.unshift(...createDefaultPortfolios());
+  }
+
+  return normalized.length > 0 ? normalized : createDefaultPortfolios();
+}
+
+function pfKey(pid, suffix) {
+  return `pf-${pid}-${suffix}`;
+}
+
+function getEmptyFallback(suffix) {
+  const field = PORTFOLIO_SUFFIX_TO_FIELD[suffix];
+  return field ? field.emptyFallback() : null;
+}
+
+function getPortfolioFallback(pid, suffix) {
+  const field = PORTFOLIO_SUFFIX_TO_FIELD[suffix];
+  if (!field) return null;
+  return (pid === OWNER_PORTFOLIO_ID ? field.ownerFallback : field.emptyFallback)();
+}
 
 async function load(key, fallback) {
   try {
@@ -376,6 +465,54 @@ const writeSyncAt = (key, value) => {
   try { localStorage.setItem(key, String(value)); } catch {}
 };
 
+async function savePortfolioData(pid, suffix, data) {
+  return save(pfKey(pid, suffix), data);
+}
+
+async function loadPortfolioData(pid, suffix, fallback) {
+  return load(pfKey(pid, suffix), fallback);
+}
+
+async function loadForPortfolio(pid, suffix) {
+  return loadPortfolioData(pid, suffix, getPortfolioFallback(pid, suffix));
+}
+
+function readStorageValue(key) {
+  const raw = localStorage.getItem(key);
+  if (raw == null) return undefined;
+  try { return JSON.parse(raw); } catch { return raw; }
+}
+
+function collectPortfolioBackupStorage() {
+  const storage = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith("pf-")) continue;
+    if (GLOBAL_SYNC_KEY_SET.has(key)) continue;
+    if (
+      !BACKUP_GLOBAL_KEY_SET.has(key) &&
+      !PORTFOLIO_STORAGE_FIELDS.some(item => key.endsWith(`-${item.suffix}`))
+    ) continue;
+    storage[key] = readStorageValue(key);
+  }
+  return storage;
+}
+
+function normalizeImportedStorageKey(rawKey) {
+  if (GLOBAL_SYNC_KEY_SET.has(rawKey)) return null;
+  if (BACKUP_GLOBAL_KEY_SET.has(rawKey)) return rawKey;
+  if (PORTFOLIO_ALIAS_TO_SUFFIX[rawKey]) return pfKey(OWNER_PORTFOLIO_ID, PORTFOLIO_ALIAS_TO_SUFFIX[rawKey]);
+
+  const legacyField = PORTFOLIO_STORAGE_FIELDS.find(item => item.hasLegacy !== false && `pf-${item.suffix}` === rawKey);
+  if (legacyField) return pfKey(OWNER_PORTFOLIO_ID, legacyField.suffix);
+
+  if (rawKey.startsWith("pf-") && PORTFOLIO_STORAGE_FIELDS.some(item => rawKey.endsWith(`-${item.suffix}`))) {
+    return rawKey;
+  }
+
+  return null;
+}
+
 function downloadJson(filename, payload) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -391,7 +528,7 @@ function normalizeBackupStorage(payload) {
 
   if (Array.isArray(payload)) {
     const looksLikeHistory = payload.every(item => item && typeof item === "object" && (item.id != null || item.date || item.aiInsight));
-    return looksLikeHistory ? { "pf-analysis-history-v1": payload } : null;
+    return looksLikeHistory ? { [pfKey(OWNER_PORTFOLIO_ID, "analysis-history-v1")]: payload } : null;
   }
 
   if (typeof payload !== "object") return null;
@@ -403,7 +540,7 @@ function normalizeBackupStorage(payload) {
   const mapEntries = (source) => {
     const mapped = {};
     for (const [rawKey, value] of Object.entries(source || {})) {
-      const key = LOCAL_BACKUP_ALIAS_TO_KEY[rawKey] || (LOCAL_BACKUP_KEY_SET.has(rawKey) ? rawKey : null);
+      const key = normalizeImportedStorageKey(rawKey);
       if (key) mapped[key] = value;
     }
     return mapped;
@@ -418,23 +555,132 @@ function normalizeBackupStorage(payload) {
   if (Object.keys(directMapped).length > 0) return directMapped;
 
   const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || payload.stats;
-  if (looksLikeBrain) return { "pf-brain-v1": payload };
+  if (looksLikeBrain) return { [pfKey(OWNER_PORTFOLIO_ID, "brain-v1")]: payload };
 
   const looksLikeDailyReport = payload.totalTodayPnl != null || Array.isArray(payload.changes) || typeof payload.aiInsight === "string";
   if (looksLikeDailyReport) {
     return {
-      "pf-daily-report-v1": payload,
-      "pf-analysis-history-v1": [payload],
+      [pfKey(OWNER_PORTFOLIO_ID, "daily-report-v1")]: payload,
+      [pfKey(OWNER_PORTFOLIO_ID, "analysis-history-v1")]: [payload],
     };
   }
 
   return null;
 }
 
+function extractPortfolioIdsFromStorage(storage) {
+  const ids = new Set([OWNER_PORTFOLIO_ID]);
+  for (const key of Object.keys(storage || {})) {
+    for (const field of PORTFOLIO_STORAGE_FIELDS) {
+      const suffix = `-${field.suffix}`;
+      if (!key.startsWith("pf-") || !key.endsWith(suffix)) continue;
+      const pid = key.slice(3, -suffix.length);
+      if (pid) ids.add(pid);
+      break;
+    }
+  }
+  return Array.from(ids);
+}
+
+function buildPortfoliosFromStorage(storage) {
+  const existing = normalizePortfolios(storage?.[PORTFOLIOS_KEY]);
+  const byId = new Map(existing.map(item => [item.id, item]));
+  const ids = extractPortfolioIdsFromStorage(storage);
+
+  return ids.map(id => (
+    byId.get(id) || {
+      id,
+      name: id === OWNER_PORTFOLIO_ID ? "我" : id,
+      isOwner: id === OWNER_PORTFOLIO_ID,
+      createdAt: todayStorageDate(),
+    }
+  ));
+}
+
+async function migrateLegacyPortfolioStorageIfNeeded() {
+  const currentVersion = await load(SCHEMA_VERSION_KEY, null);
+  const hasLegacyData = LEGACY_STORAGE_KEYS.some(key => localStorage.getItem(key) != null);
+  if (currentVersion === CURRENT_SCHEMA_VERSION || !hasLegacyData) return false;
+
+  await save(PORTFOLIOS_KEY, createDefaultPortfolios());
+  await save(ACTIVE_PORTFOLIO_KEY, OWNER_PORTFOLIO_ID);
+  await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+
+  for (const field of PORTFOLIO_STORAGE_FIELDS) {
+    if (field.hasLegacy === false) continue;
+    const legacyKey = `pf-${field.suffix}`;
+    const raw = localStorage.getItem(legacyKey);
+    if (raw == null) continue;
+    await savePortfolioData(OWNER_PORTFOLIO_ID, field.suffix, readStorageValue(legacyKey));
+    localStorage.removeItem(legacyKey);
+  }
+
+  const migratedEvents = await loadPortfolioData(OWNER_PORTFOLIO_ID, "news-events-v1", []);
+  if (Array.isArray(migratedEvents) && migratedEvents.length > 0) {
+    await savePortfolioData(OWNER_PORTFOLIO_ID, "news-events-v1", migratedEvents.map(event => ({
+      ...event,
+      status: event.status === "past" ? "closed" : event.status,
+      ...(event.status === "past" ? {
+        eventDate: event.date,
+        trackingStart: event.reviewDate || event.date,
+        exitDate: event.reviewDate || null,
+        priceAtEvent: null,
+        priceAtExit: null,
+        priceHistory: [],
+      } : {}),
+    })));
+  }
+
+  await save(SCHEMA_VERSION_KEY, CURRENT_SCHEMA_VERSION);
+  return true;
+}
+
+async function ensurePortfolioRegistry() {
+  const storedPortfolios = await load(PORTFOLIOS_KEY, null);
+  const portfolios = normalizePortfolios(storedPortfolios);
+  if (!storedPortfolios || JSON.stringify(storedPortfolios) !== JSON.stringify(portfolios)) {
+    await save(PORTFOLIOS_KEY, portfolios);
+  }
+
+  let activePortfolioId = await load(ACTIVE_PORTFOLIO_KEY, OWNER_PORTFOLIO_ID);
+  if (typeof activePortfolioId !== "string" || !portfolios.some(item => item.id === activePortfolioId)) {
+    activePortfolioId = OWNER_PORTFOLIO_ID;
+    await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
+  }
+
+  let viewMode = await load(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+  if (viewMode !== PORTFOLIO_VIEW_MODE && viewMode !== OVERVIEW_VIEW_MODE) {
+    viewMode = PORTFOLIO_VIEW_MODE;
+  }
+  // overview mode UI 還沒落地前，先固定回 portfolio，避免匯入後卡在唯讀模式
+  if (viewMode !== PORTFOLIO_VIEW_MODE) {
+    viewMode = PORTFOLIO_VIEW_MODE;
+  }
+  await save(VIEW_MODE_KEY, viewMode);
+
+  const schemaVersion = await load(SCHEMA_VERSION_KEY, null);
+  if (schemaVersion !== CURRENT_SCHEMA_VERSION) {
+    await save(SCHEMA_VERSION_KEY, CURRENT_SCHEMA_VERSION);
+  }
+
+  return { portfolios, activePortfolioId, viewMode };
+}
+
+async function loadPortfolioSnapshot(pid) {
+  const snapshot = {};
+  for (const field of PORTFOLIO_STORAGE_FIELDS) {
+    snapshot[field.alias] = await loadForPortfolio(pid, field.suffix);
+  }
+  return snapshot;
+}
+
 // ── Main ─────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab]     = useState("holdings");
   const [ready, setReady] = useState(false);
+  const [portfolios, setPortfolios] = useState(() => createDefaultPortfolios());
+  const [activePortfolioId, setActivePortfolioId] = useState(OWNER_PORTFOLIO_ID);
+  const [viewMode, setViewMode] = useState(PORTFOLIO_VIEW_MODE);
 
   // persistent state
   const [holdings,  setHoldings]  = useState(null);
@@ -486,17 +732,46 @@ export default function App() {
   const [newEvent, setNewEvent]         = useState({date:"",title:"",detail:"",stocks:"",pred:"up",predReason:""});
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
+  const [portfolioNotes, setPortfolioNotes] = useState(() => clonePortfolioNotes());
   const [cloudSync, setCloudSync]         = useState(false);
+  const [portfolioSwitching, setPortfolioSwitching] = useState(false);
   // AutoResearch state（必須在 useEffect 之前宣告）
   const [researching, setResearching] = useState(false);
   const [researchTarget, setResearchTarget] = useState(null);
   const [researchResults, setResearchResults] = useState(null);
   const [researchHistory, setResearchHistory] = useState(null);
+  const portfolioTransitionRef = useRef({
+    isHydrating: false,
+    fromPid: OWNER_PORTFOLIO_ID,
+    toPid: OWNER_PORTFOLIO_ID,
+  });
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const backupFileInputRef = useRef(null);
   const deferredQuery = useDeferredValue(scanQuery);
   const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
+  const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
+  const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
+  const applyPortfolioSnapshot = (snapshot) => {
+    setHoldings(snapshot.holdings);
+    setTradeLog(snapshot.tradeLog);
+    setTargets(snapshot.targets);
+    setNewsEvents(snapshot.newsEvents);
+    setAnalysisHistory(snapshot.analysisHistory);
+    setReversalConditions(snapshot.reversalConditions);
+    setStrategyBrain(snapshot.strategyBrain);
+    setResearchHistory(snapshot.researchHistory);
+    setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
+    setDailyReport(snapshot.dailyReport || (snapshot.analysisHistory && snapshot.analysisHistory.length > 0 ? snapshot.analysisHistory[0] : null));
+  };
+  const setCloudStateForPortfolio = (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
+    const enabled = nextViewMode === PORTFOLIO_VIEW_MODE && pid === OWNER_PORTFOLIO_ID;
+    cloudSyncStateRef.current = {
+      enabled,
+      syncedAt: enabled ? readSyncAt("pf-cloud-sync-at") : 0,
+    };
+    setCloudSync(enabled);
+  };
   const scheduleCloudSave = (action, data, successMsg) => {
     if (!cloudSyncStateRef.current.enabled) return;
     clearTimeout(cloudSaveTimersRef.current[action]);
@@ -517,29 +792,148 @@ export default function App() {
       } catch {}
     }, CLOUD_SAVE_DEBOUNCE);
   };
+  const flushCurrentPortfolio = async (pid = activePortfolioId) => {
+    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || !pid) return;
+    const liveSnapshot = {
+      holdings,
+      tradeLog,
+      targets,
+      newsEvents,
+      analysisHistory,
+      dailyReport,
+      reversalConditions,
+      strategyBrain,
+      researchHistory,
+      portfolioNotes,
+    };
+    await Promise.all(
+      Object.entries(liveSnapshot)
+        .map(([alias, value]) => {
+          const suffix = PORTFOLIO_ALIAS_TO_SUFFIX[alias];
+          return suffix ? savePortfolioData(pid, suffix, value) : null;
+        })
+        .filter(Boolean)
+    );
+    await save(ACTIVE_PORTFOLIO_KEY, pid);
+    await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+  };
+  const resetTransientUiState = () => {
+    setImg(null);
+    setB64(null);
+    setParsing(false);
+    setParsed(null);
+    setParseErr(null);
+    setDragOver(false);
+    setMemoStep(0);
+    setMemoAns([]);
+    setMemoIn("");
+    setDailyExpanded(false);
+    setExpandedStock(null);
+    setExpandedNews(new Set());
+    setReviewingEvent(null);
+    setReviewForm({ actual: "up", actualNote: "", lessons: "" });
+    setShowAddEvent(false);
+    setNewEvent({ date: "", title: "", detail: "", stocks: "", pred: "up", predReason: "" });
+    setResearchTarget(null);
+    setResearchResults(null);
+    setTpCode("");
+    setTpFirm("");
+    setTpVal("");
+  };
+  const loadPortfolio = async (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
+    const snapshot = await loadPortfolioSnapshot(pid);
+    setActivePortfolioId(pid);
+    setViewMode(nextViewMode);
+    applyPortfolioSnapshot(snapshot);
+    setCloudStateForPortfolio(pid, nextViewMode);
+    return snapshot;
+  };
+  const switchPortfolio = async (pid) => {
+    if (!pid || portfolioSwitching) return;
+    if (pid === activePortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return;
+
+    setPortfolioSwitching(true);
+    portfolioTransitionRef.current = {
+      isHydrating: true,
+      fromPid: activePortfolioId,
+      toPid: pid,
+    };
+
+    try {
+      await flushCurrentPortfolio();
+      resetTransientUiState();
+      await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+      await save(ACTIVE_PORTFOLIO_KEY, pid);
+      await loadPortfolio(pid, PORTFOLIO_VIEW_MODE);
+    } catch (err) {
+      console.error("組合切換失敗:", err);
+      setSaved("❌ 組合切換失敗");
+      setTimeout(() => setSaved(""), 3000);
+    } finally {
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: pid,
+        toPid: pid,
+      };
+      setPortfolioSwitching(false);
+    }
+  };
+  const createPortfolio = async () => {
+    const rawName = window.prompt("新組合名稱");
+    const name = rawName?.trim();
+    if (!name) return;
+
+    const nextPortfolio = {
+      id: `p-${Date.now().toString(36)}`,
+      name,
+      isOwner: false,
+      createdAt: todayStorageDate(),
+    };
+    const nextPortfolios = [...portfolios, nextPortfolio];
+
+    setPortfolios(nextPortfolios);
+    await save(PORTFOLIOS_KEY, nextPortfolios);
+    await Promise.all(
+      PORTFOLIO_STORAGE_FIELDS.map(field => savePortfolioData(nextPortfolio.id, field.suffix, getEmptyFallback(field.suffix)))
+    );
+    await switchPortfolio(nextPortfolio.id);
+    setSaved(`✅ 已新增組合「${name}」`);
+    setTimeout(() => setSaved(""), 3000);
+  };
 
   // boot
   useEffect(() => {
     (async () => {
-      const h = await load("pf-holdings-v2", INIT_HOLDINGS);
-      const l = await load("pf-log-v2", []);
-      const t = await load("pf-targets-v1", INIT_TARGETS);
-      const ne = await load("pf-news-events-v1", NEWS_EVENTS);
-      const ah = await load("pf-analysis-history-v1", []);
-      const rc = await load("pf-reversal-v1", {});
-      const sb = await load("pf-brain-v1", null);
-      const rh = await load("pf-research-history-v1", []);
-      const dr = await load("pf-daily-report-v1", null);
-      setHoldings(h); setTradeLog(l); setTargets(t);
-      setNewsEvents(ne); setAnalysisHistory(ah); setReversalConditions(rc);
-      setStrategyBrain(sb); setResearchHistory(rh);
-      // 從 localStorage 還原最近收盤分析
-      setDailyReport(dr || (ah && ah.length > 0 ? ah[0] : null));
+      portfolioTransitionRef.current = {
+        isHydrating: true,
+        fromPid: activePortfolioId,
+        toPid: activePortfolioId,
+      };
+
+      await migrateLegacyPortfolioStorageIfNeeded();
+      const registry = await ensurePortfolioRegistry();
+      const pid = registry.activePortfolioId;
+      const snapshot = await loadPortfolioSnapshot(pid);
+
+      setPortfolios(registry.portfolios);
+      setActivePortfolioId(pid);
+      setViewMode(registry.viewMode);
+      applyPortfolioSnapshot(snapshot);
       setReady(true);
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: pid,
+        toPid: pid,
+      };
 
       const lastCloudSyncAt = readSyncAt("pf-cloud-sync-at");
-      const shouldSyncCloud = !lastCloudSyncAt || (Date.now() - lastCloudSyncAt > CLOUD_SYNC_TTL);
-      cloudSyncStateRef.current = { enabled: true, syncedAt: lastCloudSyncAt };
+      const shouldSyncCloud = pid === OWNER_PORTFOLIO_ID && (!lastCloudSyncAt || (Date.now() - lastCloudSyncAt > CLOUD_SYNC_TTL));
+      cloudSyncStateRef.current = { enabled: pid === OWNER_PORTFOLIO_ID, syncedAt: lastCloudSyncAt };
+
+      if (pid !== OWNER_PORTFOLIO_ID) {
+        setCloudSync(false);
+        return;
+      }
 
       // 冷卻時間內直接用 localStorage，避免每次開頁都打 Blob
       if (!shouldSyncCloud) {
@@ -556,30 +950,30 @@ export default function App() {
           fetch("/api/research").then(r=>r.json()).catch(()=>({reports:null})),
         ]);
         // 雲端同步策略：本地優先，雲端只補缺（合併不覆蓋）
-        if (cloudBrain.brain && !sb) { setStrategyBrain(cloudBrain.brain); save("pf-brain-v1", cloudBrain.brain); }
-        if (cloudEvents.events && (!ne || ne.length === 0)) { setNewsEvents(cloudEvents.events); save("pf-news-events-v1", cloudEvents.events); }
+        if (cloudBrain.brain && !snapshot.strategyBrain) { setStrategyBrain(cloudBrain.brain); savePortfolioData(pid, "brain-v1", cloudBrain.brain); }
+        if (cloudEvents.events && (!snapshot.newsEvents || snapshot.newsEvents.length === 0)) { setNewsEvents(cloudEvents.events); savePortfolioData(pid, "news-events-v1", cloudEvents.events); }
         const cloudH = cloudHoldings.holdings;
-        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!h || h.length === 0)) {
-          setHoldings(cloudH); save("pf-holdings-v2", cloudH);
+        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!snapshot.holdings || snapshot.holdings.length === 0)) {
+          setHoldings(cloudH); savePortfolioData(pid, "holdings-v2", cloudH);
         }
         // 分析歷史：合併本地+雲端，去重
         if (cloudHistory.history?.length) {
-          const merged = [...(ah || []), ...cloudHistory.history];
+          const merged = [...(snapshot.analysisHistory || []), ...cloudHistory.history];
           const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
             .sort((a, b) => b.id - a.id).slice(0, 30);
           setAnalysisHistory(unique);
-          save("pf-analysis-history-v1", unique);
+          savePortfolioData(pid, "analysis-history-v1", unique);
           writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
           // 如果本地沒有 dailyReport，從合併結果補上
-          if (!dr && unique.length > 0) setDailyReport(unique[0]);
+          if (!snapshot.dailyReport && unique.length > 0) setDailyReport(unique[0]);
         }
         // 研究歷史：合併本地+雲端，去重
         if (cloudResearch.reports?.length) {
-          const merged = [...(rh || []), ...cloudResearch.reports];
+          const merged = [...(snapshot.researchHistory || []), ...cloudResearch.reports];
           const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
             .sort((a, b) => b.timestamp - a.timestamp).slice(0, 30);
           setResearchHistory(unique);
-          save("pf-research-history-v1", unique);
+          savePortfolioData(pid, "research-history-v1", unique);
           writeSyncAt("pf-research-cloud-sync-at", Date.now());
         }
         const syncedAt = Date.now();
@@ -592,31 +986,31 @@ export default function App() {
 
   // auto-save
   useEffect(() => {
-    if (ready && holdings) {
-      save("pf-holdings-v2", holdings);
+    if (canPersistPortfolioData && holdings) {
+      savePortfolioData(activePortfolioId, "holdings-v2", holdings);
       scheduleCloudSave("save-holdings", holdings);
     }
-  }, [holdings, ready]);
-  useEffect(() => { if (ready && tradeLog) save("pf-log-v2",      tradeLog); }, [tradeLog,  ready]);
-  useEffect(() => { if (ready && targets)  save("pf-targets-v1",  targets);  }, [targets,   ready]);
+  }, [activePortfolioId, canPersistPortfolioData, holdings]);
+  useEffect(() => { if (canPersistPortfolioData && tradeLog) savePortfolioData(activePortfolioId, "log-v2", tradeLog); }, [activePortfolioId, canPersistPortfolioData, tradeLog]);
+  useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
   useEffect(() => {
-    if (ready && newsEvents) {
-      save("pf-news-events-v1", newsEvents);
+    if (canPersistPortfolioData && newsEvents) {
+      savePortfolioData(activePortfolioId, "news-events-v1", newsEvents);
       scheduleCloudSave("save-events", newsEvents);
     }
-  }, [newsEvents, ready]);
-  useEffect(() => { if (ready && analysisHistory) save("pf-analysis-history-v1", analysisHistory); }, [analysisHistory, ready]);
-  useEffect(() => { if (ready && dailyReport) save("pf-daily-report-v1", dailyReport); }, [dailyReport, ready]);
-  useEffect(() => { if (ready && reversalConditions) save("pf-reversal-v1", reversalConditions); }, [reversalConditions, ready]);
+  }, [activePortfolioId, canPersistPortfolioData, newsEvents]);
+  useEffect(() => { if (canPersistPortfolioData && analysisHistory) savePortfolioData(activePortfolioId, "analysis-history-v1", analysisHistory); }, [activePortfolioId, analysisHistory, canPersistPortfolioData]);
+  useEffect(() => { if (canPersistPortfolioData && dailyReport) savePortfolioData(activePortfolioId, "daily-report-v1", dailyReport); }, [activePortfolioId, canPersistPortfolioData, dailyReport]);
+  useEffect(() => { if (canPersistPortfolioData && reversalConditions) savePortfolioData(activePortfolioId, "reversal-v1", reversalConditions); }, [activePortfolioId, canPersistPortfolioData, reversalConditions]);
   useEffect(() => {
-    if (ready && strategyBrain) {
-      save("pf-brain-v1", strategyBrain);
+    if (canPersistPortfolioData && strategyBrain) {
+      savePortfolioData(activePortfolioId, "brain-v1", strategyBrain);
       scheduleCloudSave("save-brain", strategyBrain);
     }
-  }, [strategyBrain, ready]);
+  }, [activePortfolioId, canPersistPortfolioData, strategyBrain]);
   useEffect(() => {
     const lastAnalysisSyncAt = readSyncAt("pf-analysis-cloud-sync-at");
-    const shouldFetchAnalysis = (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
+    const shouldFetchAnalysis = activePortfolioId === OWNER_PORTFOLIO_ID && (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchAnalysis) return;
     fetch("/api/brain?action=history")
       .then(r=>r.json())
@@ -626,16 +1020,16 @@ export default function App() {
           const merged = [...(prev || []), ...data.history];
           const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
             .sort((a, b) => b.id - a.id).slice(0, 30);
-          save("pf-analysis-history-v1", unique);
+          savePortfolioData(activePortfolioId, "analysis-history-v1", unique);
           return unique;
         });
         writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
       })
       .catch(()=>{});
-  }, [tab]);
+  }, [activePortfolioId, tab]);
   useEffect(() => {
     const lastResearchSyncAt = readSyncAt("pf-research-cloud-sync-at");
-    const shouldFetchResearch = tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
+    const shouldFetchResearch = activePortfolioId === OWNER_PORTFOLIO_ID && tab === "research" && (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchResearch) return;
     fetch("/api/research")
       .then(r=>r.json())
@@ -645,15 +1039,16 @@ export default function App() {
         const unique = merged.filter((r,i,arr) => arr.findIndex(x => x.timestamp === r.timestamp) === i)
           .sort((a,b) => b.timestamp - a.timestamp).slice(0, 30);
         setResearchHistory(unique);
-        save("pf-research-history-v1", unique);
+        savePortfolioData(activePortfolioId, "research-history-v1", unique);
         writeSyncAt("pf-research-cloud-sync-at", Date.now());
       })
       .catch(()=>{});
-  }, [tab]);
+  }, [activePortfolioId, researchHistory, tab]);
   useEffect(() => () => {
     Object.values(cloudSaveTimersRef.current).forEach(clearTimeout);
   }, []);
-  useEffect(() => { if (ready && researchHistory) save("pf-research-history-v1", researchHistory); }, [researchHistory, ready]);
+  useEffect(() => { if (canPersistPortfolioData && researchHistory) savePortfolioData(activePortfolioId, "research-history-v1", researchHistory); }, [activePortfolioId, canPersistPortfolioData, researchHistory]);
+  useEffect(() => { if (canPersistPortfolioData && portfolioNotes) savePortfolioData(activePortfolioId, "notes-v1", portfolioNotes); }, [activePortfolioId, canPersistPortfolioData, portfolioNotes]);
 
   // derived
   const H = holdings || [];
@@ -661,6 +1056,25 @@ export default function App() {
   const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
   const totalPnl  = H.reduce((s,h)=>s+h.pnl,0);
   const retPct    = totalCost>0 ? totalPnl/totalCost*100 : 0;
+  const portfolioSummaries = portfolios.map(portfolio => {
+    const storedHoldings = portfolio.id === activePortfolioId
+      ? H
+      : readStorageValue(pfKey(portfolio.id, "holdings-v2"));
+    const rows = Array.isArray(storedHoldings) ? storedHoldings : getPortfolioFallback(portfolio.id, "holdings-v2");
+    const holdingCount = Array.isArray(rows) ? rows.length : 0;
+    const portfolioValue = (rows || []).reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+    const portfolioCost = (rows || []).reduce((sum, item) => sum + ((Number(item.cost) || 0) * (Number(item.qty) || 0)), 0);
+    const portfolioPnl = (rows || []).reduce((sum, item) => sum + (Number(item.pnl) || 0), 0);
+    const portfolioRetPct = portfolioCost > 0 ? (portfolioPnl / portfolioCost) * 100 : 0;
+    return {
+      ...portfolio,
+      holdingCount,
+      totalValue: portfolioValue,
+      totalPnl: portfolioPnl,
+      retPct: portfolioRetPct,
+    };
+  });
+  const activePortfolio = portfolioSummaries.find(item => item.id === activePortfolioId) || portfolioSummaries[0] || null;
   const urgentCount = EVENTS.filter(e=>e.urgent).length;
 
   const sorted = [...H].sort((a,b)=>{
@@ -1003,18 +1417,20 @@ ${(researchHistory||[]).slice(0,5).map(r => {
       setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
 
       // 同步分析報告到雲端（不管大腦進化成不成功都要存）
-      fetch("/api/brain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save-analysis", data: report })
-      }).catch(() => {});
+      if (canUseCloud) {
+        fetch("/api/brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save-analysis", data: report })
+        }).catch(() => {});
+      }
 
       // 8. 策略大腦進化 — 讓 AI 更新策略知識庫
       setAnalyzeStep("策略大腦進化中...");
       if (aiInsight) {
         try {
           const NE = newsEvents || NEWS_EVENTS;
-          const pastEvents = NE.filter(e => e.status === "past");
+          const pastEvents = NE.filter(isClosedEvent);
           const hits = pastEvents.filter(e => e.correct === true).length;
           const total = pastEvents.filter(e => e.correct !== null).length;
 
@@ -1083,7 +1499,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       if (idx < 0) return arr;
       arr[idx] = {
         ...arr[idx],
-        status: "past",
+        status: "closed",
         actual: reviewForm.actual,
         actualNote: reviewForm.actualNote,
         correct: arr[idx].pred === reviewForm.actual,
@@ -1178,7 +1594,7 @@ ${JSON.stringify(strategyBrain)}
   const generateWeeklyReport = () => {
     const today = new Date().toLocaleDateString("zh-TW");
     const NE = newsEvents || NEWS_EVENTS;
-    const pastEvents = NE.filter(e => e.status === "past");
+    const pastEvents = NE.filter(isClosedEvent);
     const pendingEvents = NE.filter(e => e.status === "pending");
     const hits = pastEvents.filter(e => e.correct === true).length;
     const total = pastEvents.filter(e => e.correct !== null).length;
@@ -1261,12 +1677,31 @@ ${recentAnalyses || "尚無分析紀錄"}
 
   const exportLocalBackup = () => {
     try {
-      const storage = {};
-      LOCAL_BACKUP_FIELDS.forEach(({ key }) => {
-        const raw = localStorage.getItem(key);
-        if (raw == null) return;
-        storage[key] = JSON.parse(raw);
-      });
+      const storage = collectPortfolioBackupStorage();
+      storage[PORTFOLIOS_KEY] = portfolios;
+      storage[ACTIVE_PORTFOLIO_KEY] = activePortfolioId;
+      storage[VIEW_MODE_KEY] = viewMode;
+      storage[SCHEMA_VERSION_KEY] = CURRENT_SCHEMA_VERSION;
+
+      const liveSnapshot = {
+        holdings,
+        tradeLog,
+        targets,
+        newsEvents,
+        analysisHistory,
+        dailyReport,
+        reversalConditions,
+        strategyBrain,
+        researchHistory,
+        portfolioNotes,
+      };
+
+      for (const [alias, value] of Object.entries(liveSnapshot)) {
+        const suffix = PORTFOLIO_ALIAS_TO_SUFFIX[alias];
+        if (!suffix || value === undefined) continue;
+        storage[pfKey(activePortfolioId, suffix)] = value;
+      }
+
       if (Object.keys(storage).length === 0) {
         setSaved("⚠️ 目前沒有可匯出的本機資料");
         setTimeout(() => setSaved(""), 3000);
@@ -1294,6 +1729,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     if (!file) return;
     if (!confirm("匯入會覆蓋這個瀏覽器目前的本機資料；未包含在備份檔內的項目不會被改動。確定繼續？")) return;
 
+    let nextPid = activePortfolioId;
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
@@ -1303,31 +1739,54 @@ ${recentAnalyses || "尚無分析紀錄"}
         throw new Error("備份檔內沒有可識別的資料");
       }
 
-      for (const { key } of LOCAL_BACKUP_FIELDS) {
-        if (!Object.prototype.hasOwnProperty.call(storage, key)) continue;
-        await save(key, storage[key]);
+      const normalizedStorage = { ...storage };
+      const importedPortfolios = buildPortfoliosFromStorage(normalizedStorage);
+      normalizedStorage[PORTFOLIOS_KEY] = importedPortfolios;
+      normalizedStorage[ACTIVE_PORTFOLIO_KEY] =
+        typeof normalizedStorage[ACTIVE_PORTFOLIO_KEY] === "string" &&
+        importedPortfolios.some(item => item.id === normalizedStorage[ACTIVE_PORTFOLIO_KEY])
+          ? normalizedStorage[ACTIVE_PORTFOLIO_KEY]
+          : OWNER_PORTFOLIO_ID;
+      normalizedStorage[VIEW_MODE_KEY] = PORTFOLIO_VIEW_MODE;
+      normalizedStorage[SCHEMA_VERSION_KEY] = CURRENT_SCHEMA_VERSION;
+
+      portfolioTransitionRef.current = {
+        isHydrating: true,
+        fromPid: activePortfolioId,
+        toPid: normalizedStorage[ACTIVE_PORTFOLIO_KEY],
+      };
+
+      for (const [key, value] of Object.entries(normalizedStorage)) {
+        await save(key, value);
       }
 
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-holdings-v2")) setHoldings(storage["pf-holdings-v2"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-log-v2")) setTradeLog(storage["pf-log-v2"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-targets-v1")) setTargets(storage["pf-targets-v1"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-news-events-v1")) setNewsEvents(storage["pf-news-events-v1"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-analysis-history-v1")) setAnalysisHistory(storage["pf-analysis-history-v1"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-reversal-v1")) setReversalConditions(storage["pf-reversal-v1"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-brain-v1")) setStrategyBrain(storage["pf-brain-v1"]);
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-research-history-v1")) setResearchHistory(storage["pf-research-history-v1"]);
+      const registry = await ensurePortfolioRegistry();
+      nextPid = registry.activePortfolioId;
+      const snapshot = await loadPortfolioSnapshot(nextPid);
 
-      if (Object.prototype.hasOwnProperty.call(storage, "pf-daily-report-v1")) {
-        setDailyReport(storage["pf-daily-report-v1"]);
-      } else if (Object.prototype.hasOwnProperty.call(storage, "pf-analysis-history-v1")) {
-        setDailyReport(storage["pf-analysis-history-v1"]?.[0] || null);
-      }
+      setPortfolios(registry.portfolios);
+      setActivePortfolioId(nextPid);
+      setViewMode(registry.viewMode);
+      applyPortfolioSnapshot(snapshot);
 
-      setSaved(`✅ 已匯入 ${Object.keys(storage).length} 項本機資料`);
+      const cloudEnabled = registry.viewMode === PORTFOLIO_VIEW_MODE && nextPid === OWNER_PORTFOLIO_ID;
+      cloudSyncStateRef.current = {
+        enabled: cloudEnabled,
+        syncedAt: cloudEnabled ? readSyncAt("pf-cloud-sync-at") : 0,
+      };
+      setCloudSync(cloudEnabled);
+
+      setSaved(`✅ 已匯入 ${Object.keys(normalizedStorage).length} 項本機資料`);
       setTimeout(() => setSaved(""), 4000);
     } catch (err) {
       console.error("匯入備份失敗:", err);
       alert(`匯入失敗：${err.message || "JSON 格式不正確"}`);
+    } finally {
+      portfolioTransitionRef.current = {
+        isHydrating: false,
+        fromPid: nextPid,
+        toPid: nextPid,
+      };
     }
   };
 
@@ -1454,6 +1913,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         meta: STOCK_META,
         brain: strategyBrain,
         mode,
+        persist: canUseCloud,
       };
       // evolve 模式需要事件紀錄和分析歷史
       if (mode === "evolve") {
@@ -2551,8 +3011,10 @@ ${recentAnalyses || "尚無分析紀錄"}
                     <button onClick={()=>{
                       if (confirm("確定要重置策略大腦？")) {
                         setStrategyBrain(null);
-                        save("pf-brain-v1", null);
-                        fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-brain",data:null})}).catch(()=>{});
+                        savePortfolioData(activePortfolioId, "brain-v1", null);
+                        if (canUseCloud) {
+                          fetch("/api/brain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save-brain",data:null})}).catch(()=>{});
+                        }
                       }
                     }} style={{fontSize:9,padding:"2px 7px",borderRadius:4,border:`1px solid ${alpha(C.up, A.line)}`,background:"transparent",color:C.up,cursor:"pointer"}}>
                       重置
@@ -2973,7 +3435,7 @@ ${recentAnalyses || "尚無分析紀錄"}
         {/* ══════════ NEWS ANALYSIS ══════════ */}
         {tab==="news" && (()=>{
           const NE = newsEvents || NEWS_EVENTS;
-          const past    = NE.filter(e=>e.status==="past").sort((a,b)=>b.id-a.id);
+          const past    = NE.filter(isClosedEvent).sort((a,b)=>b.id-a.id);
           const pending = NE.filter(e=>e.status==="pending").sort((a,b)=>a.id-b.id);
           const hits    = NE.filter(e=>e.correct===true).length;
           const misses  = NE.filter(e=>e.correct===false).length;
@@ -2989,7 +3451,7 @@ ${recentAnalyses || "尚無分析紀錄"}
           const renderEvent = (e, idx) => {
             const open   = expandedNews.has(e.id);
             const isCorrect = e.correct;
-            const borderC = e.status==="past"
+            const borderC = isClosedEvent(e)
               ? (isCorrect===true ? alpha(C.olive, A.solid) : isCorrect===false ? alpha(C.up, A.solid) : C.border)
               : alpha(predC(e.pred), A.strongLine);
 
@@ -3032,7 +3494,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
                   {/* 右側狀態 */}
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
-                    {e.status==="past" && isCorrect!==null && (
+                    {isClosedEvent(e) && isCorrect!==null && (
                       <span style={{
                         fontSize:9, fontWeight:600, padding:"2px 7px", borderRadius:20,
                         background: isCorrect ? C.oliveBg : C.upBg,

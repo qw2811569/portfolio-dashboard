@@ -248,6 +248,14 @@ npm run dev
 
 如果 Claude 要接手，先讀這些檔，再讀 spec / plan。
 
+## 工作紀律（必讀）
+
+1. **資料在手就直接做，不要再「確認一下」**：如果已經讀過檔案、拿到 PDF 內容、知道色板，就直接動手寫，不要再花 Read/Grep 去重複驗證已知資訊。
+2. **能用 Read 讀 3 行解決的，不要開 Agent**：Agent 每次消耗大量 token。只有真正需要跨多檔案深度探索時才用，單一檔案定位用 Grep + Read。
+3. **生成靜態內容不需要探索 codebase**：寫 HTML 報告、渲染 PDF 這類任務，拿到資料和樣式就直接寫，不要繞回去讀 App 程式碼。
+4. **省 token 意識**：用戶有每日額度限制，每一次 tool call 都在消耗額度。能一次做完的不要分三次，能 parallel 的不要 sequential。
+5. **Plan mode 探索上限**：Phase 1 最多開 2 個 Explore agent，不要 3 個都開滿。如果任務範圍明確（比如只改 prompt 文字），直接 Read 目標行數即可，完全不需要 agent。
+
 ## 接力建議
 
 如果下一個 Claude 要繼續做事，推薦順序：

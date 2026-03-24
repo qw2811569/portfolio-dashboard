@@ -768,6 +768,150 @@ function brainRuleText(rule) {
   return String(rule.text || rule.rule || "").trim();
 }
 
+function normalizeBrainRuleStaleness(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["fresh", "aging", "stale", "missing"].includes(normalized) ? normalized : "";
+}
+
+function brainRuleStalenessLabel(value) {
+  switch (normalizeBrainRuleStaleness(value)) {
+    case "fresh":
+      return "新鮮";
+    case "aging":
+      return "待更新";
+    case "stale":
+      return "陳舊";
+    case "missing":
+      return "未驗證";
+    default:
+      return "";
+  }
+}
+
+function brainRuleStalenessRank(value) {
+  switch (normalizeBrainRuleStaleness(value)) {
+    case "fresh":
+      return 3;
+    case "aging":
+      return 2;
+    case "stale":
+      return 1;
+    case "missing":
+    default:
+      return 0;
+  }
+}
+
+function normalizeBrainEvidenceType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["analysis", "research", "review", "event", "fundamental", "target", "report", "dossier", "note"].includes(normalized)
+    ? normalized
+    : "note";
+}
+
+function normalizeBrainEvidenceRef(value) {
+  if (typeof value === "string") {
+    const label = value.trim();
+    return label ? { type: "note", refId: null, code: null, label, date: null } : null;
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const label = String(value.label || value.text || value.title || "").trim();
+  if (!label) return null;
+  return {
+    type: normalizeBrainEvidenceType(value.type),
+    refId: String(value.refId || value.id || "").trim() || null,
+    code: String(value.code || "").trim() || null,
+    label,
+    date: String(value.date || value.updatedAt || "").trim() || null,
+  };
+}
+
+function normalizeBrainEvidenceRefs(value) {
+  return Array.isArray(value)
+    ? value.map(normalizeBrainEvidenceRef).filter(Boolean).slice(0, 8)
+    : [];
+}
+
+function latestBrainEvidenceDate(lastValidatedAt, evidenceRefs) {
+  const candidates = [
+    lastValidatedAt,
+    ...(Array.isArray(evidenceRefs) ? evidenceRefs.map(ref => ref?.date).filter(Boolean) : []),
+  ]
+    .map(item => ({ raw: item, parsed: parseFlexibleDate(item) }))
+    .filter(item => item.parsed);
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.parsed.getTime() - a.parsed.getTime());
+  return candidates[0].raw;
+}
+
+function deriveBrainRuleStaleness({ lastValidatedAt = null, evidenceRefs = [] } = {}, { now = new Date() } = {}) {
+  const latestDate = latestBrainEvidenceDate(lastValidatedAt, evidenceRefs);
+  if (!latestDate) return "missing";
+  const freshness = computeStaleness(latestDate, 30, { now });
+  if (freshness === "fresh") return "fresh";
+  const age = daysSince(latestDate, now);
+  if (age == null) return "missing";
+  return age <= 90 ? "aging" : "stale";
+}
+
+function deriveBrainRuleValidationScore({ confidence = null, evidenceCount = 0, staleness = "", status = "active" } = {}) {
+  const hasConfidence = Number.isFinite(confidence);
+  const hasEvidence = Number.isFinite(evidenceCount) && evidenceCount > 0;
+  const normalizedStaleness = normalizeBrainRuleStaleness(staleness);
+  if (!hasConfidence && !hasEvidence && !["fresh", "aging", "stale"].includes(normalizedStaleness)) return null;
+
+  let score = hasConfidence ? Math.round((confidence / 10) * 55) : 25;
+  score += hasEvidence ? Math.min(30, Math.round(evidenceCount) * 6) : 0;
+
+  if (normalizedStaleness === "fresh") score += 15;
+  if (normalizedStaleness === "aging") score += 7;
+  if (normalizedStaleness === "stale") score -= 8;
+  if (normalizedStaleness === "missing") score -= 12;
+
+  if (status === "candidate") score = Math.min(score, 69);
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function brainRuleEvidenceSummary(evidenceRefs, { limit = 2 } = {}) {
+  const refs = Array.isArray(evidenceRefs) ? evidenceRefs.filter(Boolean) : [];
+  if (refs.length === 0) return "";
+  const labels = refs
+    .map(ref => String(ref?.label || "").trim())
+    .filter(Boolean)
+    .slice(0, limit);
+  if (labels.length === 0) return `證據${refs.length}筆`;
+  return `證據${refs.length}筆：${labels.join("、")}${refs.length > limit ? "…" : ""}`;
+}
+
+function brainRuleMetaParts(rule, { includeEvidencePreview = false } = {}) {
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) return [];
+  return [
+    rule.when ? `條件:${rule.when}` : null,
+    rule.action ? `動作:${rule.action}` : null,
+    rule.scope ? `範圍:${rule.scope}` : null,
+    rule.confidence != null ? `信心${rule.confidence}/10` : null,
+    rule.evidenceCount > 0 ? `驗證${rule.evidenceCount}次` : null,
+    rule.validationScore != null ? `驗證分${rule.validationScore}` : null,
+    rule.lastValidatedAt ? `最近驗證${rule.lastValidatedAt}` : null,
+    rule.staleness ? `狀態:${brainRuleStalenessLabel(rule.staleness)}` : null,
+    rule.checklistStage ? `檢查點:${brainChecklistStageLabel(rule.checklistStage)}` : null,
+    includeEvidencePreview ? brainRuleEvidenceSummary(rule.evidenceRefs) : null,
+  ].filter(Boolean);
+}
+
+function compareBrainRulesByStrength(a, b) {
+  const scoreDiff = (Number(b?.validationScore) || -1) - (Number(a?.validationScore) || -1);
+  if (scoreDiff !== 0) return scoreDiff;
+  const freshnessDiff = brainRuleStalenessRank(b?.staleness) - brainRuleStalenessRank(a?.staleness);
+  if (freshnessDiff !== 0) return freshnessDiff;
+  const evidenceDiff = (Number(b?.evidenceCount) || 0) - (Number(a?.evidenceCount) || 0);
+  if (evidenceDiff !== 0) return evidenceDiff;
+  const confidenceDiff = (Number(b?.confidence) || 0) - (Number(a?.confidence) || 0);
+  if (confidenceDiff !== 0) return confidenceDiff;
+  return brainRuleText(a).localeCompare(brainRuleText(b), "zh-Hant");
+}
+
 function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "active" } = {}) {
   const text = brainRuleText(rule);
   if (!text) return null;
@@ -781,7 +925,10 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
       scope: "",
       confidence: null,
       evidenceCount: 0,
+      validationScore: null,
       lastValidatedAt: null,
+      staleness: "missing",
+      evidenceRefs: [],
       status: defaultStatus,
       source: defaultSource,
       checklistStage: "",
@@ -790,9 +937,24 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
   }
 
   const confidence = Number(rule.confidence);
-  const evidenceCount = Number(rule.evidenceCount ?? rule.evidence ?? 0);
+  const evidenceRefs = normalizeBrainEvidenceRefs(rule.evidenceRefs);
+  const evidenceCount = Number(rule.evidenceCount ?? rule.evidence ?? evidenceRefs.length ?? 0);
+  const lastValidatedAt = String(rule.lastValidatedAt || "").trim() || null;
   const source = ["ai", "user", "coach", "system"].includes(rule.source) ? rule.source : defaultSource;
   const status = ["active", "candidate", "archived"].includes(rule.status) ? rule.status : defaultStatus;
+  const normalizedEvidenceCount = Number.isFinite(evidenceCount) ? Math.max(0, Math.round(evidenceCount)) : 0;
+  const staleness = normalizeBrainRuleStaleness(rule.staleness)
+    || deriveBrainRuleStaleness({ lastValidatedAt, evidenceRefs });
+  const explicitValidationScore = Number(rule.validationScore);
+  const normalizedConfidence = Number.isFinite(confidence) ? Math.max(1, Math.min(10, Math.round(confidence))) : null;
+  const validationScore = Number.isFinite(explicitValidationScore)
+    ? Math.max(0, Math.min(100, Math.round(explicitValidationScore)))
+    : deriveBrainRuleValidationScore({
+      confidence: normalizedConfidence,
+      evidenceCount: normalizedEvidenceCount,
+      staleness,
+      status,
+    });
   return {
     id: String(rule.id || "").trim() || null,
     text,
@@ -800,9 +962,12 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
     action: String(rule.action || "").trim(),
     avoid: String(rule.avoid || "").trim(),
     scope: String(rule.scope || "").trim(),
-    confidence: Number.isFinite(confidence) ? Math.max(1, Math.min(10, Math.round(confidence))) : null,
-    evidenceCount: Number.isFinite(evidenceCount) ? Math.max(0, Math.round(evidenceCount)) : 0,
-    lastValidatedAt: String(rule.lastValidatedAt || "").trim() || null,
+    confidence: normalizedConfidence,
+    evidenceCount: normalizedEvidenceCount,
+    validationScore,
+    lastValidatedAt,
+    staleness,
+    evidenceRefs,
     status,
     source,
     checklistStage: normalizeBrainChecklistStage(rule.checklistStage),
@@ -814,14 +979,7 @@ function brainRuleSummary(rule, { includeMeta = false } = {}) {
   const text = brainRuleText(rule);
   if (!text) return "";
   if (!includeMeta || !rule || typeof rule !== "object" || Array.isArray(rule)) return text;
-  const meta = [];
-  if (rule.when) meta.push(`條件:${rule.when}`);
-  if (rule.action) meta.push(`動作:${rule.action}`);
-  if (rule.scope) meta.push(`範圍:${rule.scope}`);
-  if (rule.confidence != null) meta.push(`信心${rule.confidence}/10`);
-  if (rule.evidenceCount > 0) meta.push(`驗證${rule.evidenceCount}次`);
-  if (rule.lastValidatedAt) meta.push(`最近驗證${rule.lastValidatedAt}`);
-  if (rule.checklistStage) meta.push(`檢查點:${brainChecklistStageLabel(rule.checklistStage)}`);
+  const meta = brainRuleMetaParts(rule, { includeEvidencePreview: false });
   return meta.length > 0 ? `${text}（${meta.join("｜")}）` : text;
 }
 
@@ -871,7 +1029,7 @@ function formatBrainChecklistsForPrompt(checklists) {
 
 function createEmptyStrategyBrain() {
   return {
-    version: 2,
+    version: 3,
     rules: [],
     candidateRules: [],
     checklists: createEmptyBrainChecklists(),
@@ -946,7 +1104,7 @@ function mergeBrainPreservingCoachLessons(nextBrain, currentBrain) {
 
   const hasField = (key) => Object.prototype.hasOwnProperty.call(nextBrain || {}, key);
   const merged = {
-    version: 2,
+    version: 3,
     rules: hasField("rules") ? (normalizedNext?.rules || []) : (normalizedCurrent?.rules || []),
     candidateRules: hasField("candidateRules") ? (normalizedNext?.candidateRules || []) : (normalizedCurrent?.candidateRules || []),
     checklists: hasField("checklists")
@@ -1470,8 +1628,14 @@ function buildHoldingDossiers({
       : "missing";
 
     const brainTokens = buildBrainTokens(holding, meta);
-    const matchedRules = (brain.rules || []).filter(rule => textMatchesBrainTokens(rule, brainTokens)).slice(0, 5);
-    const matchedCandidateRules = (brain.candidateRules || []).filter(rule => textMatchesBrainTokens(rule, brainTokens)).slice(0, 3);
+    const matchedRules = (brain.rules || [])
+      .filter(rule => textMatchesBrainTokens(rule, brainTokens))
+      .sort(compareBrainRulesByStrength)
+      .slice(0, 5);
+    const matchedCandidateRules = (brain.candidateRules || [])
+      .filter(rule => textMatchesBrainTokens(rule, brainTokens))
+      .sort(compareBrainRulesByStrength)
+      .slice(0, 3);
     const matchedMistakes = (brain.commonMistakes || []).filter(item => textMatchesBrainTokens(item, brainTokens)).slice(0, 5);
     const matchedLessons = (brain.lessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
     const matchedCoachLessons = (brain.coachLessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
@@ -3639,10 +3803,13 @@ ${JSON.stringify(blindPredictions, null, 0)}
 ## 🧬 BRAIN_UPDATE
 最後，根據今日分析結果更新策略大腦。用 \`\`\`json 包裹，結構：
 \`\`\`json
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用標的或情境","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"待驗證情境","action":"若成立要做什麼","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期","evolution":"這次更新一句話摘要"}
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用標的或情境","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"待驗證情境","action":"若成立要做什麼","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期","evolution":"這次更新一句話摘要"}
 \`\`\`
 - rules：保留已驗證、可重複使用的核心規則，最多12條
 - candidateRules：尚待驗證的新規則，最多6條，不要直接混進核心規則
+- validationScore：0-100，反映規則目前被支持的強度
+- staleness：標註規則是否新鮮、待更新、陳舊或尚未驗證
+- evidenceRefs：盡量附上 1-3 個證據來源，優先引用本 App 已有的 analysis / research / events / targets / fundamentals
 - checklists：把最重要的規則整理成進場前 / 加碼前 / 出場前檢查表
 - lessons：保留舊的+加入今日新教訓（只加有意義的）
 - commonMistakes：反覆出現的錯誤模式
@@ -3789,10 +3956,13 @@ ${eventSummary}
             body: JSON.stringify({
               systemPrompt: `你是策略知識庫管理器。根據今日分析結果，更新策略大腦。
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要"}
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要"}
 
 規則：基於累積經驗的核心交易策略（最多12條，去掉過時的）
 candidateRules：新的待驗證假設（最多6條）
+validationScore：0-100，反映規則目前的可用度
+staleness：標註規則是否已過期或待更新
+evidenceRefs：盡量附 1-3 個來自 analysis / research / events / targets / fundamentals 的證據
 checklists：把規則整理成進場前 / 加碼前 / 出場前檢查表
 教訓：今日新增的具體教訓（只加新的，保留舊的）
 常犯錯誤：反覆出現的錯誤模式`,
@@ -3969,7 +4139,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 3. 更新策略大腦的規則和教訓
 
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
             userPrompt: `事件：${evt.title}
 ${notesContext}
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
@@ -4030,7 +4200,7 @@ ${JSON.stringify(currentBrain)}
 7. 產生一份「整理摘要」說明你做了什麼改動。
 
 回傳**純JSON**格式：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","evolution":"一句話摘要","cleanupSummary":"整理摘要"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","evolution":"一句話摘要","cleanupSummary":"整理摘要"}`,
           userPrompt: `今日日期：${toSlashDate()}
 
 目前策略大腦：
@@ -6357,19 +6527,19 @@ ${recentAnalyses || "尚無分析紀錄"}
                 {(strategyBrain.rules||[]).length>0 && (
                   <div style={{marginTop:8,marginBottom:8}}>
                     <div style={{fontSize:10,color:C.amber,fontWeight:600,marginBottom:4}}>核心策略規則</div>
-                    {strategyBrain.rules.map((r,i)=>(
+                    {strategyBrain.rules.slice().sort(compareBrainRulesByStrength).map((r,i)=>(
                       <div key={i} style={{fontSize:10,color:C.textSec,lineHeight:1.7,
                         padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
                         <div>{i+1}. {brainRuleText(r)}</div>
-                        {(r.when || r.action || r.scope || r.confidence != null || r.evidenceCount > 0) && (
+                        {(r.when || r.action || r.scope || r.confidence != null || r.evidenceCount > 0 || r.validationScore != null || r.staleness || (r.evidenceRefs||[]).length > 0) && (
                           <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
-                            {[
-                              r.when ? `條件：${r.when}` : null,
-                              r.action ? `動作：${r.action}` : null,
-                              r.scope ? `範圍：${r.scope}` : null,
-                              r.confidence != null ? `信心 ${r.confidence}/10` : null,
-                              r.evidenceCount > 0 ? `驗證 ${r.evidenceCount} 次` : null,
-                            ].filter(Boolean).join(" ｜ ")}
+                            {brainRuleMetaParts(r, { includeEvidencePreview: false }).map(item => item.replaceAll(":", "：")).join(" ｜ ")}
+                          </div>
+                        )}
+                        {(r.evidenceRefs||[]).length > 0 && (
+                          <div style={{fontSize:9,color:C.blue,lineHeight:1.5,marginTop:2}}>
+                            證據來源：{(r.evidenceRefs || []).slice(0, 3).map(ref => ref.label).join("、")}
+                            {(r.evidenceRefs || []).length > 3 ? "…" : ""}
                           </div>
                         )}
                       </div>
@@ -6380,17 +6550,25 @@ ${recentAnalyses || "尚無分析紀錄"}
                 {(strategyBrain.candidateRules||[]).length>0 && (
                   <div style={{marginBottom:8}}>
                     <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:4}}>候選規則（待驗證）</div>
-                    {strategyBrain.candidateRules.map((rule, i)=>(
+                    {strategyBrain.candidateRules.slice().sort(compareBrainRulesByStrength).map((rule, i)=>(
                       <div key={`candidate-${i}`} style={{fontSize:10,color:C.textSec,lineHeight:1.7,padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
                         <div>{i+1}. {brainRuleText(rule)}</div>
-                        {(rule.when || rule.action || rule.confidence != null || rule.evidenceCount > 0) && (
+                        {(rule.when || rule.action || rule.confidence != null || rule.evidenceCount > 0 || rule.validationScore != null || rule.staleness || (rule.evidenceRefs||[]).length > 0) && (
                           <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
                             {[
                               rule.when ? `情境：${rule.when}` : null,
-                              rule.action ? `若成立動作：${rule.action}` : null,
+                              rule.action ? `動作：${rule.action}` : null,
                               rule.confidence != null ? `信心 ${rule.confidence}/10` : null,
                               rule.evidenceCount > 0 ? `驗證 ${rule.evidenceCount} 次` : null,
+                              rule.validationScore != null ? `驗證分 ${rule.validationScore}` : null,
+                              rule.staleness ? `狀態：${brainRuleStalenessLabel(rule.staleness)}` : null,
                             ].filter(Boolean).join(" ｜ ")}
+                          </div>
+                        )}
+                        {(rule.evidenceRefs||[]).length > 0 && (
+                          <div style={{fontSize:9,color:C.blue,lineHeight:1.5,marginTop:2}}>
+                            證據來源：{(rule.evidenceRefs || []).slice(0, 3).map(ref => ref.label).join("、")}
+                            {(rule.evidenceRefs || []).length > 3 ? "…" : ""}
                           </div>
                         )}
                       </div>

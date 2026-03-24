@@ -28,10 +28,44 @@ Use `Qwen Code` as the low-cost coding agent and `AnythingLLM` as the local know
 
 In this repo, open the command palette or `Terminal -> Run Task` and use:
 
+- `Claude Code: Launch via Ollama`
+- `Claude Code: Launch via Ollama (Print Test)`
 - `Qwen Code: Launch In Repo`
 - `AnythingLLM: Open Desktop App`
 - `Ollama: Start Local Service`
+- `Ollama: Restart Local Service (64K Context)`
 - `Ollama: Show Running Models`
+
+## Claude Code Over Ollama
+
+This repo now includes a local launcher at:
+
+- `scripts/launch-claude-ollama.sh`
+
+Default model:
+
+- `qwen3:14b`
+
+Recommended usage:
+
+- use this path when you want Claude Code UX with lower model cost
+- keep it for low-risk drafting, synthesis, and first-pass strategy thinking
+- do not treat local Ollama output as the final authority for strategy logic or client-facing correctness
+
+If you want to override the model:
+
+```bash
+CLAUDE_OLLAMA_MODEL=qwen3:14b ./scripts/launch-claude-ollama.sh
+```
+
+If you want a larger coding context, restart Ollama with:
+
+```bash
+launchctl setenv OLLAMA_CONTEXT_LENGTH 65536
+brew services restart ollama
+```
+
+That follows Ollama's own guidance that coding tools and agents should use at least `64000` tokens of context when possible.
 
 ## First Run
 
@@ -66,6 +100,14 @@ In this repo, open the command palette or `Terminal -> Run Task` and use:
 - code cleanup
 - first-pass code review
 - repetitive implementation work after the architecture is already decided
+
+### Use Claude Code over Ollama for
+
+- rough drafting of prompts
+- candidate-rule extraction from notes or reviews
+- checklist drafting
+- cheaper first-pass analysis of strategy notes
+- low-risk synthesis before handing decisions back to Codex
 
 ### Use AnythingLLM for
 
@@ -143,6 +185,7 @@ Use `AnythingLLM` first to digest documents, then use `Qwen Code` for implementa
 ## Suggested Usage Policy
 
 - Default coding: `Qwen Code`
+- Default low-cost drafting: `Claude Code over Ollama`
 - Default document retrieval: `AnythingLLM`
 - Final validation: `Codex`
 

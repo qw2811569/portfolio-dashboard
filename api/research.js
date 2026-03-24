@@ -135,6 +135,26 @@ function brainRuleText(rule) {
   return String(rule.text || rule.rule || '').trim();
 }
 
+function brainRuleStalenessLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'fresh') return '新鮮';
+  if (normalized === 'aging') return '待更新';
+  if (normalized === 'stale') return '陳舊';
+  if (normalized === 'missing') return '未驗證';
+  return '';
+}
+
+function brainRuleEvidenceSummary(evidenceRefs, limit = 2) {
+  const refs = Array.isArray(evidenceRefs) ? evidenceRefs.filter(Boolean) : [];
+  if (refs.length === 0) return null;
+  const labels = refs
+    .map(ref => String(ref?.label || '').trim())
+    .filter(Boolean)
+    .slice(0, limit);
+  if (labels.length === 0) return `證據${refs.length}筆`;
+  return `證據${refs.length}筆：${labels.join('、')}${refs.length > limit ? '…' : ''}`;
+}
+
 function brainRuleSummary(rule) {
   const text = brainRuleText(rule);
   if (!text) return '';
@@ -145,6 +165,10 @@ function brainRuleSummary(rule) {
     rule.scope ? `範圍:${rule.scope}` : null,
     Number.isFinite(Number(rule.confidence)) ? `信心${Math.round(Number(rule.confidence))}/10` : null,
     Number.isFinite(Number(rule.evidenceCount)) && Number(rule.evidenceCount) > 0 ? `驗證${Math.round(Number(rule.evidenceCount))}次` : null,
+    Number.isFinite(Number(rule.validationScore)) ? `驗證分${Math.round(Number(rule.validationScore))}` : null,
+    rule.lastValidatedAt ? `最近驗證${rule.lastValidatedAt}` : null,
+    brainRuleStalenessLabel(rule.staleness) ? `狀態:${brainRuleStalenessLabel(rule.staleness)}` : null,
+    brainRuleEvidenceSummary(rule.evidenceRefs) || null,
   ].filter(Boolean);
   return meta.length > 0 ? `${text}（${meta.join('｜')}）` : text;
 }
@@ -431,7 +455,7 @@ ${histSummary || "（無紀錄）"}
       // ── Round 4：更新策略大腦（JSON output）──
       const newBrainText = await callClaude(
         `基於所有研究和診斷結果，輸出更新後的策略大腦。回傳**純JSON**（不要markdown code block）。
-結構：{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
+結構：{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
         `個股研究：\n${stockSummaryText}\n\n系統診斷：\n${diag}\n\n進化建議：\n${evolveAdvice}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出進化後的策略大腦。保留有效的舊規則，加入新的。`
       );
 

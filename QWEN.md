@@ -53,6 +53,16 @@ Main frontend is still concentrated in `src/App.jsx`.
 - AI prompt / output quality changes
 - client-facing report correctness
 
+## Coordination Rule
+
+- Read `docs/superpowers/status/current-work.md` before starting.
+- Only take slices that are clearly low-risk implementation work.
+- After each batch, write back:
+  - `started`
+  - `changed files`
+  - `ready for review`
+- If the user says stop, finish the current small batch only and leave the next exact edit target in `current-work.md`.
+
 ## Local Dev Notes
 
 - full app mode: `vercel dev`

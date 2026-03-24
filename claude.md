@@ -1,6 +1,6 @@
 # Claude Handoff
 
-最後更新：2026-03-24
+最後更新：2026-03-25
 
 ## 專案是什麼
 
@@ -31,6 +31,8 @@
 - Claude 台股分析工具手冊：[docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md)
 - Holding dossier / 資料更新架構：[docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md)
 - 客戶報告製作手冊：[docs/superpowers/specs/2026-03-24-client-report-production-playbook.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-client-report-production-playbook.md)
+- Qwen / AnythingLLM / Claude 本機分工手冊：[docs/superpowers/specs/2026-03-25-qwen-anythingllm-setup-and-division.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-25-qwen-anythingllm-setup-and-division.md)
+- 策略大腦 V2 多模型分工計畫：[docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md](/Users/chenkuichen/APP/test/docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md)
 
 ## 已完成的重點
 
@@ -202,6 +204,40 @@ npm run dev
 
 只適合純前端畫面調整，不適合測完整功能。
 
+## 本機 LLM 入口
+
+這台機器目前已裝好：
+
+- `Qwen Code`
+- `AnythingLLM`
+- `Ollama`
+- `Claude Code`
+
+在這個 repo 內的 VSCode 任務可直接用：
+
+- `Claude Code: Launch via Ollama`
+- `Claude Code: Launch via Ollama (Print Test)`
+- `Qwen Code: Launch In Repo`
+- `AnythingLLM: Open Desktop App`
+- `Ollama: Start Local Service`
+- `Ollama: Restart Local Service (64K Context)`
+- `Ollama: Show Running Models`
+
+`Claude Code -> Ollama` 的入口腳本在：
+
+- [scripts/launch-claude-ollama.sh](/Users/chenkuichen/APP/test/scripts/launch-claude-ollama.sh)
+
+預設模型：
+
+- `qwen3:14b`
+
+用途建議：
+
+- `Claude Code over Ollama`：低成本草稿、規則整理、checklist 初稿
+- `Qwen Code`：低風險工程實作
+- `AnythingLLM`：文件檢索 / PDF / 研究資料整理
+- `Codex`：高風險邏輯、prompt 契約、最終驗收
+
 ## 關鍵檔案
 
 - 主前端：[src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx)
@@ -217,11 +253,11 @@ npm run dev
 
 優先建議：
 
-1. 手動 smoke test
-2. watchlist 編輯 UI（現在已是 per-portfolio，但還沒有完整新增/編輯/刪除介面）
-3. 接力計畫資料改成可編輯，而不是常數
-4. 做 `LOCAL_ONLY_MODE`，在沒有 AI / cloud 時自動降級
-5. 補 `.env.example`
+1. 策略大腦 V2：證據鏈、驗證分數、規則升降級
+2. 收盤分析改成先驗證規則，再新增規則
+3. 在持股 dossier / UI 顯示 brain 命中理由與資料新鮮度
+4. 手動 smoke test
+5. watchlist 編輯 UI（現在已是 per-portfolio，但還沒有完整新增/編輯/刪除介面）
 
 ## 手動 smoke test 清單
 
@@ -245,6 +281,8 @@ npm run dev
 - `api/parse.js`
 - `api/research.js`
 - `api/_lib/ai-provider.js`
+- `scripts/launch-claude-ollama.sh`
+- `docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md`
 
 如果 Claude 要接手，先讀這些檔，再讀 spec / plan。
 
@@ -255,6 +293,14 @@ npm run dev
 3. **生成靜態內容不需要探索 codebase**：寫 HTML 報告、渲染 PDF 這類任務，拿到資料和樣式就直接寫，不要繞回去讀 App 程式碼。
 4. **省 token 意識**：用戶有每日額度限制，每一次 tool call 都在消耗額度。能一次做完的不要分三次，能 parallel 的不要 sequential。
 5. **Plan mode 探索上限**：Phase 1 最多開 2 個 Explore agent，不要 3 個都開滿。如果任務範圍明確（比如只改 prompt 文字），直接 Read 目標行數即可，完全不需要 agent。
+
+## 協作契約（多模型）
+
+1. 開工前先讀 [current-work.md](/Users/chenkuichen/APP/test/docs/superpowers/status/current-work.md)。
+2. 先認領一個 task slice，再開始改檔，不要多個模型同時碰同一段高風險邏輯。
+3. 每完成一個有意義的 batch，就更新一次 `Latest checkpoint`。
+4. 如果用戶說「中斷」，只收完當前 batch，並在 5 分鐘內補好 `Stop-in-5-min fallback`。
+5. 不要替另一個模型把工作標成完成，除非已經驗證過結果。
 
 ## 接力建議
 

@@ -35,6 +35,10 @@ function deleteLocal(key) {
   } catch {}
 }
 
+function buildHistoryKey(report) {
+  return `${HISTORY_PREFIX}${report.date}-${report.id}.json`;
+}
+
 // ── Blob 讀寫（best-effort）──
 async function readBlob(blob) {
   const r = await fetch(blob.url);
@@ -73,22 +77,48 @@ async function write(key, data, opts) {
   try { await replaceSingleton(key, data, opts); } catch {}
 }
 
-async function updateHistoryIndex(report, opts) {
-  const current = readLocal(HISTORY_INDEX_KEY) || [];
-  const next = [report, ...current.filter(item => item.id !== report.id)]
-    .sort((a, b) => b.id - a.id)
+function normalizeHistoryReports(reports) {
+  const byDate = new Map();
+  (Array.isArray(reports) ? reports : []).forEach((report) => {
+    if (!report || typeof report !== 'object') return;
+    const key = report.date ? `date:${report.date}` : `id:${report.id}`;
+    const prev = byDate.get(key);
+    const reportId = Number(report.id) || 0;
+    const prevId = Number(prev?.id) || 0;
+    if (!prev || reportId >= prevId) {
+      byDate.set(key, report);
+    }
+  });
+  return Array.from(byDate.values())
+    .sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0))
     .slice(0, 30);
+}
+
+async function updateHistoryIndex(report, opts) {
+  const current = (await read(HISTORY_INDEX_KEY, opts)) || [];
+  const next = normalizeHistoryReports([report, ...current]);
   await write(HISTORY_INDEX_KEY, next, opts);
 }
 
 async function deleteHistoryReport(report, opts) {
   if (!report?.id || !report?.date) return;
-  const key = `${HISTORY_PREFIX}${report.date}-${report.id}.json`;
+  const key = buildHistoryKey(report);
   const current = (await read(HISTORY_INDEX_KEY, opts)) || [];
   const next = current.filter(item => item.id !== report.id);
   deleteLocal(key);
   await write(HISTORY_INDEX_KEY, next, opts);
   try { await del(key, opts); } catch {}
+}
+
+async function deleteHistoryReportsByDate(date, keepId, opts) {
+  if (!date) return;
+  const current = (await read(HISTORY_INDEX_KEY, opts)) || [];
+  const sameDateReports = current.filter(item => item?.date === date && item?.id !== keepId);
+  for (const report of sameDateReports) {
+    const key = buildHistoryKey(report);
+    deleteLocal(key);
+    try { await del(key, opts); } catch {}
+  }
 }
 
 export default async function handler(req, res) {
@@ -110,15 +140,22 @@ export default async function handler(req, res) {
 
       if (action === "history") {
         const cached = await read(HISTORY_INDEX_KEY, opts);
-        if (cached && cached.length > 0) return res.status(200).json({ history: cached });
+        if (cached && cached.length > 0) {
+          const normalized = normalizeHistoryReports(cached);
+          if (normalized.length !== cached.length) {
+            await write(HISTORY_INDEX_KEY, normalized, opts);
+          }
+          return res.status(200).json({ history: normalized });
+        }
         try {
           const { blobs } = await list({ prefix: HISTORY_PREFIX, ...opts });
           const history = [];
           for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
             history.push(await readBlob(blob));
           }
-          if (history.length > 0) writeLocal(HISTORY_INDEX_KEY, history);
-          return res.status(200).json({ history });
+          const normalized = normalizeHistoryReports(history);
+          if (normalized.length > 0) writeLocal(HISTORY_INDEX_KEY, normalized);
+          return res.status(200).json({ history: normalized });
         } catch {
           return res.status(200).json({ history: [] });
         }
@@ -143,7 +180,8 @@ export default async function handler(req, res) {
       }
 
       if (action === "save-analysis") {
-        const key = `${HISTORY_PREFIX}${data.date}-${data.id}.json`;
+        await deleteHistoryReportsByDate(data?.date, data?.id, opts);
+        const key = buildHistoryKey(data);
         writeLocal(key, data);
         try {
           await put(key, JSON.stringify(data), { contentType: 'application/json', access: 'public', addRandomSuffix: false, ...opts });

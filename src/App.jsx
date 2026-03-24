@@ -439,6 +439,10 @@ const MEMO_Q = {
 
 const PARSE_PROMPT = `你是台股券商成交回報截圖的解析器。解析截圖中的交易，以JSON格式輸出，不輸出其他文字：
 {"trades":[{"action":"買進或賣出","code":"代碼","name":"名稱","qty":股數,"price":成交價,"amount":金額或null}],"targetPriceUpdates":[{"code":"代碼","firm":"券商名稱","target":目標價數字,"date":"日期"}],"note":"有疑問時說明"}
+交易別判斷規則（極重要）：
+- 現買、融買、借資買 → action 一律填「買進」
+- 現賣、融賣、借券賣 → action 一律填「賣出」
+- 看「交易別」欄位的文字，不要用顏色或其他欄位猜測買賣方向
 targetPriceUpdates：如果截圖中有提到分析師目標價或研究報告目標價，請一併擷取。否則為空陣列。`;
 
 // ── helpers ─────────────────────────────────────────────────────
@@ -563,6 +567,24 @@ const CLOSED_EVENT_STATUSES = new Set(["past", "closed"]);
 
 function todayStorageDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeAnalysisHistoryEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  const byKey = new Map();
+  entries.forEach((entry) => {
+    if (!entry || typeof entry !== "object") return;
+    const key = entry.date ? `date:${entry.date}` : `id:${entry.id ?? Math.random()}`;
+    const prev = byKey.get(key);
+    const entryId = Number(entry.id) || 0;
+    const prevId = Number(prev?.id) || 0;
+    if (!prev || entryId >= prevId) {
+      byKey.set(key, entry);
+    }
+  });
+  return Array.from(byKey.values())
+    .sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0))
+    .slice(0, 30);
 }
 
 function getTaipeiClock(date = new Date()) {
@@ -1907,11 +1929,13 @@ export default function App() {
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const priceSyncInFlightRef = useRef(null);
   const backupFileInputRef = useRef(null);
+  const imgTypeRef = useRef("image/jpeg");
   const deferredQuery = useDeferredValue(scanQuery);
   const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
   const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
   const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
   const applyPortfolioSnapshot = (snapshot) => {
+    const normalizedAnalysisHistory = normalizeAnalysisHistoryEntries(snapshot.analysisHistory);
     setHoldings(applyMarketQuotesToHoldings(snapshot.holdings, marketPriceCache?.prices));
     setTradeLog(snapshot.tradeLog);
     setTargets(snapshot.targets);
@@ -1921,12 +1945,12 @@ export default function App() {
     setReportRefreshMeta(normalizeReportRefreshMeta(snapshot.reportRefreshMeta));
     setHoldingDossiers(normalizeHoldingDossiers(snapshot.holdingDossiers));
     setNewsEvents(normalizeNewsEvents(snapshot.newsEvents));
-    setAnalysisHistory(snapshot.analysisHistory);
+    setAnalysisHistory(normalizedAnalysisHistory);
     setReversalConditions(snapshot.reversalConditions);
     setStrategyBrain(normalizeStrategyBrain(snapshot.strategyBrain));
     setResearchHistory(snapshot.researchHistory);
     setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
-    setDailyReport(snapshot.dailyReport || (snapshot.analysisHistory && snapshot.analysisHistory.length > 0 ? snapshot.analysisHistory[0] : null));
+    setDailyReport(snapshot.dailyReport || (normalizedAnalysisHistory.length > 0 ? normalizedAnalysisHistory[0] : null));
   };
   const setCloudStateForPortfolio = (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
     const enabled = nextViewMode === PORTFOLIO_VIEW_MODE && pid === OWNER_PORTFOLIO_ID;
@@ -2484,9 +2508,7 @@ export default function App() {
         }
         // 分析歷史：合併本地+雲端，去重
         if (cloudHistory.history?.length) {
-          const merged = [...(snapshot.analysisHistory || []), ...cloudHistory.history];
-          const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
-            .sort((a, b) => b.id - a.id).slice(0, 30);
+          const unique = normalizeAnalysisHistoryEntries([...(snapshot.analysisHistory || []), ...cloudHistory.history]);
           setAnalysisHistory(unique);
           savePortfolioData(pid, "analysis-history-v1", unique);
           writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
@@ -2586,9 +2608,7 @@ export default function App() {
       .then(data => {
         if (!data.history?.length) return;
         setAnalysisHistory(prev => {
-          const merged = [...(prev || []), ...data.history];
-          const unique = merged.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i)
-            .sort((a, b) => b.id - a.id).slice(0, 30);
+          const unique = normalizeAnalysisHistoryEntries([...(prev || []), ...data.history]);
           savePortfolioData(activePortfolioId, "analysis-history-v1", unique);
           return unique;
         });
@@ -3563,7 +3583,7 @@ ${eventSummary}
       };
 
       setDailyReport(report);
-      setAnalysisHistory(prev => [report, ...(prev || []).filter(r => r.date !== today)].slice(0, 30));
+      setAnalysisHistory(prev => normalizeAnalysisHistoryEntries([report, ...(prev || [])]));
 
       // 同步分析報告到雲端（不管大腦進化成不成功都要存）
       if (canUseCloud) {
@@ -4371,6 +4391,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     setImg(URL.createObjectURL(file));
     setParsed(null); setParseErr(null);
     setMemoStep(0); setMemoAns([]); setMemoIn("");
+    imgTypeRef.current = file.type || "image/jpeg";
     const r = new FileReader();
     r.onload = e => setB64(e.target.result.split(",")[1]);
     r.readAsDataURL(file);
@@ -4386,14 +4407,19 @@ ${recentAnalyses || "尚無分析紀錄"}
         body: JSON.stringify({
           systemPrompt: PARSE_PROMPT,
           base64: b64,
-          mediaType: "image/jpeg",
+          mediaType: imgTypeRef.current,
         })
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.error || "API 錯誤");
       const clean = (data.content?.[0]?.text||"").replace(/```json|```/g,"").trim();
+      if (!clean) throw new Error("AI 未回傳可解析的內容");
       setParsed(JSON.parse(clean));
-    } catch { setParseErr("解析失敗，請確認截圖清晰"); }
-    finally  { setParsing(false); }
+    } catch (err) {
+      console.error("parseShot error:", err);
+      setParseErr(err.message || "解析失敗，請確認截圖清晰");
+    }
+    finally { setParsing(false); }
   };
 
   const submitMemo = () => {
@@ -6503,28 +6529,53 @@ ${recentAnalyses || "尚無分析紀錄"}
           {parsed?.trades?.length>0 && (
             <div>
               <div style={{...card,marginBottom:12}}>
-                <div style={lbl}>解析結果</div>
-                {parsed.trades.map((t,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",
-                    alignItems:"center",padding:"10px 0",
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={lbl}>解析結果</div>
+                  <span style={{fontSize:9,color:C.textMute}}>點擊可修正</span>
+                </div>
+                {parsed.trades.map((t,i)=>{
+                  const toggleAction = () => setParsed(prev => {
+                    const trades = [...prev.trades];
+                    trades[i] = {...trades[i], action: trades[i].action==="買進"?"賣出":"買進"};
+                    return {...prev, trades};
+                  });
+                  const editField = (field) => {
+                    const label = {qty:"股數",price:"成交價",name:"名稱",code:"代碼"}[field];
+                    const val = prompt(`修正${label}：`, t[field]);
+                    if (val==null) return;
+                    setParsed(prev => {
+                      const trades = [...prev.trades];
+                      const parsed = field==="qty"||field==="price" ? Number(val) : val;
+                      if ((field==="qty"||field==="price") && isNaN(parsed)) return prev;
+                      trades[i] = {...trades[i], [field]: parsed};
+                      return {...prev, trades};
+                    });
+                  };
+                  return (
+                  <div key={i} style={{padding:"10px 0",
                     borderBottom:i<parsed.trades.length-1?`1px solid ${C.borderSub}`:"none"}}>
-                    <div>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <span style={{
-                          background: t.action==="買進" ? C.upBg : C.downBg,
-                          color: t.action==="買進" ? C.up : C.down,
-                          fontSize:10, fontWeight:600, padding:"2px 9px", borderRadius:4}}>
-                          {t.action}
-                        </span>
-                        <span style={{fontSize:14,fontWeight:600,color:C.text}}>{t.name}</span>
-                        <span style={{fontSize:10,color:C.textMute}}>{t.code}</span>
-                      </div>
-                      <div style={{fontSize:11,color:C.textMute,marginTop:3}}>
-                        {t.qty}股 @ {t.price?.toLocaleString()}元
-                      </div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                      <span onClick={toggleAction} style={{
+                        background: t.action==="買進" ? C.upBg : C.downBg,
+                        color: t.action==="買進" ? C.up : C.down,
+                        fontSize:10, fontWeight:600, padding:"2px 9px", borderRadius:4,
+                        cursor:"pointer", border:`1px dashed ${t.action==="買進"?C.up:C.down}44`}}>
+                        {t.action} ↔
+                      </span>
+                      <span onClick={()=>editField("name")} style={{fontSize:14,fontWeight:600,color:C.text,cursor:"pointer"}}>{t.name}</span>
+                      <span onClick={()=>editField("code")} style={{fontSize:10,color:C.textMute,cursor:"pointer"}}>{t.code}</span>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:4,marginTop:3}}>
+                      <span onClick={()=>editField("qty")} style={{fontSize:11,color:C.textMute,cursor:"pointer",
+                        borderBottom:`1px dashed ${C.borderStrong}`}}>{t.qty}股</span>
+                      <span style={{fontSize:11,color:C.textMute}}>@</span>
+                      <span onClick={()=>editField("price")} style={{fontSize:11,color:C.textMute,cursor:"pointer",
+                        borderBottom:`1px dashed ${C.borderStrong}`}}>{t.price?.toLocaleString()}元</span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
+                {parsed.note && <div style={{fontSize:10,color:C.textMute,marginTop:8}}>{parsed.note}</div>}
                 {parsed.targetPriceUpdates?.length>0 && (
                   <div style={{marginTop:10,background:C.tealBg,border:`1px solid ${alpha(C.teal, A.line)}`,
                     borderRadius:7,padding:"8px 10px"}}>
@@ -6538,7 +6589,6 @@ ${recentAnalyses || "尚無分析紀錄"}
                     ))}
                   </div>
                 )}
-                {parsed.note && <div style={{fontSize:10,color:C.textMute,marginTop:8}}>{parsed.note}</div>}
               </div>
 
               <div style={{...card,borderLeft:`2px solid ${alpha(C.blue, A.glow)}`}}>

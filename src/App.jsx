@@ -732,14 +732,155 @@ function clonePortfolioNotes() {
   return { ...DEFAULT_PORTFOLIO_NOTES };
 }
 
+function createEmptyBrainChecklists() {
+  return {
+    preEntry: [],
+    preAdd: [],
+    preExit: [],
+  };
+}
+
+function normalizeBrainChecklistStage(value) {
+  const raw = String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (!raw) return "";
+  if (raw === "entry" || raw === "preentry") return "preEntry";
+  if (raw === "add" || raw === "preadd") return "preAdd";
+  if (raw === "exit" || raw === "preexit") return "preExit";
+  return "";
+}
+
+function brainChecklistStageLabel(stage) {
+  if (stage === "preEntry") return "進場前";
+  if (stage === "preAdd") return "加碼前";
+  if (stage === "preExit") return "出場前";
+  return "未分類";
+}
+
+function normalizeBrainChecklistItems(items) {
+  return Array.isArray(items)
+    ? Array.from(new Set(items.map(item => String(item || "").trim()).filter(Boolean))).slice(0, 12)
+    : [];
+}
+
+function brainRuleText(rule) {
+  if (typeof rule === "string") return rule.trim();
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) return "";
+  return String(rule.text || rule.rule || "").trim();
+}
+
+function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "active" } = {}) {
+  const text = brainRuleText(rule);
+  if (!text) return null;
+  if (typeof rule === "string") {
+    return {
+      id: null,
+      text,
+      when: "",
+      action: "",
+      avoid: "",
+      scope: "",
+      confidence: null,
+      evidenceCount: 0,
+      lastValidatedAt: null,
+      status: defaultStatus,
+      source: defaultSource,
+      checklistStage: "",
+      note: "",
+    };
+  }
+
+  const confidence = Number(rule.confidence);
+  const evidenceCount = Number(rule.evidenceCount ?? rule.evidence ?? 0);
+  const source = ["ai", "user", "coach", "system"].includes(rule.source) ? rule.source : defaultSource;
+  const status = ["active", "candidate", "archived"].includes(rule.status) ? rule.status : defaultStatus;
+  return {
+    id: String(rule.id || "").trim() || null,
+    text,
+    when: String(rule.when || "").trim(),
+    action: String(rule.action || "").trim(),
+    avoid: String(rule.avoid || "").trim(),
+    scope: String(rule.scope || "").trim(),
+    confidence: Number.isFinite(confidence) ? Math.max(1, Math.min(10, Math.round(confidence))) : null,
+    evidenceCount: Number.isFinite(evidenceCount) ? Math.max(0, Math.round(evidenceCount)) : 0,
+    lastValidatedAt: String(rule.lastValidatedAt || "").trim() || null,
+    status,
+    source,
+    checklistStage: normalizeBrainChecklistStage(rule.checklistStage),
+    note: String(rule.note || "").trim(),
+  };
+}
+
+function brainRuleSummary(rule, { includeMeta = false } = {}) {
+  const text = brainRuleText(rule);
+  if (!text) return "";
+  if (!includeMeta || !rule || typeof rule !== "object" || Array.isArray(rule)) return text;
+  const meta = [];
+  if (rule.when) meta.push(`條件:${rule.when}`);
+  if (rule.action) meta.push(`動作:${rule.action}`);
+  if (rule.scope) meta.push(`範圍:${rule.scope}`);
+  if (rule.confidence != null) meta.push(`信心${rule.confidence}/10`);
+  if (rule.evidenceCount > 0) meta.push(`驗證${rule.evidenceCount}次`);
+  if (rule.lastValidatedAt) meta.push(`最近驗證${rule.lastValidatedAt}`);
+  if (rule.checklistStage) meta.push(`檢查點:${brainChecklistStageLabel(rule.checklistStage)}`);
+  return meta.length > 0 ? `${text}（${meta.join("｜")}）` : text;
+}
+
+function hasBrainChecklistContent(checklists) {
+  return Object.values(checklists || {}).some(items => Array.isArray(items) && items.length > 0);
+}
+
+function normalizeBrainChecklists(value, linkedRules = []) {
+  const normalized = createEmptyBrainChecklists();
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    normalized.preEntry = normalizeBrainChecklistItems(value.preEntry);
+    normalized.preAdd = normalizeBrainChecklistItems(value.preAdd);
+    normalized.preExit = normalizeBrainChecklistItems(value.preExit);
+  }
+
+  (Array.isArray(linkedRules) ? linkedRules : []).forEach(rule => {
+    const stage = normalizeBrainChecklistStage(rule?.checklistStage);
+    const text = brainRuleText(rule);
+    if (!stage || !text || rule?.status === "archived") return;
+    if (!normalized[stage].includes(text)) normalized[stage].push(text);
+  });
+
+  normalized.preEntry = normalized.preEntry.slice(0, 12);
+  normalized.preAdd = normalized.preAdd.slice(0, 12);
+  normalized.preExit = normalized.preExit.slice(0, 12);
+  return normalized;
+}
+
+function formatBrainRulesForPrompt(rules, { limit = 8 } = {}) {
+  const rows = (Array.isArray(rules) ? rules : [])
+    .slice(0, limit)
+    .map((rule, index) => `${index + 1}. ${brainRuleSummary(rule, { includeMeta: true })}`);
+  return rows.length > 0 ? rows.join("\n") : "無";
+}
+
+function formatBrainChecklistsForPrompt(checklists) {
+  const normalized = normalizeBrainChecklists(checklists);
+  const sections = [
+    ["進場前檢查", normalized.preEntry],
+    ["加碼前檢查", normalized.preAdd],
+    ["出場前檢查", normalized.preExit],
+  ]
+    .map(([label, items]) => Array.isArray(items) && items.length > 0 ? `${label}：${items.join("；")}` : null)
+    .filter(Boolean);
+  return sections.length > 0 ? sections.join("\n") : "無";
+}
+
 function createEmptyStrategyBrain() {
   return {
+    version: 2,
     rules: [],
+    candidateRules: [],
+    checklists: createEmptyBrainChecklists(),
     lessons: [],
     commonMistakes: [],
     stats: {},
     lastUpdate: null,
     coachLessons: [],
+    evolution: "",
   };
 }
 
@@ -749,7 +890,15 @@ function normalizeStrategyBrain(value, { allowEmpty = false } = {}) {
   }
 
   const normalized = createEmptyStrategyBrain();
-  normalized.rules = Array.isArray(value.rules) ? value.rules.filter(Boolean) : [];
+  const normalizedRules = Array.isArray(value.rules)
+    ? value.rules.map(item => normalizeBrainRule(item, { defaultStatus: "active" })).filter(Boolean)
+    : [];
+  const inlineCandidates = normalizedRules.filter(rule => rule.status === "candidate");
+  normalized.rules = normalizedRules.filter(rule => rule.status !== "candidate");
+  normalized.candidateRules = Array.isArray(value.candidateRules)
+    ? value.candidateRules.map(item => normalizeBrainRule(item, { defaultStatus: "candidate" })).filter(Boolean)
+    : inlineCandidates;
+  normalized.checklists = normalizeBrainChecklists(value.checklists, [...normalized.rules, ...normalized.candidateRules]);
   normalized.lessons = Array.isArray(value.lessons)
     ? value.lessons
       .filter(item => item && typeof item.text === "string" && item.text.trim())
@@ -758,6 +907,7 @@ function normalizeStrategyBrain(value, { allowEmpty = false } = {}) {
   normalized.commonMistakes = Array.isArray(value.commonMistakes) ? value.commonMistakes.filter(Boolean) : [];
   normalized.stats = value.stats && typeof value.stats === "object" && !Array.isArray(value.stats) ? { ...value.stats } : {};
   normalized.lastUpdate = typeof value.lastUpdate === "string" ? value.lastUpdate : null;
+  normalized.evolution = typeof value.evolution === "string" ? value.evolution.trim() : "";
   normalized.coachLessons = Array.isArray(value.coachLessons)
     ? value.coachLessons
       .filter(item => item && typeof item.text === "string" && item.text.trim())
@@ -772,34 +922,49 @@ function normalizeStrategyBrain(value, { allowEmpty = false } = {}) {
 
   const hasContent =
     normalized.rules.length > 0 ||
+    normalized.candidateRules.length > 0 ||
+    hasBrainChecklistContent(normalized.checklists) ||
     normalized.lessons.length > 0 ||
     normalized.commonMistakes.length > 0 ||
     normalized.coachLessons.length > 0 ||
     Object.keys(normalized.stats).length > 0 ||
-    Boolean(normalized.lastUpdate);
+    Boolean(normalized.lastUpdate) ||
+    Boolean(normalized.evolution);
 
   return hasContent || allowEmpty ? normalized : null;
 }
 
 function mergeBrainPreservingCoachLessons(nextBrain, currentBrain) {
+  if (!nextBrain || typeof nextBrain !== "object" || Array.isArray(nextBrain)) {
+    return normalizeStrategyBrain(currentBrain);
+  }
   const normalizedNext = normalizeStrategyBrain(nextBrain, { allowEmpty: true });
   const normalizedCurrent = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
   const coachLessons = normalizedNext?.coachLessons?.length
     ? normalizedNext.coachLessons
     : (normalizedCurrent?.coachLessons || []);
 
-  if (!normalizedNext) {
-    if (!coachLessons.length) return null;
-    return {
-      ...createEmptyStrategyBrain(),
-      coachLessons,
-    };
-  }
-
-  return {
-    ...normalizedNext,
+  const hasField = (key) => Object.prototype.hasOwnProperty.call(nextBrain || {}, key);
+  const merged = {
+    version: 2,
+    rules: hasField("rules") ? (normalizedNext?.rules || []) : (normalizedCurrent?.rules || []),
+    candidateRules: hasField("candidateRules") ? (normalizedNext?.candidateRules || []) : (normalizedCurrent?.candidateRules || []),
+    checklists: hasField("checklists")
+      ? (normalizedNext?.checklists || createEmptyBrainChecklists())
+      : (
+        hasField("rules") || hasField("candidateRules")
+          ? normalizeBrainChecklists(normalizedCurrent?.checklists, [...(normalizedNext?.rules || []), ...(normalizedNext?.candidateRules || [])])
+          : (normalizedCurrent?.checklists || createEmptyBrainChecklists())
+      ),
+    lessons: hasField("lessons") ? (normalizedNext?.lessons || []) : (normalizedCurrent?.lessons || []),
+    commonMistakes: hasField("commonMistakes") ? (normalizedNext?.commonMistakes || []) : (normalizedCurrent?.commonMistakes || []),
+    stats: hasField("stats") ? (normalizedNext?.stats || {}) : (normalizedCurrent?.stats || {}),
+    lastUpdate: hasField("lastUpdate") ? (normalizedNext?.lastUpdate || null) : (normalizedCurrent?.lastUpdate || null),
     coachLessons,
+    evolution: hasField("evolution") ? (normalizedNext?.evolution || "") : (normalizedCurrent?.evolution || ""),
   };
+
+  return normalizeStrategyBrain(merged, { allowEmpty: true });
 }
 
 function formatPortfolioNotesContext(notes) {
@@ -1221,7 +1386,7 @@ function buildBrainTokens(holding, meta) {
 }
 
 function textMatchesBrainTokens(text, tokens) {
-  const source = String(text || "").toLowerCase();
+  const source = brainRuleText(text).toLowerCase();
   if (!source) return false;
   return tokens.some(token => source.includes(token));
 }
@@ -1306,6 +1471,7 @@ function buildHoldingDossiers({
 
     const brainTokens = buildBrainTokens(holding, meta);
     const matchedRules = (brain.rules || []).filter(rule => textMatchesBrainTokens(rule, brainTokens)).slice(0, 5);
+    const matchedCandidateRules = (brain.candidateRules || []).filter(rule => textMatchesBrainTokens(rule, brainTokens)).slice(0, 3);
     const matchedMistakes = (brain.commonMistakes || []).filter(item => textMatchesBrainTokens(item, brainTokens)).slice(0, 5);
     const matchedLessons = (brain.lessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
     const matchedCoachLessons = (brain.coachLessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
@@ -1377,6 +1543,7 @@ function buildHoldingDossiers({
       },
       brainContext: {
         matchedRules,
+        matchedCandidateRules,
         matchedMistakes,
         matchedLessons,
         matchedCoachLessons,
@@ -1480,7 +1647,10 @@ function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}
     ? `公開報告：${analyst.latestSummary}`
     : "公開報告：無";
   const ruleLine = (brainContext.matchedRules || []).length > 0
-    ? `相關規則：${brainContext.matchedRules.slice(0, 3).join("；")}`
+    ? `相關規則：${brainContext.matchedRules.slice(0, 3).map(rule => brainRuleSummary(rule)).join("；")}`
+    : null;
+  const candidateLine = (brainContext.matchedCandidateRules || []).length > 0
+    ? `候選規則：${brainContext.matchedCandidateRules.slice(0, 2).map(rule => brainRuleSummary(rule)).join("；")}`
     : null;
   const mistakeLine = (brainContext.matchedMistakes || []).length > 0
     ? `風險提醒：${brainContext.matchedMistakes.slice(0, 3).join("；")}`
@@ -1499,6 +1669,7 @@ function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, 2)} | 最近結案 ${events.latestClosed?.title ? `${events.latestClosed.title}(${events.latestClosed.exitDate || events.latestClosed.date || "—"})` : "無"}`,
     researchLine,
     ruleLine,
+    candidateLine,
     mistakeLine,
     `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
   ].filter(Boolean).join("\n");
@@ -1528,7 +1699,8 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
     analyst.latestSummary ? `公開報告：${analyst.latestSummary}` : "公開報告：無",
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, compact ? 2 : 3)}`,
     research.latestConclusion ? `最近研究：${research.latestConclusion}` : "最近研究：無",
-    (brainContext.matchedRules || []).length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join("；")}` : null,
+    (brainContext.matchedRules || []).length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).map(rule => brainRuleSummary(rule)).join("；")}` : null,
+    (brainContext.matchedCandidateRules || []).length > 0 ? `候選規則：${brainContext.matchedCandidateRules.slice(0, compact ? 2 : 3).map(rule => brainRuleSummary(rule)).join("；")}` : null,
     (brainContext.matchedMistakes || []).length > 0 ? `常見風險：${brainContext.matchedMistakes.slice(0, compact ? 2 : 4).join("；")}` : null,
     `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
   ].filter(Boolean);
@@ -1684,7 +1856,7 @@ function normalizeBackupStorage(payload) {
   const directMapped = mapEntries(payload);
   if (Object.keys(directMapped).length > 0) return directMapped;
 
-  const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || Array.isArray(payload.coachLessons) || payload.stats;
+  const looksLikeBrain = Array.isArray(payload.rules) || Array.isArray(payload.candidateRules) || Array.isArray(payload.lessons) || Array.isArray(payload.commonMistakes) || Array.isArray(payload.coachLessons) || payload.checklists || payload.stats || payload.evolution;
   if (looksLikeBrain) return { [pfKey(OWNER_PORTFOLIO_ID, "brain-v1")]: payload };
 
   const looksLikeDailyReport = payload.totalTodayPnl != null || Array.isArray(payload.changes) || typeof payload.aiInsight === "string";
@@ -3247,19 +3419,24 @@ export default function App() {
 跨組合教練教訓：
 ${brain.coachLessons.slice(-5).map(item => `- [${item.date}] ${item.source || item.sourcePortfolioId}：${item.text}`).join("\n")}
 ` : "";
-        // 分離 AI 生成 vs 用戶確認的規則
-        const allRules = (brain?.rules || []);
-        const userRules = allRules.filter(r => typeof r === "object" && r.source === "user").map(r => r.text);
-        const aiRules = allRules.filter(r => typeof r === "string" || (typeof r === "object" && r.source !== "user"));
-        const aiRuleTexts = aiRules.map(r => typeof r === "string" ? r : r.text);
+        const userRules = (brain?.rules || []).filter(rule => rule?.source === "user");
+        const aiRules = (brain?.rules || []).filter(rule => rule?.source !== "user");
+        const candidateRules = brain?.candidateRules || [];
+        const checklistText = formatBrainChecklistsForPrompt(brain?.checklists);
 
         const brainContext = brain ? `
 ══ 策略大腦（累積知識庫）══
 ${userRules.length > 0 ? `✅ 已驗證規則（用戶確認）：
-${userRules.map((r,i)=>`${i+1}. ${r}`).join("\n")}
+${formatBrainRulesForPrompt(userRules, { limit: 8 })}
 
-` : ""}🤖 AI 建議規則（尚未驗證，批判性使用）：
-${aiRuleTexts.map((r,i)=>`${i+1}. ${r}`).join("\n")}
+` : ""}🤖 核心規則（AI/系統整理）：
+${formatBrainRulesForPrompt(aiRules, { limit: 10 })}
+
+🧪 候選規則（需持續驗證）：
+${formatBrainRulesForPrompt(candidateRules, { limit: 6 })}
+
+📋 決策檢查表：
+${checklistText}
 
 ⚠️ 注意：AI 建議規則可能存在確認偏差，不要因為「策略大腦這樣說」就不加質疑地套用。
 
@@ -3462,9 +3639,11 @@ ${JSON.stringify(blindPredictions, null, 0)}
 ## 🧬 BRAIN_UPDATE
 最後，根據今日分析結果更新策略大腦。用 \`\`\`json 包裹，結構：
 \`\`\`json
-{"rules":["規則1","規則2"...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期"}
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用標的或情境","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"待驗證情境","action":"若成立要做什麼","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期","evolution":"這次更新一句話摘要"}
 \`\`\`
-- rules：最多15條，去掉過時的，加入今日新發現的策略
+- rules：保留已驗證、可重複使用的核心規則，最多12條
+- candidateRules：尚待驗證的新規則，最多6條，不要直接混進核心規則
+- checklists：把最重要的規則整理成進場前 / 加碼前 / 出場前檢查表
 - lessons：保留舊的+加入今日新教訓（只加有意義的）
 - commonMistakes：反覆出現的錯誤模式
 - stats：更新勝率統計`,
@@ -3610,9 +3789,11 @@ ${eventSummary}
             body: JSON.stringify({
               systemPrompt: `你是策略知識庫管理器。根據今日分析結果，更新策略大腦。
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":["規則1","規則2",...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期"}
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要"}
 
-規則：基於累積經驗的核心交易策略（最多15條，去掉過時的）
+規則：基於累積經驗的核心交易策略（最多12條，去掉過時的）
+candidateRules：新的待驗證假設（最多6條）
+checklists：把規則整理成進場前 / 加碼前 / 出場前檢查表
 教訓：今日新增的具體教訓（只加新的，保留舊的）
 常犯錯誤：反覆出現的錯誤模式`,
               userPrompt: `今日分析：
@@ -3788,7 +3969,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 3. 更新策略大腦的規則和教訓
 
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
             userPrompt: `事件：${evt.title}
 ${notesContext}
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
@@ -3841,13 +4022,15 @@ ${JSON.stringify(currentBrain)}
 
 任務：
 1. 規則（rules）：合併重複的規則，刪除矛盾的規則，保留最有效的。最多 12 條。
-2. 教訓（lessons）：合併類似的教訓，淘汰超過 90 天且不再適用的教訓。保留最近 30 條。
-3. 常犯錯誤（commonMistakes）：去重合併，保留仍然需要警惕的。最多 5 條。
-4. 跨組合教練教訓（coachLessons）：超過 180 天的降級，只保留最近 50 條。
-5. 產生一份「整理摘要」說明你做了什麼改動。
+2. 候選規則（candidateRules）：整理仍值得追蹤但尚未完全證實的規則。最多 6 條。
+3. 檢查表（checklists）：根據核心規則更新進場前 / 加碼前 / 出場前檢查表。
+4. 教訓（lessons）：合併類似的教訓，淘汰超過 90 天且不再適用的教訓。保留最近 30 條。
+5. 常犯錯誤（commonMistakes）：去重合併，保留仍然需要警惕的。最多 5 條。
+6. 跨組合教練教訓（coachLessons）：超過 180 天的降級，只保留最近 50 條。
+7. 產生一份「整理摘要」說明你做了什麼改動。
 
 回傳**純JSON**格式：
-{"rules":[...],"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","cleanupSummary":"整理摘要"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","evolution":"一句話摘要","cleanupSummary":"整理摘要"}`,
           userPrompt: `今日日期：${toSlashDate()}
 
 目前策略大腦：
@@ -3951,10 +4134,21 @@ ${JSON.stringify(brain)}
 
     // 策略大腦
     const brain = strategyBrain;
+    const checklistSummary = brain ? [
+      (brain.checklists?.preEntry || []).length > 0 ? `進場前：${brain.checklists.preEntry.join("；")}` : null,
+      (brain.checklists?.preAdd || []).length > 0 ? `加碼前：${brain.checklists.preAdd.join("；")}` : null,
+      (brain.checklists?.preExit || []).length > 0 ? `出場前：${brain.checklists.preExit.join("；")}` : null,
+    ].filter(Boolean).join("\n") : "";
     const brainSection = brain ? `
 ## 策略大腦
 核心規則：
-${(brain.rules||[]).map((r,i)=>`${i+1}. ${r}`).join("\n")}
+${(brain.rules||[]).map((r,i)=>`${i+1}. ${brainRuleSummary(r, { includeMeta: true })}`).join("\n")}
+
+候選規則：
+${(brain.candidateRules||[]).length > 0 ? (brain.candidateRules||[]).map((r,i)=>`${i+1}. ${brainRuleSummary(r, { includeMeta: true })}`).join("\n") : "無"}
+
+決策檢查表：
+${checklistSummary || "無"}
 
 常犯錯誤：${(brain.commonMistakes||[]).join("、")||"無"}
 命中率：${brain.stats?.hitRate||"計算中"}
@@ -6137,6 +6331,11 @@ ${recentAnalyses || "尚無分析紀錄"}
           {/* 策略大腦 — 可收合 */}
           {strategyBrain && (()=>{
             const brainOpen = expandedStock === "brain";
+            const checklistSections = [
+              { key: "preEntry", label: "進場前檢查", items: strategyBrain.checklists?.preEntry || [], color: C.olive },
+              { key: "preAdd", label: "加碼前檢查", items: strategyBrain.checklists?.preAdd || [], color: C.amber },
+              { key: "preExit", label: "出場前檢查", items: strategyBrain.checklists?.preExit || [], color: C.up },
+            ].filter(section => section.items.length > 0);
             return <div style={{...card,marginBottom:10,borderLeft:`3px solid ${alpha(C.lavender, A.glow)}`,padding:"8px 10px"}}>
               <div onClick={()=>setExpandedStock(brainOpen?null:"brain")} style={{
                 display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}>
@@ -6145,6 +6344,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                   <span style={{fontSize:9,color:C.textMute}}>
                     {strategyBrain.stats?.totalAnalyses||0}次分析 · 命中{strategyBrain.stats?.hitRate||"—"}
                   </span>
+                  {(strategyBrain.candidateRules||[]).length > 0 && (
+                    <span style={{fontSize:9,color:C.amber}}>
+                      候選 {(strategyBrain.candidateRules||[]).length}
+                    </span>
+                  )}
                 </div>
                 <span style={{fontSize:9,color:C.textMute}}>{brainOpen?"▲":"▼"}</span>
               </div>
@@ -6156,7 +6360,55 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {strategyBrain.rules.map((r,i)=>(
                       <div key={i} style={{fontSize:10,color:C.textSec,lineHeight:1.7,
                         padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
-                        {i+1}. {r}
+                        <div>{i+1}. {brainRuleText(r)}</div>
+                        {(r.when || r.action || r.scope || r.confidence != null || r.evidenceCount > 0) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            {[
+                              r.when ? `條件：${r.when}` : null,
+                              r.action ? `動作：${r.action}` : null,
+                              r.scope ? `範圍：${r.scope}` : null,
+                              r.confidence != null ? `信心 ${r.confidence}/10` : null,
+                              r.evidenceCount > 0 ? `驗證 ${r.evidenceCount} 次` : null,
+                            ].filter(Boolean).join(" ｜ ")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(strategyBrain.candidateRules||[]).length>0 && (
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:4}}>候選規則（待驗證）</div>
+                    {strategyBrain.candidateRules.map((rule, i)=>(
+                      <div key={`candidate-${i}`} style={{fontSize:10,color:C.textSec,lineHeight:1.7,padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                        <div>{i+1}. {brainRuleText(rule)}</div>
+                        {(rule.when || rule.action || rule.confidence != null || rule.evidenceCount > 0) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            {[
+                              rule.when ? `情境：${rule.when}` : null,
+                              rule.action ? `若成立動作：${rule.action}` : null,
+                              rule.confidence != null ? `信心 ${rule.confidence}/10` : null,
+                              rule.evidenceCount > 0 ? `驗證 ${rule.evidenceCount} 次` : null,
+                            ].filter(Boolean).join(" ｜ ")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {checklistSections.length > 0 && (
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,color:C.olive,fontWeight:600,marginBottom:4}}>決策檢查表</div>
+                    {checklistSections.map(section => (
+                      <div key={section.key} style={{marginBottom:6}}>
+                        <div style={{fontSize:9,color:section.color,fontWeight:600,marginBottom:3}}>{section.label}</div>
+                        {section.items.map((item, idx) => (
+                          <div key={`${section.key}-${idx}`} style={{fontSize:10,color:C.textSec,lineHeight:1.6}}>
+                            • {item}
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -6200,6 +6452,12 @@ ${recentAnalyses || "尚無分析紀錄"}
                         {lesson.text}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {strategyBrain.evolution && (
+                  <div style={{marginBottom:6,fontSize:10,color:C.textMute,lineHeight:1.6}}>
+                    近期進化：{strategyBrain.evolution}
                   </div>
                 )}
 

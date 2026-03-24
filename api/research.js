@@ -129,6 +129,43 @@ function formatPortfolioNotesContext(notes) {
   return lines.length > 0 ? `個人備註：\n${lines.join('\n')}` : '個人備註：無';
 }
 
+function brainRuleText(rule) {
+  if (typeof rule === 'string') return rule.trim();
+  if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return '';
+  return String(rule.text || rule.rule || '').trim();
+}
+
+function brainRuleSummary(rule) {
+  const text = brainRuleText(rule);
+  if (!text) return '';
+  if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return text;
+  const meta = [
+    rule.when ? `條件:${rule.when}` : null,
+    rule.action ? `動作:${rule.action}` : null,
+    rule.scope ? `範圍:${rule.scope}` : null,
+    Number.isFinite(Number(rule.confidence)) ? `信心${Math.round(Number(rule.confidence))}/10` : null,
+    Number.isFinite(Number(rule.evidenceCount)) && Number(rule.evidenceCount) > 0 ? `驗證${Math.round(Number(rule.evidenceCount))}次` : null,
+  ].filter(Boolean);
+  return meta.length > 0 ? `${text}（${meta.join('｜')}）` : text;
+}
+
+function summarizeBrainRules(rules, limit = 4) {
+  const rows = (Array.isArray(rules) ? rules : [])
+    .map(brainRuleSummary)
+    .filter(Boolean);
+  return rows.length > 0 ? rows.slice(0, limit).join('；') : '無';
+}
+
+function summarizeBrainChecklists(checklists) {
+  if (!checklists || typeof checklists !== 'object') return '無';
+  const sections = [
+    Array.isArray(checklists.preEntry) && checklists.preEntry.length > 0 ? `進場前：${checklists.preEntry.join('；')}` : null,
+    Array.isArray(checklists.preAdd) && checklists.preAdd.length > 0 ? `加碼前：${checklists.preAdd.join('；')}` : null,
+    Array.isArray(checklists.preExit) && checklists.preExit.length > 0 ? `出場前：${checklists.preExit.join('；')}` : null,
+  ].filter(Boolean);
+  return sections.length > 0 ? sections.join('\n') : '無';
+}
+
 function buildResearchDossierContext(dossier, { compact = false } = {}) {
   if (!dossier) return '無 dossier，可依持倉與 meta 基本資料分析。';
   const position = dossier.position || {};
@@ -154,7 +191,8 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
     analyst.latestSummary ? `公開報告：${analyst.latestSummary}` : '公開報告：無',
     `事件：待觀察 ${summarizeEventList(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventList(events.tracking, compact ? 2 : 3)}`,
     research.latestConclusion ? `最近研究：${research.latestConclusion}` : '最近研究：無',
-    Array.isArray(brainContext.matchedRules) && brainContext.matchedRules.length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).join('；')}` : null,
+    Array.isArray(brainContext.matchedRules) && brainContext.matchedRules.length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).map(brainRuleSummary).join('；')}` : null,
+    Array.isArray(brainContext.matchedCandidateRules) && brainContext.matchedCandidateRules.length > 0 ? `候選規則：${brainContext.matchedCandidateRules.slice(0, compact ? 2 : 3).map(brainRuleSummary).join('；')}` : null,
     Array.isArray(brainContext.matchedMistakes) && brainContext.matchedMistakes.length > 0 ? `常見風險：${brainContext.matchedMistakes.slice(0, compact ? 2 : 4).join('；')}` : null,
     `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
   ].filter(Boolean).join('\n');
@@ -262,7 +300,7 @@ ${dossierContext}
 現有持倉：${s.code} 持有 ${holdingRow?.qty || "?"}股，成本 ${s.cost}`
       );
 
-      const brainCtx = brain ? `策略大腦規則：\n${(brain.rules || []).join("\n")}\n常犯錯誤：${(brain.commonMistakes || []).join("、")}` : "";
+      const brainCtx = brain ? `策略大腦核心規則：\n${summarizeBrainRules(brain.rules, 8)}\n候選規則：${summarizeBrainRules(brain.candidateRules, 4)}\n決策檢查表：\n${summarizeBrainChecklists(brain.checklists)}\n常犯錯誤：${(brain.commonMistakes || []).join("、") || "無"}` : "";
       const round3 = await callClaude(
         `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
         `${notesContext}
@@ -393,7 +431,7 @@ ${histSummary || "（無紀錄）"}
       // ── Round 4：更新策略大腦（JSON output）──
       const newBrainText = await callClaude(
         `基於所有研究和診斷結果，輸出更新後的策略大腦。回傳**純JSON**（不要markdown code block）。
-結構：{"rules":[...],"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
+結構：{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"lastValidatedAt":"日期","source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
         `個股研究：\n${stockSummaryText}\n\n系統診斷：\n${diag}\n\n進化建議：\n${evolveAdvice}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出進化後的策略大腦。保留有效的舊規則，加入新的。`
       );
 

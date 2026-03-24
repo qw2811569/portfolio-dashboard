@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Qwen Code: Launch In Repo",
+      "type": "shell",
+      "command": "qwen",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "AnythingLLM: Open Desktop App",
+      "type": "shell",
+      "command": "open -a AnythingLLM",
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Ollama: Start Local Service",
+      "type": "shell",
+      "command": "brew services start ollama",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Ollama: Show Running Models",
+      "type": "shell",
+      "command": "ollama ps",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

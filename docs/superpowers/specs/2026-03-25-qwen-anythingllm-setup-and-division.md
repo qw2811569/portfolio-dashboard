@@ -1,0 +1,136 @@
+# Qwen Code + AnythingLLM Setup And Division
+
+## Goal
+
+Use `Qwen Code` as the low-cost coding agent and `AnythingLLM` as the local knowledge base / document workspace, while keeping higher-risk architecture and final QA on Codex.
+
+## Installed On This Mac
+
+- `Qwen Code` CLI
+- `Qwen Code Companion` VSCode extension
+- `AnythingLLM` desktop app
+- `Ollama` local model runtime
+
+## VSCode Entry Points
+
+In this repo, open the command palette or `Terminal -> Run Task` and use:
+
+- `Qwen Code: Launch In Repo`
+- `AnythingLLM: Open Desktop App`
+- `Ollama: Start Local Service`
+- `Ollama: Show Running Models`
+
+## First Run
+
+### Qwen Code
+
+1. Run `Qwen Code: Launch In Repo`
+2. Complete `qwen auth`
+3. Trust this repo folder when prompted
+4. Let Qwen read `QWEN.md` and `CLAUDE.md` before large tasks
+
+### AnythingLLM
+
+1. Open `AnythingLLM: Open Desktop App`
+2. On first setup, choose local / self-managed mode
+3. Use `Ollama` as the LLM provider
+4. Point it to the local Ollama service if asked
+5. Start with document workspaces first, not coding workspaces
+
+### Ollama
+
+- Service is expected at the default local endpoint
+- On this Mac, keep to smaller local models first
+- Avoid pulling large models until you are sure disk and RAM are enough
+
+## Recommended Division Of Work
+
+### Use Qwen Code for
+
+- routine React / Node edits
+- smaller refactors
+- writing tests
+- code cleanup
+- first-pass code review
+- repetitive implementation work after the architecture is already decided
+
+### Use AnythingLLM for
+
+- reading PDFs
+- storing client reports
+- storing specs, playbooks, and investment notes
+- querying past analysis decisions
+- comparing multiple documents inside one workspace
+- RAG-style retrieval from your own files
+
+### Keep Codex for
+
+- high-risk data flow changes
+- architecture decisions
+- debugging tricky regressions
+- investment workflow logic
+- final review before client-facing delivery
+
+## Practical Workflow
+
+### 1. Coding task
+
+1. Start `Qwen Code: Launch In Repo`
+2. Let Qwen handle the first implementation pass
+3. Bring the result back to Codex for deeper review when the change affects:
+   - portfolio persistence
+   - strategy brain logic
+   - client report output
+   - AI prompt / analysis quality
+
+### 2. Document-heavy task
+
+1. Open `AnythingLLM: Open Desktop App`
+2. Create these workspaces first:
+   - `Product Specs`
+   - `Strategy Brain`
+   - `Client Reports`
+3. Import PDFs, specs, and report drafts there
+4. Use AnythingLLM to retrieve, summarize, and compare source material
+5. Bring only the final distilled conclusions back into the app or into Codex
+
+### 3. Mixed task
+
+Use `AnythingLLM` first to digest documents, then use `Qwen Code` for implementation, then use `Codex` for final correctness and polish.
+
+## Recommended First Workspaces In AnythingLLM
+
+### Product Specs
+
+- `CLAUDE.md`
+- `docs/superpowers/specs/*`
+- `docs/superpowers/plans/*`
+
+### Strategy Brain
+
+- strategy notes
+- research exports
+- post-market analysis notes
+- client-specific investment rules
+
+### Client Reports
+
+- client holding PDFs
+- generated HTML reports
+- generated PDF reports
+- report production playbook
+
+## Notes For This Mac
+
+- This machine is `Apple M1 / 8 GB RAM`
+- Keep local Ollama models in the lightweight range first
+- Prefer smaller local models for document retrieval / rough drafting
+- Do not start with large coding models locally on this machine
+
+## Suggested Usage Policy
+
+- Default coding: `Qwen Code`
+- Default document retrieval: `AnythingLLM`
+- Final validation: `Codex`
+
+That keeps cost low without pushing critical judgment onto the cheapest model.

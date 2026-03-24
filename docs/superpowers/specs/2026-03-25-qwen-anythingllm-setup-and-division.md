@@ -10,6 +10,19 @@ Use `Qwen Code` as the low-cost coding agent and `AnythingLLM` as the local know
 - `Qwen Code Companion` VSCode extension
 - `AnythingLLM` desktop app
 - `Ollama` local model runtime
+- `qwen3:14b` as the main local chat / document model
+- `nomic-embed-text` as the local embedding model
+
+## Why These Models
+
+- `qwen3:14b`
+  - strong multilingual and reasoning baseline
+  - good fit for document QA and general assistant work
+  - same family can be carried forward to a future GCP + vLLM setup
+- `nomic-embed-text`
+  - lightweight local embedding model
+  - appropriate for AnythingLLM document retrieval
+  - keeps RAG costs near zero when using local inference
 
 ## VSCode Entry Points
 

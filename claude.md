@@ -179,6 +179,8 @@ Claude 在做台股分析時，預設工具組合是 `twsemcp + FinMind + twstoc
 - 沒有資料就明說缺資料，不可硬猜
 - 每個結論都要附條件，不只給看多 / 看空
 - 若研究足以改變策略，必須提出可回寫到 `strategyBrain` 的規則或教訓
+- 台股分析不能只看持倉，還要一起看市場結構、月營收 / 法說 / 財報節奏、法人資金、題材輪動與資料新鮮度
+- 重要規則要盡量拿去對照過往台股相似個股 / 相似節奏；若失準，要區分是規則本身錯，還是個股 / 流動性 / 市場 regime 差異
 - 詳版規則與工具說明見 [docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md](/Users/chenkuichen/APP/test/docs/superpowers/specs/2026-03-24-claude-tw-stock-analysis-tooling-guide.md)
 
 ## 本地啟動方式
@@ -301,6 +303,10 @@ npm run dev
 3. 每完成一個有意義的 batch，就更新一次 `Latest checkpoint`。
 4. 如果用戶說「中斷」，只收完當前 batch，並在 5 分鐘內補好 `Stop-in-5-min fallback`。
 5. 不要替另一個模型把工作標成完成，除非已經驗證過結果。
+6. 台股分析屬高難度任務，先做能力分流：便宜模型先交摘要 / 抽取 / 草稿，Codex 再做檢查、糾正、改派與最終定稿。
+7. 若 delegated 結果品質不夠，Codex 要立即收回、縮小範圍或重派，不可硬沿用。
+8. 當主線暫時沒有下一步或正在等驗證時，主動向其他模型做一次「優化掃描」，請它們提出可改進點，再由 Codex 篩選是否採納。
+9. 歷史相似案例驗證可以委派給便宜模型先整理，但「規則失準 vs 情境差異」的最終判定，保留給 Codex。
 
 ## 接力建議
 

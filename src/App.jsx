@@ -574,17 +574,27 @@ function normalizeAnalysisHistoryEntries(entries) {
   const byKey = new Map();
   entries.forEach((entry) => {
     if (!entry || typeof entry !== "object") return;
+    const normalizedEntry = normalizeDailyReportEntry(entry);
     const key = entry.date ? `date:${entry.date}` : `id:${entry.id ?? Math.random()}`;
     const prev = byKey.get(key);
-    const entryId = Number(entry.id) || 0;
+    const entryId = Number(normalizedEntry?.id) || 0;
     const prevId = Number(prev?.id) || 0;
     if (!prev || entryId >= prevId) {
-      byKey.set(key, entry);
+      byKey.set(key, normalizedEntry);
     }
   });
   return Array.from(byKey.values())
     .sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0))
     .slice(0, 30);
+}
+
+function normalizeDailyReportEntry(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  return {
+    ...value,
+    eventAssessments: Array.isArray(value.eventAssessments) ? value.eventAssessments : [],
+    brainAudit: normalizeBrainAuditBuckets(value.brainAudit),
+  };
 }
 
 function getTaipeiClock(date = new Date()) {
@@ -762,6 +772,12 @@ function normalizeBrainChecklistItems(items) {
     : [];
 }
 
+function normalizeBrainStringList(items, { limit = 8 } = {}) {
+  return Array.isArray(items)
+    ? Array.from(new Set(items.map(item => String(item || "").trim()).filter(Boolean))).slice(0, limit)
+    : [];
+}
+
 function brainRuleText(rule) {
   if (typeof rule === "string") return rule.trim();
   if (!rule || typeof rule !== "object" || Array.isArray(rule)) return "";
@@ -832,6 +848,75 @@ function normalizeBrainEvidenceRefs(value) {
     : [];
 }
 
+function normalizeBrainAnalogVerdict(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["supported", "mixed", "contradicted"].includes(normalized) ? normalized : "";
+}
+
+function brainAnalogVerdictLabel(value) {
+  switch (normalizeBrainAnalogVerdict(value)) {
+    case "supported":
+      return "支持";
+    case "mixed":
+      return "部分支持";
+    case "contradicted":
+      return "相反";
+    default:
+      return "";
+  }
+}
+
+function normalizeBrainAnalogDifferenceType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["none", "stock_specific", "market_regime", "timing", "liquidity", "rule_miss"].includes(normalized)
+    ? normalized
+    : "";
+}
+
+function brainAnalogDifferenceTypeLabel(value) {
+  switch (normalizeBrainAnalogDifferenceType(value)) {
+    case "none":
+      return "無明顯差異";
+    case "stock_specific":
+      return "個股特性差異";
+    case "market_regime":
+      return "市場節奏不同";
+    case "timing":
+      return "時間窗口不同";
+    case "liquidity":
+      return "流動性差異";
+    case "rule_miss":
+      return "規則判斷失準";
+    default:
+      return "";
+  }
+}
+
+function normalizeBrainAnalogCase(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const code = String(value.code || "").trim();
+  const name = String(value.name || "").trim();
+  const thesis = String(value.thesis || value.reason || "").trim();
+  const verdict = normalizeBrainAnalogVerdict(value.verdict);
+  const differenceType = normalizeBrainAnalogDifferenceType(value.differenceType);
+  if (!code && !name && !thesis) return null;
+  return {
+    code,
+    name,
+    period: String(value.period || value.window || "").trim(),
+    thesis,
+    verdict,
+    differenceType,
+    note: String(value.note || value.notes || "").trim(),
+  };
+}
+
+function normalizeBrainAnalogCases(value) {
+  return Array.isArray(value)
+    ? value.map(normalizeBrainAnalogCase).filter(Boolean).slice(0, 5)
+    : [];
+}
+
 function latestBrainEvidenceDate(lastValidatedAt, evidenceRefs) {
   const candidates = [
     lastValidatedAt,
@@ -890,12 +975,16 @@ function brainRuleMetaParts(rule, { includeEvidencePreview = false } = {}) {
     rule.when ? `條件:${rule.when}` : null,
     rule.action ? `動作:${rule.action}` : null,
     rule.scope ? `範圍:${rule.scope}` : null,
+    (rule.appliesTo || []).length > 0 ? `適用:${rule.appliesTo.slice(0, 3).join("/")}` : null,
+    rule.marketRegime ? `市況:${rule.marketRegime}` : null,
+    rule.catalystWindow ? `窗口:${rule.catalystWindow}` : null,
     rule.confidence != null ? `信心${rule.confidence}/10` : null,
     rule.evidenceCount > 0 ? `驗證${rule.evidenceCount}次` : null,
     rule.validationScore != null ? `驗證分${rule.validationScore}` : null,
     rule.lastValidatedAt ? `最近驗證${rule.lastValidatedAt}` : null,
     rule.staleness ? `狀態:${brainRuleStalenessLabel(rule.staleness)}` : null,
     rule.checklistStage ? `檢查點:${brainChecklistStageLabel(rule.checklistStage)}` : null,
+    (rule.historicalAnalogs || []).length > 0 ? `歷史比對${rule.historicalAnalogs.length}例` : null,
     includeEvidencePreview ? brainRuleEvidenceSummary(rule.evidenceRefs) : null,
   ].filter(Boolean);
 }
@@ -912,6 +1001,56 @@ function compareBrainRulesByStrength(a, b) {
   return brainRuleText(a).localeCompare(brainRuleText(b), "zh-Hant");
 }
 
+function normalizeBrainAuditConfidence(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric >= 0 && numeric <= 1) return Math.round(numeric * 100);
+  if (numeric >= 1 && numeric <= 10) return Math.round(numeric * 10);
+  return Math.max(0, Math.min(100, Math.round(numeric)));
+}
+
+function normalizeBrainAuditItem(value, defaultBucket = "validated") {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const text = brainRuleText(value) || String(value.ruleText || "").trim();
+  const id = String(value.id || value.ruleId || "").trim() || null;
+  if (!text && !id) return null;
+  const bucket = ["validated", "stale", "invalidated"].includes(value.bucket) ? value.bucket : defaultBucket;
+  return {
+    id,
+    text: text || "",
+    bucket,
+    reason: String(value.reason || value.note || "").trim(),
+    confidence: normalizeBrainAuditConfidence(value.confidence),
+    lastValidatedAt: String(value.lastValidatedAt || "").trim() || null,
+    staleness: normalizeBrainRuleStaleness(value.staleness) || "",
+    nextStatus: ["active", "candidate", "archived"].includes(value.nextStatus) ? value.nextStatus : "",
+    evidenceRefs: normalizeBrainEvidenceRefs(value.evidenceRefs),
+  };
+}
+
+function createEmptyBrainAudit() {
+  return {
+    validatedRules: [],
+    staleRules: [],
+    invalidatedRules: [],
+  };
+}
+
+function normalizeBrainAuditBuckets(value) {
+  const normalized = createEmptyBrainAudit();
+  if (!value || typeof value !== "object" || Array.isArray(value)) return normalized;
+  normalized.validatedRules = Array.isArray(value.validatedRules)
+    ? value.validatedRules.map(item => normalizeBrainAuditItem(item, "validated")).filter(Boolean).slice(0, 8)
+    : [];
+  normalized.staleRules = Array.isArray(value.staleRules)
+    ? value.staleRules.map(item => normalizeBrainAuditItem(item, "stale")).filter(Boolean).slice(0, 8)
+    : [];
+  normalized.invalidatedRules = Array.isArray(value.invalidatedRules)
+    ? value.invalidatedRules.map(item => normalizeBrainAuditItem(item, "invalidated")).filter(Boolean).slice(0, 8)
+    : [];
+  return normalized;
+}
+
 function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "active" } = {}) {
   const text = brainRuleText(rule);
   if (!text) return null;
@@ -923,6 +1062,12 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
       action: "",
       avoid: "",
       scope: "",
+      appliesTo: [],
+      marketRegime: "",
+      catalystWindow: "",
+      contextRequired: [],
+      invalidationSignals: [],
+      historicalAnalogs: [],
       confidence: null,
       evidenceCount: 0,
       validationScore: null,
@@ -938,6 +1083,7 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
 
   const confidence = Number(rule.confidence);
   const evidenceRefs = normalizeBrainEvidenceRefs(rule.evidenceRefs);
+  const historicalAnalogs = normalizeBrainAnalogCases(rule.historicalAnalogs || rule.analogCases);
   const evidenceCount = Number(rule.evidenceCount ?? rule.evidence ?? evidenceRefs.length ?? 0);
   const lastValidatedAt = String(rule.lastValidatedAt || "").trim() || null;
   const source = ["ai", "user", "coach", "system"].includes(rule.source) ? rule.source : defaultSource;
@@ -962,6 +1108,12 @@ function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "activ
     action: String(rule.action || "").trim(),
     avoid: String(rule.avoid || "").trim(),
     scope: String(rule.scope || "").trim(),
+    appliesTo: normalizeBrainStringList(rule.appliesTo || rule.tags, { limit: 6 }),
+    marketRegime: String(rule.marketRegime || "").trim(),
+    catalystWindow: String(rule.catalystWindow || "").trim(),
+    contextRequired: normalizeBrainStringList(rule.contextRequired, { limit: 6 }),
+    invalidationSignals: normalizeBrainStringList(rule.invalidationSignals, { limit: 6 }),
+    historicalAnalogs,
     confidence: normalizedConfidence,
     evidenceCount: normalizedEvidenceCount,
     validationScore,
@@ -1029,7 +1181,7 @@ function formatBrainChecklistsForPrompt(checklists) {
 
 function createEmptyStrategyBrain() {
   return {
-    version: 3,
+    version: 4,
     rules: [],
     candidateRules: [],
     checklists: createEmptyBrainChecklists(),
@@ -1104,7 +1256,7 @@ function mergeBrainPreservingCoachLessons(nextBrain, currentBrain) {
 
   const hasField = (key) => Object.prototype.hasOwnProperty.call(nextBrain || {}, key);
   const merged = {
-    version: 3,
+    version: 4,
     rules: hasField("rules") ? (normalizedNext?.rules || []) : (normalizedCurrent?.rules || []),
     candidateRules: hasField("candidateRules") ? (normalizedNext?.candidateRules || []) : (normalizedCurrent?.candidateRules || []),
     checklists: hasField("checklists")
@@ -2286,7 +2438,7 @@ export default function App() {
     setStrategyBrain(normalizeStrategyBrain(snapshot.strategyBrain));
     setResearchHistory(snapshot.researchHistory);
     setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
-    setDailyReport(snapshot.dailyReport || (normalizedAnalysisHistory.length > 0 ? normalizedAnalysisHistory[0] : null));
+    setDailyReport(normalizeDailyReportEntry(snapshot.dailyReport) || (normalizedAnalysisHistory.length > 0 ? normalizedAnalysisHistory[0] : null));
   };
   const setCloudStateForPortfolio = (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
     const enabled = nextViewMode === PORTFOLIO_VIEW_MODE && pid === OWNER_PORTFOLIO_ID;
@@ -2538,7 +2690,7 @@ export default function App() {
 
     setAnalysisHistory(nextHistory);
     if (deletingSelectedReport) {
-      setDailyReport(nextDailyReport);
+      setDailyReport(normalizeDailyReportEntry(nextDailyReport));
       if (!nextDailyReport) setDailyExpanded(false);
     }
 
@@ -2849,7 +3001,7 @@ export default function App() {
           savePortfolioData(pid, "analysis-history-v1", unique);
           writeSyncAt("pf-analysis-cloud-sync-at", Date.now());
           // 如果本地沒有 dailyReport，從合併結果補上
-          if (!snapshot.dailyReport && unique.length > 0) setDailyReport(unique[0]);
+          if (!snapshot.dailyReport && unique.length > 0) setDailyReport(normalizeDailyReportEntry(unique[0]));
         }
         // 研究歷史：合併本地+雲端，去重
         if (cloudResearch.reports?.length) {
@@ -3547,6 +3699,7 @@ export default function App() {
       let aiInsight = null;
       let aiError = null;
       let eventAssessments = [];
+      let brainAudit = createEmptyBrainAudit();
       let brainUpdatedInline = false;
       try {
         const dailyDossiers = changes.map(change => {
@@ -3602,7 +3755,9 @@ ${formatBrainRulesForPrompt(candidateRules, { limit: 6 })}
 📋 決策檢查表：
 ${checklistText}
 
+⚠️ 今日任務不是盲目沿用規則，而是先驗證這些規則今天是否仍成立；只有當現有規則無法解釋今日表現時，才新增少量候選規則。
 ⚠️ 注意：AI 建議規則可能存在確認偏差，不要因為「策略大腦這樣說」就不加質疑地套用。
+⚠️ 驗證規則時，要盡量對照過往台股相似案例；若結果失準，需分清楚是規則失準，還是個股 / 流動性 / 市場節奏差異。
 
 歷史教訓：
 ${(brain.lessons||[]).slice(-10).map(l=>`- [${l.date}] ${l.text}`).join("\n")}
@@ -3768,6 +3923,15 @@ ${JSON.stringify(blindPredictions, null, 0)}
 - 「目標價」→ 到達時間預估
 - 每個操作建議附帶：「如果我錯了，最可能的原因是什麼？」
 
+【策略大腦驗證原則】
+- 今天先驗證既有核心規則與候選規則，再考慮新增規則。
+- 若現有規則已足以解釋今日表現，就不要硬新增 candidate rule。
+- 若資料新鮮度是 stale 或 missing，只能降級信心或標成待更新，不可硬驗證成有效。
+- 若同一條舊規則今天被證偽，要明確寫進失效或待更新清單。
+- 驗證規則時，至少要用 1-2 個「過往台股相似案例 / 相似節奏」來交叉比對；先比驅動因子，再比漲法。
+- 若歷史案例失準，要明確區分是「個股特性差異 / 市場節奏不同 / 流動性不同」，還是規則本身判斷失準。
+- 若只是個股情境不同，不要直接刪規則；請改寫適用條件、marketRegime、catalystWindow 或 invalidationSignals。
+
 請用繁體中文，以精準簡潔的風格分析今日收盤表現。格式：
 
 ## 今日總結
@@ -3803,13 +3967,18 @@ ${JSON.stringify(blindPredictions, null, 0)}
 ## 🧬 BRAIN_UPDATE
 最後，根據今日分析結果更新策略大腦。用 \`\`\`json 包裹，結構：
 \`\`\`json
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用標的或情境","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"待驗證情境","action":"若成立要做什麼","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期","evolution":"這次更新一句話摘要"}
+{"validatedRules":[{"id":"規則ID或空字串","text":"今天仍成立的舊規則","reason":"為何成立","confidence":0到100,"lastValidatedAt":"日期","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"staleRules":[{"id":"規則ID或空字串","text":"需要降級或待更新的規則","reason":"資料過期或證據不足","confidence":0到100,"staleness":"aging/stale","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"invalidatedRules":[{"id":"規則ID或空字串","text":"今天被證偽的規則","reason":"為何失效","confidence":0到100,"nextStatus":"candidate/archived","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"rules":[{"text":"更新後仍保留的核心規則","when":"適用情境","action":"建議動作","scope":"適用標的或情境","appliesTo":["成長股/景氣股/事件股/權證/ETF"],"marketRegime":"規則適用的台股市況或輪動節奏","catalystWindow":"月營收/法說/財報/事件窗口","contextRequired":["規則成立前必須滿足的前提"],"invalidationSignals":["哪些訊號出現就代表規則該降級或失效"],"historicalAnalogs":[{"code":"歷史相似個股代碼","name":"股票名","period":"當時的年份/區間","thesis":"為何相似","verdict":"supported/mixed/contradicted","differenceType":"none/stock_specific/market_regime/timing/liquidity/rule_miss","note":"若失準，說明是個股差異還是規則失準"}],"confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"新增或保留待驗證規則","when":"待驗證情境","action":"若成立要做什麼","appliesTo":["適用類型"],"marketRegime":"預計適用的台股市況","catalystWindow":"預計驗證窗口","contextRequired":["前提"],"invalidationSignals":["失敗訊號"],"historicalAnalogs":[{"code":"歷史相似個股代碼","name":"股票名","period":"當時年份/區間","thesis":"為何相似","verdict":"supported/mixed/contradicted","differenceType":"none/stock_specific/market_regime/timing/liquidity/rule_miss","note":"補充"}],"confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1"...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"今日日期","evolution":"這次更新一句話摘要"}
 \`\`\`
-- rules：保留已驗證、可重複使用的核心規則，最多12條
-- candidateRules：尚待驗證的新規則，最多6條，不要直接混進核心規則
+- validatedRules：先列出今天被支持的舊規則，最多6條
+- staleRules：列出今天證據不足、資料過期或需降級的規則，最多6條
+- invalidatedRules：列出今天被證偽的規則，最多6條
+- rules：這是「今天驗證後」仍保留的核心規則，最多12條
+- candidateRules：只有現有規則無法解釋時，才新增少量候選規則，最多6條
 - validationScore：0-100，反映規則目前被支持的強度
 - staleness：標註規則是否新鮮、待更新、陳舊或尚未驗證
 - evidenceRefs：盡量附上 1-3 個證據來源，優先引用本 App 已有的 analysis / research / events / targets / fundamentals
+- historicalAnalogs：每條重要規則盡量附 1-2 個過往台股相似案例；若失準，必須標 differenceType，區分個股差異還是規則失準
+- marketRegime / catalystWindow / appliesTo：請把規則的台股適用情境寫清楚，避免把不同節奏硬套成同一條規則
 - checklists：把最重要的規則整理成進場前 / 加碼前 / 出場前檢查表
 - lessons：保留舊的+加入今日新教訓（只加有意義的）
 - commonMistakes：反覆出現的錯誤模式
@@ -3840,7 +4009,7 @@ ${eventSummary}
 4. 指出產業重複風險和建議調整方向。
 5. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議。
 6. 特別注意策略大腦中的歷史教訓。
-7. 在 BRAIN_UPDATE 段落中，基於今日分析更新策略大腦的規則和教訓。
+7. 在 BRAIN_UPDATE 段落中，先驗證舊規則，再決定是否新增少量候選規則。
 8. 所有操作建議必須帶具體數字（價位、張數、時間），禁止空泛描述。
 
 預測命中率：${(() => { const NE = newsEvents || NEWS_EVENTS; const pe = NE.filter(isClosedEvent); const h2 = pe.filter(e => e.correct === true).length; const t2 = pe.filter(e => e.correct !== null).length; return `${h2}/${t2}`; })()}`
@@ -3871,6 +4040,7 @@ ${eventSummary}
             try {
               const brainJson = JSON.parse(brainMatch[1].trim());
               if (brainJson && typeof brainJson === "object" && brainJson.rules) {
+                brainAudit = normalizeBrainAuditBuckets(brainJson);
                 const newBrain = mergeBrainPreservingCoachLessons(brainJson, strategyBrain);
                 setStrategyBrain(newBrain);
                 brainUpdatedInline = true;
@@ -3926,9 +4096,10 @@ ${eventSummary}
         eventAssessments,
         blindPredictions,
         predictionScores,
+        brainAudit,
       };
 
-      setDailyReport(report);
+      setDailyReport(normalizeDailyReportEntry(report));
       setAnalysisHistory(prev => normalizeAnalysisHistoryEntries([report, ...(prev || [])]));
 
       // 同步分析報告到雲端（不管大腦進化成不成功都要存）
@@ -3956,16 +4127,23 @@ ${eventSummary}
             body: JSON.stringify({
               systemPrompt: `你是策略知識庫管理器。根據今日分析結果，更新策略大腦。
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要"}
+{"validatedRules":[{"id":"規則ID或空字串","text":"今天仍成立的舊規則","reason":"為何成立","confidence":0到100,"lastValidatedAt":"日期","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"staleRules":[{"id":"規則ID或空字串","text":"需要降級或待更新的規則","reason":"資料過期或證據不足","confidence":0到100,"staleness":"aging/stale","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"invalidatedRules":[{"id":"規則ID或空字串","text":"今天被證偽的規則","reason":"為何失效","confidence":0到100,"nextStatus":"candidate/archived","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"rules":[{"text":"更新後仍保留的核心規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":["錯誤1",...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要"}
 
-規則：基於累積經驗的核心交易策略（最多12條，去掉過時的）
-candidateRules：新的待驗證假設（最多6條）
-validationScore：0-100，反映規則目前的可用度
-staleness：標註規則是否已過期或待更新
-evidenceRefs：盡量附 1-3 個來自 analysis / research / events / targets / fundamentals 的證據
+規則：先驗證舊規則，再決定是否保留
+validatedRules：今天被支持的舊規則
+staleRules：證據不足、資料過期或需降級的規則
+invalidatedRules：今天被證偽的規則
+candidateRules：只有現有規則不夠覆蓋時，才新增少量假設
 checklists：把規則整理成進場前 / 加碼前 / 出場前檢查表
 教訓：今日新增的具體教訓（只加新的，保留舊的）
-常犯錯誤：反覆出現的錯誤模式`,
+常犯錯誤：反覆出現的錯誤模式
+每條重要規則請額外補：
+- appliesTo：適用類型
+- marketRegime：適用的台股市況 / 輪動節奏
+- catalystWindow：適用的月營收 / 財報 / 法說 / 事件窗口
+- contextRequired：規則成立前提
+- invalidationSignals：哪些訊號代表規則失效
+- historicalAnalogs：1-2 個過往台股相似案例，若失準需在 note 中說明是規則失準還是個股 / 流動性 / 市況差異`,
               userPrompt: `今日分析：
 ${aiInsight}
 
@@ -3981,8 +4159,11 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const brainData = await brainRes.json();
           const brainText = brainData.content?.[0]?.text || "";
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
-          const newBrain = mergeBrainPreservingCoachLessons(JSON.parse(cleanBrain), strategyBrain);
+          const rawBrain = JSON.parse(cleanBrain);
+          brainAudit = normalizeBrainAuditBuckets(rawBrain);
+          const newBrain = mergeBrainPreservingCoachLessons(rawBrain, strategyBrain);
           setStrategyBrain(newBrain);
+          setDailyReport(prev => prev ? normalizeDailyReportEntry({ ...prev, brainAudit }) : prev);
         } catch (e) {
           console.error("策略大腦更新失敗（fallback）:", e);
         }
@@ -4139,7 +4320,12 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 3. 更新策略大腦的規則和教訓
 
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}
+
+另外，每條規則 / 候選規則盡量補上：
+- appliesTo / marketRegime / catalystWindow
+- contextRequired / invalidationSignals
+- historicalAnalogs：1-2 個過往台股相似案例；若這次失準，說明是規則失準還是個股情境差異`,
             userPrompt: `事件：${evt.title}
 ${notesContext}
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
@@ -4200,7 +4386,11 @@ ${JSON.stringify(currentBrain)}
 7. 產生一份「整理摘要」說明你做了什麼改動。
 
 回傳**純JSON**格式：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","evolution":"一句話摘要","cleanupSummary":"整理摘要"}`,
+{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"","text":""}],"commonMistakes":[...],"coachLessons":[原始格式保留],"stats":{保持原有},"lastUpdate":"今日日期","evolution":"一句話摘要","cleanupSummary":"整理摘要"}
+
+額外要求：
+- 保留真的有用的 historicalAnalogs，淘汰只會重複結論但沒有辨識度的案例
+- 若規則失效只是因為 TWSE/TPEX、流動性、時序不同，優先改寫 appliesTo / marketRegime / catalystWindow，而不是直接刪規則`,
           userPrompt: `今日日期：${toSlashDate()}
 
 目前策略大腦：
@@ -6456,6 +6646,47 @@ ${recentAnalyses || "尚無分析紀錄"}
                 </div>
               )}
 
+              {/* AI 規則驗證 */}
+              {((dailyReport.brainAudit?.validatedRules || []).length > 0 || (dailyReport.brainAudit?.staleRules || []).length > 0 || (dailyReport.brainAudit?.invalidatedRules || []).length > 0) && (
+                <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.lavender, A.glow)}`}}>
+                  <div style={{...lbl,color:C.lavender}}>AI 規則驗證</div>
+                  {[
+                    { key: "validatedRules", label: "今天仍成立", color: C.up },
+                    { key: "staleRules", label: "待更新 / 證據不足", color: C.amber },
+                    { key: "invalidatedRules", label: "今天被證偽", color: C.down },
+                  ].map(section => {
+                    const rows = dailyReport.brainAudit?.[section.key] || [];
+                    if (rows.length === 0) return null;
+                    return (
+                      <div key={section.key} style={{marginBottom:8}}>
+                        <div style={{fontSize:10,color:section.color,fontWeight:600,marginBottom:4}}>{section.label} · {rows.length} 條</div>
+                        {rows.map((item, idx) => (
+                          <div key={`${section.key}-${idx}`} style={{marginBottom:6,background:C.subtle,borderRadius:7,padding:"9px 11px"}}>
+                            <div style={{fontSize:10,fontWeight:600,color:C.textSec,marginBottom:3}}>
+                              {item.text || item.id || "未命名規則"}
+                            </div>
+                            {item.reason && (
+                              <div style={{fontSize:10,color:C.textSec,marginBottom:2}}>{item.reason}</div>
+                            )}
+                            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                              {item.confidence != null && <span style={{fontSize:9,color:C.textMute}}>信心度 {item.confidence}%</span>}
+                              {item.lastValidatedAt && <span style={{fontSize:9,color:C.textMute}}>最近驗證 {item.lastValidatedAt}</span>}
+                              {item.staleness && <span style={{fontSize:9,color:C.textMute}}>狀態 {brainRuleStalenessLabel(item.staleness)}</span>}
+                              {item.nextStatus && <span style={{fontSize:9,color:C.textMute}}>建議轉為 {item.nextStatus}</span>}
+                            </div>
+                            {(item.evidenceRefs || []).length > 0 && (
+                              <div style={{fontSize:9,color:C.blue,marginTop:3}}>
+                                證據來源：{item.evidenceRefs.slice(0, 3).map(ref => ref.label).join("、")}{item.evidenceRefs.length > 3 ? "…" : ""}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* 需要復盤的事件 */}
               {dailyReport.needsReview.length>0 && (
                 <div style={{...card,marginBottom:8,borderLeft:`3px solid ${alpha(C.up, A.glow)}`}}>
@@ -6542,6 +6773,24 @@ ${recentAnalyses || "尚無分析紀錄"}
                             {(r.evidenceRefs || []).length > 3 ? "…" : ""}
                           </div>
                         )}
+                        {((r.contextRequired||[]).length > 0 || (r.invalidationSignals||[]).length > 0) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            {(r.contextRequired||[]).length > 0 ? `成立前提：${r.contextRequired.slice(0, 3).join("、")}` : null}
+                            {(r.contextRequired||[]).length > 0 && (r.invalidationSignals||[]).length > 0 ? " ｜ " : ""}
+                            {(r.invalidationSignals||[]).length > 0 ? `失效訊號：${r.invalidationSignals.slice(0, 3).join("、")}` : null}
+                          </div>
+                        )}
+                        {(r.historicalAnalogs||[]).length > 0 && (
+                          <div style={{fontSize:9,color:C.olive,lineHeight:1.5,marginTop:2}}>
+                            歷史相似案例：{r.historicalAnalogs.slice(0, 2).map(item => {
+                              const head = [item.name, item.code].filter(Boolean).join(" ");
+                              const verdict = brainAnalogVerdictLabel(item.verdict);
+                              const diff = brainAnalogDifferenceTypeLabel(item.differenceType);
+                              return `${head || "未命名案例"}${item.period ? `(${item.period})` : ""}${verdict ? `｜${verdict}` : ""}${diff ? `｜${diff}` : ""}`;
+                            }).join("、")}
+                            {(r.historicalAnalogs || []).length > 2 ? "…" : ""}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -6558,6 +6807,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                             {[
                               rule.when ? `情境：${rule.when}` : null,
                               rule.action ? `動作：${rule.action}` : null,
+                              (rule.appliesTo||[]).length > 0 ? `適用：${rule.appliesTo.slice(0, 3).join("/")}` : null,
+                              rule.marketRegime ? `市況：${rule.marketRegime}` : null,
+                              rule.catalystWindow ? `窗口：${rule.catalystWindow}` : null,
                               rule.confidence != null ? `信心 ${rule.confidence}/10` : null,
                               rule.evidenceCount > 0 ? `驗證 ${rule.evidenceCount} 次` : null,
                               rule.validationScore != null ? `驗證分 ${rule.validationScore}` : null,
@@ -6569,6 +6821,24 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <div style={{fontSize:9,color:C.blue,lineHeight:1.5,marginTop:2}}>
                             證據來源：{(rule.evidenceRefs || []).slice(0, 3).map(ref => ref.label).join("、")}
                             {(rule.evidenceRefs || []).length > 3 ? "…" : ""}
+                          </div>
+                        )}
+                        {((rule.contextRequired||[]).length > 0 || (rule.invalidationSignals||[]).length > 0) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            {(rule.contextRequired||[]).length > 0 ? `成立前提：${rule.contextRequired.slice(0, 3).join("、")}` : null}
+                            {(rule.contextRequired||[]).length > 0 && (rule.invalidationSignals||[]).length > 0 ? " ｜ " : ""}
+                            {(rule.invalidationSignals||[]).length > 0 ? `失效訊號：${rule.invalidationSignals.slice(0, 3).join("、")}` : null}
+                          </div>
+                        )}
+                        {(rule.historicalAnalogs||[]).length > 0 && (
+                          <div style={{fontSize:9,color:C.olive,lineHeight:1.5,marginTop:2}}>
+                            歷史相似案例：{(rule.historicalAnalogs || []).slice(0, 2).map(item => {
+                              const head = [item.name, item.code].filter(Boolean).join(" ");
+                              const verdict = brainAnalogVerdictLabel(item.verdict);
+                              const diff = brainAnalogDifferenceTypeLabel(item.differenceType);
+                              return `${head || "未命名案例"}${item.period ? `(${item.period})` : ""}${verdict ? `｜${verdict}` : ""}${diff ? `｜${diff}` : ""}`;
+                            }).join("、")}
+                            {(rule.historicalAnalogs || []).length > 2 ? "…" : ""}
                           </div>
                         )}
                       </div>
@@ -6690,7 +6960,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               <div style={lbl}>歷史分析記錄</div>
               {(analysisHistory||[]).slice(0,10).map(r=>(
                 <div key={r.id} onClick={()=>{
-                    setDailyReport(r);
+                    setDailyReport(normalizeDailyReportEntry(r));
                     setDailyExpanded(true);
                     setTimeout(()=>document.getElementById("daily-report-top")?.scrollIntoView({behavior:"smooth"}),50);
                   }}

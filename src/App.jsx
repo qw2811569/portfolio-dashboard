@@ -509,6 +509,7 @@ const DEFAULT_PORTFOLIO_NOTES = {
 const EVENT_HISTORY_LIMIT = 90;
 const REPORT_REFRESH_DAILY_LIMIT = 5;
 const REPORT_EXTRACT_MAX_ITEMS = 2;
+const BRAIN_VALIDATION_CASE_LIMIT = 240;
 const DEFAULT_REVIEW_FORM = {
   actual: "up",
   actualNote: "",
@@ -551,6 +552,7 @@ const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "daily-report-v1", alias: "dailyReport", ownerFallback: () => null, emptyFallback: () => null },
   { suffix: "reversal-v1", alias: "reversalConditions", ownerFallback: () => ({}), emptyFallback: () => ({}) },
   { suffix: "brain-v1", alias: "strategyBrain", ownerFallback: () => null, emptyFallback: () => null },
+  { suffix: "brain-validation-v1", alias: "brainValidation", ownerFallback: () => ({ version: 1, cases: [] }), emptyFallback: () => ({ version: 1, cases: [] }), hasLegacy: false },
   { suffix: "research-history-v1", alias: "researchHistory", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "notes-v1", alias: "portfolioNotes", ownerFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), emptyFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), hasLegacy: false },
 ];
@@ -1051,6 +1053,420 @@ function normalizeBrainAuditBuckets(value) {
   return normalized;
 }
 
+function createEmptyBrainValidationStore() {
+  return {
+    version: 1,
+    cases: [],
+  };
+}
+
+function normalizeBrainValidationPositionType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return "stock";
+  if (normalized.includes("權證")) return "warrant";
+  if (normalized.includes("etf")) return "etf";
+  return "stock";
+}
+
+function brainValidationPositionTypeLabel(value) {
+  switch (normalizeBrainValidationPositionType(value)) {
+    case "warrant":
+      return "權證";
+    case "etf":
+      return "ETF";
+    case "stock":
+    default:
+      return "股票";
+  }
+}
+
+function normalizeBrainValidationStrategyClass(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text.includes("權證")) return "權證";
+  if (text.includes("ETF") || text.includes("指數")) return "ETF/指數";
+  if (text.includes("事件")) return "事件驅動";
+  if (text.includes("成長")) return "成長股";
+  if (text.includes("景氣")) return "景氣循環";
+  if (text.includes("防禦") || text.includes("停損")) return "防禦/停損觀察";
+  if (text.includes("轉型")) return "轉型股";
+  if (text.includes("價值")) return "價值股";
+  return text;
+}
+
+function normalizeBrainValidationEventPhase(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["no_event", "pre_event", "tracking", "post_event"].includes(normalized) ? normalized : "no_event";
+}
+
+function normalizeBrainValidationIndustryTheme(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text.includes("AI") || text.includes("伺服器")) return "AI伺服器";
+  if (text.includes("PCB") || text.includes("材料") || text.includes("CCL")) return "PCB/CCL";
+  if (text.includes("記憶體") || text.includes("IC")) return "記憶體/半導體";
+  if (text.includes("光通訊")) return "光通訊";
+  if (text.includes("生技")) return "生技";
+  if (text.includes("ETF")) return "ETF/指數";
+  if (text.includes("精密機械")) return "精密機械";
+  return text;
+}
+
+function normalizeBrainValidationHoldingPeriod(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text.includes("短") && text.includes("長")) return "mid";
+  if (text.includes("短") && text.includes("中")) return "mid";
+  if (text.includes("長")) return "long";
+  if (text.includes("中")) return "mid";
+  if (text.includes("短")) return "short";
+  return "";
+}
+
+function normalizeBrainValidationBand(value, allowed) {
+  const normalized = String(value || "").trim();
+  return allowed.includes(normalized) ? normalized : "unknown";
+}
+
+function normalizeBrainValidationFingerprint(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return {
+    positionType: normalizeBrainValidationPositionType(value.positionType),
+    strategyClass: normalizeBrainValidationStrategyClass(value.strategyClass),
+    eventPhase: normalizeBrainValidationEventPhase(value.eventPhase),
+    catalystTags: normalizeBrainStringList(value.catalystTags, { limit: 8 }),
+    industryTheme: normalizeBrainValidationIndustryTheme(value.industryTheme),
+    holdingPeriod: normalizeBrainValidationHoldingPeriod(value.holdingPeriod),
+    fundamentalState: {
+      revenueYoYBand: normalizeBrainValidationBand(value.fundamentalState?.revenueYoYBand, ["<0", "0-15", "15-30", "30+", "unknown"]),
+      epsState: normalizeBrainValidationBand(value.fundamentalState?.epsState, ["up", "flat", "down", "unknown"]),
+      grossMarginTrend: normalizeBrainValidationBand(value.fundamentalState?.grossMarginTrend, ["up", "flat", "down", "unknown"]),
+    },
+    priceState: {
+      pnlBand: normalizeBrainValidationBand(value.priceState?.pnlBand, ["<-15", "-15~-5", "-5~5", "5~15", "15+", "unknown"]),
+      targetGapBand: normalizeBrainValidationBand(value.priceState?.targetGapBand, [">20", "10~20", "0~10", "<0", "unknown"]),
+    },
+    freshness: {
+      fundamentals: normalizeBrainRuleStaleness(value.freshness?.fundamentals) || "missing",
+      targets: normalizeBrainRuleStaleness(value.freshness?.targets) || "missing",
+      analyst: normalizeBrainRuleStaleness(value.freshness?.analyst) || "missing",
+      research: normalizeBrainRuleStaleness(value.freshness?.research) || "missing",
+    },
+  };
+}
+
+function buildBrainValidationHash(text) {
+  const source = String(text || "").trim();
+  let hash = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    hash = ((hash << 5) - hash) + source.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function buildBrainRuleKey(rule) {
+  const id = String(rule?.id || "").trim();
+  if (id) return id;
+  const text = brainRuleText(rule);
+  return text ? `rule-${buildBrainValidationHash(text)}` : `rule-${Date.now()}`;
+}
+
+function classifyBrainValidationEventPhase(dossier) {
+  const events = dossier?.events || {};
+  if (Array.isArray(events.tracking) && events.tracking.length > 0) return "tracking";
+  if (Array.isArray(events.pending) && events.pending.length > 0) return "pre_event";
+  if (events.latestClosed) return "post_event";
+  return "no_event";
+}
+
+function collectBrainCatalystTags(text) {
+  const source = String(text || "").toLowerCase();
+  const tags = [];
+  const matchTag = (tag, patterns) => {
+    if (patterns.some(pattern => source.includes(pattern))) tags.push(tag);
+  };
+  matchTag("法說", ["法說", "說明會"]);
+  matchTag("財報", ["財報", "eps", "獲利"]);
+  matchTag("月營收", ["月營收", "營收"]);
+  matchTag("目標價上修", ["目標價上修", "上修"]);
+  matchTag("目標價下修", ["目標價下修", "下修"]);
+  matchTag("AI", ["ai", "伺服器"]);
+  matchTag("ASIC", ["asic"]);
+  matchTag("CCL", ["ccl", "覆銅板"]);
+  matchTag("DDR3", ["ddr3"]);
+  matchTag("漲價", ["漲價", "asp"]);
+  matchTag("去庫存", ["去庫存"]);
+  matchTag("補庫存", ["補庫存"]);
+  matchTag("政策", ["政策", "補助"]);
+  matchTag("高殖利率", ["殖利率", "股息"]);
+  matchTag("匯率", ["匯率", "升值", "貶值"]);
+  matchTag("中國刺激", ["中國", "刺激"]);
+  matchTag("生技", ["藥證", "臨床", "授權", "生技"]);
+  return tags;
+}
+
+function revenueYoYBand(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "unknown";
+  if (num < 0) return "<0";
+  if (num < 15) return "0-15";
+  if (num < 30) return "15-30";
+  return "30+";
+}
+
+function epsStateBand(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "unknown";
+  if (num < 0) return "down";
+  if (num < 5) return "flat";
+  return "up";
+}
+
+function grossMarginBand(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "unknown";
+  if (num < 25) return "down";
+  if (num < 40) return "flat";
+  return "up";
+}
+
+function pnlBand(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "unknown";
+  if (num < -15) return "<-15";
+  if (num < -5) return "-15~-5";
+  if (num < 5) return "-5~5";
+  if (num < 15) return "5~15";
+  return "15+";
+}
+
+function targetGapBand(avgTarget, price) {
+  const target = Number(avgTarget);
+  const current = Number(price);
+  if (!Number.isFinite(target) || !Number.isFinite(current) || current <= 0) return "unknown";
+  const pct = ((target - current) / current) * 100;
+  if (pct > 20) return ">20";
+  if (pct > 10) return "10~20";
+  if (pct >= 0) return "0~10";
+  return "<0";
+}
+
+function buildScenarioFingerprintFromDossier(dossier) {
+  if (!dossier) return null;
+  const position = dossier.position || {};
+  const meta = dossier.meta || {};
+  const fundamentals = dossier.fundamentals || {};
+  const targets = dossier.targets || {};
+  const analyst = dossier.analyst || {};
+  const research = dossier.research || {};
+  const events = dossier.events || {};
+  const catalystText = [
+    meta.strategy,
+    meta.industry,
+    dossier.thesis?.summary,
+    analyst.summary,
+    research.summary,
+    ...(Array.isArray(events.pending) ? events.pending.map(item => item?.title) : []),
+    ...(Array.isArray(events.tracking) ? events.tracking.map(item => item?.title) : []),
+  ].filter(Boolean).join(" | ");
+  return normalizeBrainValidationFingerprint({
+    positionType: position.type,
+    strategyClass: meta.strategy,
+    eventPhase: classifyBrainValidationEventPhase(dossier),
+    catalystTags: collectBrainCatalystTags(catalystText),
+    industryTheme: meta.industry,
+    holdingPeriod: meta.period,
+    fundamentalState: {
+      revenueYoYBand: revenueYoYBand(fundamentals.revenueYoY),
+      epsState: epsStateBand(fundamentals.eps),
+      grossMarginTrend: grossMarginBand(fundamentals.grossMargin),
+    },
+    priceState: {
+      pnlBand: pnlBand(position.pct),
+      targetGapBand: targetGapBand(targets.avgTarget, position.price),
+    },
+    freshness: {
+      fundamentals: fundamentals.freshness,
+      targets: targets.freshness,
+      analyst: analyst.freshness,
+      research: research.freshness,
+    },
+  });
+}
+
+function ratioOverlap(a, b) {
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  if (left.length === 0 || right.length === 0) return 0;
+  const rightSet = new Set(right);
+  const matched = left.filter(item => rightSet.has(item)).length;
+  return matched / Math.max(left.length, right.length, 1);
+}
+
+function isHardExcludedAnalog(left, right) {
+  if (!left || !right) return true;
+  if (left.positionType !== right.positionType) {
+    if (left.positionType === "warrant" || right.positionType === "warrant") return true;
+    if (left.positionType === "etf" || right.positionType === "etf") return true;
+  }
+  if (["權證", "ETF/指數"].includes(left.strategyClass) || ["權證", "ETF/指數"].includes(right.strategyClass)) {
+    if (left.strategyClass !== right.strategyClass) return true;
+  }
+  if ((left.eventPhase === "pre_event" && right.eventPhase === "post_event") || (left.eventPhase === "post_event" && right.eventPhase === "pre_event")) {
+    return true;
+  }
+  return false;
+}
+
+function scoreBrainValidationAnalog(left, right) {
+  if (!left || !right || isHardExcludedAnalog(left, right)) {
+    return { score: 0, excluded: true, matchedDimensions: [], mismatchedDimensions: ["hard_exclusion"] };
+  }
+
+  let score = 0;
+  const matchedDimensions = [];
+  const mismatchedDimensions = [];
+
+  if (left.positionType === right.positionType) { score += 18; matchedDimensions.push("positionType"); } else mismatchedDimensions.push("positionType");
+  if (left.strategyClass && left.strategyClass === right.strategyClass) { score += 18; matchedDimensions.push("strategyClass"); } else mismatchedDimensions.push("strategyClass");
+
+  if (left.eventPhase === right.eventPhase) {
+    score += 14; matchedDimensions.push("eventPhase");
+  } else if ((left.eventPhase === "pre_event" && right.eventPhase === "tracking") || (left.eventPhase === "tracking" && right.eventPhase === "pre_event")) {
+    score += 7; matchedDimensions.push("eventPhase");
+  } else if ((left.eventPhase === "tracking" && right.eventPhase === "post_event") || (left.eventPhase === "post_event" && right.eventPhase === "tracking")) {
+    score += 6; matchedDimensions.push("eventPhase");
+  } else {
+    mismatchedDimensions.push("eventPhase");
+  }
+
+  const catalystOverlap = ratioOverlap(left.catalystTags, right.catalystTags);
+  if (catalystOverlap >= 0.67) { score += 14; matchedDimensions.push("catalystTags"); }
+  else if (catalystOverlap >= 0.34) { score += 9; matchedDimensions.push("catalystTags"); }
+  else if (catalystOverlap > 0) { score += 5; matchedDimensions.push("catalystTags"); }
+  else mismatchedDimensions.push("catalystTags");
+
+  if (left.industryTheme && left.industryTheme === right.industryTheme) { score += 10; matchedDimensions.push("industryTheme"); }
+  else mismatchedDimensions.push("industryTheme");
+
+  if (left.holdingPeriod && left.holdingPeriod === right.holdingPeriod) { score += 8; matchedDimensions.push("holdingPeriod"); }
+  else if ([left.holdingPeriod, right.holdingPeriod].includes("mid") && left.holdingPeriod && right.holdingPeriod) { score += 4; matchedDimensions.push("holdingPeriod"); }
+  else mismatchedDimensions.push("holdingPeriod");
+
+  const fundamentalsMatched = [
+    left.fundamentalState?.revenueYoYBand === right.fundamentalState?.revenueYoYBand,
+    left.fundamentalState?.epsState === right.fundamentalState?.epsState,
+    left.fundamentalState?.grossMarginTrend === right.fundamentalState?.grossMarginTrend,
+  ].filter(Boolean).length;
+  if (fundamentalsMatched === 3) { score += 10; matchedDimensions.push("fundamentalState"); }
+  else if (fundamentalsMatched === 2) { score += 7; matchedDimensions.push("fundamentalState"); }
+  else if (fundamentalsMatched === 1) { score += 3; matchedDimensions.push("fundamentalState"); }
+  else mismatchedDimensions.push("fundamentalState");
+
+  const priceMatched = [
+    left.priceState?.pnlBand === right.priceState?.pnlBand,
+    left.priceState?.targetGapBand === right.priceState?.targetGapBand,
+  ].filter(Boolean).length;
+  if (priceMatched === 2) { score += 8; matchedDimensions.push("priceState"); }
+  else if (priceMatched === 1) { score += 4; matchedDimensions.push("priceState"); }
+  else mismatchedDimensions.push("priceState");
+
+  const freshnessPenalty = [
+    { key: "fundamentals", weight: 12 },
+    { key: "targets", weight: 10 },
+    { key: "analyst", weight: 8 },
+    { key: "research", weight: 5 },
+  ].reduce((sum, item) => {
+    const status = left.freshness?.[item.key];
+    return sum + (["stale", "missing"].includes(status) ? item.weight : 0);
+  }, 0);
+
+  score -= freshnessPenalty;
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    excluded: false,
+    matchedDimensions,
+    mismatchedDimensions,
+  };
+}
+
+function classifyBrainDifferenceType(reason, bucket) {
+  const source = String(reason || "").toLowerCase();
+  if (!source) return bucket === "invalidated" ? "rule_miss" : "none";
+  if (["流動性", "量能", "權證", "換手", "成交"].some(token => source.includes(token.toLowerCase()))) return "liquidity";
+  if (["市況", "題材", "輪動", "風險偏好", "大盤", "資金"].some(token => source.includes(token.toLowerCase()))) return "market_regime";
+  if (["法說", "月營收", "財報", "時間", "時序", "窗口"].some(token => source.includes(token.toLowerCase()))) return "timing";
+  if (["個股", "供應鏈", "客戶", "產品", "藥證", "內部人"].some(token => source.includes(token.toLowerCase()))) return "stock_specific";
+  return bucket === "invalidated" ? "rule_miss" : "none";
+}
+
+function normalizeBrainValidationMatch(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const caseId = String(value.caseId || "").trim();
+  const code = String(value.code || "").trim();
+  const name = String(value.name || "").trim();
+  if (!caseId && !code && !name) return null;
+  return {
+    caseId: caseId || null,
+    code: code || null,
+    name: name || "",
+    capturedAt: String(value.capturedAt || "").trim() || null,
+    score: Number.isFinite(Number(value.score)) ? Math.max(0, Math.min(100, Math.round(Number(value.score)))) : null,
+    verdict: normalizeBrainAnalogVerdict(value.verdict),
+    differenceType: normalizeBrainAnalogDifferenceType(value.differenceType),
+    note: String(value.note || "").trim(),
+  };
+}
+
+function normalizeBrainValidationCase(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const caseId = String(value.caseId || "").trim();
+  const ruleKey = String(value.ruleKey || "").trim();
+  const ruleText = String(value.ruleText || "").trim();
+  const code = String(value.code || "").trim();
+  if (!caseId || !ruleKey || !ruleText || !code) return null;
+  const fingerprint = normalizeBrainValidationFingerprint(value.fingerprint);
+  if (!fingerprint) return null;
+  return {
+    caseId,
+    portfolioId: String(value.portfolioId || "").trim() || OWNER_PORTFOLIO_ID,
+    sourceType: ["dailyAnalysis", "eventReview"].includes(value.sourceType) ? value.sourceType : "dailyAnalysis",
+    sourceRefId: String(value.sourceRefId || "").trim() || null,
+    capturedAt: String(value.capturedAt || "").trim() || toSlashDate(),
+    code,
+    name: String(value.name || "").trim() || code,
+    ruleKey,
+    ruleId: String(value.ruleId || "").trim() || null,
+    ruleText,
+    bucket: ["validated", "stale", "invalidated"].includes(value.bucket) ? value.bucket : "validated",
+    verdict: normalizeBrainAnalogVerdict(value.verdict) || "supported",
+    differenceType: normalizeBrainAnalogDifferenceType(value.differenceType) || "none",
+    note: String(value.note || "").trim(),
+    similarityScore: Number.isFinite(Number(value.similarityScore)) ? Math.max(0, Math.min(100, Math.round(Number(value.similarityScore)))) : null,
+    matchedDimensions: normalizeBrainStringList(value.matchedDimensions, { limit: 8 }),
+    mismatchedDimensions: normalizeBrainStringList(value.mismatchedDimensions, { limit: 8 }),
+    fingerprint,
+    evidenceRefs: normalizeBrainEvidenceRefs(value.evidenceRefs),
+    analogMatches: Array.isArray(value.analogMatches) ? value.analogMatches.map(normalizeBrainValidationMatch).filter(Boolean).slice(0, 3) : [],
+  };
+}
+
+function normalizeBrainValidationStore(value) {
+  const normalized = createEmptyBrainValidationStore();
+  if (!value || typeof value !== "object" || Array.isArray(value)) return normalized;
+  normalized.cases = Array.isArray(value.cases)
+    ? value.cases.map(normalizeBrainValidationCase).filter(Boolean)
+      .sort((a, b) => {
+        const aTime = parseFlexibleDate(a?.capturedAt)?.getTime() || 0;
+        const bTime = parseFlexibleDate(b?.capturedAt)?.getTime() || 0;
+        return bTime - aTime;
+      })
+      .slice(0, BRAIN_VALIDATION_CASE_LIMIT)
+    : [];
+  return normalized;
+}
+
 function normalizeBrainRule(rule, { defaultSource = "ai", defaultStatus = "active" } = {}) {
   const text = brainRuleText(rule);
   if (!text) return null;
@@ -1334,6 +1750,19 @@ function normalizeFundamentalsEntry(value) {
     source: source || "",
     note: note || "",
   };
+  const numericValues = [
+    normalized.revenueYoY,
+    normalized.revenueMoM,
+    normalized.eps,
+    normalized.grossMargin,
+    normalized.roe,
+  ].filter(item => item != null);
+  const looksLikePlaceholderZeros = numericValues.length > 0
+    && numericValues.every(item => Number(item) === 0)
+    && !normalized.revenueMonth
+    && !normalized.quarter
+    && !normalized.note;
+  if (looksLikePlaceholderZeros) return null;
   const hasContent = Object.values(normalized).some(item => item !== null && item !== "");
   return hasContent ? normalized : null;
 }
@@ -1887,6 +2316,178 @@ function normalizeHoldingDossiers(value) {
     .map(item => ({ ...item }));
 }
 
+function ruleMatchesValidationDossier(rule, dossier, auditItem) {
+  if (!dossier) return false;
+  const codeHints = normalizeBrainStringList([
+    ...(Array.isArray(auditItem?.evidenceRefs) ? auditItem.evidenceRefs.map(ref => ref?.code) : []),
+    ...(Array.isArray(rule?.evidenceRefs) ? rule.evidenceRefs.map(ref => ref?.code) : []),
+  ], { limit: 8 });
+  if (codeHints.includes(dossier.code)) return true;
+
+  const meta = dossier.meta || {};
+  const appliesTo = normalizeBrainStringList(rule?.appliesTo, { limit: 8 }).map(item => item.toLowerCase());
+  const tokens = buildBrainTokens({ ...dossier.position, code: dossier.code, name: dossier.name }, meta);
+  if (codeHints.length === 0 && textMatchesBrainTokens(rule, tokens)) return true;
+  if (appliesTo.length === 0) return false;
+
+  const strategy = normalizeBrainValidationStrategyClass(meta.strategy).toLowerCase();
+  const industry = normalizeBrainValidationIndustryTheme(meta.industry).toLowerCase();
+  const positionType = brainValidationPositionTypeLabel(dossier.position?.type).toLowerCase();
+  return appliesTo.some(item =>
+    strategy.includes(item) ||
+    industry.includes(item) ||
+    positionType.includes(item)
+  );
+}
+
+function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, portfolioId } = {}) {
+  const cases = normalizeBrainValidationStore(store).cases;
+  const sameRuleCases = cases.filter(item => item.ruleKey === ruleKey && (!portfolioId || item.portfolioId === portfolioId));
+  const pool = sameRuleCases.length > 0
+    ? sameRuleCases
+    : cases.filter(item => item.fingerprint?.strategyClass === fingerprint?.strategyClass && (!portfolioId || item.portfolioId === portfolioId));
+
+  return pool
+    .map(item => {
+      const score = scoreBrainValidationAnalog(fingerprint, item.fingerprint);
+      return { item, score };
+    })
+    .filter(({ score }) => !score.excluded && score.score >= 65)
+    .sort((a, b) => b.score.score - a.score.score)
+    .slice(0, limit)
+    .map(({ item, score }) => ({
+      caseId: item.caseId,
+      code: item.code,
+      name: item.name,
+      capturedAt: item.capturedAt,
+      score: score.score,
+      verdict: item.verdict,
+      differenceType: item.differenceType,
+      note: item.note,
+    }));
+}
+
+function createBrainValidationCase({
+  portfolioId,
+  sourceType,
+  sourceRefId,
+  dossier,
+  rule,
+  auditItem,
+  bucket,
+  verdict,
+  store,
+  capturedAt,
+}) {
+  const fingerprint = buildScenarioFingerprintFromDossier(dossier);
+  if (!fingerprint) return null;
+  const ruleKey = buildBrainRuleKey(rule || auditItem);
+  const analogMatches = findTopBrainAnalogMatches(store, fingerprint, { ruleKey, portfolioId });
+  const similarityScore = analogMatches.length > 0 ? analogMatches[0].score : null;
+  return normalizeBrainValidationCase({
+    caseId: `${sourceType}-${sourceRefId}-${dossier.code}-${ruleKey}`,
+    portfolioId,
+    sourceType,
+    sourceRefId,
+    capturedAt,
+    code: dossier.code,
+    name: dossier.name,
+    ruleKey,
+    ruleId: rule?.id || auditItem?.id || null,
+    ruleText: brainRuleText(rule || auditItem),
+    bucket,
+    verdict,
+    differenceType: classifyBrainDifferenceType(auditItem?.reason, bucket),
+    note: String(auditItem?.reason || "").trim(),
+    similarityScore,
+    matchedDimensions: analogMatches.length > 0 ? [] : [],
+    mismatchedDimensions: [],
+    fingerprint,
+    evidenceRefs: [
+      ...normalizeBrainEvidenceRefs(auditItem?.evidenceRefs),
+      ...normalizeBrainEvidenceRefs(rule?.evidenceRefs),
+    ].slice(0, 4),
+    analogMatches,
+  });
+}
+
+function appendBrainValidationCases(store, {
+  portfolioId,
+  sourceType = "dailyAnalysis",
+  sourceRefId,
+  dossiers,
+  brain,
+  brainAudit,
+  capturedAt = toSlashDate(),
+} = {}) {
+  const current = normalizeBrainValidationStore(store);
+  const nextMap = new Map(current.cases.map(item => [item.caseId, item]));
+  const normalizedBrain = normalizeStrategyBrain(brain, { allowEmpty: true });
+  const allRules = [
+    ...(normalizedBrain?.rules || []),
+    ...(normalizedBrain?.candidateRules || []),
+  ];
+  const byId = new Map(allRules.filter(item => item?.id).map(item => [item.id, item]));
+  const byText = new Map(allRules.map(item => [brainRuleText(item), item]).filter(([text]) => Boolean(text)));
+  const rows = normalizeHoldingDossiers(dossiers);
+
+  [
+    { key: "validatedRules", bucket: "validated", verdict: "supported" },
+    { key: "staleRules", bucket: "stale", verdict: "mixed" },
+    { key: "invalidatedRules", bucket: "invalidated", verdict: "contradicted" },
+  ].forEach(section => {
+    const items = brainAudit?.[section.key] || [];
+    items.forEach(auditItem => {
+      const rule = (auditItem.id && byId.get(auditItem.id)) || byText.get(auditItem.text) || null;
+      const matchedRows = rows.filter(dossier => ruleMatchesValidationDossier(rule, dossier, auditItem)).slice(0, 2);
+      matchedRows.forEach(dossier => {
+        const entry = createBrainValidationCase({
+          portfolioId,
+          sourceType,
+          sourceRefId,
+          dossier,
+          rule,
+          auditItem,
+          bucket: section.bucket,
+          verdict: section.verdict,
+          store: current,
+          capturedAt,
+        });
+        if (entry) nextMap.set(entry.caseId, entry);
+      });
+    });
+  });
+
+  return normalizeBrainValidationStore({
+    version: 1,
+    cases: Array.from(nextMap.values()),
+  });
+}
+
+function buildBrainValidationSummaryMap(store, portfolioId) {
+  const cases = normalizeBrainValidationStore(store).cases
+    .filter(item => !portfolioId || item.portfolioId === portfolioId);
+  const map = new Map();
+  cases.forEach(item => {
+    const current = map.get(item.ruleKey) || {
+      supported: 0,
+      mixed: 0,
+      contradicted: 0,
+      recentCases: [],
+    };
+    current[item.verdict] = (current[item.verdict] || 0) + 1;
+    current.recentCases.push(item);
+    current.recentCases.sort((a, b) => {
+      const aTime = parseFlexibleDate(a?.capturedAt)?.getTime() || 0;
+      const bTime = parseFlexibleDate(b?.capturedAt)?.getTime() || 0;
+      return bTime - aTime;
+    });
+    current.recentCases = current.recentCases.slice(0, 3);
+    map.set(item.ruleKey, current);
+  });
+  return map;
+}
+
 function formatPromptNumber(value, digits = 1) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "—";
@@ -2397,6 +2998,7 @@ export default function App() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [reversalConditions, setReversalConditions] = useState(null);
   const [strategyBrain, setStrategyBrain] = useState(null);
+  const [brainValidation, setBrainValidation] = useState(() => createEmptyBrainValidationStore());
   const [portfolioNotes, setPortfolioNotes] = useState(() => clonePortfolioNotes());
   const [cloudSync, setCloudSync]         = useState(false);
   const [portfolioSwitching, setPortfolioSwitching] = useState(false);
@@ -2436,6 +3038,7 @@ export default function App() {
     setAnalysisHistory(normalizedAnalysisHistory);
     setReversalConditions(snapshot.reversalConditions);
     setStrategyBrain(normalizeStrategyBrain(snapshot.strategyBrain));
+    setBrainValidation(normalizeBrainValidationStore(snapshot.brainValidation));
     setResearchHistory(snapshot.researchHistory);
     setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
     setDailyReport(normalizeDailyReportEntry(snapshot.dailyReport) || (normalizedAnalysisHistory.length > 0 ? normalizedAnalysisHistory[0] : null));
@@ -3088,6 +3691,11 @@ export default function App() {
     }
   }, [activePortfolioId, canPersistPortfolioData, strategyBrain]);
   useEffect(() => {
+    if (canPersistPortfolioData && brainValidation) {
+      savePortfolioData(activePortfolioId, "brain-validation-v1", brainValidation);
+    }
+  }, [activePortfolioId, brainValidation, canPersistPortfolioData]);
+  useEffect(() => {
     const lastAnalysisSyncAt = readSyncAt("pf-analysis-cloud-sync-at");
     const shouldFetchAnalysis = canUseCloud && (tab === "daily" || tab === "log") && (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL);
     if (!shouldFetchAnalysis) return;
@@ -3185,6 +3793,7 @@ export default function App() {
     });
   })();
   const dossierByCode = new Map(D.map(item => [item.code, item]));
+  const brainValidationSummaryByRule = buildBrainValidationSummaryMap(brainValidation, activePortfolioId);
   const currentNewsEvents = Array.isArray(newsEvents) ? newsEvents : [];
   const totalVal  = H.reduce((s,h)=>s+h.value,0);
   const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
@@ -3701,6 +4310,8 @@ export default function App() {
       let eventAssessments = [];
       let brainAudit = createEmptyBrainAudit();
       let brainUpdatedInline = false;
+      let finalBrainForValidation = normalizeStrategyBrain(strategyBrain, { allowEmpty: true });
+      let analysisDossiers = [];
       try {
         const dailyDossiers = changes.map(change => {
           const base = dossierByCode.get(change.code);
@@ -3716,6 +4327,7 @@ export default function App() {
             },
           };
         }).filter(Boolean);
+        analysisDossiers = dailyDossiers;
         const holdingSummary = dailyDossiers.length > 0
           ? dailyDossiers.map(dossier => {
             const change = changes.find(item => item.code === dossier.code);
@@ -4042,6 +4654,7 @@ ${eventSummary}
               if (brainJson && typeof brainJson === "object" && brainJson.rules) {
                 brainAudit = normalizeBrainAuditBuckets(brainJson);
                 const newBrain = mergeBrainPreservingCoachLessons(brainJson, strategyBrain);
+                finalBrainForValidation = newBrain;
                 setStrategyBrain(newBrain);
                 brainUpdatedInline = true;
               }
@@ -4162,11 +4775,24 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const rawBrain = JSON.parse(cleanBrain);
           brainAudit = normalizeBrainAuditBuckets(rawBrain);
           const newBrain = mergeBrainPreservingCoachLessons(rawBrain, strategyBrain);
+          finalBrainForValidation = newBrain;
           setStrategyBrain(newBrain);
           setDailyReport(prev => prev ? normalizeDailyReportEntry({ ...prev, brainAudit }) : prev);
         } catch (e) {
           console.error("策略大腦更新失敗（fallback）:", e);
         }
+      }
+
+      if (analysisDossiers.length > 0 && finalBrainForValidation) {
+        setBrainValidation(prev => appendBrainValidationCases(prev, {
+          portfolioId: activePortfolioId,
+          sourceType: "dailyAnalysis",
+          sourceRefId: String(report.id),
+          dossiers: analysisDossiers,
+          brain: finalBrainForValidation,
+          brainAudit,
+          capturedAt: `${report.date} ${report.time}`,
+        }));
       }
 
       // 同步更新持倉價格
@@ -6761,6 +7387,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                     {strategyBrain.rules.slice().sort(compareBrainRulesByStrength).map((r,i)=>(
                       <div key={i} style={{fontSize:10,color:C.textSec,lineHeight:1.7,
                         padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                        {(() => {
+                          const summary = brainValidationSummaryByRule.get(buildBrainRuleKey(r));
+                          return <>
                         <div>{i+1}. {brainRuleText(r)}</div>
                         {(r.when || r.action || r.scope || r.confidence != null || r.evidenceCount > 0 || r.validationScore != null || r.staleness || (r.evidenceRefs||[]).length > 0) && (
                           <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
@@ -6791,6 +7420,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                             {(r.historicalAnalogs || []).length > 2 ? "…" : ""}
                           </div>
                         )}
+                        {summary && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            歷史驗證：支持 {summary.supported || 0}｜部分支持 {summary.mixed || 0}｜相反 {summary.contradicted || 0}
+                            {summary.recentCases?.length > 0 ? ` ｜ 最近：${summary.recentCases.map(item => `${item.name}(${item.capturedAt || "—"})`).join("、")}` : ""}
+                          </div>
+                        )}
+                          </>;
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -6801,6 +7438,9 @@ ${recentAnalyses || "尚無分析紀錄"}
                     <div style={{fontSize:10,color:C.blue,fontWeight:600,marginBottom:4}}>候選規則（待驗證）</div>
                     {strategyBrain.candidateRules.slice().sort(compareBrainRulesByStrength).map((rule, i)=>(
                       <div key={`candidate-${i}`} style={{fontSize:10,color:C.textSec,lineHeight:1.7,padding:"2px 0",borderBottom:`1px solid ${C.borderSub}`}}>
+                        {(() => {
+                          const summary = brainValidationSummaryByRule.get(buildBrainRuleKey(rule));
+                          return <>
                         <div>{i+1}. {brainRuleText(rule)}</div>
                         {(rule.when || rule.action || rule.confidence != null || rule.evidenceCount > 0 || rule.validationScore != null || rule.staleness || (rule.evidenceRefs||[]).length > 0) && (
                           <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
@@ -6841,6 +7481,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                             {(rule.historicalAnalogs || []).length > 2 ? "…" : ""}
                           </div>
                         )}
+                        {summary && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            歷史驗證：支持 {summary.supported || 0}｜部分支持 {summary.mixed || 0}｜相反 {summary.contradicted || 0}
+                            {summary.recentCases?.length > 0 ? ` ｜ 最近：${summary.recentCases.map(item => `${item.name}(${item.capturedAt || "—"})`).join("、")}` : ""}
+                          </div>
+                        )}
+                          </>;
+                        })()}
                       </div>
                     ))}
                   </div>

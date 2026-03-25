@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 17:04
+Last updated: 2026-03-25 17:22
 
 ## Objective
 
@@ -45,6 +45,10 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `16:53` Codex：收盤分析與 fallback / review / cleanup prompt 已加入歷史相似案例要求；策略大腦 UI 已能顯示歷史相似案例與失效訊號
 - `16:58` James：建議歷史驗證細節不要直接塞進 `strategyBrain` 主體，下一步應新增獨立 `brain-validation-v1` casebook，rule 本體只保留驗證摘要
 - `17:02` Codex：已重新驗證 `npm run build` 與 `api/research.js` import，Task B 目前可運行
+- `17:14` Codex：新增獨立 `brain-validation-v1` storage / state / autosave，先 local-only 落地
+- `17:17` Codex：已接上 rule-based fingerprint / analog scoring / daily analysis 自動累積 casebook
+- `17:20` Codex：策略大腦 UI 已能顯示 casebook 歷史驗證摘要；`npm run build`、`api/research.js` import 再次通過
+- `17:21` checkpoint meeting：暫不需要新 skill；當前最大缺口改為「事件復盤 / 真實 outcome 回寫 casebook」，以及月營收 / 法說 / 目標價節奏的台股特化補強
 
 ## Next actions
 
@@ -60,6 +64,12 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
   - 問其他模型哪裡還能優化
   - 只收具體、低噪音、可驗證的建議
   - 由 Codex 決定是否納入下一輪
+- 每次準備對用戶做階段性回報前，先做一次 checkpoint meeting：
+  - 讓各模型先回報哪裡仍薄弱
+  - 檢查是否漏掉台股特有節奏 / 風險
+  - 判斷是否需要新 skill / 新工具
+  - 判斷是否需要上網補一手策略 / 市場參考
+  - 最後只保留「立即採納 / 暫緩 / 拒絕」三類決議
 - optimization sweep 優先檢查：
   - strategyBrain 規則是否重複 / 空泛 / 缺少 exit logic
   - holding dossier 哪些欄位 stale / missing
@@ -69,6 +79,8 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - 補 `evidenceRefs` 的實際產生流程，不只支援 schema
 - 補 `historicalAnalogs` 的實際產生流程，不只支援 schema
 - 設計 `brain-validation-v1` casebook，避免把大量歷史案例塞爆 `strategyBrain`
+- 把 `submitReview()` 的真實結果回寫到 `brain-validation-v1`，讓 verdict 不只靠每日分析
+- 補台股事件節奏特化欄位：月營收 / 法說 / 財報 / 目標價更新窗口
 - 評估是否為策略大腦補單元測試
 
 ## Stop-in-5-min fallback
@@ -89,6 +101,7 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - 目前 `validationScore` 與 `staleness` 仍以 fallback 推導為主，真正精準化要靠 Task B 之後的規則驗證流程
 - `evidenceRefs` schema 已就位，但實際自動回填來源還要再補
 - `historicalAnalogs` schema 已就位，但還沒有正式的相似案例檢索 / 比對器；目前先由 AI 在現有 dossier 與歷史脈絡內產出草稿
+- `brain-validation-v1` 已落地且可由 daily analysis 自動累積，但目前還缺少 review-driven 的真實 outcome 標記
 - 必須維持舊版 localStorage brain 資料相容，不能要求使用者重置資料
 - 台股分析屬高難度任務：便宜模型只能做摘要、抽取、分群、草稿；最終判斷與客戶/策略影響仍由 Codex 決定
 - 台股分析不可只看持倉欄位，後續 Task B / Task D 必須把市場機制、法人 / 題材 / 月營收 / 法說節奏一起納入

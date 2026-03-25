@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useDeferredValue, createElement as h } from "react";
+import { useState, useEffect, useRef, useDeferredValue, useMemo, createElement as h } from "react";
 import { C, A, alpha } from "./theme.js";
 
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
@@ -760,10 +760,12 @@ function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
 }
 
 function getHoldingCostBasis(item) {
+  if (!item || typeof item !== "object") return 0;
   return (Number(item?.cost) || 0) * (Number(item?.qty) || 0);
 }
 
 function resolveHoldingPrice(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return 0;
   const candidate = Number(overridePrice);
   if (Number.isFinite(candidate) && candidate > 0) return candidate;
 
@@ -780,17 +782,20 @@ function resolveHoldingPrice(item, overridePrice = null) {
 }
 
 function getHoldingMarketValue(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return 0;
   const price = resolveHoldingPrice(item, overridePrice);
   return price * (Number(item?.qty) || 0);
 }
 
 function getHoldingUnrealizedPnl(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return 0;
   return getHoldingMarketValue(item, overridePrice) - getHoldingCostBasis(item);
 }
 
 function getHoldingReturnPct(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return 0;
   const costBasis = getHoldingCostBasis(item);
-  if (costBasis <= 0) return null; // 返回 null 讓 UI 顯示「N/A」而非誤導性的 0%
+  if (costBasis <= 0) return 0; // 返回 0 避免 UI 呼叫 .toFixed() 時出錯
   return (getHoldingUnrealizedPnl(item, overridePrice) / costBasis) * 100;
 }
 
@@ -4017,11 +4022,15 @@ export default function App() {
   const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
   const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
   const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
+  // 避免 localhost/127.0.0.1 重定向迴圈 - 只在真正需要時重定向一次
   useEffect(() => {
     if (typeof window === "undefined") return;
     const { hostname, protocol, port, pathname, search, hash } = window.location;
-    if (hostname !== "localhost") return;
-    window.location.replace(`${protocol}//127.0.0.1${port ? `:${port}` : ""}${pathname}${search}${hash}`);
+    // 只在 localhost 且尚未重定向過時才重定向
+    if (hostname === "localhost" && !sessionStorage.getItem("pf-redirect-done")) {
+      sessionStorage.setItem("pf-redirect-done", "1");
+      window.location.replace(`${protocol}//127.0.0.1${port ? `:${port}` : ""}${pathname}${search}${hash}`);
+    }
   }, []);
   const applyPortfolioSnapshot = (snapshot) => {
     const normalizedAnalysisHistory = normalizeAnalysisHistoryEntries(snapshot.analysisHistory);
@@ -4846,7 +4855,7 @@ export default function App() {
   // derived
   const H = Array.isArray(holdings) ? holdings : [];
   const W = Array.isArray(watchlist) ? watchlist : [];
-  const D = (() => {
+  const D = useMemo(() => {
     const normalized = normalizeHoldingDossiers(holdingDossiers);
     if (normalized.length > 0) return normalized;
     return buildHoldingDossiers({
@@ -4861,8 +4870,8 @@ export default function App() {
       marketPriceCache,
       marketPriceSync,
     });
-  })();
-  const dossierByCode = new Map(D.map(item => [item.code, item]));
+  }, [holdingDossiers, H.length, W.length, targets, fundamentals, analystReports, newsEvents, researchHistory, strategyBrain, marketPriceCache, marketPriceSync]);
+  const dossierByCode = useMemo(() => new Map(D.map(item => [item.code, item])), [D]);
   const brainValidationSummaryByRule = buildBrainValidationSummaryMap(brainValidation, activePortfolioId);
   const currentNewsEvents = Array.isArray(newsEvents) ? newsEvents : [];
   const totalVal  = H.reduce((s,h)=>s + getHoldingMarketValue(h),0);
@@ -5046,48 +5055,57 @@ export default function App() {
     : null;
   const showRelayPlan = activePortfolioId === OWNER_PORTFOLIO_ID || H.some(item => RELAY_PLAN_CODES.has(item.code)) || W.some(item => RELAY_PLAN_CODES.has(item.code));
 
-  const sorted = [...H].sort((a,b)=>{
+  const sorted = useMemo(() => [...H].sort((a,b)=>{
     if(sortBy==="value") return getHoldingMarketValue(b)-getHoldingMarketValue(a);
-    if(sortBy==="pnl")   return getHoldingUnrealizedPnl(b)-getHoldingUnrealizedPnl(a);
-    if(sortBy==="pct")   return getHoldingReturnPct(b)-getHoldingReturnPct(a);
+    if(sortBy==="pnl")   return (getHoldingUnrealizedPnl(b) || 0) - (getHoldingUnrealizedPnl(a) || 0);
+    if(sortBy==="pct") {
+      const pctA = getHoldingReturnPct(a) || 0;
+      const pctB = getHoldingReturnPct(b) || 0;
+      return pctB - pctA;
+    }
     return 0;
-  });
-  const scanRows = sorted.map(h => {
+  }), [H, sortBy]);
+  const scanRows = useMemo(() => sorted.map(h => {
     const meta = STOCK_META[h.code];
     const T = targets?.[h.code];
     const relatedEvents = (newsEvents || NEWS_EVENTS).filter(e => e.stocks?.some(s => s.includes(h.code)));
     const hasPending = relatedEvents.some(e => e.correct == null);
-    const priority = h.alert || T?.isNew ? "A" : (hasPending || getHoldingUnrealizedPnl(h) < 0 ? "B" : "C");
+    const pnl = getHoldingUnrealizedPnl(h);
+    const priority = h.alert || T?.isNew ? "A" : (hasPending || (pnl !== null && pnl < 0) ? "B" : "C");
     const needsAttention = priority !== "C";
     return { h, meta, T, relatedEvents, hasPending, needsAttention, priority };
-  });
+  }), [sorted, targets, newsEvents]);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
-  const filteredRows = scanRows.filter(({ h, meta, T, relatedEvents, hasPending, needsAttention }) => {
-    const matchQuery = !normalizedQuery || [
-      h.name,
-      h.code,
-      meta?.industry,
-      meta?.strategy,
-      meta?.position,
-    ].filter(Boolean).some(v => String(v).toLowerCase().includes(normalizedQuery));
+  const filteredRows = useMemo(() => scanRows.filter(({ h, meta, T, relatedEvents, hasPending, needsAttention }) => {
+    const searchable = [
+      h.name || "",
+      String(h.code || ""),
+      meta?.industry || "",
+      meta?.strategy || "",
+      meta?.position || "",
+    ];
+    const matchQuery = !normalizedQuery || searchable.some(v => String(v).toLowerCase().includes(normalizedQuery));
     if (!matchQuery) return false;
     if (scanFilter === "全部") return true;
     if (scanFilter === "需處理") return needsAttention;
-    if (scanFilter === "虧損") return getHoldingUnrealizedPnl(h) < 0;
+    if (scanFilter === "虧損") {
+      const pnl = getHoldingUnrealizedPnl(h);
+      return pnl !== null && pnl < 0;
+    }
     if (scanFilter === "待處理") return hasPending;
     if (scanFilter === "目標更新") return Boolean(T?.isNew);
     if (scanFilter === "權證") return h.type === "權證";
     return true;
-  });
+  }), [scanRows, normalizedQuery, scanFilter]);
   const displayed = showAll ? filteredRows : filteredRows.slice(0,12);
-  const top5 = [...H].sort((a,b)=>getHoldingMarketValue(b)-getHoldingMarketValue(a)).slice(0,5);
+  const top5 = useMemo(() => [...H].sort((a,b)=>getHoldingMarketValue(b)-getHoldingMarketValue(a)).slice(0,5), [H]);
   const topColors = [C.blue, C.amber, C.lavender, C.olive, C.teal];
-  const winners = H.filter(h=>getHoldingUnrealizedPnl(h)>0).sort((a,b)=>getHoldingReturnPct(b)-getHoldingReturnPct(a));
-  const losers  = H.filter(h=>getHoldingUnrealizedPnl(h)<0).sort((a,b)=>getHoldingReturnPct(a)-getHoldingReturnPct(b));
+  const winners = useMemo(() => H.filter(h=>getHoldingUnrealizedPnl(h)>0).sort((a,b)=>getHoldingReturnPct(b)-getHoldingReturnPct(a)), [H]);
+  const losers  = useMemo(() => H.filter(h=>getHoldingUnrealizedPnl(h)<0).sort((a,b)=>getHoldingReturnPct(a)-getHoldingReturnPct(b)), [H]);
   const attentionCount = scanRows.filter(r => r.needsAttention).length;
   const pendingCount = scanRows.filter(r => r.hasPending).length;
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
-  const dataRefreshRows = D.map(dossier => {
+  const dataRefreshRows = useMemo(() => D.map(dossier => {
     const targetStatus = dossier?.freshness?.targets || "missing";
     const fundamentalStatus = dossier?.freshness?.fundamentals || "missing";
     const severity = (targetStatus === "missing" ? 3 : targetStatus === "stale" ? 2 : 0)
@@ -5103,13 +5121,13 @@ export default function App() {
     };
   })
     .filter(item => item.severity > 0)
-    .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code)));
+    .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code))), [D]);
   const staleTargetCount = D.filter(item => item?.freshness?.targets === "stale").length;
   const missingTargetCount = D.filter(item => item?.freshness?.targets === "missing").length;
   const staleFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "stale").length;
   const missingFundamentalCount = D.filter(item => item?.freshness?.fundamentals === "missing").length;
   const todayRefreshKey = getTaipeiClock(new Date()).marketDate;
-  const reportRefreshCandidates = H.map(holding => {
+  const reportRefreshCandidates = useMemo(() => H.map(holding => {
     const dossier = dossierByCode.get(holding.code) || null;
     const refreshEntry = reportRefreshMeta?.[holding.code] || {};
     const relatedEvents = currentNewsEvents.filter(event => getEventStockCodes(event).includes(holding.code) && !isClosedEvent(event));
@@ -5129,14 +5147,21 @@ export default function App() {
     };
   })
     .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score || getHoldingMarketValue(b.holding) - getHoldingMarketValue(a.holding));
+    .sort((a, b) => b.score - a.score || getHoldingMarketValue(b.holding) - getHoldingMarketValue(a.holding)), [H, dossierByCode, reportRefreshMeta, currentNewsEvents, todayRefreshKey]);
   useEffect(() => {
-    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || tab !== "research" || reportRefreshing) return;
-    if (reportRefreshMeta?.__daily?.date === todayRefreshKey) return;
-    if (reportRefreshCandidates.length === 0) return;
-    refreshAnalystReports({ silent: true }).catch(err => {
-      console.error("自動刷新公開報告失敗:", err);
-    });
+    let mounted = true;
+    const runRefresh = async () => {
+      if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || tab !== "research" || reportRefreshing) return;
+      if (reportRefreshMeta?.__daily?.date === todayRefreshKey) return;
+      if (reportRefreshCandidates.length === 0) return;
+      try {
+        await refreshAnalystReports({ silent: true });
+      } catch (err) {
+        if (mounted) console.error("自動刷新公開報告失敗:", err);
+      }
+    };
+    runRefresh();
+    return () => { mounted = false; };
   }, [
     ready,
     viewMode,
@@ -5145,6 +5170,7 @@ export default function App() {
     reportRefreshMeta,
     todayRefreshKey,
     reportRefreshCandidates.length,
+    refreshAnalystReports,
   ]);
 
   const filteredEvents = filterType==="全部" ? EVENTS : EVENTS.filter(e=>e.type===filterType);
@@ -6862,30 +6888,61 @@ ${recentAnalyses || "尚無分析紀錄"}
     };
     setTradeLog(prev=>[entry,...(prev||[])]);
 
-    setHoldings(prev=>{
-      const arr=[...(prev||[])];
-      const idx=arr.findIndex(h=>h.code===t.code);
-      if (t.action==="買進") {
-        if (idx>=0) {
-          const h=arr[idx];
-          const nq=h.qty+t.qty;
-          const nc=(h.cost*h.qty+t.price*t.qty)/nq;
-          arr[idx]={...h, qty:nq, price:t.price, cost:Math.round(nc*100)/100,
-            value:t.price*nq, pnl:Math.round((t.price-nc)*nq),
-            pct:Math.round((t.price/nc-1)*10000)/100};
+    setHoldings(prev => {
+      try {
+        const arr = [...(prev || [])];
+        const idx = arr.findIndex(h => h.code === t.code);
+        if (t.action === "買進") {
+          if (idx >= 0) {
+            const h = arr[idx];
+            const nq = h.qty + t.qty;
+            if (nq === 0) return prev; // 防止除零
+            const nc = (h.cost * h.qty + t.price * t.qty) / nq;
+            arr[idx] = {
+              ...h,
+              qty: nq,
+              price: t.price,
+              cost: Math.round(nc * 100) / 100,
+              value: t.price * nq,
+              pnl: Math.round((t.price - nc) * nq),
+              pct: nc > 0 ? Math.round((t.price / nc - 1) * 10000) / 100 : 0,
+            };
+          } else {
+            arr.push({
+              code: t.code,
+              name: t.name,
+              qty: t.qty,
+              price: t.price,
+              cost: t.price,
+              value: t.price * t.qty,
+              pnl: 0,
+              pct: 0,
+              type: "股票",
+            });
+          }
         } else {
-          arr.push({code:t.code,name:t.name,qty:t.qty,price:t.price,cost:t.price,
-            value:t.price*t.qty,pnl:0,pct:0,type:"股票"});
+          if (idx >= 0) {
+            const h = arr[idx];
+            const nq = Math.max(0, h.qty - t.qty);
+            if (nq === 0) {
+              arr.splice(idx, 1);
+            } else {
+              arr[idx] = {
+                ...h,
+                qty: nq,
+                price: t.price,
+                value: t.price * nq,
+                pnl: Math.round((t.price - h.cost) * nq),
+                pct: h.cost > 0 ? Math.round((t.price / h.cost - 1) * 10000) / 100 : 0,
+              };
+            }
+          }
         }
-      } else {
-        if (idx>=0) {
-          const h=arr[idx]; const nq=Math.max(0,h.qty-t.qty);
-          if(nq===0){arr.splice(idx,1);}
-          else{arr[idx]={...h,qty:nq,price:t.price,value:t.price*nq,
-            pnl:Math.round((t.price-h.cost)*nq),pct:Math.round((t.price/h.cost-1)*10000)/100};}
-        }
+        return normalizeHoldings(arr, marketPriceCache?.prices);
+      } catch (err) {
+        console.error("Holdings update failed:", err);
+        return prev;
       }
-      return normalizeHoldings(arr, marketPriceCache?.prices);
     });
 
     setSaved("✅ 已儲存");
@@ -7865,7 +7922,14 @@ ${recentAnalyses || "尚無分析紀錄"}
                           color:meta.leader==="龍頭"||meta.leader==="小龍頭"?C.amber:C.textMute,
                           fontWeight:500}}>{meta.leader}</span>
                       )}
-                      {h.expire&&<span style={{fontSize:8,color:C.amber,fontWeight:500}}>到期{h.expire}</span>}
+                      {h.expire && (() => {
+                        const isExpired = new Date(h.expire) < new Date();
+                        return (
+                          <span style={{fontSize:8,color:isExpired?C.down:C.amber,fontWeight:500}}>
+                            {isExpired ? "已到期" : `到期${h.expire}`}
+                          </span>
+                        );
+                      })()}
                       {h.alert&&<span style={{fontSize:8,color:C.up,fontWeight:600}}>{h.alert}</span>}
                       {isNew&&<span style={{fontSize:8,padding:"1px 5px",borderRadius:3,
                         background:C.tealBg,color:C.teal,fontWeight:600,

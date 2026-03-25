@@ -4,9 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>持倉看板</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { background: var(--app-bg, #283D3B); }
@@ -14,17 +11,6 @@
     <script type="module">
       import { applyThemeVars } from "/src/theme.js";
       applyThemeVars();
-    </script>
-    <script>
-      // 強制清除舊快取（版本號變更時自動重載）
-      (function(){
-        var V = "v20260321b";
-        if (localStorage.getItem("app-ver") !== V) {
-          localStorage.setItem("app-ver", V);
-          if (caches) caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); });
-          location.replace(location.pathname + "?_=" + Date.now());
-        }
-      })();
     </script>
   </head>
   <body>

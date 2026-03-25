@@ -240,6 +240,7 @@ const INIT_HOLDINGS_JINLIANCHENG = [
   { code:"7865",   name:"金聯成",           qty:106543, price:49.50,   cost:8.25,    value:5273879,  pnl:4371506,   pct:497.31,  type:"股票" },
 ];
 
+
 const INIT_WATCHLIST = [
   { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      scKey:"amber", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
   { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    scKey:"olive", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
@@ -881,6 +882,24 @@ function normalizeHoldings(rows, quotes = null, priceHints = null) {
 
 function applyMarketQuotesToHoldings(rows, quotes) {
   return normalizeHoldings(rows, quotes);
+}
+
+function shouldAdoptCloudHoldings(localRows, cloudRows) {
+  const local = Array.isArray(localRows) ? localRows : [];
+  const cloud = Array.isArray(cloudRows) ? cloudRows : [];
+  if (cloud.length === 0) return false;
+  if (local.length === 0) return true;
+
+  const localByCode = new Map(local.map(item => [String(item?.code || "").trim(), item]));
+  for (const cloudItem of cloud) {
+    const code = String(cloudItem?.code || "").trim();
+    if (!code) continue;
+    const localItem = localByCode.get(code);
+    if (!localItem) return true;
+    if ((Number(localItem?.qty) || 0) !== (Number(cloudItem?.qty) || 0)) return true;
+    if ((Number(localItem?.cost) || 0) !== (Number(cloudItem?.cost) || 0)) return true;
+  }
+  return false;
 }
 
 function getCachedQuotesForCodes(cache, codes) {
@@ -4155,6 +4174,7 @@ export default function App() {
     const batchSize = 15;
     const quotes = {};
     const failedCodes = new Set();
+    const observedMarketDates = new Set();
     const batches = [];
     for (let i = 0; i < normalizedCodes.length; i += batchSize) {
       batches.push(normalizedCodes.slice(i, i + batchSize));
@@ -4170,6 +4190,7 @@ export default function App() {
         const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`, { signal: controller.signal });
         const data = await res.json();
         (data.msgArray || []).forEach(item => {
+          if (item?.d) observedMarketDates.add(String(item.d));
           const price = extractBestPrice(item);
           const yesterday = extractYesterday(item);
           if (!price || quotes[item.c]) return;
@@ -4191,6 +4212,7 @@ export default function App() {
     return {
       quotes,
       failedCodes: Array.from(failedCodes).filter(code => !quotes[code]),
+      marketDate: Array.from(observedMarketDates).sort().slice(-1)[0] || null,
     };
   };
   const syncPostClosePrices = async ({ silent = false, force = false } = {}) => {
@@ -4202,13 +4224,7 @@ export default function App() {
       const gate = canRunPostClosePriceSync(new Date(), cachedSync);
       const trackedCodes = collectTrackedCodes();
       const missingCachedCodes = trackedCodes.filter(code => !(cachedPrice?.prices?.[code]?.price > 0));
-      const allowForcedRetry =
-        force &&
-        gate.reason === "already-synced" &&
-        !gate.clock.isWeekend &&
-        gate.clock.minutes >= POST_CLOSE_SYNC_MINUTES &&
-        trackedCodes.length > 0 &&
-        missingCachedCodes.length > 0;
+      const allowForcedRetry = force && trackedCodes.length > 0;
 
       if (!gate.allowed && !allowForcedRetry) {
         if (!silent) {
@@ -4238,10 +4254,11 @@ export default function App() {
       }
 
       const syncedAt = new Date().toISOString();
-      const { quotes, failedCodes } = await fetchPostCloseQuotes(trackedCodes);
+      const { quotes, failedCodes, marketDate: observedMarketDate } = await fetchPostCloseQuotes(trackedCodes);
+      const resolvedMarketDate = observedMarketDate || gate.clock.marketDate;
       if (Object.keys(quotes).length === 0) {
         const failedMeta = {
-          marketDate: gate.clock.marketDate,
+          marketDate: resolvedMarketDate,
           syncedAt,
           status: "failed",
           codes: trackedCodes,
@@ -4257,7 +4274,7 @@ export default function App() {
 
       const nextCache = {
         ...(cachedPrice || createEmptyMarketPriceCache()),
-        marketDate: gate.clock.marketDate,
+        marketDate: resolvedMarketDate,
         syncedAt,
         source: "twse",
         status: failedCodes.length > 0 ? "partial" : "fresh",
@@ -4267,7 +4284,7 @@ export default function App() {
         },
       };
       const nextSync = {
-        marketDate: gate.clock.marketDate,
+        marketDate: resolvedMarketDate,
         syncedAt,
         status: failedCodes.length > 0 ? "partial" : "success",
         codes: trackedCodes,
@@ -4602,24 +4619,56 @@ export default function App() {
       setViewMode(registry.viewMode);
       applyPortfolioSnapshot(snapshot);
       setReady(true);
-      portfolioTransitionRef.current = {
-        isHydrating: false,
-        fromPid: pid,
-        toPid: pid,
-      };
 
       const lastCloudSyncAt = readSyncAt("pf-cloud-sync-at");
       const shouldSyncCloud = pid === OWNER_PORTFOLIO_ID && (!lastCloudSyncAt || (Date.now() - lastCloudSyncAt > CLOUD_SYNC_TTL));
-      cloudSyncStateRef.current = { enabled: pid === OWNER_PORTFOLIO_ID, syncedAt: lastCloudSyncAt };
+      cloudSyncStateRef.current = { enabled: false, syncedAt: lastCloudSyncAt };
 
       if (pid !== OWNER_PORTFOLIO_ID) {
         setCloudSync(false);
+        portfolioTransitionRef.current = {
+          isHydrating: false,
+          fromPid: pid,
+          toPid: pid,
+        };
         return;
       }
 
-      // 冷卻時間內直接用 localStorage，避免每次開頁都打 Blob
+      // 冷卻時間內仍輕量檢查 holdings，避免本機舊持倉卡住不更新
       if (!shouldSyncCloud) {
+        try {
+          const cloudHoldings = await fetch("/api/brain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "load-holdings" }),
+          }).then((r) => r.json());
+          const cloudH = cloudHoldings?.holdings;
+          if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && shouldAdoptCloudHoldings(snapshot.holdings, cloudH)) {
+            const normalizedCloudHoldings = normalizeHoldings(
+              cloudH,
+              marketPriceCache?.prices,
+              buildHoldingPriceHints({
+                analysisHistory: snapshot.analysisHistory,
+                fallbackRows: getPortfolioFallback(pid, "holdings-v2"),
+              })
+            );
+            snapshot.holdings = normalizedCloudHoldings;
+            setHoldings(normalizedCloudHoldings);
+            savePortfolioData(pid, "holdings-v2", normalizedCloudHoldings);
+          }
+        } catch (e) {
+          // localStorage fallback keeps app usable offline
+        }
+        cloudSyncStateRef.current = {
+          enabled: true,
+          syncedAt: readSyncAt("pf-cloud-sync-at"),
+        };
         setCloudSync(true);
+        portfolioTransitionRef.current = {
+          isHydrating: false,
+          fromPid: pid,
+          toPid: pid,
+        };
         return;
       }
 
@@ -4643,7 +4692,7 @@ export default function App() {
           savePortfolioData(pid, "news-events-v1", normalizedEvents);
         }
         const cloudH = cloudHoldings.holdings;
-        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!snapshot.holdings || snapshot.holdings.length === 0)) {
+        if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && shouldAdoptCloudHoldings(snapshot.holdings, cloudH)) {
           const normalizedCloudHoldings = normalizeHoldings(
             cloudH,
             marketPriceCache?.prices,
@@ -4652,6 +4701,7 @@ export default function App() {
               fallbackRows: getPortfolioFallback(pid, "holdings-v2"),
             })
           );
+          snapshot.holdings = normalizedCloudHoldings;
           setHoldings(normalizedCloudHoldings);
           savePortfolioData(pid, "holdings-v2", normalizedCloudHoldings);
         }
@@ -4674,10 +4724,21 @@ export default function App() {
           writeSyncAt("pf-research-cloud-sync-at", Date.now());
         }
         const syncedAt = Date.now();
-        cloudSyncStateRef.current.syncedAt = syncedAt;
+        cloudSyncStateRef.current = {
+          enabled: true,
+          syncedAt,
+        };
         writeSyncAt("pf-cloud-sync-at", syncedAt);
         setCloudSync(true);
-      } catch(e) { /* 離線也能用 localStorage 版本 */ }
+      } catch(e) {
+        /* 離線也能用 localStorage 版本 */
+      } finally {
+        portfolioTransitionRef.current = {
+          isHydrating: false,
+          fromPid: pid,
+          toPid: pid,
+        };
+      }
     })();
   }, []);
 
@@ -5461,11 +5522,12 @@ export default function App() {
           holdings.some(item => item?.integrityIssue === "missing-price" || resolveHoldingPrice(item) <= 0) ||
           (isTradingDay && (marketPriceSync?.marketDate !== clock.marketDate || hasMissingTrackedQuotes))
         );
+      const shouldForceManualRefresh = !isTradingDay || alreadySyncedToday;
       
       // 強制重新抓取時，傳入 force: true
       const cache = await syncPostClosePrices({ 
         silent: false, 
-        force: shouldForceRepair || (isTradingDay && alreadySyncedToday) 
+        force: shouldForceRepair || shouldForceManualRefresh
       });
       
       if (cache?.prices && Object.keys(cache.prices).length > 0 && viewMode === PORTFOLIO_VIEW_MODE) {

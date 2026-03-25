@@ -41,7 +41,7 @@
 6. 介面上能看出「為什麼現在叫你觀察 / 加碼 / 減碼 / 出場」。
 7. 重要規則會拿去對照過往台股相似個股 / 相似節奏，並區分失準是規則本身有問題，還是個股情境差異。
 
-## 四個 LLM 怎麼分工
+## 五個 LLM / 工具怎麼分工
 
 ### 1. AnythingLLM
 
@@ -60,7 +60,25 @@
 - 決定最後資料 schema
 - 決定策略大腦的最終規則
 
-### 2. Claude Code over Ollama
+### 2. Gemini CLI
+
+定位：公開資料蒐集與即時研究層
+
+適合交給它：
+
+- 查最近的公開新聞、公告、法說、公司 IR
+- 整理公開可見的目標價報導與來源
+- 蒐集 citations / freshness / unresolved questions
+- 幫 dossier 準備外部事實包
+
+不要交給它：
+
+- 最終 fundamentals 真值
+- 最終 target 價格定稿
+- 直接回寫 `strategyBrain`
+- 最終買賣判斷
+
+### 3. Claude Code over Ollama
 
 定位：低成本的策略草稿與規則整理助手
 
@@ -78,7 +96,7 @@
 - 大型多檔案重構
 - 關鍵數字正確性背書
 
-### 3. Qwen Code
+### 4. Qwen Code
 
 定位：便宜的工程實作打手
 
@@ -96,7 +114,7 @@
 - AI prompt 契約大改
 - cloud sync / migration 這種高風險變更
 
-### 4. Codex
+### 5. Codex
 
 定位：高風險決策、整體設計與最後驗收
 
@@ -113,37 +131,40 @@
 ### 流程 A：文件先消化，再改程式
 
 1. 先把研究 PDF、財報摘要、客戶筆記丟進 AnythingLLM。
-2. 讓 AnythingLLM 產出「可引用的研究摘要」。
-3. 再讓 Claude Code over Ollama 把摘要整理成候選規則、檢查表、需要驗證的假設。
-4. 由 Codex 決定哪些要進策略大腦資料模型。
-5. 由 Qwen Code 做低風險實作。
-6. 最後回到 Codex 做驗收與修正。
+2. 讓 AnythingLLM 產出「內部研究摘要」。
+3. 再讓 Gemini CLI 補近期公開事實、來源與 freshness。
+4. 再讓 Claude Code over Ollama 把摘要整理成候選規則、檢查表、需要驗證的假設。
+5. 由 Codex 決定哪些要進策略大腦資料模型。
+6. 由 Qwen Code 做低風險實作。
+7. 最後回到 Codex 做驗收與修正。
 
 ### 流程 B：收盤分析品質優化
 
 1. AnythingLLM 整理近期文件與研究材料。
-2. Claude Code over Ollama 先草擬：
+2. Gemini CLI 補近期外部事件、法說 / 新聞 / 公告來源。
+3. Claude Code over Ollama 先草擬：
    - 今日異常點
    - 需要驗證的規則
    - 可能的 checklist 更新
-3. Codex 根據 dossier + brain + 事件資料決定真正要改的 prompt 與規則更新流程。
-4. Qwen Code 負責把 UI / helper / 低風險串接補上。
-5. Codex 做最後檢查，確保不會再次出現「持倉很完整，但分析像割裂」。
+4. Codex 根據 dossier + brain + 事件資料決定真正要改的 prompt 與規則更新流程。
+5. Qwen Code 負責把 UI / helper / 低風險串接補上。
+6. Codex 做最後檢查，確保不會再次出現「持倉很完整，但分析像割裂」。
 
 ### 流程 C：單一股票深度研究
 
 1. AnythingLLM 先做文件檢索與比較。
-2. Claude Code over Ollama 先整理：
+2. Gemini CLI 先補公開來源、近期法說 / 新聞 / 報導。
+3. Claude Code over Ollama 先整理：
    - 多頭邏輯
    - 風險
    - 事件窗口
    - 需更新到 brain 的候選規則
-3. Codex 審核是否足夠回寫到：
+4. Codex 審核是否足夠回寫到：
    - `fundamentals`
    - `targets`
    - `analystReports`
    - `strategyBrain`
-4. Qwen Code 再做必要的 UI / 資料接線。
+5. Qwen Code 再做必要的 UI / 資料接線。
 
 ## 策略大腦 V2 這輪要做的 5 個模組
 

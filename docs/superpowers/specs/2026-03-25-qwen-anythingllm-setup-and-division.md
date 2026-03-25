@@ -1,14 +1,15 @@
-# Qwen Code + AnythingLLM Setup And Division
+# Qwen Code + AnythingLLM + Gemini Setup And Division
 
 ## Goal
 
-Use `Qwen Code` as the low-cost coding agent and `AnythingLLM` as the local knowledge base / document workspace, while keeping higher-risk architecture and final QA on Codex.
+Use `Qwen Code` as the low-cost coding agent, `AnythingLLM` as the local knowledge base / document workspace, and `Gemini CLI` as the public-web research scout, while keeping higher-risk architecture and final QA on Codex.
 
 ## Installed On This Mac
 
 - `Qwen Code` CLI
 - `Qwen Code Companion` VSCode extension
 - `AnythingLLM` desktop app
+- `Gemini CLI`
 - `Ollama` local model runtime
 - `qwen3:14b` as the main local chat / document model
 - `nomic-embed-text` as the local embedding model
@@ -28,6 +29,8 @@ Use `Qwen Code` as the low-cost coding agent and `AnythingLLM` as the local know
 
 In this repo, open the command palette or `Terminal -> Run Task` and use:
 
+- `Gemini CLI: Launch In Repo`
+- `Gemini CLI: Launch Taiwan Scout`
 - `Claude Code: Launch via Ollama`
 - `Claude Code: Launch via Ollama (Print Test)`
 - `Qwen Code: Launch In Repo`
@@ -35,6 +38,33 @@ In this repo, open the command palette or `Terminal -> Run Task` and use:
 - `Ollama: Start Local Service`
 - `Ollama: Restart Local Service (64K Context)`
 - `Ollama: Show Running Models`
+
+## Gemini CLI
+
+This repo now includes two Gemini launchers:
+
+- `scripts/launch-gemini.sh`
+- `scripts/launch-gemini-research-scout.sh`
+
+Default usage:
+
+- `Gemini CLI: Launch In Repo`
+  - plain Gemini CLI in this workspace
+- `Gemini CLI: Launch Taiwan Scout`
+  - bounded mode for Taiwan-stock public research scouting
+
+Recommended role:
+
+- use Gemini for public web research, source collection, and citation gathering
+- keep it focused on recent public information
+- do not let it directly decide final target prices, fundamentals truth, or strategy-brain writes
+
+First run:
+
+1. Launch `Gemini CLI: Launch In Repo`
+2. Choose `Sign in with Google`, or set `GEMINI_API_KEY`
+3. Let Gemini read `GEMINI.md` in this repo
+4. Prefer the Taiwan Scout launcher for stock-research tasks
 
 ## Claude Code Over Ollama
 
@@ -90,6 +120,12 @@ That follows Ollama's own guidance that coding tools and agents should use at le
 - On this Mac, keep to smaller local models first
 - Avoid pulling large models until you are sure disk and RAM are enough
 
+### Gemini CLI
+
+- For the quickest setup, sign in with Google on first run
+- If you prefer key-based auth, use `GEMINI_API_KEY`
+- Treat Gemini as a research scout, not as a source-of-truth database
+
 ## Recommended Division Of Work
 
 ### Use Qwen Code for
@@ -108,6 +144,21 @@ That follows Ollama's own guidance that coding tools and agents should use at le
 - checklist drafting
 - cheaper first-pass analysis of strategy notes
 - low-risk synthesis before handing decisions back to Codex
+
+### Use Gemini CLI for
+
+- public news and announcement scans
+- law conference / earnings / company-IR source collection
+- public target-price article indexing
+- citation gathering for dossier updates
+- freshness checks on external information
+
+### Do not use Gemini CLI for
+
+- final numerical truth for fundamentals
+- direct `strategyBrain` updates
+- final target-price confirmation
+- client-facing numerical sign-off
 
 ### Use AnythingLLM for
 
@@ -151,7 +202,7 @@ That follows Ollama's own guidance that coding tools and agents should use at le
 
 ### 3. Mixed task
 
-Use `AnythingLLM` first to digest documents, then use `Qwen Code` for implementation, then use `Codex` for final correctness and polish.
+Use `AnythingLLM` first to digest internal documents, then use `Gemini CLI` to pull recent public facts and citations, then use `Qwen Code` for implementation, then use `Codex` for final correctness and polish.
 
 ## Recommended First Workspaces In AnythingLLM
 
@@ -185,6 +236,7 @@ Use `AnythingLLM` first to digest documents, then use `Qwen Code` for implementa
 ## Suggested Usage Policy
 
 - Default coding: `Qwen Code`
+- Default public-web research scout: `Gemini CLI`
 - Default low-cost drafting: `Claude Code over Ollama`
 - Default document retrieval: `AnythingLLM`
 - Final validation: `Codex`

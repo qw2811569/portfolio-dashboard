@@ -61,6 +61,41 @@ function inferFallbackTargetReports(text, fallbackDate) {
   return unique.slice(0, 3);
 }
 
+function normalizeExtractedFundamentals(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const readNumber = (raw) => {
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : null;
+  };
+  const normalized = {
+    revenueMonth: String(value.revenueMonth || "").trim() || null,
+    revenueYoY: readNumber(value.revenueYoY),
+    revenueMoM: readNumber(value.revenueMoM),
+    quarter: String(value.quarter || "").trim() || null,
+    eps: readNumber(value.eps),
+    grossMargin: readNumber(value.grossMargin),
+    roe: readNumber(value.roe),
+    updatedAt: String(value.updatedAt || "").trim() || null,
+    source: String(value.source || "").trim(),
+    note: String(value.note || "").trim(),
+  };
+  const numericValues = [
+    normalized.revenueYoY,
+    normalized.revenueMoM,
+    normalized.eps,
+    normalized.grossMargin,
+    normalized.roe,
+  ].filter(item => item != null);
+  const looksLikePlaceholderZeros = numericValues.length > 0
+    && numericValues.every(item => Number(item) === 0)
+    && !normalized.revenueMonth
+    && !normalized.quarter
+    && !normalized.note;
+  if (looksLikePlaceholderZeros) return null;
+  const hasContent = Object.values(normalized).some(item => item !== null && item !== "");
+  return hasContent ? normalized : null;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -83,6 +118,7 @@ export default async function handler(req, res) {
     const data = await callAiRaw({
       system: `你是台股研究資料抽取器。你的任務是從研究報告文字中抽出可回寫到持股 dossier 的結構化資料。
 只能抽出文字裡有明確提到的數字或來源，不可猜測。
+0 不是缺值佔位符。除非原文真的明確寫出 0，否則缺資料一律填 null，不可用 0 代替。
 目標價資料規則：
 - 優先抽出文字裡明確提到的券商 / 共識目標價
 - 如果沒有券商來源，但研究結論或操作建議裡明確寫出本次研究目標價，也要收進 reports，firm 可填「本次深度研究」
@@ -122,7 +158,7 @@ ${JSON.stringify(dossier || {}, null, 2)}
 研究全文：
 ${report.text}
 
-請抽出可回寫的財報/營收/目標價資料。若數字只是模糊描述或沒有明確來源，不要硬填。`,
+請抽出可回寫的財報/營收/目標價資料。若數字只是模糊描述或沒有明確來源，不要硬填。沒有明確數字時請填 null，不要填 0。`,
       }],
     });
 
@@ -132,7 +168,7 @@ ${report.text}
     const normalizedReports = normalizeTargetReports(parsed?.targets?.reports, fallbackDate);
     const fallbackReports = normalizedReports.length > 0 ? [] : inferFallbackTargetReports(report.text, fallbackDate);
     return res.status(200).json({
-      fundamentals: parsed?.fundamentals || null,
+      fundamentals: normalizeExtractedFundamentals(parsed?.fundamentals),
       targets: {
         reports: normalizedReports.length > 0 ? normalizedReports : fallbackReports,
       },

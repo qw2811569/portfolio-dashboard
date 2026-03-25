@@ -1,14 +1,15 @@
 # Current Work
 
-Last updated: 2026-03-25 17:22
+Last updated: 2026-03-25 18:06
 
 ## Objective
 
-Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊規則，再新增候選規則，並正式納入「過往台股相似案例驗證」。
+Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊規則，再新增候選規則，並正式納入「過往台股相似案例驗證」。本輪另外加入 `Gemini CLI` 作為公開資料 research scout。
 
 ## Active slices
 
 - `Codex`：最終策略邏輯、schema、rule lifecycle、prompt 契約、驗收
+- `Gemini CLI`：公開資料、新聞 / 法說 / 公告 / 目標價報導的 citations 與 freshness 蒐集
 - `Claude Code over Ollama`：candidate rules / checklist / 台股 prompt guardrails 草稿
 - `Qwen Code`：低風險 UI / helper / parsing / test patch
 - `AnythingLLM`：PDF / 研究文件 / 歷史材料整理與對照
@@ -19,6 +20,9 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `api/research.js`
 - `docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md`
 - `docs/superpowers/status/current-work.md`
+- `GEMINI.md`
+- `scripts/launch-gemini.sh`
+- `scripts/launch-gemini-research-scout.sh`
 - `CLAUDE.md`
 - `QWEN.md`
 
@@ -49,11 +53,16 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `17:17` Codex：已接上 rule-based fingerprint / analog scoring / daily analysis 自動累積 casebook
 - `17:20` Codex：策略大腦 UI 已能顯示 casebook 歷史驗證摘要；`npm run build`、`api/research.js` import 再次通過
 - `17:21` checkpoint meeting：暫不需要新 skill；當前最大缺口改為「事件復盤 / 真實 outcome 回寫 casebook」，以及月營收 / 法說 / 目標價節奏的台股特化補強
+- `17:42` Codex：完成 Gemini CLI 官方可行性確認；共識為「只加入公開資料 research scout，不碰最終真值層」
+- `17:49` Codex：已安裝 `Gemini CLI 0.35.0`
+- `17:57` Codex：新增 repo-local `GEMINI.md` 與兩條啟動腳本，並補進 VSCode tasks
+- `18:04` James + Curie：同意 Gemini 最佳位置是外部 research scout；不適合直接定 fundamentals / targets / strategyBrain
 
 ## Next actions
 
 - Task B 分工：
   - `Codex`：定義 validated / invalidated / candidate 的最終契約與 merge 規則
+  - `Gemini CLI`：補近期公開來源、法說 / 公告 / 目標價報導與 citations
   - `Claude Code over Ollama`：先草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
   - `Qwen Code`：等契約定稿後接 parsing / UI / test 的機械實作
 - 新增歷史驗證主線：

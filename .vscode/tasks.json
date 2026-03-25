@@ -2,6 +2,34 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Gemini CLI: Launch In Repo",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/launch-gemini.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Gemini CLI: Launch Taiwan Scout",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/launch-gemini-research-scout.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Claude Code: Launch via Ollama",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/launch-claude-ollama.sh",

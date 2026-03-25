@@ -212,11 +212,14 @@ npm run dev
 
 - `Qwen Code`
 - `AnythingLLM`
+- `Gemini CLI`
 - `Ollama`
 - `Claude Code`
 
 在這個 repo 內的 VSCode 任務可直接用：
 
+- `Gemini CLI: Launch In Repo`
+- `Gemini CLI: Launch Taiwan Scout`
 - `Claude Code: Launch via Ollama`
 - `Claude Code: Launch via Ollama (Print Test)`
 - `Qwen Code: Launch In Repo`
@@ -233,12 +236,23 @@ npm run dev
 
 - `qwen3:14b`
 
+`Gemini CLI` 的工作區 context 在：
+
+- `GEMINI.md`
+
 用途建議：
 
+- `Gemini CLI`：公開資料、法說 / 新聞 / 公告 / 目標價報導的 research scout
 - `Claude Code over Ollama`：低成本草稿、規則整理、checklist 初稿
 - `Qwen Code`：低風險工程實作
 - `AnythingLLM`：文件檢索 / PDF / 研究資料整理
 - `Codex`：高風險邏輯、prompt 契約、最終驗收
+
+`Gemini CLI` 使用邊界：
+
+- 可以蒐集外部公開來源與 citations
+- 可以補 freshness 與 unresolved questions
+- 不可直接當作 fundamentals / targets / strategyBrain 的最終真值來源
 
 ## 關鍵檔案
 

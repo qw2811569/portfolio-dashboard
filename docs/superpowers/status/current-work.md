@@ -103,6 +103,13 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `15:37` Codex：已建立 `docs/evals/program.md`、`evals/cases/*`、`scripts/eval_brain.mjs`，開始採用 autoresearch 風格的固定案例回放
 - `15:38` Codex：`node scripts/eval_brain.mjs` 初版結果 `3/3 passed · avg 100`
 - `15:40` Codex：`npm run build` 通過，最新 bundle `dist/assets/index-CvLP7CgH.js`
+- `17:34` Codex：Gemini CLI 不穩的主因已定位為舊 Node (`/usr/local/bin/node v15.7.0`)；wrapper 現已強制切到 `~/.nvm/versions/node/v24.13.1/bin/node`
+- `17:36` Codex：Gemini 預設 general model 改為 `gemini-2.5-flash`，scout model 改為 `gemini-3.1-flash-lite-preview`；`gemini-3-flash-preview` 保留為可選但不再作預設
+- `17:38` Codex：新增 `scripts/gemini-healthcheck.sh` 與 VSCode 任務 `Gemini CLI: Healthcheck`
+- `17:40` Gemini CLI：已用 `gemini-2.5-flash` / `gemini-3.1-flash-lite-preview` 成功回覆 repo 內角色、自身限制與最適合負責的公開資料工作
+- `17:47` Codex：已驗證 Qwen CLI `--help` 可正常啟動；Qwen 現況定位為「可用但偏慢的 local low-risk worker」
+- `17:49` Codex：已驗證 Claude Local over Ollama 可正常啟動並回報版本；目前定位為「互動式 drafting assistant」，暫不作 headless 主線 worker
+- `17:52` Codex：新增外部 LLM 共享交接通道 [coordination/llm-bus/board.md](/Users/chenkuichen/APP/test/coordination/llm-bus/board.md)
 
 ## Next actions
 

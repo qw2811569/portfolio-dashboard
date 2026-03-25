@@ -44,6 +44,20 @@
       "problemMatcher": []
     },
     {
+      "label": "Gemini CLI: Healthcheck",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/gemini-healthcheck.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Claude Code: Launch via Ollama",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/launch-claude-ollama.sh",
@@ -74,7 +88,7 @@
     {
       "label": "Qwen Code: Launch In Repo",
       "type": "shell",
-      "command": "qwen",
+      "command": "bash ${workspaceFolder}/scripts/launch-qwen.sh",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -82,6 +96,34 @@
         "reveal": "always",
         "panel": "dedicated",
         "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Qwen Code: Healthcheck",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/qwen-healthcheck.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude Local: Healthcheck",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/claude-local-healthcheck.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
       },
       "problemMatcher": []
     },

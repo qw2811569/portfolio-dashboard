@@ -98,10 +98,16 @@
   - 最終買賣判斷
 - 常見困難：
   - 容易把搜尋整合結果當成最終事實
-  - 本機 CLI headless 路徑目前仍需穩定化
+  - 某些高階模型會先碰到每日 quota，不適合當唯一高頻主力
 - 最佳角色：
   - 外部 research scout
   - public-source fact pack builder
+  - 先交 facts / citations / freshness，再由 Codex 判定是否採納
+- 目前穩定用法：
+  - general 預設：`gemini-2.5-flash`
+  - scout 預設：`gemini-3.1-flash-lite-preview`
+  - `gemini-3-flash-preview` 若當日 free-tier 額度耗盡，改走上述兩個模型
+  - 先跑 `scripts/gemini-healthcheck.sh`，確認 Node / auth / last error 狀態
 
 ### Qwen Code
 
@@ -119,6 +125,10 @@
 - 最佳角色：
   - implementation worker
   - low-risk patch owner
+  - bounded coding helper
+- 目前穩定用法：
+  - 透過 [launch-qwen.sh](/Users/chenkuichen/APP/test/scripts/launch-qwen.sh) 啟動
+  - 目前 local Ollama 路徑可接通，但 headless 任務偏慢，適合低頻、明確、 bounded 任務
 
 ### Claude Local Over Ollama
 
@@ -136,6 +146,10 @@
 - 最佳角色：
   - prompt drafter
   - candidate-rule draft writer
+  - interactive wording helper
+- 目前穩定用法：
+  - 可透過 `ollama launch claude` 正常啟動並回報版本
+  - 非互動 prompt 模式目前仍偏慢 / 不穩，先不要讓它卡住主線
 
 ### AnythingLLM
 

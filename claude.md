@@ -270,6 +270,19 @@ npm run dev
 - 可以補 freshness 與 unresolved questions
 - 不可直接當作 fundamentals / targets / strategyBrain 的最終真值來源
 
+固定多 AI 協作通道見：
+
+- [docs/superpowers/status/ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/superpowers/status/ai-collaboration-channel.md)
+
+之後各 AI 的：
+
+- 擅長什麼
+- 不適合什麼
+- 常遇到的困難
+- 最佳協作方式
+
+都以這份文件為準，不再散落在對話裡。
+
 ## Strategy Brain Eval Loop
 
 策略大腦開始採用固定案例回放，而不是只靠直覺改 prompt：

@@ -29,6 +29,13 @@ It must **not** act as the final source of truth for:
 - source collection for dossier updates
 - building a fact pack before Codex verifies and merges anything important
 
+## Runtime Notes
+
+- Repo default general model: `gemini-2.5-flash`
+- Repo default scout model: `gemini-3.1-flash-lite-preview`
+- `gemini-3-flash-preview` may hit daily free-tier quota early; prefer the defaults unless explicitly overridden.
+- Use `scripts/gemini-healthcheck.sh` before assuming Gemini is broken. If Node is old or quota is exhausted, the issue is environment/quota, not the prompt.
+
 ## Output Contract
 
 Prefer concise, structured output with these sections:

@@ -483,7 +483,7 @@ const MARKET_PRICE_CACHE_KEY = "pf-market-price-cache-v1";
 const MARKET_PRICE_SYNC_KEY = "pf-market-price-sync-v1";
 const MARKET_TIMEZONE = "Asia/Taipei";
 const POST_CLOSE_SYNC_MINUTES = 13 * 60 + 35;
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 const PORTFOLIOS_KEY = "pf-portfolios-v1";
 const ACTIVE_PORTFOLIO_KEY = "pf-active-portfolio-v1";
 const VIEW_MODE_KEY = "pf-view-mode-v1";
@@ -745,13 +745,39 @@ function normalizeHoldingMetrics(item, overridePrice = null) {
   };
 }
 
+function normalizeHoldingRow(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return null;
+  const code = String(item.code || "").trim();
+  if (!code) return null;
+  const qty = Number(item.qty) || 0;
+  const cost = Number(item.cost) || 0;
+  const targetPrice = Number(item.targetPrice);
+  const normalized = normalizeHoldingMetrics({
+    ...item,
+    code,
+    name: String(item.name || code).trim() || code,
+    qty,
+    cost,
+    type: item.type || "股票",
+    alert: item.alert || "",
+    expire: item.expire || null,
+  }, overridePrice);
+  return {
+    ...normalized,
+    targetPrice: Number.isFinite(targetPrice) ? targetPrice : null,
+    integrityIssue: qty > 0 && normalized.price <= 0 ? "missing-price" : null,
+  };
+}
+
+function normalizeHoldings(rows, quotes = null) {
+  const priceQuotes = quotes && typeof quotes === "object" ? quotes : null;
+  return (Array.isArray(rows) ? rows : [])
+    .map(item => normalizeHoldingRow(item, priceQuotes?.[item?.code]?.price))
+    .filter(Boolean);
+}
+
 function applyMarketQuotesToHoldings(rows, quotes) {
-  if (!Array.isArray(rows)) return [];
-  if (!quotes || typeof quotes !== "object") return rows.map(item => normalizeHoldingMetrics(item));
-  return rows.map(item => {
-    const quote = quotes[item.code];
-    return normalizeHoldingMetrics(item, quote?.price);
-  });
+  return normalizeHoldings(rows, quotes);
 }
 
 function getCachedQuotesForCodes(cache, codes) {
@@ -2025,9 +2051,27 @@ function normalizeFundamentalsEntry(value) {
     const num = Number(raw);
     return Number.isFinite(num) ? num : null;
   };
+  const normalizeRevenueHistory = (items) => Array.isArray(items)
+    ? items.map(item => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const month = String(item.month || item.revenueMonth || "").trim();
+        const releasedAt = String(item.releasedAt || item.updatedAt || "").trim();
+        const yoy = readNumber(item.yoy ?? item.revenueYoY);
+        const mom = readNumber(item.mom ?? item.revenueMoM);
+        if (!month && yoy == null && mom == null && !releasedAt) return null;
+        return {
+          month: month || null,
+          yoy,
+          mom,
+          releasedAt: releasedAt || null,
+        };
+      }).filter(Boolean).slice(0, 12)
+    : [];
   const revenueMonth = typeof value.revenueMonth === "string" ? value.revenueMonth.trim() : "";
   const quarter = typeof value.quarter === "string" ? value.quarter.trim() : "";
   const updatedAt = typeof value.updatedAt === "string" ? value.updatedAt.trim() : "";
+  const conferenceDate = typeof value.conferenceDate === "string" ? value.conferenceDate.trim() : "";
+  const earningsDate = typeof value.earningsDate === "string" ? value.earningsDate.trim() : "";
   const source = typeof value.source === "string" ? value.source.trim() : "";
   const note = typeof value.note === "string" ? value.note.trim() : "";
   const normalized = {
@@ -2039,6 +2083,9 @@ function normalizeFundamentalsEntry(value) {
     roe: readNumber(value.roe),
     quarter: quarter || null,
     updatedAt: updatedAt || null,
+    conferenceDate: conferenceDate || null,
+    earningsDate: earningsDate || null,
+    revenueHistory: normalizeRevenueHistory(value.revenueHistory),
     source: source || "",
     note: note || "",
   };
@@ -2434,6 +2481,106 @@ function summarizeEventForDossier(event) {
     correct: typeof event.correct === "boolean" ? event.correct : null,
     trackingStart: event.trackingStart || null,
     exitDate: event.exitDate || null,
+  };
+}
+
+function normalizeTaiwanValidationSignalStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["fresh", "watch", "stale", "missing"].includes(normalized) ? normalized : "missing";
+}
+
+function formatTaiwanValidationSignalLabel(value) {
+  switch (normalizeTaiwanValidationSignalStatus(value)) {
+    case "fresh":
+      return "有效";
+    case "watch":
+      return "窗口內";
+    case "stale":
+      return "過期";
+    case "missing":
+    default:
+      return "缺資料";
+  }
+}
+
+function detectTaiwanEventSignal(events, keywords, { now = new Date(), beforeDays = 14, afterDays = 7 } = {}) {
+  const rows = Array.isArray(events) ? events.filter(Boolean) : [];
+  const matched = rows.filter(event => {
+    const title = String(event?.title || "").trim().toLowerCase();
+    return keywords.some(keyword => title.includes(keyword));
+  });
+  if (matched.length === 0) return { status: "missing", title: "", date: null };
+
+  const tracking = matched.find(event => event.status === "tracking");
+  if (tracking) return { status: "fresh", title: tracking.title || "", date: tracking.date || tracking.trackingStart || null };
+
+  const pending = matched
+    .map(event => ({ event, days: daysSince(event.date || event.trackingStart, now) }))
+    .find(item => item.days != null && item.days <= 0 && Math.abs(item.days) <= beforeDays);
+  if (pending) {
+    return {
+      status: "watch",
+      title: pending.event.title || "",
+      date: pending.event.date || pending.event.trackingStart || null,
+    };
+  }
+
+  const closed = matched
+    .map(event => ({ event, days: daysSince(event.exitDate || event.date, now) }))
+    .find(item => item.days != null && item.days >= 0 && item.days <= afterDays);
+  if (closed) {
+    return {
+      status: "fresh",
+      title: closed.event.title || "",
+      date: closed.event.exitDate || closed.event.date || null,
+    };
+  }
+
+  const latest = matched
+    .map(event => ({
+      event,
+      date: parseFlexibleDate(event.exitDate || event.date || event.trackingStart || null)?.getTime() || 0,
+    }))
+    .sort((a, b) => b.date - a.date)[0];
+
+  return {
+    status: "stale",
+    title: latest?.event?.title || "",
+    date: latest?.event?.exitDate || latest?.event?.date || latest?.event?.trackingStart || null,
+  };
+}
+
+function buildTaiwanValidationSignals({ fundamentals = {}, targets = {}, analyst = {}, events = {}, research = {} } = {}, { now = new Date() } = {}) {
+  const relatedEvents = [
+    ...(Array.isArray(events.pending) ? events.pending : []),
+    ...(Array.isArray(events.tracking) ? events.tracking : []),
+    ...(events.latestClosed ? [events.latestClosed] : []),
+  ];
+  const monthlyRevenueGate = fundamentals.revenueMonth
+    ? (fundamentals.freshness === "fresh" ? "fresh" : "stale")
+    : "missing";
+  const conferenceSignal = detectTaiwanEventSignal(relatedEvents, ["法說", "說明會"], { now, beforeDays: 14, afterDays: 10 });
+  const earningsSignal = detectTaiwanEventSignal(relatedEvents, ["財報", "季報", "年報", "業績"], { now, beforeDays: 21, afterDays: 14 });
+  const targetFreshnessGate = [targets.freshness, analyst.freshness].includes("fresh")
+    ? "fresh"
+    : ([targets.freshness, analyst.freshness].includes("stale") ? "stale" : "missing");
+  const researchGate = research.freshness === "fresh" ? "fresh" : (research.freshness === "stale" ? "stale" : "missing");
+  const statuses = [monthlyRevenueGate, conferenceSignal.status, earningsSignal.status, targetFreshnessGate, researchGate];
+  let hardGateStatus = "missing";
+  if (statuses.every(status => status === "fresh" || status === "watch")) hardGateStatus = statuses.includes("watch") ? "watch" : "fresh";
+  else if (statuses.some(status => status === "stale")) hardGateStatus = "stale";
+
+  return {
+    monthlyRevenueGate,
+    conferenceGate: conferenceSignal.status,
+    conferenceDate: conferenceSignal.date,
+    conferenceTitle: conferenceSignal.title,
+    earningsGate: earningsSignal.status,
+    earningsDate: earningsSignal.date,
+    earningsTitle: earningsSignal.title,
+    targetFreshnessGate,
+    researchGate,
+    hardGateStatus,
   };
 }
 
@@ -3024,6 +3171,24 @@ async function load(key, fallback) {
 async function save(key, data) {
   try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
+
+function getPersistedMarketQuotes() {
+  try {
+    const raw = localStorage.getItem(MARKET_PRICE_CACHE_KEY);
+    if (raw == null) return null;
+    return normalizeMarketPriceCache(JSON.parse(raw))?.prices || null;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizePortfolioField(suffix, data) {
+  if (suffix === "holdings-v2") {
+    return normalizeHoldings(data, getPersistedMarketQuotes());
+  }
+  return data;
+}
+
 const readSyncAt = (key) => {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
 };
@@ -3032,7 +3197,7 @@ const writeSyncAt = (key, value) => {
 };
 
 async function savePortfolioData(pid, suffix, data) {
-  return save(pfKey(pid, suffix), data);
+  return save(pfKey(pid, suffix), sanitizePortfolioField(suffix, data));
 }
 
 function removePortfolioData(pid) {
@@ -3042,7 +3207,7 @@ function removePortfolioData(pid) {
 }
 
 async function loadPortfolioData(pid, suffix, fallback) {
-  return load(pfKey(pid, suffix), fallback);
+  return sanitizePortfolioField(suffix, await load(pfKey(pid, suffix), fallback));
 }
 
 async function loadForPortfolio(pid, suffix) {
@@ -3207,6 +3372,25 @@ async function migrateLegacyPortfolioStorageIfNeeded() {
   return true;
 }
 
+async function repairPersistedHoldingsIfNeeded() {
+  const storage = collectPortfolioBackupStorage();
+  const portfolios = buildPortfoliosFromStorage(storage);
+  const quotes = getPersistedMarketQuotes();
+  let repaired = 0;
+
+  for (const portfolio of portfolios) {
+    const key = pfKey(portfolio.id, "holdings-v2");
+    const raw = readStorageValue(key);
+    if (raw === undefined) continue;
+    const normalized = normalizeHoldings(raw, quotes);
+    if (JSON.stringify(raw) === JSON.stringify(normalized)) continue;
+    await save(key, normalized);
+    repaired += 1;
+  }
+
+  return repaired;
+}
+
 // 金聯成 組合目標價（僅收錄查到的法人/分析師共識）
 const INIT_TARGETS_JINLIANCHENG = {
   "6446": { reports:[{firm:"分析師",target:1060,date:"2026/03"}], updatedAt:"2026/03/23", isNew:true },
@@ -3262,6 +3446,7 @@ async function ensurePortfolioRegistry() {
 
   const schemaVersion = await load(SCHEMA_VERSION_KEY, null);
   if (schemaVersion !== CURRENT_SCHEMA_VERSION) {
+    await repairPersistedHoldingsIfNeeded();
     await save(SCHEMA_VERSION_KEY, CURRENT_SCHEMA_VERSION);
   }
 
@@ -3984,10 +4169,11 @@ export default function App() {
   // auto-save
   useEffect(() => {
     if (canPersistPortfolioData && holdings) {
-      savePortfolioData(activePortfolioId, "holdings-v2", holdings);
-      scheduleCloudSave("save-holdings", holdings);
+      const normalizedHoldings = normalizeHoldings(holdings, marketPriceCache?.prices);
+      savePortfolioData(activePortfolioId, "holdings-v2", normalizedHoldings);
+      scheduleCloudSave("save-holdings", normalizedHoldings);
     }
-  }, [activePortfolioId, canPersistPortfolioData, holdings]);
+  }, [activePortfolioId, canPersistPortfolioData, holdings, marketPriceCache]);
   useEffect(() => { if (canPersistPortfolioData && tradeLog) savePortfolioData(activePortfolioId, "log-v2", tradeLog); }, [activePortfolioId, canPersistPortfolioData, tradeLog]);
   useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
   useEffect(() => { if (canPersistPortfolioData && fundamentals) savePortfolioData(activePortfolioId, "fundamentals-v1", fundamentals); }, [activePortfolioId, canPersistPortfolioData, fundamentals]);
@@ -4210,13 +4396,15 @@ export default function App() {
     overviewPortfolios.forEach(portfolio => {
       (portfolio.holdings || []).forEach(item => {
         const existing = byCode.get(item.code) || { code: item.code, name: item.name, totalValue: 0, portfolios: [] };
-        existing.totalValue += Number(item.value) || 0;
+        const holdingValue = getHoldingMarketValue(item);
+        const holdingPnl = getHoldingUnrealizedPnl(item);
+        existing.totalValue += holdingValue;
         existing.portfolios.push({
           id: portfolio.id,
           name: portfolio.name,
           qty: Number(item.qty) || 0,
-          value: Number(item.value) || 0,
-          pnl: Number(item.pnl) || 0,
+          value: holdingValue,
+          pnl: holdingPnl,
         });
         byCode.set(item.code, existing);
       });
@@ -4289,9 +4477,9 @@ export default function App() {
   const showRelayPlan = activePortfolioId === OWNER_PORTFOLIO_ID || H.some(item => RELAY_PLAN_CODES.has(item.code)) || W.some(item => RELAY_PLAN_CODES.has(item.code));
 
   const sorted = [...H].sort((a,b)=>{
-    if(sortBy==="value") return b.value-a.value;
-    if(sortBy==="pnl")   return b.pnl-a.pnl;
-    if(sortBy==="pct")   return b.pct-a.pct;
+    if(sortBy==="value") return getHoldingMarketValue(b)-getHoldingMarketValue(a);
+    if(sortBy==="pnl")   return getHoldingUnrealizedPnl(b)-getHoldingUnrealizedPnl(a);
+    if(sortBy==="pct")   return getHoldingReturnPct(b)-getHoldingReturnPct(a);
     return 0;
   });
   const scanRows = sorted.map(h => {
@@ -4299,7 +4487,7 @@ export default function App() {
     const T = targets?.[h.code];
     const relatedEvents = (newsEvents || NEWS_EVENTS).filter(e => e.stocks?.some(s => s.includes(h.code)));
     const hasPending = relatedEvents.some(e => e.correct == null);
-    const priority = h.alert || T?.isNew ? "A" : (hasPending || h.pnl < 0 ? "B" : "C");
+    const priority = h.alert || T?.isNew ? "A" : (hasPending || getHoldingUnrealizedPnl(h) < 0 ? "B" : "C");
     const needsAttention = priority !== "C";
     return { h, meta, T, relatedEvents, hasPending, needsAttention, priority };
   });
@@ -4315,17 +4503,18 @@ export default function App() {
     if (!matchQuery) return false;
     if (scanFilter === "全部") return true;
     if (scanFilter === "需處理") return needsAttention;
-    if (scanFilter === "虧損") return h.pnl < 0;
+    if (scanFilter === "虧損") return getHoldingUnrealizedPnl(h) < 0;
     if (scanFilter === "待處理") return hasPending;
     if (scanFilter === "目標更新") return Boolean(T?.isNew);
     if (scanFilter === "權證") return h.type === "權證";
     return true;
   });
   const displayed = showAll ? filteredRows : filteredRows.slice(0,12);
-  const top5 = [...H].sort((a,b)=>b.value-a.value).slice(0,5);
+  const top5 = [...H].sort((a,b)=>getHoldingMarketValue(b)-getHoldingMarketValue(a)).slice(0,5);
   const topColors = [C.blue, C.amber, C.lavender, C.olive, C.teal];
-  const winners = H.filter(h=>h.pnl>0).sort((a,b)=>b.pct-a.pct);
-  const losers  = H.filter(h=>h.pnl<0).sort((a,b)=>a.pct-b.pct);
+  const winners = H.filter(h=>getHoldingUnrealizedPnl(h)>0).sort((a,b)=>getHoldingReturnPct(b)-getHoldingReturnPct(a));
+  const losers  = H.filter(h=>getHoldingUnrealizedPnl(h)<0).sort((a,b)=>getHoldingReturnPct(a)-getHoldingReturnPct(b));
+  const holdingsIntegrityIssues = H.filter(h => h?.integrityIssue === "missing-price");
   const attentionCount = scanRows.filter(r => r.needsAttention).length;
   const pendingCount = scanRows.filter(r => r.hasPending).length;
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
@@ -4602,14 +4791,14 @@ export default function App() {
         const pm = priceMap[h.code];
         return {
           code: h.code, name: h.name, type: h.type,
-          price: pm?.price || h.price,
-          yesterday: pm?.yesterday || h.price,
+          price: pm?.price || resolveHoldingPrice(h),
+          yesterday: pm?.yesterday || resolveHoldingPrice(h),
           change: pm?.change || 0,
           changePct: pm?.changePct || 0,
           cost: h.cost, qty: h.qty,
           todayPnl: pm ? Math.round(pm.change * h.qty) : 0,
-          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : h.pnl,
-          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : h.pct,
+          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : getHoldingUnrealizedPnl(h),
+          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : getHoldingReturnPct(h),
         };
       }).sort((a, b) => b.changePct - a.changePct);
 
@@ -4743,7 +4932,7 @@ ${coachContext}
 反轉追蹤持股：
 ${losers.map(h=>{
   const rc = (reversalConditions||{})[h.code];
-  return `${h.name}(${h.code}) ${h.pct}% | 反轉條件：${rc?.signal||"未設定"} | 停損：${rc?.stopLoss||"未設定"}`;
+  return `${h.name}(${h.code}) ${getHoldingReturnPct(h).toFixed(2)}% | 反轉條件：${rc?.signal||"未設定"} | 停損：${rc?.stopLoss||"未設定"}`;
 }).join("\n")}` : "";
 
         // ── Phase 2: 盲測預測（不含今日漲跌） ──
@@ -5161,14 +5350,14 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       }
 
       // 同步更新持倉價格
-      setHoldings(prev => (prev || []).map(h => {
+      setHoldings(prev => normalizeHoldings((prev || []).map(h => {
         const pm = priceMap[h.code];
         if (!pm) return h;
         const newValue = Math.round(pm.price * h.qty);
         const newPnl = Math.round((pm.price - h.cost) * h.qty);
         const newPct = Math.round((pm.price / h.cost - 1) * 10000) / 100;
         return { ...h, price: pm.price, value: newValue, pnl: newPnl, pct: newPct };
-      }));
+      }), priceMap));
 
       setLastUpdate(new Date());
       if (reportRefreshMeta?.__daily?.date !== todayRefreshKey) {
@@ -5199,9 +5388,9 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         const pm = priceMap[h.code];
         return {
           code: h.code, name: h.name, type: h.type,
-          price: pm?.price || h.price, cost: h.cost, qty: h.qty,
-          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : h.pnl,
-          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : h.pct,
+          price: pm?.price || resolveHoldingPrice(h), cost: h.cost, qty: h.qty,
+          totalPnl: pm ? Math.round((pm.price - h.cost) * h.qty) : getHoldingUnrealizedPnl(h),
+          totalPct: pm ? Math.round(((pm.price / h.cost) - 1) * 10000) / 100 : getHoldingReturnPct(h),
         };
       });
       const dailyDossiers = changes.map(change => {
@@ -5509,7 +5698,7 @@ ${JSON.stringify(brain)}
 
     // 持倉摘要
     const holdingLines = H.map(h =>
-      `${h.name}(${h.code}) | 現價${h.price} | 成本${h.cost} | 損益${h.pnl>=0?"+":""}${h.pnl}(${h.pct>=0?"+":""}${h.pct}%) | ${h.type}`
+      `${h.name}(${h.code}) | 現價${resolveHoldingPrice(h)} | 成本${h.cost} | 損益${getHoldingUnrealizedPnl(h)>=0?"+":""}${Math.round(getHoldingUnrealizedPnl(h))}(${getHoldingReturnPct(h)>=0?"+":""}${(Math.round(getHoldingReturnPct(h) * 100) / 100)}%) | ${h.type}`
     ).join("\n");
 
     // 近期分析
@@ -5922,6 +6111,10 @@ ${recentAnalyses || "尚無分析紀錄"}
 
       const normalizedStorage = { ...storage };
       const importedPortfolios = buildPortfoliosFromStorage(normalizedStorage);
+      for (const key of Object.keys(normalizedStorage)) {
+        if (!key.endsWith("-holdings-v2")) continue;
+        normalizedStorage[key] = normalizeHoldings(normalizedStorage[key], marketPriceCache?.prices);
+      }
       normalizedStorage[PORTFOLIOS_KEY] = importedPortfolios;
       normalizedStorage[ACTIVE_PORTFOLIO_KEY] =
         typeof normalizedStorage[ACTIVE_PORTFOLIO_KEY] === "string" &&
@@ -6050,7 +6243,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             pnl:Math.round((t.price-h.cost)*nq),pct:Math.round((t.price/h.cost-1)*10000)/100};}
         }
       }
-      return arr;
+      return normalizeHoldings(arr, marketPriceCache?.prices);
     });
 
     setSaved("✅ 已儲存");
@@ -6093,7 +6286,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     try {
       const stocks = mode === "single" && targetStock
         ? [targetStock]
-        : H.map(h => ({ code:h.code, name:h.name, price:h.price, cost:h.cost, pnl:h.pnl, pct:h.pct, type:h.type }));
+        : H.map(h => ({ code:h.code, name:h.name, price:resolveHoldingPrice(h), cost:h.cost, pnl:getHoldingUnrealizedPnl(h), pct:getHoldingReturnPct(h), type:h.type }));
       const researchDossiers = stocks.map(stock => {
         const dossier = dossierByCode.get(stock.code);
         if (!dossier) return null;
@@ -6655,6 +6848,24 @@ ${recentAnalyses || "尚無分析紀錄"}
             ))}
           </div>
 
+          {holdingsIntegrityIssues.length > 0 && (
+            <div style={{
+              ...card,
+              marginBottom:8,
+              borderLeft:`3px solid ${alpha(C.amber, A.glow)}`,
+              padding:"8px 10px",
+              fontSize:10,
+              color:C.amber,
+              lineHeight:1.7,
+            }}>
+              偵測到 {holdingsIntegrityIssues.length} 檔持股缺少可用價格，市值可能暫時不完整：
+              {" "}
+              {holdingsIntegrityIssues.slice(0, 5).map(item => `${item.name || item.code}(${item.code})`).join("、")}
+              {holdingsIntegrityIssues.length > 5 ? "…" : ""}。
+              請先按一次「收盤價」同步，若仍存在代表這些資料需要手動修補。
+            </div>
+          )}
+
           {/* ── 投組健檢：產業分佈 + 策略配置 ── */}
           {(()=>{
             const H_ = holdings || INIT_HOLDINGS;
@@ -6663,7 +6874,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             H_.forEach(h => {
               const m = STOCK_META[h.code];
               if (!m) return;
-              indMap[m.industry] = (indMap[m.industry] || 0) + (h.value || 0);
+              indMap[m.industry] = (indMap[m.industry] || 0) + getHoldingMarketValue(h);
             });
             const indArr = Object.entries(indMap).sort((a,b)=>b[1]-a[1]);
             const indTotal = indArr.reduce((s,x)=>s+x[1],0) || 1;
@@ -6686,7 +6897,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             H_.forEach(h => {
               const m = STOCK_META[h.code];
               if (!m) return;
-              posMap[m.position] = (posMap[m.position] || 0) + (h.value || 0);
+              posMap[m.position] = (posMap[m.position] || 0) + getHoldingMarketValue(h);
             });
             // 產業重複警告（>2檔且佔比>25%）
             const warnings = indArr.filter(([ind, val]) => {
@@ -6771,7 +6982,7 @@ ${recentAnalyses || "尚無分析紀錄"}
             <div style={lbl}>市值佔比 Top 5</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {top5.map((h,i)=>{
-                const pct=h.value/totalVal*100;
+                const pct = getHoldingMarketValue(h) / Math.max(totalVal, 1) * 100;
                 return <div key={h.code} style={{
                   display:"flex",alignItems:"center",gap:5,
                   background:C.subtle,border:`1px solid ${C.border}`,
@@ -6791,7 +7002,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               {winners.slice(0,3).map(h=>(
                 <div key={h.code} style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
                   <span style={{fontSize:11,color:C.textSec}}>{h.name}</span>
-                  <span style={{fontSize:11,fontWeight:600,color:C.up}}>+{h.pct}%</span>
+                  <span style={{fontSize:11,fontWeight:600,color:C.up}}>+{getHoldingReturnPct(h).toFixed(2)}%</span>
                 </div>
               ))}
             </div>
@@ -6800,7 +7011,7 @@ ${recentAnalyses || "尚無分析紀錄"}
               {losers.slice(0,3).map(h=>(
                 <div key={h.code} style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
                   <span style={{fontSize:11,color:C.textSec}}>{h.name}</span>
-                  <span style={{fontSize:11,fontWeight:600,color:C.down}}>{h.pct}%</span>
+                  <span style={{fontSize:11,fontWeight:600,color:C.down}}>{getHoldingReturnPct(h).toFixed(2)}%</span>
                 </div>
               ))}
             </div>
@@ -6823,7 +7034,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                       background:rc?alpha(C.olive, A.tint):C.subtle,
                       border:`1px solid ${rc?alpha(C.olive, A.soft):C.borderSub}`,
                       color:rc?C.olive:C.textMute}}>
-                      {h.name} {h.pct}% {rc?"✓":""}
+                      {h.name} {getHoldingReturnPct(h).toFixed(2)}% {rc?"✓":""}
                     </span>;
                   })}
                 </div>
@@ -6840,7 +7051,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div>
                       <span style={{fontSize:12,fontWeight:500,color:C.text}}>{h.name}</span>
-                      <span style={{fontSize:10,color:C.down,marginLeft:6}}>{h.pct}%</span>
+                      <span style={{fontSize:10,color:C.down,marginLeft:6}}>{getHoldingReturnPct(h).toFixed(2)}%</span>
                     </div>
                     <button onClick={()=>setEditing(!editing)} style={{
                       padding:"3px 9px",borderRadius:5,fontSize:9,cursor:"pointer",
@@ -7025,7 +7236,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                       )}
                     </div>
                     <div style={{fontSize:10,color:C.textMute,marginTop:2}}>
-                      {h.qty}股 · 成本{h.cost?.toLocaleString()} · 現{h.price?.toLocaleString()}
+                      {h.qty}股 · 成本{h.cost?.toLocaleString()} · 現{resolveHoldingPrice(h).toLocaleString()}
                       {meta && <span style={{marginLeft:6,fontSize:9,color:C.textMute}}>
                         {meta.strategy} · {meta.period==="短"?"短期":meta.period==="中"?"中期":meta.period==="短中"?"短中期":"中長期"} · {meta.position}
                       </span>}
@@ -7033,13 +7244,13 @@ ${recentAnalyses || "尚無分析紀錄"}
                     </div>
                     <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
                       <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:C.textSec}}>
-                        市值 {h.value?.toLocaleString()}
+                        市值 {Math.round(getHoldingMarketValue(h)).toLocaleString()}
                       </span>
-                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(h.pnl)}}>
-                        損益 {h.pnl>=0?"+":""}{h.pnl?.toLocaleString()}
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(getHoldingUnrealizedPnl(h))}}>
+                        損益 {getHoldingUnrealizedPnl(h)>=0?"+":""}{Math.round(getHoldingUnrealizedPnl(h)).toLocaleString()}
                       </span>
-                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(h.pct)}}>
-                        報酬 {h.pct>=0?"+":""}{h.pct?.toFixed(1)}%
+                      <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:pc(getHoldingReturnPct(h))}}>
+                        報酬 {getHoldingReturnPct(h)>=0?"+":""}{getHoldingReturnPct(h).toFixed(1)}%
                       </span>
                       {tp && <span style={{fontSize:9,padding:"2px 7px",borderRadius:999,background:C.subtle,border:`1px solid ${C.border}`,color:upside>=0?C.up:C.down}}>
                         目標差 {upside>=0?"+":""}{upside?.toFixed(1)}%

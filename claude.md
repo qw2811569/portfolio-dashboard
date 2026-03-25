@@ -240,6 +240,10 @@ npm run dev
 
 - `GEMINI.md`
 
+目前 repo 內 Gemini wrapper 的預設模型：
+
+- `gemini-3-flash-preview`
+
 用途建議：
 
 - `Gemini CLI`：公開資料、法說 / 新聞 / 公告 / 目標價報導的 research scout

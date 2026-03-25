@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 18:06
+Last updated: 2026-03-25 14:05
 
 ## Objective
 
@@ -57,11 +57,19 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `17:49` Codex：已安裝 `Gemini CLI 0.35.0`
 - `17:57` Codex：新增 repo-local `GEMINI.md` 與兩條啟動腳本，並補進 VSCode tasks
 - `18:04` James + Curie：同意 Gemini 最佳位置是外部 research scout；不適合直接定 fundamentals / targets / strategyBrain
+- `13:52` Codex：確認 Gemini CLI 已是 `0.35.0`，不是版本太舊；`gemini-3.1-pro` 目前在此 key / 路徑下不可用，`gemini-2.5-pro` free-tier quota 為 0
+- `13:54` Codex：實測 `gemini-3-flash-preview` 與 `gemini-3.1-flash-lite-preview` 可用，已將 repo 預設 Gemini 模型切到 `gemini-3-flash-preview`
+- `14:01` Codex：Task B 核心安全閥已落地：新增 `brainRuleKey`、`formatBrainRulesForValidationPrompt`、`ensureBrainAuditCoverage`、`mergeBrainWithAuditLifecycle`
+- `14:02` Codex：`runDailyAnalysis()` 解析 `BRAIN_UPDATE` 後不再直接覆蓋 brain，改為先補 audit coverage，再做 deterministic rule lifecycle merge
+- `14:03` Codex：Task B prompt 已加入 ruleId / 全覆蓋要求，以及台股四類驗證門檻（月營收節奏、法說/財報/事件窗口、目標價/報告 freshness、題材輪動）
+- `14:04` Curie：確認最值得硬性要求的台股驗證訊號為月營收 cadence、事件窗口、報告 freshness、族群輪動，不足時應優先進 staleRules
+- `14:04` James：提醒 merge 必須避免 partial output 洗掉舊規則，並要求 rule identity、stale vs invalidated、evidenceCount 累積與 checklist drift 一起處理
+- `14:05` Codex：`npm run build` 通過；`api/research.js` import 通過
 
 ## Next actions
 
 - Task B 分工：
-  - `Codex`：定義 validated / invalidated / candidate 的最終契約與 merge 規則
+  - `Codex`：已完成 validated / stale / invalidated / candidate 的 merge 契約與 deterministic lifecycle；下一步改接 review-driven validation
   - `Gemini CLI`：補近期公開來源、法說 / 公告 / 目標價報導與 citations
   - `Claude Code over Ollama`：先草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
   - `Qwen Code`：等契約定稿後接 parsing / UI / test 的機械實作

@@ -46,6 +46,10 @@ This repo now includes two Gemini launchers:
 - `scripts/launch-gemini.sh`
 - `scripts/launch-gemini-research-scout.sh`
 
+Current repo default model:
+
+- `gemini-3-flash-preview`
+
 Default usage:
 
 - `Gemini CLI: Launch In Repo`
@@ -62,7 +66,7 @@ Recommended role:
 First run:
 
 1. Launch `Gemini CLI: Launch In Repo`
-2. Choose `Sign in with Google`, or set `GEMINI_API_KEY`
+2. Prefer `GEMINI_API_KEY`; OAuth may authenticate successfully but still lack a usable Code Assist entitlement
 3. Let Gemini read `GEMINI.md` in this repo
 4. Prefer the Taiwan Scout launcher for stock-research tasks
 

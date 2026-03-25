@@ -695,22 +695,46 @@ function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
   return { allowed: true, reason: "ready", clock };
 }
 
+function getHoldingCostBasis(item) {
+  return (Number(item?.cost) || 0) * (Number(item?.qty) || 0);
+}
+
+function getHoldingMarketValue(item, overridePrice = null) {
+  const price = Number.isFinite(Number(overridePrice)) ? Number(overridePrice) : (Number(item?.price) || 0);
+  return price * (Number(item?.qty) || 0);
+}
+
+function getHoldingUnrealizedPnl(item, overridePrice = null) {
+  return getHoldingMarketValue(item, overridePrice) - getHoldingCostBasis(item);
+}
+
+function getHoldingReturnPct(item, overridePrice = null) {
+  const costBasis = getHoldingCostBasis(item);
+  if (costBasis <= 0) return 0;
+  return (getHoldingUnrealizedPnl(item, overridePrice) / costBasis) * 100;
+}
+
+function normalizeHoldingMetrics(item, overridePrice = null) {
+  if (!item || typeof item !== "object") return item;
+  const price = Number.isFinite(Number(overridePrice)) ? Number(overridePrice) : (Number(item.price) || 0);
+  const value = getHoldingMarketValue(item, price);
+  const pnl = getHoldingUnrealizedPnl(item, price);
+  const pct = getHoldingReturnPct(item, price);
+  return {
+    ...item,
+    price,
+    value: Math.round(value),
+    pnl: Math.round(pnl),
+    pct: Math.round(pct * 100) / 100,
+  };
+}
+
 function applyMarketQuotesToHoldings(rows, quotes) {
   if (!Array.isArray(rows)) return [];
-  if (!quotes || typeof quotes !== "object") return rows;
+  if (!quotes || typeof quotes !== "object") return rows.map(item => normalizeHoldingMetrics(item));
   return rows.map(item => {
     const quote = quotes[item.code];
-    if (!quote?.price) return item;
-    const nextValue = Math.round(quote.price * item.qty);
-    const nextPnl = Math.round((quote.price - item.cost) * item.qty);
-    const nextPct = Math.round(((quote.price / item.cost) - 1) * 10000) / 100;
-    return {
-      ...item,
-      price: quote.price,
-      value: nextValue,
-      pnl: nextPnl,
-      pct: nextPct,
-    };
+    return normalizeHoldingMetrics(item, quote?.price);
   });
 }
 
@@ -784,6 +808,11 @@ function brainRuleText(rule) {
   if (typeof rule === "string") return rule.trim();
   if (!rule || typeof rule !== "object" || Array.isArray(rule)) return "";
   return String(rule.text || rule.rule || "").trim();
+}
+
+function brainRuleKey(rule) {
+  if (!rule || typeof rule !== "object" || Array.isArray(rule)) return "";
+  return String(rule.id || "").trim() || brainRuleText(rule);
 }
 
 function normalizeBrainRuleStaleness(value) {
@@ -1042,13 +1071,13 @@ function normalizeBrainAuditBuckets(value) {
   const normalized = createEmptyBrainAudit();
   if (!value || typeof value !== "object" || Array.isArray(value)) return normalized;
   normalized.validatedRules = Array.isArray(value.validatedRules)
-    ? value.validatedRules.map(item => normalizeBrainAuditItem(item, "validated")).filter(Boolean).slice(0, 8)
+    ? value.validatedRules.map(item => normalizeBrainAuditItem(item, "validated")).filter(Boolean).slice(0, 20)
     : [];
   normalized.staleRules = Array.isArray(value.staleRules)
-    ? value.staleRules.map(item => normalizeBrainAuditItem(item, "stale")).filter(Boolean).slice(0, 8)
+    ? value.staleRules.map(item => normalizeBrainAuditItem(item, "stale")).filter(Boolean).slice(0, 20)
     : [];
   normalized.invalidatedRules = Array.isArray(value.invalidatedRules)
-    ? value.invalidatedRules.map(item => normalizeBrainAuditItem(item, "invalidated")).filter(Boolean).slice(0, 8)
+    ? value.invalidatedRules.map(item => normalizeBrainAuditItem(item, "invalidated")).filter(Boolean).slice(0, 20)
     : [];
   return normalized;
 }
@@ -1583,6 +1612,17 @@ function formatBrainRulesForPrompt(rules, { limit = 8 } = {}) {
   return rows.length > 0 ? rows.join("\n") : "無";
 }
 
+function formatBrainRulesForValidationPrompt(rules, { limit = 8 } = {}) {
+  const rows = (Array.isArray(rules) ? rules : [])
+    .slice(0, limit)
+    .map((rule, index) => {
+      const ruleId = String(rule?.id || "").trim();
+      const prefix = ruleId ? `[ruleId:${ruleId}] ` : "";
+      return `${index + 1}. ${prefix}${brainRuleSummary(rule, { includeMeta: true })}`;
+    });
+  return rows.length > 0 ? rows.join("\n") : "無";
+}
+
 function formatBrainChecklistsForPrompt(checklists) {
   const normalized = normalizeBrainChecklists(checklists);
   const sections = [
@@ -1688,6 +1728,221 @@ function mergeBrainPreservingCoachLessons(nextBrain, currentBrain) {
     lastUpdate: hasField("lastUpdate") ? (normalizedNext?.lastUpdate || null) : (normalizedCurrent?.lastUpdate || null),
     coachLessons,
     evolution: hasField("evolution") ? (normalizedNext?.evolution || "") : (normalizedCurrent?.evolution || ""),
+  };
+
+  return normalizeStrategyBrain(merged, { allowEmpty: true });
+}
+
+function mergeBrainEvidenceRefs(primaryRefs, secondaryRefs, { limit = 4 } = {}) {
+  return normalizeBrainEvidenceRefs([
+    ...normalizeBrainEvidenceRefs(primaryRefs),
+    ...normalizeBrainEvidenceRefs(secondaryRefs),
+  ]).slice(0, limit);
+}
+
+function ensureBrainAuditCoverage(brainAudit, currentBrain) {
+  const normalizedAudit = normalizeBrainAuditBuckets(brainAudit);
+  const current = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
+  const reviewed = new Set([
+    ...normalizedAudit.validatedRules,
+    ...normalizedAudit.staleRules,
+    ...normalizedAudit.invalidatedRules,
+  ].map(item => item?.id || item?.text).filter(Boolean));
+
+  const staleMap = new Map(
+    normalizedAudit.staleRules
+      .map(item => [item?.id || item?.text, item])
+      .filter(([key]) => Boolean(key))
+  );
+
+  [...(current.rules || []), ...(current.candidateRules || [])].forEach(rule => {
+    const key = brainRuleKey(rule);
+    if (!key || reviewed.has(key) || staleMap.has(key)) return;
+    const fallbackStaleness = normalizeBrainRuleStaleness(rule?.staleness) || (rule?.status === "candidate" ? "missing" : "aging");
+    const fallbackConfidence = Number.isFinite(Number(rule?.validationScore))
+      ? Math.max(25, Math.min(90, Math.round(Number(rule.validationScore))))
+      : Number.isFinite(Number(rule?.confidence))
+        ? Math.max(25, Math.min(90, Math.round(Number(rule.confidence) * 10)))
+        : 35;
+    staleMap.set(key, normalizeBrainAuditItem({
+      id: rule?.id || "",
+      text: brainRuleText(rule),
+      bucket: "stale",
+      reason: "今日分析未明確覆蓋此舊規則，先標記為待更新，避免在缺乏驗證時被當成仍然有效。",
+      confidence: fallbackConfidence,
+      staleness: fallbackStaleness,
+      lastValidatedAt: rule?.lastValidatedAt || "",
+      evidenceRefs: rule?.evidenceRefs || [],
+    }, "stale"));
+  });
+
+  return normalizeBrainAuditBuckets({
+    ...normalizedAudit,
+    staleRules: Array.from(staleMap.values()),
+  });
+}
+
+function applyAuditToBrainRule(rule, auditItem, {
+  status = null,
+  defaultStatus = "active",
+} = {}) {
+  const normalized = normalizeBrainRule(rule || {
+    id: auditItem?.id || null,
+    text: auditItem?.text || "",
+    status: status || defaultStatus,
+  }, {
+    defaultStatus: status || defaultStatus,
+  });
+  if (!normalized) return null;
+
+  const bucket = ["validated", "stale", "invalidated"].includes(auditItem?.bucket) ? auditItem.bucket : "validated";
+  const auditConfidence = normalizeBrainAuditConfidence(auditItem?.confidence);
+  const mergedEvidenceRefs = mergeBrainEvidenceRefs(auditItem?.evidenceRefs, normalized.evidenceRefs);
+  const normalizedStatus = ["active", "candidate", "archived"].includes(status) ? status : (normalized.status || defaultStatus);
+
+  let validationScore = Number.isFinite(Number(normalized.validationScore))
+    ? Math.round(Number(normalized.validationScore))
+    : deriveBrainRuleValidationScore({
+      confidence: normalized.confidence,
+      evidenceCount: normalized.evidenceCount,
+      staleness: normalized.staleness,
+      status: normalizedStatus,
+    });
+  let staleness = normalizeBrainRuleStaleness(normalized.staleness) || "missing";
+  let confidence = normalized.confidence;
+  let lastValidatedAt = normalized.lastValidatedAt || null;
+
+  if (auditConfidence != null) {
+    const convertedConfidence = Math.max(1, Math.min(10, Math.round(auditConfidence / 10)));
+    confidence = confidence != null ? Math.max(confidence, convertedConfidence) : convertedConfidence;
+  }
+
+  if (bucket === "validated") {
+    staleness = "fresh";
+    lastValidatedAt = auditItem?.lastValidatedAt || toSlashDate();
+    validationScore = Math.max(validationScore ?? 0, auditConfidence ?? 70, 70);
+  } else if (bucket === "stale") {
+    staleness = normalizeBrainRuleStaleness(auditItem?.staleness) || (normalizedStatus === "candidate" ? "missing" : "aging");
+    validationScore = Math.min(validationScore ?? 65, auditConfidence ?? 65);
+  } else if (bucket === "invalidated") {
+    staleness = "stale";
+    validationScore = Math.min(validationScore ?? 45, auditConfidence ?? 45);
+  }
+
+  const evidenceCount = Math.max(
+    Number(normalized.evidenceCount) || 0,
+    mergedEvidenceRefs.length,
+    bucket === "validated" ? 1 : 0,
+  );
+
+  return normalizeBrainRule({
+    ...normalized,
+    status: normalizedStatus,
+    confidence,
+    evidenceCount,
+    validationScore,
+    lastValidatedAt,
+    staleness,
+    evidenceRefs: mergedEvidenceRefs,
+    note: String(auditItem?.reason || "").trim() || normalized.note || "",
+  }, {
+    defaultStatus: normalizedStatus,
+    defaultSource: normalized.source || "ai",
+  });
+}
+
+function mergeBrainWithAuditLifecycle(nextBrain, currentBrain, brainAudit) {
+  const normalizedCurrent = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
+  const normalizedNext = normalizeStrategyBrain(nextBrain, { allowEmpty: true });
+  const coveredAudit = ensureBrainAuditCoverage(brainAudit, normalizedCurrent);
+
+  const currentRules = [...(normalizedCurrent.rules || []), ...(normalizedCurrent.candidateRules || [])];
+  const nextActiveRules = normalizedNext.rules || [];
+  const nextCandidateRules = normalizedNext.candidateRules || [];
+
+  const currentByKey = new Map(currentRules.map(rule => [brainRuleKey(rule), rule]).filter(([key]) => Boolean(key)));
+  const nextActiveByKey = new Map(nextActiveRules.map(rule => [brainRuleKey(rule), rule]).filter(([key]) => Boolean(key)));
+  const nextCandidateByKey = new Map(nextCandidateRules.map(rule => [brainRuleKey(rule), rule]).filter(([key]) => Boolean(key)));
+
+  const activeMap = new Map(nextActiveRules.map(rule => [brainRuleKey(rule), rule]).filter(([key]) => Boolean(key)));
+  const candidateMap = new Map(nextCandidateRules.map(rule => [brainRuleKey(rule), rule]).filter(([key]) => Boolean(key)));
+
+  const resolveBaseRule = (auditItem) => {
+    const key = auditItem?.id || auditItem?.text || "";
+    return nextActiveByKey.get(key)
+      || nextCandidateByKey.get(key)
+      || currentByKey.get(key)
+      || null;
+  };
+
+  const upsertRule = (map, rule) => {
+    const key = brainRuleKey(rule);
+    if (!key || !rule) return;
+    map.set(key, rule);
+  };
+
+  coveredAudit.validatedRules.forEach(auditItem => {
+    const rule = applyAuditToBrainRule(resolveBaseRule(auditItem), auditItem, { status: "active" });
+    if (!rule) return;
+    const key = brainRuleKey(rule);
+    candidateMap.delete(key);
+    activeMap.set(key, rule);
+  });
+
+  coveredAudit.staleRules.forEach(auditItem => {
+    const baseRule = resolveBaseRule(auditItem);
+    const targetStatus = baseRule?.status === "candidate" ? "candidate" : "active";
+    const rule = applyAuditToBrainRule(baseRule, auditItem, { status: targetStatus });
+    if (!rule) return;
+    const key = brainRuleKey(rule);
+    if (targetStatus === "candidate") {
+      activeMap.delete(key);
+      candidateMap.set(key, rule);
+    } else {
+      activeMap.set(key, rule);
+      candidateMap.delete(key);
+    }
+  });
+
+  coveredAudit.invalidatedRules.forEach(auditItem => {
+    const baseRule = resolveBaseRule(auditItem);
+    const nextStatus = auditItem?.nextStatus || "candidate";
+    const auditKey = (auditItem?.id || auditItem?.text || "").trim();
+    const baseKey = brainRuleKey(baseRule);
+    if (nextStatus === "archived") {
+      if (auditKey) {
+        activeMap.delete(auditKey);
+        candidateMap.delete(auditKey);
+      }
+      if (baseKey) {
+        activeMap.delete(baseKey);
+        candidateMap.delete(baseKey);
+      }
+      return;
+    }
+    const rule = applyAuditToBrainRule(baseRule, auditItem, { status: "candidate", defaultStatus: "candidate" });
+    if (!rule) return;
+    const ruleKey = brainRuleKey(rule);
+    activeMap.delete(ruleKey);
+    candidateMap.set(ruleKey, rule);
+  });
+
+  const merged = {
+    version: 4,
+    rules: Array.from(activeMap.values()).sort(compareBrainRulesByStrength).slice(0, 12),
+    candidateRules: Array.from(candidateMap.values()).sort(compareBrainRulesByStrength).slice(0, 8),
+    checklists: Object.prototype.hasOwnProperty.call(nextBrain || {}, "checklists")
+      ? (normalizedNext.checklists || createEmptyBrainChecklists())
+      : normalizeBrainChecklists(normalizedCurrent.checklists, [
+        ...Array.from(activeMap.values()),
+        ...Array.from(candidateMap.values()),
+      ]),
+    lessons: Object.prototype.hasOwnProperty.call(nextBrain || {}, "lessons") ? (normalizedNext.lessons || []) : (normalizedCurrent.lessons || []),
+    commonMistakes: Object.prototype.hasOwnProperty.call(nextBrain || {}, "commonMistakes") ? (normalizedNext.commonMistakes || []) : (normalizedCurrent.commonMistakes || []),
+    stats: Object.prototype.hasOwnProperty.call(nextBrain || {}, "stats") ? (normalizedNext.stats || {}) : (normalizedCurrent.stats || {}),
+    lastUpdate: Object.prototype.hasOwnProperty.call(nextBrain || {}, "lastUpdate") ? (normalizedNext.lastUpdate || null) : (normalizedCurrent.lastUpdate || null),
+    coachLessons: (normalizedNext.coachLessons || []).length > 0 ? normalizedNext.coachLessons : (normalizedCurrent.coachLessons || []),
+    evolution: Object.prototype.hasOwnProperty.call(nextBrain || {}, "evolution") ? (normalizedNext.evolution || "") : (normalizedCurrent.evolution || ""),
   };
 
   return normalizeStrategyBrain(merged, { allowEmpty: true });
@@ -3117,9 +3372,12 @@ export default function App() {
     const batchSize = 15;
     const quotes = {};
     const failedCodes = new Set();
-
+    const batches = [];
     for (let i = 0; i < normalizedCodes.length; i += batchSize) {
-      const batch = normalizedCodes.slice(i, i + batchSize);
+      batches.push(normalizedCodes.slice(i, i + batchSize));
+    }
+
+    await Promise.all(batches.map(async (batch, batchIndex) => {
       const queries = batch.flatMap(code => [`tse_${code}.tw`, `otc_${code}.tw`]);
       const exCh = queries.join("|");
       const controller = new AbortController();
@@ -3141,11 +3399,11 @@ export default function App() {
         });
       } catch (err) {
         batch.forEach(code => failedCodes.add(code));
-        console.warn(`收盤價同步批次 ${i / batchSize + 1} 失敗:`, err);
+        console.warn(`收盤價同步批次 ${batchIndex + 1} 失敗:`, err);
       } finally {
         clearTimeout(timer);
       }
-    }
+    }));
 
     return {
       quotes,
@@ -3795,9 +4053,9 @@ export default function App() {
   const dossierByCode = new Map(D.map(item => [item.code, item]));
   const brainValidationSummaryByRule = buildBrainValidationSummaryMap(brainValidation, activePortfolioId);
   const currentNewsEvents = Array.isArray(newsEvents) ? newsEvents : [];
-  const totalVal  = H.reduce((s,h)=>s+h.value,0);
-  const totalCost = H.reduce((s,h)=>s+h.cost*h.qty,0);
-  const totalPnl  = H.reduce((s,h)=>s+h.pnl,0);
+  const totalVal  = H.reduce((s,h)=>s + getHoldingMarketValue(h),0);
+  const totalCost = H.reduce((s,h)=>s + getHoldingCostBasis(h),0);
+  const totalPnl  = totalVal - totalCost;
   const retPct    = totalCost>0 ? totalPnl/totalCost*100 : 0;
   const getPortfolioSnapshot = (portfolioId) => {
     const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
@@ -3817,9 +4075,9 @@ export default function App() {
     const snapshot = getPortfolioSnapshot(portfolio.id);
     const rows = snapshot.holdings;
     const holdingCount = Array.isArray(rows) ? rows.length : 0;
-    const portfolioValue = (rows || []).reduce((sum, item) => sum + (Number(item.value) || 0), 0);
-    const portfolioCost = (rows || []).reduce((sum, item) => sum + ((Number(item.cost) || 0) * (Number(item.qty) || 0)), 0);
-    const portfolioPnl = (rows || []).reduce((sum, item) => sum + (Number(item.pnl) || 0), 0);
+    const portfolioValue = (rows || []).reduce((sum, item) => sum + getHoldingMarketValue(item), 0);
+    const portfolioCost = (rows || []).reduce((sum, item) => sum + getHoldingCostBasis(item), 0);
+    const portfolioPnl = portfolioValue - portfolioCost;
     const portfolioRetPct = portfolioCost > 0 ? (portfolioPnl / portfolioCost) * 100 : 0;
     return {
       ...portfolio,
@@ -4224,8 +4482,9 @@ export default function App() {
       console.error("收盤價同步失敗:", err);
       setSaved("❌ 收盤價同步失敗，請稍後再試");
       setTimeout(() => setSaved(""), 3000);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   // ── 每日收盤分析 ─────────────────────────────────────────────────
@@ -4356,13 +4615,13 @@ ${brain.coachLessons.slice(-5).map(item => `- [${item.date}] ${item.source || it
         const brainContext = brain ? `
 ══ 策略大腦（累積知識庫）══
 ${userRules.length > 0 ? `✅ 已驗證規則（用戶確認）：
-${formatBrainRulesForPrompt(userRules, { limit: 8 })}
+${formatBrainRulesForValidationPrompt(userRules, { limit: 8 })}
 
 ` : ""}🤖 核心規則（AI/系統整理）：
-${formatBrainRulesForPrompt(aiRules, { limit: 10 })}
+${formatBrainRulesForValidationPrompt(aiRules, { limit: 10 })}
 
 🧪 候選規則（需持續驗證）：
-${formatBrainRulesForPrompt(candidateRules, { limit: 6 })}
+${formatBrainRulesForValidationPrompt(candidateRules, { limit: 6 })}
 
 📋 決策檢查表：
 ${checklistText}
@@ -4540,6 +4799,9 @@ ${JSON.stringify(blindPredictions, null, 0)}
 - 若現有規則已足以解釋今日表現，就不要硬新增 candidate rule。
 - 若資料新鮮度是 stale 或 missing，只能降級信心或標成待更新，不可硬驗證成有效。
 - 若同一條舊規則今天被證偽，要明確寫進失效或待更新清單。
+- 驗證每條規則時，至少檢查四類台股訊號：月營收節奏、法說/財報/事件窗口、目標價/公開報告 freshness、族群/題材輪動位置。
+- 若缺少 fresh 的月營收 / 財報 / 法說 / 報告支撐，預設先進 staleRules，而不是直接 validated 或 invalidated。
+- 若股價表現只是受族群輪動或大盤風險偏好驅動，需標示 differenceType=market_regime 或 stock_specific，不可直接當成規則被驗證。
 - 驗證規則時，至少要用 1-2 個「過往台股相似案例 / 相似節奏」來交叉比對；先比驅動因子，再比漲法。
 - 若歷史案例失準，要明確區分是「個股特性差異 / 市場節奏不同 / 流動性不同」，還是規則本身判斷失準。
 - 若只是個股情境不同，不要直接刪規則；請改寫適用條件、marketRegime、catalystWindow 或 invalidationSignals。
@@ -4584,6 +4846,7 @@ ${JSON.stringify(blindPredictions, null, 0)}
 - validatedRules：先列出今天被支持的舊規則，最多6條
 - staleRules：列出今天證據不足、資料過期或需降級的規則，最多6條
 - invalidatedRules：列出今天被證偽的規則，最多6條
+- 既有核心規則與既有 candidate rule 都必須至少落入 validatedRules / staleRules / invalidatedRules 其中一個，不能遺漏
 - rules：這是「今天驗證後」仍保留的核心規則，最多12條
 - candidateRules：只有現有規則無法解釋時，才新增少量候選規則，最多6條
 - validationScore：0-100，反映規則目前被支持的強度
@@ -4652,8 +4915,8 @@ ${eventSummary}
             try {
               const brainJson = JSON.parse(brainMatch[1].trim());
               if (brainJson && typeof brainJson === "object" && brainJson.rules) {
-                brainAudit = normalizeBrainAuditBuckets(brainJson);
-                const newBrain = mergeBrainPreservingCoachLessons(brainJson, strategyBrain);
+                brainAudit = ensureBrainAuditCoverage(brainJson, strategyBrain);
+                const newBrain = mergeBrainWithAuditLifecycle(brainJson, strategyBrain, brainAudit);
                 finalBrainForValidation = newBrain;
                 setStrategyBrain(newBrain);
                 brainUpdatedInline = true;
@@ -4747,6 +5010,8 @@ validatedRules：今天被支持的舊規則
 staleRules：證據不足、資料過期或需降級的規則
 invalidatedRules：今天被證偽的規則
 candidateRules：只有現有規則不夠覆蓋時，才新增少量假設
+既有核心規則與既有 candidate rule 都必須至少落入 validatedRules / staleRules / invalidatedRules 其中一個
+驗證時至少檢查：月營收節奏、法說/財報/事件窗口、目標價/公開報告 freshness、族群/題材輪動位置；缺 fresh 證據時優先進 staleRules
 checklists：把規則整理成進場前 / 加碼前 / 出場前檢查表
 教訓：今日新增的具體教訓（只加新的，保留舊的）
 常犯錯誤：反覆出現的錯誤模式
@@ -4773,8 +5038,8 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const brainText = brainData.content?.[0]?.text || "";
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
           const rawBrain = JSON.parse(cleanBrain);
-          brainAudit = normalizeBrainAuditBuckets(rawBrain);
-          const newBrain = mergeBrainPreservingCoachLessons(rawBrain, strategyBrain);
+          brainAudit = ensureBrainAuditCoverage(rawBrain, strategyBrain);
+          const newBrain = mergeBrainWithAuditLifecycle(rawBrain, strategyBrain, brainAudit);
           finalBrainForValidation = newBrain;
           setStrategyBrain(newBrain);
           setDailyReport(prev => prev ? normalizeDailyReportEntry({ ...prev, brainAudit }) : prev);

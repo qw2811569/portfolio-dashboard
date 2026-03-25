@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p "${HOME}/.gemini"
+source "$(dirname "$0")/gemini-common.sh"
+gemini_init_env
 
-if [[ -f "${HOME}/.gemini/.env" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "${HOME}/.gemini/.env"
-  set +a
-fi
-
-MODEL="${GEMINI_MODEL:-gemini-2.5-flash}"
+MODEL="${GEMINI_SCOUT_MODEL:-gemini-3-flash-preview}"
 
 BOOTSTRAP_PROMPT=$'你現在是這個 repo 的「台股公開資料蒐集員」。\n請遵守工作區中的 GEMINI.md。\n你的任務是蒐集公開可驗證資料、整理 citations、標示 freshness 與 unresolved questions。\n不要把自己當成最終資料真值來源，不要直接做最終策略判斷，不要直接宣告可回寫 strategy brain 的最終結論。\n如果遇到月營收、EPS、毛利率、ROE、正式目標價等欄位，應優先指出需要用官方或結構化來源再驗證。'
 
@@ -20,10 +14,19 @@ fi
 
 if [[ "$#" -gt 0 ]]; then
   USER_TASK="$*"
-  exec gemini -m "${MODEL}" -i "${BOOTSTRAP_PROMPT}
+  if [[ -t 0 && -t 1 ]]; then
+    gemini_log_launch "interactive" "${MODEL}" "taiwan-scout" "${PWD}"
+    exec gemini -m "${MODEL}" -i "${BOOTSTRAP_PROMPT}
+
+目前任務：
+${USER_TASK}"
+  fi
+  gemini_log_launch "headless" "${MODEL}" "taiwan-scout" "${PWD}"
+  exec gemini -m "${MODEL}" -p "${BOOTSTRAP_PROMPT}
 
 目前任務：
 ${USER_TASK}"
 fi
 
+gemini_log_launch "interactive" "${MODEL}" "taiwan-scout" "${PWD}"
 exec gemini -m "${MODEL}" -i "${BOOTSTRAP_PROMPT}"

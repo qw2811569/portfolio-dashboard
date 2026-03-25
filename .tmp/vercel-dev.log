@@ -1,0 +1,9 @@
+Retrieving project…
+> Running Dev Command “vite --port $PORT”
+
+  VITE v5.4.21  ready in 474 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: http://192.168.1.103:3002/
+  ➜  Network: http://100.126.94.101:3002/
+> Ready! Available at http://127.0.0.1:3002

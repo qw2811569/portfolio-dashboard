@@ -215,7 +215,7 @@ const INIT_HOLDINGS = [
   { code:"3443",   name:"創意",          qty:3,    price:2290,  cost:2566.67,value:6870,  pnl:-854,  pct:-11.09, type:"股票" },
   { code:"3491",   name:"昇達科",        qty:3,    price:1445,  cost:1276.67,value:4335,  pnl:487,   pct:12.71,  type:"股票" },
   { code:"4583",   name:"台灣精銳",      qty:5,    price:629,   cost:734,    value:3145,  pnl:-536,  pct:-14.6,  type:"股票" },
-  { code:"6274",   name:"台燿",          qty:3,    price:505,   cost:507,    value:1515,  pnl:-12,   pct:-0.79,  type:"股票", alert:"今日法說" },
+  { code:"6274",   name:"台燿",          qty:3,    price:505,   cost:507,    value:1515,  pnl:-12,   pct:-0.79,  type:"股票", alert:"法說" },
   { code:"6770",   name:"力積電",        qty:20,   price:71.7,  cost:68.05,  value:1433,  pnl:63,    pct:4.62,   type:"股票" },
   { code:"6862",   name:"三集瑞-KY",     qty:17,   price:209.5, cost:197.82, value:3560,  pnl:182,   pct:5.41,   type:"股票" },
   { code:"8227",   name:"巨有科技",      qty:21,   price:128,   cost:146.57, value:2688,  pnl:-403,  pct:-13.08, type:"股票" },
@@ -244,7 +244,7 @@ const INIT_HOLDINGS_JINLIANCHENG = [
 const INIT_WATCHLIST = [
   { code:"1513", name:"中興電",  price:158.5, target:193,  status:"等Q4財報",  catalyst:"3–4月財報",      scKey:"amber", note:"積極163–165元；保守155–160元；催化：台電GIS+台積電" },
   { code:"4588", name:"玖鼎電力",price:69.1,  target:154,  status:"持有中",    catalyst:"台電電表訂單",    scKey:"olive", note:"訂單排到2028；現價已偏高不追；持有者繼續抱" },
-  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡今日法說", catalyst:"3/18法說+財報",  scKey:"up", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
+  { code:"6274", name:"台燿",    price:505,   target:710,  status:"⚡法說追蹤", catalyst:"3/18法說+財報",  scKey:"up", note:"成本507；毛利率回沖→補足2/3；展望差→停損430" },
 ];
 
 const RELAY_PLAN = {
@@ -330,10 +330,11 @@ const RELAY_PLAN = {
 const RELAY_PLAN_CODES = new Set(RELAY_PLAN.legs.map(item => item.code));
 
 const EVENTS = [
-  { date:"今日",    label:"台燿 6274 — Q4財報法說會",     sub:"毛利率+展望樂觀→補齊2/3；差→停損430",          urgent:true,  type:"法說" },
-  { date:"今日",    label:"晶豪科 194.5元 — 超出場區間",  sub:"目標175–185元已超過，考慮今日分批賣出",         urgent:true,  type:"操作" },
+  // 3/26 更新：移除已過期事件
+  // 舊的「今日」硬編碼事件已移除，改以實際事件日期與狀態判斷
+  
   { date:"每月10日",label:"月營收公布",                   sub:"晶豪科最關鍵——確認DDR3高檔維持",               urgent:false, type:"營收" },
-  { date:"3/15前",  label:"大型股全年財報",                sub:"台達電、奇鋐、創意、緯創",                      urgent:false, type:"財報" },
+  { date:"3/27前",  label:"3月最後一週財報",              sub:"注意是否有最後衝刺行情",                      urgent:false, type:"財報" },
   { date:"4/1前",   label:"中小型股全年財報",              sub:"長興、華通、晟銘電、昇達科、台灣精銳、力積電",   urgent:false, type:"財報" },
   { date:"3–4月",   label:"中興電 Q4財報 + 法說",         sub:"催化劑：台電GIS發包 + 台積電訂單",              urgent:false, type:"催化" },
   { date:"Q2前",    label:"晶豪科 全數出場",               sub:"Q1財報前最遲出清；資金轉台燿/力積電",           urgent:false, type:"操作" },
@@ -5262,7 +5263,7 @@ export default function App() {
     .map(item => {
       const alertText = item.alert.replace(/^⚡\s*/, "").trim();
       if (!alertText) return null;
-      if (alertText.startsWith("今日")) return `${item.name}${alertText}`;
+      if (alertText.includes("法說")) return `${item.name}${alertText}`;
       if (alertText.includes("出場區間")) return `${item.name}已到${alertText.replace(/到$/, "")}`;
       return `${item.name} ${alertText}`;
     })
@@ -5277,7 +5278,13 @@ export default function App() {
     const pendingCount = relatedEvents.filter(event => event.status === "pending").length;
     const hits = relatedEvents.filter(event => event.correct === true).length;
     const misses = relatedEvents.filter(event => event.correct === false).length;
-    const isUrgent = /⚡|今日/.test(item.status || "");
+    const isUrgent = /⚡/.test(item.status || "") || relatedEvents.some(event => {
+      if (!event) return false;
+      const eventDate = parseFlexibleDate(event.eventDate || event.date || event.trackingStart || event.exitDate);
+      if (!eventDate) return false;
+      const today = todayStorageDate();
+      return formatDateToStorageDate(eventDate) === today;
+    });
     const primaryEvent =
       relatedEvents.find(event => event.status === "tracking") ||
       relatedEvents.find(event => event.status === "pending") ||

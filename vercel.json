@@ -1,7 +1,8 @@
 {
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/twse", "destination": "/api/twse" }
+    { "source": "/api/twse", "destination": "/api/twse" },
+    { "source": "/api/:path*", "destination": "/api/:path*" }
   ],
   "headers": [
     {
@@ -12,5 +13,10 @@
         { "key": "Expires", "value": "0" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
+    }
+  }
 }

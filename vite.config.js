@@ -11,7 +11,15 @@ export default defineConfig({
         target: 'https://mis.twse.com.tw',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/twse/, ''),
+      },
+      '/api/': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
       }
     }
-  }
+  },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild',
+  },
 })

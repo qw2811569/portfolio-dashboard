@@ -545,6 +545,7 @@ const BACKUP_GLOBAL_KEYS = [
   SCHEMA_VERSION_KEY,
 ];
 const BACKUP_GLOBAL_KEY_SET = new Set(BACKUP_GLOBAL_KEYS);
+const APPLIED_TRADE_PATCHES_KEY = "pf-applied-trade-patches-v1";
 const DEFAULT_PORTFOLIO_NOTES = {
   riskProfile: "",
   preferences: "",
@@ -582,6 +583,29 @@ const DEFAULT_FUNDAMENTAL_DRAFT = {
   updatedAt: "",
   note: "",
 };
+const TRADE_BACKFILL_PATCHES = [
+  {
+    id: "2026-03-25-sell-039108-5000",
+    portfolioId: OWNER_PORTFOLIO_ID,
+    expectedQtyAfter: 3000,
+    entry: {
+      id: 202603250001,
+      patchId: "2026-03-25-sell-039108-5000",
+      date: "2026/3/25",
+      time: "15:00",
+      action: "賣出",
+      code: "039108",
+      name: "禾伸堂元富57購",
+      qty: 5000,
+      price: 1.9,
+      qa: [
+        { q: MEMO_Q["賣出"][0], a: "補登 2026/03/25 實際賣出 5000 股，修正 OCR 漏讀。" },
+        { q: MEMO_Q["賣出"][1], a: "是，先落袋部分獲利並降低權證時間價值風險。" },
+        { q: MEMO_Q["賣出"][2], a: "保留剩餘 3000 股續追蹤，等待下一步配置。" },
+      ],
+    },
+  },
+];
 const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
   { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
@@ -882,6 +906,59 @@ function normalizeHoldings(rows, quotes = null, priceHints = null) {
 
 function applyMarketQuotesToHoldings(rows, quotes) {
   return normalizeHoldings(rows, quotes);
+}
+
+function applyTradeEntryToHoldings(rows, trade, quotes = null) {
+  if (!trade || !trade.code || !trade.action) {
+    return normalizeHoldings(rows, quotes);
+  }
+  const arr = [...(Array.isArray(rows) ? rows : [])];
+  const idx = arr.findIndex(h => h.code === trade.code);
+  const qty = Number(trade.qty) || 0;
+  const price = Number(trade.price) || 0;
+
+  if (trade.action === "買進") {
+    if (idx >= 0) {
+      const h = arr[idx];
+      const nq = (Number(h.qty) || 0) + qty;
+      if (nq === 0) return normalizeHoldings(arr, quotes);
+      const cost = Number(h.cost) || 0;
+      const nc = (cost * (Number(h.qty) || 0) + price * qty) / nq;
+      arr[idx] = {
+        ...h,
+        qty: nq,
+        price,
+        cost: Math.round(nc * 100) / 100,
+      };
+    } else {
+      arr.push({
+        code: trade.code,
+        name: trade.name,
+        qty,
+        price,
+        cost: price,
+        type: "股票",
+      });
+    }
+    return normalizeHoldings(arr, quotes);
+  }
+
+  if (idx >= 0) {
+    const h = arr[idx];
+    const currentQty = Number(h.qty) || 0;
+    const nq = Math.max(0, currentQty - qty);
+    if (nq === 0) {
+      arr.splice(idx, 1);
+    } else {
+      arr[idx] = {
+        ...h,
+        qty: nq,
+        price,
+      };
+    }
+  }
+
+  return normalizeHoldings(arr, quotes);
 }
 
 function shouldAdoptCloudHoldings(localRows, cloudRows) {
@@ -3662,6 +3739,14 @@ async function save(key, data) {
   }
 }
 
+async function loadAppliedTradePatches() {
+  return load(APPLIED_TRADE_PATCHES_KEY, []);
+}
+
+async function saveAppliedTradePatches(ids) {
+  return save(APPLIED_TRADE_PATCHES_KEY, Array.from(new Set(ids || [])));
+}
+
 function getPersistedMarketQuotes() {
   try {
     const raw = localStorage.getItem(MARKET_PRICE_CACHE_KEY);
@@ -3882,6 +3967,61 @@ async function repairPersistedHoldingsIfNeeded() {
   }
 
   return repaired;
+}
+
+async function applyTradeBackfillPatchesIfNeeded() {
+  const applied = new Set(await loadAppliedTradePatches());
+  let changed = 0;
+
+  for (const patch of TRADE_BACKFILL_PATCHES) {
+    if (applied.has(patch.id)) continue;
+
+    const tradeLog = await loadPortfolioData(patch.portfolioId, "log-v2", []);
+    if ((tradeLog || []).some(item => item?.patchId === patch.id)) {
+      applied.add(patch.id);
+      continue;
+    }
+
+    const holdings = await loadPortfolioData(
+      patch.portfolioId,
+      "holdings-v2",
+      getPortfolioFallback(patch.portfolioId, "holdings-v2")
+    );
+    const existing = (holdings || []).find(item => item.code === patch.entry.code);
+    const currentQty = Number(existing?.qty) || 0;
+    const shouldAdjustHoldings =
+      patch.expectedQtyAfter == null ||
+      currentQty > patch.expectedQtyAfter;
+
+    const nextHoldings = shouldAdjustHoldings
+      ? applyTradeEntryToHoldings(holdings, patch.entry, getPersistedMarketQuotes())
+      : holdings;
+    const nextTradeLog = [patch.entry, ...(tradeLog || [])];
+
+    await savePortfolioData(patch.portfolioId, "log-v2", nextTradeLog);
+    await savePortfolioData(patch.portfolioId, "holdings-v2", nextHoldings);
+
+    if (patch.portfolioId === OWNER_PORTFOLIO_ID) {
+      try {
+        await fetch("/api/brain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "save-holdings", data: nextHoldings }),
+        });
+      } catch {
+        // local copy is still enough; cloud can catch up later
+      }
+    }
+
+    applied.add(patch.id);
+    changed += 1;
+  }
+
+  if (applied.size > 0) {
+    await saveAppliedTradePatches(Array.from(applied));
+  }
+
+  return changed;
 }
 
 // 金聯成 組合目標價（僅收錄查到的法人/分析師共識）
@@ -4611,6 +4751,7 @@ export default function App() {
       await migrateLegacyPortfolioStorageIfNeeded();
       await seedJinlianchengIfNeeded();
       const registry = await ensurePortfolioRegistry();
+      await applyTradeBackfillPatchesIfNeeded();
       const pid = registry.activePortfolioId;
       const snapshot = await loadPortfolioSnapshot(pid);
 
@@ -4945,7 +5086,33 @@ export default function App() {
 
   // derived
   const H = Array.isArray(holdings) ? holdings : [];
-  const W = Array.isArray(watchlist) ? watchlist : [];
+  
+  // 觀察股應用市場報價更新
+  const W = useMemo(() => {
+    const watchlistRows = Array.isArray(watchlist) ? watchlist : [];
+    if (!marketPriceCache?.prices || watchlistRows.length === 0) return watchlistRows;
+    
+    return watchlistRows.map(item => {
+      const quote = marketPriceCache.prices[item.code];
+      if (!quote?.price) return item;
+      
+      // 更新價格和潛在漲幅
+      const newPrice = quote.price;
+      const newTarget = item.target || null;
+      const newUpside = newTarget && newPrice > 0 
+        ? ((newTarget - newPrice) / newPrice) * 100 
+        : null;
+      
+      return {
+        ...item,
+        price: newPrice,
+        change: quote.change || 0,
+        changePct: quote.changePct || 0,
+        upside: newUpside,
+      };
+    });
+  }, [watchlist, marketPriceCache]);
+  
   const D = useMemo(() => {
     const normalized = normalizeHoldingDossiers(holdingDossiers);
     if (normalized.length > 0) return normalized;
@@ -5104,7 +5271,7 @@ export default function App() {
   const todayAlertSummary = urgentCount > 2
     ? `${todayAlertItems.slice(0, 2).join(" · ")} · 另有 ${urgentCount - 2} 項提醒`
     : todayAlertItems.join(" · ");
-  const watchlistRows = W.map((item, index) => {
+  const watchlistRows = useMemo(() => W.map((item, index) => {
     const relatedEvents = currentNewsEvents.filter(event => event.stocks?.some(stock => stock.includes(item.code)));
     const trackingCount = relatedEvents.filter(event => event.status === "tracking").length;
     const pendingCount = relatedEvents.filter(event => event.status === "pending").length;
@@ -5140,10 +5307,10 @@ export default function App() {
       action,
       priority,
     };
-  });
-  const watchlistFocus = watchlistRows.length > 0
+  }), [W, currentNewsEvents]);
+  const watchlistFocus = useMemo(() => watchlistRows.length > 0
     ? [...watchlistRows].sort((a, b) => b.priority - a.priority || (b.upside ?? -999) - (a.upside ?? -999))[0]
-    : null;
+    : null, [watchlistRows]);
   const showRelayPlan = activePortfolioId === OWNER_PORTFOLIO_ID || H.some(item => RELAY_PLAN_CODES.has(item.code)) || W.some(item => RELAY_PLAN_CODES.has(item.code));
 
   const sorted = useMemo(() => [...H].sort((a,b)=>{
@@ -7007,55 +7174,7 @@ ${recentAnalyses || "尚無分析紀錄"}
 
     setHoldings(prev => {
       try {
-        const arr = [...(prev || [])];
-        const idx = arr.findIndex(h => h.code === t.code);
-        if (t.action === "買進") {
-          if (idx >= 0) {
-            const h = arr[idx];
-            const nq = h.qty + t.qty;
-            if (nq === 0) return prev; // 防止除零
-            const nc = (h.cost * h.qty + t.price * t.qty) / nq;
-            arr[idx] = {
-              ...h,
-              qty: nq,
-              price: t.price,
-              cost: Math.round(nc * 100) / 100,
-              value: t.price * nq,
-              pnl: Math.round((t.price - nc) * nq),
-              pct: nc > 0 ? Math.round((t.price / nc - 1) * 10000) / 100 : 0,
-            };
-          } else {
-            arr.push({
-              code: t.code,
-              name: t.name,
-              qty: t.qty,
-              price: t.price,
-              cost: t.price,
-              value: t.price * t.qty,
-              pnl: 0,
-              pct: 0,
-              type: "股票",
-            });
-          }
-        } else {
-          if (idx >= 0) {
-            const h = arr[idx];
-            const nq = Math.max(0, h.qty - t.qty);
-            if (nq === 0) {
-              arr.splice(idx, 1);
-            } else {
-              arr[idx] = {
-                ...h,
-                qty: nq,
-                price: t.price,
-                value: t.price * nq,
-                pnl: Math.round((t.price - h.cost) * nq),
-                pct: h.cost > 0 ? Math.round((t.price / h.cost - 1) * 10000) / 100 : 0,
-              };
-            }
-          }
-        }
-        return normalizeHoldings(arr, marketPriceCache?.prices);
+        return applyTradeEntryToHoldings(prev, t, marketPriceCache?.prices);
       } catch (err) {
         console.error("Holdings update failed:", err);
         return prev;
@@ -8297,8 +8416,8 @@ ${recentAnalyses || "尚無分析紀錄"}
           )}
           {watchlistRows.length > 0 && watchlistRows.map(({ item:w, index:wi, relatedEvents:wEvents, hits:wHits, misses:wMisses, pendingCount, trackingCount, upside },) => {
             const upsideText = upside != null ? `${upside >= 0 ? "+" : ""}${upside.toFixed(1)}%` : "—";
-            const prog = w.target > 0 && w.price > 0 ? Math.min(w.price / w.target * 100, 100) : 0;
-            const sc = C[w.scKey] || C.up;
+            const prog = w.target > 0 && w.price > 0 ? Math.min((w.price / w.target) * 100, 100) : 0;
+            const sc = C[w.scKey] || C.blue;
             const bgTints=[C.card,C.cardBlue,C.cardAmber];
             const isWExp = expandedStock === `w-${w.code}`;
             return <div key={w.code} style={{...card, background:bgTints[wi%3], marginBottom:8}}>
@@ -8332,8 +8451,8 @@ ${recentAnalyses || "尚無分析紀錄"}
                     border:`1px solid ${C.border}`,padding:"3px 11px",borderRadius:20,flexShrink:0}}>{w.status || "觀察中"}</span>
                 </div>
                 <div style={{display:"flex",gap:16,marginTop:12,flexWrap:"wrap"}}>
-                  {[["現價",w.price ? w.price.toLocaleString() : "—",C.text],
-                    ["目標價",w.target ? w.target.toLocaleString() : "未設定",C.textSec],
+                  {[["現價",w.price != null && w.price > 0 ? w.price.toLocaleString() : "—",C.text],
+                    ["目標價",w.target != null && w.target > 0 ? w.target.toLocaleString() : "未設定",C.textSec],
                     ["潛在漲幅",upsideText,C.text]].map(([l,v,c])=>(
                     <div key={l}>
                       <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>{l}</div>

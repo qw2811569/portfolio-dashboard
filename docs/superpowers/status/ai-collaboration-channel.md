@@ -108,6 +108,7 @@
   - scout 預設：`gemini-3.1-flash-lite-preview`
   - `gemini-3-flash-preview` 若當日 free-tier 額度耗盡，改走上述兩個模型
   - 先跑 `scripts/gemini-healthcheck.sh`，確認 Node / auth / last error 狀態
+  - 若 `validate-local-llm-stack.sh` 顯示 `429 RESOURCE_EXHAUSTED`，代表當日 research lane 額度不足，不應再把它當高頻主力
 
 ### Qwen Code
 
@@ -128,7 +129,8 @@
   - bounded coding helper
 - 目前穩定用法：
   - 透過 [launch-qwen.sh](/Users/chenkuichen/APP/test/scripts/launch-qwen.sh) 啟動
-  - 目前 local Ollama 路徑可接通，但 headless 任務偏慢，適合低頻、明確、 bounded 任務
+  - 目前 local Ollama 路徑可接通，但 headless 任務偏慢；`qwen3-coder:30b` 升級後實測 240 秒內仍可能無輸出
+  - 現階段更適合低頻、明確、bounded 任務，或互動式輔助，不應阻塞主線
 
 ### Claude Local Over Ollama
 
@@ -149,7 +151,8 @@
   - interactive wording helper
 - 目前穩定用法：
   - 可透過 `ollama launch claude` 正常啟動並回報版本
-  - 非互動 prompt 模式目前仍偏慢 / 不穩，先不要讓它卡住主線
+  - 非互動 prompt 模式目前仍偏慢 / 不穩；切到 `qwen3-coder:30b` 後 headless 驗證仍會逾時
+  - 目前只適合互動式 drafting，不適合自動化主線
 
 ### AnythingLLM
 

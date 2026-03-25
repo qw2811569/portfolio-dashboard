@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 15:42
+Last updated: 2026-03-25 21:25
 
 ## Objective
 
@@ -111,14 +111,26 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `17:49` Codex：已驗證 Claude Local over Ollama 可正常啟動並回報版本；目前定位為「互動式 drafting assistant」，暫不作 headless 主線 worker
 - `17:52` Codex：新增外部 LLM 共享交接通道 [coordination/llm-bus/board.md](/Users/chenkuichen/APP/test/coordination/llm-bus/board.md)
 - `18:02` 使用者要求把 Qwen 與 Claude local 都升到 `qwen3-coder:30b`；舊 `qwen3:14b` 已移除，正在拉新模型
+- `20:45` Codex：電腦重開後已重新執行升級流程；`qwen3:14b` 確認移除，`qwen3-coder:30b` 與 `nomic-embed-text` 留存
+- `20:48` Codex：`launchctl setenv OLLAMA_CONTEXT_LENGTH 65536 && brew services restart ollama` 完成；Ollama 已重啟
+- `20:55` Codex：Qwen / Claude local / Gemini wrapper 與 VSCode tasks 全部重新指向當前模型與健康檢查腳本
+- `21:08` Codex：新增三方實測腳本 [validate-local-llm-stack.sh](/Users/chenkuichen/APP/test/scripts/validate-local-llm-stack.sh)
+- `21:12` Gemini：research lane 實測命中 `429 RESOURCE_EXHAUSTED`，CLI 本身正常，但今日 API quota 不足
+- `21:13` Qwen：`qwen3-coder:30b` headless low-risk patch 測試在 240 秒內未產出結果
+- `21:14` Claude local：`qwen3-coder:30b` 後端啟動正常，但 headless guardrail 測試在 240 秒內未產出結果
+- `21:18` checkpoint meeting：分工降級為
+  - `Gemini`：quota 可用時做 external research scout
+  - `Qwen`：低頻、bounded、最好互動式的小 patch helper
+  - `Claude local`：互動式 prompt / checklist / guardrail 助手
+  - 高風險主線仍由 `Codex + James + Curie` 承擔
 
 ## Next actions
 
 - Task B 分工：
   - `Codex`：已完成 validated / stale / invalidated / candidate 的 merge 契約與 review-driven validation；下一步補強多股票事件與 casebook 解釋力
-  - `Gemini CLI`：補近期公開來源、法說 / 公告 / 目標價報導與 citations
-  - `Claude Code over Ollama`：先草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
-  - `Qwen Code`：等契約定稿後接 parsing / UI / test 的機械實作
+  - `Gemini CLI`：quota 可用時補近期公開來源、法說 / 公告 / 目標價報導與 citations
+  - `Claude Code over Ollama`：互動式草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
+  - `Qwen Code`：低頻、bounded 的 parsing / UI / test 機械實作
 - 新增歷史驗證主線：
   - `AnythingLLM`：整理相似個股案例與文件證據
   - `Claude Code over Ollama`：草擬 analog matching / differenceType 文案與清單
@@ -147,7 +159,8 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
   - 使用者 reload 後確認 0 市值是否已恢復；若仍有問題，優先檢查 unrecoverable `integrityIssue: missing-price` 的個股名單
   - 台股真值層下一步要補 MOPS / TWSE / TPEX / 除權息 / 零股 / 交易成本
   - 把 `eval_brain` 案例擴到真實台股月營收 / 法說 / 題材輪動情境，不只 3 個 smoke cases
-  - Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順
+- Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順
+- 若再次驗證外部 LLM，先看 [coordination/llm-bus/runs/20260325-210859](/Users/chenkuichen/APP/test/coordination/llm-bus/runs/20260325-210859) 的實測結果，不可把已配置能力誤報成穩定主線能力
 
 ## Stop-in-5-min fallback
 

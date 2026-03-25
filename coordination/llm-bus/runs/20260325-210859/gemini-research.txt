@@ -1,0 +1,106 @@
+Attempt 1 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 2 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 3 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 4 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 5 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 6 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 7 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+Attempt 8 failed with status 429. Retrying with backoff... ApiError: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. ","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]}]}}
+    at throwErrorIfNotOK (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11716:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:11454:13
+    at async Models.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/genai/dist/node/index.mjs:12766:24)
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/loggingContentGenerator.js:235:34
+    at async file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/telemetry/trace.js:81:20
+    at async retryWithBackoff (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/utils/retry.js:167:28)
+    at async GeminiClient.generateContent (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/client.js:740:28)
+    at async WebSearchToolInvocation.execute (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/tools/web-search.js:27:30)
+    at async executeToolWithHooks (file:///Users/chenkuichen/.nvm/versions/node/v24.13.1/lib/node_modules/@google/gemini-cli/node_modules/@google/gemini-cli-core/dist/src/core/coreToolHookTriggers.js:117:24) {
+  status: 429
+}
+
+[TIMEOUT]

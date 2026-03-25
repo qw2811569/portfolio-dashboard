@@ -1,0 +1,4 @@
+
+Launching Claude Code with qwen3-coder:30b...
+
+[TIMEOUT]

@@ -766,16 +766,22 @@ function getHoldingCostBasis(item) {
 
 function resolveHoldingPrice(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
-  const candidate = Number(overridePrice);
-  if (Number.isFinite(candidate) && candidate > 0) return candidate;
-
+  
+  // 優先使用覆蓋價格（來自 API 的即時股價）
+  if (overridePrice != null) {
+    const candidate = Number(overridePrice);
+    if (Number.isFinite(candidate) && candidate > 0) return candidate;
+  }
+  
+  // 其次使用 stored price
   const storedPrice = Number(item?.price);
   if (Number.isFinite(storedPrice) && storedPrice > 0) return storedPrice;
 
+  // 最後使用 value / qty 計算
   const qty = Number(item?.qty) || 0;
   const storedValue = Number(item?.value);
   if (qty > 0 && Number.isFinite(storedValue) && storedValue > 0) {
-    return storedValue / qty; // qty 已檢查 > 0，無除零風險
+    return storedValue / qty;
   }
 
   return 0;
@@ -789,28 +795,52 @@ function getHoldingMarketValue(item, overridePrice = null) {
 
 function getHoldingUnrealizedPnl(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
-  return getHoldingMarketValue(item, overridePrice) - getHoldingCostBasis(item);
+  
+  // 如果 item 已经有計算好的 pnl（來自 normalizeHoldingMetrics），直接使用
+  if (typeof item.pnl === "number") return item.pnl;
+  
+  // 否則實時計算
+  const price = resolveHoldingPrice(item, overridePrice);
+  const qty = Number(item?.qty) || 0;
+  const cost = Number(item?.cost) || 0;
+  return (price * qty) - (cost * qty);
 }
 
 function getHoldingReturnPct(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
-  const costBasis = getHoldingCostBasis(item);
-  if (costBasis <= 0) return 0; // 返回 0 避免 UI 呼叫 .toFixed() 時出錯
-  return (getHoldingUnrealizedPnl(item, overridePrice) / costBasis) * 100;
+  
+  // 如果 item 已经有計算好的 pct（來自 normalizeHoldingMetrics），直接使用
+  if (typeof item.pct === "number") return item.pct;
+  
+  // 否則實時計算
+  const price = resolveHoldingPrice(item, overridePrice);
+  const qty = Number(item?.qty) || 0;
+  const cost = Number(item?.cost) || 0;
+  const costBasis = cost * qty;
+  if (costBasis <= 0) return 0;
+  return ((price * qty - costBasis) / costBasis) * 100;
 }
 
 function normalizeHoldingMetrics(item, overridePrice = null) {
   if (!item || typeof item !== "object") return item;
+  
+  // 使用 overridePrice（來自 API 的即時股價）或 item 中存儲的價格
   const price = resolveHoldingPrice(item, overridePrice);
-  const value = getHoldingMarketValue(item, price);
-  const pnl = getHoldingUnrealizedPnl(item, price);
-  const pct = getHoldingReturnPct(item, price);
+  const qty = Number(item?.qty) || 0;
+  const cost = Number(item?.cost) || 0;
+  
+  // 計算市值、損益、報酬率
+  const value = price * qty;  // 市值 = 現價 × 股數
+  const costBasis = cost * qty;  // 成本基礎 = 成本價 × 股數
+  const pnl = value - costBasis;  // 損益 = 市值 - 成本基礎
+  const pct = costBasis > 0 ? (pnl / costBasis) * 100 : 0;  // 報酬率 = 損益 / 成本基礎
+  
   return {
     ...item,
-    price,
-    value: Math.round(value),
-    pnl: Math.round(pnl),
-    pct: Math.round(pct * 100) / 100,
+    price,  // 更新為最新股價
+    value: Math.round(value),  // 市值
+    pnl: Math.round(pnl),  // 未實現損益
+    pct: Math.round(pct * 100) / 100,  // 報酬率百分比
   };
 }
 
@@ -5407,12 +5437,37 @@ export default function App() {
         const code = String(item?.code || "").trim();
         return code && !(marketPriceCache?.prices?.[code]?.price > 0);
       });
+      
+      // 檢查是否為交易日且已收盤
+      const isTradingDay = !clock.isWeekend && clock.minutes >= POST_CLOSE_SYNC_MINUTES;
+      const alreadySyncedToday = marketPriceSync?.marketDate === clock.marketDate;
+      
+      // 如果今天已同步，詢問用戶是否要強制重新抓取
+      if (isTradingDay && alreadySyncedToday && !hasMissingTrackedQuotes) {
+        const confirmed = window.confirm(
+          `今日收盤價已同步（${marketPriceSync?.syncedAt?.slice(11, 16) || 'N/A'} 抓取）。\n\n` +
+          `點擊「確定」強制重新抓取最新收盤價，\n點擊「取消」使用既有快取。`
+        );
+        if (!confirmed) {
+          setSaved("✅ 使用既有收盤價快取");
+          setTimeout(() => setSaved(""), 2000);
+          setRefreshing(false);
+          return;
+        }
+      }
+      
       const shouldForceRepair =
         Array.isArray(holdings) && (
           holdings.some(item => item?.integrityIssue === "missing-price" || resolveHoldingPrice(item) <= 0) ||
-          (!clock.isWeekend && clock.minutes >= POST_CLOSE_SYNC_MINUTES && (marketPriceSync?.marketDate !== clock.marketDate || hasMissingTrackedQuotes))
+          (isTradingDay && (marketPriceSync?.marketDate !== clock.marketDate || hasMissingTrackedQuotes))
         );
-      const cache = await syncPostClosePrices({ silent: false, force: shouldForceRepair });
+      
+      // 強制重新抓取時，傳入 force: true
+      const cache = await syncPostClosePrices({ 
+        silent: false, 
+        force: shouldForceRepair || (isTradingDay && alreadySyncedToday) 
+      });
+      
       if (cache?.prices && Object.keys(cache.prices).length > 0 && viewMode === PORTFOLIO_VIEW_MODE) {
         setHoldings(prev => applyMarketQuotesToHoldings(prev, cache.prices));
       }
@@ -6604,7 +6659,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     return incomingItems.length > 0;
   };
 
-  const refreshAnalystReports = async ({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) => {
+  async function refreshAnalystReports({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) {
     if (reportRefreshing) return false;
     const dailyMeta = reportRefreshMeta?.__daily || {};
     const processedCodes = new Set(Array.isArray(dailyMeta.processedCodes) ? dailyMeta.processedCodes : []);
@@ -6706,7 +6761,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       setReportRefreshing(false);
       setReportRefreshStatus("");
     }
-  };
+  }
 
   const exportLocalBackup = () => {
     try {

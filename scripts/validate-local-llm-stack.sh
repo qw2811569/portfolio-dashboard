@@ -35,7 +35,16 @@ try:
     outfile.write_text(combined, encoding="utf-8")
     statusfile.write_text(str(result.returncode), encoding="utf-8")
 except subprocess.TimeoutExpired as exc:
-    combined = (exc.stdout or "") + ("\n" if exc.stdout and exc.stderr else "") + (exc.stderr or "")
+    def _normalize(value):
+        if value is None:
+            return ""
+        if isinstance(value, bytes):
+            return value.decode("utf-8", errors="replace")
+        return value
+
+    stdout = _normalize(exc.stdout)
+    stderr = _normalize(exc.stderr)
+    combined = stdout + ("\n" if stdout and stderr else "") + stderr
     outfile.write_text((combined or "") + "\n[TIMEOUT]\n", encoding="utf-8")
     statusfile.write_text("124", encoding="utf-8")
 PY
@@ -49,17 +58,17 @@ CLAUDE_PROMPT='請用繁體中文輸出三段：1. verdict guardrails 2. freshne
 
 run_with_timeout \
   "gemini-research" \
-  90 \
-  "cd '${ROOT_DIR}' && bash scripts/launch-gemini-research-scout.sh -p \"${GEMINI_PROMPT}\""
+  180 \
+  "cd '${ROOT_DIR}' && bash scripts/launch-gemini-research-scout.sh \"${GEMINI_PROMPT}\""
 
 run_with_timeout \
   "qwen-low-risk-patch" \
-  180 \
+  240 \
   "cd '${ROOT_DIR}' && bash scripts/launch-qwen.sh -p \"${QWEN_PROMPT}\" --output-format text --yolo"
 
 run_with_timeout \
   "claude-local-guardrail" \
-  180 \
+  240 \
   "cd '${ROOT_DIR}' && bash scripts/launch-claude-ollama.sh -p \"${CLAUDE_PROMPT}\""
 
 echo

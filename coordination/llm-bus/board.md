@@ -40,3 +40,13 @@
 - 外部 research：Gemini
 - 低風險 patch：Qwen
 - 互動式草稿：Claude Local
+
+## Validation lane
+
+- pending run:
+  - Gemini：`facts / citations / freshness / unresolved_questions`
+  - Qwen：`low-risk patch draft`
+  - Claude Local：`prompt / checklist / guardrail draft`
+- acceptance rule:
+  - 只記錄實測通過的能力
+  - 若某一路 headless 模式不穩，直接降級角色，不硬撐

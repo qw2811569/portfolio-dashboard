@@ -14,6 +14,10 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `Qwen Code`：低風險 UI / helper / parsing / test patch
 - `AnythingLLM`：PDF / 研究文件 / 歷史材料整理與對照
 
+固定角色與能力邊界見：
+
+- [ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/superpowers/status/ai-collaboration-channel.md)
+
 ## Files in play
 
 - `src/App.jsx`
@@ -27,6 +31,10 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `QWEN.md`
 
 ## Latest checkpoint
+
+- `16:20` Codex：已建立固定多 AI 協作通道 [ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/superpowers/status/ai-collaboration-channel.md)
+- `16:21` James：回報其最適合擔任高風險 state/storage/sync/migration review 與最終技術裁決輔助
+- `16:22` Curie：回報其最適合擔任 truth-layer / validation / freshness / Taiwan-market guardrails 的 final reviewer
 
 - `16:02` Codex：完成 `validationScore / staleness / evidenceRefs` 的 rule normalization 與 fallback 推導
 - `16:04` Codex：策略大腦 UI 改為顯示驗證分、狀態與證據來源

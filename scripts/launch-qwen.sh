@@ -11,4 +11,4 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
   fi
 fi
 
-exec qwen "$@"
+exec qwen --auth-type qwen-oauth "$@"

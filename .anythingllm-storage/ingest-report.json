@@ -1,0 +1,131 @@
+{
+  "api_base": "http://127.0.0.1:3001/api",
+  "workspaces": [
+    {
+      "name": "台股策略總庫",
+      "slug": "20ed5570-eda1-4cf9-a873-0f4ac9caf70c",
+      "uploaded": [
+        {
+          "title": "台股策略研究任務書",
+          "location": "custom-documents/raw--6c92d689-8657-4770-8e0b-c4cb8594bdbd.json",
+          "type": "seed"
+        },
+        {
+          "title": "2026-03-23-multi-portfolio-event-tracking-design.md",
+          "location": "custom-documents/raw-2026-03-23-multi-portfolio-event-tracking-design-10b177b1-6771-404c-98c7-4c0e82aca0b2.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-23-multi-portfolio-event-tracking-implementation-plan.md",
+          "location": "custom-documents/raw-2026-03-23-multi-portfolio-event-tracking-implementation-plan-67a729f2-3e5b-4f2f-8358-cf52d8904739.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-24-claude-tw-stock-analysis-tooling-guide.md",
+          "location": "custom-documents/raw-2026-03-24-claude-tw-stock-analysis-tooling-guide-7d7f5634-43c6-41e9-bff3-ee66f033f053.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-24-client-report-production-playbook.md",
+          "location": "custom-documents/raw-2026-03-24-client-report-production-playbook-2c6452ef-4ae0-4881-9a4b-5ab9e5e537b8.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-24-holding-dossier-and-refresh-architecture.md",
+          "location": "custom-documents/raw-2026-03-24-holding-dossier-and-refresh-architecture-ab2e6079-0020-4501-8cfa-fcb5c4cafef8.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-25-qwen-anythingllm-setup-and-division.md",
+          "location": "custom-documents/raw-2026-03-25-qwen-anythingllm-setup-and-division-0154995c-1f9d-487a-ad6f-3b8e473ca8b8.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-25-strategy-brain-v2-llm-routing-plan.md",
+          "location": "custom-documents/raw-2026-03-25-strategy-brain-v2-llm-routing-plan-b4c1a021-4ad6-4764-ae94-9d98a6915e54.json",
+          "type": "file"
+        },
+        {
+          "title": "program.md",
+          "location": "custom-documents/raw-program-9b3fd6aa-a5c8-4035-9197-604980991ebe.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-26-anythingllm-tw-stock-prompt-templates.md",
+          "location": "custom-documents/raw-2026-03-26-anythingllm-tw-stock-prompt-templates-5364bc4f-6dc8-43bf-9ba6-b6bdfc8a048a.json",
+          "type": "file"
+        },
+        {
+          "title": "Desmond客戶持股健檢.pdf",
+          "location": "custom-documents/Desmond.pdf-c2f2fbcb-1be7-4f05-9cbd-15fdaac50949.json",
+          "type": "pdf"
+        },
+        {
+          "title": "金聯成持倉.pdf",
+          "location": "custom-documents/.pdf-9fa54ad7-46a9-4757-8dd9-f18d58ead029.json",
+          "type": "pdf"
+        }
+      ],
+      "uploaded_count": 12
+    },
+    {
+      "name": "產業與消息連動",
+      "slug": "522d6649-47bc-4189-ae1a-9122ae4eab59",
+      "uploaded": [
+        {
+          "title": "產業趨勢與消息連動研究框架",
+          "location": "custom-documents/raw--9b2db7ba-d361-4ecc-bb72-9e61cd07c70e.json",
+          "type": "seed"
+        },
+        {
+          "title": "2026-03-23-multi-portfolio-event-tracking-design.md",
+          "location": "custom-documents/raw-2026-03-23-multi-portfolio-event-tracking-design-22039d38-8213-4a67-8489-940f0951acfd.json",
+          "type": "file"
+        },
+        {
+          "title": "2026-03-24-claude-tw-stock-analysis-tooling-guide.md",
+          "location": "custom-documents/raw-2026-03-24-claude-tw-stock-analysis-tooling-guide-6efded46-3923-4504-850a-40d98f8f3850.json",
+          "type": "file"
+        },
+        {
+          "title": "jinliancheng-desmond-client-report.html",
+          "location": "custom-documents/raw-jinliancheng-desmond-client-report-9c481e16-97d4-4ed1-a08c-505aff4aea50.json",
+          "type": "file"
+        },
+        {
+          "title": "Desmond客戶持股健檢.pdf",
+          "location": "custom-documents/Desmond.pdf-197f64b1-8b8c-4553-aa69-2ddbcdbdbf02.json",
+          "type": "pdf"
+        }
+      ],
+      "uploaded_count": 5
+    },
+    {
+      "name": "籌碼與技術分析",
+      "slug": "3763f0f4-e91d-412b-9179-270c2ca0c469",
+      "uploaded": [
+        {
+          "title": "籌碼與技術分析研究框架",
+          "location": "custom-documents/raw--def0d91e-04a5-4195-824d-948e95c886df.json",
+          "type": "seed"
+        },
+        {
+          "title": "2026-03-26-anythingllm-tw-stock-prompt-templates.md",
+          "location": "custom-documents/raw-2026-03-26-anythingllm-tw-stock-prompt-templates-27a9f461-c023-4833-9d83-b0376f55ab37.json",
+          "type": "file"
+        },
+        {
+          "title": "jinliancheng-report.html",
+          "location": "custom-documents/raw-jinliancheng-report-59e6a87c-0dd2-4587-a04c-7c62f0a4901c.json",
+          "type": "file"
+        },
+        {
+          "title": "jinliancheng-desmond-client-report.html",
+          "location": "custom-documents/raw-jinliancheng-desmond-client-report-064ef486-025f-4d1f-87ea-1b357b69c46f.json",
+          "type": "file"
+        }
+      ],
+      "uploaded_count": 4
+    }
+  ]
+}

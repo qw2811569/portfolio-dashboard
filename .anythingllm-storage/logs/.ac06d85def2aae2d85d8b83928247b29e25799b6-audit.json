@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 2
+    },
+    "auditLog": "/Users/chenkuichen/APP/test/.anythingllm-storage/logs/.ac06d85def2aae2d85d8b83928247b29e25799b6-audit.json",
+    "files": [
+        {
+            "date": 1774467710697,
+            "name": "/Users/chenkuichen/APP/test/.anythingllm-storage/logs/collector-2026-03-26.log",
+            "hash": "3cbe7dfb47fc6269b45cf833d05685af4939b52e80dbba3d5d93fe6131f8f8ba"
+        }
+    ],
+    "hashType": "sha256"
+}

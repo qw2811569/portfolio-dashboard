@@ -1,0 +1,13 @@
+{
+    "id": "6c92d689-8657-4770-8e0b-c4cb8594bdbd",
+    "url": "file://.txt",
+    "title": ".txt",
+    "docAuthor": "no author specified",
+    "description": "Seeded into workspace 20ed5570-eda1-4cf9-a873-0f4ac9caf70c from local repo",
+    "docSource": "Strategy seed note",
+    "chunkSource": ".txt",
+    "published": "3/26/2026, 3:46:59 AM",
+    "wordCount": 29,
+    "pageContent": "台股策略研究任務書\n\n目標：\n1. 建立可長期檢索的台股策略知識庫。\n2. 從既有文件中篩選出高價值、可重複驗證的策略與研究框架。\n3. 研究重點包含：\n   - 產業趨勢與供應鏈位置\n   - 消息、法說、財報、月營收對股價的連動\n   - 籌碼面與技術分析\n   - 題材輪動與市場節奏\n\n回答規則：\n1. 先區分：已知事實 / 推論 / 待驗證事項。\n2. 若資料過期或不足，要明說。\n3. 優先整理台灣股市特有節奏：月營收、法說、財報、族群輪動、處置/分盤、零股。\n4. 不把單一案例誤當通則。\n5. 對策略結論要指出適用情境、失效條件與風險。",
+    "token_count_estimate": 362
+}

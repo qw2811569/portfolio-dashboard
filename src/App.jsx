@@ -38,7 +38,8 @@ function Md({ text, color }) {
     const line = lines[i];
     if (/^#{1,3}\s/.test(line)) {
       flushList();
-      const lvl = line.match(/^(#+)/)[1].length;
+      const lvlMatch = line.match(/^(#+)/);
+      const lvl = lvlMatch ? lvlMatch[1].length : 1;
       const txt = line.replace(/^#+\s*/, "");
       const sz = lvl === 1 ? 14 : lvl === 2 ? 12 : 11;
       els.push(h("div", { key: `h-${i}`, style: { fontSize: sz, fontWeight: 600, color: C.text, marginTop: lvl === 1 ? 12 : 8, marginBottom: 4 } }, renderInline(txt)));
@@ -47,7 +48,8 @@ function Md({ text, color }) {
     } else if (/^\d+\.\s/.test(line.trim())) {
       flushList();
       const txt = line.trim().replace(/^\d+\.\s*/, "");
-      const num = line.trim().match(/^(\d+)\./)[1];
+      const numMatch = line.trim().match(/^(\d+)\./);
+      const num = numMatch ? numMatch[1] : "1";
       els.push(h("div", { key: `ol-${i}`, style: { fontSize: 11, color: textColor, lineHeight: 1.8, paddingLeft: 12, position: "relative", marginBottom: 2 } },
         h("span", { style: { position: "absolute", left: 0, color: C.textMute, fontSize: 10 } }, `${num}.`), renderInline(txt)
       ));
@@ -771,7 +773,7 @@ function resolveHoldingPrice(item, overridePrice = null) {
   const qty = Number(item?.qty) || 0;
   const storedValue = Number(item?.value);
   if (qty > 0 && Number.isFinite(storedValue) && storedValue > 0) {
-    return storedValue / qty;
+    return storedValue / qty; // qty 已檢查 > 0，無除零風險
   }
 
   return 0;
@@ -788,7 +790,7 @@ function getHoldingUnrealizedPnl(item, overridePrice = null) {
 
 function getHoldingReturnPct(item, overridePrice = null) {
   const costBasis = getHoldingCostBasis(item);
-  if (costBasis <= 0) return 0;
+  if (costBasis <= 0) return null; // 返回 null 讓 UI 顯示「N/A」而非誤導性的 0%
   return (getHoldingUnrealizedPnl(item, overridePrice) / costBasis) * 100;
 }
 
@@ -861,7 +863,13 @@ async function fetchJsonWithTimeout(input, init = {}, timeoutMs = 8000) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(input, { ...init, signal: controller.signal });
-    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json().catch((err) => {
+      console.warn(`JSON parse error from ${input}:`, err);
+      return {};
+    });
     return { response, data };
   } finally {
     clearTimeout(timer);
@@ -2455,13 +2463,54 @@ function averagePriceRecord(value) {
   return prices.reduce((sum, price) => sum + price, 0) / prices.length;
 }
 
-function inferEventActual(priceAtEvent, priceAtExit) {
+function inferEventActual(priceAtEvent, priceAtExit, weights = null) {
+  // 如果有权重，使用加權平均
+  if (weights && typeof weights === "object" && !Array.isArray(weights)) {
+    const codes = Object.keys(priceAtEvent || {}).filter(code => 
+      Object.keys(priceAtExit || {}).includes(code) && Object.keys(weights).includes(code)
+    );
+    if (codes.length > 0) {
+      const totalWeight = codes.reduce((sum, code) => sum + (weights[code] || 0), 0);
+      if (totalWeight > 0) {
+        let weightedEntry = 0;
+        let weightedExit = 0;
+        codes.forEach(code => {
+          const weight = (weights[code] || 0) / totalWeight;
+          weightedEntry += (priceAtEvent[code] || 0) * weight;
+          weightedExit += (priceAtExit[code] || 0) * weight;
+        });
+        if (weightedEntry > 0 && weightedExit > 0) {
+          const pct = ((weightedExit / weightedEntry) - 1) * 100;
+          if (Math.abs(pct) <= 1) return "neutral";
+          return pct > 0 ? "up" : "down";
+        }
+      }
+    }
+  }
+  
+  // 退化為簡單平均（向後相容）
   const entryAvg = averagePriceRecord(priceAtEvent);
   const exitAvg = averagePriceRecord(priceAtExit);
   if (!entryAvg || !exitAvg) return null;
   const pct = ((exitAvg / entryAvg) - 1) * 100;
   if (Math.abs(pct) <= 1) return "neutral";
   return pct > 0 ? "up" : "down";
+}
+
+// 新增：計算個股漲跌幅，用於多股票事件的詳細顯示
+function inferEventStockOutcomes(priceAtEvent, priceAtExit) {
+  if (!priceAtEvent || !priceAtExit) return [];
+  const codes = new Set([...Object.keys(priceAtEvent), ...Object.keys(priceAtExit)]);
+  return Array.from(codes).map(code => {
+    const entry = priceAtEvent[code];
+    const exit = priceAtExit[code];
+    if (!entry || !exit) return { code, outcome: "inconclusive", changePct: null };
+    const pct = ((exit / entry) - 1) * 100;
+    let outcome = "inconclusive";
+    if (Math.abs(pct) <= 1) outcome = "neutral";
+    else outcome = pct > 0 ? "up" : "down";
+    return { code, outcome, changePct: Math.round(pct * 100) / 100 };
+  });
 }
 
 function appendPriceHistory(history, date, prices) {
@@ -3545,10 +3594,18 @@ async function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
-  } catch { return fallback; }
+  } catch (err) {
+    console.warn(`localStorage load error for key "${key}":`, err);
+    return fallback;
+  }
 }
+
 async function save(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (err) {
+    console.warn(`localStorage save error for key "${key}":`, err);
+  }
 }
 
 function getPersistedMarketQuotes() {
@@ -4672,7 +4729,6 @@ export default function App() {
   }, [
     activePortfolioId,
     canPersistPortfolioData,
-    holdingDossiers,
     holdings,
     marketPriceCache,
     marketPriceSync,
@@ -5136,13 +5192,32 @@ export default function App() {
     if (normalizedEvents.length === 0) return normalizedEvents;
 
     const today = toSlashDate();
+    const todayDate = parseSlashDate(today);
+    
+    // 1. 找出需要自動結案的 tracking 事件
+    const autoCloseCandidates = normalizedEvents.filter(event => {
+      if (event.status !== "tracking") return false;
+      const trackingStart = parseSlashDate(event.trackingStart);
+      if (!trackingStart) return false;
+      const trackingDays = Math.floor((todayDate - trackingStart) / (1000 * 60 * 60 * 24));
+      return trackingDays >= 90; // 超過 90 天自動結案
+    });
+
+    // 2. 找出需要轉換為 tracking 的 pending 事件
     const duePending = normalizedEvents.filter(event => {
       if (event.status !== "pending") return false;
       const scheduled = parseSlashDate(event.date);
-      return scheduled && scheduled.getTime() <= parseSlashDate(today).getTime();
+      return scheduled && scheduled.getTime() <= todayDate.getTime();
     });
-    const trackingEvents = normalizedEvents.filter(event => event.status === "tracking");
+
+    // 3. 找出需要更新價格的 tracking 事件（排除已自動結案的）
+    const trackingEvents = normalizedEvents.filter(event => 
+      event.status === "tracking" && !autoCloseCandidates.some(e => e.id === event.id)
+    );
+
+    // 4. 收集需要抓取的價格代碼
     const priceCodes = Array.from(new Set([
+      ...autoCloseCandidates.flatMap(getEventStockCodes),
       ...duePending.flatMap(getEventStockCodes),
       ...trackingEvents.flatMap(getEventStockCodes),
     ]));
@@ -5157,10 +5232,30 @@ export default function App() {
       return normalizedEvents;
     }
 
-    return normalizedEvents.map(event => {
+    // 5. 處理自動結案
+    const autoClosedIds = new Set();
+    let result = normalizedEvents.map(event => {
+      if (autoCloseCandidates.some(e => e.id === event.id)) {
+        const latestPrices = buildEventPriceRecord(event, priceMap);
+        if (!latestPrices) return event;
+        autoClosedIds.add(event.id);
+        return {
+          ...event,
+          status: "closed",
+          exitDate: today,
+          priceAtExit: latestPrices,
+          autoClosed: true, // 標記為自動結案
+          autoClosedReason: `追蹤已滿 90 天`,
+        };
+      }
+      return event;
+    });
+
+    // 6. 處理 pending → tracking 轉換
+    result = result.map(event => {
       if (event.status === "pending") {
         const scheduled = parseSlashDate(event.date);
-        if (!scheduled || scheduled.getTime() > parseSlashDate(today).getTime()) return event;
+        if (!scheduled || scheduled.getTime() > todayDate.getTime()) return event;
         const priceAtEvent = buildEventPriceRecord(event, priceMap);
         if (!priceAtEvent) return event;
         return {
@@ -5172,7 +5267,11 @@ export default function App() {
           priceHistory: appendPriceHistory(event.priceHistory, today, priceAtEvent),
         };
       }
+      return event;
+    });
 
+    // 7. 處理 tracking 事件的價格更新
+    result = result.map(event => {
       if (event.status === "tracking") {
         const latestPrices = buildEventPriceRecord(event, priceMap);
         if (!latestPrices) return event;
@@ -5181,9 +5280,10 @@ export default function App() {
           priceHistory: appendPriceHistory(event.priceHistory, today, latestPrices),
         };
       }
-
       return event;
     });
+
+    return result;
   };
   const openEventReview = async (event, domEvent) => {
     domEvent?.stopPropagation?.();

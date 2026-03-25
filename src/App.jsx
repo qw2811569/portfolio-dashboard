@@ -1503,6 +1503,8 @@ function normalizeBrainValidationMatch(value) {
     score: Number.isFinite(Number(value.score)) ? Math.max(0, Math.min(100, Math.round(Number(value.score)))) : null,
     verdict: normalizeBrainAnalogVerdict(value.verdict),
     differenceType: normalizeBrainAnalogDifferenceType(value.differenceType),
+    matchedDimensions: normalizeBrainStringList(value.matchedDimensions, { limit: 8 }),
+    mismatchedDimensions: normalizeBrainStringList(value.mismatchedDimensions, { limit: 8 }),
     note: String(value.note || "").trim(),
   };
 }
@@ -1534,6 +1536,17 @@ function normalizeBrainValidationCase(value) {
     similarityScore: Number.isFinite(Number(value.similarityScore)) ? Math.max(0, Math.min(100, Math.round(Number(value.similarityScore)))) : null,
     matchedDimensions: normalizeBrainStringList(value.matchedDimensions, { limit: 8 }),
     mismatchedDimensions: normalizeBrainStringList(value.mismatchedDimensions, { limit: 8 }),
+    reviewOutcome: value.reviewOutcome && typeof value.reviewOutcome === "object" && !Array.isArray(value.reviewOutcome)
+      ? {
+        code: String(value.reviewOutcome.code || code).trim() || code,
+        name: String(value.reviewOutcome.name || value.name || "").trim() || code,
+        predicted: ["up", "down", "neutral"].includes(value.reviewOutcome.predicted) ? value.reviewOutcome.predicted : null,
+        actual: ["up", "down", "neutral"].includes(value.reviewOutcome.actual) ? value.reviewOutcome.actual : null,
+        changePct: Number.isFinite(Number(value.reviewOutcome.changePct)) ? Math.round(Number(value.reviewOutcome.changePct) * 100) / 100 : null,
+        outcomeLabel: normalizeEventOutcomeLabel(value.reviewOutcome.outcomeLabel),
+        note: String(value.reviewOutcome.note || "").trim(),
+      }
+      : null,
     fingerprint,
     evidenceRefs: normalizeBrainEvidenceRefs(value.evidenceRefs),
     analogMatches: Array.isArray(value.analogMatches) ? value.analogMatches.map(normalizeBrainValidationMatch).filter(Boolean).slice(0, 3) : [],
@@ -2331,6 +2344,33 @@ function normalizePriceHistory(value, event) {
     .slice(-EVENT_HISTORY_LIMIT);
 }
 
+function parseEventStockDescriptor(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const code = String(value.code || "").trim();
+    const name = String(value.name || "").trim() || STOCK_META[code]?.name || code;
+    return code ? { code, name } : null;
+  }
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const code = raw.match(/\d{4,6}[A-Z]?L?/i)?.[0] || "";
+  if (!code) return null;
+  const stripped = raw
+    .replace(code, " ")
+    .replace(/[()（）-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return {
+    code,
+    name: stripped || STOCK_META[code]?.name || code,
+  };
+}
+
+function buildEventStockDescriptors(event) {
+  return (Array.isArray(event?.stocks) ? event.stocks : [])
+    .map(parseEventStockDescriptor)
+    .filter(Boolean);
+}
+
 function averagePriceRecord(value) {
   const prices = Object.values(value || {})
     .map(Number)
@@ -2357,6 +2397,98 @@ function appendPriceHistory(history, date, prices) {
   return next.slice(-EVENT_HISTORY_LIMIT);
 }
 
+function normalizeEventOutcomeLabel(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["supported", "contradicted", "mixed", "inconclusive"].includes(normalized) ? normalized : "inconclusive";
+}
+
+function normalizeEventStockOutcome(value, event) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const descriptor = parseEventStockDescriptor(value) || parseEventStockDescriptor({ code: value.code, name: value.name });
+  const code = descriptor?.code || "";
+  if (!code) return null;
+  const predicted = ["up", "down", "neutral"].includes(value.predicted) ? value.predicted : (["up", "down", "neutral"].includes(event?.pred) ? event.pred : null);
+  const actual = ["up", "down", "neutral"].includes(value.actual)
+    ? value.actual
+    : inferEventActual(
+      Number.isFinite(Number(value.priceAtEvent)) ? { [code]: Number(value.priceAtEvent) } : event?.priceAtEvent,
+      Number.isFinite(Number(value.priceAtExit)) ? { [code]: Number(value.priceAtExit) } : event?.priceAtExit,
+    );
+  const priceAtEvent = Number(value.priceAtEvent);
+  const priceAtExit = Number(value.priceAtExit);
+  const changePct = Number(value.changePct);
+  const thesisHeld = typeof value.thesisHeld === "boolean" ? value.thesisHeld : null;
+  return {
+    code,
+    name: descriptor?.name || code,
+    predicted,
+    actual: actual || null,
+    priceAtEvent: Number.isFinite(priceAtEvent) && priceAtEvent > 0 ? priceAtEvent : null,
+    priceAtExit: Number.isFinite(priceAtExit) && priceAtExit > 0 ? priceAtExit : null,
+    changePct: Number.isFinite(changePct) ? Math.round(changePct * 100) / 100 : null,
+    thesisHeld,
+    outcomeLabel: normalizeEventOutcomeLabel(value.outcomeLabel),
+    note: String(value.note || "").trim(),
+  };
+}
+
+function buildEventStockOutcomes(event) {
+  const descriptors = buildEventStockDescriptors(event);
+  if (descriptors.length === 0) return [];
+  return descriptors
+    .map(({ code, name }) => {
+      const entryPrice = Number(event?.priceAtEvent?.[code]);
+      const exitPrice = Number(event?.priceAtExit?.[code]);
+      const actual = inferEventActual(
+        Number.isFinite(entryPrice) && entryPrice > 0 ? { [code]: entryPrice } : null,
+        Number.isFinite(exitPrice) && exitPrice > 0 ? { [code]: exitPrice } : null,
+      ) || (["up", "down", "neutral"].includes(event?.actual) ? event.actual : null);
+      const changePct = Number.isFinite(entryPrice) && entryPrice > 0 && Number.isFinite(exitPrice) && exitPrice > 0
+        ? ((exitPrice / entryPrice) - 1) * 100
+        : null;
+      const predicted = ["up", "down", "neutral"].includes(event?.pred) ? event.pred : null;
+      let outcomeLabel = "inconclusive";
+      if (predicted && actual) {
+        if (predicted === actual) outcomeLabel = "supported";
+        else if (actual === "neutral" || predicted === "neutral") outcomeLabel = "mixed";
+        else outcomeLabel = "contradicted";
+      }
+      const thesisHeld = outcomeLabel === "supported" ? true : outcomeLabel === "contradicted" ? false : null;
+      const autoNote = Number.isFinite(changePct)
+        ? `${name} 事件價 ${entryPrice.toFixed(1)} → 結案 ${exitPrice.toFixed(1)}（${changePct >= 0 ? "+" : ""}${changePct.toFixed(1)}%）`
+        : (event?.actualNote || "");
+      return normalizeEventStockOutcome({
+        code,
+        name,
+        predicted,
+        actual,
+        priceAtEvent: entryPrice,
+        priceAtExit: exitPrice,
+        changePct,
+        thesisHeld,
+        outcomeLabel,
+        note: autoNote,
+      }, event);
+    })
+    .filter(Boolean);
+}
+
+function formatEventStockOutcomeLine(outcome) {
+  if (!outcome) return "";
+  const actualLabel = outcome.actual === "up" ? "上漲" : outcome.actual === "down" ? "下跌" : outcome.actual === "neutral" ? "中性" : "未明";
+  const verdict = outcome.outcomeLabel === "supported"
+    ? "支持原判斷"
+    : outcome.outcomeLabel === "contradicted"
+      ? "與原判斷相反"
+      : outcome.outcomeLabel === "mixed"
+        ? "部分支持"
+        : "暫無定論";
+  const pct = Number.isFinite(Number(outcome.changePct))
+    ? `（${Number(outcome.changePct) >= 0 ? "+" : ""}${Number(outcome.changePct).toFixed(1)}%）`
+    : "";
+  return `${outcome.name || outcome.code}：${actualLabel}${pct}｜${verdict}`;
+}
+
 function normalizeEventRecord(event) {
   if (!event || typeof event !== "object") return null;
   const status = event.status === "tracking" ? "tracking" : isClosedEvent(event) ? "closed" : "pending";
@@ -2367,11 +2499,14 @@ function normalizeEventRecord(event) {
   const trackingStart = event.trackingStart || eventDate || null;
   const exitDate = event.exitDate || (status === "closed" ? reviewDate || null : null);
   const actual = ["up", "down", "neutral"].includes(event.actual) ? event.actual : inferEventActual(priceAtEvent, priceAtExit);
+  const stockOutcomes = Array.isArray(event.stockOutcomes) && event.stockOutcomes.length > 0
+    ? event.stockOutcomes.map(item => normalizeEventStockOutcome(item, event)).filter(Boolean)
+    : (status === "closed" ? buildEventStockOutcomes({ ...event, priceAtEvent, priceAtExit, actual }) : []);
 
   return {
     ...event,
     status,
-    stocks: Array.isArray(event.stocks) ? event.stocks.filter(Boolean) : [],
+    stocks: buildEventStockDescriptors(event).map(item => `${item.name} ${item.code}`),
     eventDate,
     trackingStart,
     exitDate,
@@ -2380,6 +2515,7 @@ function normalizeEventRecord(event) {
     priceHistory: normalizePriceHistory(event.priceHistory, event),
     actual: actual || null,
     actualNote: event.actualNote || "",
+    stockOutcomes,
     correct: typeof event.correct === "boolean" ? event.correct : null,
     lessons: event.lessons || "",
     reviewDate,
@@ -2659,6 +2795,20 @@ function buildHoldingDossiers({
     const matchedMistakes = (brain.commonMistakes || []).filter(item => textMatchesBrainTokens(item, brainTokens)).slice(0, 5);
     const matchedLessons = (brain.lessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
     const matchedCoachLessons = (brain.coachLessons || []).filter(item => textMatchesBrainTokens(item?.text, brainTokens)).slice(-5);
+    const taiwanValidationSignals = buildTaiwanValidationSignals({
+      fundamentals: {
+        revenueMonth: fundamentalsEntry?.revenueMonth || null,
+        freshness: fundamentalFreshness,
+      },
+      targets: { freshness: targetFreshness },
+      analyst: { freshness: analystFreshness },
+      research: { freshness: researchFreshness },
+      events: {
+        pending: pendingEvents,
+        tracking: trackingEvents,
+        latestClosed: latestClosed ? summarizeEventForDossier(latestClosed) : null,
+      },
+    }, { now });
 
     return {
       code: holding.code,
@@ -2732,6 +2882,7 @@ function buildHoldingDossiers({
         matchedLessons,
         matchedCoachLessons,
       },
+      validationSignals: taiwanValidationSignals,
       freshness: {
         price: priceFreshness,
         targets: targetFreshness,
@@ -2753,6 +2904,107 @@ function normalizeHoldingDossiers(value) {
   return value
     .filter(item => item && typeof item === "object" && typeof item.code === "string" && typeof item.name === "string")
     .map(item => ({ ...item }));
+}
+
+function listTaiwanHardGateIssues(dossier) {
+  const signals = dossier?.validationSignals || {};
+  const items = [
+    { key: "monthlyRevenueGate", label: "月營收", status: signals.monthlyRevenueGate },
+    { key: "conferenceGate", label: "法說", status: signals.conferenceGate },
+    { key: "earningsGate", label: "財報", status: signals.earningsGate },
+    { key: "targetFreshnessGate", label: "目標價/報告", status: signals.targetFreshnessGate },
+    { key: "researchGate", label: "研究", status: signals.researchGate },
+  ].map(item => ({ ...item, status: normalizeTaiwanValidationSignalStatus(item.status) }));
+  return items.filter(item => ["missing", "stale"].includes(item.status));
+}
+
+function buildTaiwanHardGateEvidenceRefs(dossier, issues) {
+  return (Array.isArray(issues) ? issues : []).slice(0, 4).map(item => ({
+    type: "dossier",
+    refId: `dossier-${dossier?.code || "unknown"}`,
+    code: dossier?.code || "",
+    label: `${dossier?.name || dossier?.code || "持股"} ${item.label}${formatTaiwanValidationSignalLabel(item.status)}`,
+    date: dossier?.sync?.lastBuiltAt || null,
+  }));
+}
+
+function formatTaiwanHardGateIssueList(issues) {
+  return (Array.isArray(issues) ? issues : [])
+    .map(item => `${item.label}${formatTaiwanValidationSignalLabel(item.status)}`)
+    .join("、");
+}
+
+function enforceTaiwanHardGatesOnBrainAudit(brainAudit, currentBrain, {
+  dossiers = null,
+  defaultLastValidatedAt = null,
+} = {}) {
+  const normalizedAudit = normalizeBrainAuditBuckets(brainAudit);
+  const rows = normalizeHoldingDossiers(dossiers);
+  if (rows.length === 0) return normalizedAudit;
+
+  const current = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
+  const allRules = [
+    ...(current.rules || []),
+    ...(current.candidateRules || []),
+  ];
+  const byId = new Map(allRules.filter(rule => rule?.id).map(rule => [rule.id, rule]));
+  const byText = new Map(allRules.map(rule => [brainRuleText(rule), rule]).filter(([text]) => Boolean(text)));
+
+  const nextValidated = [];
+  const nextInvalidated = [];
+  const staleMap = new Map(
+    normalizedAudit.staleRules
+      .map(item => [item?.id || item?.text, item])
+      .filter(([key]) => Boolean(key))
+  );
+
+  const processBucket = (items, bucket, sink) => {
+    items.forEach(item => {
+      const rule = (item?.id && byId.get(item.id)) || byText.get(item?.text) || null;
+      const matchedRows = rows.filter(dossier => ruleMatchesValidationDossier(rule, dossier, item));
+      if (matchedRows.length === 0) {
+        sink.push(item);
+        return;
+      }
+      const blockingRows = matchedRows
+        .map(dossier => ({ dossier, issues: listTaiwanHardGateIssues(dossier) }))
+        .filter(entry => entry.issues.length > 0);
+      const hasFreshOrWatch = matchedRows.some(dossier => {
+        const status = normalizeTaiwanValidationSignalStatus(dossier?.validationSignals?.hardGateStatus);
+        return status === "fresh" || status === "watch";
+      });
+      if (blockingRows.length === 0 || hasFreshOrWatch) {
+        sink.push(item);
+        return;
+      }
+      const nextStaleness = blockingRows.some(entry => entry.issues.some(issue => issue.status === "missing")) ? "missing" : "stale";
+      const hardGateReason = blockingRows
+        .map(entry => `${entry.dossier.name}(${entry.dossier.code}) ${formatTaiwanHardGateIssueList(entry.issues)}`)
+        .join("；");
+      const key = item?.id || item?.text;
+      staleMap.set(key, normalizeBrainAuditItem({
+        ...item,
+        bucket: "stale",
+        staleness: nextStaleness,
+        lastValidatedAt: item?.lastValidatedAt || defaultLastValidatedAt || "",
+        reason: `台股驗證門檻未過：${hardGateReason}${item?.reason ? `｜原判定：${item.reason}` : ""}`,
+        evidenceRefs: mergeBrainEvidenceRefs(
+          item?.evidenceRefs,
+          blockingRows.flatMap(entry => buildTaiwanHardGateEvidenceRefs(entry.dossier, entry.issues)),
+          { limit: 6 }
+        ),
+      }, "stale"));
+    });
+  };
+
+  processBucket(normalizedAudit.validatedRules, "validated", nextValidated);
+  processBucket(normalizedAudit.invalidatedRules, "invalidated", nextInvalidated);
+
+  return normalizeBrainAuditBuckets({
+    validatedRules: nextValidated,
+    staleRules: Array.from(staleMap.values()),
+    invalidatedRules: nextInvalidated,
+  });
 }
 
 function ruleMatchesValidationDossier(rule, dossier, auditItem) {
@@ -2786,13 +3038,31 @@ function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, por
     ? sameRuleCases
     : cases.filter(item => item.fingerprint?.strategyClass === fingerprint?.strategyClass && (!portfolioId || item.portfolioId === portfolioId));
 
-  return pool
+  const scored = pool
     .map(item => {
       const score = scoreBrainValidationAnalog(fingerprint, item.fingerprint);
       return { item, score };
     })
-    .filter(({ score }) => !score.excluded && score.score >= 65)
-    .sort((a, b) => b.score.score - a.score.score)
+    .filter(({ score }) => !score.excluded)
+    .sort((a, b) => b.score.score - a.score.score);
+
+  const bestComparison = scored[0]
+    ? {
+      caseId: scored[0].item.caseId,
+      code: scored[0].item.code,
+      name: scored[0].item.name,
+      capturedAt: scored[0].item.capturedAt,
+      score: scored[0].score.score,
+      verdict: scored[0].item.verdict,
+      differenceType: scored[0].item.differenceType,
+      matchedDimensions: scored[0].score.matchedDimensions,
+      mismatchedDimensions: scored[0].score.mismatchedDimensions,
+      note: scored[0].item.note,
+    }
+    : null;
+
+  const matches = scored
+    .filter(({ score }) => score.score >= 65)
     .slice(0, limit)
     .map(({ item, score }) => ({
       caseId: item.caseId,
@@ -2802,8 +3072,15 @@ function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, por
       score: score.score,
       verdict: item.verdict,
       differenceType: item.differenceType,
+      matchedDimensions: score.matchedDimensions,
+      mismatchedDimensions: score.mismatchedDimensions,
       note: item.note,
     }));
+
+  return {
+    matches,
+    bestComparison,
+  };
 }
 
 function createBrainValidationCase({
@@ -2817,12 +3094,26 @@ function createBrainValidationCase({
   verdict,
   store,
   capturedAt,
+  reviewOutcome = null,
 }) {
   const fingerprint = buildScenarioFingerprintFromDossier(dossier);
   if (!fingerprint) return null;
   const ruleKey = buildBrainRuleKey(rule || auditItem);
-  const analogMatches = findTopBrainAnalogMatches(store, fingerprint, { ruleKey, portfolioId });
-  const similarityScore = analogMatches.length > 0 ? analogMatches[0].score : null;
+  const analogResult = findTopBrainAnalogMatches(store, fingerprint, { ruleKey, portfolioId });
+  const analogMatches = analogResult.matches || [];
+  const bestComparison = analogResult.bestComparison || null;
+  const similarityScore = bestComparison?.score ?? null;
+  const resolvedVerdict = reviewOutcome?.outcomeLabel === "supported"
+    ? "supported"
+    : reviewOutcome?.outcomeLabel === "contradicted"
+      ? "contradicted"
+      : reviewOutcome?.outcomeLabel === "mixed"
+        ? "mixed"
+        : verdict;
+  const noteParts = [
+    String(auditItem?.reason || "").trim(),
+    reviewOutcome?.note ? `逐檔結果：${reviewOutcome.note}` : "",
+  ].filter(Boolean);
   return normalizeBrainValidationCase({
     caseId: `${sourceType}-${sourceRefId}-${dossier.code}-${ruleKey}`,
     portfolioId,
@@ -2835,12 +3126,13 @@ function createBrainValidationCase({
     ruleId: rule?.id || auditItem?.id || null,
     ruleText: brainRuleText(rule || auditItem),
     bucket,
-    verdict,
+    verdict: resolvedVerdict,
     differenceType: classifyBrainDifferenceType(auditItem?.reason, bucket),
-    note: String(auditItem?.reason || "").trim(),
+    note: noteParts.join("｜"),
     similarityScore,
-    matchedDimensions: analogMatches.length > 0 ? [] : [],
-    mismatchedDimensions: [],
+    matchedDimensions: bestComparison?.matchedDimensions || [],
+    mismatchedDimensions: bestComparison?.mismatchedDimensions || [],
+    reviewOutcome,
     fingerprint,
     evidenceRefs: [
       ...normalizeBrainEvidenceRefs(auditItem?.evidenceRefs),
@@ -2858,6 +3150,7 @@ function appendBrainValidationCases(store, {
   brain,
   brainAudit,
   capturedAt = toSlashDate(),
+  reviewEvent = null,
 } = {}) {
   const current = normalizeBrainValidationStore(store);
   const nextMap = new Map(current.cases.map(item => [item.caseId, item]));
@@ -2880,6 +3173,9 @@ function appendBrainValidationCases(store, {
       const rule = (auditItem.id && byId.get(auditItem.id)) || byText.get(auditItem.text) || null;
       const matchedRows = rows.filter(dossier => ruleMatchesValidationDossier(rule, dossier, auditItem)).slice(0, 2);
       matchedRows.forEach(dossier => {
+        const reviewOutcome = sourceType === "eventReview"
+          ? (Array.isArray(reviewEvent?.stockOutcomes) ? reviewEvent.stockOutcomes.find(item => item?.code === dossier.code) || null : null)
+          : null;
         const entry = createBrainValidationCase({
           portfolioId,
           sourceType,
@@ -2891,6 +3187,7 @@ function appendBrainValidationCases(store, {
           verdict: section.verdict,
           store: current,
           capturedAt,
+          reviewOutcome,
         });
         if (entry) nextMap.set(entry.caseId, entry);
       });
@@ -3037,6 +3334,7 @@ function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}
   const research = dossier.research || {};
   const brainContext = dossier.brainContext || {};
   const freshness = dossier.freshness || {};
+  const validationSignals = dossier.validationSignals || {};
   const typeLabel = position.type || "股票";
   const expireLabel = position.expire ? ` 到期${position.expire}` : "";
 
@@ -3083,6 +3381,7 @@ function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}
     targetLine,
     fundamentalsLine,
     analystLine,
+    `台股驗證門檻：月營收${formatTaiwanValidationSignalLabel(validationSignals.monthlyRevenueGate)} / 法說${formatTaiwanValidationSignalLabel(validationSignals.conferenceGate)} / 財報${formatTaiwanValidationSignalLabel(validationSignals.earningsGate)} / 目標價/報告${formatTaiwanValidationSignalLabel(validationSignals.targetFreshnessGate)} / 總體${formatTaiwanValidationSignalLabel(validationSignals.hardGateStatus)}`,
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, 2)} | 最近結案 ${events.latestClosed?.title ? `${events.latestClosed.title}(${events.latestClosed.exitDate || events.latestClosed.date || "—"})` : "無"}`,
     researchLine,
     ruleLine,
@@ -3104,6 +3403,7 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
   const research = dossier.research || {};
   const brainContext = dossier.brainContext || {};
   const freshness = dossier.freshness || {};
+  const validationSignals = dossier.validationSignals || {};
   const lines = [
     `【${dossier.name}(${dossier.code})】`,
     `持倉：${position.type || "股票"} | 現價 ${formatPromptNumber(position.price)} 成本 ${formatPromptNumber(position.cost)} | 累計 ${position.pct >= 0 ? "+" : ""}${formatPromptNumber(position.pct, 2)}% | 股數 ${formatPromptNumber(position.qty, 0)}`,
@@ -3114,6 +3414,7 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
     targets.avgTarget ? `目標價：均值 ${formatPromptNumber(targets.avgTarget, 0)}；${summarizeTargetReportsForPrompt(targets.reports, compact ? 2 : 3)}` : "目標價：無",
     (fundamentals.eps != null || fundamentals.grossMargin != null || fundamentals.roe != null || fundamentals.revenueYoY != null) ? `財報/營收：${formatFundamentalsSummary(fundamentals)}${fundamentals.source ? `；來源 ${fundamentals.source}` : ""}` : "財報/營收：無",
     analyst.latestSummary ? `公開報告：${analyst.latestSummary}` : "公開報告：無",
+    `台股驗證門檻：月營收${formatTaiwanValidationSignalLabel(validationSignals.monthlyRevenueGate)} / 法說${formatTaiwanValidationSignalLabel(validationSignals.conferenceGate)} / 財報${formatTaiwanValidationSignalLabel(validationSignals.earningsGate)} / 目標價/報告${formatTaiwanValidationSignalLabel(validationSignals.targetFreshnessGate)} / 總體${formatTaiwanValidationSignalLabel(validationSignals.hardGateStatus)}`,
     `事件：待觀察 ${summarizeEventListForPrompt(events.pending, compact ? 2 : 3)} | 追蹤中 ${summarizeEventListForPrompt(events.tracking, compact ? 2 : 3)}`,
     research.latestConclusion ? `最近研究：${research.latestConclusion}` : "最近研究：無",
     (brainContext.matchedRules || []).length > 0 ? `相關規則：${brainContext.matchedRules.slice(0, compact ? 2 : 4).map(rule => brainRuleSummary(rule)).join("；")}` : null,
@@ -3562,6 +3863,12 @@ export default function App() {
   const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
   const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
   const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const { hostname, protocol, port, pathname, search, hash } = window.location;
+    if (hostname !== "localhost") return;
+    window.location.replace(`${protocol}//127.0.0.1${port ? `:${port}` : ""}${pathname}${search}${hash}`);
+  }, []);
   const applyPortfolioSnapshot = (snapshot) => {
     const normalizedAnalysisHistory = normalizeAnalysisHistoryEntries(snapshot.analysisHistory);
     setHoldings(applyMarketQuotesToHoldings(snapshot.holdings, marketPriceCache?.prices));
@@ -4343,6 +4650,19 @@ export default function App() {
   const totalCost = H.reduce((s,h)=>s + getHoldingCostBasis(h),0);
   const totalPnl  = totalVal - totalCost;
   const retPct    = totalCost>0 ? totalPnl/totalCost*100 : 0;
+  const todayMarketClock = getTaipeiClock(new Date());
+  const activeMarketDate = marketPriceSync?.marketDate || marketPriceCache?.marketDate || null;
+  const activePriceSyncAt = parseStoredDate(marketPriceSync?.syncedAt || marketPriceCache?.syncedAt || null);
+  const priceSyncStatusLabel = !activeMarketDate
+    ? "收盤價未同步"
+    : activeMarketDate === todayMarketClock.marketDate
+      ? `收盤價 ${activeMarketDate.replace(/-/g, "/")}`
+      : `沿用 ${activeMarketDate.replace(/-/g, "/")}`;
+  const priceSyncStatusTone = !activeMarketDate
+    ? C.amber
+    : activeMarketDate === todayMarketClock.marketDate
+      ? C.olive
+      : C.textMute;
   const getPortfolioSnapshot = (portfolioId) => {
     const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
     const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
@@ -4560,7 +4880,7 @@ export default function App() {
     };
   })
     .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score || (b.holding.value || 0) - (a.holding.value || 0));
+    .sort((a, b) => b.score - a.score || getHoldingMarketValue(b.holding) - getHoldingMarketValue(a.holding));
   useEffect(() => {
     if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || tab !== "research" || reportRefreshing) return;
     if (reportRefreshMeta?.__daily?.date === todayRefreshKey) return;
@@ -5205,6 +5525,10 @@ ${eventSummary}
               const brainJson = JSON.parse(brainMatch[1].trim());
               if (brainJson && typeof brainJson === "object" && brainJson.rules) {
                 brainAudit = ensureBrainAuditCoverage(brainJson, strategyBrain);
+                brainAudit = enforceTaiwanHardGatesOnBrainAudit(brainAudit, strategyBrain, {
+                  dossiers: analysisDossiers,
+                  defaultLastValidatedAt: today,
+                });
                 const newBrain = mergeBrainWithAuditLifecycle(brainJson, strategyBrain, brainAudit);
                 finalBrainForValidation = newBrain;
                 setStrategyBrain(newBrain);
@@ -5328,6 +5652,10 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           const cleanBrain = brainText.replace(/```json|```/g, "").trim();
           const rawBrain = JSON.parse(cleanBrain);
           brainAudit = ensureBrainAuditCoverage(rawBrain, strategyBrain);
+          brainAudit = enforceTaiwanHardGatesOnBrainAudit(brainAudit, strategyBrain, {
+            dossiers: analysisDossiers,
+            defaultLastValidatedAt: today,
+          });
           const newBrain = mergeBrainWithAuditLifecycle(rawBrain, strategyBrain, brainAudit);
           finalBrainForValidation = newBrain;
           setStrategyBrain(newBrain);
@@ -5457,7 +5785,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     const wasCorrect = evt ? evt.pred === submittedForm.actual : null;
     const reviewDate = toSlashDate();
     const reviewRecordedAt = `${reviewDate} ${new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}`;
-    const reviewedEvent = evt
+    const baseReviewedEvent = evt
       ? normalizeEventRecord({
           ...evt,
           status: "closed",
@@ -5470,6 +5798,11 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
           reviewDate,
         })
       : null;
+    const reviewedStockOutcomes = baseReviewedEvent ? buildEventStockOutcomes(baseReviewedEvent) : [];
+    const reviewedEvent = baseReviewedEvent ? normalizeEventRecord({
+      ...baseReviewedEvent,
+      stockOutcomes: reviewedStockOutcomes,
+    }) : null;
     const reviewDossiers = reviewedEvent ? buildEventReviewDossiers(reviewedEvent, dossierByCode) : [];
     const reviewDossierContext = reviewDossiers.length > 0
       ? reviewDossiers.map(dossier => buildResearchHoldingDossierContext(dossier, { compact: true })).join("\n\n")
@@ -5490,6 +5823,7 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
         correct: arr[idx].pred === submittedForm.actual,
         lessons: submittedForm.lessons,
         reviewDate,
+        stockOutcomes: reviewedStockOutcomes,
       };
       return arr;
     });
@@ -5557,6 +5891,10 @@ ${JSON.stringify(currentBrain)}
         reviewBrainAudit = attachEvidenceRefsToBrainAudit(reviewBrainAudit, reviewEvidenceRefs, {
           defaultLastValidatedAt: reviewedEvent?.exitDate || reviewDate,
         });
+        reviewBrainAudit = enforceTaiwanHardGatesOnBrainAudit(reviewBrainAudit, currentBrain, {
+          dossiers: reviewDossiers,
+          defaultLastValidatedAt: reviewedEvent?.exitDate || reviewDate,
+        });
         const newBrain = mergeBrainWithAuditLifecycle(rawBrain, currentBrain, reviewBrainAudit);
         setStrategyBrain(newBrain);
         if (reviewDossiers.length > 0) {
@@ -5568,6 +5906,7 @@ ${JSON.stringify(currentBrain)}
             brain: newBrain,
             brainAudit: reviewBrainAudit,
             capturedAt: reviewRecordedAt,
+            reviewEvent: reviewedEvent,
           }));
         }
         setSaved(feedback ? `🧠 ${feedback}` : "✅ 策略大腦已更新");
@@ -6460,9 +6799,13 @@ ${recentAnalyses || "尚無分析紀錄"}
               onChange={importLocalBackup}
               style={{ display: "none" }}
             />
+            <span style={{fontSize:9,color:priceSyncStatusTone,fontWeight:600}}>
+              {priceSyncStatusLabel}
+              {activePriceSyncAt ? ` · ${activePriceSyncAt.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}` : ""}
+            </span>
             {lastUpdate && !refreshing && (
               <span style={{fontSize:9,color:C.textMute}}>
-                {lastUpdate.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}
+                更新 {lastUpdate.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}
               </span>
             )}
           </div>
@@ -7179,7 +7522,8 @@ ${recentAnalyses || "尚無分析紀錄"}
           <div style={card}>
             {displayed.map(({ h, meta, T, relatedEvents, hasPending, needsAttention, priority },i)=>{
               const tp     = T?.reports?.length ? Math.round(T.reports.reduce((s,r)=>s+r.target,0)/T.reports.length) : null;
-              const upside = tp && h.price ? ((tp - h.price) / h.price * 100) : null;
+              const livePrice = resolveHoldingPrice(h);
+              const upside = tp && livePrice ? ((tp - livePrice) / livePrice * 100) : null;
               const isNew  = T?.isNew;
               const isExpanded = expandedStock === h.code;
               const dossier = dossierByCode.get(h.code) || null;
@@ -7274,7 +7618,7 @@ ${recentAnalyses || "尚無分析紀錄"}
                         </div>
                         <div style={{background:C.subtle,borderRadius:2,height:2,width:"100%",overflow:"hidden"}}>
                           <div style={{
-                            width:`${Math.min(Math.max((h.price/tp)*100,0),100)}%`,
+                            width:`${Math.min(Math.max((livePrice/tp)*100,0),100)}%`,
                             height:"100%",
                             background: upside>=15 ? alpha(C.up, A.solid)
                               : upside>=0  ? alpha(C.amber, A.solid)
@@ -7386,6 +7730,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                               borderLeft:`2px solid ${alpha(e.correct?C.olive:C.up, A.accent)}`,paddingLeft:8}}>
                               結果：{e.actualNote}
                             </div>}
+                            {Array.isArray(e.stockOutcomes) && e.stockOutcomes.length > 0 && (
+                              <div style={{fontSize:9,color:C.textMute,marginTop:4,lineHeight:1.6,paddingLeft:8}}>
+                                逐檔結果：{e.stockOutcomes.map(formatEventStockOutcomeLine).join("；")}
+                              </div>
+                            )}
                             {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
                               教訓：{e.lessons}
                             </div>}
@@ -7539,6 +7888,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                             borderLeft:`2px solid ${alpha(e.correct?C.olive:C.up, A.accent)}`,paddingLeft:8}}>
                             結果：{e.actualNote}
                           </div>}
+                          {Array.isArray(e.stockOutcomes) && e.stockOutcomes.length > 0 && (
+                            <div style={{fontSize:9,color:C.textMute,marginTop:4,lineHeight:1.6,paddingLeft:8}}>
+                              逐檔結果：{e.stockOutcomes.map(formatEventStockOutcomeLine).join("；")}
+                            </div>
+                          )}
                           {e.lessons && <div style={{fontSize:10,color:C.amber,marginTop:3,lineHeight:1.6}}>
                             教訓：{e.lessons}
                           </div>}
@@ -8045,6 +8399,12 @@ ${recentAnalyses || "尚無分析紀錄"}
                             {summary.recentCases?.length > 0 ? ` ｜ 最近：${summary.recentCases.map(item => `${item.name}(${item.capturedAt || "—"})`).join("、")}` : ""}
                           </div>
                         )}
+                        {summary?.recentCases?.[0] && (((summary.recentCases[0].matchedDimensions || []).length > 0) || ((summary.recentCases[0].mismatchedDimensions || []).length > 0)) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            相似維度：{(summary.recentCases[0].matchedDimensions || []).length > 0 ? summary.recentCases[0].matchedDimensions.join("、") : "—"}
+                            {` ｜ 差異維度：${(summary.recentCases[0].mismatchedDimensions || []).length > 0 ? summary.recentCases[0].mismatchedDimensions.join("、") : "—"}`}
+                          </div>
+                        )}
                           </>;
                         })()}
                       </div>
@@ -8104,6 +8464,12 @@ ${recentAnalyses || "尚無分析紀錄"}
                           <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
                             歷史驗證：支持 {summary.supported || 0}｜部分支持 {summary.mixed || 0}｜相反 {summary.contradicted || 0}
                             {summary.recentCases?.length > 0 ? ` ｜ 最近：${summary.recentCases.map(item => `${item.name}(${item.capturedAt || "—"})`).join("、")}` : ""}
+                          </div>
+                        )}
+                        {summary?.recentCases?.[0] && (((summary.recentCases[0].matchedDimensions || []).length > 0) || ((summary.recentCases[0].mismatchedDimensions || []).length > 0)) && (
+                          <div style={{fontSize:9,color:C.textMute,lineHeight:1.5,marginTop:2}}>
+                            相似維度：{(summary.recentCases[0].matchedDimensions || []).length > 0 ? summary.recentCases[0].matchedDimensions.join("、") : "—"}
+                            {` ｜ 差異維度：${(summary.recentCases[0].mismatchedDimensions || []).length > 0 ? summary.recentCases[0].mismatchedDimensions.join("、") : "—"}`}
                           </div>
                         )}
                           </>;
@@ -8965,6 +9331,11 @@ ${recentAnalyses || "尚無分析紀錄"}
                           {predIcon(e.actual)} 實際{predLabel(e.actual)} — {isCorrect?"預測正確":"預測有誤"}
                         </div>
                         <div style={{fontSize:11,color:C.textSec,lineHeight:1.7}}>{e.actualNote}</div>
+                        {Array.isArray(e.stockOutcomes) && e.stockOutcomes.length > 0 && (
+                          <div style={{fontSize:10,color:C.textMute,lineHeight:1.7,marginTop:6}}>
+                            逐檔結果：{e.stockOutcomes.map(formatEventStockOutcomeLine).join("；")}
+                          </div>
+                        )}
                       </div>
                     )}
 

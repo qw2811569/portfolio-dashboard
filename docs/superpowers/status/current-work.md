@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 14:27
+Last updated: 2026-03-25 15:08
 
 ## Objective
 
@@ -79,6 +79,14 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `14:42` Codex：新增 `resolveHoldingPrice()`，缺 `price` 時先回退到 `stored price`，再回推 `value/qty`
 - `14:43` Codex：owner 雲端 holdings 補缺改成先 `applyMarketQuotesToHoldings()` 正規化後再進 state / localStorage，避免 raw cloud holdings 直接把總市值打成 0
 - `14:45` Codex：`npm run build` 再次通過；下一步改做「全系統 bug / 優化計畫審核」，暫不直接開新大 scope
+- `14:49` James：確認 holdings integrity 最小完整方案為 persistence sanitize + import sanitize + repair migration + 所有 setHoldings 出口收斂
+- `14:52` Curie：Phase 2/3 最佳順序是先做台股 hard gates，再做 per-stock review outcome，最後才重寫 matched/mismatched dimensions
+- `14:55` Gemini CLI：補充真值層優先序應包含 MOPS/TWSE/TPEX、除權息、零股、交易成本與異常值熔斷
+- `15:00` Codex：`savePortfolioData()` / `loadPortfolioData()` 已對 `holdings-v2` 強制 sanitize；`importLocalBackup()` 已在寫入前正規化所有 holdings key
+- `15:02` Codex：schema 升到 v3，新增 `repairPersistedHoldingsIfNeeded()`，讓舊的 zero-value holdings 在啟動時做一次性修復
+- `15:04` Codex：`submitMemo()`、`runDailyAnalysis()`、overview duplicate holdings、投組健檢、Top5、持股卡等聚合 UI 已統一改用同一套 holdings 即時計算
+- `15:06` Codex：新增 holdings `integrityIssue` 與頁面提示，若缺可用價格會明講而不是靜默算 0
+- `15:08` Codex：Phase 2 第一段已落地，新增 `buildTaiwanValidationSignals()`，dossier / daily analysis / research prompt 已開始帶入月營收、法說、財報、目標價/報告的台股驗證門檻
 
 ## Next actions
 
@@ -109,10 +117,10 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
   - UI 是否隱藏了 matched rules / freshness / evidence
 - 補 `evidenceRefs` 的實際產生流程，不只支援 schema
 - 補 `historicalAnalogs` 的實際產生流程，不只支援 schema
-- 補台股事件節奏特化欄位：月營收 / 法說 / 財報 / 目標價更新窗口
+- 繼續把台股事件節奏特化欄位做實：月營收 / 法說 / 財報 / 目標價更新窗口的 hard gate enforcement
 - 評估是否為策略大腦補單元測試
 - 下一段優先檢查：
-  - 若使用者 reload 後仍看到 0 市值，要補 holdings repair / migration（因為舊 0 值可能已被寫回 localStorage）
+  - 使用者 reload 後確認 0 市值是否已恢復；若仍有問題，優先檢查 unrecoverable `integrityIssue: missing-price` 的個股名單
   - 多股票事件目前仍只有單一 `actual` / `actualNote`，之後要不要拆成 per-stock review outcome
   - `matchedDimensions / mismatchedDimensions` 目前仍未真正回填，casebook 的差異解釋力還不夠
   - Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順

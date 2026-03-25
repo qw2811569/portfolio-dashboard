@@ -1,0 +1,27 @@
+{
+  "id": "per-stock-review-001",
+  "type": "event-review",
+  "goal": "多股票事件必須拆成逐檔結果，而不是只有單一 actualNote。",
+  "input": {
+    "pred": "up",
+    "stocks": [
+      { "code": "6274", "name": "台燿" },
+      { "code": "3017", "name": "奇鋐" }
+    ],
+    "priceAtEvent": {
+      "6274": 497.5,
+      "3017": 615
+    },
+    "priceAtExit": {
+      "6274": 530,
+      "3017": 598
+    }
+  },
+  "expect": {
+    "minimumOutcomes": 2,
+    "required": [
+      { "code": "6274", "outcomeLabel": "supported", "actual": "up" },
+      { "code": "3017", "outcomeLabel": "contradicted", "actual": "down" }
+    ]
+  }
+}

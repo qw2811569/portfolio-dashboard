@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 15:08
+Last updated: 2026-03-25 15:42
 
 ## Objective
 
@@ -87,6 +87,14 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `15:04` Codex：`submitMemo()`、`runDailyAnalysis()`、overview duplicate holdings、投組健檢、Top5、持股卡等聚合 UI 已統一改用同一套 holdings 即時計算
 - `15:06` Codex：新增 holdings `integrityIssue` 與頁面提示，若缺可用價格會明講而不是靜默算 0
 - `15:08` Codex：Phase 2 第一段已落地，新增 `buildTaiwanValidationSignals()`，dossier / daily analysis / research prompt 已開始帶入月營收、法說、財報、目標價/報告的台股驗證門檻
+- `15:18` Codex：已補 canonical local host，之後本地一律以 `http://127.0.0.1:3002` 為準，避免 `localhost` 與 `127.0.0.1` 分裂成不同 localStorage
+- `15:21` Codex：header 已顯示收盤價同步狀態與 market date；report refresh 候選排序改成使用即時計算市值，不再吃舊 `holding.value`
+- `15:29` Codex：台股 hard gates 已正式接進 daily / review verdict，`validatedRules / invalidatedRules` 若缺 fresh 月營收、法說、財報、目標價/報告支撐，會自動降回 `staleRules`
+- `15:31` Codex：多股票事件已新增 `stockOutcomes`，結案復盤後會逐檔記錄方向、漲跌幅、是否支持原 thesis
+- `15:34` Codex：`brain-validation-v1` case 已正式回填 `matchedDimensions / mismatchedDimensions`，策略大腦 UI 也開始顯示最近案例的相似 / 差異維度
+- `15:37` Codex：已建立 `docs/evals/program.md`、`evals/cases/*`、`scripts/eval_brain.mjs`，開始採用 autoresearch 風格的固定案例回放
+- `15:38` Codex：`node scripts/eval_brain.mjs` 初版結果 `3/3 passed · avg 100`
+- `15:40` Codex：`npm run build` 通過，最新 bundle `dist/assets/index-CvLP7CgH.js`
 
 ## Next actions
 
@@ -121,8 +129,8 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - 評估是否為策略大腦補單元測試
 - 下一段優先檢查：
   - 使用者 reload 後確認 0 市值是否已恢復；若仍有問題，優先檢查 unrecoverable `integrityIssue: missing-price` 的個股名單
-  - 多股票事件目前仍只有單一 `actual` / `actualNote`，之後要不要拆成 per-stock review outcome
-  - `matchedDimensions / mismatchedDimensions` 目前仍未真正回填，casebook 的差異解釋力還不夠
+  - 台股真值層下一步要補 MOPS / TWSE / TPEX / 除權息 / 零股 / 交易成本
+  - 把 `eval_brain` 案例擴到真實台股月營收 / 法說 / 題材輪動情境，不只 3 個 smoke cases
   - Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順
 
 ## Stop-in-5-min fallback

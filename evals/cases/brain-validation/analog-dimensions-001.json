@@ -1,0 +1,45 @@
+{
+  "id": "analog-dimensions-001",
+  "type": "brain-validation",
+  "goal": "相似案例至少要能指出相似維度與差異維度。",
+  "input": {
+    "left": {
+      "positionType": "stock",
+      "strategyClass": "事件驅動",
+      "eventPhase": "pre_event",
+      "catalystTags": ["法說", "AI"],
+      "industryTheme": "AI伺服器",
+      "holdingPeriod": "mid",
+      "fundamentalState": {
+        "revenueYoYBand": "15-30",
+        "epsState": "up",
+        "grossMarginTrend": "flat"
+      },
+      "priceState": {
+        "pnlBand": "-5~5",
+        "targetGapBand": "10~20"
+      }
+    },
+    "right": {
+      "positionType": "stock",
+      "strategyClass": "事件驅動",
+      "eventPhase": "tracking",
+      "catalystTags": ["法說", "AI"],
+      "industryTheme": "PCB/CCL",
+      "holdingPeriod": "mid",
+      "fundamentalState": {
+        "revenueYoYBand": "15-30",
+        "epsState": "up",
+        "grossMarginTrend": "flat"
+      },
+      "priceState": {
+        "pnlBand": "-5~5",
+        "targetGapBand": "10~20"
+      }
+    }
+  },
+  "expect": {
+    "matchedDimensions": ["positionType", "strategyClass", "catalystTags", "holdingPeriod", "fundamentalState", "priceState"],
+    "mismatchedDimensions": ["industryTheme"]
+  }
+}

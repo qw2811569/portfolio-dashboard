@@ -185,6 +185,18 @@ Claude 在做台股分析時，預設工具組合是 `twsemcp + FinMind + twstoc
 
 ## 本地啟動方式
 
+本地正式入口一律使用：
+
+- `http://127.0.0.1:3002`
+
+不要再混用 `localhost:3002`，因為 `localhost` 和 `127.0.0.1` 是不同 origin，會導致 localStorage、持倉、收盤價快取與同步狀態分裂。
+
+本地正式入口一律使用：
+
+- `http://127.0.0.1:3002`
+
+不要再混用 `localhost:3002`，因為 `localhost` 和 `127.0.0.1` 是不同 origin，會導致 localStorage、持倉、收盤價快取與同步狀態分裂。
+
 ### 完整模式
 
 用：
@@ -257,6 +269,38 @@ npm run dev
 - 可以蒐集外部公開來源與 citations
 - 可以補 freshness 與 unresolved questions
 - 不可直接當作 fundamentals / targets / strategyBrain 的最終真值來源
+
+## Strategy Brain Eval Loop
+
+策略大腦開始採用固定案例回放，而不是只靠直覺改 prompt：
+
+1. 先讀 [docs/evals/program.md](/Users/chenkuichen/APP/test/docs/evals/program.md)
+2. 再跑：
+
+```bash
+node scripts/eval_brain.mjs
+```
+
+3. 只針對失敗案例修策略邏輯
+4. 分數進步才保留，退步就回滾
+
+目前 `eval_brain` 已有最小案例集，最新基準為 `3/3 passed`。
+
+## Strategy Brain Eval Loop
+
+策略大腦開始採用固定案例回放，而不是只靠直覺改 prompt：
+
+1. 先讀 [docs/evals/program.md](/Users/chenkuichen/APP/test/docs/evals/program.md)
+2. 再跑：
+
+```bash
+node scripts/eval_brain.mjs
+```
+
+3. 只針對失敗案例修策略邏輯
+4. 分數進步才保留，退步就回滾
+
+目前 `eval_brain` 已有最小案例集，最新基準為 `3/3 passed`。
 
 ## 關鍵檔案
 

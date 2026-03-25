@@ -1489,6 +1489,16 @@ function classifyBrainDifferenceType(reason, bucket) {
   return bucket === "invalidated" ? "rule_miss" : "none";
 }
 
+function refineBrainDifferenceType(baseType, { reviewOutcome = null, bestComparison = null } = {}) {
+  if (bestComparison?.differenceType && bestComparison.differenceType !== "none") return bestComparison.differenceType;
+  const mismatches = bestComparison?.mismatchedDimensions || [];
+  if (mismatches.includes("eventPhase")) return "timing";
+  if (mismatches.includes("industryTheme")) return "stock_specific";
+  if (mismatches.includes("priceState")) return "market_regime";
+  if (reviewOutcome?.outcomeLabel === "contradicted") return baseType === "none" ? "rule_miss" : baseType;
+  return baseType;
+}
+
 function normalizeBrainValidationMatch(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const caseId = String(value.caseId || "").trim();
@@ -2442,7 +2452,7 @@ function buildEventStockOutcomes(event) {
       const actual = inferEventActual(
         Number.isFinite(entryPrice) && entryPrice > 0 ? { [code]: entryPrice } : null,
         Number.isFinite(exitPrice) && exitPrice > 0 ? { [code]: exitPrice } : null,
-      ) || (["up", "down", "neutral"].includes(event?.actual) ? event.actual : null);
+      ) || (descriptors.length === 1 && ["up", "down", "neutral"].includes(event?.actual) ? event.actual : null);
       const changePct = Number.isFinite(entryPrice) && entryPrice > 0 && Number.isFinite(exitPrice) && exitPrice > 0
         ? ((exitPrice / entryPrice) - 1) * 100
         : null;
@@ -2701,10 +2711,16 @@ function buildTaiwanValidationSignals({ fundamentals = {}, targets = {}, analyst
     ? "fresh"
     : ([targets.freshness, analyst.freshness].includes("stale") ? "stale" : "missing");
   const researchGate = research.freshness === "fresh" ? "fresh" : (research.freshness === "stale" ? "stale" : "missing");
-  const statuses = [monthlyRevenueGate, conferenceSignal.status, earningsSignal.status, targetFreshnessGate, researchGate];
+  const primaryStatuses = [monthlyRevenueGate, conferenceSignal.status, earningsSignal.status, targetFreshnessGate]
+    .map(normalizeTaiwanValidationSignalStatus);
   let hardGateStatus = "missing";
-  if (statuses.every(status => status === "fresh" || status === "watch")) hardGateStatus = statuses.includes("watch") ? "watch" : "fresh";
-  else if (statuses.some(status => status === "stale")) hardGateStatus = "stale";
+  if (primaryStatuses.some(status => status === "stale")) {
+    hardGateStatus = "stale";
+  } else if (primaryStatuses.some(status => status === "watch")) {
+    hardGateStatus = "watch";
+  } else if (primaryStatuses.some(status => status === "fresh")) {
+    hardGateStatus = "fresh";
+  }
 
   return {
     monthlyRevenueGate,
@@ -2913,7 +2929,6 @@ function listTaiwanHardGateIssues(dossier) {
     { key: "conferenceGate", label: "法說", status: signals.conferenceGate },
     { key: "earningsGate", label: "財報", status: signals.earningsGate },
     { key: "targetFreshnessGate", label: "目標價/報告", status: signals.targetFreshnessGate },
-    { key: "researchGate", label: "研究", status: signals.researchGate },
   ].map(item => ({ ...item, status: normalizeTaiwanValidationSignalStatus(item.status) }));
   return items.filter(item => ["missing", "stale"].includes(item.status));
 }
@@ -3110,6 +3125,10 @@ function createBrainValidationCase({
       : reviewOutcome?.outcomeLabel === "mixed"
         ? "mixed"
         : verdict;
+  const resolvedDifferenceType = refineBrainDifferenceType(
+    classifyBrainDifferenceType(auditItem?.reason, bucket),
+    { reviewOutcome, bestComparison }
+  );
   const noteParts = [
     String(auditItem?.reason || "").trim(),
     reviewOutcome?.note ? `逐檔結果：${reviewOutcome.note}` : "",
@@ -3127,7 +3146,7 @@ function createBrainValidationCase({
     ruleText: brainRuleText(rule || auditItem),
     bucket,
     verdict: resolvedVerdict,
-    differenceType: classifyBrainDifferenceType(auditItem?.reason, bucket),
+    differenceType: resolvedDifferenceType,
     note: noteParts.join("｜"),
     similarityScore,
     matchedDimensions: bestComparison?.matchedDimensions || [],
@@ -3171,7 +3190,8 @@ function appendBrainValidationCases(store, {
     const items = brainAudit?.[section.key] || [];
     items.forEach(auditItem => {
       const rule = (auditItem.id && byId.get(auditItem.id)) || byText.get(auditItem.text) || null;
-      const matchedRows = rows.filter(dossier => ruleMatchesValidationDossier(rule, dossier, auditItem)).slice(0, 2);
+      const matchedRows = rows.filter(dossier => ruleMatchesValidationDossier(rule, dossier, auditItem))
+        .slice(0, sourceType === "eventReview" ? 8 : 3);
       matchedRows.forEach(dossier => {
         const reviewOutcome = sourceType === "eventReview"
           ? (Array.isArray(reviewEvent?.stockOutcomes) ? reviewEvent.stockOutcomes.find(item => item?.code === dossier.code) || null : null)
@@ -3228,7 +3248,7 @@ function createFallbackValidationDossier(code, event = null) {
   const normalizedCode = String(code || "").trim();
   if (!normalizedCode) return null;
   const meta = STOCK_META[normalizedCode] || {};
-  const fallbackName = meta.name || (event?.stocks || []).find(item => item?.code === normalizedCode)?.name || normalizedCode;
+  const fallbackName = meta.name || buildEventStockDescriptors(event).find(item => item?.code === normalizedCode)?.name || normalizedCode;
   return {
     code: normalizedCode,
     name: fallbackName,
@@ -3255,26 +3275,18 @@ function createFallbackValidationDossier(code, event = null) {
 
 function buildEventReviewDossiers(event, dossierLookup) {
   const lookup = dossierLookup instanceof Map ? dossierLookup : new Map();
-  const codes = Array.isArray(event?.stocks)
-    ? event.stocks
-        .map(item => (typeof item === "string" ? item : item?.code))
-        .filter(Boolean)
-    : [];
+  const codes = buildEventStockDescriptors(event).map(item => item.code);
 
   return codes
     .map(code => lookup.get(code) || createFallbackValidationDossier(code, event))
     .filter(Boolean)
-    .slice(0, 4);
+    .slice(0, event?.status === "closed" ? 8 : 4);
 }
 
 function buildEventReviewEvidenceRefs(event, reviewDate = toSlashDate()) {
   const refId = String(event?.id || "").trim();
   const label = event?.title ? `事件復盤：${event.title}` : "事件復盤";
-  const codes = Array.isArray(event?.stocks)
-    ? event.stocks
-        .map(item => (typeof item === "string" ? item : item?.code))
-        .filter(Boolean)
-    : [];
+  const codes = buildEventStockDescriptors(event).map(item => item.code);
   const refs = (codes.length > 0 ? codes : [""]).map(code => ({
     type: "review",
     refId,
@@ -3745,9 +3757,11 @@ async function ensurePortfolioRegistry() {
   }
   await save(VIEW_MODE_KEY, viewMode);
 
+  // 每次啟動都做一次輕量 repair，避免 schema 已是最新版但本地持倉之後又被寫壞。
+  await repairPersistedHoldingsIfNeeded();
+
   const schemaVersion = await load(SCHEMA_VERSION_KEY, null);
   if (schemaVersion !== CURRENT_SCHEMA_VERSION) {
-    await repairPersistedHoldingsIfNeeded();
     await save(SCHEMA_VERSION_KEY, CURRENT_SCHEMA_VERSION);
   }
 
@@ -3857,6 +3871,7 @@ export default function App() {
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
   const priceSyncInFlightRef = useRef(null);
+  const priceSelfHealRef = useRef({});
   const backupFileInputRef = useRef(null);
   const imgTypeRef = useRef("image/jpeg");
   const deferredQuery = useDeferredValue(scanQuery);
@@ -4000,15 +4015,24 @@ export default function App() {
       failedCodes: Array.from(failedCodes).filter(code => !quotes[code]),
     };
   };
-  const syncPostClosePrices = async ({ silent = false } = {}) => {
+  const syncPostClosePrices = async ({ silent = false, force = false } = {}) => {
     if (priceSyncInFlightRef.current) return priceSyncInFlightRef.current;
 
     const task = (async () => {
       const cachedSync = normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)) || marketPriceSync;
       const cachedPrice = normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)) || marketPriceCache;
       const gate = canRunPostClosePriceSync(new Date(), cachedSync);
+      const trackedCodes = collectTrackedCodes();
+      const missingCachedCodes = trackedCodes.filter(code => !(cachedPrice?.prices?.[code]?.price > 0));
+      const allowForcedRetry =
+        force &&
+        gate.reason === "already-synced" &&
+        !gate.clock.isWeekend &&
+        gate.clock.minutes >= POST_CLOSE_SYNC_MINUTES &&
+        trackedCodes.length > 0 &&
+        missingCachedCodes.length > 0;
 
-      if (!gate.allowed) {
+      if (!gate.allowed && !allowForcedRetry) {
         if (!silent) {
           if (gate.reason === "before-close") {
             setSaved("⚠️ 收盤價僅在台北時間 13:35 後同步");
@@ -4027,7 +4051,6 @@ export default function App() {
         return cachedPrice;
       }
 
-      const trackedCodes = collectTrackedCodes();
       if (trackedCodes.length === 0) {
         if (!silent) {
           setSaved("⚠️ 目前沒有可同步的股票代碼");
@@ -4663,6 +4686,7 @@ export default function App() {
     : activeMarketDate === todayMarketClock.marketDate
       ? C.olive
       : C.textMute;
+  const holdingsIntegrityIssues = H.filter(h => h?.integrityIssue === "missing-price");
   const getPortfolioSnapshot = (portfolioId) => {
     const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
     const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
@@ -4693,6 +4717,31 @@ export default function App() {
       retPct: portfolioRetPct,
     };
   });
+
+  useEffect(() => {
+    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE) return;
+    if (todayMarketClock.isWeekend || todayMarketClock.minutes < POST_CLOSE_SYNC_MINUTES) return;
+    if (H.length === 0) return;
+    if (!(totalVal <= 0 || holdingsIntegrityIssues.length > 0)) return;
+
+    const healKey = `${activePortfolioId}:${todayMarketClock.marketDate}`;
+    if (priceSelfHealRef.current[healKey]) return;
+    priceSelfHealRef.current[healKey] = true;
+
+    syncPostClosePrices({ silent: true, force: true }).catch(err => {
+      console.warn("收盤價自我修復同步失敗:", err);
+    });
+  }, [
+    H.length,
+    activePortfolioId,
+    holdingsIntegrityIssues.length,
+    ready,
+    todayMarketClock.isWeekend,
+    todayMarketClock.marketDate,
+    todayMarketClock.minutes,
+    totalVal,
+    viewMode,
+  ]);
   const activePortfolio = portfolioSummaries.find(item => item.id === activePortfolioId) || portfolioSummaries[0] || null;
   const overviewPortfolios = portfolioSummaries.map(portfolio => {
     const snapshot = getPortfolioSnapshot(portfolio.id);
@@ -4834,7 +4883,6 @@ export default function App() {
   const topColors = [C.blue, C.amber, C.lavender, C.olive, C.teal];
   const winners = H.filter(h=>getHoldingUnrealizedPnl(h)>0).sort((a,b)=>getHoldingReturnPct(b)-getHoldingReturnPct(a));
   const losers  = H.filter(h=>getHoldingUnrealizedPnl(h)<0).sort((a,b)=>getHoldingReturnPct(a)-getHoldingReturnPct(b));
-  const holdingsIntegrityIssues = H.filter(h => h?.integrityIssue === "missing-price");
   const attentionCount = scanRows.filter(r => r.needsAttention).length;
   const pendingCount = scanRows.filter(r => r.hasPending).length;
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
@@ -5083,7 +5131,8 @@ export default function App() {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      const cache = await syncPostClosePrices({ silent: false });
+      const shouldForceRepair = Array.isArray(holdings) && holdings.some(item => item?.integrityIssue === "missing-price" || resolveHoldingPrice(item) <= 0);
+      const cache = await syncPostClosePrices({ silent: false, force: shouldForceRepair });
       if (cache?.prices && Object.keys(cache.prices).length > 0 && viewMode === PORTFOLIO_VIEW_MODE) {
         setHoldings(prev => applyMarketQuotesToHoldings(prev, cache.prices));
       }

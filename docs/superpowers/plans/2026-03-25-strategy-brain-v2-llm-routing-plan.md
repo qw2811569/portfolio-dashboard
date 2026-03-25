@@ -43,6 +43,48 @@
 
 ## 五個 LLM / 工具怎麼分工
 
+### 穩定分工 v1
+
+這一輪之後的固定 routing：
+
+- `Gemini`
+  - 公開資料 scout
+  - 負責 citations / freshness / unresolved questions
+  - 不可直接決定 fundamentals / targets / strategyBrain 真值
+- `James`
+  - schema / merge / persistence / edge-case reviewer
+  - 優先抓資料流與 state 邊界 bug
+- `Curie`
+  - 台股 verdict reviewer
+  - 優先檢查月營收、法說、財報、題材輪動、流動性、時序差異
+- `Qwen`
+  - 低風險 patch / helper / test
+- `Claude local`
+  - prompt 草稿、candidate rules、checklist 草稿
+- `Codex`
+  - 最終裁決、主邏輯、驗收、accept/revert
+
+## Autoresearch 風格回圈
+
+這個專案不直接拿原版 `karpathy/autoresearch` 訓練模型，而是借它的方法論：
+
+1. 讀 [docs/evals/program.md](/Users/chenkuichen/APP/test/docs/evals/program.md)
+2. 只改有限策略邏輯
+3. 跑：
+
+```bash
+node scripts/eval_brain.mjs
+```
+
+4. 看分數與 fail cases
+5. 分數進步才保留，critical regression 就回滾
+
+目前第一版案例集在：
+
+- [evals/cases/daily-analysis/freshness-gating-001.json](/Users/chenkuichen/APP/test/evals/cases/daily-analysis/freshness-gating-001.json)
+- [evals/cases/event-review/per-stock-review-001.json](/Users/chenkuichen/APP/test/evals/cases/event-review/per-stock-review-001.json)
+- [evals/cases/brain-validation/analog-dimensions-001.json](/Users/chenkuichen/APP/test/evals/cases/brain-validation/analog-dimensions-001.json)
+
 ### 1. AnythingLLM
 
 定位：知識整理與文件檢索層

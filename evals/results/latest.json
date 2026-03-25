@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-03-25T09:25:00.937Z",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "avgScore": 100
+  },
+  "results": [
+    {
+      "id": "analog-dimensions-001",
+      "type": "brain-validation",
+      "file": "evals/cases/brain-validation/analog-dimensions-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "matchedDimensions": [
+          "positionType",
+          "strategyClass",
+          "eventPhase",
+          "catalystTags",
+          "holdingPeriod",
+          "fundamentalState",
+          "priceState"
+        ],
+        "mismatchedDimensions": [
+          "industryTheme"
+        ]
+      },
+      "failures": []
+    },
+    {
+      "id": "freshness-gating-001",
+      "type": "daily-analysis",
+      "file": "evals/cases/daily-analysis/freshness-gating-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "bucket": "stale",
+        "issues": [
+          "月營收",
+          "法說",
+          "財報",
+          "目標價/報告"
+        ]
+      },
+      "failures": []
+    },
+    {
+      "id": "per-stock-review-001",
+      "type": "event-review",
+      "file": "evals/cases/event-review/per-stock-review-001.json",
+      "pass": true,
+      "score": 100,
+      "result": [
+        {
+          "code": "6274",
+          "name": "台燿",
+          "actual": "up",
+          "changePct": 6.53,
+          "outcomeLabel": "supported"
+        },
+        {
+          "code": "3017",
+          "name": "奇鋐",
+          "actual": "down",
+          "changePct": -2.76,
+          "outcomeLabel": "contradicted"
+        }
+      ],
+      "failures": []
+    }
+  ]
+}

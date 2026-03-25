@@ -1,0 +1,20 @@
+{
+  "id": "freshness-gating-001",
+  "type": "daily-analysis",
+  "goal": "當月營收、財報與報告都 stale/missing 時，validated 必須被降回 stale。",
+  "input": {
+    "incomingBucket": "validated",
+    "signals": {
+      "monthlyRevenueGate": "stale",
+      "conferenceGate": "missing",
+      "earningsGate": "stale",
+      "targetFreshnessGate": "missing",
+      "researchGate": "fresh",
+      "hardGateStatus": "stale"
+    }
+  },
+  "expect": {
+    "bucket": "stale",
+    "mustMentionIssues": ["月營收", "財報", "目標價/報告"]
+  }
+}

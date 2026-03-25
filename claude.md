@@ -246,7 +246,7 @@ npm run dev
 
 預設模型：
 
-- `qwen3:14b`
+- `qwen3-coder:30b`
 
 `Gemini CLI` 的工作區 context 在：
 

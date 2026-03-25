@@ -16,7 +16,7 @@
 ## Qwen
 
 - role: 低風險 coding worker
-- current status: 可啟動，help 正常；本機 Ollama 路徑可接，但 headless 任務偏慢
+- current status: 切換中；目標後端改為 `qwen3-coder:30b`
 - best for:
   - bounded patch ideas
   - helper / test / mechanical refactor
@@ -27,7 +27,7 @@
 ## Claude Local
 
 - role: 互動式 prompt / checklist 草稿助手
-- current status: 可透過 Ollama 啟動並回報版本；非互動 prompt 目前不穩
+- current status: 切換中；目標後端改為 `qwen3-coder:30b`
 - best for:
   - prompt 草稿
   - checklist / guardrail wording

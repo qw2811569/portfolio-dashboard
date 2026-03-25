@@ -11,12 +11,12 @@ Use `Qwen Code` as the low-cost coding agent, `AnythingLLM` as the local knowled
 - `AnythingLLM` desktop app
 - `Gemini CLI`
 - `Ollama` local model runtime
-- `qwen3:14b` as the main local chat / document model
+- `qwen3-coder:30b` as the main local coding model
 - `nomic-embed-text` as the local embedding model
 
 ## Why These Models
 
-- `qwen3:14b`
+- `qwen3-coder:30b`
   - strong multilingual and reasoning baseline
   - good fit for document QA and general assistant work
   - same family can be carried forward to a future GCP + vLLM setup
@@ -78,7 +78,7 @@ This repo now includes a local launcher at:
 
 Default model:
 
-- `qwen3:14b`
+- `qwen3-coder:30b`
 
 Recommended usage:
 
@@ -89,7 +89,7 @@ Recommended usage:
 If you want to override the model:
 
 ```bash
-CLAUDE_OLLAMA_MODEL=qwen3:14b ./scripts/launch-claude-ollama.sh
+CLAUDE_OLLAMA_MODEL=qwen3-coder:30b ./scripts/launch-claude-ollama.sh
 ```
 
 If you want a larger coding context, restart Ollama with:

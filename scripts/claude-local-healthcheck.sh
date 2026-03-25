@@ -8,7 +8,7 @@ echo "claude: $(command -v claude)"
 echo
 python3 - <<'PY'
 import subprocess
-cmd=['ollama','launch','claude','-y','--model','qwen3:14b','--','--version']
+cmd=['ollama','launch','claude','-y','--model','qwen3-coder:30b','--','--version']
 r=subprocess.run(cmd,capture_output=True,text=True,timeout=20)
 print("status: launcher reachable")
 print(r.stdout.strip())

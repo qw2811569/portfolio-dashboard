@@ -110,6 +110,7 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `17:47` Codex：已驗證 Qwen CLI `--help` 可正常啟動；Qwen 現況定位為「可用但偏慢的 local low-risk worker」
 - `17:49` Codex：已驗證 Claude Local over Ollama 可正常啟動並回報版本；目前定位為「互動式 drafting assistant」，暫不作 headless 主線 worker
 - `17:52` Codex：新增外部 LLM 共享交接通道 [coordination/llm-bus/board.md](/Users/chenkuichen/APP/test/coordination/llm-bus/board.md)
+- `18:02` 使用者要求把 Qwen 與 Claude local 都升到 `qwen3-coder:30b`；舊 `qwen3:14b` 已移除，正在拉新模型
 
 ## Next actions
 

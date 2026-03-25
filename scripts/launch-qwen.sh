@@ -12,7 +12,7 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
 fi
 
 export OPENAI_API_KEY="${OPENAI_API_KEY:-ollama}"
-MODEL="${QWEN_MODEL:-qwen3:14b}"
+MODEL="${QWEN_MODEL:-qwen3-coder:30b}"
 BASE_URL="${QWEN_BASE_URL:-http://127.0.0.1:11434/v1}"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then

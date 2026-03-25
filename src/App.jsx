@@ -4731,6 +4731,9 @@ export default function App() {
       ? C.olive
       : C.textMute;
   const holdingsIntegrityIssues = H.filter(h => h?.integrityIssue === "missing-price");
+  const missingTrackedQuoteCodes = H
+    .map(item => String(item?.code || "").trim())
+    .filter(code => code && !(marketPriceCache?.prices?.[code]?.price > 0));
   const getPortfolioSnapshot = (portfolioId) => {
     const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
     const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
@@ -4766,7 +4769,7 @@ export default function App() {
     if (!ready || viewMode !== PORTFOLIO_VIEW_MODE) return;
     if (todayMarketClock.isWeekend || todayMarketClock.minutes < POST_CLOSE_SYNC_MINUTES) return;
     if (H.length === 0) return;
-    if (!(totalVal <= 0 || holdingsIntegrityIssues.length > 0)) return;
+    if (!(totalVal <= 0 || holdingsIntegrityIssues.length > 0 || activeMarketDate !== todayMarketClock.marketDate || missingTrackedQuoteCodes.length > 0)) return;
 
     const healKey = `${activePortfolioId}:${todayMarketClock.marketDate}`;
     if (priceSelfHealRef.current[healKey]) return;
@@ -4777,8 +4780,10 @@ export default function App() {
     });
   }, [
     H.length,
+    activeMarketDate,
     activePortfolioId,
     holdingsIntegrityIssues.length,
+    missingTrackedQuoteCodes.length,
     ready,
     todayMarketClock.isWeekend,
     todayMarketClock.marketDate,
@@ -5175,7 +5180,16 @@ export default function App() {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      const shouldForceRepair = Array.isArray(holdings) && holdings.some(item => item?.integrityIssue === "missing-price" || resolveHoldingPrice(item) <= 0);
+      const clock = getTaipeiClock(new Date());
+      const hasMissingTrackedQuotes = Array.isArray(holdings) && holdings.some(item => {
+        const code = String(item?.code || "").trim();
+        return code && !(marketPriceCache?.prices?.[code]?.price > 0);
+      });
+      const shouldForceRepair =
+        Array.isArray(holdings) && (
+          holdings.some(item => item?.integrityIssue === "missing-price" || resolveHoldingPrice(item) <= 0) ||
+          (!clock.isWeekend && clock.minutes >= POST_CLOSE_SYNC_MINUTES && (marketPriceSync?.marketDate !== clock.marketDate || hasMissingTrackedQuotes))
+        );
       const cache = await syncPostClosePrices({ silent: false, force: shouldForceRepair });
       if (cache?.prices && Object.keys(cache.prices).length > 0 && viewMode === PORTFOLIO_VIEW_MODE) {
         setHoldings(prev => applyMarketQuotesToHoldings(prev, cache.prices));

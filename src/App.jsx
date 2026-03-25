@@ -599,6 +599,27 @@ function normalizeDailyReportEntry(value) {
   };
 }
 
+function buildHoldingPriceHints({ analysisHistory = [], fallbackRows = [] } = {}) {
+  const hints = {};
+  normalizeAnalysisHistoryEntries(analysisHistory).forEach(report => {
+    (Array.isArray(report?.changes) ? report.changes : []).forEach(change => {
+      const code = String(change?.code || "").trim();
+      const price = Number(change?.price);
+      if (!code || !Number.isFinite(price) || price <= 0 || hints[code]) return;
+      hints[code] = price;
+    });
+  });
+
+  (Array.isArray(fallbackRows) ? fallbackRows : []).forEach(row => {
+    const code = String(row?.code || "").trim();
+    const price = Number(row?.price);
+    if (!code || !Number.isFinite(price) || price <= 0 || hints[code]) return;
+    hints[code] = price;
+  });
+
+  return hints;
+}
+
 function getTaipeiClock(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: MARKET_TIMEZONE,
@@ -769,10 +790,14 @@ function normalizeHoldingRow(item, overridePrice = null) {
   };
 }
 
-function normalizeHoldings(rows, quotes = null) {
+function normalizeHoldings(rows, quotes = null, priceHints = null) {
   const priceQuotes = quotes && typeof quotes === "object" ? quotes : null;
+  const hintMap = priceHints && typeof priceHints === "object" ? priceHints : null;
   return (Array.isArray(rows) ? rows : [])
-    .map(item => normalizeHoldingRow(item, priceQuotes?.[item?.code]?.price))
+    .map(item => normalizeHoldingRow(
+      item,
+      priceQuotes?.[item?.code]?.price || hintMap?.[String(item?.code || "").trim()] || null
+    ))
     .filter(Boolean);
 }
 
@@ -3695,7 +3720,10 @@ async function repairPersistedHoldingsIfNeeded() {
     const key = pfKey(portfolio.id, "holdings-v2");
     const raw = readStorageValue(key);
     if (raw === undefined) continue;
-    const normalized = normalizeHoldings(raw, quotes);
+    const analysisHistory = readStorageValue(pfKey(portfolio.id, "analysis-history-v1"));
+    const fallbackRows = getPortfolioFallback(portfolio.id, "holdings-v2");
+    const priceHints = buildHoldingPriceHints({ analysisHistory, fallbackRows });
+    const normalized = normalizeHoldings(raw, quotes, priceHints);
     if (JSON.stringify(raw) === JSON.stringify(normalized)) continue;
     await save(key, normalized);
     repaired += 1;
@@ -3773,6 +3801,15 @@ async function loadPortfolioSnapshot(pid) {
   for (const field of PORTFOLIO_STORAGE_FIELDS) {
     snapshot[field.alias] = await loadForPortfolio(pid, field.suffix);
   }
+  snapshot.analysisHistory = normalizeAnalysisHistoryEntries(snapshot.analysisHistory);
+  snapshot.holdings = normalizeHoldings(
+    snapshot.holdings,
+    getPersistedMarketQuotes(),
+    buildHoldingPriceHints({
+      analysisHistory: snapshot.analysisHistory,
+      fallbackRows: getPortfolioFallback(pid, "holdings-v2"),
+    })
+  );
   return snapshot;
 }
 
@@ -4466,7 +4503,14 @@ export default function App() {
         }
         const cloudH = cloudHoldings.holdings;
         if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!snapshot.holdings || snapshot.holdings.length === 0)) {
-          const normalizedCloudHoldings = applyMarketQuotesToHoldings(cloudH, marketPriceCache?.prices);
+          const normalizedCloudHoldings = normalizeHoldings(
+            cloudH,
+            marketPriceCache?.prices,
+            buildHoldingPriceHints({
+              analysisHistory: snapshot.analysisHistory,
+              fallbackRows: getPortfolioFallback(pid, "holdings-v2"),
+            })
+          );
           setHoldings(normalizedCloudHoldings);
           savePortfolioData(pid, "holdings-v2", normalizedCloudHoldings);
         }

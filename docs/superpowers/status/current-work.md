@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-25 14:05
+Last updated: 2026-03-25 14:27
 
 ## Objective
 
@@ -65,11 +65,25 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `14:04` Curie：確認最值得硬性要求的台股驗證訊號為月營收 cadence、事件窗口、報告 freshness、族群輪動，不足時應優先進 staleRules
 - `14:04` James：提醒 merge 必須避免 partial output 洗掉舊規則，並要求 rule identity、stale vs invalidated、evidenceCount 累積與 checklist drift 一起處理
 - `14:05` Codex：`npm run build` 通過；`api/research.js` import 通過
+- `14:14` Gemini CLI：已對 submitReview -> brain-validation-v1 提供台股高信號建議，重點包括月營收/法說/財報/目標價 freshness、個股差異 vs 規則失準、以及 time-travel / 重複事件檢查
+- `14:18` James：指出 review 路徑若直接套用 daily analysis 的 `ensureBrainAuditCoverage()`，會把不相關規則錯標為 stale；review 只應覆蓋本次事件相關規則
+- `14:19` Curie：指出事件復盤不應只看方向對錯，必須把月營收 / 法說 / 財報 / 族群輪動 / 目標價 freshness 一起做 verdict
+- `14:23` Codex：`submitReview()` 已改成回傳 review audit buckets，並走 `ensureBrainAuditCoverage(... dossiers)` + `attachEvidenceRefsToBrainAudit()` + `mergeBrainWithAuditLifecycle()`
+- `14:24` Codex：`submitReview()` 成功後已正式 append `sourceType: "eventReview"` 到 `brain-validation-v1`，讓真實復盤 outcome 累積進 casebook
+- `14:25` Codex：新增 `createFallbackValidationDossier()`、`buildEventReviewDossiers()`、`buildEventReviewEvidenceRefs()`，避免事件股票不在目前持倉時完全失去 validation writeback
+- `14:26` Codex：順手修正 holding dossier 仍吃舊 `holding.value/pnl/pct` 的割裂問題，統一改用現算公式
+- `14:27` Codex：`npm run build` 再次通過；Claude local / Qwen local 已啟動嘗試 review，但在本機 Ollama 上非互動輸出明顯較慢，暫不作為阻塞主線
+- `14:34` 使用者回報：持倉總市值直接變 0；主線切換為高優先 debug
+- `14:39` James：指出市值歸零主因是 `price*qty` 現算邏輯缺少 holdings fallback，且 cloud/import/raw holdings 缺少統一 normalizer
+- `14:40` Gemini CLI：提醒下一輪系統掃描應補 MOPS / TWSE / 除權息 / 零股 / 交易成本等真值層
+- `14:42` Codex：新增 `resolveHoldingPrice()`，缺 `price` 時先回退到 `stored price`，再回推 `value/qty`
+- `14:43` Codex：owner 雲端 holdings 補缺改成先 `applyMarketQuotesToHoldings()` 正規化後再進 state / localStorage，避免 raw cloud holdings 直接把總市值打成 0
+- `14:45` Codex：`npm run build` 再次通過；下一步改做「全系統 bug / 優化計畫審核」，暫不直接開新大 scope
 
 ## Next actions
 
 - Task B 分工：
-  - `Codex`：已完成 validated / stale / invalidated / candidate 的 merge 契約與 deterministic lifecycle；下一步改接 review-driven validation
+  - `Codex`：已完成 validated / stale / invalidated / candidate 的 merge 契約與 review-driven validation；下一步補強多股票事件與 casebook 解釋力
   - `Gemini CLI`：補近期公開來源、法說 / 公告 / 目標價報導與 citations
   - `Claude Code over Ollama`：先草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
   - `Qwen Code`：等契約定稿後接 parsing / UI / test 的機械實作
@@ -95,10 +109,13 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
   - UI 是否隱藏了 matched rules / freshness / evidence
 - 補 `evidenceRefs` 的實際產生流程，不只支援 schema
 - 補 `historicalAnalogs` 的實際產生流程，不只支援 schema
-- 設計 `brain-validation-v1` casebook，避免把大量歷史案例塞爆 `strategyBrain`
-- 把 `submitReview()` 的真實結果回寫到 `brain-validation-v1`，讓 verdict 不只靠每日分析
 - 補台股事件節奏特化欄位：月營收 / 法說 / 財報 / 目標價更新窗口
 - 評估是否為策略大腦補單元測試
+- 下一段優先檢查：
+  - 若使用者 reload 後仍看到 0 市值，要補 holdings repair / migration（因為舊 0 值可能已被寫回 localStorage）
+  - 多股票事件目前仍只有單一 `actual` / `actualNote`，之後要不要拆成 per-stock review outcome
+  - `matchedDimensions / mismatchedDimensions` 目前仍未真正回填，casebook 的差異解釋力還不夠
+  - Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順
 
 ## Stop-in-5-min fallback
 
@@ -118,7 +135,7 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - 目前 `validationScore` 與 `staleness` 仍以 fallback 推導為主，真正精準化要靠 Task B 之後的規則驗證流程
 - `evidenceRefs` schema 已就位，但實際自動回填來源還要再補
 - `historicalAnalogs` schema 已就位，但還沒有正式的相似案例檢索 / 比對器；目前先由 AI 在現有 dossier 與歷史脈絡內產出草稿
-- `brain-validation-v1` 已落地且可由 daily analysis 自動累積，但目前還缺少 review-driven 的真實 outcome 標記
+- `brain-validation-v1` 現在已支援 review-driven 的真實 outcome 標記，但多股票事件仍是單一 outcome 顆粒度
 - 必須維持舊版 localStorage brain 資料相容，不能要求使用者重置資料
 - 台股分析屬高難度任務：便宜模型只能做摘要、抽取、分群、草稿；最終判斷與客戶/策略影響仍由 Codex 決定
 - 台股分析不可只看持倉欄位，後續 Task B / Task D 必須把市場機制、法人 / 題材 / 月營收 / 法說節奏一起納入

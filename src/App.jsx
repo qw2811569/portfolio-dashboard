@@ -699,8 +699,24 @@ function getHoldingCostBasis(item) {
   return (Number(item?.cost) || 0) * (Number(item?.qty) || 0);
 }
 
+function resolveHoldingPrice(item, overridePrice = null) {
+  const candidate = Number(overridePrice);
+  if (Number.isFinite(candidate) && candidate > 0) return candidate;
+
+  const storedPrice = Number(item?.price);
+  if (Number.isFinite(storedPrice) && storedPrice > 0) return storedPrice;
+
+  const qty = Number(item?.qty) || 0;
+  const storedValue = Number(item?.value);
+  if (qty > 0 && Number.isFinite(storedValue) && storedValue > 0) {
+    return storedValue / qty;
+  }
+
+  return 0;
+}
+
 function getHoldingMarketValue(item, overridePrice = null) {
-  const price = Number.isFinite(Number(overridePrice)) ? Number(overridePrice) : (Number(item?.price) || 0);
+  const price = resolveHoldingPrice(item, overridePrice);
   return price * (Number(item?.qty) || 0);
 }
 
@@ -716,7 +732,7 @@ function getHoldingReturnPct(item, overridePrice = null) {
 
 function normalizeHoldingMetrics(item, overridePrice = null) {
   if (!item || typeof item !== "object") return item;
-  const price = Number.isFinite(Number(overridePrice)) ? Number(overridePrice) : (Number(item.price) || 0);
+  const price = resolveHoldingPrice(item, overridePrice);
   const value = getHoldingMarketValue(item, price);
   const pnl = getHoldingUnrealizedPnl(item, price);
   const pct = getHoldingReturnPct(item, price);
@@ -1080,6 +1096,23 @@ function normalizeBrainAuditBuckets(value) {
     ? value.invalidatedRules.map(item => normalizeBrainAuditItem(item, "invalidated")).filter(Boolean).slice(0, 20)
     : [];
   return normalized;
+}
+
+function attachEvidenceRefsToBrainAudit(brainAudit, evidenceRefs, { defaultLastValidatedAt = null } = {}) {
+  const normalized = normalizeBrainAuditBuckets(brainAudit);
+  const extraRefs = normalizeBrainEvidenceRefs(evidenceRefs);
+  const patchItem = (item, bucket) => normalizeBrainAuditItem({
+    ...item,
+    bucket,
+    lastValidatedAt: item?.lastValidatedAt || defaultLastValidatedAt || "",
+    evidenceRefs: mergeBrainEvidenceRefs(item?.evidenceRefs, extraRefs),
+  }, bucket);
+
+  return normalizeBrainAuditBuckets({
+    validatedRules: normalized.validatedRules.map(item => patchItem(item, "validated")),
+    staleRules: normalized.staleRules.map(item => patchItem(item, "stale")),
+    invalidatedRules: normalized.invalidatedRules.map(item => patchItem(item, "invalidated")),
+  });
 }
 
 function createEmptyBrainValidationStore() {
@@ -1740,9 +1773,10 @@ function mergeBrainEvidenceRefs(primaryRefs, secondaryRefs, { limit = 4 } = {}) 
   ]).slice(0, limit);
 }
 
-function ensureBrainAuditCoverage(brainAudit, currentBrain) {
+function ensureBrainAuditCoverage(brainAudit, currentBrain, { dossiers = null } = {}) {
   const normalizedAudit = normalizeBrainAuditBuckets(brainAudit);
   const current = normalizeStrategyBrain(currentBrain, { allowEmpty: true });
+  const rows = normalizeHoldingDossiers(dossiers);
   const reviewed = new Set([
     ...normalizedAudit.validatedRules,
     ...normalizedAudit.staleRules,
@@ -1755,7 +1789,10 @@ function ensureBrainAuditCoverage(brainAudit, currentBrain) {
       .filter(([key]) => Boolean(key))
   );
 
-  [...(current.rules || []), ...(current.candidateRules || [])].forEach(rule => {
+  const scopedRules = [...(current.rules || []), ...(current.candidateRules || [])]
+    .filter(rule => rows.length === 0 || rows.some(dossier => ruleMatchesValidationDossier(rule, dossier, null)));
+
+  scopedRules.forEach(rule => {
     const key = brainRuleKey(rule);
     if (!key || reviewed.has(key) || staleMap.has(key)) return;
     const fallbackStaleness = normalizeBrainRuleStaleness(rule?.staleness) || (rule?.status === "candidate" ? "missing" : "aging");
@@ -2483,9 +2520,9 @@ function buildHoldingDossiers({
         qty: holding.qty,
         cost: holding.cost,
         price: holding.price,
-        value: holding.value,
-        pnl: holding.pnl,
-        pct: holding.pct,
+        value: getHoldingMarketValue(holding),
+        pnl: getHoldingUnrealizedPnl(holding),
+        pct: getHoldingReturnPct(holding),
         type: holding.type || "股票",
         alert: holding.alert || "",
         expire: holding.expire || null,
@@ -2741,6 +2778,67 @@ function buildBrainValidationSummaryMap(store, portfolioId) {
     map.set(item.ruleKey, current);
   });
   return map;
+}
+
+function createFallbackValidationDossier(code, event = null) {
+  const normalizedCode = String(code || "").trim();
+  if (!normalizedCode) return null;
+  const meta = STOCK_META[normalizedCode] || {};
+  const fallbackName = meta.name || (event?.stocks || []).find(item => item?.code === normalizedCode)?.name || normalizedCode;
+  return {
+    code: normalizedCode,
+    name: fallbackName,
+    meta,
+    position: {
+      code: normalizedCode,
+      name: fallbackName,
+      type: "股票",
+      qty: null,
+      cost: null,
+      price: null,
+      pct: null,
+    },
+    thesis: {},
+    targets: {},
+    fundamentals: {},
+    analyst: {},
+    events: {},
+    research: {},
+    brainContext: {},
+    freshness: {},
+  };
+}
+
+function buildEventReviewDossiers(event, dossierLookup) {
+  const lookup = dossierLookup instanceof Map ? dossierLookup : new Map();
+  const codes = Array.isArray(event?.stocks)
+    ? event.stocks
+        .map(item => (typeof item === "string" ? item : item?.code))
+        .filter(Boolean)
+    : [];
+
+  return codes
+    .map(code => lookup.get(code) || createFallbackValidationDossier(code, event))
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function buildEventReviewEvidenceRefs(event, reviewDate = toSlashDate()) {
+  const refId = String(event?.id || "").trim();
+  const label = event?.title ? `事件復盤：${event.title}` : "事件復盤";
+  const codes = Array.isArray(event?.stocks)
+    ? event.stocks
+        .map(item => (typeof item === "string" ? item : item?.code))
+        .filter(Boolean)
+    : [];
+  const refs = (codes.length > 0 ? codes : [""]).map(code => ({
+    type: "review",
+    refId,
+    code,
+    label,
+    date: reviewDate,
+  }));
+  return normalizeBrainEvidenceRefs(refs);
 }
 
 function formatPromptNumber(value, digits = 1) {
@@ -3853,7 +3951,9 @@ export default function App() {
         }
         const cloudH = cloudHoldings.holdings;
         if (cloudH && Array.isArray(cloudH) && cloudH.length > 0 && (!snapshot.holdings || snapshot.holdings.length === 0)) {
-          setHoldings(cloudH); savePortfolioData(pid, "holdings-v2", cloudH);
+          const normalizedCloudHoldings = applyMarketQuotesToHoldings(cloudH, marketPriceCache?.prices);
+          setHoldings(normalizedCloudHoldings);
+          savePortfolioData(pid, "holdings-v2", normalizedCloudHoldings);
         }
         // 分析歷史：合併本地+雲端，去重
         if (cloudHistory.history?.length) {
@@ -5166,6 +5266,26 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
     const evt = NE.find(e => e.id === eventId);
     const submittedForm = { ...reviewForm };
     const wasCorrect = evt ? evt.pred === submittedForm.actual : null;
+    const reviewDate = toSlashDate();
+    const reviewRecordedAt = `${reviewDate} ${new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}`;
+    const reviewedEvent = evt
+      ? normalizeEventRecord({
+          ...evt,
+          status: "closed",
+          exitDate: submittedForm.exitDate || evt.exitDate || reviewDate,
+          priceAtExit: submittedForm.priceAtExit || evt.priceAtExit || null,
+          actual: submittedForm.actual,
+          actualNote: submittedForm.actualNote,
+          correct: wasCorrect,
+          lessons: submittedForm.lessons,
+          reviewDate,
+        })
+      : null;
+    const reviewDossiers = reviewedEvent ? buildEventReviewDossiers(reviewedEvent, dossierByCode) : [];
+    const reviewDossierContext = reviewDossiers.length > 0
+      ? reviewDossiers.map(dossier => buildResearchHoldingDossierContext(dossier, { compact: true })).join("\n\n")
+      : "無可用持股 dossier";
+    const reviewEvidenceRefs = reviewedEvent ? buildEventReviewEvidenceRefs(reviewedEvent, reviewDate) : [];
 
     setNewsEvents(prev => {
       const arr = normalizeNewsEvents(prev || NEWS_EVENTS);
@@ -5174,13 +5294,13 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
       arr[idx] = {
         ...arr[idx],
         status: "closed",
-        exitDate: submittedForm.exitDate || arr[idx].exitDate || toSlashDate(),
+        exitDate: submittedForm.exitDate || arr[idx].exitDate || reviewDate,
         priceAtExit: submittedForm.priceAtExit || arr[idx].priceAtExit || null,
         actual: submittedForm.actual,
         actualNote: submittedForm.actualNote,
         correct: arr[idx].pred === submittedForm.actual,
         lessons: submittedForm.lessons,
-        reviewDate: new Date().toLocaleDateString("zh-TW"),
+        reviewDate,
       };
       return arr;
     });
@@ -5208,10 +5328,11 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
             systemPrompt: `你是策略知識庫管理器。用戶剛完成一筆事件復盤，你要：
 1. 評估用戶的覆盤心得是否合理（用戶不一定正確，需要糾正偏差）
 2. 從這次復盤中提取可學習的策略教訓
-3. 更新策略大腦的規則和教訓
+3. 先驗證與本次事件 / 相關持股 dossier 有關的既有策略規則，判斷哪些被真實 outcome 支持、削弱或證偽
+4. 更新策略大腦的規則和教訓
 
 回傳**純JSON**格式（不要markdown code block），結構：
-{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}
+{"validatedRules":[{"id":"規則ID或空字串","text":"這次 outcome 仍支持的舊規則","reason":"為何成立","confidence":0到100,"lastValidatedAt":"日期","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"staleRules":[{"id":"規則ID或空字串","text":"這次復盤只能部分支持、證據不足或需降級的規則","reason":"為何只能先標記 stale","confidence":0到100,"staleness":"aging/stale","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"invalidatedRules":[{"id":"規則ID或空字串","text":"這次被真實 outcome 證偽的規則","reason":"為何失效","confidence":0到100,"nextStatus":"candidate/archived","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}]}],"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"一句話摘要","reviewFeedback":"給用戶的一句話反饋：覆盤是否合理？有什麼盲點？"}
 
 另外，每條規則 / 候選規則盡量補上：
 - appliesTo / marketRegime / catalystWindow
@@ -5219,9 +5340,16 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 - historicalAnalogs：1-2 個過往台股相似案例；若這次失準，說明是規則失準還是個股情境差異`,
             userPrompt: `事件：${evt.title}
 ${notesContext}
+相關持股 dossier：
+${reviewDossierContext}
+
 預測：${evt.pred==="up"?"看漲":evt.pred==="down"?"看跌":"中性"} — ${evt.predReason}
 實際走勢：${submittedForm.actual==="up"?"上漲":submittedForm.actual==="down"?"下跌":"中性"} — ${savedNote}
 預測${wasCorrect?"正確":"錯誤"}
+事件日期：${reviewedEvent?.eventDate || evt.date || "未填"}；結案日期：${reviewedEvent?.exitDate || reviewDate}
+請優先用真實 outcome 驗證舊規則，再決定是否新增候選規則；只有與這次事件 / 相關持股 dossier 有關的既有核心規則與 candidate rule 才需要落入 validatedRules / staleRules / invalidatedRules。
+驗證時至少檢查：月營收節奏、法說/財報/事件窗口、目標價/公開報告 freshness、族群/題材輪動位置；若缺 fresh 證據或事件資訊不足，優先進 staleRules，不要硬判 validated / invalidated。
+若這次失準只是個股流動性、監管、時間差、資金面、題材輪動差異，請在 historicalAnalogs.note 與 reason 說清楚，不要直接把規則判死。
 用戶覆盤心得：${savedLessons || "（未填）"}
 
 現有策略大腦：
@@ -5236,8 +5364,23 @@ ${JSON.stringify(currentBrain)}
         const rawBrain = JSON.parse(cleanBrain);
         const feedback = rawBrain.reviewFeedback;
         delete rawBrain.reviewFeedback;
-        const newBrain = mergeBrainPreservingCoachLessons(rawBrain, currentBrain);
+        let reviewBrainAudit = ensureBrainAuditCoverage(rawBrain, currentBrain, { dossiers: reviewDossiers });
+        reviewBrainAudit = attachEvidenceRefsToBrainAudit(reviewBrainAudit, reviewEvidenceRefs, {
+          defaultLastValidatedAt: reviewedEvent?.exitDate || reviewDate,
+        });
+        const newBrain = mergeBrainWithAuditLifecycle(rawBrain, currentBrain, reviewBrainAudit);
         setStrategyBrain(newBrain);
+        if (reviewDossiers.length > 0) {
+          setBrainValidation(prev => appendBrainValidationCases(prev, {
+            portfolioId: activePortfolioId,
+            sourceType: "eventReview",
+            sourceRefId: String(eventId),
+            dossiers: reviewDossiers,
+            brain: newBrain,
+            brainAudit: reviewBrainAudit,
+            capturedAt: reviewRecordedAt,
+          }));
+        }
         setSaved(feedback ? `🧠 ${feedback}` : "✅ 策略大腦已更新");
         setTimeout(() => setSaved(""), 6000);
       } catch (e) {

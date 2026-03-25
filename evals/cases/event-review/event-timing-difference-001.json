@@ -1,0 +1,30 @@
+{
+  "id": "event-timing-difference-001",
+  "type": "event-review",
+  "goal": "區分規則失準 vs 事件時間窗口差異：若事件尚未真正發生或已過太久，應標記為時間窗口差異。",
+  "input": {
+    "pred": "up",
+    "stocks": [
+      { "code": "3491", "name": "華星光" }
+    ],
+    "priceAtEvent": {
+      "3491": 1580
+    },
+    "priceAtExit": {
+      "3491": 1520
+    },
+    "context": {
+      "eventDate": "2026-03-20",
+      "reviewDate": "2026-03-25",
+      "daysSinceEvent": 5,
+      "eventStatus": "completed"
+    }
+  },
+  "expect": {
+    "minimumOutcomes": 1,
+    "required": [
+      { "code": "3491", "outcomeLabel": "contradicted", "actual": "down" }
+    ],
+    "considerations": ["時間窗口過短", "可能需要更長觀察期", "跌幅 -3.8% 屬輕微"]
+  }
+}

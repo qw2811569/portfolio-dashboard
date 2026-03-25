@@ -1,0 +1,50 @@
+{
+  "id": "liquidity-difference-001",
+  "type": "brain-validation",
+  "goal": "區分規則失準 vs 流動性差異：小市值股票若因流動性不足導致規則失效，應標記為流動性差異。",
+  "input": {
+    "left": {
+      "positionType": "stock",
+      "strategyClass": "事件驅動",
+      "eventPhase": "pre_event",
+      "catalystTags": ["法說", "新產品"],
+      "industryTheme": "AI 伺服器",
+      "holdingPeriod": "short_mid",
+      "fundamentalState": {
+        "revenueYoYBand": "15-30",
+        "epsState": "up",
+        "grossMarginTrend": "flat"
+      },
+      "priceState": {
+        "pnlBand": "-5~5",
+        "targetGapBand": "10-20"
+      }
+    },
+    "right": {
+      "positionType": "stock",
+      "strategyClass": "事件驅動",
+      "eventPhase": "pre_event",
+      "catalystTags": ["法說", "新產品"],
+      "industryTheme": "AI 伺服器",
+      "holdingPeriod": "short_mid",
+      "fundamentalState": {
+        "revenueYoYBand": "15-30",
+        "epsState": "up",
+        "grossMarginTrend": "flat"
+      },
+      "priceState": {
+        "pnlBand": "-5~5",
+        "targetGapBand": "10-20"
+      }
+    },
+    "outcome": {
+      "leftResult": "validated",
+      "rightResult": "invalidated"
+    }
+  },
+  "expect": {
+    "matchedDimensions": ["positionType", "strategyClass", "catalystTags", "eventPhase", "holdingPeriod", "industryTheme", "fundamentalState", "priceState"],
+    "mismatchedDimensions": [],
+    "note": "此案例用於測試完全相同情境下的流動性差異（評分腳本尚未支援 liquidityState 比對）"
+  }
+}

@@ -41,7 +41,7 @@
 6. 介面上能看出「為什麼現在叫你觀察 / 加碼 / 減碼 / 出場」。
 7. 重要規則會拿去對照過往台股相似個股 / 相似節奏，並區分失準是規則本身有問題，還是個股情境差異。
 
-## 五個 LLM / 工具怎麼分工
+## 四個工具怎麼分工
 
 ### 穩定分工 v1
 
@@ -51,16 +51,8 @@
   - 公開資料 scout
   - 負責 citations / freshness / unresolved questions
   - 不可直接決定 fundamentals / targets / strategyBrain 真值
-- `James`
-  - schema / merge / persistence / edge-case reviewer
-  - 優先抓資料流與 state 邊界 bug
-- `Curie`
-  - 台股 verdict reviewer
-  - 優先檢查月營收、法說、財報、題材輪動、流動性、時序差異
 - `Qwen`
   - 低風險 patch / helper / test
-- `Claude local`
-  - prompt 草稿、candidate rules、checklist 草稿
 - `Codex`
   - 最終裁決、主邏輯、驗收、accept/revert
 
@@ -120,25 +112,7 @@ node scripts/eval_brain.mjs
 - 直接回寫 `strategyBrain`
 - 最終買賣判斷
 
-### 3. Claude Code over Ollama
-
-定位：低成本的策略草稿與規則整理助手
-
-適合交給它：
-
-- 把研究筆記整理成候選規則
-- 幫每檔持股先做第一輪規則配對
-- 草擬 prompt 文案
-- 草擬 checklist
-- 做低風險的規則摘要、分類、歸納
-
-不要交給它：
-
-- 最終決定策略邏輯
-- 大型多檔案重構
-- 關鍵數字正確性背書
-
-### 4. Qwen Code
+### 3. Qwen Code
 
 定位：便宜的工程實作打手
 
@@ -156,7 +130,7 @@ node scripts/eval_brain.mjs
 - AI prompt 契約大改
 - cloud sync / migration 這種高風險變更
 
-### 5. Codex
+### 4. Codex
 
 定位：高風險決策、整體設計與最後驗收
 
@@ -175,38 +149,28 @@ node scripts/eval_brain.mjs
 1. 先把研究 PDF、財報摘要、客戶筆記丟進 AnythingLLM。
 2. 讓 AnythingLLM 產出「內部研究摘要」。
 3. 再讓 Gemini CLI 補近期公開事實、來源與 freshness。
-4. 再讓 Claude Code over Ollama 把摘要整理成候選規則、檢查表、需要驗證的假設。
-5. 由 Codex 決定哪些要進策略大腦資料模型。
-6. 由 Qwen Code 做低風險實作。
-7. 最後回到 Codex 做驗收與修正。
+4. 由 Codex 決定哪些要進策略大腦資料模型。
+5. 由 Qwen Code 做低風險實作。
+6. 最後回到 Codex 做驗收與修正。
 
 ### 流程 B：收盤分析品質優化
 
 1. AnythingLLM 整理近期文件與研究材料。
 2. Gemini CLI 補近期外部事件、法說 / 新聞 / 公告來源。
-3. Claude Code over Ollama 先草擬：
-   - 今日異常點
-   - 需要驗證的規則
-   - 可能的 checklist 更新
-4. Codex 根據 dossier + brain + 事件資料決定真正要改的 prompt 與規則更新流程。
-5. Qwen Code 負責把 UI / helper / 低風險串接補上。
-6. Codex 做最後檢查，確保不會再次出現「持倉很完整，但分析像割裂」。
+3. Codex 根據 dossier + brain + 事件資料決定真正要改的 prompt 與規則更新流程。
+4. Qwen Code 負責把 UI / helper / 低風險串接補上。
+5. Codex 做最後檢查，確保不會再次出現「持倉很完整，但分析像割裂」。
 
 ### 流程 C：單一股票深度研究
 
 1. AnythingLLM 先做文件檢索與比較。
 2. Gemini CLI 先補公開來源、近期法說 / 新聞 / 報導。
-3. Claude Code over Ollama 先整理：
-   - 多頭邏輯
-   - 風險
-   - 事件窗口
-   - 需更新到 brain 的候選規則
-4. Codex 審核是否足夠回寫到：
+3. Codex 審核是否足夠回寫到：
    - `fundamentals`
    - `targets`
    - `analystReports`
    - `strategyBrain`
-5. Qwen Code 再做必要的 UI / 資料接線。
+4. Qwen Code 再做必要的 UI / 資料接線。
 
 ## 策略大腦 V2 這輪要做的 5 個模組
 
@@ -354,7 +318,7 @@ node scripts/eval_brain.mjs
 
 ### Task D：台股節奏詞彙表與 prompt guardrail
 
-由 Claude Code over Ollama 草擬，Codex 定稿
+由 Codex 定稿，必要時先請 Qwen 做低風險整理
 
 輸出：
 
@@ -396,12 +360,6 @@ node scripts/eval_brain.mjs
 - 最後才去擴充台股特化語境
 
 ## 日常派工簡表
-
-### 可以先丟給 Claude Code over Ollama 的
-
-- 「把這份研究摘要整理成 5 條 candidate rules」
-- 「把這 3 次復盤整理成 preExit checklist 草稿」
-- 「幫我找出這份收盤分析裡哪幾句沒有直接證據支撐」
 
 ### 可以先丟給 Qwen Code 的
 

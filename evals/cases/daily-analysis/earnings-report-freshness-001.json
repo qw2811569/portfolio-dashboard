@@ -1,0 +1,27 @@
+{
+  "id": "earnings-report-freshness-001",
+  "type": "daily-analysis",
+  "goal": "財報季（Q1/Q2/Q3/Q4）若缺最新財報或財報已過期，應標記為 stale。",
+  "input": {
+    "incomingBucket": "validated",
+    "signals": {
+      "monthlyRevenueGate": "fresh",
+      "conferenceGate": "fresh",
+      "earningsGate": "stale",
+      "targetFreshnessGate": "fresh",
+      "researchGate": "fresh",
+      "hardGateStatus": "stale"
+    },
+    "context": {
+      "currentDate": "2026-03-25",
+      "quarter": "Q1",
+      "lastEarningsDate": "2025-11-15",
+      "lastEarningsQuarter": "Q3-2025"
+    }
+  },
+  "expect": {
+    "bucket": "stale",
+    "mustMentionIssues": ["財報"],
+    "suggestedAction": "等待或查詢 Q1-2026 財報"
+  }
+}

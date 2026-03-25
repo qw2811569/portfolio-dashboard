@@ -4,8 +4,8 @@
 
 目的：
 
-- 讓 `Gemini`、`Qwen`、`Claude local` 用同一種格式交接任務
-- 讓 Codex / James / Curie 可以快速知道：
+- 讓 `Gemini`、`Qwen` 用同一種格式交接任務
+- 讓 Codex 可以快速知道：
   - 誰正在做什麼
   - 誰卡在哪裡
   - 誰的結果可採用、誰的結果只能當草稿

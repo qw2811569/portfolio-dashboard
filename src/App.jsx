@@ -63,6 +63,47 @@ function Md({ text, color }) {
   return h("div", null, els);
 }
 
+// ── 通用表單元件 helper ────────────────────────────────────────
+const inputBaseStyle = {
+  width: "100%",
+  background: C.subtle,
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  padding: "8px 10px",
+  color: C.text,
+  fontSize: 12,
+  outline: "none",
+  fontFamily: "inherit",
+};
+
+const textareaBaseStyle = {
+  ...inputBaseStyle,
+  resize: "vertical",
+  minHeight: 68,
+  lineHeight: 1.6,
+};
+
+function TextInput({ value, onChange, placeholder, type = "text", style = {}, ...props }) {
+  return h("input", {
+    type,
+    value,
+    onChange,
+    placeholder,
+    style: { ...inputBaseStyle, ...style },
+    ...props,
+  });
+}
+
+function TextArea({ value, onChange, placeholder, style = {}, ...props }) {
+  return h("textarea", {
+    value,
+    onChange,
+    placeholder,
+    style: { ...textareaBaseStyle, ...style },
+    ...props,
+  });
+}
+
 // ── 目標價資料庫（分析師共識）─────────────────────────────────────
 // reports: [{firm, target, date}]  avg 自動計算
 const INIT_TARGETS = {
@@ -2084,10 +2125,10 @@ function normalizeWatchlist(value) {
         name,
         price: Number.isFinite(price) && price > 0 ? price : 0,
         target: Number.isFinite(target) && target > 0 ? target : 0,
-        status: typeof item.status === "string" ? item.status : "",
-        catalyst: typeof item.catalyst === "string" ? item.catalyst : "",
+        status: typeof item.status === "string" ? item.status.trim() : "",
+        catalyst: typeof item.catalyst === "string" ? item.catalyst.trim() : "",
         scKey: typeof item.scKey === "string" ? item.scKey : "blue",
-        note: typeof item.note === "string" ? item.note : "",
+        note: typeof item.note === "string" ? item.note.trim() : "",
       };
     })
     .filter(Boolean);
@@ -3856,6 +3897,10 @@ export default function App() {
   const toggleNews = (id) => setExpandedNews(prev => {
     const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s;
   });
+  // watchlist editor
+  const [watchlistModalOpen, setWatchlistModalOpen] = useState(false);
+  const [watchlistEditing, setWatchlistEditing] = useState(null);
+  const [watchlistForm, setWatchlistForm] = useState({ code: "", name: "", price: "", target: "", status: "", catalyst: "", scKey: "blue", note: "" });
   const [tpCode, setTpCode] = useState("");
   const [tpFirm, setTpFirm] = useState("");
   const [tpVal,  setTpVal]  = useState("");
@@ -4552,6 +4597,57 @@ export default function App() {
   useEffect(() => { if (canPersistPortfolioData && targets)  savePortfolioData(activePortfolioId, "targets-v1", targets); }, [activePortfolioId, canPersistPortfolioData, targets]);
   useEffect(() => { if (canPersistPortfolioData && fundamentals) savePortfolioData(activePortfolioId, "fundamentals-v1", fundamentals); }, [activePortfolioId, canPersistPortfolioData, fundamentals]);
   useEffect(() => { if (canPersistPortfolioData && watchlist) savePortfolioData(activePortfolioId, "watchlist-v1", watchlist); }, [activePortfolioId, canPersistPortfolioData, watchlist]);
+
+  // watchlist handlers
+  const openWatchlistAddModal = () => {
+    setWatchlistEditing(null);
+    setWatchlistForm({ code: "", name: "", price: "", target: "", status: "", catalyst: "", scKey: "blue", note: "" });
+    setWatchlistModalOpen(true);
+  };
+  const openWatchlistEditModal = (item) => {
+    setWatchlistEditing(item);
+    setWatchlistForm({
+      code: item.code,
+      name: item.name,
+      price: String(item.price || ""),
+      target: String(item.target || ""),
+      status: item.status || "",
+      catalyst: item.catalyst || "",
+      scKey: item.scKey || "blue",
+      note: item.note || "",
+    });
+    setWatchlistModalOpen(true);
+  };
+  const handleWatchlistDelete = (code) => {
+    const next = (watchlist || []).filter(item => item.code !== code);
+    setWatchlist(next);
+  };
+  const handleWatchlistSubmit = () => {
+    const code = watchlistForm.code.trim();
+    const name = watchlistForm.name.trim();
+    if (!code || !name) return;
+    const price = parseFloat(watchlistForm.price) || 0;
+    const target = parseFloat(watchlistForm.target) || 0;
+    const newItem = {
+      code,
+      name,
+      price: price > 0 ? price : 0,
+      target: target > 0 ? target : 0,
+      status: watchlistForm.status.trim(),
+      catalyst: watchlistForm.catalyst.trim(),
+      scKey: watchlistForm.scKey || "blue",
+      note: watchlistForm.note.trim(),
+    };
+    let next;
+    if (watchlistEditing) {
+      next = (watchlist || []).map(item => item.code === watchlistEditing.code ? newItem : item);
+    } else {
+      next = [...(watchlist || []), newItem];
+    }
+    setWatchlist(next);
+    setWatchlistModalOpen(false);
+  };
+
   useEffect(() => { if (canPersistPortfolioData && analystReports) savePortfolioData(activePortfolioId, "analyst-reports-v1", analystReports); }, [activePortfolioId, analystReports, canPersistPortfolioData]);
   useEffect(() => { if (canPersistPortfolioData && reportRefreshMeta) savePortfolioData(activePortfolioId, "report-refresh-meta-v1", reportRefreshMeta); }, [activePortfolioId, canPersistPortfolioData, reportRefreshMeta]);
   useEffect(() => {
@@ -7903,11 +7999,22 @@ ${recentAnalyses || "尚無分析紀錄"}
             <div style={{...card,textAlign:"center",padding:"24px 14px"}}>
               <div style={{fontSize:20,marginBottom:6,opacity:0.3}}>◌</div>
               <div style={{fontSize:12,color:C.textMute,fontWeight:400}}>
-                這個組合目前沒有觀察股<br/>
-                <span style={{fontSize:10}}>後續若要做多組合觀察名單，再把 watchlist 編輯功能補上。</span>
+                這個組合目前沒有觀察股
               </div>
+              <button onClick={openWatchlistAddModal} style={{
+                marginTop:12,padding:"8px 16px",background:C.teal,color:"white",border:"none",
+                borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",
+              }}>＋ 新增觀察股</button>
             </div>
-          ) : watchlistRows.map(({ item:w, index:wi, relatedEvents:wEvents, hits:wHits, misses:wMisses, pendingCount, trackingCount, upside },) => {
+          ) : (
+            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+              <button onClick={openWatchlistAddModal} style={{
+                padding:"6px 12px",background:C.teal,color:"white",border:"none",
+                borderRadius:20,fontSize:10,fontWeight:600,cursor:"pointer",
+              }}>＋ 新增觀察股</button>
+            </div>
+          )}
+          {watchlistRows.length > 0 && watchlistRows.map(({ item:w, index:wi, relatedEvents:wEvents, hits:wHits, misses:wMisses, pendingCount, trackingCount, upside },) => {
             const upsideText = upside != null ? `${upside >= 0 ? "+" : ""}${upside.toFixed(1)}%` : "—";
             const prog = w.target > 0 && w.price > 0 ? Math.min(w.price / w.target * 100, 100) : 0;
             const sc = C[w.scKey] || C.up;
@@ -7929,6 +8036,16 @@ ${recentAnalyses || "尚無分析紀錄"}
                     <div style={{fontSize:10,color:C.textMute,marginTop:2,lineHeight:1.6}}>
                       {w.catalyst || "尚未補上催化劑"} <span style={{fontSize:9}}>{isWExp?"▲":"▼"}</span>
                     </div>
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <button onClick={(e)=>{e.stopPropagation();openWatchlistEditModal(w);}} style={{
+                      padding:"4px 8px",background:"transparent",border:`1px solid ${C.border}`,
+                      borderRadius:12,fontSize:9,color:C.textMute,cursor:"pointer",
+                    }}>編輯</button>
+                    <button onClick={(e)=>{e.stopPropagation();if(confirm(`確定要刪除 "${w.name} (${w.code})"？`)){handleWatchlistDelete(w.code);}}} style={{
+                      padding:"4px 8px",background:"transparent",border:`1px solid ${C.up}`,
+                      borderRadius:12,fontSize:9,color:C.up,cursor:"pointer",
+                    }}>刪除</button>
                   </div>
                   <span style={{background:C.subtle,color:C.textSec,fontSize:10,fontWeight:500,
                     border:`1px solid ${C.border}`,padding:"3px 11px",borderRadius:20,flexShrink:0}}>{w.status || "觀察中"}</span>
@@ -9793,6 +9910,85 @@ ${recentAnalyses || "尚無分析紀錄"}
         })()}
 
       </div>
+      {/* Watchlist Modal */}
+      {watchlistModalOpen && (
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}} onClick={()=>setWatchlistModalOpen(false)}>
+          <div onClick={(e)=>e.stopPropagation()} style={{background:C.card,borderRadius:12,padding:20,width:"90%",maxWidth:400,boxShadow:"0 10px 40px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:16}}>
+              {watchlistEditing ? "編輯觀察股" : "新增觀察股"}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div>
+                <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>代號 *</div>
+                <input value={watchlistForm.code} onChange={(e)=>setWatchlistForm({...watchlistForm,code:e.target.value})}
+                  placeholder="如：2330"
+                  style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+              </div>
+              <div>
+                <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>名稱 *</div>
+                <input value={watchlistForm.name} onChange={(e)=>setWatchlistForm({...watchlistForm,name:e.target.value})}
+                  placeholder="如：台積電"
+                  style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+              <div>
+                <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>現價</div>
+                <input type="number" value={watchlistForm.price} onChange={(e)=>setWatchlistForm({...watchlistForm,price:e.target.value})}
+                  placeholder="如：500"
+                  style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+              </div>
+              <div>
+                <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>目標價</div>
+                <input type="number" value={watchlistForm.target} onChange={(e)=>setWatchlistForm({...watchlistForm,target:e.target.value})}
+                  placeholder="如：700"
+                  style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>狀態</div>
+              <input value={watchlistForm.status} onChange={(e)=>setWatchlistForm({...watchlistForm,status:e.target.value})}
+                placeholder="如：觀察中、等財報"
+                style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>催化劑</div>
+              <input value={watchlistForm.catalyst} onChange={(e)=>setWatchlistForm({...watchlistForm,catalyst:e.target.value})}
+                placeholder="如：Q2 財報、法說會"
+                style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",color:C.text,fontSize:12,outline:"none"}}/>
+            </div>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>顏色標籤</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[["blue","藍"],["amber","琥珀"],["olive","橄欖"],["up","紅"],["teal","青"],["cyan","藍綠"],["lavender","紫"]].map(([key,label])=>(
+                  <button key={key} onClick={()=>setWatchlistForm({...watchlistForm,scKey:key})} style={{
+                    padding:"4px 10px",borderRadius:12,fontSize:9,fontWeight:500,cursor:"pointer",
+                    background:watchlistForm.scKey===key?C[key]+"33":"transparent",
+                    border:`1px solid ${watchlistForm.scKey===key?C[key]:C.border}`,
+                    color:watchlistForm.scKey===key?C[key]:C.textMute,
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:9,color:C.textMute,marginBottom:4}}>備註</div>
+              <textarea value={watchlistForm.note} onChange={(e)=>setWatchlistForm({...watchlistForm,note:e.target.value})}
+                placeholder="觀察重點、操作策略..."
+                style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:8,color:C.text,fontSize:11,resize:"none",minHeight:60,outline:"none",lineHeight:1.6}}/>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={()=>setWatchlistModalOpen(false)} style={{
+                padding:"8px 16px",background:"transparent",border:`1px solid ${C.border}`,
+                borderRadius:20,fontSize:11,color:C.textMute,cursor:"pointer",
+              }}>取消</button>
+              <button onClick={handleWatchlistSubmit} style={{
+                padding:"8px 16px",background:C.teal,color:"white",border:"none",
+                borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",
+              }}>{watchlistEditing ? "儲存" : "新增"}</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{textAlign:"center",padding:"8px 0",fontSize:9,color:C.textMute,opacity:0.5}}>v2024.03.21b · bg:{C.bg}</div>
     </div>
   );

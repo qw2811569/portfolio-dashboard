@@ -225,28 +225,14 @@ npm run dev
 - `Qwen Code`
 - `AnythingLLM`
 - `Gemini CLI`
-- `Ollama`
 - `Claude Code`
 
 在這個 repo 內的 VSCode 任務可直接用：
 
 - `Gemini CLI: Launch In Repo`
 - `Gemini CLI: Launch Taiwan Scout`
-- `Claude Code: Launch via Ollama`
-- `Claude Code: Launch via Ollama (Print Test)`
 - `Qwen Code: Launch In Repo`
 - `AnythingLLM: Open Desktop App`
-- `Ollama: Start Local Service`
-- `Ollama: Restart Local Service (64K Context)`
-- `Ollama: Show Running Models`
-
-`Claude Code -> Ollama` 的入口腳本在：
-
-- [scripts/launch-claude-ollama.sh](/Users/chenkuichen/APP/test/scripts/launch-claude-ollama.sh)
-
-預設模型：
-
-- `qwen3-coder:30b`
 
 `Gemini CLI` 的工作區 context 在：
 
@@ -254,12 +240,11 @@ npm run dev
 
 目前 repo 內 Gemini wrapper 的預設模型：
 
-- `gemini-3-flash-preview`
+- `gemini-2.5-flash`
 
 用途建議：
 
 - `Gemini CLI`：公開資料、法說 / 新聞 / 公告 / 目標價報導的 research scout
-- `Claude Code over Ollama`：低成本草稿、規則整理、checklist 初稿
 - `Qwen Code`：低風險工程實作
 - `AnythingLLM`：文件檢索 / PDF / 研究資料整理
 - `Codex`：高風險邏輯、prompt 契約、最終驗收
@@ -358,7 +343,6 @@ node scripts/eval_brain.mjs
 - `api/parse.js`
 - `api/research.js`
 - `api/_lib/ai-provider.js`
-- `scripts/launch-claude-ollama.sh`
 - `docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md`
 
 如果 Claude 要接手，先讀這些檔，再讀 spec / plan。

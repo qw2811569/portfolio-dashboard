@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-03-25T09:25:00.937Z",
+  "generatedAt": "2026-03-25T18:03:24.426Z",
   "summary": {
-    "total": 3,
-    "passed": 3,
+    "total": 9,
+    "passed": 9,
     "failed": 0,
     "avgScore": 100
   },
@@ -30,6 +30,78 @@
       "failures": []
     },
     {
+      "id": "liquidity-difference-001",
+      "type": "brain-validation",
+      "file": "evals/cases/brain-validation/liquidity-difference-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "matchedDimensions": [
+          "positionType",
+          "strategyClass",
+          "eventPhase",
+          "catalystTags",
+          "industryTheme",
+          "holdingPeriod",
+          "fundamentalState",
+          "priceState"
+        ],
+        "mismatchedDimensions": []
+      },
+      "failures": []
+    },
+    {
+      "id": "sector-rotation-001",
+      "type": "brain-validation",
+      "file": "evals/cases/brain-validation/sector-rotation-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "matchedDimensions": [
+          "positionType",
+          "strategyClass",
+          "eventPhase",
+          "catalystTags",
+          "holdingPeriod"
+        ],
+        "mismatchedDimensions": [
+          "industryTheme",
+          "fundamentalState",
+          "priceState"
+        ]
+      },
+      "failures": []
+    },
+    {
+      "id": "conference-window-001",
+      "type": "daily-analysis",
+      "file": "evals/cases/daily-analysis/conference-window-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "bucket": "stale",
+        "issues": [
+          "法說",
+          "目標價/報告"
+        ]
+      },
+      "failures": []
+    },
+    {
+      "id": "earnings-report-freshness-001",
+      "type": "daily-analysis",
+      "file": "evals/cases/daily-analysis/earnings-report-freshness-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "bucket": "stale",
+        "issues": [
+          "財報"
+        ]
+      },
+      "failures": []
+    },
+    {
       "id": "freshness-gating-001",
       "type": "daily-analysis",
       "file": "evals/cases/daily-analysis/freshness-gating-001.json",
@@ -44,6 +116,37 @@
           "目標價/報告"
         ]
       },
+      "failures": []
+    },
+    {
+      "id": "monthly-revenue-cadence-001",
+      "type": "daily-analysis",
+      "file": "evals/cases/daily-analysis/monthly-revenue-cadence-001.json",
+      "pass": true,
+      "score": 100,
+      "result": {
+        "bucket": "stale",
+        "issues": [
+          "月營收"
+        ]
+      },
+      "failures": []
+    },
+    {
+      "id": "event-timing-difference-001",
+      "type": "event-review",
+      "file": "evals/cases/event-review/event-timing-difference-001.json",
+      "pass": true,
+      "score": 100,
+      "result": [
+        {
+          "code": "3491",
+          "name": "華星光",
+          "actual": "down",
+          "changePct": -3.8,
+          "outcomeLabel": "contradicted"
+        }
+      ],
       "failures": []
     },
     {

@@ -1,0 +1,51 @@
+{
+  "id": "sector-rotation-001",
+  "type": "brain-validation",
+  "goal": "區分規則失準 vs 族群輪動差異：若規則在相似情境但不同族群失效，應標記為族群輪動差異而非規則錯誤。",
+  "input": {
+    "left": {
+      "positionType": "stock",
+      "strategyClass": "成長股",
+      "eventPhase": "tracking",
+      "catalystTags": ["AI", "散熱"],
+      "industryTheme": "AI 伺服器",
+      "holdingPeriod": "mid",
+      "fundamentalState": {
+        "revenueYoYBand": "30+",
+        "epsState": "up",
+        "grossMarginTrend": "up"
+      },
+      "priceState": {
+        "pnlBand": "10-20",
+        "targetGapBand": "20+"
+      }
+    },
+    "right": {
+      "positionType": "stock",
+      "strategyClass": "成長股",
+      "eventPhase": "tracking",
+      "catalystTags": ["AI", "散熱"],
+      "industryTheme": "傳統散熱",
+      "holdingPeriod": "mid",
+      "fundamentalState": {
+        "revenueYoYBand": "0-15",
+        "epsState": "flat",
+        "grossMarginTrend": "down"
+      },
+      "priceState": {
+        "pnlBand": "-10~0",
+        "targetGapBand": "0-10"
+      }
+    },
+    "outcome": {
+      "leftResult": "validated",
+      "rightResult": "invalidated"
+    }
+  },
+  "expect": {
+    "matchedDimensions": ["positionType", "strategyClass", "catalystTags", "eventPhase", "holdingPeriod"],
+    "mismatchedDimensions": ["industryTheme", "fundamentalState", "priceState"],
+    "differenceType": "sector_and_fundamentals",
+    "conclusion": "規則本身正確，但個股基本面與族群定位不同導致結果差異"
+  }
+}

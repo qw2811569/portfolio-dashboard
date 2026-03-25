@@ -11,23 +11,4 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
   fi
 fi
 
-export OPENAI_API_KEY="${OPENAI_API_KEY:-ollama}"
-MODEL="${QWEN_MODEL:-qwen3-coder:30b}"
-BASE_URL="${QWEN_BASE_URL:-http://127.0.0.1:11434/v1}"
-
-if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then
-  exec qwen "$@"
-fi
-
-if [[ "$#" -gt 0 ]]; then
-  exec qwen \
-    --auth-type openai \
-    --openai-base-url "${BASE_URL}" \
-    --model "${MODEL}" \
-    "$@" </dev/null
-fi
-
-exec qwen \
-  --auth-type openai \
-  --openai-base-url "${BASE_URL}" \
-  --model "${MODEL}"
+exec qwen "$@"

@@ -1,0 +1,26 @@
+{
+  "id": "conference-window-001",
+  "type": "daily-analysis",
+  "goal": "法說會前後一週若缺會議紀錄或目標價更新，應標記為 missing 並要求補齊。",
+  "input": {
+    "incomingBucket": "validated",
+    "signals": {
+      "monthlyRevenueGate": "fresh",
+      "conferenceGate": "missing",
+      "earningsGate": "fresh",
+      "targetFreshnessGate": "aging",
+      "researchGate": "fresh",
+      "hardGateStatus": "missing"
+    },
+    "context": {
+      "currentDate": "2026-03-20",
+      "conferenceDate": "2026-03-18",
+      "daysSinceConference": 2
+    }
+  },
+  "expect": {
+    "bucket": "stale",
+    "mustMentionIssues": ["法說"],
+    "suggestedAction": "補齊法說會紀錄或更新目標價"
+  }
+}

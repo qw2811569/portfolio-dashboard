@@ -76,14 +76,8 @@ node scripts/eval_brain.mjs
 - `Gemini`
   - 外部公開資料 scout
   - 不直接當真值層
-- `James`
-  - schema / merge / edge-case reviewer
-- `Curie`
-  - 台股市場結構與 verdict reviewer
 - `Qwen`
   - 低風險 patch / test / helper
-- `Claude local`
-  - prompt 草稿與 checklist 草稿
 - `Codex`
   - 最終裁決、修改策略邏輯、驗收分數、決定保留或回滾
 

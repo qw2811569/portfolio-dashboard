@@ -54,8 +54,6 @@ echo "Validation run directory: ${OUT_DIR}"
 
 GEMINI_PROMPT='請用繁體中文輸出一份 facts pack，主題是 6274 台燿。格式固定四段：facts、citations、freshness、unresolved_questions。不要假裝自己是最終真值層；若月營收、EPS、毛利率、ROE、正式目標價缺少一手來源，必須直接說需要官方或結構化資料再驗證。'
 QWEN_PROMPT='請先閱讀 coordination/llm-bus/README.md。你現在只能做低風險工作。請輸出一份最小 low-risk patch draft，不要真的修改檔案。任務：針對 scripts/gemini-healthcheck.sh 提出一個最小、安全、可回滾的改善，格式固定為：files、why_safe、validation、draft_diff。不得碰 strategyBrain、holdings、sync、cloud、truth-layer。'
-CLAUDE_PROMPT='請用繁體中文輸出三段：1. verdict guardrails 2. freshness checklist 3. downgrade rules。主題是台股收盤分析。必須包含月營收、財報、法說、公開目標價/報告 freshness，不足資料時要改判 stale 或 needs verification。請精簡。'
-
 run_with_timeout \
   "gemini-research" \
   180 \
@@ -65,11 +63,6 @@ run_with_timeout \
   "qwen-low-risk-patch" \
   240 \
   "cd '${ROOT_DIR}' && bash scripts/launch-qwen.sh -p \"${QWEN_PROMPT}\" --output-format text --yolo"
-
-run_with_timeout \
-  "claude-local-guardrail" \
-  240 \
-  "cd '${ROOT_DIR}' && bash scripts/launch-claude-ollama.sh -p \"${CLAUDE_PROMPT}\""
 
 echo
 echo "Validation status summary:"

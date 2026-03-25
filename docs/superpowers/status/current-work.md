@@ -10,7 +10,6 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 
 - `Codex`：最終策略邏輯、schema、rule lifecycle、prompt 契約、驗收
 - `Gemini CLI`：公開資料、新聞 / 法說 / 公告 / 目標價報導的 citations 與 freshness 蒐集
-- `Claude Code over Ollama`：candidate rules / checklist / 台股 prompt guardrails 草稿
 - `Qwen Code`：低風險 UI / helper / parsing / test patch
 - `AnythingLLM`：PDF / 研究文件 / 歷史材料整理與對照
 
@@ -31,6 +30,9 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `QWEN.md`
 
 ## Latest checkpoint
+
+- `2026-03-26` Codex：已移除 repo 內 `Claude local over Ollama` 入口、任務與驗證鏈；後續只保留 `Codex / Gemini / Qwen / AnythingLLM` 作為有效工具鏈
+- `2026-03-26` Codex：文件中若仍出現 `James / Curie / Claude local`，視為歷史紀錄，不再作為目前分工
 
 - `16:20` Codex：已建立固定多 AI 協作通道 [ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/superpowers/status/ai-collaboration-channel.md)
 - `16:21` James：回報其最適合擔任高風險 state/storage/sync/migration review 與最終技術裁決輔助
@@ -121,19 +123,16 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
 - `21:18` checkpoint meeting：分工降級為
   - `Gemini`：quota 可用時做 external research scout
   - `Qwen`：低頻、bounded、最好互動式的小 patch helper
-  - `Claude local`：互動式 prompt / checklist / guardrail 助手
-  - 高風險主線仍由 `Codex + James + Curie` 承擔
+  - 高風險主線由 `Codex` 承擔
 
 ## Next actions
 
 - Task B 分工：
   - `Codex`：已完成 validated / stale / invalidated / candidate 的 merge 契約與 review-driven validation；下一步補強多股票事件與 casebook 解釋力
   - `Gemini CLI`：quota 可用時補近期公開來源、法說 / 公告 / 目標價報導與 citations
-  - `Claude Code over Ollama`：互動式草擬 `brainContext` / `BRAIN_UPDATE` 新 prompt 文案與台股 guardrails
   - `Qwen Code`：低頻、bounded 的 parsing / UI / test 機械實作
 - 新增歷史驗證主線：
   - `AnythingLLM`：整理相似個股案例與文件證據
-  - `Claude Code over Ollama`：草擬 analog matching / differenceType 文案與清單
   - `Codex`：定義哪些差異屬於規則失準，哪些只是情境不同
 - 若主線暫時卡住或正在等驗證，自動做一次 optimization sweep：
   - 問其他模型哪裡還能優化
@@ -159,7 +158,7 @@ Task A 已完成第一段。Task B 進行中：把收盤分析改成先驗證舊
   - 使用者 reload 後確認 0 市值是否已恢復；若仍有問題，優先檢查 unrecoverable `integrityIssue: missing-price` 的個股名單
   - 台股真值層下一步要補 MOPS / TWSE / TPEX / 除權息 / 零股 / 交易成本
   - 把 `eval_brain` 案例擴到真實台股月營收 / 法說 / 題材輪動情境，不只 3 個 smoke cases
-- Qwen / Claude local 若要進穩定協作，需要把非互動本地模型路由再調順
+- Qwen 若要進穩定協作，需要把非互動本地模型路由再調順
 - 若再次驗證外部 LLM，先看 [coordination/llm-bus/runs/20260325-210859](/Users/chenkuichen/APP/test/coordination/llm-bus/runs/20260325-210859) 的實測結果，不可把已配置能力誤報成穩定主線能力
 
 ## Stop-in-5-min fallback

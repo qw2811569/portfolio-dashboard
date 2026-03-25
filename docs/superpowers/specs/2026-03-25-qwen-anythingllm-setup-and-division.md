@@ -2,7 +2,7 @@
 
 ## Goal
 
-Use `Qwen Code` as the low-cost coding agent, `AnythingLLM` as the local knowledge base / document workspace, and `Gemini CLI` as the public-web research scout, while keeping higher-risk architecture and final QA on Codex.
+Use `Qwen Code` as the coding agent, `AnythingLLM` as the document workspace, and `Gemini CLI` as the public-web research scout, while keeping higher-risk architecture and final QA on Codex.
 
 ## Installed On This Mac
 
@@ -10,20 +10,13 @@ Use `Qwen Code` as the low-cost coding agent, `AnythingLLM` as the local knowled
 - `Qwen Code Companion` VSCode extension
 - `AnythingLLM` desktop app
 - `Gemini CLI`
-- `Ollama` local model runtime
-- `qwen3-coder:30b` as the main local coding model
-- `nomic-embed-text` as the local embedding model
 
-## Why These Models
+## Current State
 
-- `qwen3-coder:30b`
-  - strong multilingual and reasoning baseline
-  - good fit for document QA and general assistant work
-  - same family can be carried forward to a future GCP + vLLM setup
-- `nomic-embed-text`
-  - lightweight local embedding model
-  - appropriate for AnythingLLM document retrieval
-  - keeps RAG costs near zero when using local inference
+- `Qwen Code` is kept as a plain CLI tool
+- `Gemini CLI` is kept for public-web scouting
+- local `Ollama` runtime and local coding models have been removed
+- `AnythingLLM` remains installed as a document workspace
 
 ## VSCode Entry Points
 
@@ -31,13 +24,8 @@ In this repo, open the command palette or `Terminal -> Run Task` and use:
 
 - `Gemini CLI: Launch In Repo`
 - `Gemini CLI: Launch Taiwan Scout`
-- `Claude Code: Launch via Ollama`
-- `Claude Code: Launch via Ollama (Print Test)`
 - `Qwen Code: Launch In Repo`
 - `AnythingLLM: Open Desktop App`
-- `Ollama: Start Local Service`
-- `Ollama: Restart Local Service (64K Context)`
-- `Ollama: Show Running Models`
 
 ## Gemini CLI
 
@@ -70,37 +58,6 @@ First run:
 3. Let Gemini read `GEMINI.md` in this repo
 4. Prefer the Taiwan Scout launcher for stock-research tasks
 
-## Claude Code Over Ollama
-
-This repo now includes a local launcher at:
-
-- `scripts/launch-claude-ollama.sh`
-
-Default model:
-
-- `qwen3-coder:30b`
-
-Recommended usage:
-
-- use this path when you want Claude Code UX with lower model cost
-- keep it for low-risk drafting, synthesis, and first-pass strategy thinking
-- do not treat local Ollama output as the final authority for strategy logic or client-facing correctness
-
-If you want to override the model:
-
-```bash
-CLAUDE_OLLAMA_MODEL=qwen3-coder:30b ./scripts/launch-claude-ollama.sh
-```
-
-If you want a larger coding context, restart Ollama with:
-
-```bash
-launchctl setenv OLLAMA_CONTEXT_LENGTH 65536
-brew services restart ollama
-```
-
-That follows Ollama's own guidance that coding tools and agents should use at least `64000` tokens of context when possible.
-
 ## First Run
 
 ### Qwen Code
@@ -114,15 +71,8 @@ That follows Ollama's own guidance that coding tools and agents should use at le
 
 1. Open `AnythingLLM: Open Desktop App`
 2. On first setup, choose local / self-managed mode
-3. Use `Ollama` as the LLM provider
-4. Point it to the local Ollama service if asked
-5. Start with document workspaces first, not coding workspaces
-
-### Ollama
-
-- Service is expected at the default local endpoint
-- On this Mac, keep to smaller local models first
-- Avoid pulling large models until you are sure disk and RAM are enough
+3. Choose the provider you actually want to use later
+4. Start with document workspaces first, not coding workspaces
 
 ### Gemini CLI
 
@@ -140,14 +90,7 @@ That follows Ollama's own guidance that coding tools and agents should use at le
 - code cleanup
 - first-pass code review
 - repetitive implementation work after the architecture is already decided
-
-### Use Claude Code over Ollama for
-
-- rough drafting of prompts
-- candidate-rule extraction from notes or reviews
-- checklist drafting
-- cheaper first-pass analysis of strategy notes
-- low-risk synthesis before handing decisions back to Codex
+- note: this repo now launches plain `qwen` CLI only, without local Ollama routing
 
 ### Use Gemini CLI for
 
@@ -230,18 +173,11 @@ Use `AnythingLLM` first to digest internal documents, then use `Gemini CLI` to p
 - generated PDF reports
 - report production playbook
 
-## Notes For This Mac
-
-- This machine is `Apple M1 / 8 GB RAM`
-- Keep local Ollama models in the lightweight range first
-- Prefer smaller local models for document retrieval / rough drafting
-- Do not start with large coding models locally on this machine
-
 ## Suggested Usage Policy
 
 - Default coding: `Qwen Code`
 - Default public-web research scout: `Gemini CLI`
-- Default low-cost drafting: `Claude Code over Ollama`
+- Default low-cost drafting: `Qwen Code`
 - Default document retrieval: `AnythingLLM`
 - Final validation: `Codex`
 

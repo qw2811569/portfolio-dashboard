@@ -45,7 +45,7 @@ echo "  ${PRIMARY_MODEL} launch soft budget: ${PRIMARY_MODEL_SOFT_LIMIT}/day"
 echo "  ${PRIMARY_MODEL} launches today: ${PRIMARY_MODEL_COUNT}/${PRIMARY_MODEL_SOFT_LIMIT}"
 
 if [[ "${PRIMARY_MODEL_COUNT}" -ge "${PRIMARY_MODEL_SOFT_LIMIT}" ]]; then
-  echo "  status: reached soft budget, shift lower-value scouting back to Claude local / Qwen / AnythingLLM."
+  echo "  status: reached soft budget, shift lower-value scouting back to Qwen / AnythingLLM."
 elif [[ "${PRIMARY_MODEL_COUNT}" -ge $((PRIMARY_MODEL_SOFT_LIMIT * 3 / 4)) ]]; then
   echo "  status: high usage, reserve remaining launches for high-value public research only."
 else

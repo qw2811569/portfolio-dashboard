@@ -58,34 +58,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Claude Code: Launch via Ollama",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/launch-claude-ollama.sh",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Claude Code: Launch via Ollama (Print Test)",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/launch-claude-ollama.sh -p \"請用一句中文回答：Claude Code over Ollama 已連通。\"",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "focus": true
-      },
-      "problemMatcher": []
-    },
-    {
       "label": "Qwen Code: Launch In Repo",
       "type": "shell",
       "command": "bash ${workspaceFolder}/scripts/launch-qwen.sh",
@@ -114,21 +86,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Claude Local: Healthcheck",
-      "type": "shell",
-      "command": "bash ${workspaceFolder}/scripts/claude-local-healthcheck.sh",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "focus": false
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "LLM Stack: Validate Gemini/Qwen/Claude Local",
+      "label": "LLM Stack: Validate Gemini/Qwen",
       "type": "shell",
       "command": "bash ${workspaceFolder}/scripts/validate-local-llm-stack.sh",
       "options": {
@@ -147,36 +105,6 @@
       "command": "open -a AnythingLLM",
       "presentation": {
         "reveal": "never",
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Ollama: Start Local Service",
-      "type": "shell",
-      "command": "brew services start ollama",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Ollama: Restart Local Service (64K Context)",
-      "type": "shell",
-      "command": "launchctl setenv OLLAMA_CONTEXT_LENGTH 65536 && brew services restart ollama",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "Ollama: Show Running Models",
-      "type": "shell",
-      "command": "ollama ps",
-      "presentation": {
-        "reveal": "always",
         "panel": "shared"
       },
       "problemMatcher": []

@@ -1,0 +1,26 @@
+{
+  "id": "monthly-revenue-cadence-001",
+  "type": "daily-analysis",
+  "goal": "月營收公告季節（每月 10 日前）若缺新鮮月營收資料，應標記為 stale 並要求更新。",
+  "input": {
+    "incomingBucket": "validated",
+    "signals": {
+      "monthlyRevenueGate": "stale",
+      "conferenceGate": "fresh",
+      "earningsGate": "fresh",
+      "targetFreshnessGate": "fresh",
+      "researchGate": "fresh",
+      "hardGateStatus": "stale"
+    },
+    "context": {
+      "currentDate": "2026-03-15",
+      "lastRevenueDate": "2026-02-10",
+      "revenueFrequency": "monthly"
+    }
+  },
+  "expect": {
+    "bucket": "stale",
+    "mustMentionIssues": ["月營收"],
+    "suggestedAction": "等待或查詢最新月營收公告"
+  }
+}

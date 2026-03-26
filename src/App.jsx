@@ -6546,7 +6546,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     return incomingItems.length > 0;
   };
 
-  async function refreshAnalystReports({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) {
+  const refreshAnalystReports = useCallback(async ({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) => {
     if (reportRefreshing) return false;
     const dailyMeta = reportRefreshMeta?.__daily || {};
     const processedCodes = new Set(Array.isArray(dailyMeta.processedCodes) ? dailyMeta.processedCodes : []);
@@ -6648,7 +6648,20 @@ ${recentAnalyses || "尚無分析紀錄"}
       setReportRefreshing(false);
       setReportRefreshStatus("");
     }
-  }
+  }, [
+    reportRefreshing,
+    reportRefreshMeta,
+    reportRefreshCandidates,
+    todayRefreshKey,
+    analystReports,
+    setReportRefreshing,
+    setReportRefreshStatus,
+    setAnalystReports,
+    setReportRefreshMeta,
+    upsertTargetReport,
+    mergeAnalystReportBatch,
+    REPORT_REFRESH_DAILY_LIMIT
+  ]);
 
   const exportLocalBackup = () => {
     try {

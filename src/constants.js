@@ -102,3 +102,13 @@ export const LEGACY_STORAGE_KEYS = PORTFOLIO_STORAGE_FIELDS
   .map(item => `pf-${item.suffix}`);
 
 export const CLOSED_EVENT_STATUSES = new Set(["past", "closed"]);
+export 
+export 
+export 
+export 
+
+export const GLOBAL_STORAGE_KEYS = [
+  ...BACKUP_GLOBAL_KEYS,
+  ...GLOBAL_SYNC_KEYS,
+];
+

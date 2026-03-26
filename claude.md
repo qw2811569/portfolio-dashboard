@@ -1,6 +1,89 @@
 # Claude Handoff
 
-最後更新：2026-03-25
+最後更新：2026-03-27
+
+## 🚀 部署狀態
+
+### 本地開發
+
+**✅ 本地開發伺服器運行中**
+
+- **本地環境：** http://127.0.0.1:5173 (或 http://localhost:5173)
+- **啟動命令：** `npm run dev`
+- **完整模式：** `vercel dev` (如需測試 API)
+
+### 生產環境
+
+**✅ 已部署到 Vercel Production**
+
+- **生產環境：** https://jiucaivoice-dashboard.vercel.app
+- **Build 狀態：** ✅ 通過 (439.56 KB, 1.18s)
+- **最後部署：** 2026-03-27
+
+---
+
+## 🎯 重要更新 (2026-03-27) - Phase 2 重構進行中
+
+**第二階段重構已啟動！** 詳情請閱讀：
+
+- 📘 `docs/refactoring/PHASE_2_REFACTORING_PLAN.md` - Phase 2 重構計畫
+- 📚 `docs/HANDBOOK_FOR_AI_AGENTS.md` - 完整架構文檔
+
+### 新增架構
+
+**已安裝套件：**
+- `zustand` - 全局狀態管理
+- `react-router-dom` - 路由管理
+- `@tanstack/react-query` - API 請求管理
+
+**已建立模組：**
+- `src/stores/` - Zustand stores (6 個 stores)
+  - `portfolioStore.js` - 投資組合狀態
+  - `eventStore.js` - 事件追蹤狀態
+  - `marketStore.js` - 市場數據狀態
+  - `brainStore.js` - 策略大腦狀態
+  - `holdingsStore.js` - 持股狀態
+  - `reportsStore.js` - 報告狀態
+- `src/hooks/api/` - TanStack Query hooks
+  - `useAnalysis.js` - 分析 API hooks
+  - `useResearch.js` - 研究 API hooks
+  - `useCloudSync.js` - 雲端同步 hooks
+
+**預期成果：**
+- App.jsx: 6,944 行 → ~2,000 行 (-71%)
+- 更好的職責分離
+- URL 即狀態
+- 自動 API 快取
+
+---
+
+**App.jsx 重構完成！** 詳情請閱讀：
+
+- 📘 `docs/HANDBOOK_FOR_AI_AGENTS.md` - **必讀**：完整架構與重構結果
+- 🚀 `docs/QUICK_START.md` - 快速參考
+- 📊 `docs/refactoring/REFACTORING_DECISION_DOCUMENT.md` - 重構決策記錄
+
+### 重構成果
+
+| 指標 | 重構前 | 重構後 | 改善 |
+|------|--------|--------|------|
+| App.jsx 行數 | 9,518 | 6,944 | **-27%** |
+| 模組化代碼 | 0 | 7,171 行 | **+100%** |
+| Build 時間 | ~1s | ~1s | 持平 |
+| Bundle 大小 | 404KB | 381KB | **-6%** |
+
+### 新的目錄結構
+
+```
+src/
+├── App.jsx              # 6,944 行 (UI 渲染 + 狀態協調)
+├── hooks/               # 1,840 行 (7 個 custom hooks)
+├── components/          # 3,545 行 (12 個 UI 元件群組)
+├── lib/                 # 1,489 行 (5 個工具模組)
+└── utils.js             # 352 行 (向後相容層)
+```
+
+---
 
 ## 專案是什麼
 

@@ -87,11 +87,10 @@ import {
   NEWS_EVENTS,
 } from "./seedData.js";
 
-// ── Event normalization (still in App.jsx) ─────────────────────────────
+// ── Event normalization (now in lib/events.js) ─────────────────────────────
 
-// These will be extracted to lib/events.js later
-import { normalizeEventRecord, normalizeNewsEvents } from "./App.jsx";
-export { normalizeEventRecord, normalizeNewsEvents };
+// Re-export from lib/events.js
+export { normalizeEventRecord, normalizeNewsEvents } from "./lib/events.js";
 
 // ── Storage helpers ───────────────────────────────────────────────────
 

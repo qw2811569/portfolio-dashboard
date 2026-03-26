@@ -26,55 +26,6 @@ import { OverviewPanel } from "./components/overview/index.js";
 import { usePortfolioManagement } from "./hooks/usePortfolioManagement.js";
 import Md from "./components/Md.jsx";
 import { TextInput, TextArea } from "./components/Form.jsx";
-// Import all utilities from lib to avoid duplicates
-import {
-  // Holdings
-  normalizeHoldings, applyMarketQuotesToHoldings, applyTradeEntryToHoldings,
-  shouldAdoptCloudHoldings, buildHoldingPriceHints, normalizeHoldingRow,
-  normalizeHoldingMetrics, getHoldingReturnPct, getHoldingUnrealizedPnl,
-  getHoldingMarketValue, getHoldingCostBasis, resolveHoldingPrice,
-  getCachedQuotesForCodes,
-  // Market
-  normalizeMarketPriceCache, normalizeMarketPriceSync, fetchJsonWithTimeout,
-  // Datetime
-  getTaipeiClock, parseStoredDate, todayStorageDate, canRunPostClosePriceSync,
-  // Events
-  normalizeNewsEvents, normalizeEventRecord, normalizeEventStockOutcome,
-  buildEventStockOutcomes, formatEventStockOutcomeLine, buildEventStockDescriptors,
-  parseEventStockDescriptor, normalizePriceRecord, normalizePriceHistory,
-  appendPriceHistory, inferEventStockOutcomes, averagePriceRecord,
-  inferEventActual, normalizeEventOutcomeLabel, isClosedEvent,
-  getEventStockCodes,
-  // Brain
-  brainRuleText, brainRuleKey, normalizeBrainRuleStaleness,
-  brainRuleStalenessLabel, brainRuleStalenessRank, deriveBrainRuleStaleness,
-  deriveBrainRuleValidationScore, normalizeBrainEvidenceType,
-  normalizeBrainEvidenceRef, normalizeBrainEvidenceRefs,
-  normalizeBrainAnalogVerdict, brainAnalogVerdictLabel,
-  normalizeBrainAnalogDifferenceType, brainAnalogDifferenceTypeLabel,
-  normalizeBrainAnalogCase, normalizeBrainAnalogCases,
-  normalizeBrainChecklistStage, brainChecklistStageLabel,
-  normalizeBrainAuditConfidence, normalizeBrainAuditItem,
-  normalizeBrainAuditBuckets, attachEvidenceRefsToBrainAudit,
-  compareBrainRulesByStrength, brainRuleMetaParts, brainRuleEvidenceSummary,
-  normalizeBrainValidationPositionType, brainValidationPositionTypeLabel,
-  normalizeBrainValidationStrategyClass, normalizeBrainValidationEventPhase,
-  normalizeBrainValidationIndustryTheme, normalizeBrainValidationHoldingPeriod,
-  normalizeBrainValidationBand, normalizeBrainValidationFingerprint,
-  buildBrainValidationHash, buildBrainRuleKey, classifyBrainValidationEventPhase,
-  collectBrainCatalystTags, revenueYoYBand, epsStateBand, grossMarginBand,
-  pnlBand, targetGapBand, buildScenarioFingerprintFromDossier,
-  ratioOverlap, isHardExcludedAnalog, scoreBrainValidationAnalog,
-  classifyBrainDifferenceType, refineBrainDifferenceType,
-  normalizeBrainValidationMatch, normalizeBrainValidationCase,
-  normalizeBrainValidationStore, normalizeBrainChecklistItems,
-  normalizeBrainStringList, latestBrainEvidenceDate, createEmptyBrainAudit,
-  createEmptyBrainValidationStore, createEmptyBrainChecklists,
-  formatBrainChecklistsForPrompt, brainRuleSummary,
-  // Utils
-  normalizeAnalysisHistoryEntries, normalizeDailyReportEntry,
-  buildHoldingPriceHints as buildPriceHints,
-} from "./lib/index.js";
 
 // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
 

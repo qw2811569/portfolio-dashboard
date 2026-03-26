@@ -44,10 +44,22 @@
   - `brainStore.js` - 策略大腦狀態
   - `holdingsStore.js` - 持股狀態
   - `reportsStore.js` - 報告狀態
+- `src/pages/` - 頁面元件 (9 個頁面)
+  - `HoldingsPage.jsx` - 持股頁面
+  - `WatchlistPage.jsx` - 觀察股頁面
+  - `EventsPage.jsx` - 事件頁面
+  - `DailyPage.jsx` - 收盤分析頁面
+  - `ResearchPage.jsx` - 研究頁面
+  - `TradePage.jsx` - 交易上傳頁面
+  - `LogPage.jsx` - 交易日誌頁面
+  - `NewsPage.jsx` - 新聞分析頁面
+  - `OverviewPage.jsx` - 總覽頁面
 - `src/hooks/api/` - TanStack Query hooks
   - `useAnalysis.js` - 分析 API hooks
   - `useResearch.js` - 研究 API hooks
   - `useCloudSync.js` - 雲端同步 hooks
+
+**進度：** Phase 2 完成 70%
 
 **預期成果：**
 - App.jsx: 6,944 行 → ~2,000 行 (-71%)

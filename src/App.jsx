@@ -14,6 +14,8 @@ import {
   STOCK_META,
   avgTarget,
 } from "./seedData.js";
+import Header from "./components/Header.jsx";
+import { usePortfolioManagement } from "./hooks/usePortfolioManagement.js";
 
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
 function Md({ text, color }) {
@@ -178,7 +180,7 @@ const metricCard = {
 const CLOUD_SYNC_TTL = 1000 * 60 * 30;
 const CLOUD_SAVE_DEBOUNCE = 1000 * 20;
 const OWNER_PORTFOLIO_ID = "me";
-const PORTFOLIO_VIEW_MODE = "portfolio";
+export const PORTFOLIO_VIEW_MODE = "portfolio";
 const OVERVIEW_VIEW_MODE = "overview";
 const MARKET_PRICE_CACHE_KEY = "pf-market-price-cache-v1";
 const MARKET_PRICE_SYNC_KEY = "pf-market-price-sync-v1";
@@ -195,7 +197,7 @@ const GLOBAL_SYNC_KEYS = [
   "pf-research-cloud-sync-at",
 ];
 const GLOBAL_SYNC_KEY_SET = new Set(GLOBAL_SYNC_KEYS);
-const BACKUP_GLOBAL_KEYS = [
+export const BACKUP_GLOBAL_KEYS = [
   PORTFOLIOS_KEY,
   ACTIVE_PORTFOLIO_KEY,
   VIEW_MODE_KEY,
@@ -203,7 +205,7 @@ const BACKUP_GLOBAL_KEYS = [
 ];
 const BACKUP_GLOBAL_KEY_SET = new Set(BACKUP_GLOBAL_KEYS);
 const APPLIED_TRADE_PATCHES_KEY = "pf-applied-trade-patches-v1";
-const DEFAULT_PORTFOLIO_NOTES = {
+export const DEFAULT_PORTFOLIO_NOTES = {
   riskProfile: "",
   preferences: "",
   customNotes: "",
@@ -241,7 +243,7 @@ const DEFAULT_FUNDAMENTAL_DRAFT = {
   note: "",
 };
 const TRADE_BACKFILL_PATCHES = [
-  {
+  { // This is an example patch, it should be applied only once
     id: "2026-03-25-sell-039108-5000",
     portfolioId: OWNER_PORTFOLIO_ID,
     expectedQtyAfter: 3000,
@@ -263,7 +265,7 @@ const TRADE_BACKFILL_PATCHES = [
     },
   },
 ];
-const PORTFOLIO_STORAGE_FIELDS = [
+export const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "holdings-v2", alias: "holdings", ownerFallback: () => INIT_HOLDINGS, emptyFallback: () => [] },
   { suffix: "log-v2", alias: "tradeLog", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "targets-v1", alias: "targets", ownerFallback: () => INIT_TARGETS, emptyFallback: () => ({}) },
@@ -281,8 +283,8 @@ const PORTFOLIO_STORAGE_FIELDS = [
   { suffix: "research-history-v1", alias: "researchHistory", ownerFallback: () => [], emptyFallback: () => [] },
   { suffix: "notes-v1", alias: "portfolioNotes", ownerFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), emptyFallback: () => ({ ...DEFAULT_PORTFOLIO_NOTES }), hasLegacy: false },
 ];
-const PORTFOLIO_SUFFIX_TO_FIELD = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.suffix, item]));
-const PORTFOLIO_ALIAS_TO_SUFFIX = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.alias, item.suffix]));
+export const PORTFOLIO_SUFFIX_TO_FIELD = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.suffix, item]));
+export const PORTFOLIO_ALIAS_TO_SUFFIX = Object.fromEntries(PORTFOLIO_STORAGE_FIELDS.map(item => [item.alias, item.suffix]));
 const LEGACY_STORAGE_KEYS = PORTFOLIO_STORAGE_FIELDS
   .filter(item => item.hasLegacy !== false)
   .map(item => `pf-${item.suffix}`);
@@ -292,11 +294,11 @@ const GLOBAL_STORAGE_KEYS = [
 ];
 const CLOSED_EVENT_STATUSES = new Set(["past", "closed"]);
 
-function todayStorageDate() {
+export function todayStorageDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function normalizeAnalysisHistoryEntries(entries) {
+export function normalizeAnalysisHistoryEntries(entries) {
   if (!Array.isArray(entries)) return [];
   const byKey = new Map();
   entries.forEach((entry) => {
@@ -315,7 +317,7 @@ function normalizeAnalysisHistoryEntries(entries) {
     .slice(0, 30);
 }
 
-function normalizeDailyReportEntry(value) {
+export function normalizeDailyReportEntry(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   return {
     ...value,
@@ -324,7 +326,7 @@ function normalizeDailyReportEntry(value) {
   };
 }
 
-function buildHoldingPriceHints({ analysisHistory = [], fallbackRows = [] } = {}) {
+export function buildHoldingPriceHints({ analysisHistory = [], fallbackRows = [] } = {}) {
   const hints = {};
   normalizeAnalysisHistoryEntries(analysisHistory).forEach(report => {
     (Array.isArray(report?.changes) ? report.changes : []).forEach(change => {
@@ -345,7 +347,7 @@ function buildHoldingPriceHints({ analysisHistory = [], fallbackRows = [] } = {}
   return hints;
 }
 
-function getTaipeiClock(date = new Date()) {
+export function getTaipeiClock(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: MARKET_TIMEZONE,
     year: "numeric",
@@ -369,13 +371,13 @@ function getTaipeiClock(date = new Date()) {
   };
 }
 
-function parseStoredDate(value) {
+export function parseStoredDate(value) {
   if (!value || typeof value !== "string") return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function createEmptyMarketPriceCache() {
+export function createEmptyMarketPriceCache() {
   return {
     marketDate: null,
     syncedAt: null,
@@ -385,7 +387,7 @@ function createEmptyMarketPriceCache() {
   };
 }
 
-function normalizeMarketPriceCache(value) {
+export function normalizeMarketPriceCache(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const prices = Object.fromEntries(
     Object.entries(value.prices || {})
@@ -419,7 +421,7 @@ function normalizeMarketPriceCache(value) {
   return normalized.marketDate || normalized.syncedAt || Object.keys(normalized.prices).length > 0 ? normalized : null;
 }
 
-function normalizeMarketPriceSync(value) {
+export function normalizeMarketPriceSync(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const normalized = {
     marketDate: typeof value.marketDate === "string" ? value.marketDate : null,
@@ -431,7 +433,7 @@ function normalizeMarketPriceSync(value) {
   return normalized.marketDate || normalized.syncedAt || normalized.codes.length > 0 || normalized.failedCodes.length > 0 ? normalized : null;
 }
 
-function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
+export function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
   const clock = getTaipeiClock(date);
   if (clock.isWeekend) return { allowed: false, reason: "market-closed", clock };
   if (clock.minutes < POST_CLOSE_SYNC_MINUTES) return { allowed: false, reason: "before-close", clock };
@@ -441,12 +443,12 @@ function canRunPostClosePriceSync(date = new Date(), syncMeta = null) {
   return { allowed: true, reason: "ready", clock };
 }
 
-function getHoldingCostBasis(item) {
+export function getHoldingCostBasis(item) {
   if (!item || typeof item !== "object") return 0;
   return (Number(item?.cost) || 0) * (Number(item?.qty) || 0);
 }
 
-function resolveHoldingPrice(item, overridePrice = null) {
+export function resolveHoldingPrice(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
   
   // 優先使用覆蓋價格（來自 API 的即時股價）
@@ -469,13 +471,13 @@ function resolveHoldingPrice(item, overridePrice = null) {
   return 0;
 }
 
-function getHoldingMarketValue(item, overridePrice = null) {
+export function getHoldingMarketValue(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
   const price = resolveHoldingPrice(item, overridePrice);
   return price * (Number(item?.qty) || 0);
 }
 
-function getHoldingUnrealizedPnl(item, overridePrice = null) {
+export function getHoldingUnrealizedPnl(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
   
   // 如果 item 已经有計算好的 pnl（來自 normalizeHoldingMetrics），直接使用
@@ -488,7 +490,7 @@ function getHoldingUnrealizedPnl(item, overridePrice = null) {
   return (price * qty) - (cost * qty);
 }
 
-function getHoldingReturnPct(item, overridePrice = null) {
+export function getHoldingReturnPct(item, overridePrice = null) {
   if (!item || typeof item !== "object") return 0;
   
   // 如果 item 已经有計算好的 pct（來自 normalizeHoldingMetrics），直接使用
@@ -503,7 +505,7 @@ function getHoldingReturnPct(item, overridePrice = null) {
   return ((price * qty - costBasis) / costBasis) * 100;
 }
 
-function normalizeHoldingMetrics(item, overridePrice = null) {
+export function normalizeHoldingMetrics(item, overridePrice = null) {
   if (!item || typeof item !== "object") return item;
   
   // 使用 overridePrice（來自 API 的即時股價）或 item 中存儲的價格
@@ -526,7 +528,7 @@ function normalizeHoldingMetrics(item, overridePrice = null) {
   };
 }
 
-function normalizeHoldingRow(item, overridePrice = null) {
+export function normalizeHoldingRow(item, overridePrice = null) {
   if (!item || typeof item !== "object") return null;
   const code = String(item.code || "").trim();
   if (!code) return null;
@@ -550,7 +552,7 @@ function normalizeHoldingRow(item, overridePrice = null) {
   };
 }
 
-function normalizeHoldings(rows, quotes = null, priceHints = null) {
+export function normalizeHoldings(rows, quotes = null, priceHints = null) {
   const priceQuotes = quotes && typeof quotes === "object" ? quotes : null;
   const hintMap = priceHints && typeof priceHints === "object" ? priceHints : null;
   return (Array.isArray(rows) ? rows : [])
@@ -561,11 +563,11 @@ function normalizeHoldings(rows, quotes = null, priceHints = null) {
     .filter(Boolean);
 }
 
-function applyMarketQuotesToHoldings(rows, quotes) {
+export function applyMarketQuotesToHoldings(rows, quotes) {
   return normalizeHoldings(rows, quotes);
 }
 
-function applyTradeEntryToHoldings(rows, trade, quotes = null) {
+export function applyTradeEntryToHoldings(rows, trade, quotes = null) {
   if (!trade || !trade.code || !trade.action) {
     return normalizeHoldings(rows, quotes);
   }
@@ -618,7 +620,7 @@ function applyTradeEntryToHoldings(rows, trade, quotes = null) {
   return normalizeHoldings(arr, quotes);
 }
 
-function shouldAdoptCloudHoldings(localRows, cloudRows) {
+export function shouldAdoptCloudHoldings(localRows, cloudRows) {
   const local = Array.isArray(localRows) ? localRows : [];
   const cloud = Array.isArray(cloudRows) ? cloudRows : [];
   if (cloud.length === 0) return false;
@@ -636,7 +638,7 @@ function shouldAdoptCloudHoldings(localRows, cloudRows) {
   return false;
 }
 
-function getCachedQuotesForCodes(cache, codes) {
+export function getCachedQuotesForCodes(cache, codes) {
   const priceCache = normalizeMarketPriceCache(cache);
   if (!priceCache || !priceCache.prices) return {};
   const codeSet = new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean));
@@ -646,7 +648,7 @@ function getCachedQuotesForCodes(cache, codes) {
   );
 }
 
-async function fetchJsonWithTimeout(input, init = {}, timeoutMs = 8000) {
+export async function fetchJsonWithTimeout(input, init = {}, timeoutMs = 8000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -664,11 +666,11 @@ async function fetchJsonWithTimeout(input, init = {}, timeoutMs = 8000) {
   }
 }
 
-function createDefaultPortfolios() {
+export function createDefaultPortfolios() {
   return [{ id: OWNER_PORTFOLIO_ID, name: "我", isOwner: true, createdAt: todayStorageDate() }];
 }
 
-function clonePortfolioNotes() {
+export function clonePortfolioNotes() {
   return { ...DEFAULT_PORTFOLIO_NOTES };
 }
 
@@ -1906,7 +1908,7 @@ function formatPortfolioNotesContext(notes) {
   return lines.length > 0 ? `個人備註：\n${lines.join("\n")}` : "個人備註：無";
 }
 
-function normalizeWatchlist(value) {
+export function normalizeWatchlist(value) {
   if (!Array.isArray(value)) return [];
   return value
     .map(item => {
@@ -1930,7 +1932,7 @@ function normalizeWatchlist(value) {
     .filter(Boolean);
 }
 
-function normalizeFundamentalsEntry(value) {
+export function normalizeFundamentalsEntry(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const readNumber = (raw) => {
     const num = Number(raw);
@@ -1991,7 +1993,7 @@ function normalizeFundamentalsEntry(value) {
   return hasContent ? normalized : null;
 }
 
-function normalizeFundamentalsStore(value) {
+export function normalizeFundamentalsStore(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return Object.fromEntries(
     Object.entries(value)
@@ -2003,7 +2005,7 @@ function normalizeFundamentalsStore(value) {
   );
 }
 
-function normalizeAnalystReportItem(value) {
+export function normalizeAnalystReportItem(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const id = String(value.id || "").trim();
   const title = String(value.title || "").trim();
@@ -2029,7 +2031,7 @@ function normalizeAnalystReportItem(value) {
   };
 }
 
-function normalizeAnalystReportsStore(value) {
+export function normalizeAnalystReportsStore(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return Object.fromEntries(
     Object.entries(value)
@@ -2051,7 +2053,7 @@ function normalizeAnalystReportsStore(value) {
   );
 }
 
-function normalizeReportRefreshMeta(value) {
+export function normalizeReportRefreshMeta(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const normalized = {};
   for (const [code, entry] of Object.entries(value)) {
@@ -2077,7 +2079,7 @@ function normalizeReportRefreshMeta(value) {
   return normalized;
 }
 
-function mergeAnalystReportItems(existingItems, nextItems) {
+export function mergeAnalystReportItems(existingItems, nextItems) {
   const merged = [...(Array.isArray(existingItems) ? existingItems : [])];
   (Array.isArray(nextItems) ? nextItems : []).forEach(item => {
     const normalized = normalizeAnalystReportItem(item);
@@ -2095,7 +2097,7 @@ function mergeAnalystReportItems(existingItems, nextItems) {
     .slice(0, 12);
 }
 
-function formatAnalystReportSummary(items, limit = 2) {
+export function formatAnalystReportSummary(items, limit = 2) {
   const rows = (Array.isArray(items) ? items : [])
     .map(item => {
       const summary = item.summary || item.title;
@@ -2107,7 +2109,7 @@ function formatAnalystReportSummary(items, limit = 2) {
   return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
 }
 
-function formatFundamentalsSummary(entry) {
+export function formatFundamentalsSummary(entry) {
   const normalized = normalizeFundamentalsEntry(entry);
   if (!normalized) return "尚未建立";
   const parts = [
@@ -2121,7 +2123,7 @@ function formatFundamentalsSummary(entry) {
   return parts.length > 0 ? parts.join(" · ") : "尚未建立";
 }
 
-function mergeTargetReports(existingReports, incomingReports) {
+export function mergeTargetReports(existingReports, incomingReports) {
   const merged = [...(Array.isArray(existingReports) ? existingReports : [])];
   (Array.isArray(incomingReports) ? incomingReports : []).forEach(report => {
     const firm = String(report?.firm || "").trim();
@@ -2136,19 +2138,19 @@ function mergeTargetReports(existingReports, incomingReports) {
   return merged;
 }
 
-function createDefaultReviewForm(overrides = {}) {
+export function createDefaultReviewForm(overrides = {}) {
   return { ...DEFAULT_REVIEW_FORM, ...overrides };
 }
 
-function createDefaultEventDraft(overrides = {}) {
+export function createDefaultEventDraft(overrides = {}) {
   return { ...DEFAULT_NEW_EVENT, ...overrides };
 }
 
-function createDefaultFundamentalDraft(overrides = {}) {
+export function createDefaultFundamentalDraft(overrides = {}) {
   return { ...DEFAULT_FUNDAMENTAL_DRAFT, ...overrides };
 }
 
-function isClosedEvent(event) {
+export function isClosedEvent(event) {
   return CLOSED_EVENT_STATUSES.has(event?.status);
 }
 
@@ -2159,7 +2161,7 @@ function toSlashDate(date = new Date()) {
   return `${year}/${month}/${day}`;
 }
 
-function parseSlashDate(value) {
+export function parseSlashDate(value) {
   const match = String(value || "").trim().match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
   if (!match) return null;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
@@ -2172,7 +2174,7 @@ function parseSlashDate(value) {
   return date;
 }
 
-function daysBetween(fromValue, toValue = new Date()) {
+export function daysBetween(fromValue, toValue = new Date()) {
   const from = fromValue instanceof Date ? new Date(fromValue) : parseSlashDate(fromValue);
   const to = toValue instanceof Date ? new Date(toValue) : parseSlashDate(toValue);
   if (!from || !to) return null;
@@ -2181,7 +2183,7 @@ function daysBetween(fromValue, toValue = new Date()) {
   return Math.round((to - from) / (1000 * 60 * 60 * 24));
 }
 
-function getEventStockCodes(event) {
+export function getEventStockCodes(event) {
   return Array.from(new Set(
     (event?.stocks || [])
       .map(stock => String(stock).match(/\d{4,6}[A-Z]?L?/i)?.[0] || null)
@@ -2189,7 +2191,7 @@ function getEventStockCodes(event) {
   ));
 }
 
-function normalizePriceRecord(value, event) {
+export function normalizePriceRecord(value, event) {
   if (value == null) return null;
   if (typeof value === "number" && Number.isFinite(value)) {
     const codes = getEventStockCodes(event);
@@ -2202,7 +2204,7 @@ function normalizePriceRecord(value, event) {
   return entries.length > 0 ? Object.fromEntries(entries) : null;
 }
 
-function normalizePriceHistory(value, event) {
+export function normalizePriceHistory(value, event) {
   if (!Array.isArray(value)) return [];
   return value
     .map(entry => {
@@ -2216,7 +2218,7 @@ function normalizePriceHistory(value, event) {
     .slice(-EVENT_HISTORY_LIMIT);
 }
 
-function parseEventStockDescriptor(value) {
+export function parseEventStockDescriptor(value) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const code = String(value.code || "").trim();
     const name = String(value.name || "").trim() || STOCK_META[code]?.name || code;
@@ -2237,13 +2239,13 @@ function parseEventStockDescriptor(value) {
   };
 }
 
-function buildEventStockDescriptors(event) {
+export function buildEventStockDescriptors(event) {
   return (Array.isArray(event?.stocks) ? event.stocks : [])
     .map(parseEventStockDescriptor)
     .filter(Boolean);
 }
 
-function averagePriceRecord(value) {
+export function averagePriceRecord(value) {
   const prices = Object.values(value || {})
     .map(Number)
     .filter(price => Number.isFinite(price) && price > 0);
@@ -2251,7 +2253,7 @@ function averagePriceRecord(value) {
   return prices.reduce((sum, price) => sum + price, 0) / prices.length;
 }
 
-function inferEventActual(priceAtEvent, priceAtExit, weights = null) {
+export function inferEventActual(priceAtEvent, priceAtExit, weights = null) {
   // 如果有权重，使用加權平均
   if (weights && typeof weights === "object" && !Array.isArray(weights)) {
     const codes = Object.keys(priceAtEvent || {}).filter(code => 
@@ -2286,7 +2288,7 @@ function inferEventActual(priceAtEvent, priceAtExit, weights = null) {
 }
 
 // 新增：計算個股漲跌幅，用於多股票事件的詳細顯示
-function inferEventStockOutcomes(priceAtEvent, priceAtExit) {
+export function inferEventStockOutcomes(priceAtEvent, priceAtExit) {
   if (!priceAtEvent || !priceAtExit) return [];
   const codes = new Set([...Object.keys(priceAtEvent), ...Object.keys(priceAtExit)]);
   return Array.from(codes).map(code => {
@@ -2301,7 +2303,7 @@ function inferEventStockOutcomes(priceAtEvent, priceAtExit) {
   });
 }
 
-function appendPriceHistory(history, date, prices) {
+export function appendPriceHistory(history, date, prices) {
   const next = Array.isArray(history) ? [...history] : [];
   const idx = next.findIndex(item => item?.date === date);
   const record = { date, prices };
@@ -2310,12 +2312,12 @@ function appendPriceHistory(history, date, prices) {
   return next.slice(-EVENT_HISTORY_LIMIT);
 }
 
-function normalizeEventOutcomeLabel(value) {
+export function normalizeEventOutcomeLabel(value) {
   const normalized = String(value || "").trim().toLowerCase();
   return ["supported", "contradicted", "mixed", "inconclusive"].includes(normalized) ? normalized : "inconclusive";
 }
 
-function normalizeEventStockOutcome(value, event) {
+export function normalizeEventStockOutcome(value, event) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const descriptor = parseEventStockDescriptor(value) || parseEventStockDescriptor({ code: value.code, name: value.name });
   const code = descriptor?.code || "";
@@ -2345,7 +2347,7 @@ function normalizeEventStockOutcome(value, event) {
   };
 }
 
-function buildEventStockOutcomes(event) {
+export function buildEventStockOutcomes(event) {
   const descriptors = buildEventStockDescriptors(event);
   if (descriptors.length === 0) return [];
   return descriptors
@@ -2386,7 +2388,7 @@ function buildEventStockOutcomes(event) {
     .filter(Boolean);
 }
 
-function formatEventStockOutcomeLine(outcome) {
+export function formatEventStockOutcomeLine(outcome) {
   if (!outcome) return "";
   const actualLabel = outcome.actual === "up" ? "上漲" : outcome.actual === "down" ? "下跌" : outcome.actual === "neutral" ? "中性" : "未明";
   const verdict = outcome.outcomeLabel === "supported"
@@ -2402,7 +2404,7 @@ function formatEventStockOutcomeLine(outcome) {
   return `${outcome.name || outcome.code}：${actualLabel}${pct}｜${verdict}`;
 }
 
-function normalizeEventRecord(event) {
+export function normalizeEventRecord(event) {
   if (!event || typeof event !== "object") return null;
   const status = event.status === "tracking" ? "tracking" : isClosedEvent(event) ? "closed" : "pending";
   const priceAtEvent = normalizePriceRecord(event.priceAtEvent, event);
@@ -2435,13 +2437,13 @@ function normalizeEventRecord(event) {
   };
 }
 
-function normalizeNewsEvents(items) {
+export function normalizeNewsEvents(items) {
   return (Array.isArray(items) ? items : [])
     .map(normalizeEventRecord)
     .filter(Boolean);
 }
 
-function parseFlexibleDate(value) {
+export function parseFlexibleDate(value) {
   if (!value) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : new Date(value);
   if (typeof value === "number") {
@@ -2461,7 +2463,7 @@ function parseFlexibleDate(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function daysSince(value, now = new Date()) {
+export function daysSince(value, now = new Date()) {
   const parsed = parseFlexibleDate(value);
   if (!parsed) return null;
   const current = now instanceof Date ? new Date(now) : parseFlexibleDate(now);
@@ -2471,14 +2473,14 @@ function daysSince(value, now = new Date()) {
   return Math.round((current - parsed) / (1000 * 60 * 60 * 24));
 }
 
-function computeStaleness(value, thresholdDays, { missingWhenEmpty = true, now = new Date() } = {}) {
+export function computeStaleness(value, thresholdDays, { missingWhenEmpty = true, now = new Date() } = {}) {
   if (value == null || value === "") return missingWhenEmpty ? "missing" : "stale";
   const age = daysSince(value, now);
   if (age == null) return "missing";
   return age <= thresholdDays ? "fresh" : "stale";
 }
 
-function averageTargetFromEntry(entry) {
+export function averageTargetFromEntry(entry) {
   const reports = Array.isArray(entry?.reports) ? entry.reports : [];
   const targets = reports
     .map(report => Number(report?.target))
@@ -2487,7 +2489,7 @@ function averageTargetFromEntry(entry) {
   return Math.round(targets.reduce((sum, value) => sum + value, 0) / targets.length);
 }
 
-function extractResearchConclusion(report) {
+export function extractResearchConclusion(report) {
   const lastRound = Array.isArray(report?.rounds) && report.rounds.length > 0
     ? report.rounds[report.rounds.length - 1]
     : null;
@@ -2496,7 +2498,7 @@ function extractResearchConclusion(report) {
   return (match?.[1] || content.slice(0, 300) || "").trim();
 }
 
-function buildBrainTokens(holding, meta) {
+export function buildBrainTokens(holding, meta) {
   return [
     holding?.code,
     holding?.name,
@@ -2512,13 +2514,13 @@ function buildBrainTokens(holding, meta) {
     .filter(token => token.length >= 2);
 }
 
-function textMatchesBrainTokens(text, tokens) {
+export function textMatchesBrainTokens(text, tokens) {
   const source = brainRuleText(text).toLowerCase();
   if (!source) return false;
   return tokens.some(token => source.includes(token));
 }
 
-function summarizeEventForDossier(event) {
+export function summarizeEventForDossier(event) {
   if (!event) return null;
   return {
     id: event.id,
@@ -2533,12 +2535,12 @@ function summarizeEventForDossier(event) {
   };
 }
 
-function normalizeTaiwanValidationSignalStatus(value) {
+export function normalizeTaiwanValidationSignalStatus(value) {
   const normalized = String(value || "").trim().toLowerCase();
   return ["fresh", "watch", "stale", "missing"].includes(normalized) ? normalized : "missing";
 }
 
-function formatTaiwanValidationSignalLabel(value) {
+export function formatTaiwanValidationSignalLabel(value) {
   switch (normalizeTaiwanValidationSignalStatus(value)) {
     case "fresh":
       return "有效";
@@ -2552,7 +2554,7 @@ function formatTaiwanValidationSignalLabel(value) {
   }
 }
 
-function detectTaiwanEventSignal(events, keywords, { now = new Date(), beforeDays = 14, afterDays = 7 } = {}) {
+export function detectTaiwanEventSignal(events, keywords, { now = new Date(), beforeDays = 14, afterDays = 7 } = {}) {
   const rows = Array.isArray(events) ? events.filter(Boolean) : [];
   const matched = rows.filter(event => {
     const title = String(event?.title || "").trim().toLowerCase();
@@ -2599,7 +2601,7 @@ function detectTaiwanEventSignal(events, keywords, { now = new Date(), beforeDay
   };
 }
 
-function buildTaiwanValidationSignals({ fundamentals = {}, targets = {}, analyst = {}, events = {}, research = {} } = {}, { now = new Date() } = {}) {
+export function buildTaiwanValidationSignals({ fundamentals = {}, targets = {}, analyst = {}, events = {}, research = {} } = {}, { now = new Date() } = {}) {
   const relatedEvents = [
     ...(Array.isArray(events.pending) ? events.pending : []),
     ...(Array.isArray(events.tracking) ? events.tracking : []),
@@ -2639,7 +2641,7 @@ function buildTaiwanValidationSignals({ fundamentals = {}, targets = {}, analyst
   };
 }
 
-function buildHoldingDossiers({
+export function buildHoldingDossiers({
   holdings,
   watchlist,
   targets,
@@ -2836,7 +2838,7 @@ function listTaiwanHardGateIssues(dossier) {
   return items.filter(item => ["missing", "stale"].includes(item.status));
 }
 
-function buildTaiwanHardGateEvidenceRefs(dossier, issues) {
+export function buildTaiwanHardGateEvidenceRefs(dossier, issues) {
   return (Array.isArray(issues) ? issues : []).slice(0, 4).map(item => ({
     type: "dossier",
     refId: `dossier-${dossier?.code || "unknown"}`,
@@ -2846,13 +2848,13 @@ function buildTaiwanHardGateEvidenceRefs(dossier, issues) {
   }));
 }
 
-function formatTaiwanHardGateIssueList(issues) {
+export function formatTaiwanHardGateIssueList(issues) {
   return (Array.isArray(issues) ? issues : [])
     .map(item => `${item.label}${formatTaiwanValidationSignalLabel(item.status)}`)
     .join("、");
 }
 
-function enforceTaiwanHardGatesOnBrainAudit(brainAudit, currentBrain, {
+export function enforceTaiwanHardGatesOnBrainAudit(brainAudit, currentBrain, {
   dossiers = null,
   defaultLastValidatedAt = null,
 } = {}) {
@@ -2925,7 +2927,7 @@ function enforceTaiwanHardGatesOnBrainAudit(brainAudit, currentBrain, {
   });
 }
 
-function ruleMatchesValidationDossier(rule, dossier, auditItem) {
+export function ruleMatchesValidationDossier(rule, dossier, auditItem) {
   if (!dossier) return false;
   const codeHints = normalizeBrainStringList([
     ...(Array.isArray(auditItem?.evidenceRefs) ? auditItem.evidenceRefs.map(ref => ref?.code) : []),
@@ -2949,7 +2951,7 @@ function ruleMatchesValidationDossier(rule, dossier, auditItem) {
   );
 }
 
-function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, portfolioId } = {}) {
+export function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, portfolioId } = {}) {
   const cases = normalizeBrainValidationStore(store).cases;
   const sameRuleCases = cases.filter(item => item.ruleKey === ruleKey && (!portfolioId || item.portfolioId === portfolioId));
   const pool = sameRuleCases.length > 0
@@ -3001,7 +3003,7 @@ function findTopBrainAnalogMatches(store, fingerprint, { ruleKey, limit = 2, por
   };
 }
 
-function createBrainValidationCase({
+export function createBrainValidationCase({
   portfolioId,
   sourceType,
   sourceRefId,
@@ -3064,7 +3066,7 @@ function createBrainValidationCase({
   });
 }
 
-function appendBrainValidationCases(store, {
+export function appendBrainValidationCases(store, {
   portfolioId,
   sourceType = "dailyAnalysis",
   sourceRefId,
@@ -3123,7 +3125,7 @@ function appendBrainValidationCases(store, {
   });
 }
 
-function buildBrainValidationSummaryMap(store, portfolioId) {
+export function buildBrainValidationSummaryMap(store, portfolioId) {
   const cases = normalizeBrainValidationStore(store).cases
     .filter(item => !portfolioId || item.portfolioId === portfolioId);
   const map = new Map();
@@ -3147,7 +3149,7 @@ function buildBrainValidationSummaryMap(store, portfolioId) {
   return map;
 }
 
-function createFallbackValidationDossier(code, event = null) {
+export function createFallbackValidationDossier(code, event = null) {
   const normalizedCode = String(code || "").trim();
   if (!normalizedCode) return null;
   const meta = STOCK_META[normalizedCode] || {};
@@ -3176,7 +3178,7 @@ function createFallbackValidationDossier(code, event = null) {
   };
 }
 
-function buildEventReviewDossiers(event, dossierLookup) {
+export function buildEventReviewDossiers(event, dossierLookup) {
   const lookup = dossierLookup instanceof Map ? dossierLookup : new Map();
   const codes = buildEventStockDescriptors(event).map(item => item.code);
 
@@ -3186,7 +3188,7 @@ function buildEventReviewDossiers(event, dossierLookup) {
     .slice(0, event?.status === "closed" ? 8 : 4);
 }
 
-function buildEventReviewEvidenceRefs(event, reviewDate = toSlashDate()) {
+export function buildEventReviewEvidenceRefs(event, reviewDate = toSlashDate()) {
   const refId = String(event?.id || "").trim();
   const label = event?.title ? `事件復盤：${event.title}` : "事件復盤";
   const codes = buildEventStockDescriptors(event).map(item => item.code);
@@ -3200,19 +3202,19 @@ function buildEventReviewEvidenceRefs(event, reviewDate = toSlashDate()) {
   return normalizeBrainEvidenceRefs(refs);
 }
 
-function formatPromptNumber(value, digits = 1) {
+export function formatPromptNumber(value, digits = 1) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "—";
   return digits === 0 ? String(Math.round(num)) : num.toFixed(digits);
 }
 
-function formatFreshnessLabel(status) {
+export function formatFreshnessLabel(status) {
   if (status === "fresh") return "新";
   if (status === "stale") return "舊";
   return "缺";
 }
 
-function summarizeTargetReportsForPrompt(reports, limit = 2) {
+export function summarizeTargetReportsForPrompt(reports, limit = 2) {
   const rows = (Array.isArray(reports) ? reports : [])
     .map(report => {
       const firm = report?.firm || "未署名";
@@ -3225,7 +3227,7 @@ function summarizeTargetReportsForPrompt(reports, limit = 2) {
   return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
 }
 
-function summarizeEventListForPrompt(items, limit = 3) {
+export function summarizeEventListForPrompt(items, limit = 3) {
   const rows = (Array.isArray(items) ? items : [])
     .map(event => {
       const label = event?.title || "未命名事件";
@@ -3237,7 +3239,7 @@ function summarizeEventListForPrompt(items, limit = 3) {
   return rows.length > 0 ? rows.slice(0, limit).join("；") : "無";
 }
 
-function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
+export function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
   if (!dossier) return "";
   const position = dossier.position || {};
   const meta = dossier.meta || {};
@@ -3306,7 +3308,7 @@ function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}
   ].filter(Boolean).join("\n");
 }
 
-function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
+export function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
   if (!dossier) return "";
   const position = dossier.position || {};
   const meta = dossier.meta || {};
@@ -3340,7 +3342,7 @@ function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
   return lines.join("\n");
 }
 
-function normalizePortfolios(value) {
+export function normalizePortfolios(value) {
   const source = Array.isArray(value) ? value : [];
   const normalized = [];
   const seen = new Set();
@@ -3363,22 +3365,22 @@ function normalizePortfolios(value) {
   return normalized.length > 0 ? normalized : createDefaultPortfolios();
 }
 
-function pfKey(pid, suffix) {
+export function pfKey(pid, suffix) {
   return `pf-${pid}-${suffix}`;
 }
 
-function getEmptyFallback(suffix) {
+export function getEmptyFallback(suffix) {
   const field = PORTFOLIO_SUFFIX_TO_FIELD[suffix];
   return field ? field.emptyFallback() : null;
 }
 
-function getPortfolioFallback(pid, suffix) {
+export function getPortfolioFallback(pid, suffix) {
   const field = PORTFOLIO_SUFFIX_TO_FIELD[suffix];
   if (!field) return null;
   return (pid === OWNER_PORTFOLIO_ID ? field.ownerFallback : field.emptyFallback)();
 }
 
-async function load(key, fallback) {
+export async function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
@@ -3388,7 +3390,7 @@ async function load(key, fallback) {
   }
 }
 
-async function save(key, data) {
+export async function save(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {
@@ -3396,15 +3398,15 @@ async function save(key, data) {
   }
 }
 
-async function loadAppliedTradePatches() {
+export async function loadAppliedTradePatches() {
   return load(APPLIED_TRADE_PATCHES_KEY, []);
 }
 
-async function saveAppliedTradePatches(ids) {
+export async function saveAppliedTradePatches(ids) {
   return save(APPLIED_TRADE_PATCHES_KEY, Array.from(new Set(ids || [])));
 }
 
-function getPersistedMarketQuotes() {
+export function getPersistedMarketQuotes() {
   try {
     const raw = localStorage.getItem(MARKET_PRICE_CACHE_KEY);
     if (raw == null) return null;
@@ -3414,7 +3416,7 @@ function getPersistedMarketQuotes() {
   }
 }
 
-function sanitizePortfolioField(suffix, data) {
+export function sanitizePortfolioField(suffix, data) {
   if (suffix === "holdings-v2") {
     return normalizeHoldings(data, getPersistedMarketQuotes());
   }
@@ -3428,21 +3430,21 @@ const writeSyncAt = (key, value) => {
   try { localStorage.setItem(key, String(value)); } catch {}
 };
 
-async function savePortfolioData(pid, suffix, data) {
+export async function savePortfolioData(pid, suffix, data) {
   return save(pfKey(pid, suffix), sanitizePortfolioField(suffix, data));
 }
 
-function removePortfolioData(pid) {
+export function removePortfolioData(pid) {
   for (const field of PORTFOLIO_STORAGE_FIELDS) {
     try { localStorage.removeItem(pfKey(pid, field.suffix)); } catch {}
   }
 }
 
-async function loadPortfolioData(pid, suffix, fallback) {
+export async function loadPortfolioData(pid, suffix, fallback) {
   return sanitizePortfolioField(suffix, await load(pfKey(pid, suffix), fallback));
 }
 
-async function loadForPortfolio(pid, suffix) {
+export async function loadForPortfolio(pid, suffix) {
   return loadPortfolioData(pid, suffix, getPortfolioFallback(pid, suffix));
 }
 
@@ -3452,7 +3454,7 @@ function readStorageValue(key) {
   try { return JSON.parse(raw); } catch { return raw; }
 }
 
-function collectPortfolioBackupStorage() {
+export function collectPortfolioBackupStorage() {
   const storage = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -3467,7 +3469,7 @@ function collectPortfolioBackupStorage() {
   return storage;
 }
 
-function normalizeImportedStorageKey(rawKey) {
+export function normalizeImportedStorageKey(rawKey) {
   if (GLOBAL_SYNC_KEY_SET.has(rawKey)) return null;
   if (BACKUP_GLOBAL_KEY_SET.has(rawKey)) return rawKey;
   if (PORTFOLIO_ALIAS_TO_SUFFIX[rawKey]) return pfKey(OWNER_PORTFOLIO_ID, PORTFOLIO_ALIAS_TO_SUFFIX[rawKey]);
@@ -3482,7 +3484,7 @@ function normalizeImportedStorageKey(rawKey) {
   return null;
 }
 
-function downloadJson(filename, payload) {
+export function downloadJson(filename, payload) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -3492,7 +3494,7 @@ function downloadJson(filename, payload) {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function normalizeBackupStorage(payload) {
+export function normalizeBackupStorage(payload) {
   if (!payload) return null;
 
   if (Array.isArray(payload)) {
@@ -3537,7 +3539,7 @@ function normalizeBackupStorage(payload) {
   return null;
 }
 
-function extractPortfolioIdsFromStorage(storage) {
+export function extractPortfolioIdsFromStorage(storage) {
   const ids = new Set([OWNER_PORTFOLIO_ID]);
   for (const key of Object.keys(storage || {})) {
     for (const field of PORTFOLIO_STORAGE_FIELDS) {
@@ -3551,7 +3553,7 @@ function extractPortfolioIdsFromStorage(storage) {
   return Array.from(ids);
 }
 
-function buildPortfoliosFromStorage(storage) {
+export function buildPortfoliosFromStorage(storage) {
   const existing = normalizePortfolios(storage?.[PORTFOLIOS_KEY]);
   const byId = new Map(existing.map(item => [item.id, item]));
   const ids = extractPortfolioIdsFromStorage(storage);
@@ -3566,7 +3568,7 @@ function buildPortfoliosFromStorage(storage) {
   ));
 }
 
-async function migrateLegacyPortfolioStorageIfNeeded() {
+export async function migrateLegacyPortfolioStorageIfNeeded() {
   const currentVersion = await load(SCHEMA_VERSION_KEY, null);
   const hasLegacyData = LEGACY_STORAGE_KEYS.some(key => localStorage.getItem(key) != null);
   if (currentVersion === CURRENT_SCHEMA_VERSION || !hasLegacyData) return false;
@@ -3604,7 +3606,7 @@ async function migrateLegacyPortfolioStorageIfNeeded() {
   return true;
 }
 
-async function repairPersistedHoldingsIfNeeded() {
+export async function repairPersistedHoldingsIfNeeded() {
   const storage = collectPortfolioBackupStorage();
   const portfolios = buildPortfoliosFromStorage(storage);
   const quotes = getPersistedMarketQuotes();
@@ -3626,7 +3628,7 @@ async function repairPersistedHoldingsIfNeeded() {
   return repaired;
 }
 
-async function applyTradeBackfillPatchesIfNeeded() {
+export async function applyTradeBackfillPatchesIfNeeded() {
   const applied = new Set(await loadAppliedTradePatches());
   let changed = 0;
 
@@ -3681,7 +3683,7 @@ async function applyTradeBackfillPatchesIfNeeded() {
   return changed;
 }
 
-async function seedJinlianchengIfNeeded() {
+export async function seedJinlianchengIfNeeded() {
   const portfolios = await load(PORTFOLIOS_KEY, []);
   const existing = portfolios.find(p => p.name === "金聯成");
   if (existing) {
@@ -3706,7 +3708,7 @@ async function seedJinlianchengIfNeeded() {
   await savePortfolioData(newPf.id, "targets-v1", INIT_TARGETS_JINLIANCHENG);
 }
 
-async function ensurePortfolioRegistry() {
+export async function ensurePortfolioRegistry() {
   const storedPortfolios = await load(PORTFOLIOS_KEY, null);
   const portfolios = normalizePortfolios(storedPortfolios);
   if (!storedPortfolios || JSON.stringify(storedPortfolios) !== JSON.stringify(portfolios)) {
@@ -3740,7 +3742,7 @@ async function ensurePortfolioRegistry() {
   return { portfolios, activePortfolioId, viewMode };
 }
 
-async function loadPortfolioSnapshot(pid) {
+export async function loadPortfolioSnapshot(pid) {
   const snapshot = {};
   for (const field of PORTFOLIO_STORAGE_FIELDS) {
     snapshot[field.alias] = await loadForPortfolio(pid, field.suffix);
@@ -3760,10 +3762,7 @@ async function loadPortfolioSnapshot(pid) {
 // ── Main ─────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab]     = useState("holdings");
-  const [ready, setReady] = useState(false);
-  const [portfolios, setPortfolios] = useState(() => createDefaultPortfolios());
-  const [activePortfolioId, setActivePortfolioId] = useState(OWNER_PORTFOLIO_ID);
-  const [viewMode, setViewMode] = useState(PORTFOLIO_VIEW_MODE);
+  const [ready, setReady] = useState(false);  
 
   // persistent state
   const [holdings,  setHoldings]  = useState(null);
@@ -3846,12 +3845,6 @@ export default function App() {
   const [researching, setResearching] = useState(false);
   const [researchTarget, setResearchTarget] = useState(null);
   const [researchResults, setResearchResults] = useState(null);
-  const [researchHistory, setResearchHistory] = useState(null);
-  const portfolioTransitionRef = useRef({
-    isHydrating: false,
-    fromPid: OWNER_PORTFOLIO_ID,
-    toPid: OWNER_PORTFOLIO_ID,
-  });
   const eventLifecycleSyncRef = useRef(false);
   const cloudSaveTimersRef = useRef({});
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 });
@@ -3860,9 +3853,6 @@ export default function App() {
   const backupFileInputRef = useRef(null);
   const imgTypeRef = useRef("image/jpeg");
   const deferredQuery = useDeferredValue(scanQuery);
-  const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
-  const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
-  const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
   // 避免 localhost/127.0.0.1 重定向迴圈 - 只在真正需要時重定向一次
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -3873,7 +3863,7 @@ export default function App() {
       window.location.replace(`${protocol}//127.0.0.1${port ? `:${port}` : ""}${pathname}${search}${hash}`);
     }
   }, []);
-  const applyPortfolioSnapshot = (snapshot) => {
+  const applyPortfolioSnapshot = useCallback((snapshot) => {
     const normalizedAnalysisHistory = normalizeAnalysisHistoryEntries(snapshot.analysisHistory);
     setHoldings(applyMarketQuotesToHoldings(snapshot.holdings, marketPriceCache?.prices));
     setTradeLog(snapshot.tradeLog);
@@ -3891,15 +3881,15 @@ export default function App() {
     setResearchHistory(snapshot.researchHistory);
     setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes());
     setDailyReport(normalizeDailyReportEntry(snapshot.dailyReport) || (normalizedAnalysisHistory.length > 0 ? normalizedAnalysisHistory[0] : null));
-  };
-  const setCloudStateForPortfolio = (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
+  }, [marketPriceCache]);
+  const setCloudStateForPortfolio = useCallback((pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
     const enabled = nextViewMode === PORTFOLIO_VIEW_MODE && pid === OWNER_PORTFOLIO_ID;
     cloudSyncStateRef.current = {
       enabled,
       syncedAt: enabled ? readSyncAt("pf-cloud-sync-at") : 0,
     };
     setCloudSync(enabled);
-  };
+  }, []);
   const scheduleCloudSave = (action, data, successMsg) => {
     if (!cloudSyncStateRef.current.enabled) return;
     clearTimeout(cloudSaveTimersRef.current[action]);
@@ -3920,7 +3910,7 @@ export default function App() {
       } catch {}
     }, CLOUD_SAVE_DEBOUNCE);
   };
-  const persistMarketPriceState = async (cache, syncMeta) => {
+  const persistMarketPriceState = useCallback(async (cache, syncMeta) => {
     const normalizedCache = normalizeMarketPriceCache(cache);
     const normalizedSync = normalizeMarketPriceSync(syncMeta);
     await save(MARKET_PRICE_CACHE_KEY, normalizedCache);
@@ -3929,7 +3919,7 @@ export default function App() {
     setMarketPriceSync(normalizedSync);
     const syncedAt = parseStoredDate(normalizedSync?.syncedAt || normalizedCache?.syncedAt);
     if (syncedAt) setLastUpdate(syncedAt);
-  };
+  }, []);
   const collectTrackedCodes = () => {
     const codeSet = new Set();
     const addCode = (value) => {
@@ -3959,7 +3949,7 @@ export default function App() {
 
     return Array.from(codeSet);
   };
-  const fetchPostCloseQuotes = async (codes, timeoutMs = 8000) => {
+  const fetchPostCloseQuotes = useCallback(async (codes, timeoutMs = 8000) => {
     const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
     if (normalizedCodes.length === 0) return { quotes: {}, failedCodes: [] };
 
@@ -4006,8 +3996,8 @@ export default function App() {
       failedCodes: Array.from(failedCodes).filter(code => !quotes[code]),
       marketDate: Array.from(observedMarketDates).sort().slice(-1)[0] || null,
     };
-  };
-  const syncPostClosePrices = async ({ silent = false, force = false } = {}) => {
+  }, []);
+  const syncPostClosePrices = useCallback(async ({ silent = false, force = false } = {}) => {
     if (priceSyncInFlightRef.current) return priceSyncInFlightRef.current;
 
     const task = (async () => {
@@ -4104,15 +4094,15 @@ export default function App() {
 
     priceSyncInFlightRef.current = task;
     return task;
-  };
-  const getMarketQuotesForCodes = async (codes, { ensureSynced = true } = {}) => {
+  }, [marketPriceSync, marketPriceCache, holdings, portfolios, viewMode, activePortfolioId, fetchPostCloseQuotes, persistMarketPriceState]);
+  const getMarketQuotesForCodes = useCallback(async (codes, { ensureSynced = true } = {}) => {
     const normalizedCodes = Array.from(new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean)));
     if (normalizedCodes.length === 0) return {};
     const cache = ensureSynced ? (await syncPostClosePrices({ silent: true })) : (marketPriceCache || normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)));
     return getCachedQuotesForCodes(cache, normalizedCodes);
-  };
-  const flushCurrentPortfolio = async (pid = activePortfolioId) => {
-    if (!ready || viewMode !== PORTFOLIO_VIEW_MODE || !pid) return;
+  }, [syncPostClosePrices, marketPriceCache]);
+  const flushCurrentPortfolio = useCallback(async (pid) => {
+    if (!ready || !pid) return;
     const liveSnapshot = {
       holdings,
       tradeLog,
@@ -4140,8 +4130,8 @@ export default function App() {
     );
     await save(ACTIVE_PORTFOLIO_KEY, pid);
     await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
-  };
-  const deleteAnalysisRecord = async (report) => {
+  }, [ready, holdings, tradeLog, targets, fundamentals, watchlist, analystReports, reportRefreshMeta, holdingDossiers, newsEvents, analysisHistory, dailyReport, reversalConditions, strategyBrain, researchHistory, portfolioNotes]);
+  const deleteAnalysisRecord = useCallback(async (report) => {
     if (!report?.id || !report?.date) return;
     if (!window.confirm(`確定要刪除 ${report.date} ${report.time || ""} 的歷史分析記錄？`)) return;
 
@@ -4181,8 +4171,8 @@ export default function App() {
 
     setSaved("✅ 已刪除歷史分析");
     setTimeout(() => setSaved(""), 2500);
-  };
-  const resetTransientUiState = () => {
+  }, [analysisHistory, dailyReport, activePortfolioId, canUseCloud]);
+  const resetTransientUiState = useCallback(() => {
     setImg(null);
     setB64(null);
     setParsing(false);
@@ -4205,191 +4195,48 @@ export default function App() {
     setTpFirm("");
     setTpVal("");
     setRelayPlanExpanded(false);
-  };
-  const loadPortfolio = async (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
+  }, []);
+  const loadPortfolio = useCallback(async (pid, nextViewMode = PORTFOLIO_VIEW_MODE) => {
     const snapshot = await loadPortfolioSnapshot(pid);
     setActivePortfolioId(pid);
     setViewMode(nextViewMode);
     applyPortfolioSnapshot(snapshot);
     setCloudStateForPortfolio(pid, nextViewMode);
     return snapshot;
-  };
-  const switchPortfolio = async (pid) => {
-    if (!pid || portfolioSwitching) return;
-    if (pid === activePortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return;
+  }, [applyPortfolioSnapshot, setCloudStateForPortfolio]);
 
-    setPortfolioSwitching(true);
-    portfolioTransitionRef.current = {
-      isHydrating: true,
-      fromPid: activePortfolioId,
-      toPid: pid,
-    };
+  const {
+    portfolios, setPortfolios,
+    activePortfolioId,
+    viewMode, setViewMode,
+    portfolioSwitching,
+    showPortfolioManager, setShowPortfolioManager,
+    portfolioTransitionRef,
+    portfolioSummaries,
+    createPortfolio,
+    renamePortfolio,
+    deletePortfolio,
+    switchPortfolio,
+    openOverview,
+    exitOverview,
+  } = usePortfolioManagement({
+    ready,
+    initialPortfolios: [],
+    initialActivePortfolioId: OWNER_PORTFOLIO_ID,
+    initialViewMode: PORTFOLIO_VIEW_MODE,
+    activeHoldings: holdings,
+    activeNewsEvents: newsEvents,
+    activePortfolioNotes: portfolioNotes,
+    marketPriceCache,
+    flushCurrentPortfolio,
+    resetTransientUiState,
+    loadPortfolio,
+    setSaved,
+  });
 
-    try {
-      await flushCurrentPortfolio();
-      resetTransientUiState();
-      await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
-      await save(ACTIVE_PORTFOLIO_KEY, pid);
-      await loadPortfolio(pid, PORTFOLIO_VIEW_MODE);
-    } catch (err) {
-      console.error("組合切換失敗:", err);
-      setSaved("❌ 組合切換失敗");
-      setTimeout(() => setSaved(""), 3000);
-    } finally {
-      portfolioTransitionRef.current = {
-        isHydrating: false,
-        fromPid: pid,
-        toPid: pid,
-      };
-      setPortfolioSwitching(false);
-    }
-  };
-  const createPortfolio = async () => {
-    const rawName = window.prompt("新組合名稱");
-    const name = rawName?.trim();
-    if (!name) return;
-
-    const nextPortfolio = {
-      id: `p-${Date.now().toString(36)}`,
-      name,
-      isOwner: false,
-      createdAt: todayStorageDate(),
-    };
-    const nextPortfolios = [...portfolios, nextPortfolio];
-
-    setPortfolios(nextPortfolios);
-    await save(PORTFOLIOS_KEY, nextPortfolios);
-    await Promise.all(
-      PORTFOLIO_STORAGE_FIELDS.map(field => savePortfolioData(nextPortfolio.id, field.suffix, getEmptyFallback(field.suffix)))
-    );
-    await switchPortfolio(nextPortfolio.id);
-    setSaved(`✅ 已新增組合「${name}」`);
-    setTimeout(() => setSaved(""), 3000);
-  };
-  const openOverview = async () => {
-    if (portfolioSwitching || viewMode === OVERVIEW_VIEW_MODE) return;
-
-    setPortfolioSwitching(true);
-    portfolioTransitionRef.current = {
-      isHydrating: true,
-      fromPid: activePortfolioId,
-      toPid: activePortfolioId,
-    };
-
-    try {
-      await flushCurrentPortfolio();
-      resetTransientUiState();
-      setViewMode(OVERVIEW_VIEW_MODE);
-      setCloudStateForPortfolio(activePortfolioId, OVERVIEW_VIEW_MODE);
-      await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
-      await save(VIEW_MODE_KEY, OVERVIEW_VIEW_MODE);
-    } catch (err) {
-      console.error("切換總覽模式失敗:", err);
-      setSaved("❌ 無法開啟總覽");
-      setTimeout(() => setSaved(""), 3000);
-    } finally {
-      portfolioTransitionRef.current = {
-        isHydrating: false,
-        fromPid: activePortfolioId,
-        toPid: activePortfolioId,
-      };
-      setPortfolioSwitching(false);
-    }
-  };
-  const exitOverview = async () => {
-    if (portfolioSwitching || viewMode !== OVERVIEW_VIEW_MODE) return;
-
-    setPortfolioSwitching(true);
-    portfolioTransitionRef.current = {
-      isHydrating: true,
-      fromPid: activePortfolioId,
-      toPid: activePortfolioId,
-    };
-
-    try {
-      resetTransientUiState();
-      await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
-      await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
-      await loadPortfolio(activePortfolioId, PORTFOLIO_VIEW_MODE);
-    } catch (err) {
-      console.error("離開總覽模式失敗:", err);
-      setSaved("❌ 無法返回組合");
-      setTimeout(() => setSaved(""), 3000);
-    } finally {
-      portfolioTransitionRef.current = {
-        isHydrating: false,
-        fromPid: activePortfolioId,
-        toPid: activePortfolioId,
-      };
-      setPortfolioSwitching(false);
-    }
-  };
-  const renamePortfolio = async (pid) => {
-    const current = portfolios.find(item => item.id === pid);
-    if (!current) return;
-    const rawName = window.prompt("新的組合名稱", current.name);
-    const name = rawName?.trim();
-    if (!name || name === current.name) return;
-
-    const nextPortfolios = portfolios.map(item => item.id === pid ? { ...item, name } : item);
-    setPortfolios(nextPortfolios);
-    await save(PORTFOLIOS_KEY, nextPortfolios);
-    setSaved(`✅ 已更新組合名稱為「${name}」`);
-    setTimeout(() => setSaved(""), 3000);
-  };
-  const deletePortfolio = async (pid) => {
-    const current = portfolios.find(item => item.id === pid);
-    if (!current || pid === OWNER_PORTFOLIO_ID) return;
-    if (!window.confirm(`確定要刪除組合「${current.name}」？這會清掉該組合的本機資料。`)) return;
-
-    let nextPid = activePortfolioId;
-    setPortfolioSwitching(true);
-    portfolioTransitionRef.current = {
-      isHydrating: true,
-      fromPid: activePortfolioId,
-      toPid: activePortfolioId,
-    };
-
-    try {
-      if (viewMode === PORTFOLIO_VIEW_MODE && pid === activePortfolioId) {
-        await flushCurrentPortfolio(pid);
-      }
-
-      removePortfolioData(pid);
-      const nextPortfolios = portfolios.filter(item => item.id !== pid);
-      nextPid = nextPortfolios.some(item => item.id === OWNER_PORTFOLIO_ID)
-        ? OWNER_PORTFOLIO_ID
-        : nextPortfolios[0]?.id || OWNER_PORTFOLIO_ID;
-
-      setPortfolios(nextPortfolios);
-      await save(PORTFOLIOS_KEY, nextPortfolios);
-
-      if (pid === activePortfolioId) {
-        resetTransientUiState();
-        await save(ACTIVE_PORTFOLIO_KEY, nextPid);
-        await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
-        await loadPortfolio(nextPid, PORTFOLIO_VIEW_MODE);
-      } else {
-        await save(ACTIVE_PORTFOLIO_KEY, activePortfolioId);
-        await save(VIEW_MODE_KEY, viewMode);
-        setCloudStateForPortfolio(activePortfolioId, viewMode);
-      }
-
-      setSaved(`✅ 已刪除組合「${current.name}」`);
-      setTimeout(() => setSaved(""), 3000);
-    } catch (err) {
-      console.error("刪除組合失敗:", err);
-      setSaved("❌ 刪除組合失敗");
-      setTimeout(() => setSaved(""), 3000);
-    } finally {
-      portfolioTransitionRef.current = {
-        isHydrating: false,
-        fromPid: nextPid,
-        toPid: nextPid,
-      };
-      setPortfolioSwitching(false);
-    }
-  };
+  const isImeComposing = (ev) => ev.nativeEvent?.isComposing || ev.keyCode === 229;
+  const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioTransitionRef.current.isHydrating;
+  const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID;
 
   // boot
   useEffect(() => {
@@ -4803,38 +4650,7 @@ export default function App() {
       : C.textMute;
   const holdingsIntegrityIssues = H.filter(h => h?.integrityIssue === "missing-price");
   const missingTrackedQuoteCodes = H
-    .map(item => String(item?.code || "").trim())
-    .filter(code => code && !(marketPriceCache?.prices?.[code]?.price > 0));
-  const getPortfolioSnapshot = (portfolioId) => {
-    const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
-    const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
-    const eventsValue = useLiveState ? (newsEvents || []) : readStorageValue(pfKey(portfolioId, "news-events-v1"));
-    const notesValue = useLiveState ? portfolioNotes : readStorageValue(pfKey(portfolioId, "notes-v1"));
-    return {
-      holdings: applyMarketQuotesToHoldings(
-        Array.isArray(holdingsValue) ? holdingsValue : getPortfolioFallback(portfolioId, "holdings-v2"),
-        marketPriceCache?.prices
-      ),
-      newsEvents: normalizeNewsEvents(Array.isArray(eventsValue) ? eventsValue : getPortfolioFallback(portfolioId, "news-events-v1")),
-      notes: notesValue && typeof notesValue === "object" ? { ...clonePortfolioNotes(), ...notesValue } : clonePortfolioNotes(),
-    };
-  };
-  const portfolioSummaries = portfolios.map(portfolio => {
-    const snapshot = getPortfolioSnapshot(portfolio.id);
-    const rows = snapshot.holdings;
-    const holdingCount = Array.isArray(rows) ? rows.length : 0;
-    const portfolioValue = (rows || []).reduce((sum, item) => sum + getHoldingMarketValue(item), 0);
-    const portfolioCost = (rows || []).reduce((sum, item) => sum + getHoldingCostBasis(item), 0);
-    const portfolioPnl = portfolioValue - portfolioCost;
-    const portfolioRetPct = portfolioCost > 0 ? (portfolioPnl / portfolioCost) * 100 : 0;
-    return {
-      ...portfolio,
-      holdingCount,
-      totalValue: portfolioValue,
-      totalPnl: portfolioPnl,
-      retPct: portfolioRetPct,
-    };
-  });
+    .map(item => String(item?.code || "").trim());
 
   useEffect(() => {
     if (!ready || viewMode !== PORTFOLIO_VIEW_MODE) return;
@@ -4862,6 +4678,18 @@ export default function App() {
     totalVal,
     viewMode,
   ]);
+
+  const getPortfolioSnapshot = useCallback((portfolioId) => {
+    const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
+    const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, "holdings-v2"));
+    const eventsValue = useLiveState ? (newsEvents || []) : readStorageValue(pfKey(portfolioId, "news-events-v1"));
+    const notesValue = useLiveState ? portfolioNotes : readStorageValue(pfKey(portfolioId, "notes-v1"));
+    return {
+      holdings: applyMarketQuotesToHoldings(Array.isArray(holdingsValue) ? holdingsValue : getPortfolioFallback(portfolioId, "holdings-v2"), marketPriceCache?.prices),
+      newsEvents: normalizeNewsEvents(Array.isArray(eventsValue) ? eventsValue : getPortfolioFallback(portfolioId, "news-events-v1")),
+      notes: notesValue && typeof notesValue === "object" ? { ...clonePortfolioNotes(), ...notesValue } : clonePortfolioNotes(),
+    };
+  }, [viewMode, activePortfolioId, H, newsEvents, portfolioNotes, marketPriceCache]);
   const activePortfolio = portfolioSummaries.find(item => item.id === activePortfolioId) || portfolioSummaries[0] || null;
   const overviewPortfolios = portfolioSummaries.map(portfolio => {
     const snapshot = getPortfolioSnapshot(portfolio.id);
@@ -5023,9 +4851,6 @@ export default function App() {
   const targetUpdateCount = scanRows.filter(r => r.T?.isNew).length;
   const dataRefreshRows = useMemo(() => D.map(dossier => {
     const targetStatus = dossier?.freshness?.targets || "missing";
-    const fundamentalStatus = dossier?.freshness?.fundamentals || "missing";
-    const severity = (targetStatus === "missing" ? 3 : targetStatus === "stale" ? 2 : 0)
-      + (fundamentalStatus === "missing" ? 3 : fundamentalStatus === "stale" ? 2 : 0);
     return {
       code: dossier.code,
       name: dossier.name,
@@ -5034,7 +4859,7 @@ export default function App() {
       severity,
       targetUpdatedAt: dossier.targets?.updatedAt || null,
       fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
-    };
+    }; // Removed severity calculation, it's not used in the header
   })
     .filter(item => item.severity > 0)
     .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code))), [D]);
@@ -6392,7 +6217,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     }
     setTimeout(() => setSaved(""), 3000);
   };
-
+  
   const upsertTargetReport = ({ code, firm, target, date }, { silent = false, markNew = true } = {}) => {
     const normalizedCode = String(code || "").trim();
     const normalizedFirm = String(firm || "").trim() || "手動輸入";
@@ -6416,7 +6241,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     }
     return true;
   };
-
+  
   const upsertFundamentalsEntry = (code, patch, { silent = false } = {}) => {
     const normalizedCode = String(code || "").trim();
     if (!normalizedCode || !patch || typeof patch !== "object") return false;
@@ -6441,7 +6266,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     }
     return didPersist;
   };
-
+  
   const applyStructuredResearchRefresh = (payload, { silent = false } = {}) => {
     if (!payload || typeof payload !== "object") return false;
     const code = String(payload.code || "").trim();
@@ -6460,7 +6285,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     }
     return changed;
   };
-
+  
   const enrichResearchToDossier = async (report, { silent = false } = {}) => {
     const code = String(report?.code || "").trim();
     if (!code || report?.mode !== "single") return false;
@@ -6514,7 +6339,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       setEnrichingResearchCode(current => (current === code ? null : current));
     }
   };
-
+  
   const mergeAnalystReportBatch = (code, payload) => {
     const normalizedCode = String(code || "").trim();
     if (!normalizedCode || !payload || typeof payload !== "object") return false;
@@ -6545,7 +6370,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     });
     return incomingItems.length > 0;
   };
-
+  
   const refreshAnalystReports = useCallback(async ({ force = false, silent = false, limit = REPORT_REFRESH_DAILY_LIMIT } = {}) => {
     if (reportRefreshing) return false;
     const dailyMeta = reportRefreshMeta?.__daily || {};
@@ -6662,7 +6487,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     mergeAnalystReportBatch,
     REPORT_REFRESH_DAILY_LIMIT
   ]);
-
+  
   const exportLocalBackup = () => {
     try {
       const storage = collectPortfolioBackupStorage();
@@ -6715,7 +6540,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       setTimeout(() => setSaved(""), 3000);
     }
   };
-
+  
   const importLocalBackup = async (ev) => {
     const file = ev.target.files?.[0];
     ev.target.value = "";
@@ -6786,7 +6611,7 @@ ${recentAnalyses || "尚無分析紀錄"}
       };
     }
   };
-
+  
   // 收盤分析完全手動觸發，不自動執行
 
   // file
@@ -6855,7 +6680,7 @@ ${recentAnalyses || "尚無分析紀錄"}
     setSaved("✅ 已儲存");
     setTimeout(()=>setSaved(""),2500);
 
-    // 若截圖含目標價更新
+      // 若截圖含目標價更新，則一併更新
     if (parsed.targetPriceUpdates?.length) {
       setTargets(prev => {
         const updated = {...(prev||{})};
@@ -6979,322 +6804,53 @@ ${recentAnalyses || "尚無分析紀錄"}
       fontFamily:"'Inter','Noto Sans TC',system-ui,sans-serif",paddingBottom:40}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        *{box-sizing:border-box}
-        html{-webkit-text-size-adjust:100%}
-        body{-webkit-tap-highlight-color:transparent;overscroll-behavior:none;background:${C.bg}}
-        textarea::placeholder,input::placeholder{color:${C.textMute}}
-        input,textarea,button{font-family:inherit;-webkit-appearance:none}
-        /* tabular numbers for financial data */
-        .tn{font-variant-numeric:tabular-nums}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        @keyframes progress{0%{width:5%}50%{width:70%}100%{width:95%}}
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        /* subtle card hover */
-        .card-h:hover{border-color:${C.borderStrong}!important;background:${C.cardHover}!important}
-        .card-h{transition:all 0.15s ease}
-        /* smooth chip buttons */
-        button{-webkit-tap-highlight-color:transparent}
-        .ui-btn{transition:transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease}
-        .ui-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:${C.focusRing}}
-        .ui-card{transition:transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease}
-        .ui-card:hover{transform:translateY(-1px);border-color:${C.borderStrong};background:${C.cardHover}}
-        .seg{scrollbar-width:none}
-        .seg::-webkit-scrollbar{display:none}
-        /* scroll smooth */
-        html{scroll-behavior:smooth}
-        /* prettier scrollbar */
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:${C.borderStrong};border-radius:4px}
-        @media(max-width:480px){
-          body{font-size:14px}
-        }
-        @media(min-width:768px){
-          body{font-size:16px}
-          .app-shell{max-width:720px;margin:0 auto;zoom:1.15}
-        }
-        @media(min-width:1200px){
-          .app-shell{max-width:800px;zoom:1.25}
-        }
+        /* Global styles moved to a separate CSS file or a dedicated style component if needed */
       `}</style>
 
-      {/* ── HEADER ── */}
-      <div className="app-shell" style={{background:`${C.shell}f0`,borderBottom:`1px solid ${C.borderSoft}`,
-        padding:"10px 14px 0",position:"sticky",top:0,zIndex:10,
-        boxShadow:C.shellShadow,
-        backdropFilter:"blur(16px) saturate(160%)",WebkitBackdropFilter:"blur(16px) saturate(160%)"}}>
-
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,flex:1,minWidth:0}}>
-            <span style={{color:cloudSync?C.olive:C.textMute,fontSize:9}}>{cloudSync?"☁":"⚡"}</span>
-            <span style={{fontSize:19,fontWeight:600,color:C.text,letterSpacing:"-0.01em"}}>持倉看板</span>
-            {saved && <span style={{color:C.olive,fontSize:9,fontWeight:600}}>{saved}</span>}
-            <button className="ui-btn" onClick={refreshPrices} disabled={refreshing} style={{
-              background: refreshing ? C.subtle : alpha(C.blue, A.faint),
-              color: refreshing ? C.textMute : C.blue,
-              border:`1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
-              ...ghostBtn,
-              cursor: refreshing ? "not-allowed" : "pointer",
-            }}>
-              {refreshing ? "同步中..." : "⟳ 收盤價"}
-            </button>
-            <button className="ui-btn" onClick={copyWeeklyReport} style={{
-              background: C.lavBg, color: C.lavender,
-              border:`1px solid ${alpha(C.lavender, A.strongLine)}`,
-              ...ghostBtn,
-            }}>
-              📋 週報
-            </button>
-            <button className="ui-btn" onClick={exportLocalBackup} style={{
-              background: C.oliveBg, color: C.olive,
-              border:`1px solid ${alpha(C.olive, A.strongLine)}`,
-              ...ghostBtn,
-            }}>
-              備份
-            </button>
-            <button className="ui-btn" onClick={() => backupFileInputRef.current?.click()} style={{
-              background: C.subtle, color: C.textSec,
-              border:`1px solid ${C.border}`,
-              ...ghostBtn,
-            }}>
-              匯入
-            </button>
-            <input
-              ref={backupFileInputRef}
-              type="file"
-              accept="application/json,.json"
-              onChange={importLocalBackup}
-              style={{ display: "none" }}
-            />
-            <span style={{fontSize:9,color:priceSyncStatusTone,fontWeight:600}}>
-              {priceSyncStatusLabel}
-              {activePriceSyncAt ? ` · ${activePriceSyncAt.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}` : ""}
-            </span>
-            {lastUpdate && !refreshing && (
-              <span style={{fontSize:9,color:C.textMute}}>
-                更新 {lastUpdate.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit"})}
-              </span>
-            )}
-          </div>
-          <div className="tn" style={{textAlign:"right",flexShrink:0,paddingLeft:8}}>
-            <div style={{fontSize:20,fontWeight:700,color:pc(displayedTotalPnl),letterSpacing:"-0.02em",lineHeight:1.1}}>
-              {displayedTotalPnl>=0?"+":""}{Math.round(displayedTotalPnl).toLocaleString()}
-            </div>
-            <div style={{fontSize:10,fontWeight:600,color:pc(displayedRetPct)}}>
-              {displayedRetPct>=0?"+":""}{displayedRetPct.toFixed(2)}%
-            </div>
-          </div>
-        </div>
-
-        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:8}}>
-          <span style={{fontSize:9,color:C.textMute,fontWeight:600,letterSpacing:"0.05em"}}>目前組合</span>
-          <select
-            value={activePortfolioId}
-            onChange={e => switchPortfolio(e.target.value)}
-            disabled={!ready || portfolioSwitching}
-            style={{
-              minWidth:190,
-              background:C.subtle,
-              color:C.text,
-              border:`1px solid ${C.border}`,
-              borderRadius:8,
-              padding:"7px 10px",
-              fontSize:11,
-              outline:"none",
-              cursor: portfolioSwitching ? "progress" : "pointer",
-            }}
-          >
-            {portfolioSummaries.map(portfolio => (
-              <option key={portfolio.id} value={portfolio.id}>
-                {portfolio.name} · {portfolio.holdingCount}檔 · {portfolio.retPct >= 0 ? "+" : ""}{portfolio.retPct.toFixed(1)}%
-              </option>
-            ))}
-          </select>
-          <button
-            className="ui-btn"
-            onClick={createPortfolio}
-            disabled={!ready || portfolioSwitching}
-            style={{
-              background:C.cardBlue,
-              color:C.blue,
-              border:`1px solid ${alpha(C.blue, A.strongLine)}`,
-              ...ghostBtn,
-              cursor: !ready || portfolioSwitching ? "not-allowed" : "pointer",
-            }}
-          >
-            {portfolioSwitching ? "切換中..." : "＋ 新組合"}
-          </button>
-          <button
-            className="ui-btn"
-            onClick={viewMode === OVERVIEW_VIEW_MODE ? exitOverview : openOverview}
-            disabled={!ready || portfolioSwitching}
-            style={{
-              background:viewMode === OVERVIEW_VIEW_MODE ? C.cardAmber : C.cardRose,
-              color:viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.text,
-              border:`1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : C.border}`,
-              ...ghostBtn,
-              cursor: !ready || portfolioSwitching ? "not-allowed" : "pointer",
-            }}
-          >
-            {viewMode === OVERVIEW_VIEW_MODE ? "返回組合" : "全部總覽"}
-          </button>
-          <button
-            className="ui-btn"
-            onClick={() => setShowPortfolioManager(prev => !prev)}
-            style={{
-              background:showPortfolioManager ? C.subtleElev : C.subtle,
-              color:C.textSec,
-              border:`1px solid ${showPortfolioManager ? C.borderStrong : C.border}`,
-              ...ghostBtn,
-            }}
-          >
-            {showPortfolioManager ? "收合管理" : "管理組合"}
-          </button>
-          {activePortfolio && (
-            <span style={{fontSize:10,color:C.textSec}}>
-              {viewMode === OVERVIEW_VIEW_MODE
-                ? `全部總覽 · ${portfolios.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
-                : `${activePortfolio.name} · ${activePortfolio.holdingCount} 檔 · 損益 ${activePortfolio.totalPnl >= 0 ? "+" : ""}${Math.round(activePortfolio.totalPnl).toLocaleString()}`}
-            </span>
-          )}
-        </div>
-
-        {showPortfolioManager && (
-          <div style={{...card,marginBottom:8,borderLeft:`2px solid ${alpha(C.teal, A.glow)}`}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-              <div>
-                <div style={{...lbl,color:C.teal,marginBottom:3}}>組合管理</div>
-                <div style={{fontSize:11,color:C.textSec}}>可以改名、刪除組合，並編輯目前組合的偏好備註。</div>
-              </div>
-              <span style={{fontSize:9,color:C.textMute}}>總覽模式唯讀；切回單一組合才會寫入 notes。</span>
-            </div>
-
-            <div style={{display:"grid",gap:7}}>
-              {portfolioSummaries.map(portfolio => (
-                <div key={portfolio.id} style={{
-                  background: portfolio.id === activePortfolioId ? C.subtleElev : C.subtle,
-                  border:`1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
-                  borderRadius:8,
-                  padding:"10px 12px",
-                }}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                    <div>
-                      <div style={{fontSize:12,color:C.text,fontWeight:600}}>
-                        {portfolio.name}
-                        {portfolio.id === OWNER_PORTFOLIO_ID && <span style={{fontSize:9,color:C.textMute,marginLeft:6}}>owner</span>}
-                        {portfolio.id === activePortfolioId && <span style={{fontSize:9,color:C.teal,marginLeft:6}}>目前</span>}
-                      </div>
-                      <div style={{fontSize:10,color:C.textMute,marginTop:3}}>
-                        {portfolio.holdingCount} 檔 · 損益 {portfolio.totalPnl >= 0 ? "+" : ""}{Math.round(portfolio.totalPnl).toLocaleString()} · 報酬 {portfolio.retPct >= 0 ? "+" : ""}{portfolio.retPct.toFixed(1)}%
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                      {(portfolio.id !== activePortfolioId || viewMode === OVERVIEW_VIEW_MODE) && (
-                        <button className="ui-btn" onClick={() => switchPortfolio(portfolio.id)} style={{
-                          background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
-                          ...ghostBtn,
-                        }}>
-                          打開
-                        </button>
-                      )}
-                      <button className="ui-btn" onClick={() => renamePortfolio(portfolio.id)} style={{
-                        background:C.cardAmber,color:C.amber,border:`1px solid ${alpha(C.amber, A.strongLine)}`,
-                        ...ghostBtn,
-                      }}>
-                        改名
-                      </button>
-                      {portfolio.id !== OWNER_PORTFOLIO_ID && (
-                        <button className="ui-btn" onClick={() => deletePortfolio(portfolio.id)} style={{
-                          background:C.upBg,color:C.up,border:`1px solid ${alpha(C.up, A.strongLine)}`,
-                          ...ghostBtn,
-                        }}>
-                          刪除
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {viewMode === PORTFOLIO_VIEW_MODE ? (
-              <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${C.borderSub}`}}>
-                <div style={{...lbl,marginBottom:8}}>目前組合備註</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                  <div>
-                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>風險屬性</div>
-                    <input
-                      value={portfolioNotes.riskProfile || ""}
-                      onChange={e => setPortfolioNotes(prev => ({ ...prev, riskProfile: e.target.value }))}
-                      placeholder="如：保守、波段、可接受回撤"
-                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}
-                    />
-                  </div>
-                  <div>
-                    <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>操作偏好</div>
-                    <input
-                      value={portfolioNotes.preferences || ""}
-                      onChange={e => setPortfolioNotes(prev => ({ ...prev, preferences: e.target.value }))}
-                      placeholder="如：只做財報前布局、避免權證"
-                      style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:"8px 10px",color:C.text,fontSize:11,outline:"none",fontFamily:"inherit"}}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div style={{fontSize:9,color:C.textMute,marginBottom:3}}>自訂備註</div>
-                  <textarea
-                    value={portfolioNotes.customNotes || ""}
-                    onChange={e => setPortfolioNotes(prev => ({ ...prev, customNotes: e.target.value }))}
-                    placeholder="這組合的策略限制、委託人要求、特殊提醒..."
-                    style={{width:"100%",background:C.subtle,border:`1px solid ${C.border}`,borderRadius:7,padding:8,color:C.text,fontSize:11,resize:"vertical",minHeight:72,outline:"none",fontFamily:"inherit",lineHeight:1.7}}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div style={{marginTop:12,fontSize:10,color:C.textMute,background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",lineHeight:1.7}}>
-                目前在全部總覽模式，資料維持唯讀。要編輯 notes，先用上方「打開」切回某個單一組合。
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* today alert */}
-        {viewMode !== OVERVIEW_VIEW_MODE && urgentCount>0 && (
-          <div style={{background:C.upBg,border:`1px solid ${alpha(C.up, A.line)}`,
-            borderLeft:`3px solid ${C.up}`,
-            borderRadius:6,padding:"5px 10px",marginBottom:8,
-            fontSize:10,color:C.up,lineHeight:1.6,fontWeight:500}}>
-            今日 · {todayAlertSummary}
-          </div>
-        )}
-
-        {viewMode === OVERVIEW_VIEW_MODE ? (
-          <div style={{background:C.subtle,border:`1px solid ${C.border}`,borderRadius:8,padding:"8px 10px",marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style={{fontSize:10,color:C.textSec}}>全部總覽模式只讀，不會寫本機資料，也不會同步雲端。</span>
-            <button className="ui-btn" onClick={exitOverview} style={{
-              background:C.cardBlue,color:C.blue,border:`1px solid ${alpha(C.blue, A.strongLine)}`,
-              ...ghostBtn,
-            }}>
-              返回目前組合
-            </button>
-          </div>
-        ) : (
-          <div className="seg" style={{display:"flex",gap:6,overflowX:"auto",padding:"2px 0 6px"}}>
-            {TABS.map(t=>(
-              <button className="ui-btn" key={t.k} onClick={()=>{setTab(t.k);window.scrollTo({top:0,behavior:"smooth"})}} style={{
-                background:tab===t.k ? alpha(C.text, "10") : "transparent",
-                color: tab===t.k ? C.text : C.textMute,
-                border:`1px solid ${tab===t.k ? C.borderStrong : "transparent"}`,
-                boxShadow:tab===t.k ? C.insetLine : "none",
-                borderRadius:999,
-                padding:"7px 13px",
-                fontSize:11, fontWeight: tab===t.k ? 600 : 500,
-                cursor:"pointer", whiteSpace:"nowrap",
-              }}>{t.label}</button>
-            ))}
-          </div>
-        )}
-      </div>
+      <Header
+        C={C}
+        A={A}
+        alpha={alpha}
+        cloudSync={cloudSync}
+        saved={saved}
+        refreshPrices={refreshPrices}
+        refreshing={refreshing}
+        copyWeeklyReport={copyWeeklyReport}
+        exportLocalBackup={exportLocalBackup}
+        backupFileInputRef={backupFileInputRef}
+        importLocalBackup={importLocalBackup}
+        priceSyncStatusTone={priceSyncStatusTone}
+        priceSyncStatusLabel={priceSyncStatusLabel}
+        activePriceSyncAt={activePriceSyncAt}
+        lastUpdate={lastUpdate}
+        pc={pc}
+        displayedTotalPnl={displayedTotalPnl}
+        displayedRetPct={displayedRetPct}
+        activePortfolioId={activePortfolioId}
+        switchPortfolio={pm.switchPortfolio}
+        ready={ready}
+        portfolioSwitching={portfolioSwitching}
+        portfolioSummaries={portfolioSummaries}
+        createPortfolio={createPortfolio}
+        viewMode={viewMode}
+        exitOverview={exitOverview}
+        openOverview={openOverview}
+        showPortfolioManager={showPortfolioManager}
+        setShowPortfolioManager={setShowPortfolioManager}
+        renamePortfolio={renamePortfolio}
+        deletePortfolio={deletePortfolio}
+        OWNER_PORTFOLIO_ID={OWNER_PORTFOLIO_ID}
+        overviewTotalValue={overviewTotalValue}
+        portfolioNotes={portfolioNotes}
+        setPortfolioNotes={setPortfolioNotes}
+        PORTFOLIO_VIEW_MODE={PORTFOLIO_VIEW_MODE}
+        OVERVIEW_VIEW_MODE={OVERVIEW_VIEW_MODE}
+        urgentCount={urgentCount}
+        todayAlertSummary={todayAlertSummary}
+        TABS={TABS}
+        tab={tab}
+        setTab={setTab}
+      />
 
       <div className="app-shell" style={{padding:"10px 14px"}}>
 

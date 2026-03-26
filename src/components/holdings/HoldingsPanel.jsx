@@ -1,13 +1,13 @@
 import { createElement as h } from "react";
-import { C, alpha } from "../theme.js";
-import { IND_COLOR, STOCK_META } from "../seedData.js";
-import { Card, MetricCard, Badge, Button, SectionHeader, EmptyState } from "./common";
+import { C, alpha } from "../../theme.js";
+import { IND_COLOR, STOCK_META } from "../../seedData.js";
+import { Card, MetricCard, Badge, Button, SectionHeader, EmptyState } from "../common";
 import {
   getHoldingMarketValue,
   getHoldingReturnPct,
   getPortfolioValue,
   getPortfolioCost,
-} from "../lib/holdings.js";
+} from "../../lib/holdings.js";
 
 const lbl = { fontSize: 10, color: C.textMute, letterSpacing: "0.06em", fontWeight: 600, marginBottom: 5 };
 const metricCard = {

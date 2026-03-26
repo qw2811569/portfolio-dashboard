@@ -8,7 +8,7 @@ import {
   PORTFOLIO_STORAGE_FIELDS,
   PORTFOLIO_SUFFIX_TO_FIELD,
   PORTFOLIO_VIEW_MODE,
-} from "./constants.js";
+} from "../constants.js";
 import {
   todayStorageDate,
   pfKey,
@@ -18,7 +18,7 @@ import {
   applyMarketQuotesToHoldings,
   clonePortfolioNotes,
   normalizeNewsEvents,
-} from "./utils.js";
+} from "../utils.js";
 
 /**
  * Read a value from localStorage

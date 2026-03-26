@@ -1,46 +1,10 @@
 /**
  * Strategy Brain utilities
- * 
+ *
  * This module handles strategy brain normalization, validation, and lifecycle management.
  */
 
-// ── Date helpers ─────────────────────────────────────────────────────
-
-export function parseFlexibleDate(value) {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  
-  const str = String(value).trim();
-  if (!str) return null;
-  
-  // Try ISO format first
-  const iso = new Date(str);
-  if (!Number.isNaN(iso.getTime())) return iso;
-  
-  // Try YYYY/MM/DD
-  const parts = str.match(/^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})/);
-  if (parts) {
-    const [, year, month, day] = parts;
-    return new Date(Number(year), Number(month) - 1, Number(day));
-  }
-  
-  return null;
-}
-
-export function daysSince(dateValue, now = new Date()) {
-  const date = parseFlexibleDate(dateValue);
-  if (!date) return null;
-  const diff = now.getTime() - date.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-export function computeStaleness(dateValue, freshDays = 30, { now = new Date() } = {}) {
-  const age = daysSince(dateValue, now);
-  if (age == null) return "missing";
-  if (age <= freshDays) return "fresh";
-  if (age <= freshDays * 3) return "aging";
-  return "stale";
-}
+import { parseFlexibleDate, daysSince, computeStaleness } from "./datetime.js";
 
 // ── Rule text extraction ──────────────────────────────────────────────
 

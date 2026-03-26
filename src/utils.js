@@ -66,10 +66,6 @@ import {
   DEFAULT_NEW_EVENT,
   DEFAULT_PORTFOLIO_NOTES,
   DEFAULT_REVIEW_FORM,
-  INIT_HOLDINGS,
-  INIT_TARGETS,
-  INIT_WATCHLIST,
-  NEWS_EVENTS,
   OWNER_PORTFOLIO_ID,
   PORTFOLIO_SUFFIX_TO_FIELD,
   PORTFOLIOS_KEY,
@@ -84,16 +80,12 @@ import {
   LEGACY_STORAGE_KEYS,
   CLOSED_EVENT_STATUSES,
 } from "./constants.js";
-
-export {
-  normalizeMarketPriceCache,
-  getPersistedMarketQuotes,
-} from "./lib/market.js";
-
-export {
-  normalizeHoldings,
-  applyMarketQuotesToHoldings,
-} from "./lib/holdings.js";
+import {
+  INIT_HOLDINGS,
+  INIT_TARGETS,
+  INIT_WATCHLIST,
+  NEWS_EVENTS,
+} from "./seedData.js";
 
 // ── Event normalization (still in App.jsx) ─────────────────────────────
 

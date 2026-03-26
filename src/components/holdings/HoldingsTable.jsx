@@ -1,11 +1,11 @@
 import { createElement as h } from "react";
-import { C, alpha } from "../theme.js";
-import { Card, Badge, Button } from "./common";
+import { C, alpha } from "../../theme.js";
+import { Card, Badge, Button } from "../common";
 import {
   getHoldingMarketValue,
   getHoldingReturnPct,
   getHoldingUnrealizedPnl,
-} from "../lib/holdings.js";
+} from "../../lib/holdings.js";
 
 const card = {
   background: C.card,

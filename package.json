@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/watchlist.test.js && node tests/holdings.test.js"
+    "test": "node tests/watchlist.test.js && node tests/holdings.test.js",
+    "checkpoint": "bash scripts/create-checkpoint.sh",
+    "checkpoint:git": "bash scripts/git-checkpoint.sh"
   },
   "dependencies": {
     "@vercel/blob": "^2.3.1",

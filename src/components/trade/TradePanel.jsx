@@ -1,6 +1,6 @@
 import { createElement as h } from "react";
 import { C, alpha } from "../../theme.js";
-import { Card, Button, TextInput } from "../common";
+import { Card, Button } from "../common";
 
 const card = {
   background: C.card,

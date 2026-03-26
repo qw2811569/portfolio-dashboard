@@ -4,8 +4,7 @@ import { C } from "../theme.js";
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
 export default function Md({ text, color }) {
   if (!text) return null;
-  const lines = text.split("
-");
+  const lines = text.split("\n");
   const els = [];
   let listItems = [];
   const textColor = color || C.textSec;

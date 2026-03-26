@@ -12,40 +12,64 @@ import {
 import {
   todayStorageDate,
   pfKey,
-  readStorageValue,
   save,
   getHoldingCostBasis,
   getHoldingMarketValue,
   applyMarketQuotesToHoldings,
-  normalizeNewsEvents,
   clonePortfolioNotes,
-} from "../App.jsx"; // These will be moved to a utils file later
+  normalizeNewsEvents,
+} from "./utils.js";
 
+/**
+ * Read a value from localStorage
+ */
+function readStorageValue(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get fallback value for a portfolio field
+ */
 function getPortfolioFallback(pid, suffix) {
   const field = PORTFOLIO_SUFFIX_TO_FIELD[suffix];
   if (!field) return null;
   return (pid === OWNER_PORTFOLIO_ID ? field.ownerFallback : field.emptyFallback)();
 }
 
+/**
+ * Remove all data for a portfolio
+ */
 function removePortfolioData(pid) {
   for (const field of PORTFOLIO_STORAGE_FIELDS) {
     try { localStorage.removeItem(pfKey(pid, field.suffix)); } catch {}
   }
 }
 
+/**
+ * Portfolio Management Hook
+ * 
+ * Manages portfolio state, switching, creation, renaming, and deletion.
+ * Also handles overview mode toggling.
+ */
 export const usePortfolioManagement = ({
-  initialPortfolios,
-  initialActivePortfolioId,
-  initialViewMode,
-  activeHoldings,
-  activeNewsEvents,
-  activePortfolioNotes,
-  marketPriceCache,
-  flushCurrentPortfolio,
-  resetTransientUiState,
-  loadPortfolio,
-  setSaved,
-}) => {
+  ready = false,
+  initialPortfolios = [],
+  initialActivePortfolioId = OWNER_PORTFOLIO_ID,
+  initialViewMode = PORTFOLIO_VIEW_MODE,
+  activeHoldings = [],
+  activeNewsEvents = [],
+  activePortfolioNotes = {},
+  marketPriceCache = null,
+  flushCurrentPortfolio = async () => {},
+  resetTransientUiState = () => {},
+  loadPortfolio = async () => {},
+  setSaved = () => {},
+} = {}) => {
   const [portfolios, setPortfolios] = useState(initialPortfolios);
   const [activePortfolioId, setActivePortfolioId] = useState(initialActivePortfolioId);
   const [viewMode, setViewMode] = useState(initialViewMode);
@@ -58,6 +82,9 @@ export const usePortfolioManagement = ({
     toPid: initialActivePortfolioId,
   });
 
+  /**
+   * Get snapshot of a portfolio's data
+   */
   const getPortfolioSnapshot = useCallback((portfolioId) => {
     const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId;
     const holdingsValue = useLiveState ? activeHoldings : readStorageValue(pfKey(portfolioId, "holdings-v2"));
@@ -74,6 +101,9 @@ export const usePortfolioManagement = ({
     };
   }, [viewMode, activePortfolioId, activeHoldings, activeNewsEvents, activePortfolioNotes, marketPriceCache]);
 
+  /**
+   * Calculate portfolio summaries with metrics
+   */
   const portfolioSummaries = useMemo(() => {
     if (!portfolios) return [];
     return portfolios.map(portfolio => {
@@ -94,6 +124,9 @@ export const usePortfolioManagement = ({
     });
   }, [portfolios, getPortfolioSnapshot]);
 
+  /**
+   * Switch to a different portfolio
+   */
   const switchPortfolio = useCallback(async (pid) => {
     if (!pid || portfolioSwitching) return;
     if (pid === activePortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return;
@@ -117,6 +150,9 @@ export const usePortfolioManagement = ({
     }
   }, [activePortfolioId, viewMode, portfolioSwitching, flushCurrentPortfolio, resetTransientUiState, loadPortfolio, setSaved]);
 
+  /**
+   * Create a new portfolio
+   */
   const createPortfolio = useCallback(async () => {
     const rawName = window.prompt("新組合名稱");
     const name = rawName?.trim();
@@ -140,6 +176,9 @@ export const usePortfolioManagement = ({
     setTimeout(() => setSaved(""), 3000);
   }, [portfolios, switchPortfolio, setSaved]);
 
+  /**
+   * Rename a portfolio
+   */
   const renamePortfolio = useCallback(async (pid) => {
     const current = portfolios.find(item => item.id === pid);
     if (!current) return;
@@ -154,6 +193,9 @@ export const usePortfolioManagement = ({
     setTimeout(() => setSaved(""), 3000);
   }, [portfolios, setSaved]);
 
+  /**
+   * Delete a portfolio
+   */
   const deletePortfolio = useCallback(async (pid) => {
     const current = portfolios.find(item => item.id === pid);
     if (!current || pid === OWNER_PORTFOLIO_ID) return;
@@ -193,6 +235,9 @@ export const usePortfolioManagement = ({
     }
   }, [portfolios, activePortfolioId, viewMode, flushCurrentPortfolio, switchPortfolio, setSaved]);
 
+  /**
+   * Enter overview mode (read-only view of all portfolios)
+   */
   const openOverview = useCallback(async () => {
     if (portfolioSwitching || viewMode === OVERVIEW_VIEW_MODE) return;
     setPortfolioSwitching(true);
@@ -208,6 +253,9 @@ export const usePortfolioManagement = ({
     }
   }, [activePortfolioId, flushCurrentPortfolio, portfolioSwitching, resetTransientUiState, viewMode]);
 
+  /**
+   * Exit overview mode and return to portfolio view
+   */
   const exitOverview = useCallback(async () => {
     if (portfolioSwitching || viewMode !== OVERVIEW_VIEW_MODE) return;
     await switchPortfolio(activePortfolioId);

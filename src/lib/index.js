@@ -7,3 +7,4 @@ export * from "./holdings.js";
 export * from "./brain.js";
 export * from "./datetime.js";
 export * from "./market.js";
+export * from "./events.js";

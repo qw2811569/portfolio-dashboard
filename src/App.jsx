@@ -3735,8 +3735,6 @@ export default function App() {
   const [brainValidation, setBrainValidation] = useState(() => createEmptyBrainValidationStore());
   const [portfolioNotes, setPortfolioNotes] = useState(() => clonePortfolioNotes());
   const [cloudSync, setCloudSync]         = useState(false);
-  const [portfolioSwitching, setPortfolioSwitching] = useState(false);
-  const [showPortfolioManager, setShowPortfolioManager] = useState(false);
   const [relayPlanExpanded, setRelayPlanExpanded] = useState(false);
   // AutoResearch state（必須在 useEffect 之前宣告）
   const [researching, setResearching] = useState(false);

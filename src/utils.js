@@ -95,6 +95,12 @@ export {
   applyMarketQuotesToHoldings,
 } from "./lib/holdings.js";
 
+// ── Event normalization (still in App.jsx) ─────────────────────────────
+
+// These will be extracted to lib/events.js later
+import { normalizeEventRecord, normalizeNewsEvents } from "./App.jsx";
+export { normalizeEventRecord, normalizeNewsEvents };
+
 // ── Storage helpers ───────────────────────────────────────────────────
 
 /**

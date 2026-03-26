@@ -1,21 +1,21 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import {
   OWNER_PORTFOLIO_ID,
-  PORTFOLIO_VIEW_MODE,
   OVERVIEW_VIEW_MODE,
   PORTFOLIOS_KEY,
   ACTIVE_PORTFOLIO_KEY,
   VIEW_MODE_KEY,
   PORTFOLIO_STORAGE_FIELDS,
   PORTFOLIO_SUFFIX_TO_FIELD,
-} from "../App.jsx"; // These will be moved to a constants file later
+  PORTFOLIO_VIEW_MODE,
+} from "./constants.js";
 import {
   todayStorageDate,
   pfKey,
   readStorageValue,
   save,
-  getHoldingMarketValue,
   getHoldingCostBasis,
+  getHoldingMarketValue,
   applyMarketQuotesToHoldings,
   normalizeNewsEvents,
   clonePortfolioNotes,

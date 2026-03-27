@@ -5,7 +5,10 @@
  */
 
 import { create } from 'zustand';
-import { createDefaultReviewForm, createDefaultEventDraft } from '../utils.js';
+import { DEFAULT_REVIEW_FORM, DEFAULT_NEW_EVENT } from '../constants.js';
+
+const createDefaultReviewForm = (overrides = {}) => ({ ...DEFAULT_REVIEW_FORM, ...overrides });
+const createDefaultEventDraft = (overrides = {}) => ({ ...DEFAULT_NEW_EVENT, ...overrides });
 
 // Initial state
 const createInitialState = () => ({

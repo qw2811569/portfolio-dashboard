@@ -289,6 +289,33 @@ export function formatEventStockOutcomeLine(outcome) {
   return `${outcome.name || outcome.code}：${actualLabel}${pct}｜${verdict}`
 }
 
+/**
+ * Infer catalyst type from event title text
+ * @returns {'earnings'|'corporate'|'industry'|'macro'|'technical'|null}
+ */
+export function inferCatalystType(event) {
+  const text = (event?.title || '').toLowerCase()
+  if (!text) return null
+  if (/營收|財報|eps|法說|季報|年報/.test(text)) return 'earnings'
+  if (/併購|增資|庫藏|董事|除權|除息/.test(text)) return 'corporate'
+  if (/產能|訂單|供應鏈|技術|製程/.test(text)) return 'industry'
+  if (/fed|利率|gdp|cpi|央行|匯率|關稅/.test(text)) return 'macro'
+  if (/外資|融資|融券|成交量|突破|跌破/.test(text)) return 'technical'
+  return null
+}
+
+/**
+ * Infer impact level from catalyst type
+ * @returns {'high'|'medium'|'low'|null}
+ */
+export function inferImpact(event) {
+  const type = event?.catalystType
+  if (!type) return null
+  if (type === 'earnings') return 'high'
+  if (type === 'technical') return 'low'
+  return 'medium'
+}
+
 export function normalizeEventRecord(event) {
   if (!event || typeof event !== 'object') return null
   const status =

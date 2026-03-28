@@ -120,6 +120,29 @@ export const DEFAULT_THESIS = {
   reviewHistory: [],
 }
 
+export const DEFAULT_THESIS_PILLAR = {
+  id: null,
+  text: '',
+  status: 'on_track', // on_track / watch / behind / broken
+  trend: 'stable', // up / stable / down
+  lastChecked: null,
+}
+
+export const DEFAULT_THESIS_RISK = {
+  id: null,
+  text: '',
+  triggered: false,
+}
+
+export const PILLAR_STATUSES = ['on_track', 'watch', 'behind', 'broken']
+export const PILLAR_TRENDS = ['up', 'stable', 'down']
+export const CONVICTION_LEVELS = ['high', 'medium', 'low']
+export const UPDATE_LOG_IMPACTS = ['strengthen', 'weaken', 'neutral']
+export const UPDATE_LOG_ACTIONS = ['hold', 'add', 'trim', 'exit']
+
+export const CATALYST_TYPES = ['earnings', 'corporate', 'industry', 'macro', 'technical']
+export const IMPACT_LEVELS = ['high', 'medium', 'low']
+
 export const DEFAULT_RISK_SETTINGS = {
   totalCapital: null,
   riskPerTrade: 2,

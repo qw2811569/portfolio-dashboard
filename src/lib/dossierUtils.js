@@ -43,7 +43,7 @@ ${priceInfo}
 市值: ${position.value}
 未實現損益: ${position.pnl} (${position.pct >= 0 ? '+' : ''}${position.pct.toFixed(2)}%)
 
-投資論文 (Thesis): ${thesis.reason || '無'}
+${dossier.thesis ? buildThesisScorecardContext(dossier.thesis) : '投資論文 (Thesis): 無'}
 ${targetInfo}
 ${fundamentalInfo}
 ${eventInfo}
@@ -290,6 +290,32 @@ export function buildThemeContext(code, stockMeta) {
   })
 
   return `相關主題: ${themes.join(', ')}`
+}
+
+/**
+ * Build thesis scorecard context for AI prompt
+ */
+export function buildThesisScorecardContext(thesis) {
+  if (!thesis) return ''
+
+  const statement = thesis.statement || thesis.reason || ''
+  const direction = thesis.direction || 'long'
+  const conviction = thesis.conviction || 'medium'
+
+  const pillarLines = (thesis.pillars || [])
+    .map((p) => `  - ${p.text} [${p.status}] trend:${p.trend || 'stable'}`)
+    .join('\n')
+
+  const riskLines = (thesis.risks || [])
+    .map((r) => `  - ${r.text}${r.triggered ? ' [TRIGGERED]' : ''}`)
+    .join('\n')
+
+  const priceInfo = []
+  if (thesis.targetPrice) priceInfo.push(`目標價: ${thesis.targetPrice}`)
+  if (thesis.stopLoss) priceInfo.push(`停損價: ${thesis.stopLoss}`)
+
+  return `Thesis (${direction}): ${statement}
+Conviction: ${conviction}${pillarLines ? `\nPillars:\n${pillarLines}` : ''}${riskLines ? `\nRisks:\n${riskLines}` : ''}${priceInfo.length > 0 ? `\n${priceInfo.join(' / ')}` : ''}`
 }
 
 export function createDefaultFundamentalDraft(overrides = {}) {

@@ -5,7 +5,6 @@ import { getSupplyChain, getThemesForStock } from './dataAdapters/index.js'
 export function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
   if (!dossier) return ''
   const position = dossier.position || {}
-  const thesis = dossier.thesis || {}
   const targets = dossier.targets || []
   const fundamentals = dossier.fundamentals || {}
   const events = dossier.events || []

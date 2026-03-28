@@ -2,7 +2,65 @@
 // 用於記錄和追蹤投資 thesis
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { OWNER_PORTFOLIO_ID, DEFAULT_THESIS, STORAGE_KEYS } from '../constants.js'
+import {
+  OWNER_PORTFOLIO_ID,
+  DEFAULT_THESIS,
+  STORAGE_KEYS,
+  DEFAULT_THESIS_PILLAR,
+  DEFAULT_THESIS_RISK,
+  PILLAR_STATUSES,
+  PILLAR_TRENDS,
+  CONVICTION_LEVELS,
+} from '../constants.js'
+
+/**
+ * Normalize a thesis record — migrates old format on read
+ */
+export function normalizeThesis(thesis) {
+  if (!thesis || typeof thesis !== 'object') return null
+
+  const statement = thesis.statement || thesis.reason || ''
+  const direction = thesis.direction === 'short' ? 'short' : 'long'
+  const conviction = CONVICTION_LEVELS.includes(thesis.conviction) ? thesis.conviction : 'medium'
+
+  const pillars = Array.isArray(thesis.pillars)
+    ? thesis.pillars.map((p) => ({
+        ...DEFAULT_THESIS_PILLAR,
+        ...p,
+        status: PILLAR_STATUSES.includes(p?.status) ? p.status : 'on_track',
+        trend: PILLAR_TRENDS.includes(p?.trend) ? p.trend : 'stable',
+      }))
+    : []
+
+  // Migrate old invalidation string → single risk item
+  let risks = []
+  if (Array.isArray(thesis.risks)) {
+    risks = thesis.risks.map((r) => ({ ...DEFAULT_THESIS_RISK, ...r }))
+  } else if (typeof thesis.invalidation === 'string' && thesis.invalidation.trim()) {
+    risks = [{ id: 'r-migrated-0', text: thesis.invalidation.trim(), triggered: false }]
+  }
+
+  return {
+    id: thesis.id || null,
+    stockId: thesis.stockId || null,
+    status: thesis.status || 'active',
+    createdAt: thesis.createdAt || null,
+    updatedAt: thesis.updatedAt || null,
+    direction,
+    statement,
+    reason: thesis.reason || '',
+    expectation: thesis.expectation || '',
+    invalidation: thesis.invalidation || '',
+    pillars,
+    risks,
+    conviction,
+    targetPrice: thesis.targetPrice ?? null,
+    stopLoss: thesis.stopLoss ?? null,
+    stopLossPercent: thesis.stopLossPercent ?? null,
+    updateLog: Array.isArray(thesis.updateLog) ? thesis.updateLog : [],
+    reviewHistory: Array.isArray(thesis.reviewHistory) ? thesis.reviewHistory : [],
+  }
+}
 
 /**
  * Read thesis from localStorage
@@ -11,7 +69,8 @@ function readThesisFromStorage(portfolioId = OWNER_PORTFOLIO_ID) {
   try {
     const key = `${STORAGE_KEYS.THESIS}-${portfolioId}`
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : []
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.map(normalizeThesis).filter(Boolean) : []
   } catch {
     return []
   }

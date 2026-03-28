@@ -1,0 +1,122 @@
+{
+  "AI伺服器": {
+    "description": "AI 訓練與推論伺服器完整供應鏈",
+    "count": 148,
+    "relatedThemes": ["CoWoS", "HBM", "NVIDIA", "CPO", "資料中心"],
+    "stocks": {
+      "upstream": ["2382", "2324", "3231", "2356"],
+      "midstream": ["2308", "2317", "3044", "3011"],
+      "downstream": ["3017", "3037", "2327", "2383"]
+    }
+  },
+  "CoWoS": {
+    "description": "台積電先進封裝技術供應鏈",
+    "count": 39,
+    "relatedThemes": ["AI伺服器", "HBM", "NVIDIA"],
+    "stocks": {
+      "upstream": [],
+      "midstream": ["2330"],
+      "downstream": ["3037", "8046", "2344"]
+    }
+  },
+  "NVIDIA": {
+    "description": "NVIDIA AI 晶片與 GPU 供應鏈",
+    "count": 104,
+    "relatedThemes": ["AI伺服器", "CoWoS", "HBM", "資料中心"],
+    "stocks": {
+      "upstream": ["2330", "3443"],
+      "midstream": ["2317", "2382", "3231"],
+      "downstream": ["3017", "6862"]
+    }
+  },
+  "HBM": {
+    "description": "高頻寬記憶體供應鏈",
+    "count": 16,
+    "relatedThemes": ["AI伺服器", "CoWoS", "NVIDIA"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": ["3037", "2330"]
+    }
+  },
+  "CPO": {
+    "description": "共同封裝光學技術供應鏈",
+    "count": 13,
+    "relatedThemes": ["AI伺服器", "資料中心", "矽光子"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": ["3491", "4960"]
+    }
+  },
+  "資料中心": {
+    "description": "資料中心基礎設施與零組件供應鏈",
+    "count": 77,
+    "relatedThemes": ["AI伺服器", "CPO", "NVIDIA"],
+    "stocks": {
+      "upstream": ["2308", "2317"],
+      "midstream": ["3017", "3231", "2382"],
+      "downstream": ["3491"]
+    }
+  },
+  "5G": {
+    "description": "第五代行動通訊基礎設施與終端供應鏈",
+    "count": 62,
+    "relatedThemes": ["低軌衛星"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": []
+    }
+  },
+  "電動車": {
+    "description": "電動車動力系統與零組件供應鏈",
+    "count": 45,
+    "relatedThemes": ["碳化矽"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": []
+    }
+  },
+  "低軌衛星": {
+    "description": "低軌道衛星通訊地面設備與元件供應鏈",
+    "count": 20,
+    "relatedThemes": ["5G"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": ["3491"]
+    }
+  },
+  "矽光子": {
+    "description": "矽光子積體電路技術供應鏈",
+    "count": 12,
+    "relatedThemes": ["CPO", "資料中心"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": []
+    }
+  },
+  "碳化矽": {
+    "description": "碳化矽功率半導體供應鏈",
+    "count": 15,
+    "relatedThemes": ["電動車"],
+    "stocks": {
+      "upstream": [],
+      "midstream": [],
+      "downstream": []
+    }
+  },
+  "ABF載板": {
+    "description": "ABF載板高階IC封裝基板供應鏈",
+    "count": 10,
+    "relatedThemes": ["AI伺服器", "CoWoS"],
+    "stocks": {
+      "upstream": [],
+      "midstream": ["3037", "8046"],
+      "downstream": []
+    }
+  }
+}

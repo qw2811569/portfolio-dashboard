@@ -336,6 +336,8 @@ export function normalizeEventRecord(event) {
       : status === 'closed'
         ? buildEventStockOutcomes({ ...event, priceAtEvent, priceAtExit, actual })
         : []
+  const catalystType = event.catalystType || inferCatalystType(event)
+  const impact = event.impact || inferImpact({ catalystType })
 
   return {
     ...event,
@@ -353,6 +355,11 @@ export function normalizeEventRecord(event) {
     correct: typeof event.correct === 'boolean' ? event.correct : null,
     lessons: event.lessons || '',
     reviewDate,
+    // Catalyst fields (backward compatible)
+    catalystType: catalystType || null,
+    impact: impact || null,
+    relatedThesisIds: Array.isArray(event.relatedThesisIds) ? event.relatedThesisIds : [],
+    pillarImpact: event.pillarImpact || null,
   }
 }
 

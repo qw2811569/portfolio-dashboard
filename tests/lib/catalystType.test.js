@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { inferCatalystType, inferImpact } from '../../src/lib/eventUtils.js'
+import { inferCatalystType, inferImpact, normalizeEventRecord } from '../../src/lib/eventUtils.js'
 
 describe('inferCatalystType', () => {
   it('detects earnings events', () => {
@@ -73,5 +73,56 @@ describe('inferImpact', () => {
   it('returns null for unknown type', () => {
     expect(inferImpact({ catalystType: null })).toBeNull()
     expect(inferImpact({})).toBeNull()
+  })
+})
+
+describe('normalizeEventRecord catalyst fields', () => {
+  const baseEvent = {
+    id: 'evt-1',
+    title: '台積電3月營收公布',
+    date: '2026/03/28',
+    stocks: ['台積電 2330'],
+    pred: 'up',
+    status: 'pending',
+  }
+
+  it('auto-infers catalystType from title', () => {
+    const result = normalizeEventRecord(baseEvent)
+    expect(result.catalystType).toBe('earnings')
+  })
+
+  it('auto-infers impact from catalystType', () => {
+    const result = normalizeEventRecord(baseEvent)
+    expect(result.impact).toBe('high')
+  })
+
+  it('preserves explicit catalystType over inference', () => {
+    const result = normalizeEventRecord({ ...baseEvent, catalystType: 'corporate' })
+    expect(result.catalystType).toBe('corporate')
+  })
+
+  it('preserves explicit impact over inference', () => {
+    const result = normalizeEventRecord({ ...baseEvent, impact: 'low' })
+    expect(result.impact).toBe('low')
+  })
+
+  it('defaults relatedThesisIds to empty array', () => {
+    const result = normalizeEventRecord(baseEvent)
+    expect(result.relatedThesisIds).toEqual([])
+  })
+
+  it('preserves provided relatedThesisIds', () => {
+    const result = normalizeEventRecord({ ...baseEvent, relatedThesisIds: ['thesis-2330-001'] })
+    expect(result.relatedThesisIds).toEqual(['thesis-2330-001'])
+  })
+
+  it('defaults pillarImpact to null', () => {
+    const result = normalizeEventRecord(baseEvent)
+    expect(result.pillarImpact).toBeNull()
+  })
+
+  it('sets catalystType to null for unclassifiable events', () => {
+    const result = normalizeEventRecord({ ...baseEvent, title: '今天天氣不錯' })
+    expect(result.catalystType).toBeNull()
   })
 })

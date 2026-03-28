@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-28 21:54
+Last updated: 2026-03-29 03:05
 
 ## Objective
 
@@ -36,6 +36,10 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-03-29 03:05` Codex：新增 [useAppRuntimeSyncRefs.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntimeSyncRefs.js)，把 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 內原本分散的 `activePortfolioIdRef / viewModeRef / portfoliosRef / portfolioSetterRef / bootRuntimeRef` 同步 effect 收斂成單一 hook
+- `2026-03-29 03:05` Codex：順手移除 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 中未使用的 `canUseCloudRef`，避免 dead ref 誤導後續維護
+- `2026-03-29 03:05` Codex：新增測試 [useAppRuntimeSyncRefs.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/useAppRuntimeSyncRefs.test.jsx)，並通過 `npm run verify:local`；全量測試提升到 `25 files / 111 tests`
+- `2026-03-29 03:05` Codex：新增交接報告 [DEBUG_REPORT_2026-03-29_APP_RUNTIME_REF_SYNC_EXTRACTION.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-29_APP_RUNTIME_REF_SYNC_EXTRACTION.md)
 - `2026-03-28 21:54` Codex：新增 [src/lib/appShellRuntime.js](/Users/chenkuichen/APP/test/src/lib/appShellRuntime.js) 與 [src/components/AppPanels.jsx](/Users/chenkuichen/APP/test/src/components/AppPanels.jsx)，把 `live portfolio snapshot` 欄位清單與 tab panel render skeleton 從 [src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 收成單一 source of truth
 - `2026-03-28 21:54` Codex：`flushCurrentPortfolio()` 與 `useLocalBackupWorkflow()` 現在共用 `buildLivePortfolioSnapshot()`；`newsEvents` fallback 與 event filter 也已集中到 `appShellRuntime`
 - `2026-03-28 21:54` Codex：新增測試 [appShellRuntime.test.js](/Users/chenkuichen/APP/test/tests/lib/appShellRuntime.test.js)，並通過 `npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh`、`npm run healthcheck`、`npm run smoke:ui`；全量測試提升到 `22 files / 97 tests`

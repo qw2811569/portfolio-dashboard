@@ -76,6 +76,7 @@
 - `src/hooks/useSavedToast.js`
 - `src/hooks/useAppShellUiState.js`
 - `src/hooks/useCanonicalLocalhostRedirect.js`
+- `src/hooks/useAppRuntimeSyncRefs.js`
 - `src/hooks/useDailyAnalysisWorkflow.js`
 - `src/hooks/useResearchWorkflow.js`
 - `src/components/AppPanels.jsx`
@@ -107,6 +108,7 @@
 - 若任務是 app-level saved toast、timeout cleanup、跨 workflow 提示訊息競態，先看 `src/hooks/useSavedToast.js`
 - 若任務是 `tab / scan / relay / review / research selection` 這批 app-local transient UI state，先看 `src/hooks/useAppShellUiState.js`
 - 若任務是 `localhost -> 127.0.0.1` canonical redirect，先看 `src/hooks/useCanonicalLocalhostRedirect.js`
+- 若任務是 `App.jsx` 內 `state -> ref` 同步、`bootRuntimeRef`、`portfolioSetterRef` 這批 runtime refs，先看 `src/hooks/useAppRuntimeSyncRefs.js`
 - 若任務是 `App.jsx` 的 panel render 收斂、tab -> panel registry、或 panel-scoped `ErrorBoundary` 組裝，先看 `src/components/AppPanels.jsx`
 - 若任務是 `App.jsx` 的 live snapshot、event fallback/filter 這類 app-shell 級 helper，先看 `src/lib/appShellRuntime.js`
 - 若任務是收盤分析流程，先看 `src/hooks/useDailyAnalysisWorkflow.js`；若是改 snapshot/prompt 純邏輯，再進 `src/lib/dailyAnalysisRuntime.js`

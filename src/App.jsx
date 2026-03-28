@@ -18,6 +18,7 @@ import { useTransientUiActions } from './hooks/useTransientUiActions.js'
 import { useSavedToast } from './hooks/useSavedToast.js'
 import { useAppShellUiState } from './hooks/useAppShellUiState.js'
 import { useCanonicalLocalhostRedirect } from './hooks/useCanonicalLocalhostRedirect.js'
+import { useAppRuntimeSyncRefs } from './hooks/useAppRuntimeSyncRefs.js'
 import { useDailyAnalysisWorkflow } from './hooks/useDailyAnalysisWorkflow.js'
 import { useResearchWorkflow } from './hooks/useResearchWorkflow.js'
 import { useStressTestWorkflow } from './hooks/useStressTestWorkflow.js'
@@ -228,7 +229,7 @@ export default function App() {
   const portfoliosRef = useRef([])
   const activePortfolioIdRef = useRef(OWNER_PORTFOLIO_ID)
   const viewModeRef = useRef(PORTFOLIO_VIEW_MODE)
-  const canUseCloudRef = useRef(false)
+  const bootRuntimeRef = useRef(null)
   const refreshAnalystReportsRef = useRef(async () => false)
   const resetTradeCaptureRef = useRef(() => {})
   useCanonicalLocalhostRedirect()
@@ -421,47 +422,24 @@ export default function App() {
     notifySaved: flashSaved,
   })
 
-  useEffect(() => {
-    activePortfolioIdRef.current = activePortfolioId
-  }, [activePortfolioId])
-  useEffect(() => {
-    viewModeRef.current = viewMode
-  }, [viewMode])
-  useEffect(() => {
-    portfoliosRef.current = portfolios
-  }, [portfolios])
-  useEffect(() => {
-    portfolioSetterRef.current = {
-      setActivePortfolioId,
-      setViewMode,
-    }
-  }, [setActivePortfolioId, setViewMode])
-
   const canPersistPortfolioData = ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioSwitching
   const canUseCloud = viewMode === PORTFOLIO_VIEW_MODE && activePortfolioId === OWNER_PORTFOLIO_ID
-  const bootRuntimeRef = useRef(null)
-  useEffect(() => {
-    canUseCloudRef.current = canUseCloud
-  }, [canUseCloud])
-  useEffect(() => {
-    bootRuntimeRef.current = {
-      activePortfolioId,
-      marketPriceQuotes: marketPriceCache?.prices || null,
-      applyPortfolioSnapshot,
-      setPortfolios,
-      setActivePortfolioId,
-      setViewMode,
-      portfolioTransitionRef,
-    }
-  }, [
+  useAppRuntimeSyncRefs({
+    activePortfolioIdRef,
     activePortfolioId,
-    applyPortfolioSnapshot,
-    marketPriceCache,
-    portfolioTransitionRef,
+    viewModeRef,
+    viewMode,
+    portfoliosRef,
+    portfolios,
+    portfolioSetterRef,
     setActivePortfolioId,
-    setPortfolios,
     setViewMode,
-  ])
+    bootRuntimeRef,
+    marketPriceCache,
+    applyPortfolioSnapshot,
+    setPortfolios,
+    portfolioTransitionRef,
+  })
 
   usePortfolioBootstrap({
     bootRuntimeRef,

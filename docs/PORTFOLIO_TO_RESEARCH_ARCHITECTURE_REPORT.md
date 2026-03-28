@@ -55,6 +55,7 @@
 - `src/hooks/useSavedToast.js` 管 app-level saved toast、timer cleanup 與 shared `flashSaved()` 邊界
 - `src/hooks/useAppShellUiState.js` 管 `tab / scan / relay / review / research selection` 這批純 UI transient state
 - `src/hooks/useCanonicalLocalhostRedirect.js` 管 `localhost -> 127.0.0.1` canonical redirect，讓主 runtime 不再自己養 redirect effect
+- `src/hooks/useAppRuntimeSyncRefs.js` 管 `activePortfolioId / viewMode / portfolios / bootRuntime` 這批 app runtime refs 的同步邊界
 - `src/components/AppPanels.jsx` 管 tab panel registry 與 panel-scoped `ErrorBoundary` render，讓 `App.jsx` 不再自己展開每一段 panel skeleton
 - `src/lib/appShellRuntime.js` 管 app-shell 級的 live snapshot 組裝、runtime events fallback 與 event filter helper
 - `src/hooks/useDailyAnalysisWorkflow.js` 管收盤分析的 async orchestration，讓 `App.jsx` 不再直接承擔整段 `runDailyAnalysis()`
@@ -74,6 +75,7 @@
 - `src/App.jsx` 與 route shell 的 `watchlist / reversal` action 現在已共用相同 hook，避免兩條入口寫出不同 shape 或遺漏 `updatedAt`
 - `src/App.jsx`、`usePortfolioManagement.js`、`usePortfolioPersistence.js` 與 `useRoutePortfolioRuntime.js` 的 saved toast 現在已共用 `notifySaved / flashSaved` 邊界，不再各自手刻 timer
 - `flushCurrentPortfolio()` 與 local backup export 現在已共用同一份 live snapshot builder，新增 persisted field 時不再需要同步維護兩份欄位清單
+- `App.jsx` 裡那批 `state -> ref` 同步 effect，現在已收斂到 `useAppRuntimeSyncRefs()`；未使用的 `canUseCloudRef` 也已移除
 - `src/App.routes.jsx` 存在，但不是目前瀏覽器載入的主入口
 - `src/App.routes.jsx` 已補上 route-local `QueryClientProvider`，讓 `Daily / Research` 這類 route hooks 可以在不依賴 `src/App.jsx` 的前提下運作
 - `src/pages/usePortfolioRouteContext.js` 已作為 route pages 的第一批真實資料入口，但不代表主入口已切換

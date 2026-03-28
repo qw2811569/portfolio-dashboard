@@ -192,6 +192,123 @@ export function useThesisTracking(portfolioId = OWNER_PORTFOLIO_ID) {
     [theses, portfolioId]
   )
 
+  const addPillar = useCallback(
+    async (thesisId, pillar) => {
+      const newPillar = {
+        ...DEFAULT_THESIS_PILLAR,
+        id: `p-${Date.now()}`,
+        lastChecked: new Date().toISOString().slice(0, 10),
+        ...pillar,
+      }
+      const updated = theses.map((t) => {
+        if (t.id === thesisId) {
+          return {
+            ...t,
+            pillars: [...(t.pillars || []), newPillar],
+            updatedAt: new Date().toISOString(),
+          }
+        }
+        return t
+      })
+      setTheses(updated)
+      saveThesisToStorage(updated, portfolioId)
+      return { success: true, pillar: newPillar }
+    },
+    [theses, portfolioId]
+  )
+
+  const updatePillar = useCallback(
+    async (thesisId, pillarId, updates) => {
+      const updated = theses.map((t) => {
+        if (t.id === thesisId) {
+          return {
+            ...t,
+            updatedAt: new Date().toISOString(),
+            pillars: (t.pillars || []).map((p) =>
+              p.id === pillarId
+                ? { ...p, ...updates, lastChecked: new Date().toISOString().slice(0, 10) }
+                : p
+            ),
+          }
+        }
+        return t
+      })
+      setTheses(updated)
+      saveThesisToStorage(updated, portfolioId)
+      return { success: true }
+    },
+    [theses, portfolioId]
+  )
+
+  const addRisk = useCallback(
+    async (thesisId, risk) => {
+      const newRisk = {
+        ...DEFAULT_THESIS_RISK,
+        id: `r-${Date.now()}`,
+        ...risk,
+      }
+      const updated = theses.map((t) => {
+        if (t.id === thesisId) {
+          return { ...t, risks: [...(t.risks || []), newRisk], updatedAt: new Date().toISOString() }
+        }
+        return t
+      })
+      setTheses(updated)
+      saveThesisToStorage(updated, portfolioId)
+      return { success: true, risk: newRisk }
+    },
+    [theses, portfolioId]
+  )
+
+  const toggleRisk = useCallback(
+    async (thesisId, riskId) => {
+      const updated = theses.map((t) => {
+        if (t.id === thesisId) {
+          return {
+            ...t,
+            updatedAt: new Date().toISOString(),
+            risks: (t.risks || []).map((r) =>
+              r.id === riskId ? { ...r, triggered: !r.triggered } : r
+            ),
+          }
+        }
+        return t
+      })
+      setTheses(updated)
+      saveThesisToStorage(updated, portfolioId)
+      return { success: true }
+    },
+    [theses, portfolioId]
+  )
+
+  const addUpdateLogEntry = useCallback(
+    async (thesisId, entry) => {
+      const logEntry = {
+        date: new Date().toISOString().slice(0, 10),
+        event: '',
+        impact: 'neutral',
+        pillarId: null,
+        action: 'hold',
+        note: '',
+        ...entry,
+      }
+      const updated = theses.map((t) => {
+        if (t.id === thesisId) {
+          return {
+            ...t,
+            updatedAt: new Date().toISOString(),
+            updateLog: [...(t.updateLog || []), logEntry],
+          }
+        }
+        return t
+      })
+      setTheses(updated)
+      saveThesisToStorage(updated, portfolioId)
+      return { success: true }
+    },
+    [theses, portfolioId]
+  )
+
   /**
    * Get thesis for a specific stock
    */
@@ -278,6 +395,13 @@ export function useThesisTracking(portfolioId = OWNER_PORTFOLIO_ID) {
     getThesisByStock,
     getThesesNeedingReview,
     checkInvalidationSignals,
+
+    // Scorecard methods
+    addPillar,
+    updatePillar,
+    addRisk,
+    toggleRisk,
+    addUpdateLogEntry,
   }
 }
 

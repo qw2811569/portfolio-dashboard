@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { normalizeThesis } from '../../src/hooks/useThesisTracking.js'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { normalizeThesis, useThesisTracking } from '../../src/hooks/useThesisTracking.js'
 
 describe('normalizeThesis', () => {
   it('passes through a fully upgraded thesis unchanged', () => {
@@ -92,5 +93,134 @@ describe('normalizeThesis', () => {
     const result = normalizeThesis(thesis)
     expect(result.pillars[0].status).toBe('on_track')
     expect(result.pillars[0].trend).toBe('up')
+  })
+})
+
+describe('useThesisTracking scorecard methods', () => {
+  beforeEach(() => {
+    localStorage.getItem.mockReturnValue(null)
+    localStorage.setItem.mockClear()
+  })
+
+  it('addPillar adds a pillar to a thesis', async () => {
+    const { result } = renderHook(() => useThesisTracking())
+
+    await act(async () => {
+      await result.current.addThesis({ stockId: '2330', reason: 'test' })
+    })
+
+    const thesisId = result.current.theses[0].id
+
+    await act(async () => {
+      await result.current.addPillar(thesisId, { text: '月營收成長 >20%' })
+    })
+
+    const thesis = result.current.theses.find((t) => t.id === thesisId)
+    expect(thesis.pillars).toHaveLength(1)
+    expect(thesis.pillars[0].text).toBe('月營收成長 >20%')
+    expect(thesis.pillars[0].status).toBe('on_track')
+    expect(thesis.pillars[0].id).toBeTruthy()
+  })
+
+  it('updatePillar updates status and trend', async () => {
+    const { result } = renderHook(() => useThesisTracking())
+
+    await act(async () => {
+      await result.current.addThesis({
+        stockId: '2330',
+        reason: 'test',
+        pillars: [
+          {
+            id: 'p1',
+            text: 'Revenue growth',
+            status: 'on_track',
+            trend: 'stable',
+            lastChecked: null,
+          },
+        ],
+      })
+    })
+
+    const thesisId = result.current.theses[0].id
+
+    await act(async () => {
+      await result.current.updatePillar(thesisId, 'p1', { status: 'watch', trend: 'down' })
+    })
+
+    const pillar = result.current.theses[0].pillars[0]
+    expect(pillar.status).toBe('watch')
+    expect(pillar.trend).toBe('down')
+    expect(pillar.lastChecked).toBeTruthy()
+  })
+
+  it('addRisk adds a risk to a thesis', async () => {
+    const { result } = renderHook(() => useThesisTracking())
+
+    await act(async () => {
+      await result.current.addThesis({ stockId: '2330', reason: 'test' })
+    })
+
+    const thesisId = result.current.theses[0].id
+
+    await act(async () => {
+      await result.current.addRisk(thesisId, { text: 'NVIDIA轉單三星' })
+    })
+
+    const thesis = result.current.theses.find((t) => t.id === thesisId)
+    expect(thesis.risks).toHaveLength(1)
+    expect(thesis.risks[0].text).toBe('NVIDIA轉單三星')
+    expect(thesis.risks[0].triggered).toBe(false)
+  })
+
+  it('toggleRisk flips triggered state', async () => {
+    const { result } = renderHook(() => useThesisTracking())
+
+    await act(async () => {
+      await result.current.addThesis({
+        stockId: '2330',
+        reason: 'test',
+        risks: [{ id: 'r1', text: 'Risk one', triggered: false }],
+      })
+    })
+
+    const thesisId = result.current.theses[0].id
+
+    await act(async () => {
+      await result.current.toggleRisk(thesisId, 'r1')
+    })
+
+    expect(result.current.theses[0].risks[0].triggered).toBe(true)
+
+    await act(async () => {
+      await result.current.toggleRisk(thesisId, 'r1')
+    })
+
+    expect(result.current.theses[0].risks[0].triggered).toBe(false)
+  })
+
+  it('addUpdateLogEntry appends to updateLog', async () => {
+    const { result } = renderHook(() => useThesisTracking())
+
+    await act(async () => {
+      await result.current.addThesis({ stockId: '2330', reason: 'test' })
+    })
+
+    const thesisId = result.current.theses[0].id
+
+    await act(async () => {
+      await result.current.addUpdateLogEntry(thesisId, {
+        event: 'Q4法說會展望正面',
+        impact: 'strengthen',
+        pillarId: null,
+        action: 'hold',
+        note: 'N5/N3 產能利用率維持高檔',
+      })
+    })
+
+    const thesis = result.current.theses.find((t) => t.id === thesisId)
+    expect(thesis.updateLog).toHaveLength(1)
+    expect(thesis.updateLog[0].event).toBe('Q4法說會展望正面')
+    expect(thesis.updateLog[0].impact).toBe('strengthen')
+    expect(thesis.updateLog[0].date).toBeTruthy()
   })
 })

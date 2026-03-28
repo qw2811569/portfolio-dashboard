@@ -31,6 +31,8 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
     brainContext.matchedRules?.length > 0
       ? `匹配規則: ${brainContext.matchedRules.map((r) => r.text).join('；')}`
       : '匹配規則: 無'
+  const supplyChainInfo = buildSupplyChainContext(dossier.code)
+  const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
 
   return `
 股票代碼: ${dossier.code}
@@ -45,6 +47,8 @@ ${priceInfo}
 ${targetInfo}
 ${fundamentalInfo}
 ${eventInfo}
+${supplyChainInfo ? `\n供應鏈:\n${supplyChainInfo}` : ''}
+${themeInfo ? `${themeInfo}` : ''}
 ${brainRuleInfo}
 `
 }
@@ -237,6 +241,55 @@ export function formatTaiwanValidationSignalLabel(value) {
     default:
       return '缺失'
   }
+}
+
+/**
+ * 建立供應鏈 context 文字（for AI prompt）
+ */
+export function buildSupplyChainContext(code) {
+  const chain = getSupplyChain(code)
+  if (!chain) return ''
+
+  const parts = []
+
+  if (chain.upstream.length > 0) {
+    const upstreamText = chain.upstream
+      .map((s) => `${s.name}(${s.product}${s.dependency === 'high' ? ',高度依賴' : ''})`)
+      .join(', ')
+    parts.push(`上游: ${upstreamText}`)
+  }
+
+  if (chain.downstream.length > 0) {
+    const downstreamText = chain.downstream
+      .map((s) => `${s.name}(${s.product}${s.revenueShare ? ',' + s.revenueShare + '營收' : ''})`)
+      .join(', ')
+    parts.push(`下游: ${downstreamText}`)
+  }
+
+  if (chain.customers.length > 0) {
+    parts.push(`主要客戶: ${chain.customers.join(', ')}`)
+  }
+
+  if (chain.suppliers.length > 0) {
+    parts.push(`主要供應商: ${chain.suppliers.join(', ')}`)
+  }
+
+  return parts.join('\n')
+}
+
+/**
+ * 建立主題 context 文字（for AI prompt）
+ */
+export function buildThemeContext(code, stockMeta) {
+  if (!stockMeta?.themes?.length) return ''
+
+  const themes = stockMeta.themes.map((name) => {
+    const found = getThemesForStock(code).find((t) => t.name === name)
+    if (found) return `${name}(${found.count}家)`
+    return name
+  })
+
+  return `相關主題: ${themes.join(', ')}`
 }
 
 export function createDefaultFundamentalDraft(overrides = {}) {

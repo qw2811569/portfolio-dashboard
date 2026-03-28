@@ -5,5 +5,5 @@ dist/
 .DS_Store
 .vercel
 .env*.local
-data/
+/data/
 blob-backup/

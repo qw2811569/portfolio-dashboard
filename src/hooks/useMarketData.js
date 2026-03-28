@@ -1,393 +1,368 @@
-/**
- * Market Data Hook
- * 
- * Manages market price cache, sync operations, and TWSE data fetching.
- */
-
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
+  API_ENDPOINTS,
   MARKET_PRICE_CACHE_KEY,
   MARKET_PRICE_SYNC_KEY,
-  MARKET_TIMEZONE,
-  POST_CLOSE_SYNC_MINUTES,
+  PORTFOLIO_ALIAS_TO_SUFFIX,
   PORTFOLIO_VIEW_MODE,
-} from "./constants.js";
+  POST_CLOSE_SYNC_MINUTES,
+  STATUS_MESSAGE_TIMEOUT_MS,
+} from '../constants.js'
+import { APP_DIALOG_MESSAGES, APP_TOAST_MESSAGES } from '../lib/appMessages.js'
+import { getTaipeiClock, parseStoredDate } from '../lib/datetime.js'
+import { getEventStockCodes } from '../lib/eventUtils.js'
+import { applyMarketQuotesToHoldings, resolveHoldingPrice } from '../lib/holdings.js'
 import {
+  canRunPostClosePriceSync,
   createEmptyMarketPriceCache,
+  extractBestPrice,
+  extractYesterday,
+  getCachedQuotesForCodes,
   normalizeMarketPriceCache,
   normalizeMarketPriceSync,
-  applyMarketQuotesToHoldings,
-  canRunPostClosePriceSync,
-  parseStoredDate,
-  save,
-  getTaipeiClock,
-} from "./utils.js";
+} from '../lib/market.js'
+import {
+  buildTwseBatchQueries,
+  collectTrackedCodes as collectTrackedCodesFromPortfolios,
+  extractQuotesFromTwsePayload,
+} from '../lib/marketSyncRuntime.js'
+import { pfKey, readStorageValue, save } from '../lib/portfolioUtils.js'
 
-/**
- * Read from localStorage
- */
-const readStorageValue = (key) => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-/**
- * Extract best price from TWSE item
- */
-const extractBestPrice = (item) => {
-  if (!item || typeof item !== "object") return null;
-  const price = Number(item.z ?? item.dj ?? item.price);
-  return Number.isFinite(price) && price > 0 ? price : null;
-};
-
-/**
- * Extract yesterday's closing price
- */
-const extractYesterday = (item) => {
-  if (!item || typeof item !== "object") return null;
-  const yesterday = Number(item.y ?? item.yesterday);
-  return Number.isFinite(yesterday) && yesterday > 0 ? yesterday : null;
-};
-
-/**
- * Get event stock codes
- */
-const getEventStockCodes = (event) => {
-  if (!event || typeof event !== "object") return [];
-  const stocks = String(event.stocks || "").trim();
-  if (!stocks) return [];
-  return stocks
-    .split(/[,\s]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(s => {
-      const match = s.match(/^(\d{4,6})\s*(.*)$/);
-      return match ? match[1] : s;
-    });
-};
-
-/**
- * Market Data Hook
- * 
- * @param {Object} params
- * @param {string} params.activePortfolioId - Current portfolio ID
- * @param {string} params.viewMode - Current view mode
- * @param {Array} params.holdings - Current holdings
- * @param {Array} params.watchlist - Current watchlist
- * @param {Array} params.newsEvents - Current news events
- * @param {Array} params.portfolios - All portfolios
- * @param {Function} params.setHoldings - Set holdings callback
- * @param {Function} params.setSaved - Show status callback
- * @param {Function} params.setLastUpdate - Set last update callback
- * @returns {Object} Market data state and operations
- */
-export const useMarketData = ({
-  activePortfolioId,
-  viewMode,
+export function useMarketData({
   holdings = [],
   watchlist = [],
   newsEvents = [],
-  portfolios = [],
+  portfoliosRef = { current: [] },
+  activePortfolioIdRef = { current: '' },
+  viewModeRef = { current: PORTFOLIO_VIEW_MODE },
   setHoldings = () => {},
-  setSaved = () => {},
-  setLastUpdate = () => {},
-} = {}) => {
-  const [marketPriceCache, setMarketPriceCache] = useState(() => 
+  notifySaved = () => {},
+  requestConfirmation = async () => true,
+} = {}) {
+  const [marketPriceCache, setMarketPriceCache] = useState(() =>
     normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY))
-  );
-  const [marketPriceSync, setMarketPriceSync] = useState(() => 
+  )
+  const [marketPriceSync, setMarketPriceSync] = useState(() =>
     normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY))
-  );
-  const [refreshing, setRefreshing] = useState(false);
-  
-  const priceSyncInFlightRef = useRef(null);
-  const priceSelfHealRef = useRef({});
+  )
+  const [lastUpdate, setLastUpdate] = useState(() => {
+    const cachedSync = normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY))
+    const cachedPrice = normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY))
+    return parseStoredDate(cachedSync?.syncedAt || cachedPrice?.syncedAt)
+  })
+  const [refreshing, setRefreshing] = useState(false)
 
-  /**
-   * Persist market price state to localStorage
-   */
+  const priceSyncInFlightRef = useRef(null)
+  const priceSelfHealRef = useRef({})
+
   const persistMarketPriceState = useCallback(async (cache, syncMeta) => {
-    const normalizedCache = normalizeMarketPriceCache(cache);
-    const normalizedSync = normalizeMarketPriceSync(syncMeta);
-    
-    await save(MARKET_PRICE_CACHE_KEY, normalizedCache);
-    await save(MARKET_PRICE_SYNC_KEY, normalizedSync);
-    
-    setMarketPriceCache(normalizedCache);
-    setMarketPriceSync(normalizedSync);
-    
-    const syncedAt = parseStoredDate(normalizedSync?.syncedAt || normalizedCache?.syncedAt);
-    if (syncedAt) setLastUpdate(syncedAt);
-  }, [setLastUpdate]);
+    const normalizedCache = normalizeMarketPriceCache(cache)
+    const normalizedSync = normalizeMarketPriceSync(syncMeta)
+    await save(MARKET_PRICE_CACHE_KEY, normalizedCache)
+    await save(MARKET_PRICE_SYNC_KEY, normalizedSync)
+    setMarketPriceCache(normalizedCache)
+    setMarketPriceSync(normalizedSync)
+    const syncedAt = parseStoredDate(normalizedSync?.syncedAt || normalizedCache?.syncedAt)
+    if (syncedAt) setLastUpdate(syncedAt)
+  }, [])
 
-  /**
-   * Collect all tracked stock codes from portfolios
-   */
-  const collectTrackedCodes = useCallback(() => {
-    const codeSet = new Set();
-    const addCode = (value) => {
-      const code = String(value || "").trim();
-      if (code) codeSet.add(code);
-    };
-    const addRows = (rows) => {
-      if (!Array.isArray(rows)) return;
-      rows.forEach(item => addCode(item?.code));
-    };
-    const addEvents = (rows) => {
-      if (!Array.isArray(rows)) return;
-      rows.forEach(event => {
-        getEventStockCodes(event).forEach(code => addCode(code));
-      });
-    };
+  const collectTrackedCodes = useCallback(
+    () =>
+      collectTrackedCodesFromPortfolios({
+        portfolios: portfoliosRef.current,
+        currentActivePortfolioId: activePortfolioIdRef.current,
+        currentViewMode: viewModeRef.current,
+        liveState: {
+          holdings,
+          watchlist,
+          newsEvents,
+        },
+        readStorageValue,
+        pfKey,
+        portfolioAliasToSuffix: PORTFOLIO_ALIAS_TO_SUFFIX,
+        getEventStockCodes,
+        portfolioViewMode: PORTFOLIO_VIEW_MODE,
+      }),
+    [holdings, newsEvents, watchlist, portfoliosRef, activePortfolioIdRef, viewModeRef]
+  )
 
-    portfolios.forEach(portfolio => {
-      const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolio.id === activePortfolioId;
-      const holdingRows = useLiveState ? holdings : readStorageValue(`pf-${portfolio.id}-holdings-v2`);
-      const watchlistRows = useLiveState ? watchlist : readStorageValue(`pf-${portfolio.id}-watchlist-v1`);
-      const eventRows = useLiveState ? newsEvents : readStorageValue(`pf-${portfolio.id}-news-events-v1`);
-      addRows(holdingRows);
-      addRows(watchlistRows);
-      addEvents(eventRows);
-    });
-
-    return Array.from(codeSet);
-  }, [activePortfolioId, viewMode, holdings, watchlist, newsEvents, portfolios]);
-
-  /**
-   * Fetch post-close quotes from TWSE
-   */
   const fetchPostCloseQuotes = useCallback(async (codes, timeoutMs = 8000) => {
-    const normalizedCodes = Array.from(
-      new Set((codes || []).map(code => String(code || "").trim()).filter(Boolean))
-    );
-    
-    if (normalizedCodes.length === 0) return { quotes: {}, failedCodes: [] };
+    const normalizedCodes = buildTwseBatchQueries(codes).flat()
+    if (normalizedCodes.length === 0) return { quotes: {}, failedCodes: [], marketDate: null }
 
-    const batchSize = 15;
-    const quotes = {};
-    const failedCodes = new Set();
-    const observedMarketDates = new Set();
-    const batches = [];
-    
-    for (let i = 0; i < normalizedCodes.length; i += batchSize) {
-      batches.push(normalizedCodes.slice(i, i + batchSize));
-    }
+    const quotes = {}
+    const failedCodes = new Set()
+    const observedMarketDates = new Set()
+    const batches = buildTwseBatchQueries(normalizedCodes)
 
-    await Promise.all(batches.map(async (batch, batchIndex) => {
-      const queries = batch.flatMap(code => [`tse_${code}.tw`, `otc_${code}.tw`]);
-      const exCh = queries.join("|");
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+    await Promise.all(
+      batches.map(async (batch, batchIndex) => {
+        const queries = batch.flatMap((code) => [`tse_${code}.tw`, `otc_${code}.tw`])
+        const exCh = queries.join('|')
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), timeoutMs)
 
-      try {
-        const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`, { signal: controller.signal });
-        const data = await res.json();
-        (data.msgArray || []).forEach(item => {
-          if (item?.d) observedMarketDates.add(String(item.d));
-          const price = extractBestPrice(item);
-          const yesterday = extractYesterday(item);
-          if (!price || quotes[item.c]) return;
-          quotes[item.c] = {
-            price,
-            yesterday,
-            change: yesterday ? price - yesterday : 0,
-            changePct: yesterday ? ((price / yesterday) - 1) * 100 : 0,
-          };
-        });
-      } catch (err) {
-        batch.forEach(code => failedCodes.add(code));
-        console.warn(`收盤價同步批次 ${batchIndex + 1} 失敗:`, err);
-      } finally {
-        clearTimeout(timer);
-      }
-    }));
+        try {
+          const response = await fetch(`${API_ENDPOINTS.TWSE}?ex_ch=${encodeURIComponent(exCh)}`, {
+            signal: controller.signal,
+          })
+          const data = await response.json()
+          if (!response.ok) {
+            throw new Error(data?.detail || data?.error || `TWSE 請求失敗 (${response.status})`)
+          }
+          const extracted = extractQuotesFromTwsePayload(data, {
+            extractBestPrice,
+            extractYesterday,
+          })
+          Object.assign(quotes, extracted.quotes)
+          if (extracted.marketDate) observedMarketDates.add(extracted.marketDate)
+        } catch (error) {
+          batch.forEach((code) => failedCodes.add(code))
+          console.warn(`收盤價同步批次 ${batchIndex + 1} 失敗:`, error)
+        } finally {
+          clearTimeout(timer)
+        }
+      })
+    )
 
     return {
       quotes,
-      failedCodes: Array.from(failedCodes).filter(code => !quotes[code]),
+      failedCodes: Array.from(failedCodes).filter((code) => !quotes[code]),
       marketDate: Array.from(observedMarketDates).sort().slice(-1)[0] || null,
-    };
-  }, []);
+    }
+  }, [])
 
-  /**
-   * Sync post-close prices
-   */
-  const syncPostClosePrices = useCallback(async ({ silent = false, force = false } = {}) => {
-    if (priceSyncInFlightRef.current) return priceSyncInFlightRef.current;
+  const syncPostClosePrices = useCallback(
+    async ({ silent = false, force = false } = {}) => {
+      if (priceSyncInFlightRef.current) return priceSyncInFlightRef.current
 
-    const task = (async () => {
-      const cachedSync = normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)) || marketPriceSync;
-      const cachedPrice = normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)) || marketPriceCache;
-      const gate = canRunPostClosePriceSync(new Date(), cachedSync);
-      const trackedCodes = collectTrackedCodes();
-      const missingCachedCodes = trackedCodes.filter(code => !(cachedPrice?.prices?.[code]?.price > 0));
-      const allowForcedRetry = force && trackedCodes.length > 0;
+      const task = (async () => {
+        const currentViewMode = viewModeRef.current
+        const cachedSync =
+          normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)) || marketPriceSync
+        const cachedPrice =
+          normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)) || marketPriceCache
+        const gate = canRunPostClosePriceSync(new Date(), cachedSync)
+        const trackedCodes = collectTrackedCodes()
+        const allowForcedRetry = force && trackedCodes.length > 0
 
-      if (!gate.allowed && !allowForcedRetry) {
-        if (!silent) {
-          if (gate.reason === "before-close") {
-            setSaved("⚠️ 收盤價僅在台北時間 13:35 後同步");
-          } else if (gate.reason === "market-closed") {
-            setSaved("⚠️ 非交易日，沿用最近收盤價");
-          } else if (cachedSync?.status === "failed") {
-            setSaved("⚠️ 今日已嘗試同步收盤價，沿用既有快取");
-          } else {
-            setSaved("✅ 今日收盤價已同步，避免重複抓取");
+        if (!gate.allowed && !allowForcedRetry) {
+          if (!silent) {
+            if (gate.reason === 'before-close') {
+              notifySaved(APP_TOAST_MESSAGES.priceSyncBeforeClose)
+            } else if (gate.reason === 'market-closed') {
+              notifySaved(APP_TOAST_MESSAGES.priceSyncMarketClosed)
+            } else if (cachedSync?.status === 'failed') {
+              notifySaved(APP_TOAST_MESSAGES.priceSyncAlreadyAttempted)
+            } else {
+              notifySaved(APP_TOAST_MESSAGES.priceSyncAlreadyDone)
+            }
           }
-          setTimeout(() => setSaved(""), 3000);
+          if (cachedPrice?.prices && currentViewMode === PORTFOLIO_VIEW_MODE) {
+            setHoldings((prev) => applyMarketQuotesToHoldings(prev, cachedPrice.prices))
+          }
+          return cachedPrice
         }
-        if (cachedPrice?.prices && viewMode === PORTFOLIO_VIEW_MODE) {
-          setHoldings(prev => applyMarketQuotesToHoldings(prev, cachedPrice.prices));
-        }
-        return cachedPrice;
-      }
 
-      if (trackedCodes.length === 0) {
-        if (!silent) {
-          setSaved("⚠️ 目前沒有可同步的股票代碼");
-          setTimeout(() => setSaved(""), 3000);
+        if (trackedCodes.length === 0) {
+          if (!silent) notifySaved(APP_TOAST_MESSAGES.priceSyncNoTrackedCodes)
+          return cachedPrice
         }
-        return cachedPrice;
-      }
 
-      const syncedAt = new Date().toISOString();
-      const { quotes, failedCodes, marketDate: observedMarketDate } = await fetchPostCloseQuotes(trackedCodes);
-      const resolvedMarketDate = observedMarketDate || gate.clock.marketDate;
-      
-      if (Object.keys(quotes).length === 0) {
-        const failedMeta = {
+        const syncedAt = new Date().toISOString()
+        const {
+          quotes,
+          failedCodes,
+          marketDate: observedMarketDate,
+        } = await fetchPostCloseQuotes(trackedCodes)
+        const resolvedMarketDate = observedMarketDate || gate.clock.marketDate
+
+        if (Object.keys(quotes).length === 0) {
+          const failedMeta = {
+            marketDate: resolvedMarketDate,
+            syncedAt,
+            status: 'failed',
+            codes: trackedCodes,
+            failedCodes,
+          }
+          await persistMarketPriceState(cachedPrice || createEmptyMarketPriceCache(), failedMeta)
+          if (!silent) notifySaved(APP_TOAST_MESSAGES.priceSyncFailedKeepCache)
+          return cachedPrice
+        }
+
+        const nextCache = {
+          ...(cachedPrice || createEmptyMarketPriceCache()),
           marketDate: resolvedMarketDate,
           syncedAt,
-          status: "failed",
+          source: 'twse',
+          status: failedCodes.length > 0 ? 'partial' : 'fresh',
+          prices: {
+            ...((cachedPrice && cachedPrice.prices) || {}),
+            ...quotes,
+          },
+        }
+        const nextSync = {
+          marketDate: resolvedMarketDate,
+          syncedAt,
+          status: failedCodes.length > 0 ? 'partial' : 'success',
           codes: trackedCodes,
           failedCodes,
-        };
-        await persistMarketPriceState(cachedPrice || createEmptyMarketPriceCache(), failedMeta);
+        }
+
+        await persistMarketPriceState(nextCache, nextSync)
+        if (currentViewMode === PORTFOLIO_VIEW_MODE) {
+          setHoldings((prev) => applyMarketQuotesToHoldings(prev, nextCache.prices))
+        }
+
         if (!silent) {
-          setSaved("⚠️ 今日收盤價同步失敗，沿用既有快取");
-          setTimeout(() => setSaved(""), 3000);
+          if (failedCodes.length > 0) {
+            notifySaved(
+              APP_TOAST_MESSAGES.priceSyncSyncedPartial(
+                trackedCodes.length - failedCodes.length,
+                trackedCodes.length
+              ),
+              STATUS_MESSAGE_TIMEOUT_MS.LONG
+            )
+          } else {
+            notifySaved(
+              APP_TOAST_MESSAGES.priceSyncSyncedAll(trackedCodes.length),
+              STATUS_MESSAGE_TIMEOUT_MS.LONG
+            )
+          }
         }
-        return cachedPrice;
-      }
 
-      const nextCache = {
-        ...(cachedPrice || createEmptyMarketPriceCache()),
-        marketDate: resolvedMarketDate,
-        syncedAt,
-        source: "twse",
-        status: failedCodes.length > 0 ? "partial" : "success",
-        prices: { ...cachedPrice?.prices, ...quotes },
-      };
+        return nextCache
+      })().finally(() => {
+        priceSyncInFlightRef.current = null
+      })
 
-      const nextSync = {
-        marketDate: resolvedMarketDate,
-        syncedAt,
-        status: failedCodes.length > 0 ? "partial" : "success",
-        codes: trackedCodes,
-        failedCodes,
-      };
+      priceSyncInFlightRef.current = task
+      return task
+    },
+    [
+      collectTrackedCodes,
+      fetchPostCloseQuotes,
+      marketPriceCache,
+      marketPriceSync,
+      notifySaved,
+      persistMarketPriceState,
+      setHoldings,
+      viewModeRef,
+    ]
+  )
 
-      await persistMarketPriceState(nextCache, nextSync);
-      
-      if (viewMode === PORTFOLIO_VIEW_MODE) {
-        setHoldings(prev => applyMarketQuotesToHoldings(prev, nextCache.prices));
-      }
+  const getMarketQuotesForCodes = useCallback(
+    async (codes, { ensureSynced = true } = {}) => {
+      const normalizedCodes = Array.from(
+        new Set((codes || []).map((code) => String(code || '').trim()).filter(Boolean))
+      )
+      if (normalizedCodes.length === 0) return {}
+      const cache = ensureSynced
+        ? await syncPostClosePrices({ silent: true })
+        : marketPriceCache || normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY))
+      return getCachedQuotesForCodes(cache, normalizedCodes)
+    },
+    [marketPriceCache, syncPostClosePrices]
+  )
 
-      if (!silent) {
-        if (failedCodes.length > 0) {
-          setSaved(`✅ 收盤價已同步（${failedCodes.length} 檔失敗）`);
-        } else {
-          setSaved("✅ 收盤價已同步");
-        }
-        setTimeout(() => setSaved(""), 3000);
-      }
-
-      return nextCache;
-    })();
-
-    priceSyncInFlightRef.current = task;
-    try {
-      return await task;
-    } finally {
-      priceSyncInFlightRef.current = null;
-    }
-  }, [marketPriceCache, marketPriceSync, collectTrackedCodes, persistMarketPriceState, viewMode, setHoldings, setSaved]);
-
-  /**
-   * Refresh prices manually
-   */
   const refreshPrices = useCallback(async () => {
-    setRefreshing(true);
+    if (refreshing) return
+    setRefreshing(true)
+
     try {
-      await syncPostClosePrices({ silent: false, force: true });
+      const clock = getTaipeiClock(new Date())
+      const hasMissingTrackedQuotes =
+        Array.isArray(holdings) &&
+        holdings.some((item) => {
+          const code = String(item?.code || '').trim()
+          return code && !(marketPriceCache?.prices?.[code]?.price > 0)
+        })
+      const isTradingDay = !clock.isWeekend && clock.minutes >= POST_CLOSE_SYNC_MINUTES
+      const alreadySyncedToday = marketPriceSync?.marketDate === clock.marketDate
+
+      if (isTradingDay && alreadySyncedToday && !hasMissingTrackedQuotes) {
+        const confirmed = await requestConfirmation(
+          APP_DIALOG_MESSAGES.priceSyncAlreadySynced(
+            marketPriceSync?.syncedAt?.slice(11, 16) || 'N/A'
+          )
+        )
+        if (!confirmed) {
+          notifySaved(APP_TOAST_MESSAGES.priceSyncUseCache, STATUS_MESSAGE_TIMEOUT_MS.BRIEF)
+          return
+        }
+      }
+
+      const shouldForceRepair =
+        Array.isArray(holdings) &&
+        (holdings.some(
+          (item) => item?.integrityIssue === 'missing-price' || resolveHoldingPrice(item) <= 0
+        ) ||
+          (isTradingDay &&
+            (marketPriceSync?.marketDate !== clock.marketDate || hasMissingTrackedQuotes)))
+      const shouldForceManualRefresh = !isTradingDay || alreadySyncedToday
+      const cache = await syncPostClosePrices({
+        silent: false,
+        force: shouldForceRepair || shouldForceManualRefresh,
+      })
+
+      if (
+        cache?.prices &&
+        Object.keys(cache.prices).length > 0 &&
+        viewModeRef.current === PORTFOLIO_VIEW_MODE
+      ) {
+        setHoldings((prev) => applyMarketQuotesToHoldings(prev, cache.prices))
+      }
+    } catch (error) {
+      console.error('收盤價同步失敗:', error)
+      notifySaved(APP_TOAST_MESSAGES.priceSyncFailedRetry)
     } finally {
-      setRefreshing(false);
+      setRefreshing(false)
     }
-  }, [syncPostClosePrices]);
-
-  /**
-   * Get price sync status label
-   */
-  const priceSyncStatusLabel = useMemo(() => {
-    if (!marketPriceSync) return "未同步";
-    if (marketPriceSync.status === "failed") return "同步失敗";
-    if (marketPriceSync.status === "partial") return "部分成功";
-    if (marketPriceSync.status === "success") return "已同步";
-    return "未同步";
-  }, [marketPriceSync]);
-
-  /**
-   * Get price sync status tone
-   */
-  const priceSyncStatusTone = useMemo(() => {
-    if (!marketPriceSync) return "#888";
-    if (marketPriceSync.status === "failed") return "#ef4444";
-    if (marketPriceSync.status === "partial") return "#f59e0b";
-    if (marketPriceSync.status === "success") return "#22c55e";
-    return "#888";
-  }, [marketPriceSync]);
-
-  /**
-   * Get active price sync time
-   */
-  const activePriceSyncAt = useMemo(() => {
-    if (!marketPriceSync?.syncedAt) return null;
-    return parseStoredDate(marketPriceSync.syncedAt);
-  }, [marketPriceSync]);
-
-  /**
-   * Get last update time
-   */
-  const lastUpdate = useMemo(() => {
-    if (!marketPriceCache?.syncedAt) return null;
-    return parseStoredDate(marketPriceCache.syncedAt);
-  }, [marketPriceCache]);
-
-  return {
-    // State
+  }, [
+    holdings,
     marketPriceCache,
     marketPriceSync,
+    notifySaved,
     refreshing,
-    
-    // Status
+    requestConfirmation,
+    setHoldings,
+    syncPostClosePrices,
+    viewModeRef,
+  ])
+
+  const priceSyncStatusLabel = useMemo(() => {
+    if (!marketPriceSync) return '未同步'
+    if (marketPriceSync.status === 'failed') return '同步失敗'
+    if (marketPriceSync.status === 'partial') return '部分成功'
+    if (marketPriceSync.status === 'success') return '已同步'
+    return '未同步'
+  }, [marketPriceSync])
+
+  const priceSyncStatusTone = useMemo(() => {
+    if (!marketPriceSync) return '#888'
+    if (marketPriceSync.status === 'failed') return '#ef4444'
+    if (marketPriceSync.status === 'partial') return '#f59e0b'
+    if (marketPriceSync.status === 'success') return '#22c55e'
+    return '#888'
+  }, [marketPriceSync])
+
+  const activePriceSyncAt = useMemo(() => {
+    if (!marketPriceSync?.syncedAt) return null
+    return parseStoredDate(marketPriceSync.syncedAt)
+  }, [marketPriceSync])
+
+  return {
+    marketPriceCache,
+    marketPriceSync,
+    lastUpdate,
+    setLastUpdate,
+    refreshing,
     priceSyncStatusLabel,
     priceSyncStatusTone,
     activePriceSyncAt,
-    lastUpdate,
-    
-    // Operations
     refreshPrices,
     syncPostClosePrices,
-    persistMarketPriceState,
-    collectTrackedCodes,
-    fetchPostCloseQuotes,
-    
-    // Refs
-    priceSyncInFlightRef,
+    getMarketQuotesForCodes,
     priceSelfHealRef,
-  };
-};
+  }
+}

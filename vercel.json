@@ -1,5 +1,8 @@
 {
   "framework": "vite",
+  "dev": {
+    "port": 3002
+  },
   "rewrites": [
     { "source": "/api/twse", "destination": "/api/twse" },
     { "source": "/api/:path*", "destination": "/api/:path*" }

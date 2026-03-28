@@ -1,10 +1,10 @@
 /**
  * Cloud Sync API Hooks
- * 
+ *
  * TanStack Query hooks for cloud sync endpoints
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query'
 
 /**
  * Sync holdings from cloud
@@ -17,15 +17,15 @@ export function useSyncHoldingsFromCloud(portfolioId, enabled = true) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-holdings' }),
-      });
-      if (!res.ok) throw new Error('Failed to sync holdings');
-      const data = await res.json();
-      return data.content || [];
+      })
+      if (!res.ok) throw new Error('Failed to sync holdings')
+      const data = await res.json()
+      return data.content || []
     },
     enabled: enabled && portfolioId === 'me', // Only for owner portfolio
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
-  });
+  })
 }
 
 /**
@@ -33,19 +33,19 @@ export function useSyncHoldingsFromCloud(portfolioId, enabled = true) {
  */
 export function useSaveHoldingsToCloud() {
   return useMutation({
-    mutationFn: async ({ portfolioId, holdings }) => {
+    mutationFn: async ({ portfolioId: _portfolioId, holdings }) => {
       const res = await fetch('/api/brain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: 'save-holdings',
           data: { holdings },
         }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      })
+      if (!res.ok) throw new Error(await res.text())
+      return res.json()
     },
-  });
+  })
 }
 
 /**
@@ -59,15 +59,15 @@ export function useSyncBrainFromCloud(enabled = true) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-brain' }),
-      });
-      if (!res.ok) throw new Error('Failed to sync brain');
-      const data = await res.json();
-      return data.content;
+      })
+      if (!res.ok) throw new Error('Failed to sync brain')
+      const data = await res.json()
+      return data.content
     },
     enabled,
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
-  });
+  })
 }
 
 /**
@@ -79,15 +79,15 @@ export function useSaveBrainToCloud() {
       const res = await fetch('/api/brain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           action: 'save-brain',
           data: brainData,
         }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      })
+      if (!res.ok) throw new Error(await res.text())
+      return res.json()
     },
-  });
+  })
 }
 
 /**
@@ -101,15 +101,15 @@ export function useSyncAnalysisFromCloud(portfolioId, enabled = true) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-analysis-history' }),
-      });
-      if (!res.ok) throw new Error('Failed to sync analysis');
-      const data = await res.json();
-      return data.content || [];
+      })
+      if (!res.ok) throw new Error('Failed to sync analysis')
+      const data = await res.json()
+      return data.content || []
     },
     enabled: enabled && portfolioId === 'me',
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
-  });
+  })
 }
 
 /**
@@ -123,13 +123,13 @@ export function useSyncResearchFromCloud(enabled = true) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-research-history' }),
-      });
-      if (!res.ok) throw new Error('Failed to sync research');
-      const data = await res.json();
-      return data.content || [];
+      })
+      if (!res.ok) throw new Error('Failed to sync research')
+      const data = await res.json()
+      return data.content || []
     },
     enabled,
     staleTime: 30 * 60 * 1000, // 30 minutes
     retry: 1,
-  });
+  })
 }

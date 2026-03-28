@@ -1,0 +1,44 @@
+{
+  "files.exclude": {
+    "**/.tmp": true,
+    "**/.archive": true,
+    "**/dist": true,
+    "**/*.bak": true,
+    "**/*.bak2": true,
+    "**/*.bak3": true,
+    "**/*.backup": true,
+    "**/*.before-opt": true,
+    "**/*.phase4-backup": true,
+    "**/*.watchlist-backup": true,
+    "**/*.broken": true,
+    "**/*.fixed": true
+  },
+  "search.exclude": {
+    "**/.tmp": true,
+    "**/.archive": true,
+    "**/dist": true,
+    "**/*.bak": true,
+    "**/*.bak2": true,
+    "**/*.bak3": true,
+    "**/*.backup": true,
+    "**/*.before-opt": true,
+    "**/*.phase4-backup": true,
+    "**/*.watchlist-backup": true,
+    "**/*.broken": true,
+    "**/*.fixed": true
+  },
+  "files.watcherExclude": {
+    "**/.tmp/**": true,
+    "**/.archive/**": true,
+    "**/dist/**": true,
+    "**/*.bak*": true,
+    "**/*.backup": true,
+    "**/*.before-opt": true,
+    "**/*.phase4-backup": true,
+    "**/*.watchlist-backup": true,
+    "**/*.broken": true,
+    "**/*.fixed": true
+  },
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.tsserver.maxTsServerMemory": 2048
+}

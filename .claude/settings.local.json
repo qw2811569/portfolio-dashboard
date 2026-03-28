@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/brain?action=brain\")",
       "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/research\")",
-      "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/brain?action=history\")"
+      "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/brain?action=history\")",
+      "Bash(gh api:*)"
     ]
   }
 }

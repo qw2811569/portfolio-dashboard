@@ -1,9 +1,640 @@
 Retrieving project…
 > Running Dev Command “vite --port $PORT”
 
-  VITE v5.4.21  ready in 474 ms
+  VITE v5.4.21  ready in 354 ms
 
-  ➜  Local:   http://localhost:3002/
-  ➜  Network: http://192.168.1.103:3002/
-  ➜  Network: http://100.126.94.101:3002/
+  ➜  Local:   http://127.0.0.1:3002/
+  ➜  press h + enter to show help
 > Ready! Available at http://127.0.0.1:3002
+5:54:38 PM [vite] hmr update /src/App.jsx, /src/components/trade/TradePanel.jsx
+5:56:23 PM [vite] hmr update /src/App.jsx
+5:56:26 PM [vite] hmr update /src/App.jsx, /src/components/trade/TradePanel.jsx
+6:07:50 PM [vite] hmr update /src/App.jsx
+6:09:58 PM [vite] hmr update /src/components/research/ResearchPanel.jsx
+6:14:26 PM [vite] hmr update /src/App.jsx, /src/components/trade/TradePanel.jsx
+6:14:26 PM [vite] hmr update /src/App.jsx
+6:14:26 PM [vite] hmr update /src/App.jsx
+6:14:26 PM [vite] hmr update /src/App.jsx
+6:14:26 PM [vite] hmr update /src/App.jsx
+8:01:38 PM [vite] hmr update /src/App.jsx
+8:01:42 PM [vite] hmr update /src/App.jsx
+8:01:57 PM [vite] hmr update /src/App.jsx
+8:02:12 PM [vite] hmr update /src/App.jsx
+8:02:21 PM [vite] hmr update /src/App.jsx
+8:02:47 PM [vite] hmr update /src/App.jsx
+8:03:12 PM [vite] hmr update /src/App.jsx
+8:04:23 PM [vite] hmr update /src/App.jsx
+8:10:25 PM [vite] hmr update /src/App.jsx
+8:12:23 PM [vite] hmr update /src/App.jsx
+8:12:48 PM [vite] hmr update /src/App.jsx
+8:12:52 PM [vite] hmr update /src/App.jsx
+8:12:57 PM [vite] hmr update /src/App.jsx
+8:12:57 PM [vite] hmr update /src/App.jsx
+8:13:19 PM [vite] hmr update /src/App.jsx
+8:13:27 PM [vite] hmr update /src/App.jsx
+8:13:50 PM [vite] hmr update /src/App.jsx
+8:13:56 PM [vite] hmr update /src/App.jsx
+8:23:27 PM [vite] hmr update /src/App.jsx
+8:23:29 PM [vite] hmr update /src/App.jsx
+8:28:46 PM [vite] hmr update /src/App.jsx
+8:29:40 PM [vite] hmr update /src/App.jsx
+8:29:55 PM [vite] hmr update /src/App.jsx
+8:41:34 PM [vite] hmr update /src/App.jsx
+8:41:55 PM [vite] hmr update /src/App.jsx
+8:42:03 PM [vite] hmr update /src/App.jsx
+8:42:14 PM [vite] hmr update /src/App.jsx
+8:43:20 PM [vite] hmr update /src/App.jsx
+8:49:32 PM [vite] hmr update /src/App.jsx, /src/components/trade/TradePanel.jsx
+8:50:05 PM [vite] hmr update /src/App.jsx
+8:50:47 PM [vite] hmr update /src/App.jsx
+8:51:05 PM [vite] hmr update /src/App.jsx
+8:51:29 PM [vite] hmr update /src/App.jsx
+8:52:02 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'activePriceSyncAt' has already been declared. (731:4)
+
+  729 |     retPct,
+  730 |     todayMarketClock,
+> 731 |     activePriceSyncAt,
+      |     ^
+  732 |     priceSyncStatusLabel,
+  733 |     priceSyncStatusTone,
+  734 |     holdingsIntegrityIssues,
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:731:4
+  729|      retPct,
+  730|      todayMarketClock,
+  731|      activePriceSyncAt,
+     |      ^
+  732|      priceSyncStatusLabel,
+  733|      priceSyncStatusTone,
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7544:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7540:16)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+8:52:03 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'activePriceSyncAt' has already been declared. (731:4)
+
+  729 |     retPct,
+  730 |     todayMarketClock,
+> 731 |     activePriceSyncAt,
+      |     ^
+  732 |     priceSyncStatusLabel,
+  733 |     priceSyncStatusTone,
+  734 |     holdingsIntegrityIssues,
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:731:4
+  729|      retPct,
+  730|      todayMarketClock,
+  731|      activePriceSyncAt,
+     |      ^
+  732|      priceSyncStatusLabel,
+  733|      priceSyncStatusTone,
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7544:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7540:16)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+8:52:03 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'activePriceSyncAt' has already been declared. (731:4)
+
+  729 |     retPct,
+  730 |     todayMarketClock,
+> 731 |     activePriceSyncAt,
+      |     ^
+  732 |     priceSyncStatusLabel,
+  733 |     priceSyncStatusTone,
+  734 |     holdingsIntegrityIssues,
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:731:4
+  729|      retPct,
+  730|      todayMarketClock,
+  731|      activePriceSyncAt,
+     |      ^
+  732|      priceSyncStatusLabel,
+  733|      priceSyncStatusTone,
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7544:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7540:16)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+8:52:03 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'activePriceSyncAt' has already been declared. (731:4)
+
+  729 |     retPct,
+  730 |     todayMarketClock,
+> 731 |     activePriceSyncAt,
+      |     ^
+  732 |     priceSyncStatusLabel,
+  733 |     priceSyncStatusTone,
+  734 |     holdingsIntegrityIssues,
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:731:4
+  729|      retPct,
+  730|      todayMarketClock,
+  731|      activePriceSyncAt,
+     |      ^
+  732|      priceSyncStatusLabel,
+  733|      priceSyncStatusTone,
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7544:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7540:16)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+8:52:04 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'activePriceSyncAt' has already been declared. (731:4)
+
+  729 |     retPct,
+  730 |     todayMarketClock,
+> 731 |     activePriceSyncAt,
+      |     ^
+  732 |     priceSyncStatusLabel,
+  733 |     priceSyncStatusTone,
+  734 |     holdingsIntegrityIssues,
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:731:4
+  729|      retPct,
+  730|      todayMarketClock,
+  731|      activePriceSyncAt,
+     |      ^
+  732|      priceSyncStatusLabel,
+  733|      priceSyncStatusTone,
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7544:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7540:16)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+8:52:46 PM [vite] hmr update /src/App.jsx
+8:53:26 PM [vite] hmr update /src/App.jsx
+9:02:11 PM [vite] hmr update /src/App.jsx
+9:02:31 PM [vite] hmr update /src/App.jsx
+9:03:11 PM [vite] hmr update /src/App.jsx
+9:03:23 PM [vite] hmr update /src/App.jsx
+9:03:29 PM [vite] hmr update /src/App.jsx
+9:03:41 PM [vite] hmr update /src/App.jsx
+9:03:45 PM [vite] hmr update /src/App.jsx
+9:03:54 PM [vite] hmr update /src/App.jsx
+9:05:15 PM [vite] hmr update /src/App.jsx
+9:05:45 PM [vite] hmr update /src/App.jsx
+9:05:50 PM [vite] hmr update /src/App.jsx
+9:08:49 PM [vite] hmr update /src/App.jsx
+9:09:00 PM [vite] hmr update /src/App.jsx
+9:09:31 PM [vite] hmr update /src/App.jsx
+9:11:56 PM [vite] hmr update /src/App.jsx
+9:12:04 PM [vite] hmr update /src/App.jsx
+9:18:23 PM [vite] hmr update /src/App.jsx
+9:18:24 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Unexpected keyword 'import'. (134:0)
+
+  132 | } from "./lib/appMessages.js";
+  133 | import {
+> 134 | import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+      | ^
+  135 |
+  136 | // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+  137 |
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:134:0
+  132|  } from "./lib/appMessages.js";
+  133|  import {
+  134|  import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+     |  ^
+  135|  
+  136|  // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at JSXParserMixin.checkReservedWord (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12224:12)
+      at JSXParserMixin.parseImportSpecifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14414:12)
+      at JSXParserMixin.parseNamedImportSpecifiers (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14398:36)
+      at JSXParserMixin.parseImportSpecifiersAndAfter (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14242:37)
+      at JSXParserMixin.parseImport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14235:17)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12876:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+9:18:34 PM [vite] hmr update /src/App.jsx
+9:18:34 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Unexpected keyword 'import'. (134:0)
+
+  132 | } from "./lib/appMessages.js";
+  133 | import {
+> 134 | import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+      | ^
+  135 |
+  136 | // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+  137 |
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:134:0
+  132|  } from "./lib/appMessages.js";
+  133|  import {
+  134|  import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+     |  ^
+  135|  
+  136|  // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at JSXParserMixin.checkReservedWord (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12224:12)
+      at JSXParserMixin.parseImportSpecifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14414:12)
+      at JSXParserMixin.parseNamedImportSpecifiers (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14398:36)
+      at JSXParserMixin.parseImportSpecifiersAndAfter (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14242:37)
+      at JSXParserMixin.parseImport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14235:17)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12876:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+9:18:50 PM [vite] Pre-transform error: /Users/chenkuichen/APP/test/src/App.jsx: Unexpected keyword 'import'. (134:0)
+
+  132 | } from "./lib/appMessages.js";
+  133 | import {
+> 134 | import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+      | ^
+  135 |
+  136 | // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+  137 |
+9:19:02 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Unexpected keyword 'import'. (134:0)
+
+  132 | } from "./lib/appMessages.js";
+  133 | import {
+> 134 | import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+      | ^
+  135 |
+  136 | // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+  137 |
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:134:0
+  132|  } from "./lib/appMessages.js";
+  133|  import {
+  134|  import { normalizeWatchlist } from "./lib/watchlistUtils.js";
+     |  ^
+  135|  
+  136|  // ── 種子資料改由 seedData.js 提供，讓 App.jsx 只保留邏輯 ───────────
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at JSXParserMixin.checkReservedWord (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12224:12)
+      at JSXParserMixin.parseImportSpecifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14414:12)
+      at JSXParserMixin.parseNamedImportSpecifiers (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14398:36)
+      at JSXParserMixin.parseImportSpecifiersAndAfter (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14242:37)
+      at JSXParserMixin.parseImport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14235:17)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12876:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+9:19:25 PM [vite] hmr update /src/App.jsx
+9:25:16 PM [vite] hmr update /src/App.jsx
+9:25:31 PM [vite] hmr update /src/App.jsx
+9:26:13 PM [vite] hmr update /src/App.jsx
+9:34:23 PM [vite] hmr update /src/App.jsx
+9:34:31 PM [vite] hmr update /src/App.jsx
+9:35:08 PM [vite] hmr update /src/App.jsx
+9:35:09 PM [vite] Internal server error: /Users/chenkuichen/APP/test/src/App.jsx: Identifier 'resetTransientUiState' has already been declared. (368:8)
+
+  366 |     await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+  367 |   }, [ready, holdings, tradeLog, targets, fundamentals, watchlist, analystReports, reportRefreshMeta, holdingDossiers, newsEvents, analysisHistory, dailyReport, reversalConditions, strategyBrain, researchHistory, portfolioNotes]);
+> 368 |   const resetTransientUiState = useCallback(() => {
+      |         ^
+  369 |     resetTradeCaptureRef.current();
+  370 |     setDailyExpanded(false);
+  371 |     setExpandedStock(null);
+  Plugin: vite:react-babel
+  File: /Users/chenkuichen/APP/test/src/App.jsx:368:8
+  366|      await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE);
+  367|    }, [ready, holdings, tradeLog, targets, fundamentals, watchlist, analystReports, reportRefreshMeta, holdingDossiers, newsEvents, analysisHistory, dailyReport, reversalConditions, strategyBrain, researchHistory, portfolioNotes]);
+  368|    const resetTransientUiState = useCallback(() => {
+     |          ^
+  369|      resetTradeCaptureRef.current();
+  370|      setDailyExpanded(false);
+      at constructor (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:365:19)
+      at JSXParserMixin.raise (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:6599:19)
+      at ScopeHandler.checkRedeclarationInScope (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1619:19)
+      at ScopeHandler.declareName (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:1585:12)
+      at JSXParserMixin.declareNameFromIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7567:16)
+      at JSXParserMixin.checkIdentifier (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7563:12)
+      at JSXParserMixin.checkLVal (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:7500:12)
+      at JSXParserMixin.parseVarId (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13412:10)
+      at JSXParserMixin.parseVar (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13383:12)
+      at JSXParserMixin.parseVarStatement (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13230:10)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12851:23)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseStatementListItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12747:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:61)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseBlock (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13297:10)
+      at JSXParserMixin.parseFunctionBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12100:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12086:10)
+      at /Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13445:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12403:14)
+      at JSXParserMixin.parseFunction (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13444:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13907:19)
+      at JSXParserMixin.parseExport (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13828:25)
+      at JSXParserMixin.parseStatementContent (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12878:27)
+      at JSXParserMixin.parseStatementLike (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12767:17)
+      at JSXParserMixin.parseModuleItem (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12744:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13316:36)
+      at JSXParserMixin.parseBlockBody (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:13309:10)
+      at JSXParserMixin.parseProgram (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12622:10)
+      at JSXParserMixin.parseTopLevel (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:12612:25)
+      at JSXParserMixin.parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14488:25)
+      at parse (/Users/chenkuichen/APP/test/node_modules/@babel/parser/lib/index.js:14522:38)
+      at parser (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/parser/index.js:41:34)
+      at parser.next (<anonymous>)
+      at normalizeFile (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+      at normalizeFile.next (<anonymous>)
+      at run (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transformation/index.js:22:50)
+      at run.next (<anonymous>)
+      at transform (/Users/chenkuichen/APP/test/node_modules/@babel/core/lib/transform.js:22:33)
+      at transform.next (<anonymous>)
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:261:32)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:189:28
+      at /Users/chenkuichen/APP/test/node_modules/@babel/core/lib/gensync-utils/async.js:67:7
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:113:33
+      at step (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:287:14)
+      at /Users/chenkuichen/APP/test/node_modules/gensync/index.js:273:13
+      at async.call.result.err.err (/Users/chenkuichen/APP/test/node_modules/gensync/index.js:223:11)
+9:35:19 PM [vite] hmr update /src/App.jsx
+9:49:44 PM [vite] hmr update /src/App.jsx

@@ -1,57 +1,68 @@
 # 快速參考指南
 
-**給接手 AI 的快速上手指南**
+給接手 AI 與開發者的 1 分鐘版本
 
 ---
 
-## 🚀 30 秒上手
+## 30 秒上手
 
 ```bash
-# 1. 安裝依賴
 npm install
+vercel dev
+npm run verify:local
+```
 
-# 2. 本地開發
-npm run dev
+若只是快速重驗前端白頁：
 
-# 3. 構建驗證
-npm run build  # 必須通過
+```bash
+npm run smoke:ui
 ```
 
 ---
 
-## 📁 檔案結構（快速版）
+## 檔案結構（快速版）
 
 ```
 src/
-├── App.jsx              # 主應用 (6,944 行)
-├── hooks/               # 業務邏輯 (7 個 hooks)
+├── App.jsx              # 主 orchestrator (~5,062 行)
+├── hooks/               # runtime / state lifecycle
 ├── components/          # UI 元件 (12 個群組)
-├── lib/                 # 工具函數 (5 個模組)
+├── lib/                 # 純邏輯與 brain runtime
 └── utils.js             # 向後相容
 ```
 
----
+目前最重要的 runtime hooks：
 
-## 🔍 快速查找
-
-| 要找什麼 | 去哪裡 |
-|----------|--------|
-| 持股計算 | `lib/holdings.js` |
-| 事件邏輯 | `lib/events.js` + `hooks/useEvents.js` |
-| 策略大腦 | `lib/brain.js` + `hooks/useStrategyBrain.js` |
-| UI 元件 | `components/{feature}/` |
-| 狀態管理 | `hooks/` |
-| API 調用 | `api/` |
+- `usePortfolioManagement`
+- `usePortfolioDerivedData`
+- `usePortfolioBootstrap`
+- `usePortfolioPersistence`
 
 ---
 
-## 📝 修改範例
+## 快速查找
 
-### 修改持股計算
+| 要找什麼                    | 去哪裡                                                                |
+| --------------------------- | --------------------------------------------------------------------- |
+| 持股計算                    | `lib/holdings.js`                                                     |
+| typed holding math baseline | `lib/holdingMath.ts`                                                  |
+| 事件邏輯                    | `lib/events.js` + `hooks/useEvents.js`                                |
+| 策略大腦                    | `lib/brain.js` + `hooks/useStrategyBrain.js`                          |
+| UI 元件                     | `components/{feature}/`                                               |
+| 狀態管理                    | `hooks/`                                                              |
+| API 調用                    | `api/`                                                                |
+| boot / hydrate / cloud sync | `hooks/usePortfolioBootstrap.js` + `hooks/usePortfolioPersistence.js` |
+
+---
+
+## 修改原則
+
+- 優先改 `lib/*`、`hooks/*`、`components/*`
+- 只有跨 tab orchestration、使用者流程接線、最終 panel 組裝才優先改 `App.jsx`
+- 完整本地模式只認 `vercel dev`
 
 ```javascript
-// ❌ 不要直接修改 App.jsx
-// ✅ 修改 lib/holdings.js
+// 優先在 lib/hooks 落邏輯
 
 // lib/holdings.js
 export function getHoldingMarketValue(item, overridePrice = null) {
@@ -59,44 +70,25 @@ export function getHoldingMarketValue(item, overridePrice = null) {
 }
 ```
 
-### 新增功能
-
-```javascript
-// 1. 先在 lib/ 添加純函數
-// lib/newFeature.js
-export function calculateSomething(data) { }
-
-// 2. 在 hooks/ 添加狀態管理
-// hooks/useNewFeature.js
-export const useNewFeature = () => {
-  const [state, setState] = useState();
-  // ...
-};
-
-// 3. 在 components/ 添加 UI
-// components/newFeature/NewFeaturePanel.jsx
-export function NewFeaturePanel({ data }) { }
-
-// 4. 在 App.jsx 整合
-```
-
 ---
 
-## ✅ 驗證清單
+## 驗證清單
 
 修改後必須：
-- [ ] `npm run build` 通過
-- [ ] 手動測試相關功能
-- [ ] 無 console errors
+
+- [ ] `npm run verify:local` 通過
+- [ ] 若只做小修，至少 `npm run smoke:ui` 通過
+- [ ] 若動到 typed module / ts baseline，補看 `npm run typecheck`
 
 ---
 
-## 📚 完整文檔
+## 完整文檔
 
 詳細說明請閱讀：
-- `docs/HANDBOOK_FOR_AI_AGENTS.md` - 完整架構文檔
-- `CLAUDE.md` - 專案概述
+
+- `docs/AI_COLLABORATION_GUIDE.md` - canonical 協作與驗證規則
+- `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md` - 產品與資料流共識
 
 ---
 
-**最後更新：** 2026-03-27
+最後更新：2026-03-27

@@ -1,80 +1,35 @@
-# Qwen Repo Guide
+# Qwen Guide
 
-## Read First
+最後更新：2026-03-27
 
-If you need deeper project context, read `CLAUDE.md` first. This file is the short version for Qwen Code.
+這份是 Qwen 的短版角色卡，不是獨立 source of truth。
 
-## Project Summary
+## 先讀
 
-This repo is a Taiwan stock portfolio management app with:
+1. `docs/AI_COLLABORATION_GUIDE.md`
+2. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
+3. `docs/superpowers/status/current-work.md`（只有在接手進行中的工作時）
 
-- multi-portfolio management
-- event tracking with `pending / tracking / closed`
-- owner-only cloud sync
-- strategy brain with structured rules, candidate rules, and checklists
-- holding dossiers for research and post-market analysis
-- client-facing HTML/PDF report generation
+## Qwen 最適合做什麼
 
-Main frontend is still concentrated in `src/App.jsx`.
+- bounded implementation
+- 機械式重構
+- lint / test / 小型 UI cleanup
+- 第一輪 code review
+- 不碰 schema 的低風險 helper 補強
 
-## Important Files
+## Qwen 不應主導什麼
 
-- `src/App.jsx`
-- `api/_lib/ai-provider.js`
-- `api/analyze.js`
-- `api/parse.js`
-- `api/research.js`
-- `api/brain.js`
-- `CLAUDE.md`
-- `docs/superpowers/specs/2026-03-24-holding-dossier-and-refresh-architecture.md`
-- `docs/superpowers/specs/2026-03-24-client-report-production-playbook.md`
+- strategy brain 核心規則判定
+- cloud sync / persistence 高風險修改
+- 客戶版數字與結論的最終裁決
+- 以「看起來合理」取代實際驗證
 
-## Safe Default Working Style
+## 交接格式
 
-- prefer small, localized changes
-- keep backward compatibility with existing localStorage data
-- do not break multi-portfolio storage keys
-- do not remove owner-only cloud gating
-- do not overwrite client-facing report assets casually
+- `done`
+- `changed files`
+- `risks`
+- `next best step`
 
-## Use Qwen Code For
-
-- routine implementation
-- mechanical refactors
-- test writing
-- smaller UI cleanup
-- first-pass code review
-
-## Hand Back To Codex For
-
-- strategy brain logic changes
-- cloud sync changes
-- holding dossier schema changes
-- AI prompt / output quality changes
-- client-facing report correctness
-
-## Coordination Rule
-
-- Read `docs/superpowers/status/current-work.md` before starting.
-- Only take slices that are clearly low-risk implementation work.
-- After each batch, write back:
-  - `started`
-  - `changed files`
-  - `ready for review`
-- If the user says stop, finish the current small batch only and leave the next exact edit target in `current-work.md`.
-
-## Local Dev Notes
-
-- full app mode: `vercel dev`
-- frontend-only mode: `npm run dev`
-- build check: `npm run build`
-
-## Current Priority
-
-Default to cost-saving support work:
-
-- implementation help
-- code cleanup
-- smaller review tasks
-
-Keep final correctness review and high-risk architectural work for Codex.
+若只做到一半，請留下下一個最小 edit target。

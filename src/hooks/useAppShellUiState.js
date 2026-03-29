@@ -8,6 +8,7 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
   const [scanQuery, setScanQuery] = useState('')
   const [scanFilter, setScanFilter] = useState(APP_LABELS.allFilter)
   const [filterType, setFilterType] = useState(APP_LABELS.allFilter)
+  const [catalystFilter, setCatalystFilter] = useState('全部')
   const [showReversal, setShowReversal] = useState(false)
   const [dailyExpanded, setDailyExpanded] = useState(false)
   const [expandedStock, setExpandedStock] = useState(null)
@@ -28,6 +29,7 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
     setResearchTarget(null)
     setResearchResults(null)
     setRelayPlanExpanded(false)
+    setCatalystFilter('全部')
   }, [resetTradeCaptureRef])
 
   return {
@@ -41,6 +43,8 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
     setScanFilter,
     filterType,
     setFilterType,
+    catalystFilter,
+    setCatalystFilter,
     showReversal,
     setShowReversal,
     dailyExpanded,

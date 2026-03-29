@@ -244,6 +244,8 @@ export default function App() {
     setScanFilter,
     filterType,
     setFilterType,
+    catalystFilter,
+    setCatalystFilter,
     showReversal,
     setShowReversal,
     dailyExpanded,
@@ -716,7 +718,7 @@ export default function App() {
     fallbackEvents: NEWS_EVENTS,
     filterType,
     allFilterLabel: APP_LABELS.allFilter,
-  })
+  }).filter((e) => catalystFilter === '全部' || e.catalystType === catalystFilter)
 
   // ── 每日收盤分析 ─────────────────────────────────────────────────
   const { runDailyAnalysis } = useDailyAnalysisWorkflow({
@@ -1053,6 +1055,8 @@ export default function App() {
             filterType,
             setFilterType,
             filteredEvents,
+            catalystFilter,
+            setCatalystFilter,
           }}
           dailyProps={{
             dailyReport,

@@ -13,6 +13,28 @@ const TYPE_COLOR = {
   權證: C.choco,
 }
 
+const CATALYST_LABELS = {
+  earnings: '財報',
+  corporate: '公司',
+  industry: '產業',
+  macro: '總經',
+  technical: '技術',
+}
+
+const CATALYST_COLOR = {
+  earnings: C.up,
+  corporate: C.teal,
+  industry: C.olive,
+  macro: C.lavender,
+  technical: C.amber,
+}
+
+const IMPACT_COLOR = {
+  high: C.up,
+  medium: C.amber,
+  low: C.textMute,
+}
+
 /**
  * Relay Plan Card
  */
@@ -403,6 +425,22 @@ export function EventCard({ event }) {
           },
           event.type
         ),
+        event.impact &&
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 8,
+                fontWeight: 600,
+                padding: '1px 4px',
+                borderRadius: 3,
+                background: alpha(IMPACT_COLOR[event.impact] || C.textMute, '15'),
+                color: IMPACT_COLOR[event.impact] || C.textMute,
+                textAlign: 'center',
+              },
+            },
+            event.impact.toUpperCase()
+          ),
         h(
           'div',
           { style: { fontSize: 9, color: C.textMute, textAlign: 'center', lineHeight: 1.4 } },
@@ -458,6 +496,41 @@ export function EventsFilter({ filterType, setFilterType }) {
 }
 
 /**
+ * Catalyst Type Filter Buttons
+ */
+export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
+  return h(
+    'div',
+    { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 } },
+    ['全部', ...Object.keys(CATALYST_LABELS)].map((t) =>
+      h(
+        Button,
+        {
+          key: t,
+          onClick: () => setCatalystFilter(t),
+          style: {
+            background: catalystFilter === t ? C.subtleElev : 'transparent',
+            color:
+              catalystFilter === t
+                ? C.text
+                : t === '全部'
+                  ? C.textMute
+                  : CATALYST_COLOR[t] || C.textMute,
+            border: `1px solid ${catalystFilter === t ? C.borderStrong : C.border}`,
+            borderRadius: 20,
+            padding: '3px 11px',
+            fontSize: 10,
+            fontWeight: 500,
+            cursor: 'pointer',
+          },
+        },
+        t === '全部' ? '全部分類' : CATALYST_LABELS[t]
+      )
+    )
+  )
+}
+
+/**
  * Main Events Panel
  */
 export function EventsPanel({
@@ -467,6 +540,8 @@ export function EventsPanel({
   filterType,
   setFilterType,
   filteredEvents,
+  catalystFilter,
+  setCatalystFilter,
 }) {
   return h(
     'div',
@@ -480,6 +555,9 @@ export function EventsPanel({
 
     // Filter buttons
     h(EventsFilter, { filterType, setFilterType }),
+
+    // Catalyst type filter buttons (only shown if props provided)
+    setCatalystFilter && h(CatalystFilter, { catalystFilter, setCatalystFilter }),
 
     // Events list
     filteredEvents.map((e, i) => h(EventCard, { key: i, event: e }))

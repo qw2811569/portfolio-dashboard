@@ -358,10 +358,14 @@ holding dossier 是把單一標的需要的資訊打包成分析上下文。
 
 ### Phase C：事件驅動追蹤
 
-入口：
+入口（三層，優先序由上到下）：
 
-- 使用者手動建立事件
-- 既有事件依日期與狀態流轉
+1. **Vercel Cron 自動蒐集**（2026-04-01 新增）
+   - `api/cron/collect-daily-events.js` 每個工作日 08:00 自動跑
+   - 從 MOPS 抓法說會/重訊/股利公告 + 產生固定行事曆（FOMC/央行/財報季/月營收）
+   - 結果寫入 Vercel Blob，前端 `useAutoEventCalendar.js` boot 時讀取並按用戶持股篩選
+2. **`api/event-calendar.js` 即時 API**（Blob 讀不到時的 fallback）
+3. **使用者手動建立事件**（原有功能）
 
 主要動作：
 
@@ -369,11 +373,13 @@ holding dossier 是把單一標的需要的資訊打包成分析上下文。
 - 事件綁定股票代碼
 - 記錄事件前後價格
 - 在 review 時寫入 actual / lessons
+- 自動事件標記 `source: 'auto-calendar'` 或 `source: 'mops'`，與手動事件區分
 
 結果：
 
 - 系統知道你買這檔不是抽象看好，而是因為特定催化節點
 - 事件失敗時可以回收成經驗，而不是只留下情緒
+- 多用戶共享公共事件（FOMC、央行），個人化持股事件
 
 ### Phase D：收盤分析
 

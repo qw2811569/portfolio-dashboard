@@ -37,7 +37,7 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
   const knowledgeInfo = buildKnowledgeContext(dossier.stockMeta ?? {})
   const finmindInfo = buildFinMindChipContext(finmind)
 
-  return `
+  const result = `
 股票代碼: ${dossier.code}
 股票名稱: ${dossier.name}
 持股數量: ${position.qty}
@@ -60,6 +60,32 @@ ${finmindInfo}` : ''}
 ${knowledgeInfo ? `
 ${knowledgeInfo}` : ''}
 `
+
+  // Prompt 瘦身輔助：記錄字數統計供 Codex 分析
+  try {
+    const thesisLen = dossier.thesis ? buildThesisScorecardContext(dossier.thesis).length : 0
+    const supplyChainLen = supplyChainInfo ? supplyChainInfo.length : 0
+    const knowledgeLen = knowledgeInfo ? knowledgeInfo.length : 0
+    const finmindLen = finmindInfo ? finmindInfo.length : 0
+    console.log(
+      '[prompt-budget]',
+      dossier.code,
+      'total:',
+      result.length,
+      '字 | thesis:',
+      thesisLen,
+      '| supplyChain:',
+      supplyChainLen,
+      '| knowledge:',
+      knowledgeLen,
+      '| finmind:',
+      finmindLen
+    )
+  } catch {
+    // silent fail - 不影響主流程
+  }
+
+  return result
 }
 
 export function buildEventReviewDossiers(reviewedEvent, dossierByCode) {

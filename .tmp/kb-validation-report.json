@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-31T09:28:41.733Z",
+  "totalItems": 398,
+  "avgScore": 0.7077701005025125,
+  "avgScores": {
+    "actionability": 0.7116834170854287,
+    "specificity": 0.7908291457286409,
+    "verifiability": 0.6329145728643211,
+    "reusability": 0.6532663316582897,
+    "sourceQuality": 0.7198492462311581
+  },
+  "distribution": {
+    "low": 1,
+    "medium": 200,
+    "high": 197
+  },
+  "lowScoreItems": [
+    {
+      "id": "ca-013",
+      "category": "chip-analysis",
+      "title": "外資現貨期貨背離",
+      "total": 0.49499999999999994,
+      "scores": {
+        "actionability": 0.2,
+        "specificity": 0.7,
+        "verifiability": 0.5,
+        "reusability": 0.6,
+        "sourceQuality": 0.7
+      }
+    }
+  ]
+}

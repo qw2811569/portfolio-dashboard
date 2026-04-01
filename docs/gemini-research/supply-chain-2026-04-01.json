@@ -1,0 +1,65 @@
+{
+  "facts": [
+    {
+      "code": "2308",
+      "name": "台達電",
+      "upstream": ["Infineon (晶片)", "Texas Instruments (晶片)", "Nippon Chemi-Con (電容)"],
+      "downstream": ["NVIDIA (AI 伺服器電源)", "Dell", "HPE", "主要雲端服務供應商 (CSP)"],
+      "source": "https://ec.ltn.com.tw/article/breakingnews/4620073",
+      "changeNote": "確認其在 NVIDIA GB200 伺服器電源供應中的關鍵地位。"
+    },
+    {
+      "code": "3017",
+      "name": "奇鋐",
+      "upstream": ["高力 (散熱模組元件)", "健策 (均熱片)", "Nidec (風扇馬達)"],
+      "downstream": ["NVIDIA (3D VC 散熱)", "主要伺服器 ODM (廣達、緯創)", "Dell", "HPE"],
+      "source": "https://www.cmoney.tw/follow/channel/article-149480531",
+      "changeNote": "確認其為 NVIDIA AI GPU (如 H100, B100) 的 3D VC 散熱主要供應商。"
+    },
+    {
+      "code": "3231",
+      "name": "緯創",
+      "upstream": ["NVIDIA (GPU)", "Intel (CPU)", "AMD (CPU)", "奇鋐 (散-熱)"],
+      "downstream": ["NVIDIA (DGX/HGX 主機板)", "Microsoft", "Meta", "Amazon Web Services"],
+      "source": "https://www.gvm.com.tw/article/111555",
+      "changeNote": "確認其為 NVIDIA GB200 AI 伺服器的主要組裝廠之一。"
+    },
+    {
+      "code": "3443",
+      "name": "創意",
+      "upstream": ["台積電 (CoWoS 先進封裝)"],
+      "downstream": ["Amazon (ASIC)", "Google (TPU)", "Microsoft (ASIC)"],
+      "source": "https://www.businesstoday.com.tw/article/category/183015/post/202401240032/",
+      "changeNote": "確認其主要客戶為大型雲端服務供應商 (CSP)，進行客製化 AI 晶片設計。"
+    },
+    {
+      "code": "2313",
+      "name": "華通",
+      "upstream": ["南亞 (銅箔基板)", "台燿 (銅箔基板)"],
+      "downstream": ["Apple (手機 HDI 板)", "SpaceX (低軌衛星板)", "主要伺服器 ODM"],
+      "source": "https://wantrich.chinatimes.com/news/20240318900138-420101",
+      "changeNote": "確認其在低軌衛星 (LEO) 用戶終端 PCB 的高市佔率地位。"
+    },
+    {
+      "code": "6274",
+      "name": "台燿",
+      "upstream": ["南亞 (銅箔)", "長春 (環氧樹脂)"],
+      "downstream": ["廣達 (AI 伺服器主機板)", "緯創 (AI 伺服器主機板)", "Cisco (交換器)"],
+      "source": "https://www.moneydj.com/kmdj/news/newsviewer.aspx?a=e774c478-5918-4723-9577-4f36098f481c",
+      "changeNote": "確認其高階銅箔基板 (CCL) 打入 AI 伺服器供應鏈。"
+    }
+  ],
+  "citations": [
+    "https://ec.ltn.com.tw/article/breakingnews/4620073",
+    "https://www.cmoney.tw/follow/channel/article-149480531",
+    "https://www.gvm.com.tw/article/111555",
+    "https://www.businesstoday.com.tw/article/category/183015/post/202401240032/",
+    "https://wantrich.chinatimes.com/news/20240318900138-420101",
+    "https://www.moneydj.com/kmdj/news/newsviewer.aspx?a=e774c478-5918-4723-9577-4f36098f481c"
+  ],
+  "freshness": "2026-04-01 蒐集",
+  "unresolved_questions": [
+    "部分小型公司如三集瑞-KY、巨有科技的具體上下游客戶資訊較不透明，難以找到權威來源。"
+  ],
+  "recommended_verification": "建議交叉比對各公司年報與法說會簡報，以獲得最官方的供應鏈資訊。"
+}

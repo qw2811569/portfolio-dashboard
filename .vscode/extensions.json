@@ -1,5 +1,8 @@
 {
   "recommendations": [
-    "qwenlm.qwen-code-vscode-ide-companion"
+    "qwenlm.qwen-code-vscode-ide-companion",
+    "eamodio.gitlens",
+    "blameprompt.blameprompt",
+    "openai.chatgpt"
   ]
 }

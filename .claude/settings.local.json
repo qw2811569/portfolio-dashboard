@@ -4,7 +4,10 @@
       "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/brain?action=brain\")",
       "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/research\")",
       "Bash(curl -s \"https://jiucaivoice-dashboard.vercel.app/api/brain?action=history\")",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(python3 -c \"import weasyprint; print\\(''''weasyprint ok''''\\)\")",
+      "Read(//Applications/**)",
+      "Bash(grep -E \"\\(^./docs/[^/]+\\\\.md$|current-work\\)\")"
     ]
   }
 }

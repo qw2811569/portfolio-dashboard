@@ -1,0 +1,99 @@
+{
+  "facts": [
+    {
+      "entryId": "ca-077",
+      "title": "董監持股質押比率",
+      "currentClaim": "董監持股質押比率超過 50% 時，公司治理風險顯著升高",
+      "verification": "此為市場普遍接受的觀點。高質押比率可能導致股價下跌時的斷頭賣壓，增加股價波動風險。此標準仍然適用。",
+      "status": "confirmed",
+      "source": "https://www.sinotrade.com.tw/richclub/news/509930"
+    },
+    {
+      "entryId": "it-003",
+      "title": "AI 伺服器供應鏈",
+      "currentClaim": "散熱和電源是價值量提升環節",
+      "verification": "確認為真。隨著 GPU 功耗從數百瓦增至千瓦等級，散熱方案從氣冷轉向液冷，電源供應器瓦數也大幅提升，兩者的單價與價值量均顯著增長。",
+      "status": "confirmed",
+      "source": "https://www.ithome.com.tw/news/161878"
+    },
+    {
+      "entryId": "nc-048",
+      "title": "券資比>30% 軋空訊號",
+      "currentClaim": "券資比>30% + 利多 = 積極佈局軋空行情",
+      "verification": "此為台股常見的技術分析策略。高券資比代表潛在空單回補買盤，若遇利多消息，容易觸發空方停損，形成軋空行情。此邏輯仍然有效。",
+      "status": "confirmed",
+      "source": "https://www.cmoney.tw/learn/course/technicals/topic/1580"
+    },
+    {
+      "entryId": "rm-003",
+      "title": "倉位控制 - 單一持股上限",
+      "currentClaim": "單一持股不超過總部位 20%",
+      "verification": "此為標準的風險管理原則，旨在避免單一資產的黑天鵝事件對整體投資組合造成毀滅性打擊。此規則仍然是業界普遍建議。",
+      "status": "confirmed",
+      "source": "https://www.schwab.com/learn/story/power-of-diversification"
+    },
+    {
+      "entryId": "sc-063",
+      "title": "2024 散熱族群 - 奇鋐成功案例",
+      "currentClaim": "AI 伺服器功耗提升，液冷散熱成為剛需",
+      "verification": "確認為真。NVIDIA 的 GB200 超級晶片功耗超過 2000W，傳統氣冷已達極限，液冷散熱成為必然趨勢，帶動相關供應鏈價值提升。",
+      "status": "confirmed",
+      "source": "https://news.cnyes.com/news/id/5496621"
+    },
+    {
+      "entryId": "fa-012",
+      "title": "本益比估值法",
+      "currentClaim": "本益比<12 為低估，>20 為高估",
+      "verification": "此標準過於簡化。不同產業（如成長型科技股 vs 穩定型傳產股）的合理本益比區間差異巨大。建議更新為分產業討論。",
+      "status": "needs_update",
+      "source": "https://www.investopedia.com/terms/p/price-earningsratio.asp"
+    },
+    {
+      "entryId": "it-033",
+      "title": "太空產業趨勢",
+      "currentClaim": "全球市場規模預計 2030 年達 1 兆美元",
+      "verification": "多家市場研究機構（如摩根士丹利、花旗）的預測均落在 1 兆至 1.5 兆美元區間。此數據仍然有效。",
+      "status": "confirmed",
+      "source": "https://www.morganstanley.com/ideas/investing-in-space"
+    },
+    {
+      "entryId": "nc-012",
+      "title": "油價波動影響",
+      "currentClaim": "油價漲對航運利好、對航空利空",
+      "verification": "此論述過於簡化。油價上漲確實增加航空公司燃油成本，但對航運業影響複雜，需區分是需求拉動還是供給衝擊。建議修改為「油價上漲通常對航空業不利」。",
+      "status": "needs_update",
+      "source": "https://www.forbes.com/sites/greatspeculations/2022/03/08/how-do-oil-prices-impact-airline-stocks/"
+    },
+    {
+      "entryId": "ca-006",
+      "title": "籌碼集中度",
+      "currentClaim": "籌碼集中度週增>5% = 續抱",
+      "verification": "此為量化指標，但「5%」這個門檻值可能需要根據不同市值大小的股票進行調整。大型股的 5% 變化比小型股更具意義。建議增加市值區間的條件。",
+      "status": "needs_update",
+      "source": "https://smart.businessweekly.com.tw/Reading/Indep/6001618"
+    },
+    {
+      "entryId": "rm-015",
+      "title": "凱利公式應用",
+      "currentClaim": "使用半凱利（凱利值/2）計算部位",
+      "verification": "使用分數凱利（如半凱利）是實務上為了避免模型估計誤差而過度下注的常見做法，可以降低波動性與毀滅風險。此建議仍然合理。",
+      "status": "confirmed",
+      "source": "https://www.investopedia.com/terms/k/kellycriterion.asp"
+    }
+  ],
+  "citations": [
+    "https://www.sinotrade.com.tw/richclub/news/509930",
+    "https://www.ithome.com.tw/news/161878",
+    "https://www.cmoney.tw/learn/course/technicals/topic/1580",
+    "https://www.schwab.com/learn/story/power-of-diversification",
+    "https://news.cnyes.com/news/id/5496621",
+    "https://www.investopedia.com/terms/p/price-earningsratio.asp",
+    "https://www.morganstanley.com/ideas/investing-in-space",
+    "https://www.forbes.com/sites/greatspeculations/2022/03/08/how-do-oil-prices-impact-airline-stocks/",
+    "https://smart.businessweekly.com.tw/Reading/Indep/6001618",
+    "https://www.investopedia.com/terms/k/kellycriterion.asp"
+  ],
+  "freshness": "2026-04-01 蒐集",
+  "unresolved_questions": [],
+  "recommended_verification": "建議由 Claude 審查標記為 'needs_update' 的條目，並決定具體的修改邏輯。"
+}

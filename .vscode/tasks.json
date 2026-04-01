@@ -2,6 +2,76 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "📄 Docs Site: Launch",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/launch-docs-site.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🤖 AI State: Status",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/ai-state.sh status",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🤖 AI State: Handover",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/ai-state.sh handover",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🤖 AI State: Next Step",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/ai-state.sh next-step",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🤖 AI State: Timeline",
+      "type": "shell",
+      "command": "bash ${workspaceFolder}/scripts/ai-state.sh timeline",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Gemini CLI: Launch In Repo",
       "type": "shell",
       "command": "bash ${workspaceFolder}/scripts/launch-gemini.sh",

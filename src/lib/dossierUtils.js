@@ -151,7 +151,8 @@ export function buildDailyHoldingDossierContext(
       ? `匹配規則: ${brainContext.matchedRules.map((r) => r.text).join('；')}`
       : '匹配規則: 無'
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
-  const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
+  const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : '';
+  const themeChipsText = buildThemeChipsText(dossier.code)
   const knowledgeInfo = compact
     ? buildCompactKnowledgeContext(dossier.stockMeta ?? {})
     : buildKnowledgeContext(dossier.stockMeta ?? {})
@@ -204,6 +205,7 @@ ${supplyChainInfo ? `
 供應鏈:
 ${supplyChainInfo}` : ''}
 ${themeInfo ? `${themeInfo}` : ''}
+${themeChipsText ? `主題標籤：${themeChipsText}` : ''}
 ${brainRuleInfo}
 ${finmindInfo ? `
 ${finmindInfo}` : ''}
@@ -505,6 +507,10 @@ export function buildSupplyChainContext(code) {
     parts.push(`主要供應商: ${chain.suppliers.join(', ')}`)
   }
 
+  if (chain.competitors?.length > 0) {
+    parts.push(`主要競爭對手：${chain.competitors.join(', ')}`)
+  }
+
   return parts.join('\n')
 }
 
@@ -526,6 +532,42 @@ export function buildThemeContext(code, stockMeta) {
 /**
  * Build thesis scorecard context for AI prompt
  */
+
+
+/**
+ * 建立主題標籤展示（含上中下游位置）- 用於前端 UI
+ * 從 themeClassification.json 讀取每檔持股的主題 + 位置
+ */
+export function buildThemeChips(code) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const themeFile = path.join(process.cwd(), 'src/data/themeClassification.json');
+    if (!fs.existsSync(themeFile)) return [];
+    
+    const themeData = JSON.parse(fs.readFileSync(themeFile, 'utf-8'));
+    const entry = themeData[code];
+    if (!entry?.themes) return [];
+    
+    return entry.themes.map(t => ({
+      theme: t.theme,
+      position: t.position || null,
+      label: t.position ? t.theme + '(' + t.position + ')' : t.theme,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 建立主題標籤文字（用於 prompt）
+ */
+export function buildThemeChipsText(code) {
+  const chips = buildThemeChips(code);
+  if (chips.length === 0) return '';
+  return chips.map(c => c.label).join(' | ');
+}
+
 export function buildThesisScorecardContext(thesis) {
   if (!thesis) return ''
 

@@ -1,0 +1,38 @@
+{
+  "facts": [
+    {
+      "code": "3017",
+      "name": "奇鋐",
+      "competitor": "雙鴻 (3324)",
+      "finding": "雙鴻在 2026 年 3 月法說會表示，其水冷板營收佔比目標從 2025 年的 10% 提升至 2026 年的 20%，並已切入美系 CSP 客戶的 GB200 供應鏈，顯示其在水冷散熱領域正積極追趕奇鋐。",
+      "source": "https://www.ctee.com.tw/news/20260312700140-430201",
+      "impact": "中性偏負。奇鋐雖仍是 3D VC 主要供應商，但在水冷板市場將面臨雙鴻更激烈的價格與市佔競爭。"
+    },
+    {
+      "code": "2308",
+      "name": "台達電",
+      "competitor": "光寶科 (2301)",
+      "finding": "光寶科在 2026 年 3 月宣布其 AI 伺服器電源產品已通過多家 CSP 認證，並預計下半年開始放量，特別是 3kW 以上的高功率產品，直接對標台達電的主力產品線。",
+      "source": "https://money.udn.com/money/story/5612/9478123",
+      "impact": "中性。AI 電源市場仍在擴大，足以容納多家供應商。但光寶科的加入可能影響台達電的議價能力與毛利率。"
+    },
+    {
+      "code": "3443",
+      "name": "創意",
+      "competitor": "世芯-KY (3661)",
+      "finding": "世芯-KY 於 2026 年 2 月法說會表示，除了現有美系 CSP 客戶，已成功拿下第二家美系大型 CSP 的 5nm ASIC 案，預計 2027 年貢獻營收。顯示其在北美市場的客戶拓展速度加快。",
+      "source": "https://www.technews.tw/2026/02/27/alchip-4q25-briefing/",
+      "impact": "中性偏負。雖然 ASIC 市場夠大，但世芯-KY 積極的客戶策略可能分食創意在北美市場的潛在訂單。"
+    }
+  ],
+  "citations": [
+    "https://www.ctee.com.tw/news/20260312700140-430201",
+    "https://money.udn.com/money/story/5612/9478123",
+    "https://www.technews.tw/2026/02/27/alchip-4q25-briefing/"
+  ],
+  "freshness": "2026-04-01 蒐集",
+  "unresolved_questions": [
+    "低軌衛星領域（如昇達科、華通）的競爭對手動態較不透明，難以找到具體量化數據。"
+  ],
+  "recommended_verification": "建議交叉比對券商報告中關於各公司市佔率的預估，以更精確評估競爭影響。"
+}

@@ -40,5 +40,7 @@
     "**/*.fixed": true
   },
   "typescript.disableAutomaticTypeAcquisition": true,
-  "typescript.tsserver.maxTsServerMemory": 2048
+  "typescript.tsserver.maxTsServerMemory": 2048,
+  "claudeCode.useTerminal": false,
+  "markdown.validate.enabled": true
 }

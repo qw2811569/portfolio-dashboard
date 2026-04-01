@@ -1,0 +1,31 @@
+{
+  "facts": [
+    {
+      "code": "3443",
+      "metric": "PER (本益比)",
+      "finmindValue": "45.52",
+      "publicSource": "Goodinfo! 台灣股市資訊網",
+      "publicValue": "45.52",
+      "match": true,
+      "source": "https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=3443"
+    },
+    {
+      "code": "2308",
+      "metric": "PER (本益比)",
+      "finmindValue": "28.15",
+      "publicSource": "Goodinfo! 台灣股市資訊網",
+      "publicValue": "28.21",
+      "match": false,
+      "source": "https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=2308"
+    }
+  ],
+  "citations": [
+    "https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=3443",
+    "https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=2308"
+  ],
+  "freshness": "2026-04-01 蒐集",
+  "unresolved_questions": [
+    "台達電(2308)的本益比在 FinMind 與 Goodinfo 之間存在 0.06 的微小差異，可能源於財報數據更新時間差或計算方式的細微不同。"
+  ],
+  "recommended_verification": "建議由 Codex 或開發者檢查 FinMind adapter 的 PER 計算邏輯，確認是否與主要看盤軟體一致。"
+}

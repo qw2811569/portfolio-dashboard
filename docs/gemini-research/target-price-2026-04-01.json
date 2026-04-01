@@ -1,0 +1,55 @@
+{
+  "facts": [
+    {
+      "code": "2308",
+      "name": "台達電",
+      "firm": "FactSet共識",
+      "target": 1575,
+      "date": "2026/02/27",
+      "source": "https://news.cnyes.com/news/id/5474321",
+      "previousTarget": 1200,
+      "change": "+375"
+    },
+    {
+      "code": "2313",
+      "name": "華通",
+      "firm": "FactSet共識",
+      "target": 210,
+      "date": "2026/03/16",
+      "source": "https://news.cnyes.com/news/id/5493235",
+      "previousTarget": 280,
+      "change": "-70"
+    },
+    {
+      "code": "3017",
+      "name": "奇鋐",
+      "firm": "大摩",
+      "target": 2300,
+      "date": "2026/03/13",
+      "source": "https://money.udn.com/money/story/5607/9473188",
+      "previousTarget": 1800,
+      "change": "+500"
+    },
+    {
+      "code": "3231",
+      "name": "緯創",
+      "firm": "國內法人",
+      "target": 188,
+      "date": "2026/03/16",
+      "source": "https://wantrich.chinatimes.com/news/20260316900243-420101",
+      "previousTarget": 195,
+      "change": "-7"
+    }
+  ],
+  "citations": [
+    "https://news.cnyes.com/news/id/5474321",
+    "https://news.cnyes.com/news/id/5493235",
+    "https://money.udn.com/money/story/5607/9473188",
+    "https://wantrich.chinatimes.com/news/20260316900243-420101"
+  ],
+  "freshness": "2026-04-01 蒐集",
+  "unresolved_questions": [
+    "多數持股近期無券商發布新目標價，或現有目標價仍為最新。",
+    "自行估算的目標價未列入比對。"
+  ]
+}

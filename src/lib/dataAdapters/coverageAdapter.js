@@ -38,6 +38,7 @@ export function getSupplyChain(code) {
     downstream: entry.downstream ?? [],
     customers: entry.customers ?? [],
     suppliers: entry.suppliers ?? [],
+    competitors: entry.competitors ?? [],
     source: 'coverage-static',
   }
 }

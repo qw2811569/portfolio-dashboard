@@ -1,316 +1,200 @@
 {
-  "lastUpdated": "2026-04-01T05:59:57.000Z",
+  "lastUpdated": "2026-04-01T14:00:00.000Z",
   "project": {
     "name": "台股投資決策工作台",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "status": "active",
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 6 個 checkpoint，App.jsx 已是 7 行薄入口",
-    "thisWeek": "本週主線維持主 runtime 收斂；最新已知綠燈基線 3 files / 10 tests",
+    "today": "FinMind 數據接入完成、brain proposal gate 上線、事件行事曆 Cron 就緒",
+    "thisWeek": "知識庫 600→完成、AI 協作治理升級、4 個 AI 全部有明確分工",
     "highlights": [
-      "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 最新完整基線 3 files / 10 tests",
-      "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
+      "✅ 知識庫 600/600 條，品質測試 25/25 全過",
+      "✅ FinMind API 接入（籌碼/估值/財報/股利/營收 6 大數據集）",
+      "✅ 事件行事曆 Cron 自動化（MOPS+固定行事曆）",
+      "✅ Brain proposal gate 上線（候選提案→評估→套用/拒絕）",
+      "✅ Vercel timeout 修復（10s→60s）",
+      "✅ 4 個 AI 角色卡+Git 紀律制定完成"
     ]
   },
+  "overallProgress": {
+    "completed": 72,
+    "description": "核心功能已可用，數據管線已接通，策略大腦演化機制初步完成"
+  },
   "phases": {
-    "phaseA": {
-      "name": "資料基礎建設",
+    "phase1": {
+      "name": "核心基礎建設",
       "progress": 100,
       "status": "completed",
       "completedAt": "2026-03-28",
-      "description": "建立核心資料結構與持久化機制"
-    },
-    "phaseB": {
-      "name": "工作流升級",
-      "progress": 60,
-      "status": "in-progress",
-      "startedAt": "2026-03-28",
-      "description": "外部資源整合與工作流優化",
+      "description": "持倉管理、localStorage 持久化、多組合支援",
       "tasks": [
-        {
-          "name": "外部資源整合設計",
-          "status": "done"
-        },
-        {
-          "name": "工作流優化",
-          "status": "doing",
-          "progress": 60
-        },
-        {
-          "name": "API 串接優化",
-          "status": "todo"
-        }
+        { "name": "持倉 CRUD + 排序", "status": "done" },
+        { "name": "多組合切換", "status": "done" },
+        { "name": "localStorage 持久化", "status": "done" },
+        { "name": "Cloud sync (owner-only)", "status": "done" }
       ]
     },
-    "phaseC": {
-      "name": "晨間筆記功能",
-      "progress": 30,
+    "phase2": {
+      "name": "AI 分析管線",
+      "progress": 85,
       "status": "in-progress",
-      "startedAt": "2026-03-29",
-      "description": "建立每日投資筆記工作流",
+      "description": "收盤分析、深度研究、策略大腦",
       "tasks": [
-        {
-          "name": "筆記模板設計",
-          "status": "done"
-        },
-        {
-          "name": "每日自動生成",
-          "status": "doing",
-          "progress": 30
-        },
-        {
-          "name": "與策略大腦整合",
-          "status": "todo"
-        }
+        { "name": "收盤分析 (daily analysis)", "status": "done" },
+        { "name": "盲測預測 (blind prediction)", "status": "done" },
+        { "name": "深度研究 (single stock)", "status": "done" },
+        { "name": "全組合研究 (evolve)", "status": "done" },
+        { "name": "Brain proposal gate", "status": "done" },
+        { "name": "Prompt token 預算控制", "status": "done" },
+        { "name": "Prompt 品質持續優化", "status": "doing", "progress": 60 },
+        { "name": "研究結果自動回寫 dossier", "status": "doing", "progress": 50 }
+      ]
+    },
+    "phase3": {
+      "name": "知識庫 + 數據管線",
+      "progress": 90,
+      "status": "in-progress",
+      "description": "結構化知識、外部數據源、自動化蒐集",
+      "tasks": [
+        { "name": "知識庫 600 條（7 分類）", "status": "done" },
+        { "name": "知識庫品質測試 25/25", "status": "done" },
+        { "name": "策略映射 + slot-based 檢索", "status": "done" },
+        { "name": "FinMind API（籌碼/估值/財報）", "status": "done" },
+        { "name": "FinMind 接入 dossier + prompt", "status": "done" },
+        { "name": "事件行事曆 Cron 自動化", "status": "done" },
+        { "name": "事件 Cron 接入前端 boot", "status": "doing", "progress": 80 },
+        { "name": "知識庫演化（usage→feedback→auto-adjust）", "status": "doing", "progress": 30 },
+        { "name": "RSS 多源聚合（鉅亨/經濟日報）", "status": "todo" }
+      ]
+    },
+    "phase4": {
+      "name": "事件驅動追蹤",
+      "progress": 70,
+      "status": "in-progress",
+      "description": "催化事件生命週期、復盤、行事曆",
+      "tasks": [
+        { "name": "事件 CRUD + 狀態流轉", "status": "done" },
+        { "name": "事件 review + lessons", "status": "done" },
+        { "name": "行事曆自動蒐集 (Cron)", "status": "done" },
+        { "name": "MOPS 法說會自動匯入", "status": "done" },
+        { "name": "行事曆前端 UI 接入", "status": "doing", "progress": 60 },
+        { "name": "Gemini 手動蒐集 → 匯入管線", "status": "doing", "progress": 40 },
+        { "name": "事件與分析結果連結", "status": "todo" }
+      ]
+    },
+    "phase5": {
+      "name": "Runtime 瘦身 + Route 遷移",
+      "progress": 65,
+      "status": "in-progress",
+      "description": "useAppRuntime 拆分、route shell 準備",
+      "tasks": [
+        { "name": "useAppRuntime 928→511 行", "status": "done" },
+        { "name": "Composer/Args/Workflows 外移", "status": "done" },
+        { "name": "AppShellFrame 抽離", "status": "done" },
+        { "name": "useAppRuntime 目標 ~300 行", "status": "doing", "progress": 50 },
+        { "name": "Route pages data wiring", "status": "doing", "progress": 30 },
+        { "name": "Route shell 全面接管", "status": "todo" }
+      ]
+    },
+    "phase6": {
+      "name": "多用戶 + 部署優化",
+      "progress": 30,
+      "status": "planned",
+      "description": "支援多用戶、效能優化、監控",
+      "tasks": [
+        { "name": "Vercel Cron 共用事件蒐集", "status": "done" },
+        { "name": "前端按用戶持股篩選", "status": "doing", "progress": 50 },
+        { "name": "用戶認證系統", "status": "todo" },
+        { "name": "效能監控 (Web Vitals)", "status": "done" },
+        { "name": "Blob storage 多用戶隔離", "status": "todo" },
+        { "name": "PWA / 離線支援", "status": "todo" }
       ]
     }
   },
   "metrics": {
     "appJsxLines": 7,
-    "appJsxLinesChange": 0,
-    "testFiles": 50,
-    "testCases": 10,
-    "totalDocs": 26,
-    "completedTasks": 24,
-    "inProgressTasks": 2
+    "testFiles": 48,
+    "testCases": 229,
+    "knowledgeBaseEntries": 600,
+    "apiEndpoints": 12,
+    "hooks": 65,
+    "dataAdapters": 3,
+    "aiAgents": 4
   },
   "health": {
     "overall": "healthy",
     "build": "passing",
     "lint": "passing",
-    "tests": "passing",
-    "smoke": "passing"
+    "tests": "48/48 files, 229/229 tests",
+    "production": "https://jiucaivoice-dashboard.vercel.app",
+    "knowledgeBase": "600/600, 98.7% quantified"
+  },
+  "aiTeam": {
+    "codex": {
+      "role": "最終裁決者",
+      "status": "active",
+      "currentTask": "P0 prompt 瘦身 + P1 brain gate（已完成第一版）",
+      "configFile": "CODEX.md"
+    },
+    "claude": {
+      "role": "技術架構師 + 品質總監",
+      "status": "active",
+      "currentTask": "FinMind adapter 已建、知識庫壓測、跨 AI 治理",
+      "configFile": "CLAUDE.md"
+    },
+    "qwen": {
+      "role": "搭建工程師",
+      "status": "active",
+      "currentTask": "FinMind 接入 dossier、事件接線、測試覆蓋、RSS 擴充",
+      "configFile": "QWEN.md",
+      "pendingTasks": 14
+    },
+    "gemini": {
+      "role": "研究蒐集員",
+      "status": "active",
+      "currentTask": "法說會蒐集、目標價更新、知識庫 fact-check、FinMind 驗證",
+      "configFile": "GEMINI.md",
+      "workflows": 7
+    }
   },
   "timeline": [
     {
-      "time": "2026-04-01 13:59",
+      "time": "2026-04-01 22:00",
+      "ai": "Claude",
+      "title": "FinMind data adapter 建立 + 全專案進度重建",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 14:05",
       "ai": "Codex",
-      "title": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivo…",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
+      "title": "FinMind 數據接入 dossier + daily analysis prompt",
       "status": "done"
     },
     {
       "time": "2026-04-01 13:24",
       "ai": "Codex",
-      "title": "完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
+      "title": "P0 prompt budget + P1 brain proposal gate 完成",
       "status": "done"
     },
     {
-      "time": "2026-04-01 00:21",
-      "ai": "Codex",
-      "title": "補齊 route-based 入口仍殘留的收盤價 / 行事曆 / 成交 OCR 解析缺口。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 00:04",
-      "ai": "Codex",
-      "title": "修掉 production 上的收盤價 / 行事曆 / 成交 OCR 三條線上故障。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
+      "time": "2026-04-01 12:00",
+      "ai": "Claude",
+      "title": "事件行事曆 Cron 自動化 + Vercel 部署",
       "status": "done"
     },
     {
       "time": "2026-04-01 00:15",
       "ai": "Claude",
-      "title": "知識庫壓測 + 3 個 bug fix + 演化方案 + Qwen 交接。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
+      "title": "知識庫壓測 + 排序修正 + dossier stockMeta 串接",
       "status": "done"
     },
     {
-      "time": "2026-04-01 00:00",
+      "time": "2026-03-31 21:40",
       "ai": "Claude",
-      "title": "知識庫壓測 + 排序偏差修正 + 演化方案設計。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-03-31 23:55",
-      "ai": "Codex",
-      "title": "修掉本輪高信號 bug 報告並重新部署 production。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-03-31 21:48",
-      "ai": "Codex",
-      "title": "candidate brain proposal 第一版已部署到 production。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
+      "title": "知識庫 600/600 + 品質優化 + 策略映射對齊",
       "status": "done"
     }
-  ],
-  "aiTeam": {
-    "current": "Qwen",
-    "members": [
-      {
-        "name": "Codex",
-        "role": "技術主導 / 最終裁決",
-        "avatar": "🧠",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
-        "tasksCompleted": 37,
-        "lastActive": "2026-04-01 13:59",
-        "statusSource": "manual",
-        "activitySource": "~/.codex/session_index.jsonl"
-      },
-      {
-        "name": "Qwen",
-        "role": "低風險實作 / 文件整理",
-        "avatar": "✍️",
-        "status": "working",
-        "currentTask": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。",
-        "tasksCompleted": 12,
-        "lastActive": "2026-04-01 13:59",
-        "statusSource": "auto",
-        "activitySource": "~/.qwen/projects/*/chats"
-      },
-      {
-        "name": "Gemini",
-        "role": "公開資料蒐集",
-        "avatar": "🔍",
-        "status": "working",
-        "currentTask": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)",
-        "tasksCompleted": 5,
-        "lastActive": "2026-04-01 13:12",
-        "statusSource": "auto",
-        "activitySource": "~/.gemini/usage-log.tsv"
-      },
-      {
-        "name": "Claude",
-        "role": "strategy brain second opinion",
-        "avatar": "🎯",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
-        "tasksCompleted": 7,
-        "lastActive": "2026-03-30 13:33",
-        "statusSource": "manual"
-      }
-    ]
-  },
-  "handover": {
-    "from": "Codex",
-    "time": "2026-04-01T13:59:00+08:00",
-    "message": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。",
-    "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
-    "blockers": [],
-    "needsReview": false,
-    "optimizationSuggestions": [
-      "每次更新 docs/status/current-work.md 後執行 bash scripts/sync-state.sh",
-      "若需要重刷 build/lint/test 健康狀態，再執行 bash scripts/sync-state.sh --full"
-    ]
-  },
-  "nextMilestone": {
-    "name": "Phase B 完成",
-    "progress": 60,
-    "estimatedComplete": "2026-04-05",
-    "remainingTasks": 2
-  },
-  "generatedAt": "2026-04-01T05:59:57.782Z",
-  "sources": {
-    "canonicalStatus": "docs/status/current-work.md",
-    "canonicalAiActivity": "docs/status/ai-activity.json",
-    "generatedView": "docs-site/state.json",
-    "generator": "scripts/build-docs-state.mjs"
-  },
-  "liveActivity": [
-    {
-      "time": "2026-04-01 13:59",
-      "isoTime": "2026-04-01T13:59:57+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-01 13:59",
-      "isoTime": "2026-04-01T13:59:57+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-01 13:12",
-      "isoTime": "2026-04-01T13:12:42+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-01 13:12",
-      "isoTime": "2026-04-01T13:12:42+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：/temp/readonly/command (nmtlkb) 讀 QWEN.md，先做「修正待辦」（還原 quality-validation（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-01 13:12",
-      "isoTime": "2026-04-01T13:12:42+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout：讀 GEMINI.md，按工作流程 4 和 5 執行：更新持股供應鏈關係 + 隨機 fact-check 10 條知識庫 entry",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 11:11",
-      "isoTime": "2026-03-31T11:11:42+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：現在更新狀態文件，報告完成 70% 里程碑和 buildKnowledgeContext() 優化完成。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 11:06",
-      "isoTime": "2026-03-31T11:06:26+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：更新索引後需要同步狀態到 current-work.md 並執行 sync-state.sh 來更新 docs-site。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 10:36",
-      "isoTime": "2026-03-31T10:36:00+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "超過活動視窗，已自動切回待命",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-31 10:36",
-      "isoTime": "2026-03-31T10:36:00+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "本地部署完成：vercel dev 已在 127.0.0.1:3002 啟動，healthcheck 與 UI smoke 全綠（API 可用、前端標記正常）。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-31 03:38",
-      "isoTime": "2026-03-31T03:38:36+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：更新 index.json 後，需要調用 sync-state.sh 同步狀態並記錄進度到 current-work.md。（自動偵測）",
-      "status": "working"
-    }
-  ],
-  "trackingStack": {
-    "gitlensRecommended": true,
-    "blamepromptRecommended": true,
-    "blamepromptCliInstalled": true,
-    "aiStatusPipelineReady": true,
-    "launcherAutoReportReady": true,
-    "liveActivityMirrorReady": true
-  }
+  ]
 }

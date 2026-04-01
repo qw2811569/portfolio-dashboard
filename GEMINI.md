@@ -253,6 +253,29 @@
 
 **交接方式：** 寫到 `docs/gemini-research/finmind-validation-YYYY-MM-DD.json`。
 
+## 已完成任務（Claude 2026-04-01 晚確認）
+
+- ✅ 工作流程 4：供應鏈更新（supply-chain-2026-04-01.json，6 檔持股）
+- ✅ 工作流程 5：知識庫 fact-check（fact-check-2026-04-01.json）
+- ✅ 工作流程 7：FinMind 數據驗證（finmind-validation-2026-04-01.json，PER 比對 Goodinfo）
+- ⚠️ 工作流程 1：法說會行事曆（event-calendar-2026-04-01.json 為空，上次品質不合格後未重做）
+
+## 新一輪任務（Claude 2026-04-01 晚指派）
+
+### A. 重做法說會行事曆（工作流程 1）
+
+上次的輸出只有 3 檔且 citation 全是 Google 搜尋 URL。**必須涵蓋全部 17 檔**，citation 必須是實際來源。
+
+刪除 `docs/gemini-research/event-calendar-2026-04-01.json` 並重做。
+
+### B. 目標價更新（工作流程 2）
+
+搜尋 STOCK_META 中所有持股的最新券商目標價。比對 `src/seedData.js` 的 `INIT_TARGETS`，找出過時的。產出到 `docs/gemini-research/target-price-2026-04-01.json`。
+
+### C. 競爭態勢監測（工作流程 6）
+
+搜尋持股的主要競爭對手近期動態。產出到 `docs/gemini-research/competitive-2026-04-01.json`。
+
 ## 持股代碼清單（從 STOCK_META 取）
 
 蒐集時以這些持股為範圍：

@@ -35,9 +35,17 @@
 
 知識庫已完成 600/600，品質測試 25/25 全過。以下是 Qwen 接手的**低風險機械式任務**：
 
-### P0 — 立即可做
+### P0 — ✅ 已完成
 
-#### 1. 給 strategy-cases 補 confidence 欄位
+#### 1. ~~給 strategy-cases 補 confidence 欄位~~ ✅
+
+#### 2. ~~清理重複 entry~~ ⚠️ 未完全做到（見修正待辦）
+
+#### 3. ~~Usage tracking 實作~~ ✅
+
+### P0-NEW — 立即可做（新一輪任務 2026-04-01 晚）
+
+#### ~~1. 給 strategy-cases 補 confidence 欄位~~（舊，跳過）
 
 120 個策略案例目前沒有 confidence，需要批量補上。
 
@@ -278,10 +286,65 @@ async function enrichDossierWithFinMind(dossier) {
 
 ---
 
-## 修正待辦（先做再繼續新任務）
+## 已完成任務（Claude 2026-04-01 晚確認）
 
-1. **還原 `quality-validation.json`**（P5）
-2. **清理重複 title**（P0 任務 2，上次沒做）：`董監持股質押比率` 在 fa 和 ca 各出現一次
+- ✅ P0-1: strategy-cases 補 confidence（130 條都有了）
+- ✅ P0-3: Usage tracking 實作
+- ✅ P1-4: Feedback 按鈕 UI（待確認）
+- ✅ P2-6: 事件行事曆接入前端 boot（useAutoEventCalendar 已接入 useAppRuntimeCoreLifecycle）
+- ✅ P4-9: useEvents 測試
+- ✅ P4-11: useWatchlistActions 測試
+- ✅ P6-13: FinMind 接入 dossier（usePortfolioDerivedData 已呼叫 fetchStockDossierData）
+- ✅ P6-14: daily analysis prompt 加入 FinMind 數據（dossierUtils 已追加籌碼/估值）
+- ✅ P7: RSS 來源擴充（鉅亨網已加入 analyst-reports.js）
+
+## 新一輪任務（Claude 2026-04-01 晚指派）
+
+**開始前先 `git pull origin main`。**
+
+### 必做（修正遺留問題）
+
+#### A. 還原 quality-validation.json
+
+`quality-validation.json` 被你改成評分報告格式，原本的品質框架定義丟了。
+
+```bash
+# 1. 保存現有評分報告
+cp src/lib/knowledge-base/quality-validation.json src/lib/knowledge-base/quality-report-2026-04-01.json
+
+# 2. 從 git 還原原本的框架定義
+git show 1eab1ed:src/lib/knowledge-base/quality-validation.json > src/lib/knowledge-base/quality-validation.json
+
+# 3. 驗證還原成功
+node -e "const d=JSON.parse(require('fs').readFileSync('src/lib/knowledge-base/quality-validation.json','utf-8')); console.log(d.qualityCriteria ? 'OK' : 'FAIL')"
+```
+
+#### B. 清理重複 title
+
+`董監持股質押比率` 在 fundamental-analysis 和 chip-analysis 各出現一次。檢查內容是否不同，不同則改 title 區分，相同則刪其中一個。
+
+#### C. commit 你的改動
+
+你有 uncommitted changes（`usePortfolioDerivedData.js`, `dossierUtils.js`, `analyst-reports.js` 等）。用：
+
+```bash
+AI_NAME=Qwen bash scripts/ai-commit.sh "feat: FinMind dossier enrichment, event calendar boot, RSS expansion, test coverage"
+```
+
+### 新任務
+
+#### D. 補 `useHoldings` 測試
+
+P4 任務 10 上次沒做。`src/hooks/useHoldings.js` 的持股增刪改、排序。
+
+#### E. 補 `dossierUtils` 的 `buildHoldingDossiers` 測試
+
+確認 `stockMeta` 有被正確傳入 dossier（這是之前的致命 bug，需要 regression test）。
+
+#### F. Gemini 供應鏈資料匯入
+
+Gemini 已產出 `docs/gemini-research/supply-chain-2026-04-01.json`（6 檔持股的上下游更新）。
+把這些資料更新到 `src/data/supplyChain.json`。
 
 ---
 

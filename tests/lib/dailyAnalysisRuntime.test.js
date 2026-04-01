@@ -170,6 +170,7 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(analysisRequest.userPrompt).toContain('<portfolio_holdings>')
     expect(analysisRequest.userPrompt).toContain('A 級優先處理只選 1-3 檔')
     expect(analysisRequest.userPrompt).toContain('不要在每檔持股重複改寫整段供應鏈')
+    expect(analysisRequest.userPrompt).toContain('必須先寫完整的中文分析評論')
     expect(extractDailyEventAssessments(insight)).toEqual([])
     expect(extractDailyBrainUpdate(insight)).toEqual({})
     expect(stripDailyAnalysisEmbeddedBlocks(insight)).toBe('## 今日總結\nOK')
@@ -178,5 +179,12 @@ describe('lib/dailyAnalysisRuntime', () => {
       totalTodayPnl: 1234,
       injectedKnowledgeIds: ['fa-001', 'rm-001'],
     })
+  })
+
+  it('falls back to raw text when the analysis only contains embedded json blocks', () => {
+    const jsonOnlyInsight = `## 📋 EVENT_ASSESSMENTS\n\`\`\`json\n[]\n\`\`\`\n## 🧬 BRAIN_UPDATE\n\`\`\`json\n{}\n\`\`\`\n`
+
+    expect(stripDailyAnalysisEmbeddedBlocks(jsonOnlyInsight)).toContain('## 📋 EVENT_ASSESSMENTS')
+    expect(stripDailyAnalysisEmbeddedBlocks(jsonOnlyInsight)).toContain('## 🧬 BRAIN_UPDATE')
   })
 })

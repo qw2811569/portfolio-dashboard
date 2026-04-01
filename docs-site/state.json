@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T22:08:39.000Z",
+  "lastUpdated": "2026-04-01T22:24:20.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,11 +7,11 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 1 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 2 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 目前測試檔 60 個",
+      "✅ 目前測試檔 61 個",
       "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
@@ -241,8 +241,8 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 60,
-    "testCases": 334,
+    "testFiles": 61,
+    "testCases": 340,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 43,
-        "lastActive": "2026-04-02 06:08",
+        "tasksCompleted": 44,
+        "lastActive": "2026-04-02 06:24",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -305,9 +305,9 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：All tasks K-N have been completed. Let me provide a final summary交接 repo",
+        "currentTask": "Qwen：兩個 bug 都已修復並 commit，現在需要提供完整的交接報告，包含 done、changed files、risks 和 next bes",
         "tasksCompleted": 12,
-        "lastActive": "2026-04-02 05:58",
+        "lastActive": "2026-04-02 06:18",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -336,6 +336,22 @@
   },
   "timeline": [
     {
+      "time": "2026-04-02 06:24",
+      "ai": "Codex",
+      "title": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout- 2026-04-02 06:28 Codex：緊急 Bug 修復完成，已補 OCR / 收盤分析 / 深度研究三條線的可見…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 22:18",
+      "ai": "Qwen",
+      "title": "緊急 Bug 修復完成：BUG-3（持倉硬編碼→空陣列 fallback）+ BUG-5（行事曆直接呼叫 event-calendar API）。驗證：git commit 372ac12。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
       "time": "2026-04-02 06:08",
       "ai": "Codex",
       "title": "P7/P8 已完成並部署 production。",
@@ -344,7 +360,7 @@
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T22:09:21.124Z",
+  "generatedAt": "2026-04-01T22:24:20.076Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -360,6 +376,22 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-02 06:24",
+      "isoTime": "2026-04-02T06:24:20+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：兩個 bug 都已修復並 commit，現在需要提供完整的交接報告，包含 done、changed files、risks 和 next bes（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 06:24",
+      "isoTime": "2026-04-02T06:24:19+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 06:08",
       "isoTime": "2026-04-02T06:08:39+08:00",
@@ -423,28 +455,12 @@
       "action": "start",
       "message": "Gemini research scout 啟動，等待任務輸入",
       "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:41+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:41+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T06:08:00+08:00",
-    "message": "P7/P8 已完成並部署 production。",
+    "time": "2026-04-02T06:24:00+08:00",
+    "message": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout- 2026-04-02 06:28 Codex：緊急 Bug 修復完成，已補 OCR / 收盤分析 / 深度研究三條線的可見錯誤與 timeout 保護。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

@@ -14,21 +14,59 @@ import {
   updateResearchReportsProposalState,
 } from '../lib/researchRuntime.js'
 
-async function defaultRunResearchRequest(body) {
-  const res = await fetch(API_ENDPOINTS.RESEARCH, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(
-      text.includes('TIMEOUT')
-        ? '深度研究逾時，請稍後再試（Vercel function timeout）'
-        : text.slice(0, 120) || `研究 API 失敗 (${res.status})`
-    )
+const RESEARCH_REQUEST_TIMEOUT_MS = 55_000
+
+function createTimeoutSignal(timeoutMs = RESEARCH_REQUEST_TIMEOUT_MS) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return { signal: AbortSignal.timeout(timeoutMs), cancel: () => {} }
   }
-  return res.json()
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  return {
+    signal: controller.signal,
+    cancel: () => clearTimeout(timer),
+  }
+}
+
+function isTimeoutError(error) {
+  const name = String(error?.name || '')
+  const message = String(error?.message || '')
+  return (
+    name === 'TimeoutError' ||
+    name === 'AbortError' ||
+    message.includes('timeout') ||
+    message.includes('timed out') ||
+    message.includes('逾時')
+  )
+}
+
+async function defaultRunResearchRequest(body) {
+  const { signal, cancel } = createTimeoutSignal()
+  try {
+    const res = await fetch(API_ENDPOINTS.RESEARCH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(
+        text.includes('TIMEOUT')
+          ? '深度研究逾時，請稍後再試（Vercel function timeout）'
+          : text.slice(0, 120) || `研究 API 失敗 (${res.status})`
+      )
+    }
+    return res.json()
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new Error('深度研究逾時，請稍後再試（55 秒內未完成）')
+    }
+    throw error
+  } finally {
+    cancel()
+  }
 }
 
 async function defaultSaveBrainRequest(brainData) {
@@ -177,7 +215,7 @@ export function useResearchWorkflow({
         console.error('AutoResearch failed:', error)
         const msg = error?.message || ''
         emitSaved(
-          msg.includes('逾時')
+          msg.includes('逾時') || msg.includes('55 秒')
             ? '❌ 研究逾時 · 請稍後再試'
             : `❌ 研究失敗：${msg.slice(0, 60) || '未知錯誤'}`
         )

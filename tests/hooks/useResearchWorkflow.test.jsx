@@ -228,4 +228,59 @@ describe('hooks/useResearchWorkflow.js', () => {
       expect.any(Number)
     )
   })
+
+  it('times out deep research requests before the UI spins forever', async () => {
+    const originalFetch = global.fetch
+    const fetchMock = vi.fn(async () => {
+      throw Object.assign(new Error('The operation was aborted due to timeout'), {
+        name: 'TimeoutError',
+      })
+    })
+    global.fetch = fetchMock
+
+    const setResearching = vi.fn()
+    const setResearchTarget = vi.fn()
+    const notifySaved = vi.fn()
+
+    const { result } = renderHook(() =>
+      useResearchWorkflow({
+        researching: false,
+        setResearching,
+        setResearchTarget,
+        holdings: [],
+        portfolioHoldings: [],
+        dossierByCode: new Map(),
+        stockMeta: {},
+        strategyBrain: {},
+        portfolioNotes: {},
+        canUseCloud: false,
+        newsEvents: [],
+        analysisHistory: [],
+        resolveHoldingPrice: vi.fn(),
+        getHoldingUnrealizedPnl: vi.fn(),
+        getHoldingReturnPct: vi.fn(),
+        setResearchResults: vi.fn(),
+        setResearchHistory: vi.fn(),
+        notifySaved,
+        enrichResearchToDossier: vi.fn(async () => false),
+      })
+    )
+
+    try {
+      await act(async () => {
+        await result.current.runResearch('evolve')
+      })
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/research',
+        expect.objectContaining({
+          method: 'POST',
+          signal: expect.any(AbortSignal),
+        })
+      )
+      expect(notifySaved).toHaveBeenCalledWith('❌ 研究逾時 · 請稍後再試', expect.any(Number))
+    } finally {
+      global.fetch = originalFetch
+    }
+  })
 })

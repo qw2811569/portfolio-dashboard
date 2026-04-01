@@ -6,7 +6,7 @@ import {
   getTradeBatchMode,
   normalizeTradeParseResult,
 } from '../lib/tradeParseUtils.js'
-import { extractTradeParseJsonText } from '../lib/tradeAiResponse.js'
+import { buildTradeParseErrorMessage, extractTradeParseJsonText } from '../lib/tradeAiResponse.js'
 
 function createEmptyTradeEditorState(createDefaultFundamentalDraft) {
   return {
@@ -262,11 +262,33 @@ export function useTradeCaptureRuntime({
       const data = await response.json()
       if (!response.ok) throw new Error(data.detail || data.error || 'API 錯誤')
 
-      const clean = extractTradeParseJsonText(data.content?.[0]?.text || '')
-      if (!clean) throw new Error('AI 未回傳可解析的內容')
+      const rawText = String(data.content?.[0]?.text || '')
+      const clean = extractTradeParseJsonText(rawText)
+      if (!clean) {
+        throw new Error(
+          buildTradeParseErrorMessage({
+            error: new Error('AI 未回傳可解析的內容'),
+            rawText,
+            responseData: data,
+          })
+        )
+      }
+
+      let parsedPayload
+      try {
+        parsedPayload = JSON.parse(clean)
+      } catch (parseError) {
+        throw new Error(
+          buildTradeParseErrorMessage({
+            error: parseError,
+            rawText,
+            responseData: data,
+          })
+        )
+      }
 
       const normalized = normalizeTradeParseResult(
-        JSON.parse(clean),
+        parsedPayload,
         activeUpload.tradeDate || toSlashDate()
       )
       if (!normalized.trades.length && !normalized.targetPriceUpdates.length) {
@@ -286,7 +308,10 @@ export function useTradeCaptureRuntime({
       console.error('parseShot error:', error)
       updateActiveUpload((upload) => ({
         ...upload,
-        parseErr: error.message || '解析失敗，請確認截圖清晰',
+        parseErr:
+          buildTradeParseErrorMessage({
+            error,
+          }) || '解析失敗，請確認截圖清晰',
       }))
     } finally {
       setParsing(false)

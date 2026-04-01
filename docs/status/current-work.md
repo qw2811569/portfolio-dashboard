@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 06:08
+Last updated: 2026-04-02 06:24
 
 ## Objective
 
@@ -42,6 +42,14 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 06:24` Codex：完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout- `2026-04-02 06:28` Codex：緊急 Bug 修復完成，已補 OCR / 收盤分析 / 深度研究三條線的可見錯誤與 timeout 保護。
+  - done：`api/parse.js` 現在會驗證 `base64` 是否存在，並把 OCR AI 原始回應以截斷格式記到 server log；`useTradeCaptureRuntime.js` 會把「AI 未回傳可解析 JSON / JSON 格式錯誤」轉成較具體的前端錯誤訊息，不再只顯示籠統失敗。`dailyAnalysisRuntime.js` 明確要求模型先輸出中文分析評論，再附 `EVENT_ASSESSMENTS / BRAIN_UPDATE`；若 strip 掉附錄後正文為空，會保留原始回覆，避免收盤分析整塊變空白。`useResearchWorkflow.js` 對 `/api/research` 加上 55 秒 timeout，並將 timeout / abort 對應成明確的逾時提示，避免 UI 一直轉圈沒有結果。
+  - changed files：`api/parse.js`、`src/hooks/useTradeCaptureRuntime.js`、`src/lib/tradeAiResponse.js`、`src/lib/dailyAnalysisRuntime.js`、`src/hooks/useResearchWorkflow.js`、`tests/api/parse.test.js`、`tests/lib/tradeAiResponse.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`、`tests/hooks/useResearchWorkflow.test.jsx`
+  - validation：`vitest` targeted 4 files / 16 tests 通過；`npm run build` 通過；`npm run lint` 無 error。lint 仍有既有 warnings：`DailyReportPanel.jsx` console、`GeminiResearchBrowser.jsx` unused arg；另有目前工作樹上的 `src/constants.js` / `src/hooks/useAutoEventCalendar.js` unused warning，未納入本輪修補。
+  - risks：尚未做 production smoke，所以 OCR 真實截圖、收盤分析 streaming 正文品質、以及深度研究 55 秒 timeout 提示目前只在本地測試覆蓋；`/api/research` 仍非 streaming，若 payload 再變大，使用者至少會看到 timeout，但不會提早收到部分結果。
+  - next best step：push 後先部署 production，接著用一張真實成交截圖驗證 OCR、用真實收盤分析 payload 驗證正文不再為空、再用 production `/api/research` 確認 55 秒 timeout 提示如預期出現。
+
 - `2026-04-01 22:18` Qwen：緊急 Bug 修復完成：BUG-3（持倉硬編碼→空陣列 fallback）+ BUG-5（行事曆直接呼叫 event-calendar API）。驗證：git commit 372ac12。
 
 

@@ -77,6 +77,7 @@ const DAILY_ANALYSIS_SYSTEM_PROMPT = `你是一位專業的台股策略分析師
 - 每個操作建議附帶：「如果我錯了，最可能的原因是什麼？」
 
 【輸出優先序與篇幅控制】
+- 必須先輸出人類可讀的繁中分析評論，再輸出 EVENT_ASSESSMENTS 與 BRAIN_UPDATE JSON blocks；禁止只回 JSON
 - 先判斷今天最需要處理的 1-3 檔，列為 A 級優先處理；只有 A 級可以寫 2-4 行深度分析
 - 其餘持股只保留一句話快照，格式固定為：代號/名稱｜今日 verdict｜明日動作或等待條件
 - 不要按產業把所有持股重寫成長篇組合報告；產業段落只用來解釋共通驅動，不可取代個股結論
@@ -415,6 +416,7 @@ export function buildDailyAnalysisRequest({
       '只挑 1-3 個與今日走勢真正有因果關聯的事件。',
       '所有操作建議都要有具體數字、等待條件與「如果我錯了」的原因。',
       '在 BRAIN_UPDATE 中先驗證既有規則，再決定是否新增少量候選規則。',
+      '必須先寫完整的中文分析評論，最後才能附上 EVENT_ASSESSMENTS 與 BRAIN_UPDATE JSON blocks。',
       '</instruction>',
     ].join('\n'),
   }
@@ -524,10 +526,12 @@ export function buildDailyReport({
 }
 
 export function stripDailyAnalysisEmbeddedBlocks(displayText = '') {
-  return String(displayText || '')
+  const rawText = String(displayText || '').trim()
+  const cleaned = rawText
     .replace(/## 📋 EVENT_ASSESSMENTS[\s\S]*?```[\s\S]*?```/g, '')
     .replace(/## 🧬 BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/g, '')
     .trim()
+  return cleaned || rawText
 }
 
 function extractEmbeddedJsonBlock(displayText = '', pattern) {

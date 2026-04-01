@@ -209,6 +209,8 @@
 - `scripts/ai-status.sh done|handover|suggest|blocker` 會自動寫回 `docs/status/current-work.md` 並同步 docs-site
 - 若要讓 Git 歸因穩定可讀，優先透過 `scripts/launch-qwen.sh`、`scripts/launch-gemini.sh`、`scripts/launch-gemini-research-scout.sh` 啟動 AI；這些 launcher 會自動帶入 AI 專屬 `GIT_AUTHOR_*` / `GIT_COMMITTER_*`
 - 若 AI 需要建立 commit，優先使用 `AI_NAME=<Name> bash scripts/ai-commit.sh "message"`；它會用 AI 專屬 author identity 寫 commit，並附上 `AI-Agent` / 狀態來源 metadata
+- **每個 AI 必須在工作結束前 commit 自己的改動。** 不要留下 unstaged/uncommitted 的改動給下一個 AI。曾發生 Codex 的改動沒 commit，被混進 Claude 的 commit 裡，導致 git blame 歸因錯誤、rollback 困難。如果因故無法 commit（如 lint 不過），必須在 `docs/status/current-work.md` 記錄哪些檔案有 uncommitted changes
+- **commit 前只 stage 自己改的檔案。** 不要用 `git add -A` 或 `git add .`，因為其他 AI 可能同時有 uncommitted 改動在工作目錄裡。用 `git add <specific-files>` 明確指定
 - VS Code workspace 已推薦安裝 `eamodio.gitlens` 與 `blameprompt.blameprompt`
 - 本機已安裝 BlamePrompt CLI；若要查看 AI receipts，可用 `blameprompt blame <file>`、`blameprompt diff`、`blameprompt show <commit>`
 - 歷史快照 / backup 檔不可再放在 `src/` 活躍 source tree；請改放 `.archive/` 或 repo 外部備份

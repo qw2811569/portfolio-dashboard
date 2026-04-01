@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T22:24:20.000Z",
+  "lastUpdated": "2026-04-01T22:32:00.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -336,9 +336,9 @@
   },
   "timeline": [
     {
-      "time": "2026-04-02 06:24",
+      "time": "2026-04-02 06:32",
       "ai": "Codex",
-      "title": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout- 2026-04-02 06:28 Codex：緊急 Bug 修復完成，已補 OCR / 收盤分析 / 深度研究三條線的可見…",
+      "title": "緊急 Bug 修復已 push + deploy，OCR / 收盤分析 / 深度研究三條線都已補上可見錯誤與 timeout 保護。",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
@@ -360,7 +360,7 @@
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T22:24:20.076Z",
+  "generatedAt": "2026-04-01T22:26:58.287Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -459,8 +459,8 @@
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T06:24:00+08:00",
-    "message": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout- 2026-04-02 06:28 Codex：緊急 Bug 修復完成，已補 OCR / 收盤分析 / 深度研究三條線的可見錯誤與 timeout 保護。",
+    "time": "2026-04-02T06:32:00+08:00",
+    "message": "緊急 Bug 修復已 push + deploy，OCR / 收盤分析 / 深度研究三條線都已補上可見錯誤與 timeout 保護。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

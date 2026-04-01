@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildBlindPredictionBlock,
   buildBlindPredictionRequest,
+  buildDailyAnalysisRequest,
   buildDailyChanges,
   buildDailyEventCollections,
   buildDailyReport,
@@ -134,6 +135,11 @@ describe('lib/dailyAnalysisRuntime', () => {
       blindHoldingSummary: '持股摘要',
       eventSummary: '事件摘要',
     })
+    const analysisRequest = buildDailyAnalysisRequest({
+      today: '2026/03/28',
+      holdingSummary: '持股摘要',
+      blindPredictions: [],
+    })
     const insight = `## 今日總結\nOK\n## 📋 EVENT_ASSESSMENTS\n\`\`\`json\n[]\n\`\`\`\n## 🧬 BRAIN_UPDATE\n\`\`\`json\n{}\n\`\`\`\n`
     const report = buildDailyReport({
       today: '2026/03/28',
@@ -146,6 +152,9 @@ describe('lib/dailyAnalysisRuntime', () => {
 
     expect(request.systemPrompt).toContain('這是盲測')
     expect(request.userPrompt).toContain('持股摘要')
+    expect(analysisRequest.systemPrompt).toContain('A 級優先處理')
+    expect(analysisRequest.systemPrompt).toContain('700-1200 字為目標')
+    expect(analysisRequest.userPrompt).toContain('只深寫最需要處理的 1-3 檔')
     expect(stripDailyAnalysisEmbeddedBlocks(insight)).toBe('## 今日總結\nOK')
     expect(report).toMatchObject({
       date: '2026/03/28',

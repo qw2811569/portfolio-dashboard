@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T14:00:00.000Z",
+  "lastUpdated": "2026-04-01T06:53:34.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,15 +7,12 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "FinMind 數據接入完成、brain proposal gate 上線、事件行事曆 Cron 就緒",
-    "thisWeek": "知識庫 600→完成、AI 協作治理升級、4 個 AI 全部有明確分工",
+    "today": "今天新增 10 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "thisWeek": "本週主線維持主 runtime 收斂；最新已知綠燈基線 3 files / 10 tests",
     "highlights": [
-      "✅ 知識庫 600/600 條，品質測試 25/25 全過",
-      "✅ FinMind API 接入（籌碼/估值/財報/股利/營收 6 大數據集）",
-      "✅ 事件行事曆 Cron 自動化（MOPS+固定行事曆）",
-      "✅ Brain proposal gate 上線（候選提案→評估→套用/拒絕）",
-      "✅ Vercel timeout 修復（10s→60s）",
-      "✅ 4 個 AI 角色卡+Git 紀律制定完成"
+      "✅ App.jsx 已收斂為 7 行薄入口",
+      "✅ 最新完整基線 3 files / 10 tests",
+      "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
   "overallProgress": {
@@ -30,10 +27,22 @@
       "completedAt": "2026-03-28",
       "description": "持倉管理、localStorage 持久化、多組合支援",
       "tasks": [
-        { "name": "持倉 CRUD + 排序", "status": "done" },
-        { "name": "多組合切換", "status": "done" },
-        { "name": "localStorage 持久化", "status": "done" },
-        { "name": "Cloud sync (owner-only)", "status": "done" }
+        {
+          "name": "持倉 CRUD + 排序",
+          "status": "done"
+        },
+        {
+          "name": "多組合切換",
+          "status": "done"
+        },
+        {
+          "name": "localStorage 持久化",
+          "status": "done"
+        },
+        {
+          "name": "Cloud sync (owner-only)",
+          "status": "done"
+        }
       ]
     },
     "phase2": {
@@ -42,14 +51,40 @@
       "status": "in-progress",
       "description": "收盤分析、深度研究、策略大腦",
       "tasks": [
-        { "name": "收盤分析 (daily analysis)", "status": "done" },
-        { "name": "盲測預測 (blind prediction)", "status": "done" },
-        { "name": "深度研究 (single stock)", "status": "done" },
-        { "name": "全組合研究 (evolve)", "status": "done" },
-        { "name": "Brain proposal gate", "status": "done" },
-        { "name": "Prompt token 預算控制", "status": "done" },
-        { "name": "Prompt 品質持續優化", "status": "doing", "progress": 60 },
-        { "name": "研究結果自動回寫 dossier", "status": "doing", "progress": 50 }
+        {
+          "name": "收盤分析 (daily analysis)",
+          "status": "done"
+        },
+        {
+          "name": "盲測預測 (blind prediction)",
+          "status": "done"
+        },
+        {
+          "name": "深度研究 (single stock)",
+          "status": "done"
+        },
+        {
+          "name": "全組合研究 (evolve)",
+          "status": "done"
+        },
+        {
+          "name": "Brain proposal gate",
+          "status": "done"
+        },
+        {
+          "name": "Prompt token 預算控制",
+          "status": "done"
+        },
+        {
+          "name": "Prompt 品質持續優化",
+          "status": "doing",
+          "progress": 60
+        },
+        {
+          "name": "研究結果自動回寫 dossier",
+          "status": "doing",
+          "progress": 50
+        }
       ]
     },
     "phase3": {
@@ -58,15 +93,44 @@
       "status": "in-progress",
       "description": "結構化知識、外部數據源、自動化蒐集",
       "tasks": [
-        { "name": "知識庫 600 條（7 分類）", "status": "done" },
-        { "name": "知識庫品質測試 25/25", "status": "done" },
-        { "name": "策略映射 + slot-based 檢索", "status": "done" },
-        { "name": "FinMind API（籌碼/估值/財報）", "status": "done" },
-        { "name": "FinMind 接入 dossier + prompt", "status": "done" },
-        { "name": "事件行事曆 Cron 自動化", "status": "done" },
-        { "name": "事件 Cron 接入前端 boot", "status": "doing", "progress": 80 },
-        { "name": "知識庫演化（usage→feedback→auto-adjust）", "status": "doing", "progress": 30 },
-        { "name": "RSS 多源聚合（鉅亨/經濟日報）", "status": "todo" }
+        {
+          "name": "知識庫 600 條（7 分類）",
+          "status": "done"
+        },
+        {
+          "name": "知識庫品質測試 25/25",
+          "status": "done"
+        },
+        {
+          "name": "策略映射 + slot-based 檢索",
+          "status": "done"
+        },
+        {
+          "name": "FinMind API（籌碼/估值/財報）",
+          "status": "done"
+        },
+        {
+          "name": "FinMind 接入 dossier + prompt",
+          "status": "done"
+        },
+        {
+          "name": "事件行事曆 Cron 自動化",
+          "status": "done"
+        },
+        {
+          "name": "事件 Cron 接入前端 boot",
+          "status": "doing",
+          "progress": 80
+        },
+        {
+          "name": "知識庫演化（usage→feedback→auto-adjust）",
+          "status": "doing",
+          "progress": 30
+        },
+        {
+          "name": "RSS 多源聚合（鉅亨/經濟日報）",
+          "status": "todo"
+        }
       ]
     },
     "phase4": {
@@ -75,13 +139,36 @@
       "status": "in-progress",
       "description": "催化事件生命週期、復盤、行事曆",
       "tasks": [
-        { "name": "事件 CRUD + 狀態流轉", "status": "done" },
-        { "name": "事件 review + lessons", "status": "done" },
-        { "name": "行事曆自動蒐集 (Cron)", "status": "done" },
-        { "name": "MOPS 法說會自動匯入", "status": "done" },
-        { "name": "行事曆前端 UI 接入", "status": "doing", "progress": 60 },
-        { "name": "Gemini 手動蒐集 → 匯入管線", "status": "doing", "progress": 40 },
-        { "name": "事件與分析結果連結", "status": "todo" }
+        {
+          "name": "事件 CRUD + 狀態流轉",
+          "status": "done"
+        },
+        {
+          "name": "事件 review + lessons",
+          "status": "done"
+        },
+        {
+          "name": "行事曆自動蒐集 (Cron)",
+          "status": "done"
+        },
+        {
+          "name": "MOPS 法說會自動匯入",
+          "status": "done"
+        },
+        {
+          "name": "行事曆前端 UI 接入",
+          "status": "doing",
+          "progress": 60
+        },
+        {
+          "name": "Gemini 手動蒐集 → 匯入管線",
+          "status": "doing",
+          "progress": 40
+        },
+        {
+          "name": "事件與分析結果連結",
+          "status": "todo"
+        }
       ]
     },
     "phase5": {
@@ -90,12 +177,32 @@
       "status": "in-progress",
       "description": "useAppRuntime 拆分、route shell 準備",
       "tasks": [
-        { "name": "useAppRuntime 928→511 行", "status": "done" },
-        { "name": "Composer/Args/Workflows 外移", "status": "done" },
-        { "name": "AppShellFrame 抽離", "status": "done" },
-        { "name": "useAppRuntime 目標 ~300 行", "status": "doing", "progress": 50 },
-        { "name": "Route pages data wiring", "status": "doing", "progress": 30 },
-        { "name": "Route shell 全面接管", "status": "todo" }
+        {
+          "name": "useAppRuntime 928→511 行",
+          "status": "done"
+        },
+        {
+          "name": "Composer/Args/Workflows 外移",
+          "status": "done"
+        },
+        {
+          "name": "AppShellFrame 抽離",
+          "status": "done"
+        },
+        {
+          "name": "useAppRuntime 目標 ~300 行",
+          "status": "doing",
+          "progress": 50
+        },
+        {
+          "name": "Route pages data wiring",
+          "status": "doing",
+          "progress": 30
+        },
+        {
+          "name": "Route shell 全面接管",
+          "status": "todo"
+        }
       ]
     },
     "phase6": {
@@ -104,27 +211,49 @@
       "status": "planned",
       "description": "支援多用戶、效能優化、監控",
       "tasks": [
-        { "name": "Vercel Cron 共用事件蒐集", "status": "done" },
-        { "name": "前端按用戶持股篩選", "status": "doing", "progress": 50 },
-        { "name": "用戶認證系統", "status": "todo" },
-        { "name": "效能監控 (Web Vitals)", "status": "done" },
-        { "name": "Blob storage 多用戶隔離", "status": "todo" },
-        { "name": "PWA / 離線支援", "status": "todo" }
+        {
+          "name": "Vercel Cron 共用事件蒐集",
+          "status": "done"
+        },
+        {
+          "name": "前端按用戶持股篩選",
+          "status": "doing",
+          "progress": 50
+        },
+        {
+          "name": "用戶認證系統",
+          "status": "todo"
+        },
+        {
+          "name": "效能監控 (Web Vitals)",
+          "status": "done"
+        },
+        {
+          "name": "Blob storage 多用戶隔離",
+          "status": "todo"
+        },
+        {
+          "name": "PWA / 離線支援",
+          "status": "todo"
+        }
       ]
     }
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 48,
-    "testCases": 229,
+    "testFiles": 54,
+    "testCases": 10,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
     "dataAdapters": 3,
-    "aiAgents": 4
+    "aiAgents": 4,
+    "appJsxLinesChange": 0,
+    "totalDocs": 26,
+    "inProgressTasks": 1
   },
   "health": {
-    "overall": "healthy",
+    "overall": "warning",
     "build": "passing",
     "lint": "passing",
     "tests": "48/48 files, 229/229 tests",
@@ -157,44 +286,227 @@
       "currentTask": "法說會蒐集、目標價更新、知識庫 fact-check、FinMind 驗證",
       "configFile": "GEMINI.md",
       "workflows": 7
-    }
+    },
+    "current": "Qwen",
+    "members": [
+      {
+        "name": "Codex",
+        "role": "技術主導 / 最終裁決",
+        "avatar": "🧠",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 39,
+        "lastActive": "2026-04-01 14:41",
+        "statusSource": "manual",
+        "activitySource": "~/.codex/session_index.jsonl"
+      },
+      {
+        "name": "Qwen",
+        "role": "低風險實作 / 文件整理",
+        "avatar": "✍️",
+        "status": "working",
+        "currentTask": "Qwen：讓我創建 useHoldings 測試和 dossierUtils 測試。",
+        "tasksCompleted": 12,
+        "lastActive": "2026-04-01 14:52",
+        "statusSource": "auto",
+        "activitySource": "~/.qwen/projects/*/chats"
+      },
+      {
+        "name": "Gemini",
+        "role": "公開資料蒐集",
+        "avatar": "🔍",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 5,
+        "lastActive": "2026-04-01 13:12",
+        "statusSource": "auto",
+        "activitySource": "~/.gemini/usage-log.tsv"
+      },
+      {
+        "name": "Claude",
+        "role": "strategy brain second opinion",
+        "avatar": "🎯",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 7,
+        "lastActive": "2026-03-30 13:33",
+        "statusSource": "manual"
+      }
+    ]
   },
   "timeline": [
     {
-      "time": "2026-04-01 22:00",
-      "ai": "Claude",
-      "title": "FinMind data adapter 建立 + 全專案進度重建",
+      "time": "2026-04-01 14:41",
+      "ai": "Codex",
+      "title": "補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research actio…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 06:33",
+      "ai": "Qwen",
+      "title": "P7+P4 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS 來源；(2) 補測試：useEvents(19 測試)+useWatchlistActions(12 測試) 已…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 06:06",
+      "ai": "Qwen",
+      "title": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化。驗證：lint(0 err)+vitest(25 test…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
       "time": "2026-04-01 14:05",
       "ai": "Codex",
-      "title": "FinMind 數據接入 dossier + daily analysis prompt",
+      "title": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 13:59",
+      "ai": "Codex",
+      "title": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivo…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
       "time": "2026-04-01 13:24",
       "ai": "Codex",
-      "title": "P0 prompt budget + P1 brain proposal gate 完成",
+      "title": "完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-01 12:00",
-      "ai": "Claude",
-      "title": "事件行事曆 Cron 自動化 + Vercel 部署",
+      "time": "2026-04-01 00:21",
+      "ai": "Codex",
+      "title": "補齊 route-based 入口仍殘留的收盤價 / 行事曆 / 成交 OCR 解析缺口。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-01 00:15",
-      "ai": "Claude",
-      "title": "知識庫壓測 + 排序修正 + dossier stockMeta 串接",
-      "status": "done"
-    },
-    {
-      "time": "2026-03-31 21:40",
-      "ai": "Claude",
-      "title": "知識庫 600/600 + 品質優化 + 策略映射對齊",
+      "time": "2026-04-01 00:04",
+      "ai": "Codex",
+      "title": "修掉 production 上的收盤價 / 行事曆 / 成交 OCR 三條線上故障。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     }
-  ]
+  ],
+  "generatedAt": "2026-04-01T06:53:34.444Z",
+  "sources": {
+    "canonicalStatus": "docs/status/current-work.md",
+    "canonicalAiActivity": "docs/status/ai-activity.json",
+    "generatedView": "docs-site/state.json",
+    "generator": "scripts/build-docs-state.mjs"
+  },
+  "trackingStack": {
+    "gitlensRecommended": true,
+    "blamepromptRecommended": true,
+    "blamepromptCliInstalled": true,
+    "aiStatusPipelineReady": true,
+    "launcherAutoReportReady": true,
+    "liveActivityMirrorReady": true
+  },
+  "liveActivity": [
+    {
+      "time": "2026-04-01 14:53",
+      "isoTime": "2026-04-01T14:53:34+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "超過活動視窗，已自動切回待命",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 14:53",
+      "isoTime": "2026-04-01T14:53:34+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：讓我創建 useHoldings 測試和 dossierUtils 測試。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:41",
+      "isoTime": "2026-04-01T14:41:33+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有任務已完成，需要提供完整的交接報告，包含完成的任務、修改的檔案、風險評估和下一步建議。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:41",
+      "isoTime": "2026-04-01T14:41:33+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 14:05",
+      "isoTime": "2026-04-01T14:05:55+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：腳本沒有執行權限，讓我直接用 node 來寫入狀態。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:05",
+      "isoTime": "2026-04-01T14:05:55+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 13:59",
+      "isoTime": "2026-04-01T13:59:57+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 13:59",
+      "isoTime": "2026-04-01T13:59:57+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 13:12",
+      "isoTime": "2026-04-01T13:12:42+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 13:12",
+      "isoTime": "2026-04-01T13:12:42+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：/temp/readonly/command (nmtlkb) 讀 QWEN.md，先做「修正待辦」（還原 quality-validation（自動偵測）",
+      "status": "working"
+    }
+  ],
+  "handover": {
+    "from": "Codex",
+    "time": "2026-04-01T14:41:00+08:00",
+    "message": "補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。",
+    "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
+    "blockers": [],
+    "needsReview": false,
+    "optimizationSuggestions": [
+      "每次更新 docs/status/current-work.md 後執行 bash scripts/sync-state.sh",
+      "若需要重刷 build/lint/test 健康狀態，再執行 bash scripts/sync-state.sh --full"
+    ]
+  }
 }

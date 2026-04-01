@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-01 13:59
+Last updated: 2026-04-01 14:41
 
 ## Objective
 
@@ -43,6 +43,14 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-04-01 14:41` Codex：補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。
+
+- `2026-04-01 06:33` Qwen：P7+P4 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS 來源；(2) 補測試：useEvents(19 測試)+useWatchlistActions(12 測試) 已通過，共 31/31 綠燈。驗證：lint(0 err)+vitest(31 tests) 全綠。
+
+- `2026-04-01 06:06` Qwen：FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化。驗證：lint(0 err)+vitest(25 tests) 全綠。
+
+
+- `2026-04-01 14:05` Codex：FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化
 - `2026-04-01 13:59` Codex：P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。
 - `2026-04-01 13:24` Codex：完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。
   - P0 prompt 瘦身：新增 `src/lib/promptBudget.js`，`api/research.js` 與 `useDailyAnalysisWorkflow.js` 現在會對 holding summary 套 `3000` 字預算，超限時保留最大部位 5 檔；brain context 超過 `1500` 字時會退回 user rules + 最近 3 條 lessons

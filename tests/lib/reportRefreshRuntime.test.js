@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildAnalystTargetUpserts,
+  buildReportRefreshCandidates,
   buildResearchExtractRequest,
   extractStructuredResearchRefreshPlan,
   getResearchReportText,
@@ -143,5 +144,46 @@ describe('lib/reportRefreshRuntime', () => {
         lastMessage: '刷新失敗',
       })
     )
+  })
+
+  it('prioritizes report refresh candidates by dossier freshness, events and size', () => {
+    const candidates = buildReportRefreshCandidates({
+      holdings: [
+        { code: '2330', name: '台積電', qty: 1000, price: 950 },
+        { code: '2454', name: '聯發科', qty: 100, price: 1200 },
+        { code: '2303', name: '聯電', qty: 1000, price: 50 },
+      ],
+      dossierByCode: new Map([
+        ['2330', { code: '2330', freshness: { targets: 'missing', analyst: 'missing' } }],
+        ['2454', { code: '2454', freshness: { targets: 'stale', analyst: 'fresh' } }],
+        ['2303', { code: '2303', freshness: { targets: 'fresh', analyst: 'fresh' } }],
+      ]),
+      reportRefreshMeta: {
+        2454: { checkedDate: '2026-04-01' },
+      },
+      newsEvents: [
+        { id: 'e1', title: '法說會', stocks: ['台積電 2330'], status: 'tracking' },
+        { id: 'e2', title: '已結案', stocks: ['聯發科 2454'], status: 'closed' },
+      ],
+      todayRefreshKey: '2026-04-01',
+      getEventStockCodes: (event) =>
+        Array.isArray(event?.stocks)
+          ? event.stocks.map((item) => String(item).trim().split(/\s+/).at(-1))
+          : [],
+      isClosedEvent: (event) => event.status === 'closed',
+      getHoldingMarketValue: (holding) => Number(holding.qty || 0) * Number(holding.price || 0),
+    })
+
+    expect(candidates).toHaveLength(2)
+    expect(candidates[0]).toMatchObject({
+      holding: expect.objectContaining({ code: '2330' }),
+      score: 11,
+      checkedToday: false,
+    })
+    expect(candidates[1]).toMatchObject({
+      holding: expect.objectContaining({ code: '2454' }),
+      score: 3,
+      checkedToday: true,
+    })
   })
 })

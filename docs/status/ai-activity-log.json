@@ -1,6 +1,54 @@
 {
-  "lastUpdated": "2026-04-01T13:59:57+08:00",
+  "lastUpdated": "2026-04-01T14:53:34+08:00",
   "entries": [
+    {
+      "time": "2026-04-01 14:53",
+      "isoTime": "2026-04-01T14:53:34+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "超過活動視窗，已自動切回待命",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 14:53",
+      "isoTime": "2026-04-01T14:53:34+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：讓我創建 useHoldings 測試和 dossierUtils 測試。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:41",
+      "isoTime": "2026-04-01T14:41:33+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有任務已完成，需要提供完整的交接報告，包含完成的任務、修改的檔案、風險評估和下一步建議。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:41",
+      "isoTime": "2026-04-01T14:41:33+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 14:05",
+      "isoTime": "2026-04-01T14:05:55+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：腳本沒有執行權限，讓我直接用 node 來寫入狀態。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 14:05",
+      "isoTime": "2026-04-01T14:05:55+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
+      "status": "idle"
+    },
     {
       "time": "2026-04-01 13:59",
       "isoTime": "2026-04-01T13:59:57+08:00",
@@ -295,38 +343,6 @@
       "ai": "Qwen",
       "action": "auto-detect",
       "message": "Qwen：文件已建立並更新狀態，現在需要總結完成的工作並提供清晰的下一步指引給使用者。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 17:58",
-      "isoTime": "2026-03-30T17:58:28+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先主線完成：useAppRuntime 接入 useAppRuntimeCoreLifecycle，runtime 再瘦 105 行；修正 Vite /api 自迴圈 proxy，避免 EMFILE。lint/vitest/fast-refresh/healthcheck 已驗證。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 17:50",
-      "isoTime": "2026-03-30T17:50:07+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：文件已建立，現在需要更新 current-work.md 記錄這個討論文件已建立，並邀請 Claude 參與討論。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 17:50",
-      "isoTime": "2026-03-30T17:50:01+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：用戶要求我將討論問題整理成正式文件，讓 Claude AI 能讀到。我需要創建一個結構化的討論文件，放在 docs/ 目錄下，讓 Claude （自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 17:50",
-      "isoTime": "2026-03-30T17:50:00+08:00",
-      "ai": "Codex",
-      "action": "start",
-      "message": "主線收斂下一步：抽 useAppRuntimeCoreLifecycle，搬走核心 lifecycle wiring 區段",
       "status": "working"
     }
   ]

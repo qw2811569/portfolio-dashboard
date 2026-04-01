@@ -46,6 +46,46 @@ export function buildResearchExtractRequest({ report, targetStock, dossier, toda
   }
 }
 
+export function buildReportRefreshCandidates({
+  holdings = [],
+  dossierByCode = new Map(),
+  reportRefreshMeta = {},
+  newsEvents = [],
+  todayRefreshKey = '',
+  getEventStockCodes = () => [],
+  isClosedEvent = () => false,
+  getHoldingMarketValue = () => 0,
+} = {}) {
+  return (Array.isArray(holdings) ? holdings : [])
+    .map((holding) => {
+      const dossier = dossierByCode.get(holding.code) || null
+      const refreshEntry = reportRefreshMeta?.[holding.code] || {}
+      const relatedEvents = (Array.isArray(newsEvents) ? newsEvents : []).filter(
+        (event) => getEventStockCodes(event).includes(holding.code) && !isClosedEvent(event)
+      )
+      const targetStatus = dossier?.freshness?.targets || 'missing'
+      const analystStatus = dossier?.freshness?.analyst || 'missing'
+      const score =
+        (targetStatus === 'missing' ? 5 : targetStatus === 'stale' ? 3 : 0) +
+        (analystStatus === 'missing' ? 4 : analystStatus === 'stale' ? 2 : 0) +
+        (relatedEvents.length > 0 ? 2 : 0)
+
+      return {
+        holding,
+        score,
+        targetStatus,
+        analystStatus,
+        relatedEvents,
+        checkedToday: refreshEntry.checkedDate === todayRefreshKey,
+      }
+    })
+    .filter((item) => item.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score || getHoldingMarketValue(b.holding) - getHoldingMarketValue(a.holding)
+    )
+}
+
 export function mergeAnalystReportBatchStore(
   store,
   code,

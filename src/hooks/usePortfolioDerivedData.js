@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
   holdings,
@@ -465,32 +466,16 @@ export function usePortfolioDerivedData({
   const todayRefreshKey = getTaipeiClock(new Date()).marketDate
   const reportRefreshCandidates = useMemo(
     () =>
-      H.map((holding) => {
-        const dossier = dossierByCode.get(holding.code) || null
-        const refreshEntry = reportRefreshMeta?.[holding.code] || {}
-        const relatedEvents = currentNewsEvents.filter(
-          (event) => getEventStockCodes(event).includes(holding.code) && !isClosedEvent(event)
-        )
-        const targetStatus = dossier?.freshness?.targets || 'missing'
-        const analystStatus = dossier?.freshness?.analyst || 'missing'
-        const score =
-          (targetStatus === 'missing' ? 5 : targetStatus === 'stale' ? 3 : 0) +
-          (analystStatus === 'missing' ? 4 : analystStatus === 'stale' ? 2 : 0) +
-          (relatedEvents.length > 0 ? 2 : 0)
-        return {
-          holding,
-          score,
-          targetStatus,
-          analystStatus,
-          relatedEvents,
-          checkedToday: refreshEntry.checkedDate === todayRefreshKey,
-        }
-      })
-        .filter((item) => item.score > 0)
-        .sort(
-          (a, b) =>
-            b.score - a.score || getHoldingMarketValue(b.holding) - getHoldingMarketValue(a.holding)
-        ),
+      buildReportRefreshCandidates({
+        holdings: H,
+        dossierByCode,
+        reportRefreshMeta,
+        newsEvents: currentNewsEvents,
+        todayRefreshKey,
+        getEventStockCodes,
+        isClosedEvent,
+        getHoldingMarketValue,
+      }),
     [
       H,
       dossierByCode,

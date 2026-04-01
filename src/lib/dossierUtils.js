@@ -1,9 +1,127 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
 import { getEventStockCodes } from './eventUtils.js'
 import { getSupplyChain, getThemesForStock } from './dataAdapters/index.js'
-import { buildKnowledgeContext } from './knowledgeBase.js'
+import { buildCompactKnowledgeContext, buildKnowledgeContext } from './knowledgeBase.js'
 
-export function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
+function compactPromptText(value, limit = 48) {
+  const text = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  if (text.length <= limit) return text
+  return `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…`
+}
+
+function formatSignedNumber(value, digits = 0) {
+  const number = Number(value) || 0
+  return `${number >= 0 ? '+' : ''}${number.toFixed(digits)}`
+}
+
+function formatPct(value, digits = 2) {
+  return `${formatSignedNumber(value, digits)}%`
+}
+
+function summarizeTargetsForPrompt(targets = [], limit = 2) {
+  const rows = (Array.isArray(targets) ? targets : [])
+    .map((target) => {
+      const firm = compactPromptText(target?.firm, 10)
+      const price = Number(target?.target)
+      if (!firm || !Number.isFinite(price)) return null
+      return `${firm} ${price}`
+    })
+    .filter(Boolean)
+    .slice(0, Math.max(1, limit))
+
+  return rows.length > 0 ? rows.join(' | ') : '無'
+}
+
+function summarizeEventsForPrompt(events = [], limit = 2) {
+  const rows = (Array.isArray(events) ? events : [])
+    .map((event) => {
+      const date = compactPromptText(event?.date, 12)
+      const title = compactPromptText(event?.title, 20)
+      if (!title) return null
+      return [date, title].filter(Boolean).join(' ')
+    })
+    .filter(Boolean)
+    .slice(0, Math.max(1, limit))
+
+  return rows.length > 0 ? rows.join(' | ') : '無'
+}
+
+function summarizeMatchedRulesForPrompt(brainContext = {}, limit = 2) {
+  const rows = (Array.isArray(brainContext?.matchedRules) ? brainContext.matchedRules : [])
+    .map((rule) => compactPromptText(rule?.text, 28))
+    .filter(Boolean)
+    .slice(0, Math.max(1, limit))
+
+  return rows.length > 0 ? rows.join(' | ') : '無'
+}
+
+function summarizeFreshnessForPrompt(freshness = {}) {
+  if (!freshness || typeof freshness !== 'object') return ''
+  const entries = [
+    ['營收', freshness.fundamentals],
+    ['目標價', freshness.targets],
+    ['事件', freshness.events],
+    ['研究', freshness.research],
+  ]
+    .filter(([, value]) => value)
+    .map(([label, value]) => `${label}:${value}`)
+  return entries.join(' | ')
+}
+
+function summarizeThesisForPrompt(thesis) {
+  if (!thesis) return '無'
+  const statement = compactPromptText(thesis.statement || thesis.reason, 54)
+  const direction = thesis.direction ? `方向:${thesis.direction}` : ''
+  const conviction = thesis.conviction ? `信心:${thesis.conviction}` : ''
+  const target = thesis.targetPrice ? `目標:${thesis.targetPrice}` : ''
+  const stopLoss = thesis.stopLoss ? `停損:${thesis.stopLoss}` : ''
+  return [statement, direction, conviction, target, stopLoss].filter(Boolean).join(' | ') || '無'
+}
+
+function buildCompactFinMindSummary(finmind) {
+  if (
+    !finmind ||
+    (!finmind.institutional?.length && !finmind.valuation?.length && !finmind.margin?.length)
+  ) {
+    return '無'
+  }
+
+  const parts = []
+
+  if (finmind.institutional?.length > 0) {
+    const recent5 = finmind.institutional.slice(0, 5)
+    const foreignSum = recent5.reduce((sum, item) => sum + (item.foreign || 0), 0)
+    const investmentSum = recent5.reduce((sum, item) => sum + (item.investment || 0), 0)
+    parts.push(`法人5日 外資${formatSignedNumber(foreignSum)} 投信${formatSignedNumber(investmentSum)}`)
+  }
+
+  if (finmind.valuation?.length > 0) {
+    const latest = finmind.valuation[0]
+    const valuation = [
+      Number.isFinite(Number(latest?.per)) && latest.per !== 0 ? `PER ${Number(latest.per).toFixed(1)}` : '',
+      Number.isFinite(Number(latest?.pbr)) && latest.pbr !== 0 ? `PBR ${Number(latest.pbr).toFixed(2)}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+    if (valuation) parts.push(valuation)
+  }
+
+  if (finmind.margin?.length > 1) {
+    const change = (finmind.margin[0]?.marginBalance || 0) - (finmind.margin[1]?.marginBalance || 0)
+    parts.push(`融資${formatSignedNumber(change)}張`)
+  }
+
+  return parts.length > 0 ? parts.join(' | ') : '無'
+}
+
+export function buildDailyHoldingDossierContext(
+  dossier,
+  change,
+  { blind = false, compact = false } = {}
+) {
   if (!dossier) return ''
   const position = dossier.position || {}
   const targets = dossier.targets || []
@@ -34,8 +152,40 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
       : '匹配規則: 無'
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
   const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
-  const knowledgeInfo = buildKnowledgeContext(dossier.stockMeta ?? {})
+  const knowledgeInfo = compact
+    ? buildCompactKnowledgeContext(dossier.stockMeta ?? {})
+    : buildKnowledgeContext(dossier.stockMeta ?? {})
   const finmindInfo = buildFinMindChipContext(finmind)
+
+  if (compact) {
+    const closeInfo = blind
+      ? '收盤:N/A(盲測)'
+      : `收盤:${position.price}(${formatPct(change?.changePct, 2)})`
+    const snapshotLine = [
+      `數量:${position.qty || 0}`,
+      closeInfo,
+      `成本:${position.cost || 0}`,
+      `市值:${position.value || 0}`,
+      `損益:${position.pnl || 0}(${formatPct(position.pct, 2)})`,
+    ].join(' | ')
+    const lines = [
+      `<holding code="${dossier.code}" name="${dossier.name}" strategy="${compactPromptText(dossier?.stockMeta?.strategy || position?.type || '未知', 12)}">`,
+      `snapshot=${snapshotLine}`,
+      `thesis=${summarizeThesisForPrompt(dossier.thesis)}`,
+      `targets=${summarizeTargetsForPrompt(targets)}`,
+      `fundamentals=${formatFundamentalsSummary(fundamentals)}`,
+      `events=${summarizeEventsForPrompt(events)}`,
+      `brain=${summarizeMatchedRulesForPrompt(brainContext)}`,
+      `finmind=${buildCompactFinMindSummary(finmind)}`,
+      knowledgeInfo ? `knowledge=${knowledgeInfo}` : '',
+      summarizeFreshnessForPrompt(dossier.freshness)
+        ? `freshness=${summarizeFreshnessForPrompt(dossier.freshness)}`
+        : '',
+      `</holding>`,
+    ].filter(Boolean)
+
+    return lines.join('\n')
+  }
 
   const result = `
 股票代碼: ${dossier.code}
@@ -67,20 +217,22 @@ ${knowledgeInfo}` : ''}
     const supplyChainLen = supplyChainInfo ? supplyChainInfo.length : 0
     const knowledgeLen = knowledgeInfo ? knowledgeInfo.length : 0
     const finmindLen = finmindInfo ? finmindInfo.length : 0
-    console.log(
-      '[prompt-budget]',
-      dossier.code,
-      'total:',
-      result.length,
-      '字 | thesis:',
-      thesisLen,
-      '| supplyChain:',
-      supplyChainLen,
-      '| knowledge:',
-      knowledgeLen,
-      '| finmind:',
-      finmindLen
-    )
+    if (typeof globalThis !== 'undefined' && globalThis.__DEBUG_PROMPT_BUDGET__) {
+      console.warn(
+        '[prompt-budget]',
+        dossier.code,
+        'total:',
+        result.length,
+        '字 | thesis:',
+        thesisLen,
+        '| supplyChain:',
+        supplyChainLen,
+        '| knowledge:',
+        knowledgeLen,
+        '| finmind:',
+        finmindLen
+      )
+    }
   } catch {
     // silent fail - 不影響主流程
   }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildHoldingDossiers } from '../../src/lib/dossierUtils.js'
+import { buildDailyHoldingDossierContext, buildHoldingDossiers } from '../../src/lib/dossierUtils.js'
 
 describe('dossierUtils - buildHoldingDossiers', () => {
   const mockHoldings = [
@@ -166,6 +166,45 @@ describe('dossierUtils - buildHoldingDossiers', () => {
 
       expect(tsmc.events).toHaveLength(1)
       expect(quanta.events).toHaveLength(0)
+    })
+  })
+
+  describe('compact prompt summary', () => {
+    it('builds a shorter compact holding summary for daily analysis prompts', () => {
+      const dossier = {
+        code: '2330',
+        name: '台積電',
+        position: { qty: 1000, cost: 550, value: 952000, pnl: 402000, pct: 73.09, price: 952 },
+        thesis: {
+          statement: 'AI 需求帶動先進製程與 CoWoS 產能持續吃緊，月營收維持高增速。',
+          conviction: 'high',
+          targetPrice: 1080,
+          stopLoss: 900,
+        },
+        targets: [{ firm: '高盛', target: 1100 }],
+        fundamentals: { revenueMonth: '2026/03', revenueYoY: 32, revenueMoM: 8 },
+        events: [{ date: '2026/04/18', title: '法說會' }],
+        brainContext: {
+          matchedRules: [{ text: '法說前兩週可布局，若未超預期則事件後減碼。' }],
+        },
+        stockMeta: { strategy: '成長股' },
+        finmind: {
+          institutional: [{ foreign: 1200, investment: 80, dealer: -20 }],
+          valuation: [{ per: 24.3, pbr: 7.12 }],
+          margin: [{ marginBalance: 15000 }, { marginBalance: 15300 }],
+        },
+        freshness: { fundamentals: 'fresh', targets: 'fresh', events: 'tracking' },
+      }
+      const change = { changePct: 2.18 }
+
+      const verbose = buildDailyHoldingDossierContext(dossier, change)
+      const compact = buildDailyHoldingDossierContext(dossier, change, { compact: true })
+
+      expect(verbose).toContain('股票代碼: 2330')
+      expect(compact).toContain('<holding code="2330"')
+      expect(compact).toContain('snapshot=')
+      expect(compact).toContain('knowledge=')
+      expect(compact.length).toBeLessThan(verbose.length)
     })
   })
 })

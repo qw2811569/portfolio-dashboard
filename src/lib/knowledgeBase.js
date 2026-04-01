@@ -136,6 +136,15 @@ export function getKnowledgeSelection(
   }
 }
 
+function compactKnowledgeText(value, limit = 32) {
+  const text = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  if (text.length <= limit) return text
+  return `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…`
+}
+
 export function collectInjectedKnowledgeIdsFromDossiers(
   dossiers = [],
   { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2 } = {}
@@ -151,6 +160,37 @@ export function collectInjectedKnowledgeIdsFromDossiers(
       )
     )
   )
+}
+
+export function buildCompactKnowledgeContext(
+  stockMeta = {},
+  { maxItems = 2, minConfidence = 0.7, maxCaseItems = 1 } = {}
+) {
+  const { knowledge, cases } = getKnowledgeSelection(stockMeta, {
+    maxItems,
+    minConfidence,
+    maxCaseItems,
+  })
+
+  trackUsage([...knowledge, ...cases])
+
+  const lines = []
+  if (knowledge.length > 0) {
+    lines.push(
+      `知識: ${knowledge
+        .map((item) => `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.action, 26)}`)
+        .join(' | ')}`
+    )
+  }
+  if (cases.length > 0) {
+    lines.push(
+      `案例: ${cases
+        .map((item) => `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.lessons, 24)}`)
+        .join(' | ')}`
+    )
+  }
+
+  return lines.join('\n')
 }
 
 /**

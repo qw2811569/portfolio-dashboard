@@ -16,10 +16,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { systemPrompt, userPrompt } = req.body;
+    const {
+      systemPrompt,
+      userPrompt,
+      maxTokens = 2200,
+      allowThinking = false,
+    } = req.body || {};
     const data = await callAiRaw({
       system: systemPrompt,
-      maxTokens: 3000,
+      maxTokens,
+      allowThinking,
       messages: [{ role: "user", content: userPrompt }],
     });
     return res.status(200).json(data);

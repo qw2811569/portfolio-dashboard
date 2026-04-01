@@ -144,13 +144,13 @@ export function useDailyAnalysisWorkflow({
               Number(dossier?.position?.value) ||
               Number(change?.price || dossier?.position?.price || 0) *
                 Number(dossier?.position?.qty || 0),
-            text: buildDailyHoldingDossierContext(dossier, change),
+            text: buildDailyHoldingDossierContext(dossier, change, { compact: true }),
           }
         })
         const holdingSummary =
           holdingPromptEntries.length > 0
             ? buildBudgetedHoldingSummary(holdingPromptEntries, {
-                maxChars: 3000,
+                maxChars: 2200,
                 maxEntries: 5,
               }).text
             : '目前沒有持股 dossier。'
@@ -228,7 +228,7 @@ ${coachContext}
               fullText: fullBrainContext,
               userRulesText: formatBrainRulesForValidationPrompt(userRules, { limit: 6 }),
               recentLessonsText: formatRecentLessons(brain.lessons || [], { limit: 3 }),
-              maxChars: 1500,
+              maxChars: 1000,
             }).text
           : ''
 
@@ -258,11 +258,14 @@ ${losers
                       Number(dossier?.position?.value) ||
                       Number(change?.price || dossier?.position?.price || 0) *
                         Number(dossier?.position?.qty || 0),
-                    text: buildDailyHoldingDossierContext(dossier, change, { blind: true }),
+                    text: buildDailyHoldingDossierContext(dossier, change, {
+                      blind: true,
+                      compact: true,
+                    }),
                   }
                 }),
                 {
-                  maxChars: 3000,
+                  maxChars: 1800,
                   maxEntries: 5,
                 }
               ).text

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-01 15:22
+Last updated: 2026-04-01 15:58
 
 ## Objective
 
@@ -43,6 +43,7 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-04-01 15:58` Codex：P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.
 - `2026-04-01 15:22` Codex：production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latency 60.21s 仍貼近上限。P2 已接入 research evolve：新增 knowledgeEvolutionRuntime，前端會把 kb-usage-log / kb-feedback-log 帶進 research API，evolve/portfolio 研究結果現在附 knowledgeProposal（confidence adjustments candidate，不自動改寫知識庫 JSON）；daily report 也開始記錄 injectedKnowledgeIds，讓 👍/👎 feedback 能回流到具體 knowledge entry。驗證：vitest 5 files 41 tests 全過，lint 0 err 2 warnings，build 通過。
 
 - `2026-04-01 06:54` Qwen：P4+P7 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS；(2) 補測試：useEvents(11 測試)+useWatchlistActions(12 測試)=23/23 通過。驗證：lint(0 err)+vitest(23 tests) 全綠。

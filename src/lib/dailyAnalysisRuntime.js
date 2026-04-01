@@ -325,6 +325,13 @@ ${JSON.stringify(blindPredictions, null, 0)}
 `
 }
 
+function wrapPromptSection(tag, content, fallback = '無') {
+  const text = String(content || '').trim()
+  return `<${tag}>
+${text || fallback}
+</${tag}>`
+}
+
 export function buildBlindPredictionRequest({
   today = '',
   notesContext = '',
@@ -333,18 +340,24 @@ export function buildBlindPredictionRequest({
   eventSummary = '',
 }) {
   return {
+    maxTokens: 900,
+    allowThinking: false,
     systemPrompt: BLIND_PREDICTION_SYSTEM_PROMPT,
-    userPrompt: `今日日期：${today}
-${notesContext}
-${brainContext}
-
-持倉 dossier（盲測模式，不含今日漲跌）：
-${blindHoldingSummary}
-
-待觀察事件：
-${eventSummary}
-
-請對每檔持股預測今日方向。注意：你看不到今日實際漲跌，必須基於已有資訊做出判斷。`,
+    userPrompt: [
+      '<analysis_packet mode="blind_prediction">',
+      wrapPromptSection('date', today, '未提供'),
+      wrapPromptSection('portfolio_notes', notesContext),
+      wrapPromptSection('brain_context', brainContext),
+      wrapPromptSection('portfolio_holdings', blindHoldingSummary, '目前沒有持股 dossier。'),
+      wrapPromptSection('tracking_events', eventSummary),
+      '</analysis_packet>',
+      '',
+      '<instruction>',
+      '請只根據 <portfolio_holdings> 與 <tracking_events> 判斷每檔持股今日方向。',
+      '忽略不存在的即時漲跌資料；若證據不足，方向可選 flat 並降低 confidence。',
+      '輸出純 JSON array，不要補充說明。',
+      '</instruction>',
+    ].join('\n'),
   }
 }
 
@@ -364,38 +377,43 @@ export function buildDailyAnalysisRequest({
   predictionHitRate = '0/0',
 }) {
   return {
+    maxTokens: 2200,
+    allowThinking: false,
     systemPrompt: DAILY_ANALYSIS_SYSTEM_PROMPT,
-    userPrompt: `今日日期：${today}
-${prevReviewBlock}${blindPredBlock}
-═══ 今日實際表現 ═══
-今日持倉損益：${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()} 元
-${marketContext}${notesContext}
-${brainContext}
-${revContext}
-
-持倉 dossier（請把這份整合資料當成主要判斷依據；它已經包含持倉、thesis、目標價、事件、研究摘要、策略大腦線索）：
-${holdingSummary}
-
-產業集中度警告：AI/伺服器佔5檔(台達電/奇鋐/緯創/晟銘電/創意)、光通訊3檔、PCB材料3檔 — 需評估集中風險
-
-異常波動（>3%）：${anomalySummary}
-
-待觀察事件：
-${eventSummary}
-
-請分析今日收盤表現，事件連動，並給出策略建議。
-特別注意：
-1. ${blindPredictions.length > 0 ? '先對比盲測預測與實際結果，分析預測正確和錯誤的原因。' : '每檔股票都先讀 dossier 的 thesis / 目標價 / 事件 / 研究摘要 / brainContext，再結合今日漲跌，不要只看漲跌幅。'}
-2. 每檔股票必須標注適合的持有週期（短/中/長期）和對應策略。
-3. 如果 dossier 的資料新鮮度是 stale 或 missing，要直接指出不確定性，不要假裝有最新財報或最新投顧數字。
-4. 指出產業重複風險和建議調整方向。
-5. 區分龍頭股（核心持有）vs 衛星/戰術配置的不同操作建議。
-6. 特別注意策略大腦中的歷史教訓。
-7. 在 BRAIN_UPDATE 段落中，先驗證舊規則，再決定是否新增少量候選規則。
-8. 所有操作建議必須帶具體數字（價位、張數、時間），禁止空泛描述。
-9. 若持股超過 8 檔，只深寫最需要處理的 1-3 檔，其餘持股改用一句話快照。
-
-預測命中率：${predictionHitRate}`,
+    userPrompt: [
+      '<analysis_packet mode="daily_close">',
+      wrapPromptSection('date', today, '未提供'),
+      wrapPromptSection('previous_review', prevReviewBlock),
+      wrapPromptSection('blind_prediction_review', blindPredBlock),
+      wrapPromptSection(
+        'today_performance',
+        `今日持倉損益: ${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()} 元`
+      ),
+      wrapPromptSection('market_context', marketContext),
+      wrapPromptSection('portfolio_notes', notesContext),
+      wrapPromptSection('brain_context', brainContext),
+      wrapPromptSection('reversal_watch', revContext),
+      wrapPromptSection('portfolio_holdings', holdingSummary, '目前沒有持股 dossier。'),
+      wrapPromptSection(
+        'concentration_risk',
+        'AI/伺服器5檔、光通訊3檔、PCB材料3檔，需評估集中風險與龍頭/衛星配置差異。'
+      ),
+      wrapPromptSection('anomalies', anomalySummary || '無'),
+      wrapPromptSection('tracking_events', eventSummary),
+      wrapPromptSection('prediction_hit_rate', predictionHitRate || '0/0'),
+      '</analysis_packet>',
+      '',
+      '<instruction>',
+      blindPredictions.length > 0
+        ? '先對比 <blind_prediction_review> 與 <today_performance>，指出預測對錯與原因。'
+        : '先讀 <portfolio_holdings> 的 thesis / targets / events / brain，再結合 <today_performance> 判斷，不要只看漲跌幅。',
+      'A 級優先處理只選 1-3 檔，其餘持股一律用一句話快照。',
+      '若資料 freshness 為 stale 或 missing，要直接標明不確定性，不可假裝有最新資料。',
+      '只挑 1-3 個與今日走勢真正有因果關聯的事件。',
+      '所有操作建議都要有具體數字、等待條件與「如果我錯了」的原因。',
+      '在 BRAIN_UPDATE 中先驗證既有規則，再決定是否新增少量候選規則。',
+      '</instruction>',
+    ].join('\n'),
   }
 }
 
@@ -407,6 +425,8 @@ export function buildFallbackBrainUpdateRequest({
   totalTodayPnl = 0,
 }) {
   return {
+    maxTokens: 2600,
+    allowThinking: false,
     systemPrompt: FALLBACK_BRAIN_UPDATE_SYSTEM_PROMPT,
     userPrompt: `今日分析：
 ${aiInsight}

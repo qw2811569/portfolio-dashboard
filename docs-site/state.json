@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T07:22:12.000Z",
+  "lastUpdated": "2026-04-01T07:58:48.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 11 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 13 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂；最新已知綠燈基線 3 files / 10 tests",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -241,7 +241,7 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 54,
+    "testFiles": 56,
     "testCases": 10,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
@@ -249,7 +249,7 @@
     "dataAdapters": 3,
     "aiAgents": 4,
     "appJsxLinesChange": 0,
-    "totalDocs": 26,
+    "totalDocs": 27,
     "inProgressTasks": 1
   },
   "health": {
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 40,
-        "lastActive": "2026-04-01 15:22",
+        "tasksCompleted": 41,
+        "lastActive": "2026-04-01 15:58",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -305,9 +305,9 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：讓我從 2d6b587 還原 quality-validation.json。",
+        "currentTask": "Qwen：事件匯入完成，現在提供交接報告。",
         "tasksCompleted": 12,
-        "lastActive": "2026-04-01 15:17",
+        "lastActive": "2026-04-01 15:51",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -336,11 +336,27 @@
   },
   "timeline": [
     {
+      "time": "2026-04-01 15:58",
+      "ai": "Codex",
+      "title": "P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prom…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
       "time": "2026-04-01 15:22",
       "ai": "Codex",
       "title": "production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latenc…",
       "description": "同步自 docs/status/current-work.md",
       "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 06:54",
+      "ai": "Qwen",
+      "title": "P4+P7 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS；(2) 補測試：useEvents(11 測試)+useWatchlistActions(12 測試)=23/2…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
@@ -382,25 +398,9 @@
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
-    },
-    {
-      "time": "2026-04-01 13:24",
-      "ai": "Codex",
-      "title": "完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 00:21",
-      "ai": "Codex",
-      "title": "補齊 route-based 入口仍殘留的收盤價 / 行事曆 / 成交 OCR 解析缺口。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T07:22:12.232Z",
+  "generatedAt": "2026-04-01T07:58:48.593Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -416,6 +416,22 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-01 15:58",
+      "isoTime": "2026-04-01T15:58:48+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：事件匯入完成，現在提供交接報告。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 15:58",
+      "isoTime": "2026-04-01T15:58:48+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.",
+      "status": "idle"
+    },
     {
       "time": "2026-04-01 15:22",
       "isoTime": "2026-04-01T15:22:12+08:00",
@@ -479,28 +495,12 @@
       "action": "done",
       "message": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
       "status": "idle"
-    },
-    {
-      "time": "2026-04-01 13:59",
-      "isoTime": "2026-04-01T13:59:57+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-01 13:59",
-      "isoTime": "2026-04-01T13:59:57+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。",
-      "status": "idle"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-01T15:22:00+08:00",
-    "message": "production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latency 60.21s 仍貼近上限。P2 已接入 research evolve：新增 knowledgeEvolutionRuntime，前端會把 kb-usage-log / kb-feedback-log 帶進 research API，evolve/portfolio 研究結果現在附 knowledgeProposal（confidence adjustments candidate，不自動改寫知識庫 JSON）；daily report 也開始記錄 injectedKnowledgeIds，讓 👍/👎 feedback 能回流到具體 knowledge entry。驗證：vitest 5 files 41 tests 全過，lint 0 err 2 warnings，build 通過。- 2026-04-01 06:54 Qwen：P4+P7 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS；(2) 補測試：useEvents(11 測試)+useWatchlistActions(12 測試)=23/23 通過。驗證：lint(0 err)+vitest(23 tests) 全綠。",
+    "time": "2026-04-01T15:58:00+08:00",
+    "message": "P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

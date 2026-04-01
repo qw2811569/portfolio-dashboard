@@ -61,6 +61,8 @@ describe('lib/researchRuntime', () => {
       canUseCloud: true,
       newsEvents: [{ id: 'e1' }, { id: 'e2' }],
       analysisHistory: [{ id: 1 }, { id: 2 }],
+      knowledgeUsageLog: [{ timestamp: 1, itemIds: ['fa-001'] }],
+      knowledgeFeedbackLog: [{ analysisId: 1, signal: 'helpful', injectedKnowledgeIds: ['fa-001'] }],
     })
 
     expect(researchDossiers).toEqual([
@@ -80,6 +82,8 @@ describe('lib/researchRuntime', () => {
       persist: true,
       events: [{ id: 'e1' }, { id: 'e2' }],
       analysisHistory: [{ id: 1 }, { id: 2 }],
+      knowledgeUsageLog: [{ timestamp: 1, itemIds: ['fa-001'] }],
+      knowledgeFeedbackLog: [{ analysisId: 1, signal: 'helpful', injectedKnowledgeIds: ['fa-001'] }],
     })
   })
 

@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T14:53:34+08:00",
+  "lastUpdated": "2026-04-01T15:22:12+08:00",
   "current": "Qwen",
   "members": [
     {
@@ -8,8 +8,8 @@
       "avatar": "🧠",
       "status": "idle",
       "currentTask": "等待分配新任務",
-      "tasksCompleted": 39,
-      "lastActive": "2026-04-01 14:41",
+      "tasksCompleted": 40,
+      "lastActive": "2026-04-01 15:22",
       "statusSource": "manual",
       "activitySource": "~/.codex/session_index.jsonl"
     },
@@ -18,9 +18,9 @@
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
       "status": "working",
-      "currentTask": "Qwen：讓我創建 useHoldings 測試和 dossierUtils 測試。",
+      "currentTask": "Qwen：讓我從 2d6b587 還原 quality-validation.json。",
       "tasksCompleted": 12,
-      "lastActive": "2026-04-01 14:52",
+      "lastActive": "2026-04-01 15:17",
       "statusSource": "auto",
       "activitySource": "~/.qwen/projects/*/chats"
     },

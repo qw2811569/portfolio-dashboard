@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import {
+  collectInjectedKnowledgeIdsFromDossiers,
   getRelevantKnowledge,
   getRelevantCases,
   buildKnowledgeContext,
@@ -13,8 +14,13 @@ const KB_DIR = join(__dirname, '../../src/lib/knowledge-base')
 
 // 排除 templates 目錄和 index.json
 const getCategoryFiles = () => {
+  const excludedFiles = new Set([
+    'index.json',
+    'quality-report-2026-04-01.json',
+    'quality-validation.json',
+  ])
   return readdirSync(KB_DIR)
-    .filter((file) => file.endsWith('.json') && file !== 'index.json')
+    .filter((file) => file.endsWith('.json') && !excludedFiles.has(file))
     .map((file) => join(KB_DIR, file))
 }
 
@@ -396,6 +402,19 @@ describe('knowledgeBase.js 檢索模組', () => {
     it('空 stockMeta 能正常運作（不 crash）', () => {
       const context = buildKnowledgeContext()
       expect(typeof context).toBe('string')
+    })
+  })
+
+  describe('collectInjectedKnowledgeIdsFromDossiers', () => {
+    it('collects unique knowledge ids from dossier stock meta selections', () => {
+      const itemIds = collectInjectedKnowledgeIdsFromDossiers([
+        { stockMeta: { strategy: '事件驅動' } },
+        { stockMeta: { strategy: '成長股' } },
+        { stockMeta: { strategy: '事件驅動' } },
+      ])
+
+      expect(itemIds.length).toBeGreaterThan(0)
+      expect(new Set(itemIds).size).toBe(itemIds.length)
     })
   })
 })

@@ -117,6 +117,42 @@ export function getRelevantCases(stockMeta = {}, { maxItems = 2 } = {}) {
   return result.slice(0, maxItems)
 }
 
+export function getKnowledgeSelection(
+  stockMeta = {},
+  { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2 } = {}
+) {
+  const knowledge = getRelevantKnowledge(stockMeta, { maxItems, minConfidence })
+  const cases = getRelevantCases(stockMeta, { maxItems: maxCaseItems })
+  return {
+    knowledge,
+    cases,
+    itemIds: Array.from(
+      new Set(
+        [...knowledge, ...cases]
+          .map((item) => String(item?.id || '').trim())
+          .filter(Boolean)
+      )
+    ),
+  }
+}
+
+export function collectInjectedKnowledgeIdsFromDossiers(
+  dossiers = [],
+  { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2 } = {}
+) {
+  return Array.from(
+    new Set(
+      (Array.isArray(dossiers) ? dossiers : []).flatMap((dossier) =>
+        getKnowledgeSelection(dossier?.stockMeta ?? {}, {
+          maxItems,
+          minConfidence,
+          maxCaseItems,
+        }).itemIds
+      )
+    )
+  )
+}
+
 /**
  * 格式化知識條目為 prompt 文字（結構化格式）
  */
@@ -144,8 +180,7 @@ export function formatCaseItem(item) {
  * 回傳 prompt 可用的知識摘要區塊（有內容才回傳，空字串代表略過）
  */
 export function buildKnowledgeContext(stockMeta = {}) {
-  const knowledge = getRelevantKnowledge(stockMeta)
-  const cases = getRelevantCases(stockMeta)
+  const { knowledge, cases } = getKnowledgeSelection(stockMeta)
 
   // Usage tracking: 記錄哪些 entry 被選中（side-effect，不阻塞主流程）
   trackUsage([...knowledge, ...cases])

@@ -148,6 +148,7 @@ describe('lib/dailyAnalysisRuntime', () => {
       anomalies: [],
       eventCorrelations: [],
       needsReview: [],
+      injectedKnowledgeIds: ['fa-001', 'rm-001', 'fa-001'],
     })
 
     expect(request.systemPrompt).toContain('這是盲測')
@@ -159,6 +160,7 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(report).toMatchObject({
       date: '2026/03/28',
       totalTodayPnl: 1234,
+      injectedKnowledgeIds: ['fa-001', 'rm-001'],
     })
   })
 })

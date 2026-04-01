@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
+import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
 import {
   buildBudgetedBrainContext,
   buildBudgetedHoldingSummary,
@@ -112,6 +113,37 @@ function buildBrainProposal({
     },
     proposedBrain: parsedBrain,
   }
+}
+
+function formatKnowledgeProposalContent(proposal) {
+  if (!proposal || typeof proposal !== 'object') {
+    return '⚠️ 知識庫演化提案生成失敗，請手動檢查'
+  }
+
+  const adjustments = Array.isArray(proposal.confidenceAdjustments)
+    ? proposal.confidenceAdjustments
+    : []
+
+  const preview =
+    adjustments.length > 0
+      ? adjustments
+          .slice(0, 5)
+          .map(
+            (item) =>
+              `- ${item.id} ${item.title}：${Math.round(item.fromConfidence * 100)}% → ${Math.round(item.toConfidence * 100)}%（${item.reason}）`
+          )
+          .join('\n')
+      : '目前 feedback 與 usage 訊號不足，暫無 confidence 調整。'
+
+  return `🧠 ${proposal.summary || '知識庫演化提案已生成'}
+
+狀態：${proposal.status || 'unknown'}
+Gate：${proposal.evaluation?.summary || '尚未評估'}
+調整筆數：${proposal.metrics?.adjustmentCount || adjustments.length}
+有 linked feedback 的回饋：${proposal.metrics?.feedbackLinkedCount || 0}
+缺少 injectedKnowledgeIds 的回饋：${proposal.metrics?.feedbackMissingLinkCount || 0}
+
+${preview}`
 }
 
 function normalizeHoldingDossiers(value) {
@@ -400,6 +432,8 @@ export default async function handler(req, res) {
     events,
     analysisHistory,
     portfolioNotes,
+    knowledgeUsageLog,
+    knowledgeFeedbackLog,
     mode,
     persist = true,
   } = req.body
@@ -650,6 +684,10 @@ ${histSummary || '（無紀錄）'}
         diagnostics: diag,
         advice: evolveAdvice,
       })
+      const knowledgeProposal = buildKnowledgeEvolutionProposal({
+        usageLog: knowledgeUsageLog,
+        feedbackLog: knowledgeFeedbackLog,
+      })
 
       if (persist && brainProposal) {
         await write(`${BRAIN_PROPOSAL_PREFIX}/${proposalId}.json`, brainProposal)
@@ -685,9 +723,14 @@ ${histSummary || '（無紀錄）'}
                 }`
               : '⚠️ 候選策略提案生成失敗，請手動檢查',
           },
+          {
+            title: '知識庫演化提案',
+            content: formatKnowledgeProposalContent(knowledgeProposal),
+          },
         ],
         stockSummaries,
         brainProposal,
+        knowledgeProposal,
         proposalStatus: brainProposal?.status || 'failed',
       }
       if (persist) {

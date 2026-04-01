@@ -477,6 +477,7 @@ export function buildDailyReport({
   blindPredictions = [],
   predictionScores = null,
   brainAudit = null,
+  injectedKnowledgeIds = [],
 }) {
   return {
     id: Date.now(),
@@ -493,6 +494,9 @@ export function buildDailyReport({
     blindPredictions,
     predictionScores,
     brainAudit,
+    injectedKnowledgeIds: Array.isArray(injectedKnowledgeIds)
+      ? Array.from(new Set(injectedKnowledgeIds.filter(Boolean)))
+      : [],
   }
 }
 

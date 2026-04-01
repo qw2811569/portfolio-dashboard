@@ -66,6 +66,8 @@ export function buildResearchRequestBody({
   canUseCloud = false,
   newsEvents = [],
   analysisHistory = [],
+  knowledgeUsageLog = [],
+  knowledgeFeedbackLog = [],
 }) {
   const body = {
     stocks,
@@ -81,6 +83,11 @@ export function buildResearchRequestBody({
   if (mode === 'evolve' || mode === 'portfolio') {
     body.events = (Array.isArray(newsEvents) ? newsEvents : []).slice(0, 20)
     body.analysisHistory = (Array.isArray(analysisHistory) ? analysisHistory : []).slice(0, 10)
+    body.knowledgeUsageLog = (Array.isArray(knowledgeUsageLog) ? knowledgeUsageLog : []).slice(-500)
+    body.knowledgeFeedbackLog = (Array.isArray(knowledgeFeedbackLog)
+      ? knowledgeFeedbackLog
+      : []
+    ).slice(-200)
   }
 
   return body

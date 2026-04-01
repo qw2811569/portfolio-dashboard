@@ -974,6 +974,9 @@ export function DailyReportPanel({
         signal, // 'helpful' or 'misleading'
         timestamp: Date.now(),
         date: dailyReport.date,
+        injectedKnowledgeIds: Array.isArray(dailyReport.injectedKnowledgeIds)
+          ? dailyReport.injectedKnowledgeIds
+          : [],
       })
       // Keep last 200 entries
       if (log.length > 200) log.splice(0, log.length - 200)

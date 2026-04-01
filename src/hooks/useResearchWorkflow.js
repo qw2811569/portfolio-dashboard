@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { API_ENDPOINTS, STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
+import { readKnowledgeEvolutionLogs } from '../lib/knowledgeEvolutionRuntime.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
 import { evaluateBrainProposal } from '../lib/researchProposalRuntime.js'
 import {
@@ -67,6 +68,7 @@ export function useResearchWorkflow({
   enrichResearchToDossier = async () => false,
   runResearchRequest = defaultRunResearchRequest,
   saveBrainRequest = defaultSaveBrainRequest,
+  readKnowledgeLogs = readKnowledgeEvolutionLogs,
 }) {
   const [proposalAction, setProposalAction] = useState({ id: null, type: null })
   const emitSaved = useCallback(
@@ -115,6 +117,10 @@ export function useResearchWorkflow({
           getHoldingReturnPct,
         })
         const researchDossiers = buildResearchDossiers({ stocks, dossierByCode })
+        const { usageLog: knowledgeUsageLog, feedbackLog: knowledgeFeedbackLog } =
+          readKnowledgeLogs(
+            typeof globalThis !== 'undefined' ? globalThis.localStorage : null
+          )
         const body = buildResearchRequestBody({
           mode,
           stocks,
@@ -126,6 +132,8 @@ export function useResearchWorkflow({
           canUseCloud,
           newsEvents,
           analysisHistory,
+          knowledgeUsageLog,
+          knowledgeFeedbackLog,
         })
 
         const data = await runResearchRequest(body, { mode, targetStock })
@@ -152,8 +160,10 @@ export function useResearchWorkflow({
           const hasBrainProposal =
             (mode === 'evolve' || mode === 'portfolio') &&
             (result.brainProposal?.proposedBrain || result.newBrain)
+          const hasKnowledgeProposal =
+            (mode === 'evolve' || mode === 'portfolio') && result.knowledgeProposal
 
-          if (hasBrainProposal) {
+          if (hasBrainProposal || hasKnowledgeProposal) {
             emitSaved('✅ 系統進化提案已生成 · 尚未套用正式策略大腦')
           } else {
             emitSaved('✅ 研究完成')
@@ -191,6 +201,7 @@ export function useResearchWorkflow({
       portfolioNotes,
       researching,
       resolveHoldingPrice,
+      readKnowledgeLogs,
       runResearchRequest,
       setResearchHistory,
       setResearchResults,

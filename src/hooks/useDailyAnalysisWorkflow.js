@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
+import { collectInjectedKnowledgeIdsFromDossiers } from '../lib/knowledgeBase.js'
 import {
   buildAnalysisDossiers,
   buildBlindPredictionBlock,
@@ -125,11 +126,13 @@ export function useDailyAnalysisWorkflow({
       let brainUpdatedInline = false
       let finalBrainForValidation = normalizeStrategyBrain(strategyBrain, { allowEmpty: true })
       let analysisDossiers = []
+      let injectedKnowledgeIds = []
       let blindPredictions = []
 
       try {
         const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode })
         analysisDossiers = dailyDossiers
+        injectedKnowledgeIds = collectInjectedKnowledgeIdsFromDossiers(dailyDossiers)
 
         const holdingPromptEntries = dailyDossiers.map((dossier) => {
           const change = changes.find((item) => item.code === dossier.code)
@@ -400,6 +403,7 @@ ${losers
         blindPredictions,
         predictionScores,
         brainAudit,
+        injectedKnowledgeIds,
       })
 
       setDailyReport(normalizeDailyReportEntry(report))

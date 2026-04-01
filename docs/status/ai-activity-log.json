@@ -1,6 +1,22 @@
 {
-  "lastUpdated": "2026-04-01T14:53:34+08:00",
+  "lastUpdated": "2026-04-01T15:22:12+08:00",
   "entries": [
+    {
+      "time": "2026-04-01 15:22",
+      "isoTime": "2026-04-01T15:22:12+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：讓我從 2d6b587 還原 quality-validation.json。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 15:22",
+      "isoTime": "2026-04-01T15:22:12+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latency 60.21s 仍貼近上限。P2 已接入 research evolve：新增 knowledgeEvolutionRuntime，前端會把 kb-usage-log / kb-feedback-log 帶進 research API，evolve/portfolio 研究結果現在附 knowledgeProposal（confidence adjustments candidate，不自動改寫知識庫 JSON）；daily report 也開始記錄 injectedKnowledgeIds，讓 👍/👎 feedback 能回流到具體 knowledge entry。驗證：vitest 5 files 41 tests 全過，lint 0 err 2 warnings，build 通過。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-01 14:53",
       "isoTime": "2026-04-01T14:53:34+08:00",
@@ -312,38 +328,6 @@
       "action": "done",
       "message": "優先任務持續完成：新增 useAppRuntimeHelperCatalog 抽出 core/workflow helper 契約，useAppRuntime 再瘦到 556 行；補 helper catalog 測試，lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。",
       "status": "idle"
-    },
-    {
-      "time": "2026-03-30 18:15",
-      "isoTime": "2026-03-30T18:15:40+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：用戶說 Claude 已經回答了討論文件中的問題，讓我查看文件來了解 Claude 的回覆內容。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 18:15",
-      "isoTime": "2026-03-30T18:15:40+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務續推：把 useAppRuntimeCoreLifecycle/useAppRuntimeWorkflows 的 helper 參數收成 catalog bag，useAppRuntime 再降到 556 行；lint+vitest+build+fast-refresh+healthcheck+smoke 通過。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 18:00",
-      "isoTime": "2026-03-30T18:00:46+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務更新：完成 useAppRuntimeCoreLifecycle 接線、修正 Vite /api 代理自迴圈；已用 vercel dev 在 127.0.0.1:3002 通過 healthcheck + smoke:ui。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 17:58",
-      "isoTime": "2026-03-30T17:58:28+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：文件已建立並更新狀態，現在需要總結完成的工作並提供清晰的下一步指引給使用者。（自動偵測）",
-      "status": "working"
     }
   ]
 }

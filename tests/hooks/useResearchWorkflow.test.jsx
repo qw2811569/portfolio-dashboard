@@ -9,6 +9,17 @@ describe('hooks/useResearchWorkflow.js', () => {
     const setResearchResults = vi.fn()
     const setResearchHistory = vi.fn()
     const notifySaved = vi.fn()
+    const readKnowledgeLogs = vi.fn(() => ({
+      usageLog: [{ timestamp: 1, itemIds: ['fa-001'] }],
+      feedbackLog: [
+        {
+          analysisId: 'daily-1',
+          signal: 'helpful',
+          injectedKnowledgeIds: ['fa-001'],
+          timestamp: 2,
+        },
+      ],
+    }))
 
     const runResearchRequest = vi.fn(async () => ({
       results: [
@@ -48,6 +59,7 @@ describe('hooks/useResearchWorkflow.js', () => {
         notifySaved,
         enrichResearchToDossier: vi.fn(async () => false),
         runResearchRequest,
+        readKnowledgeLogs,
       })
     )
 
@@ -56,6 +68,16 @@ describe('hooks/useResearchWorkflow.js', () => {
     })
 
     expect(runResearchRequest).toHaveBeenCalledTimes(1)
+    expect(runResearchRequest.mock.calls[0][0]).toMatchObject({
+      knowledgeUsageLog: [{ timestamp: 1, itemIds: ['fa-001'] }],
+      knowledgeFeedbackLog: [
+        expect.objectContaining({
+          analysisId: 'daily-1',
+          signal: 'helpful',
+          injectedKnowledgeIds: ['fa-001'],
+        }),
+      ],
+    })
     expect(setResearchResults).toHaveBeenCalledWith(
       expect.objectContaining({
         brainProposal: expect.objectContaining({

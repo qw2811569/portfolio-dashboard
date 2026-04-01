@@ -315,6 +315,12 @@ function proposalStatusMeta(proposalStatus, gatePassed) {
   return { label: '待決策', color: C.amber }
 }
 
+function knowledgeProposalStatusMeta(status, gatePassed) {
+  if (status === 'candidate' && gatePassed !== false) return { label: '候選調整', color: C.teal }
+  if (status === 'blocked' || gatePassed === false) return { label: 'Gate 未通過', color: C.down }
+  return { label: '暫無調整', color: C.textMute }
+}
+
 export function ResearchProposalCard({
   results,
   onApplyProposal,
@@ -433,6 +439,70 @@ export function ResearchProposalCard({
   )
 }
 
+export function KnowledgeProposalCard({ results }) {
+  const proposal = results?.knowledgeProposal
+  if (!proposal) return null
+
+  const evaluation = proposal.evaluation || {}
+  const statusMeta = knowledgeProposalStatusMeta(proposal.status, evaluation.passed)
+  const adjustments = Array.isArray(proposal.confidenceAdjustments)
+    ? proposal.confidenceAdjustments
+    : []
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(statusMeta.color, '45')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        },
+      },
+      h(
+        'div',
+        null,
+        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, '知識庫演化提案'),
+        h('div', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, proposal.summary || '—'),
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+          `${statusMeta.label} · ${evaluation.summary || '尚未評估'}`
+        )
+      ),
+      h(
+        'div',
+        { style: { fontSize: 10, color: C.textMute, textAlign: 'right', lineHeight: 1.6 } },
+        `調整 ${proposal.metrics?.adjustmentCount || adjustments.length} 筆`,
+        h('br'),
+        `linked feedback ${proposal.metrics?.feedbackLinkedCount || 0} / 缺 link ${proposal.metrics?.feedbackMissingLinkCount || 0}`
+      )
+    ),
+    adjustments.length > 0 &&
+      h(
+        'div',
+        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textSec, lineHeight: 1.7 } },
+        adjustments.slice(0, 5).map((item) =>
+          h(
+            'div',
+            { key: item.id },
+            `${item.id} ${item.title}：${Math.round(item.fromConfidence * 100)}% → ${Math.round(item.toConfidence * 100)}% · ${item.reason}`
+          )
+        )
+      )
+  )
+}
+
 /**
  * Research Results
  */
@@ -509,6 +579,9 @@ export function ResearchResults({
       onDiscardProposal,
       proposalActionId,
       proposalActionType,
+    }),
+    h(KnowledgeProposalCard, {
+      results,
     }),
     results.rounds?.map((round, i) =>
       h(

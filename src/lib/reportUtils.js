@@ -15,6 +15,9 @@ export function normalizeDailyReportEntry(value) {
     ...value,
     eventAssessments: Array.isArray(value.eventAssessments) ? value.eventAssessments : [],
     brainAudit: normalizeBrainAuditBuckets(value.brainAudit),
+    injectedKnowledgeIds: Array.isArray(value.injectedKnowledgeIds)
+      ? Array.from(new Set(value.injectedKnowledgeIds.filter(Boolean)))
+      : [],
   }
 }
 

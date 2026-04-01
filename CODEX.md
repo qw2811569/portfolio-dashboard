@@ -30,7 +30,19 @@
 3. **如果 lint 不過無法 commit，在 `docs/status/current-work.md` 記錄哪些檔案有 uncommitted changes**
 4. Push 前確認 `git diff --cached --stat` 只包含自己的檔案
 
-## 當前任務（Claude 2026-04-01 交接）
+## 當前任務
+
+### 緊急：latency 60.21s 接近 timeout 邊界
+
+2026-04-01 production smoke test 回報 `/api/analyze` 真實 payload 花了 60.21s，幾乎觸發 60s timeout。
+
+**必須在下一輪優先處理：**
+
+- 方案 A：prompt 進一步瘦身（holdingSummary 截斷 top 5 持股、brainContext 精簡到 1000 字以下）
+- 方案 B：改用 streaming response（`ReadableStream`），前端逐步渲染，不受 function timeout 限制
+- 方案 C：把 `maxDuration` 提到 120s（需要 Vercel Pro plan）
+
+**建議 A+B 並行 — 先瘦 prompt 降到 40s 以內，同時規劃 streaming 作為長期方案。**
 
 ### P0：research API prompt 瘦身（修 timeout）
 

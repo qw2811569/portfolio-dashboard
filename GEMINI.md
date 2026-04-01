@@ -272,9 +272,21 @@
 
 搜尋 STOCK_META 中所有持股的最新券商目標價。比對 `src/seedData.js` 的 `INIT_TARGETS`，找出過時的。產出到 `docs/gemini-research/target-price-2026-04-01.json`。
 
+**注意：** Gemini 已產出此檔案。Claude 需要審查品質後決定是否讓 Qwen 匯入 seedData。
+
 ### C. 競爭態勢監測（工作流程 6）
 
 搜尋持股的主要競爭對手近期動態。產出到 `docs/gemini-research/competitive-2026-04-01.json`。
+
+### D. prompt token 分析（新任務）
+
+Codex 回報收盤分析 API 花了 60.21 秒，接近 timeout。Gemini 幫忙搜尋：
+
+1. Claude API（`claude-sonnet-4`）在 input token 量不同時的回應時間基準
+2. 台股投資分析類的 prompt 最佳實踐 — 其他台股 AI 分析工具的 prompt 長度大概多少
+3. 有沒有台股專用的 prompt template 可以參考，讓分析品質不降但 token 更精簡
+
+產出到 `docs/gemini-research/prompt-optimization-research-2026-04-01.json`。
 
 ## 持股代碼清單（從 STOCK_META 取）
 

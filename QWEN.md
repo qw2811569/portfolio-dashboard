@@ -510,16 +510,46 @@ if (finmind.cashFlow?.length > 0) {
 **位置：** 新建 `src/components/holdings/SupplyChainView.jsx`
 **數據來源：** `import { getSupplyChain } from '../lib/dataAdapters/index.js'`
 
-#### N. 整合所有 Gemini research 到前端可瀏覽的頁面
+#### ~~N~~ ✅ 已完成（GeminiResearchBrowser + API，commit 49b561d）
 
-目前 Gemini 的研究產出（7 個 JSON 檔在 `docs/gemini-research/`）只能手動讀檔案。建一個前端頁面讓用戶瀏覽：
+### 緊急 Bug 修復（Claude 2026-04-02 第三輪 — 用戶回報）
 
-- 列出所有 Gemini research 檔案（按日期排序）
-- 點擊可展開內容（事件行事曆、目標價、競爭態勢等）
-- 標記 freshness（幾天前蒐集的）
+**用戶實際使用時發現 5 個 bug，其中 2 個由 Qwen 負責修。優先於所有新功能。**
 
-**位置：** 新建 `src/components/research/GeminiResearchBrowser.jsx`
-**數據來源：** 可以建一個 `/api/gemini-research` endpoint 讀取 `docs/gemini-research/` 目錄
+**開始前先 `git pull origin main`。**
+
+#### BUG-3：持倉頁面硬編碼（seedData 持股）
+
+**現象：** 持倉頁面顯示的是 `seedData.js` 裡寫死的 17 檔持股，而不是用戶自己的。
+
+**診斷：** `usePortfolioManagement.js` 在 localStorage 為空時 fallback 到 `INIT_HOLDINGS`。新用戶或清除瀏覽器後就會看到開發者的持股。
+
+**修法：**
+
+1. 在 `src/constants.js` 的 `PORTFOLIO_STORAGE_FIELDS` 中，把 owner portfolio 的 `ownerFallback` 從 `() => INIT_HOLDINGS` 改成 `() => []`（空陣列）
+2. 新用戶應該看到空的持股列表 + 「新增第一檔持股」引導
+3. 同步修改 `INIT_TARGETS` 和 `INIT_WATCHLIST` 的 fallback 也改成空
+4. `seedData.js` 的資料保留（作為 demo），但不自動載入
+
+**驗證：** 開一個無痕視窗訪問 app，確認看到空持股而不是 17 檔。
+
+#### BUG-5：行事曆沒有更新
+
+**現象：** 行事曆 tab 沒有顯示事件或顯示很舊的資料。
+
+**診斷：**
+
+1. `collect-daily-events.js` line 220 — `stockCodes` 變數未定義，cron crash
+2. `useAutoEventCalendar.js` line 23 — 前端打 `/api/cron/collect-daily-events` 但這是 POST cron handler，不回傳資料
+3. `PUB_BLOB_READ_WRITE_TOKEN` 環境變數可能沒設
+
+**修法：**
+
+1. 修 `useAutoEventCalendar.js`：第一層改成直接打 `/api/event-calendar`（即時 API），不打 cron endpoint
+2. 修 `collect-daily-events.js`：加 GET handler 回傳最新 blob 快照，或定義 `stockCodes`
+3. 確認 Vercel 環境變數 `PUB_BLOB_READ_WRITE_TOKEN` 和 `CRON_SECRET` 有設定
+
+**驗證：** 打開 app 行事曆 tab，確認有未來 30 天的事件（月營收截止日、FOMC 等）。
 
 ---
 

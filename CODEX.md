@@ -127,41 +127,64 @@ Claude 剛把 `supplyChain.json` 從 8→20 entries，`themes.json` 也全部填
 60.21s latency 即使瘦身後仍可能在持股數增加時回到邊界。規劃 `/api/analyze` 改用 streaming response（`ReadableStream` + Vercel Edge Function），讓前端逐步渲染分析結果。
 
 **這是規劃文件，不是立即實作。** 產出一份 `docs/specs/streaming-analysis-design.md`：
+
 - 前端 `useDailyAnalysisWorkflow.js` 如何改成 streaming consumer
 - Edge Function vs Serverless Function 的 timeout 差異
 - 預估可以省多少 perceived latency
 
-### 新一輪任務（Claude 2026-04-02 第二輪指派）
+### ~~P7/P8~~ ✅ 已完成（streaming 實作 + production smoke）
 
-**開始前先確認 `274cac6` 已 push 到 origin/main。如果沒有，先修 GitHub 認證再 push。**
+### 緊急 Bug 修復（Claude 2026-04-02 第三輪 — 用戶回報）
 
-#### P7：streaming 實作第一階段 — `/api/analyze` 改 streaming response
+**用戶實際使用時發現 5 個 bug，其中 3 個由 Codex 負責修。**
 
-P6 設計文件已完成。開始實作：
+**開始前先 `git pull origin main`。**
 
-1. `api/analyze.js` 改用 `ReadableStream`（或 Vercel Edge Function），邊生成邊回傳
-2. `api/_lib/ai-provider.js` 加 streaming mode — Anthropic SDK 的 `stream: true`
-3. 前端 `useDailyAnalysisWorkflow.js` 改成 streaming consumer：逐步渲染分析正文，`EVENT_ASSESSMENTS` / `BRAIN_UPDATE` 在流結束後解析
+#### BUG-1：上傳成交 OCR 辨識失敗
 
-**這是解決 60s timeout 的根本方案。** prompt 瘦身只能治標，streaming 才能讓用戶在 5 秒內看到第一批文字。
+**現象：** 用戶上傳交易截圖，辨識失敗。
 
-#### P8：production smoke test + deploy
+**診斷：**
 
-push 後部署到 Vercel，驗證：
-1. `/api/analyze` latency（目標 < 40s，之前 60.21s）
-2. FinMind 新 datasets 回傳正常（balanceSheet, cashFlow, shareholding）
-3. 動態事件行事曆（Qwen 建的 FinMind TaiwanStockNews 事件源）
+1. `api/_lib/ai-provider.js` line 12 — `DEFAULT_MODEL = 'claude-sonnet-4-20250514'`。但 OCR 需要 vision 能力，確認 Sonnet 是否支援 image input，或是否需要改用其他 model
+2. `useTradeCaptureRuntime.js` line 265 — `extractTradeParseJsonText()` 在 AI 回傳非 JSON 時靜默失敗，用戶只看到「辨識失敗」但看不到具體錯誤
+3. `api/parse.js` — 確認 request body 有正確把圖片 base64 傳到 Claude API
 
-#### P9：FinMind 付費後 — Backer datasets 接入
+**修法：**
 
-用戶即將訂閱 FinMind Backer (NT$459/月)。付費後解鎖的高價值 datasets：
+- 在 `api/parse.js` 加 console.log 印出 AI 回傳的原始 response，方便 debug
+- 在 `useTradeCaptureRuntime.js` 的 catch 中顯示具體錯誤訊息給用戶，而不是只說「辨識失敗」
+- 確認環境變數 `ANTHROPIC_API_KEY` 在 Vercel production 有設定
 
-1. **TaiwanStockHoldingSharesPer** — 持股分布（散戶 vs 大戶集中度）
-2. **TaiwanBusinessIndicator** — 景氣指標（領先/同時/落後 + 燈號）
-3. **TaiwanStockMarketValue** — 每日市值
-4. **CnnFearGreedIndex** — 恐懼貪婪指數
+#### BUG-2：收盤分析沒有分析評論
 
-**這個等付費確認後才做。** 先準備 adapter 的 dataset mapping，付費後加一行 `FINMIND_TOKEN` 環境變數就上線。
+**現象：** 用戶按「收盤分析」，有跑但結果是空的（沒有文字評論）。
+
+**診斷：** streaming 改版（`9bd48fd`）後，`useDailyAnalysisWorkflow.js` 的 response 處理流程改了。可能的問題：
+
+1. `stripDailyAnalysisEmbeddedBlocks()` 把 AI 回傳的整段文字都刪了（如果 AI 只回傳 JSON blocks 沒有人話）
+2. streaming consumer 在拼接 chunks 時可能漏了 content
+3. AI prompt 要求輸出 `EVENT_ASSESSMENTS` + `BRAIN_UPDATE` blocks，但沒有明確要求也要輸出人類可讀的分析文字
+
+**修法：**
+
+- 用真實 payload 在 production 跑一次 `POST /api/analyze?stream=1`，把原始 response 印出來看
+- 如果 AI 確實只回傳 JSON blocks，在 `dailyAnalysisRuntime.js` 的 system prompt 明確要求「必須先輸出中文分析評論，然後才輸出 JSON blocks」
+- 在 `stripDailyAnalysisEmbeddedBlocks()` 後，如果結果為空，保留原始文字而不是回傳空
+
+#### BUG-4：深度研究卡住
+
+**現象：** 用戶按「深度研究」後 UI 一直轉，沒有結果也沒有錯誤。
+
+**診斷：** `useResearchWorkflow.js` line 18 的 fetch 沒有 `AbortSignal.timeout()`，Vercel 30s-60s 超時後靜默失敗。
+
+**修法：**
+
+1. 在 `useResearchWorkflow.js` 的 fetch 加上 `signal: AbortSignal.timeout(55000)`（55 秒，略低於 Vercel 60s）
+2. catch 中區分 timeout vs 其他錯誤，顯示對應訊息
+3. 如果 `/api/research` 也該改成 streaming，參考 `/api/analyze` 的 streaming 改法
+
+### P9：FinMind 付費後 — Backer datasets 接入（等付費確認）
 
 完整 dataset 參考見 `docs/finmind-api-reference.md`。
 

@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T22:52:00.000Z",
+  "lastUpdated": "2026-04-01T23:04:36.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 3 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 1 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 44,
-        "lastActive": "2026-04-02 06:24",
+        "tasksCompleted": 45,
+        "lastActive": "2026-04-02 07:04",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -305,9 +305,9 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：兩個 bug 都已修復並 commit，現在需要提供完整的交接報告，包含 done、changed files、risks 和 next bes",
+        "currentTask": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。",
         "tasksCompleted": 12,
-        "lastActive": "2026-04-02 06:18",
+        "lastActive": "2026-04-02 06:57",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -336,39 +336,15 @@
   },
   "timeline": [
     {
-      "time": "2026-04-02 06:52",
+      "time": "2026-04-02 07:04",
       "ai": "Codex",
-      "title": "追查 Importing a module script failed 後，將最脆弱的 panel chunk 改為穩定載入。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-02 06:32",
-      "ai": "Codex",
-      "title": "緊急 Bug 修復已 push + deploy，OCR / 收盤分析 / 深度研究三條線都已補上可見錯誤與 timeout 保護。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 22:18",
-      "ai": "Qwen",
-      "title": "緊急 Bug 修復完成：BUG-3（持倉硬編碼→空陣列 fallback）+ BUG-5（行事曆直接呼叫 event-calendar API）。驗證：git commit 372ac12。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-02 06:08",
-      "ai": "Codex",
-      "title": "P7/P8 已完成並部署 production。",
+      "title": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- 2026-04-02 07:04 Codex：完成全面 Bug Sweep，並修掉 production re…",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T22:50:00.201Z",
+  "generatedAt": "2026-04-01T23:04:36.647Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -384,6 +360,22 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-02 07:04",
+      "isoTime": "2026-04-02T07:04:36+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 07:04",
+      "isoTime": "2026-04-02T07:04:36+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 06:50",
       "isoTime": "2026-04-02T06:50:00+08:00",
@@ -447,28 +439,12 @@
       "action": "auto-detect",
       "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
       "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:29+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:06+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T06:52:00+08:00",
-    "message": "追查 Importing a module script failed 後，將最脆弱的 panel chunk 改為穩定載入。",
+    "time": "2026-04-02T07:04:00+08:00",
+    "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- 2026-04-02 07:04 Codex：完成全面 Bug Sweep，並修掉 production research serverless 啟動即 crash 的問題。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

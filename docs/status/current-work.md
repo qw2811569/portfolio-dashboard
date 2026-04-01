@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 06:52
+Last updated: 2026-04-02 07:04
 
 ## Objective
 
@@ -42,6 +42,14 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 07:04` Codex：完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- `2026-04-02 07:04` Codex：完成全面 Bug Sweep，並修掉 production `research` serverless 啟動即 crash 的問題。
+  - done：依照 `CODEX.md` 的 5 項 sweep 完成 production 驗證。最新 production 已是 commit `939ca51`；Vercel deployment `dpl_EYZHzhbn3jTpdrMy1JfgZmy63GfP` build 綠燈。`/api/research` 原本 bare GET 與 POST 都是 `FUNCTION_INVOCATION_FAILED`，Vercel logs 顯示根因是 Node ESM 載入 `src/lib/knowledge-base/*.json` 缺少 import attribute；已在 `src/lib/knowledgeBase.js` 與 `src/lib/knowledgeEvolutionRuntime.js` 補上 `with { type: 'json' }`，修補後 production `GET /api/research` 已恢復 `200`，`POST /api/research` 會進到真正研究流程，不再 instant crash。
+  - changed files：`src/lib/knowledgeBase.js`、`src/lib/knowledgeEvolutionRuntime.js`
+  - validation：`vitest`（`knowledge-base + knowledgeEvolutionRuntime`）29 tests 通過；`npm run build` 通過；`npm run lint` 無 error，仍有既有 warnings。production sweep 結果：`GET /api/twse -> 400`、`GET /api/finmind -> 400`、`GET /api/event-calendar -> 200`、`GET /api/analyze -> 405`、`GET /api/research -> 200`、`GET /api/parse -> 405`、`GET /api/analyst-reports -> 405`、`GET /api/gemini-research -> 200`。
+  - risks：Vercel CLI 目前只列出 `ANTHROPIC_API_KEY` 與 `PUB_BLOB_READ_WRITE_TOKEN`，看不到 `CRON_SECRET` / `FINMIND_TOKEN`；若不是 CLI 權限視角限制，代表至少其中兩個 env 尚未配置。streaming analyze 端到端通過，SSE 有 `meta + delta + done`，且正文是中文評論不是純 JSON。OCR 對正常尺寸 PNG 端到端通過（`200`），但 1x1 極小測試圖仍會回 `500 Could not process image`，表示 parse API 對不可處理圖片還沒有 graceful degrade。`/api/research` 單股 POST 目前不再 instant crash，但 production API 仍會在約 `60.9s` 被 Vercel 打成 `504 FUNCTION_INVOCATION_TIMEOUT`；用與前端同等的 `AbortSignal.timeout(55000)` 測試時，會在 `55.01s` 收到 `TimeoutError`，代表不會無限 hang，但研究 latency 仍是紅燈。
+  - next best step：優先做 research streaming / prompt 瘦身第二輪，把單股 research 壓到 55 秒內；其次補 OCR 對過小或不可處理圖片的 graceful 400/結構化錯誤；最後到 Vercel Dashboard 核對並補上 `CRON_SECRET` / `FINMIND_TOKEN`。
+
 - `2026-04-01 22:57` Qwen：全面 Bug Sweep 完成：SWEEP-1（9 個頁面全部載入）✓、SWEEP-2（空用戶體驗）✓、SWEEP-3（行事曆 API）✓、SWEEP-5（ErrorBoundary）✓。所有檢查通過。
 
 

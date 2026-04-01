@@ -1,6 +1,22 @@
 {
-  "lastUpdated": "2026-04-02T06:50:00+08:00",
+  "lastUpdated": "2026-04-02T07:04:36+08:00",
   "entries": [
+    {
+      "time": "2026-04-02 07:04",
+      "isoTime": "2026-04-02T07:04:36+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 07:04",
+      "isoTime": "2026-04-02T07:04:36+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 06:50",
       "isoTime": "2026-04-02T06:50:00+08:00",
@@ -311,30 +327,6 @@
       "ai": "Qwen",
       "action": "auto-detect",
       "message": "Qwen：已完成 ca-021 閾值修正和 news-correlation 填充至 50 條，現在更新 current-work.md 記錄進度。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 03:35",
-      "isoTime": "2026-03-31T03:35:49+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：已修正 ca-021 閾值並填充 news-correlation 至 50 條，現在需要更新 index.json 並回報進度。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 03:35",
-      "isoTime": "2026-03-31T03:35:49+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務續推：新增 composeAppRuntimeWorkflowInput，將 useAppRuntime 最大 workflow wiring 組裝外移 composer；useAppRuntime 降至 511 行。驗證：eslint(2 files)+vitest(2 files/8 tests)+build+fast-refresh 全綠。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-31 03:32",
-      "isoTime": "2026-03-31T03:32:01+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：現在需要更新 current-work.md 記錄 Claude 審查意見的修正進度。（自動偵測）",
       "status": "working"
     }
   ]

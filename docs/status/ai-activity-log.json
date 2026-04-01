@@ -1,6 +1,14 @@
 {
-  "lastUpdated": "2026-04-02T07:46:53+08:00",
+  "lastUpdated": "2026-04-02T07:49:42+08:00",
   "entries": [
+    {
+      "time": "2026-04-02 07:49",
+      "isoTime": "2026-04-02T07:49:42+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 07:46",
       "isoTime": "2026-04-02T07:46:53+08:00",
@@ -311,14 +319,6 @@
       "ai": "Qwen",
       "action": "auto-detect",
       "message": "Qwen：更新 index.json 後，需要調用 sync-state.sh 同步狀態並記錄進度到 current-work.md。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 03:38",
-      "isoTime": "2026-03-31T03:38:20+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：用戶要求繼續填充知識庫，我應該繼續填充 news-correlation 或其他需要擴充的分類，目標是達到 350 條 (70%)。（自動偵測）",
       "status": "working"
     }
   ]

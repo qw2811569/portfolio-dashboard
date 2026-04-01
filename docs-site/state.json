@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T23:46:53.000Z",
+  "lastUpdated": "2026-04-01T23:49:42.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 46,
-        "lastActive": "2026-04-02 07:46",
+        "tasksCompleted": 47,
+        "lastActive": "2026-04-02 07:49",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -336,6 +336,14 @@
   },
   "timeline": [
     {
+      "time": "2026-04-02 07:49",
+      "ai": "Codex",
+      "title": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
       "time": "2026-04-02 07:46",
       "ai": "Codex",
       "title": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
@@ -350,17 +358,9 @@
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
-    },
-    {
-      "time": "2026-04-02 07:04",
-      "ai": "Codex",
-      "title": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- 2026-04-02 07:04 Codex：完成全面 Bug Sweep，並修掉 production re…",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T23:46:53.964Z",
+  "generatedAt": "2026-04-01T23:49:42.896Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -376,6 +376,14 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-02 07:49",
+      "isoTime": "2026-04-02T07:49:42+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 07:46",
       "isoTime": "2026-04-02T07:46:53+08:00",
@@ -447,20 +455,12 @@
       "action": "auto-detect",
       "message": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。（自動偵測）",
       "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:32",
-      "isoTime": "2026-04-02T05:32:10+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。",
-      "status": "idle"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T07:46:00+08:00",
-    "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
+    "time": "2026-04-02T07:49:00+08:00",
+    "message": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

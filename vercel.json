@@ -1,8 +1,5 @@
 {
   "framework": "vite",
-  "dev": {
-    "port": 3002
-  },
   "rewrites": [
     { "source": "/api/twse", "destination": "/api/twse" },
     { "source": "/api/:path*", "destination": "/api/:path*" }
@@ -18,6 +15,15 @@
     }
   ],
   "functions": {
+    "api/analyze.js": {
+      "maxDuration": 60
+    },
+    "api/research.js": {
+      "maxDuration": 60
+    },
+    "api/parse.js": {
+      "maxDuration": 30
+    },
     "api/*.js": {
       "maxDuration": 10
     }

@@ -1,6 +1,7 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
 import { getEventStockCodes } from './eventUtils.js'
 import { getSupplyChain, getThemesForStock } from './dataAdapters/index.js'
+import { buildKnowledgeContext } from './knowledgeBase.js'
 
 export function buildDailyHoldingDossierContext(dossier, change, { blind = false } = {}) {
   if (!dossier) return ''
@@ -32,6 +33,7 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
       : '匹配規則: 無'
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
   const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
+  const knowledgeInfo = buildKnowledgeContext(dossier.stockMeta ?? {})
 
   return `
 股票代碼: ${dossier.code}
@@ -49,6 +51,7 @@ ${eventInfo}
 ${supplyChainInfo ? `\n供應鏈:\n${supplyChainInfo}` : ''}
 ${themeInfo ? `${themeInfo}` : ''}
 ${brainRuleInfo}
+${knowledgeInfo ? `\n${knowledgeInfo}` : ''}
 `
 }
 
@@ -72,6 +75,7 @@ export function buildHoldingDossiers(input, options = {}) {
     analystReports = {},
     newsEvents = [],
     researchHistory = [],
+    stockMeta = {},
   } = config
 
   const rows = Array.isArray(holdings) ? holdings : []
@@ -84,7 +88,7 @@ export function buildHoldingDossiers(input, options = {}) {
     analystReports: analystReports[holding.code]?.items || [],
     events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
     research: researchHistory.filter((r) => r.code === holding.code),
-    // Add more dossier fields as needed
+    stockMeta: stockMeta[holding.code] || null,
   }))
 }
 

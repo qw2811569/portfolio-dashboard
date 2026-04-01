@@ -284,7 +284,20 @@ ${losers
             })
           ),
         })
-        const analysisData = await analysisResponse.json()
+        let analysisData
+        try {
+          analysisData = await analysisResponse.json()
+        } catch {
+          const text = await analysisResponse
+            .clone()
+            .text()
+            .catch(() => '')
+          throw new Error(
+            text.includes('TIMEOUT')
+              ? 'AI 分析逾時，請稍後再試（Vercel function timeout）'
+              : `AI 回應格式錯誤：${text.slice(0, 80)}`
+          )
+        }
         if (!analysisResponse.ok) {
           throw new Error(
             analysisData?.detail ||

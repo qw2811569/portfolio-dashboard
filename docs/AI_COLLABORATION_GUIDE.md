@@ -1,7 +1,15 @@
 # AI 協作指南
 
-最後更新：2026-03-28  
+最後更新：2026-03-30
 狀態：唯一 canonical AI 規則文件
+
+---
+
+> **TL;DR — 接手前先確認這三件事**
+>
+> 1. 執行入口是 `src/main.jsx → src/App.jsx`（經由 `useAppRuntime.js` + `AppShellFrame.jsx`），不是 `App.routes.jsx`
+> 2. 啟動用 `vercel dev`，網址固定 `http://127.0.0.1:3002`
+> 3. 改完跑 `npm run verify:local`；宣稱「已完整驗證」前必須貼完整輸出
 
 ---
 
@@ -13,11 +21,20 @@
 2. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
 3. `docs/status/current-work.md`（只有在接手進行中的工作時）
 
-長期角色補充在：
+狀態同步規則：
 
-- `docs/status/ai-collaboration-channel.md`
-
-但該檔不是啟動、驗證或 runtime 規則的 source of truth。
+- `docs/status/current-work.md` 是唯一 canonical 任務 checkpoint 真相
+- `docs/status/ai-activity.json` 是 canonical AI 即時工作狀態真相
+- `docs/status/ai-activity-log.json` 是 canonical AI 即時活動 feed 真相
+- `docs-site/state.json` 只是 docs-site 的衍生展示檔，不是獨立黑板
+- docs-site 前端在手動「立即刷新」時，會直接讀 `docs-site/current-work.md`、`docs-site/ai-activity.json`、`docs-site/ai-activity-log.json` 的 canonical 鏡像，不再只依賴 `state.json`
+- 每次完成可交接的小 checkpoint，必須寫回 `docs/status/current-work.md`
+- 每次 AI 開始 / 進度推進 / 完成 / 交接工作時，可用 `scripts/ai-status.sh` 或 `scripts/ai-state.sh` 更新 `ai-activity`、`ai-activity-log` 與 checkpoint
+- `scripts/launch-qwen.sh`、`scripts/launch-gemini.sh`、`scripts/launch-gemini-research-scout.sh` 現在會在啟動時自動登記 `working` 狀態；若要更新更細的作業過程，請再補 `progress`
+- docs-site 啟動腳本會同時啟動 `refresh-ai-presence.py` daemon，從 `~/.qwen`、`~/.gemini`、`~/.claude`、`~/.codex` 活動痕跡自動回填 `ai-activity`；即使其他 AI 沒手動回報，也能在儀表板看到近期作業狀態
+- 本 repo 的變更歸因標準組合是：`GitLens + BlamePrompt + ai-status/launcher`
+- 若需要讓 docs-site 同步新進度，再執行 `bash scripts/sync-state.sh`
+- 只有在需要重刷 build / lint / tests 健康狀態時，才執行 `bash scripts/sync-state.sh --full`
 
 ---
 
@@ -38,95 +55,251 @@
 
 - `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
 
+### 台股分析底線
+
+台股分析不能只看持倉本身，至少要同時理解：
+
+- **市場結構**：漲跌停、量價結構、融資融券、權證時間價值、ETF / 槓桿產品特性
+- **時間節奏**：月營收、財報、法說、除權息、政策題材、事件窗口
+- **資金行為**：外資 / 投信 / 自營商、主流族群輪動、題材資金擁擠度
+- **產業與供應鏈**：龍頭 / 二線、上游下游、報價循環、景氣位置
+- **資料新鮮度**：過期財報、舊目標價、舊事件不可以當成當下結論
+
+策略大腦的任務不是「替持倉寫心得」，而是把台股市場運作方式一起納入判斷。
+
 ---
 
-## 3. 固定真相
+## 3. 先分清楚：現在真相與目標藍圖
 
-### Runtime 入口
+這份 repo 目前同時存在兩條線：
+
+- 穩定主 runtime：`src/main.jsx -> src/App.jsx`
+- route migration line：`src/App.routes.jsx` + `src/pages/*` + `src/hooks/useRoute*`
+
+這兩條線不能被當成同等權威。
+
+### 3.1 現在真相（Current Truth）
+
+以下內容是今天就成立、接手時必須遵守的規則。
+
+#### Runtime 入口
 
 - 目前真正執行入口是 `src/main.jsx -> src/App.jsx`
+- `src/main.jsx` 目前只負責 boot runtime diagnostics 與 render `App`
 - 不要假設 repo 已完全切到 route shell 版本
-- `src/App.routes.jsx` 與 `src/pages/*` 目前仍視為 refactor scaffold，不可在未補齊真實 state / handler / derived data 前直接當成主 runtime
 - 若發現 `src/main.jsx` 被改去 render `App.routes.jsx`，先視為未完成遷移，優先收回穩定 runtime，再逐段搬移
-- route shell 第一批真實資料接線已落在 `src/lib/routeRuntime.js` 與 `src/pages/usePortfolioRouteContext.js`
-- route shell 第二批頁面接線已收斂到 `src/hooks/useRoute*Page.js`；若要改 `Holdings / Watchlist / Events / News / Daily / Research / Trade / Log / Overview` 的 route 行為，先看對應 hook，不要再把 action assembly 塞回 `src/pages/*`
-- `src/App.routes.jsx` 現在已自帶 route-local `QueryClientProvider`，因此 `Daily / Research` route hooks 所需的 TanStack Query provider 不應再由 page 自己兜底
-- `src/hooks/useRoutePortfolioRuntime.js` 與 `src/hooks/usePortfolioManagement.js` 的 portfolio create / rename / delete，現在都走 `Header` 的 shared dialog props，不再在這兩個 hook 內使用 `window.prompt()` / `window.confirm()`
-- `src/hooks/useRouteResearchPage.js` 的 `onResearch / onEvolve` 已改為共用 `src/hooks/useResearchWorkflow.js`；若 route shell 與主 runtime 的 research 行為不一致，先檢查這兩個 hook 的參數接線，而不是再複製一份 inline mutation
-- 若任務是修 route pages 的 placeholder state / fake handler，先沿用這兩個入口，不要再回頭把假資料塞進 `src/pages/*`
-- 若文件與實際程式不一致，以 repo 內目前檔案為準
-- `src/App.jsx` 現在是 orchestration shell，不是 pure route shell
+
+#### Route shell 的真實定位
+
+- `src/App.routes.jsx` 與 `src/pages/*` 不是純假資料 scaffold
+- 它們已經有部分真實資料接線與真實 workflow
+- 但它們仍不是主 runtime，也不是目前唯一 source of truth
+- route migration line 的任務是逐段收斂與替代，不是和 `src/App.jsx` 長期雙軌並行長大
+
+#### 當前狀態權威
+
+- 今天的共享狀態權威，仍以 `src/App.jsx` 與其 orchestration hooks 為主
+- Zustand stores 已存在，但目前不是預設 source of truth
+- TanStack Query 已存在於 route shell 與部分 API hooks，但目前不是全域資料權威
+- 若任務是修今天真正在跑的行為，先修 shared lib / shared hook / `src/App.jsx` 主 runtime，不要只修 route-only 分支
+
+#### `App.jsx` 的當前責任
+
+- `src/App.jsx` 現在是很薄的 runtime entry wrapper，不是 route shell
+- `src/App.jsx` 目前主要只負責呼叫 `src/hooks/useAppRuntime.js` 並 render `src/components/AppShellFrame.jsx`
 - `src/App.jsx` 必須維持 React Fast Refresh 相容的 export 形狀：只保留 default export `App`
-- 不要再把 constants / helpers / storage utils 從 `src/App.jsx` 重新 export；若需要共用，移到 `src/lib/*`、`src/hooks/*` 或 `src/constants.js`
+- 不要再把 constants / helpers / storage utils 從 `src/App.jsx` 重新 export
+- 真正的主 runtime 狀態與 workflow wiring 現在以 `src/hooks/useAppRuntime.js` 為主
+- render 外殼、Header boundary、AppPanels provider 與 confirm dialog render 現在以 `src/components/AppShellFrame.jsx` 為主
+- 若需要共用邏輯，移到 `src/lib/*`、`src/hooks/*` 或 `src/constants.js`
+- `AppPanels` 現在優先透過 `src/contexts/PortfolioPanelsContext.jsx` 取用 panel data / actions；不要再把 `overviewProps / holdingsProps / dailyProps / ...` 這類大包 props 重新塞回 `src/App.jsx -> src/components/AppPanels.jsx`
+- `PortfolioPanelsContext` 是 panel-scope 去耦邊界，不是新的全域狀態權威；不要把它誤用成 store 替代品
+
+#### 當前主要 runtime 邊界
+
+- Portfolio lifecycle：
+  `src/hooks/usePortfolioManagement.js`
+  `src/hooks/usePortfolioDerivedData.js`
+  `src/hooks/usePortfolioBootstrap.js`
+  `src/hooks/usePortfolioPersistence.js`
+  `src/hooks/usePortfolioSnapshotRuntime.js`
+- Dossier / report / backup / lifecycle：
+  `src/hooks/usePortfolioDossierActions.js`
+  `src/hooks/useReportRefreshWorkflow.js`
+  `src/hooks/useLocalBackupWorkflow.js`
+  `src/hooks/useEventLifecycleSync.js`
+- App shell / transient UI：
+  `src/hooks/useAppConfirmationDialog.js`
+  `src/hooks/useWeeklyReportClipboard.js`
+  `src/hooks/useWatchlistActions.js`
+  `src/hooks/useTransientUiActions.js`
+  `src/hooks/useSavedToast.js`
+  `src/hooks/useAppRuntime.js`
+  `src/hooks/useAppShellUiState.js`
+  `src/hooks/useCanonicalLocalhostRedirect.js`
+  `src/hooks/useAppRuntimeComposer.js`
+  `src/hooks/usePortfolioPanelsContextComposer.js`
+  `src/hooks/useAppRuntimeSyncRefs.js`
+  `src/hooks/useAppCallbackRefs.js`
+- Analysis / research：
+  `src/hooks/useDailyAnalysisWorkflow.js`
+  `src/hooks/useResearchWorkflow.js`
+  `src/hooks/useStressTestWorkflow.js`
+  `src/hooks/useEventReviewWorkflow.js`
+- App shell render：
+  `src/components/AppShellFrame.jsx`
+  `src/components/AppPanels.jsx`
+  `src/contexts/PortfolioPanelsContext.jsx`
+  `src/lib/appShellRuntime.js`
+- Canonical utility modules：
+  `src/lib/brainRuntime.js`
+  `src/lib/dailyAnalysisRuntime.js`
+  `src/lib/researchRuntime.js`
+  `src/lib/reportRefreshRuntime.js`
+  `src/lib/dossierUtils.js`
+  `src/lib/reportUtils.js`
+  `src/lib/eventUtils.js`
+  `src/lib/datetime.js`
+  `src/lib/market.js`
+  `src/lib/portfolioUtils.js`
+  `src/lib/tradeParseUtils.js`
+
+#### Route migration line 的當前邊界
+
+- `src/App.routes.jsx` 是未來主入口的 route shell，不是今天的主入口
+- route shell 第一批真實資料接線在：
+  `src/lib/routeRuntime.js`
+  `src/pages/usePortfolioRouteContext.js`
+- route shell 第二批頁面接線在：
+  `src/hooks/useRoute*Page.js`
+  `src/hooks/useRoutePortfolioRuntime.js`
+- `src/App.routes.jsx` 已自帶 route-local `QueryClientProvider`
+- route shell 若要套用正式 strategy brain，必須走 `src/hooks/useRoutePortfolioRuntime.js` 提供的 `setStrategyBrain()`
+- `api/research.js` 的 `evolve / portfolio` 研究結果現在以 `brainProposal` 候選提案回傳，不再直接自動覆蓋正式 strategy brain
+
+#### 共享互動邊界
+
+- `src/components/Header.jsx` 現在支援 `portfolioEditor` 與 `portfolioDeleteDialog` props
+- `src/components/common/Dialogs.jsx` 是目前 runtime 的 shared dialog 邊界
+- 不要再引入 `window.prompt()` / `window.confirm()` / `window.alert()`
+- 截至 2026-03-29，`rg -n "prompt\\(|confirm\\(|alert\\(" src` 應為 0；若再出現，視為 regression
+- `ErrorBoundary` 目前採 panel-scoped 策略：在 `src/App.jsx` 針對 `Header` 與各主要 panel 包 boundary，而不是在 `src/main.jsx` 外層包整個 App
+- `saved` 提示訊息現在應優先走 shared `notifySaved / flashSaved` 管線；不要再在新 workflow 內手刻 `setSaved(...) + setTimeout(...)`
+
+#### 特定功能的 canonical 入口
+
+- 收盤分析流程：`src/hooks/useDailyAnalysisWorkflow.js`
+- 深度研究流程：`src/hooks/useResearchWorkflow.js`
+- 壓力測試流程：`src/hooks/useStressTestWorkflow.js`
+- 事件復盤流程：`src/hooks/useEventReviewWorkflow.js`
+- 交易截圖 / OCR / 補登日期 / 多圖佇列：`src/hooks/useTradeCaptureRuntime.js`
+- OCR 正規化 / batch 寫入 / 批次摘要 / 低信心檢查：`src/lib/tradeParseUtils.js`
+- Dossier 組裝 /台股 hard gate / prompt context：`src/lib/dossierUtils.js`
+- Analysis history / analyst report normalize：`src/lib/reportUtils.js`
+- 日期 / market clock / storage-date formatting：`src/lib/datetime.js`
+- Market cache / post-close sync gate / quote parsing：`src/lib/market.js`
+- Portfolio registry / localStorage / backup import-export：`src/lib/portfolioUtils.js`
+- 歷史交易修補 patch 套用：`src/lib/portfolioUtils.js`
+
+#### 開發衛生規則
+
+- 若文件與實際程式不一致，以 repo 內目前檔案為準
+- 若要更新 AI 即時工作狀態，優先使用 `AI_NAME=<Name> ./scripts/ai-status.sh start|done|handover|suggest|blocker "..."`
+- 若要更新「作業過程」，使用 `AI_NAME=<Name> ./scripts/ai-status.sh progress "..."`
+- `scripts/ai-status.sh done|handover|suggest|blocker` 會自動寫回 `docs/status/current-work.md` 並同步 docs-site
+- 若要讓 Git 歸因穩定可讀，優先透過 `scripts/launch-qwen.sh`、`scripts/launch-gemini.sh`、`scripts/launch-gemini-research-scout.sh` 啟動 AI；這些 launcher 會自動帶入 AI 專屬 `GIT_AUTHOR_*` / `GIT_COMMITTER_*`
+- 若 AI 需要建立 commit，優先使用 `AI_NAME=<Name> bash scripts/ai-commit.sh "message"`；它會用 AI 專屬 author identity 寫 commit，並附上 `AI-Agent` / 狀態來源 metadata
+- VS Code workspace 已推薦安裝 `eamodio.gitlens` 與 `blameprompt.blameprompt`
+- 本機已安裝 BlamePrompt CLI；若要查看 AI receipts，可用 `blameprompt blame <file>`、`blameprompt diff`、`blameprompt show <commit>`
 - 歷史快照 / backup 檔不可再放在 `src/` 活躍 source tree；請改放 `.archive/` 或 repo 外部備份
 - JS/JSX workspace 專案邊界由 `jsconfig.json` 管理；新增檔案時請維持 include / exclude 收斂，不要把 `docs/`、`.tmp/`、`dist/`、`.archive/` 重新拉回活躍 JS project
-- 目前主要 runtime 邊界如下：
-- `src/hooks/usePortfolioManagement.js`
-- `src/hooks/usePortfolioDerivedData.js`
-- `src/hooks/usePortfolioBootstrap.js`
-- `src/hooks/usePortfolioPersistence.js`
-- `src/hooks/usePortfolioDossierActions.js`
-- `src/hooks/useReportRefreshWorkflow.js`
-- `src/hooks/useLocalBackupWorkflow.js`
-- `src/hooks/useEventLifecycleSync.js`
-- `src/hooks/useAppConfirmationDialog.js`
-- `src/hooks/useWeeklyReportClipboard.js`
-- `src/hooks/useWatchlistActions.js`
-- `src/hooks/useTransientUiActions.js`
-- `src/hooks/useSavedToast.js`
-- `src/hooks/useAppShellUiState.js`
-- `src/hooks/useCanonicalLocalhostRedirect.js`
-- `src/hooks/useAppRuntimeSyncRefs.js`
-- `src/hooks/useDailyAnalysisWorkflow.js`
-- `src/hooks/useResearchWorkflow.js`
-- `src/components/AppPanels.jsx`
-- `src/lib/appShellRuntime.js`
-- `src/lib/brainRuntime.js`
-- `src/lib/dailyAnalysisRuntime.js`
-- `src/lib/researchRuntime.js`
-- `src/lib/reportRefreshRuntime.js`
-- `src/lib/eventUtils.js`
-- `src/lib/datetime.js`
-- `src/lib/market.js`
-- `src/lib/portfolioUtils.js`
-- `holding dossier` 與 `report` 的 normalize / prompt builder helper，現在優先收斂在 `src/lib/dossierUtils.js` 與 `src/lib/reportUtils.js`
-- `event / review / date parsing` 的純邏輯現在優先收斂在 `src/lib/eventUtils.js`
-- `date / market clock / storage-date formatting` 的純邏輯現在優先收斂在 `src/lib/datetime.js`
-- `market cache / post-close sync gate / quote parsing` 的純邏輯現在優先收斂在 `src/lib/market.js`
-- `portfolio registry / localStorage / backup import-export` 的純邏輯現在優先收斂在 `src/lib/portfolioUtils.js`
-- `daily analysis` 的 snapshot 組裝、事件關聯、盲測評分與 prompt payload builder，現在優先收斂在 `src/lib/dailyAnalysisRuntime.js`
-- `research` 的 stock snapshot、research dossier、request body 與 history merge，現在優先收斂在 `src/lib/researchRuntime.js`
-- 若任務是 dossier 組裝、台股 hard gate、daily/research prompt context、analysis history / analyst report normalize，先看上述兩個 utility module，不要先把 helper 塞回 `src/App.jsx`
-- 若任務是 target / fundamentals / alert 寫回，先看 `src/hooks/usePortfolioDossierActions.js`
-- 若任務是公開報告刷新、研究結果回寫 dossier、report refresh meta，先看 `src/hooks/useReportRefreshWorkflow.js` 與 `src/lib/reportRefreshRuntime.js`
-- 若任務是本機備份匯入匯出，先看 `src/hooks/useLocalBackupWorkflow.js`
-- 若任務是 app-level confirm dialog promise flow，先看 `src/hooks/useAppConfirmationDialog.js`
-- 若任務是事件狀態自動從 `pending -> tracking -> closed` 與價格歷史追蹤，先看 `src/hooks/useEventLifecycleSync.js`
-- 若任務是週報素材組裝與剪貼簿 fallback，先看 `src/hooks/useWeeklyReportClipboard.js`
-- 若任務是 watchlist 新增 / 編輯 / 刪除，先看 `src/hooks/useWatchlistActions.js`
-- 若任務是 review cancel / reversal update 這類 app-local transient UI actions，先看 `src/hooks/useTransientUiActions.js`
-- 若任務是 app-level saved toast、timeout cleanup、跨 workflow 提示訊息競態，先看 `src/hooks/useSavedToast.js`
-- 若任務是 `tab / scan / relay / review / research selection` 這批 app-local transient UI state，先看 `src/hooks/useAppShellUiState.js`
-- 若任務是 `localhost -> 127.0.0.1` canonical redirect，先看 `src/hooks/useCanonicalLocalhostRedirect.js`
-- 若任務是 `App.jsx` 內 `state -> ref` 同步、`bootRuntimeRef`、`portfolioSetterRef` 這批 runtime refs，先看 `src/hooks/useAppRuntimeSyncRefs.js`
-- 若任務是 `App.jsx` 的 panel render 收斂、tab -> panel registry、或 panel-scoped `ErrorBoundary` 組裝，先看 `src/components/AppPanels.jsx`
-- 若任務是 `App.jsx` 的 live snapshot、event fallback/filter 這類 app-shell 級 helper，先看 `src/lib/appShellRuntime.js`
-- 若任務是收盤分析流程，先看 `src/hooks/useDailyAnalysisWorkflow.js`；若是改 snapshot/prompt 純邏輯，再進 `src/lib/dailyAnalysisRuntime.js`
-- 若任務是深度研究流程，先看 `src/hooks/useResearchWorkflow.js`；若是改 request body / stocks / history merge，再進 `src/lib/researchRuntime.js`
-- route shell 若要支援 `newBrain` 落盤，必須走 `src/hooks/useRoutePortfolioRuntime.js` 提供的 `setStrategyBrain()`；不要只更新 page-local state
-- 若任務是事件正規化、review evidence refs、portfolio backup / import / storage migration，先看 `src/lib/eventUtils.js`、`src/lib/portfolioUtils.js`
-- 若任務是 boot / storage / cloud sync，先看上述 hooks，再決定是否需要動 `src/App.jsx`
-- `src/main.jsx` 目前只負責 boot runtime diagnostics 與 render `App`
-- `src/pages/WatchlistPage.jsx` 已不再使用 `prompt()`；route watchlist 新增/編輯應沿用 `WatchlistPanel` 的 modal editor
-- `src/components/Header.jsx` 現在支援可選的 `portfolioEditor` 與 `portfolioDeleteDialog` props；route shell 與穩定主 runtime 都已接上這條 shared UI 邊界，而且底層已統一改走 `src/components/common/Dialogs.jsx`
-- `src/components/common/Dialogs.jsx` 是目前 runtime 的 shared dialog 邊界；若要新增確認、刪除、文字修正類互動，優先沿用這裡，不要再引入 `window.prompt()` / `window.confirm()` / `window.alert()`
-- `src/hooks/useTradeCaptureRuntime.js` 是交易截圖的 canonical runtime；若要改上傳成交、OCR 修正、補登日期、多圖佇列，先改這支 hook，不要在 `App.jsx` 與 route hook 各修一份
-- `src/lib/tradeParseUtils.js` 是交易 OCR 正規化、batch 寫入、批次摘要與低信心檢查 helper；若 `src/lib` 再出現跟 trade parse / multi-trade backfill / OCR warnings 有關的紅燈，先看這裡
-- 截至 2026-03-28，`rg -n "prompt\\(|confirm\\(|alert\\(" src` 應為 0；若再出現，視為 regression
-- `ErrorBoundary` 目前採 panel-scoped 策略：在 `src/App.jsx` 針對 `Header` 與各主要 panel 包 boundary，而不是在 `src/main.jsx` 外層包整個 App
-- `src/App.jsx` 與其他 runtime hook 不應在 render 期直接讀寫 `ref.current`；若需要同步 ref，請放進 effect 或改成現有 state / prop 流
-- `saved` 提示訊息現在應優先走 shared `notifySaved / flashSaved` 管線；不要再在新 workflow 內直接手刻 `setSaved(...) + setTimeout(...)`
+- `src/App.jsx` 與其他 runtime hook 不應在 render 期直接讀寫 `ref.current`
+- 若任務是主 runtime 的狀態 / workflow wiring，先看 `src/hooks/useAppRuntime.js`
+- 若任務是 `useAppRuntime.js` 裡剩餘的 boot/runtime wiring 參數組裝，先看 `src/hooks/useAppRuntimeComposer.js`，不要再把大型 hook args object 直接堆回 `App.jsx`
+- 若任務是 `AppPanels` 與各 panel 間的資料 / 行為傳遞，先看 `src/hooks/usePortfolioPanelsContextComposer.js` 與 `src/contexts/PortfolioPanelsContext.jsx`
+- 若任務是 `App.jsx` 內晚期 callback ref 同步，例如 `refreshAnalystReportsRef` / `resetTradeCaptureRef`，先看 `src/hooks/useAppCallbackRefs.js`
 - 若看到 `src/lib/market.js` 或 `src/lib/portfolioUtils.js` 出現 placeholder / stub 版本，視為不完整 refactor，應優先修回 canonical helper 實作
+
+### 3.2 持股分析模型
+
+這是 AI prompt 的輸入資料源，修分析邏輯前必須理解。
+
+#### STOCK_META（定義在 `src/seedData.js`，引用於 10+ 個模組）
+
+每檔持股有五個欄位：
+
+| 欄位       | 說明     | 範例值                                   |
+| ---------- | -------- | ---------------------------------------- |
+| `industry` | 產業分類 | `AI/伺服器`、`光通訊`、`半導體`          |
+| `strategy` | 策略框架 | `成長股`、`景氣循環`、`事件驅動`、`權證` |
+| `period`   | 持有週期 | `短`、`短中`、`中`、`中長`               |
+| `position` | 持倉定位 | `核心`、`衛星`、`戰術`                   |
+| `leader`   | 產業地位 | `龍頭`、`小龍頭`、`二線`、`小型`         |
+
+`IND_COLOR`（同在 `src/seedData.js`）：每個產業對應一個 Tailwind 400 色，供 UI 標示用。
+
+#### 使用規則
+
+- `STOCK_META` 已傳入 AI 分析 prompt（via `dossierUtils.js` → `knowledgeBase.js`），不要在 prompt 內重複硬寫分類
+- **不能用同一套邏輯判斷全部個股**，必須依 `strategy` 欄位分流分析
+- 新增持股時，**必須同步更新 `STOCK_META`**，否則 dossier、持倉健檢、知識庫注入都會遺漏該股分類
+- `themes` 欄位（外部資源整合 Phase A 後新增）：標記該股所屬主題（如 `AI伺服器`、`CoWoS`）
+
+#### 主要引用位置
+
+- `src/lib/dossierUtils.js` — dossier 組裝與 prompt context（含 knowledgeBase 注入）
+- `src/lib/researchRuntime.js` — 深度研究 context
+- `src/hooks/usePortfolioDerivedData.js` — 投組健檢與產業集中度計算
+- `src/components/holdings/HoldingsPanel.jsx` — 持倉顯示
+- `src/lib/knowledgeBase.js` — 依 `strategy` 類型選取相關知識庫條目注入 prompt
+
+---
+
+### 3.3 目標藍圖（Target Architecture）
+
+以下是目標架構要達到的狀態，不是今天已完成的規則。
+
+目標是把單體 orchestration shell 逐步收斂成：
+
+- 由 route 驅動的頁面架構
+- 有明確權威的共享狀態模型
+- 有明確權威的 server-state / async data 模型
+- `App.jsx` 進一步瘦身，最終只剩很薄的 app shell，甚至被 route layout 吸收
+
+目標形態包含：
+
+- `src/main.jsx` 最終切到 render `App.routes.jsx`
+- URL 真實反映使用者所在頁面
+- `activePortfolioId / viewMode / tab` 這類跨層共享狀態有單一權威
+- API 請求與其 loading / error / cache 逐步由 TanStack Query 接管
+- `Header` 與其他高階元件減少 prop drilling，改由更穩定的共享狀態邊界供應
+
+但以下幾點今天都還不能假設：
+
+- 不能假設 `App.routes.jsx` 已是主入口
+- 不能假設 Zustand 已是全域 source of truth
+- 不能假設 TanStack Query 已接手所有重要 async workflow
+- 不能假設 `src/pages/*` 已能無痛取代 `src/App.jsx`
+
+### 3.4 遷移順序（Migration Order）
+
+為了避免雙 runtime、雙資料權威、雙 async 模型同時膨脹，遷移順序固定如下：
+
+1. 先修文件：先把 Current Truth 與 Target Architecture 分清楚
+2. 再守單一主線：所有 bugfix 與新功能，先落在 shared module 或穩定主 runtime
+3. 再收共享狀態：先收 `activePortfolioId / viewMode / tab` 等真正跨層共享的狀態
+4. 再收 server-state：先從邊界清楚的 API 流程導入 TanStack Query
+5. 最後才切入口：只有當 route shell 真能覆蓋主流程，才把 `main.jsx` 切到 `App.routes.jsx`
+
+目前最重要的規則是：
+
+- 不要因為 repo 裡已經有 store / query / route shell，就假設主線已完成遷移
+- 不要新增第三套權威狀態
+- 不要讓 route shell 和 `App.jsx` 再各長一份同樣的流程
+
+---
+
+## 4. 本地執行與固定網址
 
 ### 本地完整模式
 
@@ -155,45 +328,25 @@ http://127.0.0.1:3002
 
 ---
 
-## 4. 驗證規則
+## 5. 驗證規則
 
-### 快速健康檢查
+### 何時跑哪個命令
 
-```bash
-npm run healthcheck
-```
+| 情境                               | 命令                                        | 最低要求          |
+| ---------------------------------- | ------------------------------------------- | ----------------- |
+| 日常開發完成                       | `npm run verify:local`                      | 全部通過          |
+| 只改 UI / 樣式                     | `npm run lint && npm run build`             | build 無錯        |
+| 改到 runtime / storage / AI 主流程 | `npm run verify:local` + `npm run smoke:ui` | 全部通過          |
+| 部署或本地重啟後                   | `npm run smoke:ui`                          | HTTP 200 + 無白頁 |
+| 宣稱「已完整驗證」                 | `npm run verify:local`                      | 必須貼完整輸出    |
 
-### Fast Refresh 邊界檢查
-
-```bash
-npm run check:fast-refresh
-```
-
-### UI smoke
+### 各命令說明
 
 ```bash
-npm run smoke:ui
-```
-
-### 完整本地驗證
-
-```bash
-npm run verify:local
-```
-
-目前內容包含：
-
-- `npm run check:fast-refresh`
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test:run`
-- `npm run build`
-- `npm run healthcheck`
-- `npm run smoke:ui`
-
-### 基本品質檢查
-
-```bash
+npm run healthcheck          # 檢查 /index.html、Vite client、App.jsx HMR 狀態
+npm run check:fast-refresh   # Fast Refresh 邊界檢查
+npm run smoke:ui             # UI smoke（HTTP + 無白頁）
+npm run verify:local         # 完整：fast-refresh + lint + typecheck + test + build + healthcheck + smoke
 npm run lint
 npm run build
 ```
@@ -207,7 +360,97 @@ npm run build
 - 若 `healthcheck` 回報 `Latest App.jsx Vite event is healthy`，代表最近一次 `src/App.jsx` HMR 事件沒有再落入 invalidation
 - 若要回報「已完整驗證」，不要只貼 `build` 或 `healthcheck`，至少要貼 `verify:local`
 
-### Runtime diagnostics
+---
+
+## 5.1 問題排查指南
+
+### 白頁或無法啟動
+
+1. 跑 `npm run healthcheck` 檢查基本健康狀態
+2. 跑 `npm run verify:local` 完整驗證
+3. 檢查 `.tmp/vercel-dev.log` 看 Vite frontend 訊號
+4. 確認使用 `http://127.0.0.1:3002`（不是 `localhost:3002`）
+
+### Fast Refresh 問題
+
+1. 跑 `npm run check:fast-refresh`
+2. 確認 `src/App.jsx` 只保留 default export `App`
+3. 確認沒有在 render 期直接讀寫 `ref.current`
+4. 確認 constants / helpers 已外移到 `src/lib/*` 或 `src/constants.js`
+
+### 測試失敗
+
+1. 跑 `npm run test:run` 看完整測試結果
+2. 單一測試失敗：`npx vitest run tests/path/to/test.test.jsx`
+3. 檢查是否有 flaky timeout（見 `tradePanel.dialogs.test.jsx` 範例）
+
+### Lint / Typecheck 錯誤
+
+1. `npm run lint` — ESLint 檢查
+2. `npm run typecheck` — TypeScript 檢查（JS 專案也用得到）
+3. 確認沒有使用 `window.prompt()` / `window.confirm()` / `window.alert()`
+
+### 策略大腦 / AI 相關問題
+
+1. 查看 `docs/evals/program.md` 了解 eval 流程
+2. 跑 `node scripts/eval_brain.mjs` 回放測試案例
+3. 檢查資料新鮮度（`freshness-gating`）
+4. 確認逐檔 outcome（`per_stock_resolution`）
+
+### 協作與分工問題
+
+1. 查看本章 §8「AI 分工與任務路由」
+2. 查看本章 §9「交接格式」
+3. 不確定該誰做？→ 查看 §8「任務類型分配」表格
+
+### Runtime 錯誤
+
+1. 檢查 `sessionStorage["pf-runtime-diagnostics-v1"]`
+2. 查看 panel-scoped ErrorBoundary 是否觸發
+3. 確認沒有未處理的 Promise 拒絕
+
+### Strategy Brain Eval Program
+
+本專案使用「台股策略邏輯回放評測器」來驗證策略大腦的優化，而非靠感覺改 prompt。
+
+**每輪標準流程**：
+
+1. 選 1 個 capability（`freshness-gating` / `event-review-per-stock` / `analog-explainability`）
+2. 跑 `node scripts/eval_brain.mjs`
+3. 讀結果：總分、每個 case 的 pass/fail、哪個維度失敗
+4. 只修高信號失敗案例
+5. 重跑
+6. 分數進步才保留；若 critical gate 退步就回滾
+
+**評分重點**：
+
+- `gate_correctness` — stale / missing 的月營收、法說、財報、目標價/報告，不可被當成 `validated`
+- `per_stock_resolution` — 多股票事件必須逐檔留下 outcome
+- `analog_explainability` — casebook 必須能說清楚相似維度與差異維度
+- `unsupported_claim_penalty` — 沒資料卻硬判 fresh / validated 直接失敗
+
+**接受門檻**：
+
+- Critical cases 全過
+- 總分 `>= 85`
+- 不可出現 unsupported claim
+- 已通過 case 不可退步
+
+**多模型分工**：
+
+- `Gemini` — 外部公開資料 scout，不直接當真值層
+- `Qwen` — 低風險 patch / test / helper
+- `Codex` — 最終裁決、修改策略邏輯、驗收分數、決定保留或回滾
+
+**本輪固定案例集**：
+
+- `evals/cases/daily-analysis/freshness-gating-001.json`
+- `evals/cases/event-review/per-stock-review-001.json`
+- `evals/cases/brain-validation/analog-dimensions-001.json`
+
+---
+
+## 6. Runtime diagnostics
 
 - 前端全域錯誤、未處理 Promise 拒絕、以及 React error boundary 錯誤，現在都會統一寫到 `sessionStorage["pf-runtime-diagnostics-v1"]`
 - `web-vitals` 也已接到同一個 adapter，會以 `kind: "web-vital"` 寫進同一份 diagnostics
@@ -221,46 +464,235 @@ npm run build
 
 ---
 
-## 5. AI 分工
+## 7. 知識庫分工
 
-### Codex
+### 知識庫現況（2026-03-31）
 
-- 高風險邏輯
-- strategy brain 最終判定
-- schema / persistence / cloud sync
-- 最終整合與驗收
+**知識庫已完成 600/600 條目標，品質測試 25/25 全過。**
 
-### Claude
+| 指標          | 數值                         |
+| ------------- | ---------------------------- |
+| 總條目        | 600（7 分類各達 target）     |
+| action 量化率 | 98.7%（測試門檻 5%）         |
+| 簡體中文      | 0 violation                  |
+| 策略覆蓋      | 11 種（含 STOCK_META alias） |
+| 版本          | `index.json` v2.0.0          |
 
-- strategy brain / validation second opinion
-- prompt 契約與輸出品質
-- 雲端同步與 schema 風險檢查
-- client-facing 報告正確性
+### 知識庫團隊與已完成工作
 
-### Qwen
+| 角色       | 職責                    | 已完成工作（2026-03-31）                                                                                                                                       |
+| ---------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Qwen**   | 知識庫搭建工程師        | 基礎架構搭建（schema/JSON/API）、初版 348 條匯入、quality-validation.json 框架                                                                                 |
+| **Claude** | 知識庫架構師 / 品質審查 | 品質審查+4 bug fix、補齊 202 條至 600、action 量化改寫 130 條、knowledgeBase.js 策略映射擴充+alias 修正、測試從 13→25 個+門檻收緊、autoresearch-style 實驗帳本 |
+| **Codex**  | 策略大腦 / 研究流程     | **待接手**：把 `api/research.js` 改成 candidate brain proposal 模式（見下方「下一步」）                                                                        |
 
-- bounded implementation
-- 機械式重構
-- lint / test / 小型 UI cleanup
-- 第一輪 code review
+### 已安裝的開發工具
 
-### Gemini
+| 工具                   | 來源                             | 安裝方式                       | 用途                                                                        |
+| ---------------------- | -------------------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| **superpowers** v5.0.6 | `obra/superpowers`               | `claude plugin install`        | brainstorming、subagent-driven-dev、systematic-debugging、TDD、verification |
+| **notebooklm-skill**   | `PleasePrompto/notebooklm-skill` | `~/.claude/skills/notebooklm/` | 外部文件知識查詢（需 Google 帳號認證）                                      |
 
-- 外部公開資料 research scout
-- citations / freshness / unresolved questions
-- 新聞、公告、法說、公開報導掃描
+### 知識庫 ↔ 應用串接路徑
 
-### AnythingLLM
+```
+STOCK_META (seedData.js)
+  ↓ strategy 欄位（如 '成長股', 'ETF/指數', '價值股', '轉型股'）
+knowledgeBase.js — STRATEGY_KNOWLEDGE_MAP + UNIVERSAL_SOURCES
+  ↓ getRelevantKnowledge() + getRelevantCases()
+dossierUtils.js — buildKnowledgeContext(dossier.stockMeta)
+  ↓ 注入 prompt
+api/analyze.js — daily analysis 使用知識庫 context
+api/research.js — deep research 使用知識庫 context
+```
 
-- PDF / 文件知識庫檢索
-- 歷史材料整理
-- RAG 型上下文補充
+**重要：** STOCK_META 的 strategy 名稱已與 STRATEGY_KNOWLEDGE_MAP 對齊（含 alias），`ETF/指數`↔`ETF指數`、`價值股`↔`價值投資`、`轉型股`↔`轉機股` 都能命中。新增持股時須確認 strategy 值在 map 中有對應。
+
+### 知識庫品質保障
+
+- 測試：`tests/lib/knowledge-base.test.js`（25 個測試）
+- 實驗帳本：`docs/superpowers/kb-experiment-results.tsv`（autoresearch-style）
+- 門檻：action 量化率>95%、簡體字 0、ID 唯一、confidence 0-1、metadata 一致
+
+### 下一步（Codex 接手）
+
+Codex 提出的 autoresearch 借鑒方向，按優先序：
+
+1. **`api/research.js` 改成 candidate brain proposal**（不直接覆蓋正式 brain）
+   - 產出：`proposed_rules`, `rules_to_stale`, `evidence_refs`, `expected_gain`, `risk_notes`
+   - 經過 gate / eval 才 merge 進正式 brain
+2. **research run ledger**（研究實驗帳本）
+   - 固定欄位：run_id, mode, prompt_version, input_snapshot, output_summary, score, keep/discard, reason
+3. **eval loop 接到 research 主流程**
+   - `docs/evals/program.md` 的 gate 接成可執行腳本
+   - research 產生候選 brain → 自動跑固定 cases → 未過 gate 不落盤
+4. **固定預算與停止條件**
+   - 每次 evolve 最多 1-3 輪，沒有分數進步就停止
+
+Claude 在 Codex 完成後負責：驗證 proposal schema 正確性、gate 邏輯 edge case、prompt 契約品質。
+
+### 協作流程
+
+```
+Qwen（搭建）→ Claude（審查+補齊+品質）→ Codex（策略大腦演化流程）→ Claude（最終驗證）
+```
+
+### JSON 知識層
+
+本應用程式的結構化知識（持倉、觀察股、催化事件、分析歷史）由以下管理：
+
+- `src/lib/portfolioUtils.js` - Portfolio registry / localStorage / backup import-export
+- `src/lib/dossierUtils.js` - Dossier 組裝 / 台股 hard gate / prompt context
+- `src/lib/reportUtils.js` - Analysis history / analyst report normalize
+- `src/lib/market.js` - Market cache / post-close sync gate / quote parsing
+- `src/lib/knowledge-base/` - 股票分析知識庫（7 分類、600 條、v2.0.0）
+- `src/lib/knowledgeBase.js` - 知識庫檢索+策略映射+prompt 注入
+
+### 知識條目格式
+
+每條知識包含「事實 / 解讀 / 動作」三層結構，action 必須含量化門檻：
+
+```json
+{
+  "id": "ta-001",
+  "title": "早晨之星買進訊號",
+  "fact": "下跌趨勢中出現長黑 + 跳空小 K+ 長白三根 K 棒",
+  "interpretation": "空方力道耗盡，多方反轉訊號",
+  "action": "第三根 K 棒收盤確認後買進，停損設在早晨之星低點",
+  "confidence": 0.7,
+  "tags": ["K 線", "反轉", "買進訊號"],
+  "source": "K 線型態實務"
+}
+```
+
+### 資料優先序（Claude 建議）
+
+分析時應遵循以下資料優先序：
+
+1. **TWSE 官方資料** (twsemcp) — 最權威
+2. **FinMind** — 深度研究
+3. **twstock** — 本地 fallback
+4. **TradingView** — 技術面補強
+5. **模型推論** — 最後才用
+
+**原則：**
+
+- 不同來源數字不一致時，採用較新的官方資料
+- 不能把技術面判斷寫成基本面事實
+- 沒有資料就明說缺資料，不要假裝知道
+
+### 分析產出結構（Claude 建議）
+
+所有分析產出應分為三層：
+
+1. **事實（Fact）** — 數據、收盤價、成交量、法人買賣超
+2. **解讀（Interpretation）** — 量價背離、題材延續、財報預期變化
+3. **動作建議（Action）** — 續抱 / 減碼 / 停損觀察點
+
+### 收盤分析模板（Claude 建議）
+
+**應該做：**
+
+- ✅ 短、準、可行動
+- ✅ 只列最重要的 1-3 檔異常持股
+- ✅ 每檔都要有「事實 + 解讀 + 動作」
+
+**不該做：**
+
+- ❌ 把所有持股都重寫成長報告
+- ❌ 為了完整而塞太多產業背景
+- ❌ 在沒有新資料時重複昨天的結論
+
+### 深度研究模板（Claude 建議）
+
+**單股研究應回答：**
+
+- 核心邏輯是否還成立
+- 未來 1-3 個月催化劑與時間點
+- 最可能的 3 個風險
+- 估值偏高/偏低，和誰比
+- 操作計畫（進場區、加減碼、停損）
+
+**全組合研究應回答：**
+
+- 哪些部位最需要立即動作
+- 資金配置是否失衡
+- 哪些策略規則已過時
+- 哪些錯誤在反覆發生
+
+### API 端點
+
+- `GET /api/knowledge?action=search&q=台積電` — 搜尋知識
+- `GET /api/knowledge?action=similar&stockId=2330` — 獲取相似案例
+- `GET /api/knowledge?action=stats` — 分類統計
+- `POST /api/knowledge` — 添加知識項目
+
+### 誰負責什麼
+
+| 知識類型          | 負責層                    | 說明                             |
+| ----------------- | ------------------------- | -------------------------------- |
+| 文件 / PDF / 報告 | Qwen                      | 文件讀取、比較、摘要整理         |
+| 結構化投資知識    | JSON 知識層               | 持倉、事件、分析、報告的持久化   |
+| 股票分析知識庫    | `src/lib/knowledge-base/` | 產業趨勢、消息連動、籌碼技術分析 |
+| 最新公開資訊      | Gemini CLI                | 新聞、公告、法說、外部研究       |
+| 策略規則判定      | Codex/Claude              | 最終 truth、schema、客戶數字     |
 
 ---
 
-## 6. 任務路由規則
+## 8. AI 分工與任務路由
 
-以下工作預設由 Codex 或 Claude 主導：
+### AI 分工總表
+
+| AI         | 適合的工作                                                                 | 不適合 / 需最終審查                       | 常見困難                                                       | 目前穩定用法                                                        |
+| ---------- | -------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Codex**  | 高風險邏輯、strategy brain 最終判定、schema / persistence / cloud sync     |                                           | 資料層與 prompt 層不同步時，模型輸出可讀但不可安全回寫         | 技術主導、最終 reviewer、多模型協作裁決者                           |
+| **Claude** | strategy brain second opinion、prompt 契約、雲端同步風險、client-facing    | 客戶版數字與結論的最終裁決                | 使用者期待高於目前資料品質時，容易被誤解成 prompt 問題         | 高風險邏輯 second opinion、validation                               |
+| **Qwen**   | bounded implementation、機械式重構、lint / test、小型 UI cleanup、文件整理 | strategy brain、cloud sync、最終數字      | 如果任務邊界不清楚，容易碰到高風險區                           | plain Qwen CLI，低頻、明確、bounded 任務                            |
+| **Gemini** | 最新資料搜尋、citation 蒐集、freshness 比對、新聞 / 公告 / 法說掃描        | fundamentals truth、target price 最終判定 | 容易把搜尋整合結果當成最終事實；某些高階模型會先碰到每日 quota | general: `gemini-2.5-flash`；scout: `gemini-3.1-flash-lite-preview` |
+
+### 任務類型分配
+
+#### 類型 1：高風險核心邏輯
+
+例：策略大腦、validation lifecycle、truth-layer、cloud sync、損益正確性
+
+分工：
+
+- **Codex 主導**
+- Qwen 不直接改主邏輯
+- Gemini 只補外部資料，不做最後裁決
+
+#### 類型 2：外部資料蒐集
+
+例：法說 / 公告 / 新聞、公開目標價報導、公開 research 索引
+
+分工：
+
+- **Gemini 主導**
+- Qwen 做文件檢索補充
+- Codex 最後決定是否採用
+
+#### 類型 3：低風險實作
+
+例：UI 小改、helper 重構、測試、機械式整理
+
+分工：
+
+- **Qwen 主導**
+- Codex review
+
+#### 類型 4：文件與知識整理
+
+例：spec 摘要、客戶報告素材整理、PDF / 會議 memo
+
+分工：
+
+- **Qwen 主導整理**
+- Codex 審核可否進主流程
+
+### 任務路由規則
+
+以下工作預設由 **Codex** 或 **Claude** 主導：
 
 - strategy brain 規則 lifecycle
 - persistence / migration / import-export
@@ -268,14 +700,15 @@ npm run build
 - 客戶版數字與結論
 - 高風險 prompt 契約
 
-以下工作適合交給 Qwen：
+以下工作適合交給 **Qwen**：
 
 - 小型 patch
 - 測試補齊
 - UI cleanup
 - 明確邊界的 helper 重構
+- 文件整理與摘要
 
-以下工作適合交給 Gemini：
+以下工作適合交給 **Gemini**：
 
 - 最新資料搜尋
 - citation 蒐集
@@ -283,33 +716,111 @@ npm run build
 
 若任務需要「最新」或「精準出處」，Gemini 只負責收集，最後仍要由主線實作者決定是否採納。
 
+### 實用工作流程
+
+#### 流程 A：文件先消化，再改程式
+
+1. 由 Qwen 消化研究 PDF、財報摘要、客戶筆記，產出「內部研究摘要」
+2. 再讓 Gemini CLI 補近期公開事實、來源與 freshness
+3. 由 Codex 決定哪些要進策略大腦資料模型
+4. 由 Qwen 做低風險實作
+5. 最後回到 Codex 做驗收與修正
+
+#### 流程 B：收盤分析品質優化
+
+1. Qwen 整理近期文件與研究材料
+2. Gemini CLI 補近期外部事件、法說 / 新聞 / 公告來源
+3. Codex 根據 dossier + brain + 事件資料決定真正要改的 prompt 與規則更新流程
+4. Qwen 負責把 UI / helper / 低風險串接補上
+5. Codex 做最後檢查，確保不會再次出現「持倉很完整，但分析像割裂」
+
+#### 流程 C：單一股票深度研究
+
+1. Qwen 先做文件檢索與比較
+2. Gemini CLI 先補公開來源、近期法說 / 新聞 / 報導
+3. Codex 審核是否足夠回寫到 `fundamentals` / `targets` / `analystReports` / `strategyBrain`
+4. Qwen 再做必要的 UI / 資料接線
+
+### Checkpoint Meeting 規則
+
+每次準備對使用者做階段性回報前，先做一次 checkpoint meeting。
+
+至少檢查：
+
+1. 哪些部分還不穩
+2. 哪些資料來源仍不足
+3. 哪些工作應該換 AI 接手
+4. 是否需要新增 skill / 工具
+5. 是否需要外部資料驗證
+
+結論要寫回 `docs/status/current-work.md`
+
 ---
 
-## 7. 交接格式
+## 9. 交接格式
+
+### 基本格式（所有任務）
 
 所有 AI 交接時，至少用這四項：
 
-- `done`
-- `changed files`
-- `risks`
-- `next best step`
+- `done` — 完成了什麼
+- `changed files` — 改了哪些檔案
+- `risks` — 潛在風險與注意事項
+- `next_best_step` — 下一步最佳行動
 
-研究型任務額外補：
+### 研究型任務額外格式
 
-- `citations`
-- `freshness`
-- `unresolved_questions`
+若任務涉及外部資料蒐集或研究，額外補充：
+
+- `citations` — 來源連結
+- `freshness` — 資料新鮮度（日期 / 時間）
+- `unresolved_questions` — 尚未解決的問題
+
+### 通用回報格式（建議）
+
+更完整的回報可包含：
+
+- `unknowns` — 不確定的地方
+- `needs_external_ref` — 需要外部參考的事項
+
+### Stop-in-5-Min 規則
+
+若使用者表示「中斷」或任務需要暫停：
+
+1. 所有 AI 在 5 分鐘內完成目前小段落
+2. 不再開啟新 scope
+3. 回寫以下三項：
+   - 完成了什麼
+   - 卡在哪裡
+   - 下一步最小切點
 
 ---
 
-## 8. 歷史文件處理方式
+## 10. 歷史文件處理方式
+
+### 短版角色卡（留原位）
 
 以下檔案現在都只是短版角色卡或歷史入口，不再各自維護完整規則：
 
 - `claude.md`
 - `QWEN.md`
 - `GEMINI.md`
-- `docs/HANDBOOK_FOR_AI_AGENTS.md`
+- `docs/SERVER_ACCESS_GUIDE.md`
+- `docs/testing/FUNCTIONAL_TEST_REPORT.md`
+
+### 已刪除的歷史文件
+
+以下文件已刪除，內容已併入本指南或已過時：
+
+- `docs/HANDBOOK_FOR_AI_AGENTS.md` → 已刪除，內容由本指南取代
+- `docs/DOCUMENT_CLEANUP_PROPOSAL.md` → 已刪除，已被本次收斂取代
+- `docs/specs/2026-03-25-qwen-anythingllm-setup-and-division.md` → 已刪除（AnythingLLM 已停用）
+- `docs/specs/2026-03-26-anythingllm-tw-stock-prompt-templates.md` → 已刪除（AnythingLLM 已停用）
+- `docs/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md` → 已刪除（內容已併入本指南 §2、§5、§8）
+- `docs/status/ai-collaboration-channel.md` → 已刪除（內容已併入本指南）
+- `docs/refactoring/*` → 已刪除（重構歷史記錄）
+- `docs/DEBUG_REPORT_*.md` → 已刪除（已解決的 debug 報告）
+- `docs/archive/*` → 已刪除（所有歸檔文件）
 
 若任何舊文件提到：
 

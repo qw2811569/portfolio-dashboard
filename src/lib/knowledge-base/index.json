@@ -1,0 +1,58 @@
+{
+  "name": "台股投資知識庫",
+  "version": "2.0.0",
+  "lastUpdated": "2026-03-31T12:00:00+08:00",
+  "description": "股票分析知識庫 - 整合產業趨勢、消息連動、籌碼與技術分析",
+  "categories": [
+    {
+      "id": "fundamental-analysis",
+      "name": "基本面分析",
+      "description": "財報分析、估值方法、產業分析",
+      "itemCount": 80
+    },
+    {
+      "id": "industry-trends",
+      "name": "產業趨勢",
+      "description": "台股各產業趨勢分析、供應鏈結構、景氣循環",
+      "itemCount": 100
+    },
+    {
+      "id": "news-correlation",
+      "name": "消息連動",
+      "description": "法說、財報、月營收、政策消息與股價連動關係",
+      "itemCount": 80
+    },
+    {
+      "id": "chip-analysis",
+      "name": "籌碼分析",
+      "description": "法人、主力、融資融券籌碼分析",
+      "itemCount": 80
+    },
+    {
+      "id": "technical-analysis",
+      "name": "技術分析",
+      "description": "量價結構、均線、型態、支撐壓力分析",
+      "itemCount": 100
+    },
+    {
+      "id": "strategy-cases",
+      "name": "策略案例",
+      "description": "歷史策略案例與復盤記錄",
+      "itemCount": 120
+    },
+    {
+      "id": "risk-management",
+      "name": "風險管理",
+      "description": "停損策略、倉位控制、心理建設",
+      "itemCount": 40
+    }
+  ],
+  "metadata": {
+    "totalItems": 600,
+    "targetItems": 600,
+    "progress": 1.0,
+    "source": "Manual curation from existing docs + knowledge base enrichment",
+    "migratedAt": "2026-03-29",
+    "lastImport": "2026-03-31"
+  }
+}

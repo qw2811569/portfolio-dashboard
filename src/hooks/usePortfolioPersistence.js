@@ -7,6 +7,7 @@ import {
   PORTFOLIO_ALIAS_TO_SUFFIX,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
+import { STOCK_META } from '../seedData.js'
 
 function mergeResearchHistory(existingReports, incomingReports) {
   return [...(existingReports || []), ...(incomingReports || [])]
@@ -162,6 +163,7 @@ export function usePortfolioPersistence({
       strategyBrain,
       marketPriceCache,
       marketPriceSync,
+      stockMeta: STOCK_META,
     })
     const prevJson = JSON.stringify(normalizeHoldingDossiers(holdingDossiers))
     const nextJson = JSON.stringify(nextDossiers)

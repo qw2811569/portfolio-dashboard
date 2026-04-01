@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-03-29 03:05
+Last updated: 2026-04-01 00:21
 
 ## Objective
 
@@ -8,42 +8,135 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Active slices
 
-- `Codex`：最終策略邏輯、schema、rule lifecycle、prompt 契約、驗收
+- `Codex`：最終策略邏輯、schema、rule lifecycle、prompt 契約、驗收。`api/research.js` candidate brain proposal 已切第一版
+- `Claude`：知識庫品質審查完成（600/600 已達標）。待 Codex 完成 proposal 後驗證 schema + gate 邏輯
 - `Gemini CLI`：公開資料、新聞 / 法說 / 公告 / 目標價報導的 citations 與 freshness 蒐集
-- `Qwen Code`：低風險 UI / helper / parsing / test patch
-- `AnythingLLM`：PDF / 研究文件 / 歷史材料整理與對照
+- `Qwen Code`：低風險 UI / helper / parsing / test patch、文件整理。知識庫機械改寫（模糊 action 修正等）
 
 固定角色與能力邊界見：
 
-- [ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/status/ai-collaboration-channel.md)
+- `docs/AI_COLLABORATION_GUIDE.md`
 
 ## Files in play
 
 - `src/App.jsx`
 - `src/lib/eventUtils.js`
 - `src/lib/portfolioUtils.js`
+- `src/lib/knowledgeBase.js` — 知識庫檢索+策略映射（Claude 最近修改）
+- `src/lib/knowledge-base/` — 7 分類 600 條（Claude 最近完成）
+- `src/lib/dossierUtils.js` — dossier 組裝，串接知識庫 context
+- `src/seedData.js` — STOCK_META 策略定義
+- `tests/lib/knowledge-base.test.js` — 25 個 KB 測試（Claude 新增）
 - `src/components/ErrorBoundary.jsx`
 - `src/main.jsx`
 - `scripts/healthcheck.sh`
-- `api/research.js`
-- `docs/superpowers/plans/2026-03-25-strategy-brain-v2-llm-routing-plan.md`
+- `scripts/kb-experiment.sh` — autoresearch-style 實驗量測（Claude 新增）
+- `api/research.js` — candidate brain proposal 主流程（Codex 進行中）
+- `src/hooks/useResearchWorkflow.js` — research proposal 契約與提示訊息（Codex 進行中）
+- `src/components/research/ResearchPanel.jsx` — evolve UI 文案同步 proposal 語意（Codex 進行中）
+- `docs/AI_COLLABORATION_GUIDE.md` — §7 知識庫分工已更新
+- `docs/superpowers/kb-experiment-results.tsv` — 實驗帳本
 - `docs/status/current-work.md`
-- `GEMINI.md`
-- `scripts/launch-gemini.sh`
-- `scripts/launch-gemini-research-scout.sh`
 - `CLAUDE.md`
 - `QWEN.md`
+- `GEMINI.md`
 
 ## Latest checkpoint
 
+- `2026-04-01 00:21` Codex：補齊 route-based 入口仍殘留的收盤價 / 行事曆 / 成交 OCR 解析缺口。
+  - route 收盤價：`useRoutePortfolioRuntime.js` 的 Header `⟳ 收盤價` 原本只會重讀本機快取，現在會真正打 `/api/twse`、寫回 `MARKET_PRICE_CACHE_KEY` / `MARKET_PRICE_SYNC_KEY`，並把新報價套回 route holdings
+  - route 行事曆：`useRouteEventsPage.js` 現在會在 `newsEvents` 為空時回退 `NEWS_EVENTS`，不再因空 storage 讓 `/portfolio/:id/events` 整頁空白
+  - 成交 OCR：新增 `src/lib/tradeAiResponse.js`，`useTradeCaptureRuntime.js` 會先抽出第一段 JSON，再交給 `normalizeTradeParseResult()`，降低 Claude 多吐敘述文字時的解析失敗率
+  - 驗證：新增 route integration tests（events fallback + route header price sync）與 OCR JSON extraction tests；`vitest`（2 files / 6 tests）+ `eslint` + `build` 全過
+- `2026-04-01 00:04` Codex：修掉 production 上的收盤價 / 行事曆 / 成交 OCR 三條線上故障。
+  - `api/twse.js`：恢復成真正的 serverless handler，production `/api/twse` 不再 `FUNCTION_INVOCATION_FAILED`
+  - `api/_lib/ai-provider.js`：Anthropic 模式優先取 `ANTHROPIC_API_KEY`，並已更新 production env key；`/api/parse` 不再回 `invalid x-api-key`
+  - 事件顯示：`resolveRuntimeNewsEvents()` 改成空陣列時回退 seed events，事件卡片補 `title/detail -> label/sub` fallback，行事曆 tab 不再空白
+  - 驗證：`eslint` + targeted `vitest`（4 files / 28 tests）+ build 全過；production `curl /api/twse`、`curl /api/parse`、UI smoke 全過
+  - 部署：`https://jiucaivoice-dashboard.vercel.app`
+- `2026-04-01 00:15` Claude：知識庫壓測 + 3 個 bug fix + 演化方案 + Qwen 交接。
+  - 壓測：34 檔持股 100% 覆蓋、7/7 策略相關性、檢索穩定
+  - Bug fix 1：`getRelevantKnowledge` slot-based 分配（策略 4 + rm 1），解決 rm 擠掉策略知識
+  - Bug fix 2：`buildHoldingDossiers` 加入 `stockMeta` 傳遞，解決知識注入永遠拿到空物件的致命 bug
+  - Bug fix 3：`usePortfolioDerivedData` + `usePortfolioPersistence` 傳入 `STOCK_META`
+  - 演化方案：`docs/superpowers/specs/2026-03-31-kb-evolution-design.md`
+  - Qwen 交接：QWEN.md 更新 5 項待辦
+  - 測試 **45/45 files, 217/217 tests 全過**
+- `2026-04-01 00:00` Claude：知識庫壓測 + 排序偏差修正 + 演化方案設計。
+  - 壓測：34 檔持股 100% 覆蓋、6/7 策略相關性通過、檢索穩定
+  - Bug fix：`getRelevantKnowledge` 改成 slot-based 分配（策略 4 + rm 1），解決 rm 擠掉策略知識問題
+  - 演化方案：`docs/superpowers/specs/2026-03-31-kb-evolution-design.md`（三層：usage tracking → feedback signal → confidence auto-adjust）
+  - 發現待處理：事件驅動的 nc 被 fa 擠掉（nc confidence 偏低）、strategy-cases 缺 confidence 欄位
+  - 測試 25/25 通過
+- `2026-03-31 23:55` Codex：修掉本輪高信號 bug 報告並重新部署 production。
+  - 修復：補回 `3443 / 創意` 供應鏈資料，讓 `getSupplyChain()` / `buildSupplyChainContext()` 恢復正常
+  - 修復：`AppPanels` context tests 改成等待 lazy-loaded panel，清掉因 `Suspense` loading fallback 造成的假性失敗
+  - 驗證：targeted vitest（3 files / 15 tests）全過；全量 vitest（45 files / 216 tests）全過；production UI smoke + `curl` HTTP 200 全過
+  - 部署：`https://jiucaivoice-dashboard.vercel.app`
+- `2026-03-31 21:48` Codex：candidate brain proposal 第一版已部署到 production。
+  - 網址：`https://jiucaivoice-dashboard.vercel.app`
+  - 內容：`api/research.js` 已改為 proposal 輸出，不再自動覆蓋正式 strategy brain；research UI 同步 proposal 語意，`portfolio/evolve` report metadata 也已對齊
+  - 驗證：Vercel production deploy ready + `curl` 外部可達（HTTP 200）
+- `2026-03-31 21:43` Codex：`api/research.js` 開始切到 candidate brain proposal 模式，`evolve / portfolio` 研究結果不再自動覆蓋正式 strategy brain。
+  - API：新增 `brainProposal` / `proposalStatus`，提案落到 `brain-proposals/*.json`，不再直接寫 `strategy-brain.json`
+  - UI：`useResearchWorkflow` / `ResearchPanel` 已同步改成「提案生成、尚未套用」語意
+  - 協作：`AI_COLLABORATION_GUIDE.md` 已補 proposal 契約，供 Claude / Gemini / Qwen 依同一條邊界接手
+  - 驗證：eslint（6 files）+ vitest（3 files / 14 tests）+ build 全通過
+- `2026-03-31 21:40` Claude：知識庫完成 600/600 + 品質優化 + 應用串接修正。
+  - 內容：從 398 補齊至 600 條（產業趨勢+50、技術分析+50、策略案例+50、籌碼+30、基本面+20、消息+2）
+  - 品質：action 量化率從 77%→98.7%（130 條改寫），測試門檻收緊至 5%
+  - Bug fix：knowledgeBase.js 策略映射 alias 對齊 STOCK_META（ETF/指數、價值股、轉型股）
+  - 工具：安裝 superpowers v5.0.6 plugin + notebooklm skill
+  - 方法論：autoresearch-style 實驗帳本建立於 docs/superpowers/kb-experiment-results.tsv
+  - 文件：AI_COLLABORATION_GUIDE.md §7 全面更新分工與串接路徑
+  - 測試：25/25 全過，全套 211 pass / 4 fail（4 fail 預先存在、與 KB 無關）
+  - **下一步交接 Codex**：`api/research.js` 改成 candidate brain proposal 模式
+- `2026-03-31 10:36` Codex：本地部署完成：vercel dev 已在 127.0.0.1:3002 啟動，healthcheck 與 UI smoke 全綠（API 可用、前端標記正常）。
+- `2026-03-31 03:38` Codex：優先任務再推進：新增 composeAppRuntimeHeaderInput，將 useAppRuntime 的 header wiring 再外移；workflow/header 組裝已雙收斂。驗證：eslint(2 files)+vitest(3 files/10 tests)+build+fast-refresh 全綠。
+- `2026-03-31 03:35` Codex：優先任務續推：新增 composeAppRuntimeWorkflowInput，將 useAppRuntime 最大 workflow wiring 組裝外移 composer；useAppRuntime 降至 511 行。驗證：eslint(2 files)+vitest(2 files/8 tests)+build+fast-refresh 全綠。
+- `2026-03-31 03:27` Codex：優先任務續推：新增 useAppRuntimeArgs（core/workflow args builder）並把 useAppRuntime 兩段大型參數牆外移；補 useAppRuntimeArgs 測試。驗證：lint+vitest(7 files/15 tests)+build+fast-refresh+healthcheck+smoke 全綠。
+- `2026-03-30 23:58` Codex：優先任務續推：新增 useAppRuntimePortfolioDerivedData/useAppRuntimeHeaderProps，將衍生資料與 header props 組裝從 useAppRuntime 再拆一層；composer 補 core/workflow flatten 組裝並新增測試，lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。
+- `2026-03-30 23:20` Codex：優先任務續推：useAppRuntime 兩段大型參數組裝改走 composeAppRuntimeCoreLifecycleArgs/composeAppRuntimeWorkflowsArgs；修正 refs lint 風險，新增 composer flatten 測試；lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。
+- `2026-03-30 18:18` Codex：優先任務持續完成：新增 useAppRuntimeHelperCatalog 抽出 core/workflow helper 契約，useAppRuntime 再瘦到 556 行；補 helper catalog 測試，lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。
+- `2026-03-30 18:15` Codex：優先任務續推：把 useAppRuntimeCoreLifecycle/useAppRuntimeWorkflows 的 helper 參數收成 catalog bag，useAppRuntime 再降到 556 行；lint+vitest+build+fast-refresh+healthcheck+smoke 通過。
+- `2026-03-30 18:00` Codex：優先任務更新：完成 useAppRuntimeCoreLifecycle 接線、修正 Vite /api 代理自迴圈；已用 vercel dev 在 127.0.0.1:3002 通過 healthcheck + smoke:ui。
+- `2026-03-30 17:58` Codex：優先主線完成：useAppRuntime 接入 useAppRuntimeCoreLifecycle，runtime 再瘦 105 行；修正 Vite /api 自迴圈 proxy，避免 EMFILE。lint/vitest/fast-refresh/healthcheck 已驗證。
+- `2026-03-30 13:33` Claude：知識庫致命bug修復+品質改善+dossier接線+指南手術修改完成
+- `2026-03-30 13:32` Codex：主線優先任務持續完成：新增 usePostCloseSilentSync 與 useMorningNoteRuntime，useAppRuntime 進一步降到 749 行；hooks tests+fast-refresh+healthcheck 通過
+- `2026-03-30 13:27` Codex：主線優先任務續推：新增 useAppRuntimeWorkflows 承接 workflow wiring（report/daily/stress/review/trade/research/backup/panels），useAppRuntime 從 963 行降到 758 行；lint+hooks tests+fast-refresh+healthcheck 通過
+- `2026-03-30 13:19` Codex：第三層完成：useAppRuntime 兩段 effect（收盤自我修復同步 / research 自動刷新）已抽成 usePostCloseSelfHealSync 與 useResearchAutoRefresh，小 hook 測試已補齊
+- `2026-03-30 13:15` Codex：本地部署確認：vercel dev 已固定綁定 127.0.0.1:3002，healthcheck 全綠（Server/Frontend/API）
+- `2026-03-30 13:04` Codex：第二層收斂完成：useAppRuntime 的 Daily/Stress/Review/Weekly/Trade/Research/Backup/Panels 大型 args 組裝已抽到 useAppRuntimeComposer，並處理 react-hooks/refs lint 風險；lint+composer tests+fast-refresh 通過
+- `2026-03-30 12:57` Codex：主線收斂：useAppRuntime 新增 composePortfolioDerivedDataInput / composeAppHeaderProps / composeAppShellFrameRuntime 與通用 helper，並補 useAppRuntimeComposer 測試；lint+fast-refresh+測試通過
+- `2026-03-30 09:45` Codex：docs-site 已新增四區塊進度條：今日總結/本週進度/下一里程碑/最近進度覆蓋率，並以 runtime 自動計算百分比與筆數
+- `2026-03-30 09:35` Codex：docs-site 四大區塊（最近進度/今日總結/本週進度/下一里程碑）已改為 checkpoint + ai-activity-log 混合來源；已實測可顯示 Qwen 活躍進度，不再只顯示 Codex
+- `2026-03-30 04:57` Codex：已完成根本修正：新增 refresh-ai-presence 自動偵測管線，從 ~/.qwen ~/.gemini ~/.claude ~/.codex 回填 ai-activity；sync-state 與 launch-docs-site 都會自動刷新，解決『只有 Codex 狀態會上板』迴圈問題
+- `2026-03-30 04:49` Codex：docs-site 新增 AI 追蹤堆疊區塊（GitLens/BlamePrompt/ai-status/launcher/live feed）並接上 state 生成器 trackingStack，刷新後可直接在 HTML 看到是否全啟用
+- `2026-03-30 04:33` Codex：已導入 GitLens + BlamePrompt + ai-status/launcher 組合；VS Code 已安裝 extension、BlamePrompt CLI 與 hooks 已就緒，Qwen/Gemini launcher 會帶 AI Git identity，新增 ai-commit.sh 統一 AI commit 歸因
+- `2026-03-30 04:24` Codex：docs-site 已新增 canonical live activity feed；Qwen/Gemini launcher 會自動登記 working 狀態，儀表板現可直接顯示 currentTask 與最近作業過程
+- `2026-03-30 04:16` Codex：docs-site 前端已改成直接讀取 [current-work.md](/Users/chenkuichen/APP/test/docs/status/current-work.md) 與 [ai-activity.json](/Users/chenkuichen/APP/test/docs/status/ai-activity.json)；即使沒先重建 `state.json`，其他 AI 的 `working` 狀態與最新 checkpoint 在按下「立即刷新」後也能直接顯示
+- `2026-03-30 04:16` Codex：補修 [launch-docs-site.sh](/Users/chenkuichen/APP/test/scripts/launch-docs-site.sh) 錯誤指向 `scripts/docs-site` 的 bug，並建立 [docs-site/current-work.md](/Users/chenkuichen/APP/test/docs-site/current-work.md) / [docs-site/ai-activity.json](/Users/chenkuichen/APP/test/docs-site/ai-activity.json) symlink 作為前端直接讀取 canonical 狀態的入口
+- `2026-03-30 04:09` Codex：已建立 [ai-activity.json](/Users/chenkuichen/APP/test/docs/status/ai-activity.json) 作為 AI 即時工作狀態真相；[ai-status.sh](/Users/chenkuichen/APP/test/scripts/ai-status.sh)、[ai-state.sh](/Users/chenkuichen/APP/test/scripts/ai-state.sh)、[ai-handover.sh](/Users/chenkuichen/APP/test/scripts/ai-handover.sh) 現在會寫入 `ai-activity` 與 `current-work.md`，再同步 docs-site，修正「只有 Codex 更新才會顯示」的問題
+- `2026-03-30 04:00` Codex：docs-site 已移除自動輪詢，改成右上角「立即刷新」按鈕；同步更新 [index.html](/Users/chenkuichen/APP/test/docs-site/index.html)、[script.js](/Users/chenkuichen/APP/test/docs-site/script.js)、[style.css](/Users/chenkuichen/APP/test/docs-site/style.css) 與 docs-site 指南，降低常駐輪詢對本機的干擾
+- `2026-03-30 03:51` Codex：已封存舊的 `state.json` 直接寫入路徑；[ai-state.sh](/Users/chenkuichen/APP/test/scripts/ai-state.sh) 的寫入命令已停用，[ai-status.sh](/Users/chenkuichen/APP/test/scripts/ai-status.sh) 與 [ai-handover.sh](/Users/chenkuichen/APP/test/scripts/ai-handover.sh) 改成相容提示，避免其他 AI 再把 docs-site 狀態寫回舊格式
+- `2026-03-30 03:49` Codex：docs-site 狀態同步改為以 [current-work.md](/Users/chenkuichen/APP/test/docs/status/current-work.md) 為唯一真相；新增 [build-docs-state.mjs](/Users/chenkuichen/APP/test/scripts/build-docs-state.mjs)，由 [sync-state.sh](/Users/chenkuichen/APP/test/scripts/sync-state.sh) 重新生成 [docs-site/state.json](/Users/chenkuichen/APP/test/docs-site/state.json)
+- `2026-03-30 03:49` Codex：[docs-site/script.js](/Users/chenkuichen/APP/test/docs-site/script.js) 已補 `state.json` cache-busting / no-store；同步更新 [AI_COLLABORATION_GUIDE.md](/Users/chenkuichen/APP/test/docs/AI_COLLABORATION_GUIDE.md)、[AI_STATE_GUIDE.md](/Users/chenkuichen/APP/test/docs-site/AI_STATE_GUIDE.md)、[DYNAMIC_GUIDE.md](/Users/chenkuichen/APP/test/docs-site/DYNAMIC_GUIDE.md)、[AI_GUIDE.md](/Users/chenkuichen/APP/test/docs-site/AI_GUIDE.md)，避免其他 AI 再把 `state.json` 當獨立黑板
+- `2026-03-30 03:35` Codex：補登狀態回報約定；日常進度與最新 checkpoint 一律先回寫 [current-work.md](/Users/chenkuichen/APP/test/docs/status/current-work.md)，規則變更再同步 [AI_COLLABORATION_GUIDE.md](/Users/chenkuichen/APP/test/docs/AI_COLLABORATION_GUIDE.md)，架構真相變更再同步 [PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md](/Users/chenkuichen/APP/test/docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md)
+- `2026-03-30 03:35` Codex：確認 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 已是薄入口，目前只負責呼叫 [useAppRuntime.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntime.js) 並 render [AppShellFrame.jsx](/Users/chenkuichen/APP/test/src/components/AppShellFrame.jsx)；目前除 bug 應優先閱讀 `useAppRuntime.js`，不用再從 `App.jsx` 大檔進場
+- `2026-03-30 03:35` Codex：最新已知完整綠燈基線仍是 `npm run verify:local` 通過，包含 `35 files / 167 tests`、`build`、`healthcheck` 與 `smoke:ui`
+- `2026-03-29 20:31` Codex：新增 [useAppRuntime.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntime.js) 與 [AppShellFrame.jsx](/Users/chenkuichen/APP/test/src/components/AppShellFrame.jsx)，把 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 的頂層 state / workflow wiring 與 render shell 正式拆開
+- `2026-03-29 20:31` Codex：[App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 現在只剩薄入口，主 runtime wiring 移到 [useAppRuntime.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntime.js)；[AppShellFrame.test.jsx](/Users/chenkuichen/APP/test/tests/components/AppShellFrame.test.jsx) 已補上 loading / ready render coverage
+- `2026-03-29 20:20` Codex：新增 [PortfolioPanelsContext.jsx](/Users/chenkuichen/APP/test/src/contexts/PortfolioPanelsContext.jsx) 與 [usePortfolioPanelsContextComposer.js](/Users/chenkuichen/APP/test/src/hooks/usePortfolioPanelsContextComposer.js)，把 `App.jsx -> AppPanels` 的海量 props 收成 panel-scope data/actions contexts
+- `2026-03-29 20:20` Codex：[AppPanels.jsx](/Users/chenkuichen/APP/test/src/components/AppPanels.jsx) 現在只接 `viewMode / overviewViewMode / tab / errorBoundaryCopy`，各 panel 所需 props 改由 context 組裝；`src/App.jsx` 進一步降到約 `980` 行
+- `2026-03-29 20:20` Codex：新增測試 [AppPanels.contexts.test.jsx](/Users/chenkuichen/APP/test/tests/components/AppPanels.contexts.test.jsx)，覆蓋 log panel data context 與 daily actions context；`npm run verify:local` 通過，全量測試提升到 `34 files / 165 tests`
+- `2026-03-29 19:58` Codex：新增 [useAppRuntimeComposer.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntimeComposer.js)，把 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 內 `boot/runtime wiring` 的大型 hook args object 收成 `useAppBootRuntimeComposer()`、`usePortfolioManagementComposer()`、`useAppLifecycleRuntimeComposer()`
+- `2026-03-29 19:58` Codex：新增測試 [useAppRuntimeComposer.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/useAppRuntimeComposer.test.jsx)，並通過 `npm run lint`、`npx vitest run tests/hooks/useAppRuntimeComposer.test.jsx`、`npm run verify:local`
+- `2026-03-29 19:58` Codex：`src/App.jsx` 進一步降到約 `1004` 行；全量驗證目前提升到 `33 files / 163 tests`，`healthcheck` 與 `smoke:ui` 維持綠燈
 - `2026-03-29 03:05` Codex：新增 [useAppRuntimeSyncRefs.js](/Users/chenkuichen/APP/test/src/hooks/useAppRuntimeSyncRefs.js)，把 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 內原本分散的 `activePortfolioIdRef / viewModeRef / portfoliosRef / portfolioSetterRef / bootRuntimeRef` 同步 effect 收斂成單一 hook
 - `2026-03-29 03:05` Codex：順手移除 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 中未使用的 `canUseCloudRef`，避免 dead ref 誤導後續維護
 - `2026-03-29 03:05` Codex：新增測試 [useAppRuntimeSyncRefs.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/useAppRuntimeSyncRefs.test.jsx)，並通過 `npm run verify:local`；全量測試提升到 `25 files / 111 tests`
-- `2026-03-29 03:05` Codex：新增交接報告 [DEBUG_REPORT_2026-03-29_APP_RUNTIME_REF_SYNC_EXTRACTION.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-29_APP_RUNTIME_REF_SYNC_EXTRACTION.md)
 - `2026-03-28 21:54` Codex：新增 [src/lib/appShellRuntime.js](/Users/chenkuichen/APP/test/src/lib/appShellRuntime.js) 與 [src/components/AppPanels.jsx](/Users/chenkuichen/APP/test/src/components/AppPanels.jsx)，把 `live portfolio snapshot` 欄位清單與 tab panel render skeleton 從 [src/App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 收成單一 source of truth
 - `2026-03-28 21:54` Codex：`flushCurrentPortfolio()` 與 `useLocalBackupWorkflow()` 現在共用 `buildLivePortfolioSnapshot()`；`newsEvents` fallback 與 event filter 也已集中到 `appShellRuntime`
-- `2026-03-28 21:54` Codex：新增測試 [appShellRuntime.test.js](/Users/chenkuichen/APP/test/tests/lib/appShellRuntime.test.js)，並通過 `npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh`、`npm run healthcheck`、`npm run smoke:ui`；全量測試提升到 `22 files / 97 tests`
-- `2026-03-28 21:54` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_APP_PANELS_AND_SNAPSHOT_DEDUP.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_APP_PANELS_AND_SNAPSHOT_DEDUP.md)；`src/App.jsx` 進一步降到約 `1111` 行
 - `2026-03-28 21:40` Codex：新增 [useSavedToast.js](/Users/chenkuichen/APP/test/src/hooks/useSavedToast.js)、[useAppShellUiState.js](/Users/chenkuichen/APP/test/src/hooks/useAppShellUiState.js)、[useCanonicalLocalhostRedirect.js](/Users/chenkuichen/APP/test/src/hooks/useCanonicalLocalhostRedirect.js)，把 `saved toast timer`、localhost canonical redirect 與 app-local transient UI state 從 [App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 再抽出去
 - `2026-03-28 21:40` Codex：`usePortfolioManagement.js`、`usePortfolioPersistence.js`、`useRoutePortfolioRuntime.js` 現在都優先走 shared `notifySaved / flashSaved` 管線，修掉多來源 `setTimeout` 互踩導致新提示被舊 timer 提前清掉的 bug
 - `2026-03-28 21:40` Codex：新增 hook tests [useSavedToast.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/useSavedToast.test.jsx) 與 [useAppShellUiState.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/useAppShellUiState.test.jsx)；[App.jsx](/Users/chenkuichen/APP/test/src/App.jsx) 再降到約 `1158` 行
@@ -57,7 +150,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `2026-03-28 21:18` Codex：新增 [reportRefreshRuntime.js](/Users/chenkuichen/APP/test/src/lib/reportRefreshRuntime.js) 與 [reportRefreshRuntime.test.js](/Users/chenkuichen/APP/test/tests/lib/reportRefreshRuntime.test.js)，把 analyst report merge / meta merge / structured research extract plan 純邏輯抽離出來
 - `2026-03-28 21:18` Codex：修掉 `Events` tab 還在吃 seed `NEWS_EVENTS` 的真 bug、`flashSaved()` timeout 互踩問題，以及 `App.jsx` render-phase refs lint blocker；`tradePanel.dialogs.test.jsx` 也補了 flake timeout
 - `2026-03-28 21:18` Codex：`src/App.jsx` 已降到約 `1198` 行；`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh`、`npm run healthcheck`、`npm run smoke:ui` 全綠
-- `2026-03-28 21:18` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_APP_SHELL_REDUCTION_AND_BUGFIXES.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_APP_SHELL_REDUCTION_AND_BUGFIXES.md)
 - `2026-03-28 18:11` Codex：route shell 的 research flow 已從 `useRunResearch()` inline mutation 收斂到共享 [useResearchWorkflow.js](/Users/chenkuichen/APP/test/src/hooks/useResearchWorkflow.js)，[useRouteResearchPage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteResearchPage.js) 現在只負責 route-specific panel state 與 report refresh / enrich glue
 - `2026-03-28 18:11` Codex：`useRoutePortfolioRuntime.js` 已補 `setStrategyBrain()` 與可帶 timeout 的 `flashSaved()`，因此 route shell 的 `onEvolve` 也能把 `newBrain` 正確落回 route runtime storage
 - `2026-03-28 18:11` Codex：順手修掉 [ResearchPanel.jsx](/Users/chenkuichen/APP/test/src/components/research/ResearchPanel.jsx) 的 `h` shadowing bug；新增 route research integration coverage 到 [routePages.actions.test.jsx](/Users/chenkuichen/APP/test/tests/routes/routePages.actions.test.jsx)
@@ -76,58 +168,46 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `2026-03-28 13:59` Codex：新增共享 hook [useTradeCaptureRuntime.js](/Users/chenkuichen/APP/test/src/hooks/useTradeCaptureRuntime.js) 與 helper [tradeParseUtils.js](/Users/chenkuichen/APP/test/src/lib/tradeParseUtils.js)，主 runtime 與 route shell 的交易截圖流程已收斂成同一條 runtime
 - `2026-03-28 13:59` Codex：上傳成交現在支援多圖佇列、補登成交日期、同批多筆交易寫入與混合買賣 memo；不再只寫 `parsed.trades[0]`
 - `2026-03-28 13:59` Codex：新增測試 [tradeParseUtils.test.js](/Users/chenkuichen/APP/test/tests/lib/tradeParseUtils.test.js)，並通過 `npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh`；全量測試提升到 `12 files / 71 tests`
-- `2026-03-28 13:59` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_DIALOG_PRIMITIVES_AND_TRADE_CAPTURE.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_DIALOG_PRIMITIVES_AND_TRADE_CAPTURE.md)
 - `2026-03-28 13:36` Codex：完成 `src/` legacy browser dialogs sweep，新增 [Dialogs.jsx](/Users/chenkuichen/APP/test/src/components/common/Dialogs.jsx)，把 `TradePanel` / `WatchlistPanel` / `App.jsx` 剩餘 `prompt()` / `confirm()` / `alert()` 全部收掉
 - `2026-03-28 13:36` Codex：新增測試 [tradePanel.dialogs.test.jsx](/Users/chenkuichen/APP/test/tests/components/tradePanel.dialogs.test.jsx)，並確認 `rg -n "prompt\\(|confirm\\(|alert\\(" src` 為空
-- `2026-03-28 13:36` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_LEGACY_BROWSER_DIALOGS_SWEEP.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_LEGACY_BROWSER_DIALOGS_SWEEP.md)
 - `2026-03-28 13:36` Codex：`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh` 通過；全量測試提升到 `11 files / 68 tests`
 - `2026-03-28 13:29` Codex：`usePortfolioManagement.js` 已移除主 runtime 的 `window.prompt()` / `window.confirm()`，create / rename / delete 現在與 route shell 共用 `Header` dialog 邊界
 - `2026-03-28 13:29` Codex：`Header.jsx` 已完整支援 shared `portfolioEditor` + `portfolioDeleteDialog`；`App.jsx` 與 `useRoutePortfolioRuntime.js` 都已接上
 - `2026-03-28 13:29` Codex：`tests/routes/routePages.actions.test.jsx` 已新增 delete dialog coverage；route actions 現在覆蓋 create / rename / delete / watchlist add / news review
-- `2026-03-28 13:29` Codex：交接報告 [DEBUG_REPORT_2026-03-28_ROUTE_PORTFOLIO_MODAL_EDITOR.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_ROUTE_PORTFOLIO_MODAL_EDITOR.md) 已更新為 shared dialogs 完成態
 - `2026-03-28 13:29` Codex：`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh` 通過；全量測試提升到 `10 files / 67 tests`
 - `2026-03-28 13:28` Codex：`useRoutePortfolioRuntime.js` 已移除 route-shell `window.prompt()` 的 create / rename 流程，改成受控 modal editor state
 - `2026-03-28 13:28` Codex：`Header.jsx` 已支援可選的 `portfolioEditor` modal props；route shell 透過這條邊界處理 portfolio create / rename，並保持對穩定主 runtime 的 callback fallback 相容
 - `2026-03-28 13:28` Codex：`tests/routes/routePages.actions.test.jsx` 已新增 portfolio create / rename modal tests，並明確驗證 `window.prompt()` 未被呼叫
-- `2026-03-28 13:28` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_ROUTE_PORTFOLIO_MODAL_EDITOR.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_ROUTE_PORTFOLIO_MODAL_EDITOR.md)
 - `2026-03-28 13:28` Codex：`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh` 通過；全量測試提升到 `10 files / 66 tests`
 - `2026-03-28 13:11` Codex：完成第二批 route page hook extraction，新增 [useRouteHoldingsPage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteHoldingsPage.js)、[useRouteWatchlistPage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteWatchlistPage.js)、[useRouteDailyPage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteDailyPage.js)、[useRouteResearchPage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteResearchPage.js)、[useRouteTradePage.js](/Users/chenkuichen/APP/test/src/hooks/useRouteTradePage.js) 等 route page hooks
 - `2026-03-28 13:11` Codex：`src/pages/*` 現在多數只剩 render panel + call hook；`WatchlistPage` 已移除 `prompt()` 路徑，`TradePage` route shell 也修正為傳入正確的 memo question array
 - `2026-03-28 13:11` Codex：`src/App.routes.jsx` 已補 route-local `QueryClientProvider`，route shell 進一步接近可替代 `src/App.jsx` 的入口條件
 - `2026-03-28 13:11` Codex：新增 route integration tests [routePages.actions.test.jsx](/Users/chenkuichen/APP/test/tests/routes/routePages.actions.test.jsx)，覆蓋 watchlist modal add 與 news review persistence
-- `2026-03-28 13:11` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_ROUTE_PAGE_HOOK_EXTRACTION.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_ROUTE_PAGE_HOOK_EXTRACTION.md)
 - `2026-03-28 13:11` Codex：`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh` 通過；全量測試提升到 `10 files / 64 tests`
 - `2026-03-28 05:31` Codex：新增 [useRoutePortfolioRuntime.js](/Users/chenkuichen/APP/test/src/hooks/useRoutePortfolioRuntime.js)，`PortfolioLayout.jsx` 已退回薄容器，只負責 render `Header + Outlet`
 - `2026-03-28 05:31` Codex：新增 route integration tests [portfolioLayout.routes.test.jsx](/Users/chenkuichen/APP/test/tests/routes/portfolioLayout.routes.test.jsx)，覆蓋 route context hydrate/persist 與 header tab 導航
 - `2026-03-28 05:31` Codex：補齊 `canRunPostClosePriceSync` 在 `datetime.js` / `market.js` 的相容邊界，修回全量測試綠燈
-- `2026-03-28 05:31` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_ROUTE_RUNTIME_HOOK_AND_TESTS.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_ROUTE_RUNTIME_HOOK_AND_TESTS.md)
 - `2026-03-28 05:31` Codex：`npm run lint`、`npm run typecheck`、`npm run test:run`、`npm run build`、`npm run check:fast-refresh` 通過
 - `2026-03-28 05:16` Codex：完成 route runtime 第一批接線，新增 [routeRuntime.js](/Users/chenkuichen/APP/test/src/lib/routeRuntime.js) 與 [usePortfolioRouteContext.js](/Users/chenkuichen/APP/test/src/pages/usePortfolioRouteContext.js)
 - `2026-03-28 05:16` Codex：`PortfolioLayout` 已改為讀取真實 localStorage / market snapshot，並把持久化 action 透過 `Outlet context` 傳給 route pages
 - `2026-03-28 05:16` Codex：`Holdings / Watchlist / Events / News / Daily / Research / Trade / Log / Overview` 頁面已移除第一批 placeholder state / fake handler，改吃 route runtime
-- `2026-03-28 05:16` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_ROUTE_RUNTIME_FIRST_TRANCHE.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_ROUTE_RUNTIME_FIRST_TRANCHE.md)
 - `2026-03-28 05:16` Codex：`npm run lint`、`npm run typecheck`、`npm run build` 通過
 - `2026-03-28 04:34` Codex：確認 `src/main.jsx` 曾被切到 `App.routes.jsx`，但 route shell 仍是 scaffold；已收回穩定 runtime 入口為 `src/main.jsx -> src/App.jsx`
 - `2026-03-28 04:34` Codex：新增 `src/lib/navigationTabs.js`，將 `Header` tabs 設定從 `App.jsx` / `PortfolioLayout.jsx` 收斂成共享 builder
 - `2026-03-28 04:34` Codex：`Header` 現在對缺少 `TABS` 有安全 fallback；`PortfolioLayout.jsx` 也移除對 `A` / `alpha` 的冗餘 props 傳遞
-- `2026-03-28 04:34` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_RUNTIME_ENTRY_TAB_ALIGNMENT.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_RUNTIME_ENTRY_TAB_ALIGNMENT.md)
 - `2026-03-28 04:01` Codex：救回一輪半套 helper refactor，已修正 `src/App.jsx` 因 duplicate helper/import 造成的 parse failure
 - `2026-03-28 04:01` Codex：`src/lib/market.js`、`src/lib/portfolioUtils.js`、`src/lib/datetime.js` 已從 placeholder / 遺漏 export 狀態恢復成可用的 canonical helper module
 - `2026-03-28 04:01` Codex：`src/App.jsx` 已重新改成吃 `lib` helper，檔案從約 `3525` 行降到 `3159` 行
-- `2026-03-28 04:01` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_HELPER_EXTRACTION_RECOVERY.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_HELPER_EXTRACTION_RECOVERY.md)
 - `2026-03-28 04:01` Codex：`npm run lint`、`npm run typecheck`、`npm run check:fast-refresh`、`npm run build` 通過
 - `2026-03-28 03:24` Codex：完成 `src/lib/eventUtils.js`、`src/lib/portfolioUtils.js` 實用化並回收 `src/App.jsx` 內 event / review / storage helper
 - `2026-03-28 03:24` Codex：`src/main.jsx` 已移除 whole-app ErrorBoundary；`src/App.jsx` 改為對 Header 與各主要 panel 採 panel-scoped `ErrorBoundary`
 - `2026-03-28 03:24` Codex：`scripts/healthcheck.sh` 已再清一輪不必要字串插值，並保留前端資源與 Vite log 檢查
-- `2026-03-28 03:24` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_EVENT_STORAGE_BOUNDARY_EXTRACTION.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_EVENT_STORAGE_BOUNDARY_EXTRACTION.md)
 - `2026-03-28 03:24` Codex：`npm run check:fast-refresh`、`npm run lint`、`npm run build` 通過
 
 - `2026-03-28 03:02` Codex：完成 `src/lib/reportUtils.js` 與 `src/lib/dossierUtils.js` 實作化，`App.jsx` 已改用這兩個 utility module
 - `2026-03-28 03:02` Codex：`src/hooks/useReports.js` 已從錯誤的 `./utils.js` 改接 `../lib/reportUtils.js`
-- `2026-03-28 03:02` Codex：新增交接報告 [DEBUG_REPORT_2026-03-28_DOSSIER_REPORT_UTILS_EXTRACTION.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_DOSSIER_REPORT_UTILS_EXTRACTION.md)
 - `2026-03-28 03:02` Codex：`npm run check:fast-refresh`、`npm run lint`、`npm run build` 通過
 - `2026-03-28 02:18` Codex：確認 `.tmp/vercel-dev.log` 中 `BACKUP_GLOBAL_KEYS` Fast Refresh invalidation 屬歷史事件；最新 `App.jsx` 事件已回到正常 `hmr update`
-- `2026-03-28 02:18` Codex：新增 [DEBUG_REPORT_2026-03-28_FAST_REFRESH_BOUNDARY_CONVERGENCE.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-28_FAST_REFRESH_BOUNDARY_CONVERGENCE.md)，說明這輪不是單純口頭確認，而是把 `App.jsx` / `constants.js` 邊界再收斂一層
 - `2026-03-28 02:18` Codex：新增 `src/lib/watchlistUtils.js`，並將 `App.jsx` 內重複的 constants / watchlist normalize 收回 `src/constants.js` 與 `src/lib/*`
 - `2026-03-28 02:18` Codex：`npm run check:fast-refresh`、`npm run lint`、`npm run build` 再次通過
 - `2026-03-28 01:28` Codex：新增 `jsconfig.json`，把 JS/JSX workspace 專案邊界收斂到 `src`、`tests`、`api`、`scripts`
@@ -150,7 +230,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `2026-03-27 22:10` Codex：新增報告 [OPTIMIZATION_REPORT_2026-03-27_FAST_REFRESH_HEALTHCHECK_DIAGNOSTICS.md](/Users/chenkuichen/APP/test/docs/OPTIMIZATION_REPORT_2026-03-27_FAST_REFRESH_HEALTHCHECK_DIAGNOSTICS.md)
 - `2026-03-27 21:45` Codex：已修正 `src/App.jsx` Fast Refresh invalidation 根因，移除所有 named exports，保留 default export `App`
 - `2026-03-27 21:45` Codex：`scripts/healthcheck.sh` 改為看最新一筆 `App.jsx` Vite 事件，不再被舊 invalidation 記錄誤導
-- `2026-03-27 21:45` Codex：新增交接報告 [DEBUG_REPORT_2026-03-27_FAST_REFRESH_FIX.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-27_FAST_REFRESH_FIX.md)
 - `2026-03-27 21:30` Codex：依建議完成新一輪優化落地，新增 TypeScript baseline `tsconfig.json + src/lib/holdingMath.ts`
 - `2026-03-27 21:30` Codex：`verify:local` 已納入 `npm run typecheck`；全量測試提升到 `7 files / 56 tests`
 - `2026-03-27 21:30` Codex：`scripts/healthcheck.sh` 已能回報 Vite log signal 與 HMR invalidation 警告
@@ -158,21 +237,18 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `2026-03-27 21:16` Codex：第三層 debug 完成；已補 `holdingDossiers` rebuild 差異測試與 malformed payload defensive tests
 - `2026-03-27 21:16` Codex：`usePortfolioPersistence` / `usePortfolioBootstrap` 已加入 array-shape guard，避免錯誤 payload 汙染 state/persistence
 - `2026-03-27 21:16` Codex：hook tests 提升到 `2 files / 12 tests`，全量測試提升到 `7 files / 55 tests`，`npm run verify:local` 再次通過
-- `2026-03-27 21:16` Codex：第三層交接報告已落地 [DEBUG_REPORT_2026-03-27_LAYER3_EDGE_CASES.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-27_LAYER3_EDGE_CASES.md)
 - `2026-03-27 21:07` Codex：已補完第二層剩餘三條線 `bootstrap cooldown branch`、`research TTL pull`、`cloud save failure / cleanup timer`
 - `2026-03-27 21:07` Codex：hook tests 擴充到 `2 files / 8 tests`，全量測試提升到 `7 files / 51 tests`
 - `2026-03-27 21:07` Codex：`npm run lint`、`npm run test:run`、`npm run verify:local` 再次全通過；layer-2 報告已更新為完成態
 - `2026-03-27 20:45` Codex：第二層 debug 完成；新增 hook 級測試 [usePortfolioBootstrap.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/usePortfolioBootstrap.test.jsx) 與 [usePortfolioPersistence.test.jsx](/Users/chenkuichen/APP/test/tests/hooks/usePortfolioPersistence.test.jsx)
 - `2026-03-27 20:45` Codex：目前測試總數提升到 `7 files / 47 tests`，`npm run test:run`、`npm run lint`、`npm run verify:local` 全部通過
-- `2026-03-27 20:45` Codex：第二層交接報告已落地 [DEBUG_REPORT_2026-03-27_LAYER2_HOOKS.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-27_LAYER2_HOOKS.md)
 - `2026-03-27 20:40` Codex：完成全面 debug sweep；`npm run lint`、`npm run test:run`、`npm run build`、`npm run healthcheck`、`npm run smoke:ui`、`npm run verify:local` 全部通過
 - `2026-03-27 20:40` Codex：確認本輪未發現新的 runtime blocker；主要修正為把 `verify:local` 升級成真正完整驗證鏈，納入 lint + tests
-- `2026-03-27 20:40` Codex：新增交接報告 [DEBUG_REPORT_2026-03-27_FULL_SWEEP.md](/Users/chenkuichen/APP/test/docs/DEBUG_REPORT_2026-03-27_FULL_SWEEP.md)，供後續 AI 直接接手
 
-- `2026-03-26` Codex：已移除 repo 內 `Claude local over Ollama` 入口、任務與驗證鏈；後續只保留 `Codex / Gemini / Qwen / AnythingLLM` 作為有效工具鏈
+- `2026-03-26` Codex：已移除 repo 內 `Claude local over Ollama` 入口、任務與驗證鏈；後續只保留 `Codex / Gemini / Qwen` 作為有效工具鏈
 - `2026-03-26` Codex：文件中若仍出現 `James / Curie / Claude local`，視為歷史紀錄，不再作為目前分工
 
-- `16:20` Codex：已建立固定多 AI 協作通道 [ai-collaboration-channel.md](/Users/chenkuichen/APP/test/docs/superpowers/status/ai-collaboration-channel.md)
+- `16:20` Codex：已建立固定多 AI 協作通道（現為 `AI_COLLABORATION_GUIDE.md`）
 - `16:21` James：回報其最適合擔任高風險 state/storage/sync/migration review 與最終技術裁決輔助
 - `16:22` Curie：回報其最適合擔任 truth-layer / validation / freshness / Taiwan-market guardrails 的 final reviewer
 
@@ -270,7 +346,7 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
   - `Gemini CLI`：quota 可用時補近期公開來源、法說 / 公告 / 目標價報導與 citations
   - `Qwen Code`：低頻、bounded 的 parsing / UI / test 機械實作
 - 新增歷史驗證主線：
-  - `AnythingLLM`：整理相似個股案例與文件證據
+  - `Qwen Code`：整理相似個股案例與文件證據
   - `Codex`：定義哪些差異屬於規則失準，哪些只是情境不同
 - 若主線暫時卡住或正在等驗證，自動做一次 optimization sweep：
   - 問其他模型哪裡還能優化
@@ -321,3 +397,51 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - 必須維持舊版 localStorage brain 資料相容，不能要求使用者重置資料
 - 台股分析屬高難度任務：便宜模型只能做摘要、抽取、分群、草稿；最終判斷與客戶/策略影響仍由 Codex 決定
 - 台股分析不可只看持倉欄位，後續 Task B / Task D 必須把市場機制、法人 / 題材 / 月營收 / 法說節奏一起納入
+
+## Latest checkpoint
+
+- `2026-03-30 04:10` Qwen：完成知識庫搭建三項任務：1) twsemcp 安裝成功，建立 twseAdapter.js 適配層 2) 建立收盤分析 + 深度研究模板 3) 持續填充知識中
+
+- `2026-03-30 04:30` Qwen：知識庫豐富進度：1) 消息連動 +10 條 2) 策略案例 +10 條 3) 風險管理 +12 條。總計 58/500 條 (11.6%)。建立收盤分析 + 深度研究模板。twsemcp 安裝成功。
+
+- `2026-03-30 04:45` Qwen：知識庫豐富進度：1) 技術分析 +20 條（共 30 條）2) 籌碼分析 +12 條（共 20 條）。總計 90/500 條 (18%)。
+
+- `2026-03-30 05:00` Qwen：知識庫豐富進度：1) 基本面分析 +15 條（共 20 條）2) 產業趨勢 +17 條（共 20 條）。總計 122/500 條 (24.4%)。接近 25% 里程碑。
+
+- `2026-03-30 05:10` Qwen：知識庫豐富進度：1) 策略案例 +15 條（共 25 條）2) 消息連動 +20 條（共 30 條）。總計 157/500 條 (31.4%)。突破 30% 里程碑。
+
+- `2026-03-30 05:20` Qwen：知識庫豐富進度：1) 產業趨勢 +15 條（共 35 條）2) 籌碼分析 +15 條（共 35 條）。總計 187/500 條 (37.4%)。接近 40% 里程碑。
+
+- `2026-03-30 05:30` Qwen：知識庫豐富進度：1) 策略案例 +5 條（共 30 條）2) 基本面分析 +10 條（共 30 條）。總計 202/500 條 (40.4%)。**突破 40% 里程碑！**
+
+- `2026-03-30 05:40` Qwen：知識庫豐富進度：1) 技術分析 +10 條（共 40 條）2) 風險管理 +8 條（共 20 條）。總計 220/500 條 (44%)。接近 50% 里程碑。
+
+- `2026-03-30 05:50` Qwen：知識庫豐富進度：1) 策略案例 +5 條（共 35 條）2) 產業趨勢 +5 條（共 40 條）。總計 230/500 條 (46%)。接近 50% 里程碑。
+
+- `2026-03-30 06:00` Qwen：**知識庫豐富進度突破 50% 里程碑！** 1) 消息連動 +10 條（共 40 條）2) 基本面分析 +10 條（共 40 條）。總計 **250/500 條 (50%)**。
+
+- `2026-03-30 06:05` Qwen：已建立 AI 協作討論文件 `docs/AI_COLLABORATION_DISCUSSION.md`，整理 12 個技術與架構問題邀請 Claude 一起討論。優先級 P0 問題 3 個、P1 問題 3 個、P2 問題 3 個。
+
+- `2026-03-30 06:30` Qwen：**P0 工作完成** - 已搬移 twseAdapter.js → api/twse.js，改為直接 fetch TWSE OpenAPI，實作指數退避重試機制。
+
+- `2026-03-30 07:00` Qwen：**P1 工作完成** - 1) 更新供應鏈 schema（增加 dependency、substituteRisk 欄位）2) 加入 usageTracking 機制到知識庫品質驗證框架 3) 實作知識淘汰 3 步驟流程。
+
+- `2026-03-30 07:30` Qwen：**P1 工作全部完成** - 已建立收盤分析 Prompt 模板（XML + few-shot + 驗證機制），存入 `docs/PROMPT_TEMPLATES.md`。
+
+- `2026-03-30 08:00` Qwen：**Claude 建議的全部工作已完成** - P0/P1/P2 共 7 項工作全部完成。準備更新 AI_COLLABORATION_DISCUSSION.md 標記所有問題已解決。
+
+- `2026-03-30 08:30` Qwen：**知識庫豐富進度突破 50%** - 策略案例 +15 條（共 50 條）。總計 **265/500 條 (53%)**。繼續朝向 60% 目標邁進。
+
+- `2026-03-30 09:00` Qwen：**知識庫豐富進度 56%** - 籌碼分析 +15 條（共 50 條）。總計 **280/500 條 (56%)**。繼續朝向 60% 目標邁進。
+
+- `2026-03-30 09:30` Qwen：**知識庫豐富進度 58%** - 技術分析 +10 條（共 50 條）。總計 **290/500 條 (58%)**。距離 60% 目標還差 10 條！
+
+- `2026-03-30 10:00` Qwen：**🎉 知識庫豐富進度突破 60% 里程碑！** - 產業趨勢 +10 條（共 50 條）。總計 **300/500 條 (60%)**。目標達成！
+
+- `2026-03-30 10:30` Qwen：**知識庫豐富進度 62%** - 策略案例 +10 條（共 60 條）。總計 **310/500 條 (62%)**。持續朝向 70% 目標邁進。
+
+- `2026-03-30 11:00` Qwen：**已修正 Claude 審查意見** - 1) 刪除 news-correlation nc-031 到 nc-040（美國總體經濟數據）2) 刪除重複條目 nc-016/nc-018 3) 修正 ca-006 錯字 4) 標記 ca-021 閾值問題。總計 298 條，持續填充中。
+- `2026-03-30 11:30` Qwen：已修正 ca-021 閾值為動態標準，news-correlation 填充至 50 條（+22 條台股特定事件）。總計 320 條 (64%)。
+- `2026-03-30 12:00` Qwen：news-correlation 填充至 60 條（+10 條台股特定事件）。總計 330 條 (66%)。
+- `2026-03-30 12:30` Qwen：news-correlation 填充至 70 條（+10 條）。總計 340 條 (68%)。
+- `2026-03-30 13:00` Qwen：**🎉 知識庫突破 70% 里程碑！** news-correlation 完成 80 條目標，buildKnowledgeContext() 已優化為結構化輸出格式。總計 350 條 (70%)。

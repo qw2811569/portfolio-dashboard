@@ -15,7 +15,14 @@ async function defaultRunResearchRequest(body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  if (!res.ok) throw new Error(await res.text())
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(
+      text.includes('TIMEOUT')
+        ? '深度研究逾時，請稍後再試（Vercel function timeout）'
+        : text.slice(0, 120) || `研究 API 失敗 (${res.status})`
+    )
+  }
   return res.json()
 }
 
@@ -37,11 +44,9 @@ export function useResearchWorkflow({
   getHoldingReturnPct = () => 0,
   setResearchResults = () => {},
   setResearchHistory = () => {},
-  setStrategyBrain = () => {},
   setSaved = () => {},
   notifySaved = null,
   enrichResearchToDossier = async () => false,
-  mergeBrainPreservingCoachLessons = (nextBrain) => nextBrain,
   runResearchRequest = defaultRunResearchRequest,
 }) {
   const emitSaved = useCallback(
@@ -109,9 +114,12 @@ export function useResearchWorkflow({
               })
           }
 
-          if ((mode === 'evolve' || mode === 'portfolio') && result.newBrain) {
-            setStrategyBrain(mergeBrainPreservingCoachLessons(result.newBrain, strategyBrain))
-            emitSaved('✅ 系統進化完成 · 策略大腦已更新')
+          const hasBrainProposal =
+            (mode === 'evolve' || mode === 'portfolio') &&
+            (result.brainProposal?.proposedBrain || result.newBrain)
+
+          if (hasBrainProposal) {
+            emitSaved('✅ 系統進化提案已生成 · 尚未套用正式策略大腦')
           } else {
             emitSaved('✅ 研究完成')
           }
@@ -122,7 +130,12 @@ export function useResearchWorkflow({
         }
       } catch (error) {
         console.error('AutoResearch failed:', error)
-        emitSaved('❌ 研究失敗')
+        const msg = error?.message || ''
+        emitSaved(
+          msg.includes('逾時')
+            ? '❌ 研究逾時 · 請稍後再試'
+            : `❌ 研究失敗：${msg.slice(0, 60) || '未知錯誤'}`
+        )
         return null
       } finally {
         setResearching(false)
@@ -138,7 +151,6 @@ export function useResearchWorkflow({
       getHoldingReturnPct,
       getHoldingUnrealizedPnl,
       holdings,
-      mergeBrainPreservingCoachLessons,
       newsEvents,
       portfolioHoldings,
       portfolioNotes,
@@ -149,9 +161,8 @@ export function useResearchWorkflow({
       setResearchResults,
       setResearchTarget,
       setResearching,
-      setStrategyBrain,
-      stockMeta,
       strategyBrain,
+      stockMeta,
     ]
   )
 

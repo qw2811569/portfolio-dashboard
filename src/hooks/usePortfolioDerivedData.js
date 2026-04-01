@@ -94,6 +94,7 @@ export function usePortfolioDerivedData({
       strategyBrain,
       marketPriceCache,
       marketPriceSync,
+      stockMeta: STOCK_META,
     })
   }, [
     holdingDossiers,
@@ -107,6 +108,7 @@ export function usePortfolioDerivedData({
     strategyBrain,
     marketPriceCache,
     marketPriceSync,
+    STOCK_META,
     normalizeHoldingDossiers,
     buildHoldingDossiers,
   ])

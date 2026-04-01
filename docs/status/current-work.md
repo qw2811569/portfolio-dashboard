@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 06:32
+Last updated: 2026-04-02 06:52
 
 ## Objective
 
@@ -42,6 +42,13 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 06:52` Codex：追查 `Importing a module script failed` 後，將最脆弱的 panel chunk 改為穩定載入。
+  - done：用 Vite manifest 對照後確認最可疑的是 `daily` / `research`，因為只有這兩個 panel 會額外依賴共享 `Md-*.js` 子 chunk。[`AppPanels.jsx`](/Users/chenkuichen/app/test/src/components/AppPanels.jsx) 現在把 `DailyReportPanel` 與 `ResearchPanel` 改為 eager import，不再走 lazy chunk；其餘仍保留 lazy，但新增 [`lazyPanelLoader.js`](/Users/chenkuichen/app/test/src/lib/lazyPanelLoader.js) 做一次性 reload 保護，當瀏覽器遇到 `Importing a module script failed` / `Failed to fetch dynamically imported module` 這類快取不一致錯誤時，會只自動重整一次避免白屏卡死。
+  - changed files：`src/components/AppPanels.jsx`、`src/lib/lazyPanelLoader.js`、`tests/lib/lazyPanelLoader.test.js`
+  - validation：`vitest`（`AppPanels.contexts + lazyPanelLoader`）5 tests 通過；`npm run build` 通過；`npm run lint` 無 error，仍有既有 warnings。build manifest 已確認 `src/components/reports/index.js` 與 `src/components/research/index.js` 不再出現在 entry `dynamicImports`。
+  - risks：主 bundle 因把 `daily/research` 收回 entry 而增大到約 `505 kB`，重新出現 Vite chunk warning；這是用較小的首屏體積 tradeoff 換取較高的 panel 穩定性。若之後要繼續優化，可再把 markdown 依賴拆成更穩定的 shared vendor，而不是恢復成脆弱的二層 lazy import。
+  - next best step：push + deploy 後，直接在 production 打開 `daily` 與 `research` panel 驗證是否不再出現 module script failed；如果還有零星案例，再把剩餘 lazy panels 的錯誤 telemetry scope 匯到 `/api/telemetry` 做精準追蹤。
 
 - `2026-04-02 06:32` Codex：緊急 Bug 修復已 push + deploy，OCR / 收盤分析 / 深度研究三條線都已補上可見錯誤與 timeout 保護。
   - done：`api/parse.js` 現在會驗證 `base64` 是否存在，並把 OCR AI 原始回應以截斷格式記到 server log；`useTradeCaptureRuntime.js` 會把「AI 未回傳可解析 JSON / JSON 格式錯誤」轉成較具體的前端錯誤訊息，不再只顯示籠統失敗。`dailyAnalysisRuntime.js` 明確要求模型先輸出中文分析評論，再附 `EVENT_ASSESSMENTS / BRAIN_UPDATE`；若 strip 掉附錄後正文為空，會保留原始回覆，避免收盤分析整塊變空白。`useResearchWorkflow.js` 對 `/api/research` 加上 55 秒 timeout，並將 timeout / abort 對應成明確的逾時提示，避免 UI 一直轉圈沒有結果。

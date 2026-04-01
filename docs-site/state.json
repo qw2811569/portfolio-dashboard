@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T22:32:00.000Z",
+  "lastUpdated": "2026-04-01T22:52:00.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,11 +7,11 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 2 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 3 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 目前測試檔 61 個",
+      "✅ 目前測試檔 62 個",
       "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
@@ -241,8 +241,8 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 61,
-    "testCases": 340,
+    "testFiles": 62,
+    "testCases": 343,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
@@ -250,7 +250,7 @@
     "aiAgents": 4,
     "appJsxLinesChange": 0,
     "totalDocs": 29,
-    "inProgressTasks": 2
+    "inProgressTasks": 1
   },
   "health": {
     "overall": "warning",
@@ -315,8 +315,8 @@
         "name": "Gemini",
         "role": "公開資料蒐集",
         "avatar": "🔍",
-        "status": "working",
-        "currentTask": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
         "tasksCompleted": 5,
         "lastActive": "2026-04-02 05:07",
         "statusSource": "auto",
@@ -335,6 +335,14 @@
     ]
   },
   "timeline": [
+    {
+      "time": "2026-04-02 06:52",
+      "ai": "Codex",
+      "title": "追查 Importing a module script failed 後，將最脆弱的 panel chunk 改為穩定載入。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
     {
       "time": "2026-04-02 06:32",
       "ai": "Codex",
@@ -360,7 +368,7 @@
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T22:26:58.287Z",
+  "generatedAt": "2026-04-01T22:50:00.201Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -376,6 +384,14 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-02 06:50",
+      "isoTime": "2026-04-02T06:50:00+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "超過活動視窗，已自動切回待命",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 06:24",
       "isoTime": "2026-04-02T06:24:20+08:00",
@@ -447,20 +463,12 @@
       "action": "auto-detect",
       "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
       "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:06+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T06:32:00+08:00",
-    "message": "緊急 Bug 修復已 push + deploy，OCR / 收盤分析 / 深度研究三條線都已補上可見錯誤與 timeout 保護。",
+    "time": "2026-04-02T06:52:00+08:00",
+    "message": "追查 Importing a module script failed 後，將最脆弱的 panel chunk 改為穩定載入。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

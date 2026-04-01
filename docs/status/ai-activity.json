@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-02T06:24:20+08:00",
+  "lastUpdated": "2026-04-02T06:50:00+08:00",
   "current": "Qwen",
   "members": [
     {
@@ -28,8 +28,8 @@
       "name": "Gemini",
       "role": "公開資料蒐集",
       "avatar": "🔍",
-      "status": "working",
-      "currentTask": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)",
+      "status": "idle",
+      "currentTask": "等待分配新任務",
       "tasksCompleted": 5,
       "lastActive": "2026-04-02 05:07",
       "statusSource": "auto",

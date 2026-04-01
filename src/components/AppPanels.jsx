@@ -4,19 +4,31 @@ import {
   usePortfolioPanelsActions,
   usePortfolioPanelsData,
 } from '../contexts/PortfolioPanelsContext.jsx'
+import { DailyReportPanel } from './reports/index.js'
+import { ResearchPanel } from './research/index.js'
+import { createLazyPanelLoader } from '../lib/lazyPanelLoader.js'
 
-const lazyNamedExport = (loader, exportName) =>
-  lazy(() => loader().then((module) => ({ default: module[exportName] })))
+const lazyNamedExport = (loader, panelKey, exportName) =>
+  lazy(
+    createLazyPanelLoader({
+      loader,
+      panelKey,
+      exportName,
+    })
+  )
 
-const OverviewPanel = lazyNamedExport(() => import('./overview/index.js'), 'OverviewPanel')
-const HoldingsPanelChunk = lazy(() => import('./holdings/HoldingsPanelChunk.jsx'))
-const WatchlistPanel = lazyNamedExport(() => import('./watchlist/index.js'), 'WatchlistPanel')
-const EventsPanel = lazyNamedExport(() => import('./events/index.js'), 'EventsPanel')
-const DailyReportPanel = lazyNamedExport(() => import('./reports/index.js'), 'DailyReportPanel')
-const ResearchPanel = lazyNamedExport(() => import('./research/index.js'), 'ResearchPanel')
-const TradePanel = lazyNamedExport(() => import('./trade/index.js'), 'TradePanel')
-const LogPanel = lazyNamedExport(() => import('./log/index.js'), 'LogPanel')
-const NewsAnalysisPanel = lazyNamedExport(() => import('./news/index.js'), 'NewsAnalysisPanel')
+const OverviewPanel = lazyNamedExport(() => import('./overview/index.js'), 'overview', 'OverviewPanel')
+const HoldingsPanelChunk = lazy(
+  createLazyPanelLoader({
+    loader: () => import('./holdings/HoldingsPanelChunk.jsx'),
+    panelKey: 'holdings',
+  })
+)
+const WatchlistPanel = lazyNamedExport(() => import('./watchlist/index.js'), 'watchlist', 'WatchlistPanel')
+const EventsPanel = lazyNamedExport(() => import('./events/index.js'), 'events', 'EventsPanel')
+const TradePanel = lazyNamedExport(() => import('./trade/index.js'), 'trade', 'TradePanel')
+const LogPanel = lazyNamedExport(() => import('./log/index.js'), 'log', 'LogPanel')
+const NewsAnalysisPanel = lazyNamedExport(() => import('./news/index.js'), 'news', 'NewsAnalysisPanel')
 
 function PanelLoadingFallback() {
   return (

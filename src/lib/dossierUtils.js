@@ -87,7 +87,9 @@ function buildCompactFinMindSummary(finmind) {
     (!finmind.institutional?.length &&
       !finmind.valuation?.length &&
       !finmind.margin?.length &&
-      !finmind.shareholding?.length)
+      !finmind.shareholding?.length &&
+      !finmind.balanceSheet?.length &&
+      !finmind.cashFlow?.length)
   ) {
     return '無'
   }
@@ -115,6 +117,37 @@ function buildCompactFinMindSummary(finmind) {
   if (finmind.margin?.length > 1) {
     const change = (finmind.margin[0]?.marginBalance || 0) - (finmind.margin[1]?.marginBalance || 0)
     parts.push(`融資${formatSignedNumber(change)}張`)
+  }
+
+  // 資產負債表摘要
+  if (finmind.balanceSheet?.length > 0) {
+    const latest = finmind.balanceSheet[0]
+    const totalAssets = latest?.totalAssets != null ? Number(latest.totalAssets) : null
+    const totalLiabilities = latest?.totalLiabilities != null ? Number(latest.totalLiabilities) : null
+    const shareholderEquity = latest?.shareholderEquity != null ? Number(latest.shareholderEquity) : null
+    const debtRatio = latest?.debtRatio != null ? Number(latest.debtRatio) : null
+    
+    if (totalAssets != null || debtRatio != null) {
+      const assetsStr = totalAssets != null ? `總資產${Math.round(totalAssets)}M` : ''
+      const debtStr = debtRatio != null ? `負債比${debtRatio.toFixed(1)}%` : ''
+      const equityStr = shareholderEquity != null ? `股東權益${Math.round(shareholderEquity)}M` : ''
+      lines.push(`  資產負債：${[assetsStr, debtStr, equityStr].filter(Boolean).join(', ')}`)
+    }
+  }
+
+  // 現金流量表摘要
+  if (finmind.cashFlow?.length > 0) {
+    const latest = finmind.cashFlow[0]
+    const operatingCF = latest?.operatingCF != null ? Number(latest.operatingCF) : null
+    const investingCF = latest?.investingCF != null ? Number(latest.investingCF) : null
+    const financingCF = latest?.financingCF != null ? Number(latest.financingCF) : null
+    
+    if (operatingCF != null || investingCF != null) {
+      const operatingStr = operatingCF != null ? `營業${Math.round(operatingCF)}M` : ''
+      const investingStr = investingCF != null ? `投資${Math.round(investingCF)}M` : ''
+      const financingStr = financingCF != null ? `籌資${Math.round(financingCF)}M` : ''
+      lines.push(`  現金流：${[operatingStr, investingStr, financingStr].filter(Boolean).join(', ')}`)
+    }
   }
 
   if (finmind.shareholding?.length > 0) {

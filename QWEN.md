@@ -375,6 +375,29 @@ console.log('[prompt-budget]', dossier.code, 'total:', result.length, '字')
 
 ---
 
+#### I. 修復 MOPS 抓取穩定性
+
+`api/cron/collect-daily-events.js` 從 MOPS 抓法說會公告在 Vercel 環境超時或被擋（production 回傳 0 筆 MOPS 事件）。
+
+**問題診斷：**
+
+- MOPS (`mops.twse.com.tw`) 可能封鎖 Vercel IP 或需要特定 headers
+- `fetchMopsAnnouncements` 的 HTML regex parsing 可能因 MOPS 改版失效
+- Vercel serverless 的 1.5 秒 rate limit delay × 4 天 = 6 秒，加上 MOPS 回應慢可能超過 10 秒 function timeout
+
+**修復方向：**
+
+1. 在本地跑 `curl -s 'https://mops.twse.com.tw/mops/web/ajax_t05st01' -X POST -d 'encodeURIComponent=1&step=1&firstin=1&off=1&TYPEK=all&isnew=true&date1=114/04/01&date2=114/04/01'` 確認 MOPS 是否回傳 HTML
+2. 如果 MOPS 封鎖 Vercel IP，改成 **本地 cron**（用 `schedule` skill 或 `scripts/` 排程）抓完後 push 到 Blob
+3. 如果是 parsing 問題，修 `fetchMopsAnnouncements` 的 regex
+4. 降低 rate limit delay 到 500ms 或改成只查今天（不查未來 3 天）
+
+**驗證：** `curl https://jiucaivoice-dashboard.vercel.app/api/cron/collect-daily-events` 回傳 `mopsCount > 0`
+
+**優先度高** — 這是事件自動化的核心管線，修好了就不需要 Gemini 手動搜尋法說會。
+
+---
+
 ## 交接格式
 
 - `done`

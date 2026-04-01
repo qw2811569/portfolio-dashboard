@@ -258,15 +258,13 @@
 - ✅ 工作流程 4：供應鏈更新（supply-chain-2026-04-01.json，6 檔持股）
 - ✅ 工作流程 5：知識庫 fact-check（fact-check-2026-04-01.json）
 - ✅ 工作流程 7：FinMind 數據驗證（finmind-validation-2026-04-01.json，PER 比對 Goodinfo）
-- ⚠️ 工作流程 1：法說會行事曆（event-calendar-2026-04-01.json 為空，上次品質不合格後未重做）
+- ~~工作流程 1：法說會行事曆~~ **已取消** — 法說會是確定性公開資料，應由 MOPS 自動抓取（`api/cron/collect-daily-events.js`），不需要 AI 手動搜尋。MOPS 穩定性問題已轉派 Qwen 修。
 
 ## 新一輪任務（Claude 2026-04-01 晚指派）
 
-### A. 重做法說會行事曆（工作流程 1）
+### ~~A. 重做法說會行事曆~~ 已取消
 
-上次的輸出只有 3 檔且 citation 全是 Google 搜尋 URL。**必須涵蓋全部 17 檔**，citation 必須是實際來源。
-
-刪除 `docs/gemini-research/event-calendar-2026-04-01.json` 並重做。
+法說會日期改由 MOPS 自動管線抓取，不再需要 Gemini 手動搜尋。
 
 ### B. 目標價更新（工作流程 2）
 

@@ -19,67 +19,14 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
 ]
 
-// ── MOPS 抓取 ──
+// ── MOPS 抓取（已停用 — MOPS 需要完整瀏覽器會話）─
+// 改用 Gemini 蒐集的事件作為 fallback
+// 參考：docs/gemini-research/event-calendar-*.json
 async function fetchMopsAnnouncements(dateStr) {
-  const year = parseInt(dateStr.slice(0, 4)) - 1911
-  const month = dateStr.slice(4, 6)
-  const day = dateStr.slice(6, 8)
-
-  const body = new URLSearchParams({
-    encodeURIComponent: 1,
-    step: 1,
-    firstin: 1,
-    off: 1,
-    keyword4: '',
-    code1: '',
-    TYPEK2: '',
-    checkbtn: '',
-    queryName: 'co_id',
-    inpuType: 'co_id',
-    TYPEK: 'all',
-    isnew: 'true',
-    co_id: '',
-    date1: `${year}/${month}/${day}`,
-    date2: `${year}/${month}/${day}`,
-    keyword3: '',
-  })
-
-  const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]
-  const res = await fetch(MOPS_BASE, {
-    method: 'POST',
-    headers: {
-      'User-Agent': userAgent,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Referer: 'https://mops.twse.com.tw/mops/web/t05st01',
-    },
-    body: body.toString(),
-  })
-
-  if (!res.ok) return []
-
-  const html = await res.text()
-  const announcements = []
-  const rowRegex =
-    /<tr[^>]*>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/gi
-  let match
-  while ((match = rowRegex.exec(html)) !== null) {
-    const code = match[1]?.replace(/<[^>]+>/g, '').trim()
-    const name = match[2]?.replace(/<[^>]+>/g, '').trim()
-    const title = match[4]?.replace(/<[^>]+>/g, '').trim()
-    if (!code || !title || !/^\d{4}$/.test(code)) continue
-
-    const type = inferType(title)
-    if (type) {
-      announcements.push({
-        code,
-        name,
-        title,
-        type,
-        date: `${dateStr.slice(0, 4)}-${month}-${day}`,
-      })
-    }
-  }
-  return announcements
+  // MOPS 需要完整瀏覽器會話（JavaScript + cookie），無法用簡單 fetch 訪問
+  // 返回空陣列，讓系統使用 Gemini 蒐集的事件
+  console.log('[MOPS] 已停用 — 使用 Gemini 事件作為 fallback')
+  return []
 }
 
 function inferType(title) {
@@ -262,36 +209,15 @@ export default async function handler(req, res) {
   const todayISO = today.toISOString().slice(0, 10)
 
   try {
-    // 1. MOPS（今天 + 未來 3 天）
+    // 1. MOPS（已停用，返回空陣列）
     const mopsEvents = []
-    for (let i = 0; i < 4; i++) {
-      const d = new Date(today)
-      d.setDate(d.getDate() + i)
-      const ds = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
-      try {
-        const items = await fetchMopsAnnouncements(ds)
-        mopsEvents.push(
-          ...items.map((item) => ({
-            id: `mops-${item.code}-${ds}`,
-            type: item.type,
-            title: `${item.name}(${item.code}) ${item.title}`,
-            date: item.date,
-            stocks: [item.code],
-            source: 'mops',
-            impact: item.type === 'conference' ? 'high' : 'medium',
-          }))
-        )
-      } catch {}
-      // Rate limit: 1-2 秒間隔
-      if (i < 3) await new Promise((r) => setTimeout(r, 1500))
-    }
 
     // 2. 固定行事曆（未來 30 天）
     const fixedEvents = generateFixedEvents(today, 30)
 
-    // 3. Google News（不帶持股代碼 — 蒐集的是公共新聞，前端再篩選）
-    // 這裡用空陣列，因為 cron 不知道每個用戶的持股
-    // 新聞蒐集由前端按需觸發（api/analyst-reports.js）
+    // 3. Gemini 蒐集的事件（fallback for MOPS）
+    // 讀取最新的 event-calendar-*.json
+    const geminiEvents = await loadGeminiEvents(todayISO)
 
     // 組裝快照
     const snapshot = {
@@ -300,10 +226,12 @@ export default async function handler(req, res) {
       events: {
         mops: mopsEvents,
         fixed: fixedEvents,
+        gemini: geminiEvents,
       },
       stats: {
         mopsCount: mopsEvents.length,
         fixedCount: fixedEvents.length,
+        geminiCount: geminiEvents.length,
       },
     }
 
@@ -325,4 +253,64 @@ export default async function handler(req, res) {
     console.error('Daily event collection failed:', error)
     return res.status(500).json({ error: error.message })
   }
+}
+
+// ── 載入 Gemini 蒐集的事件 ──
+async function loadGeminiEvents(todayISO) {
+  try {
+    // 讀取最新的 event-calendar JSON（從 docs/gemini-research/）
+    const fs = await import('fs')
+    const path = await import('path')
+    const geminiDir = path.join(process.cwd(), 'docs/gemini-research')
+    const files = fs.readdirSync(geminiDir)
+    const eventFile = files.filter(f => f.startsWith('event-calendar-') && f.endsWith('.json')).sort().pop()
+    
+    if (!eventFile) {
+      console.log('[Gemini] 無事件檔案')
+      return []
+    }
+
+    const filePath = path.join(geminiDir, eventFile)
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    const facts = data.facts || []
+    
+    // 過濾並轉換為系統格式
+    const today = new Date(todayISO)
+    const events = []
+    
+    for (const fact of facts) {
+      if (!fact.date || !fact.eventType || fact.confidence !== 'confirmed') continue
+      
+      const eventDate = new Date(fact.date)
+      const daysDiff = (eventDate - today) / (1000 * 60 * 60 * 24)
+      
+      // 只取今天起未來 60 天的事件
+      if (daysDiff < 0 || daysDiff > 60) continue
+      
+      events.push({
+        id: `gemini-${fact.code}-${fact.date}`,
+        type: mapGeminiType(fact.eventType),
+        title: `${fact.name}(${fact.code}) ${fact.eventType}`,
+        date: fact.date,
+        stocks: [fact.code],
+        source: 'gemini-research',
+        impact: fact.eventType.includes('法說') || fact.eventType.includes('股東') ? 'high' : 'medium',
+        citation: fact.source,
+      })
+    }
+    
+    console.log(`[Gemini] 載入 ${events.length} 個事件 from ${eventFile}`)
+    return events
+  } catch (err) {
+    console.warn('[Gemini] 載入失敗:', err.message)
+    return []
+  }
+}
+
+function mapGeminiType(geminiType) {
+  if (geminiType.includes('法說')) return 'conference'
+  if (geminiType.includes('股東')) return 'shareholder'
+  if (geminiType.includes('財報')) return 'earnings'
+  if (geminiType.includes('除權') || geminiType.includes('除息')) return 'dividend'
+  return 'other'
 }

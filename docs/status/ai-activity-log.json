@@ -1,6 +1,46 @@
 {
-  "lastUpdated": "2026-03-31T11:11:42+08:00",
+  "lastUpdated": "2026-04-01T13:59:57+08:00",
   "entries": [
+    {
+      "time": "2026-04-01 13:59",
+      "isoTime": "2026-04-01T13:59:57+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 13:59",
+      "isoTime": "2026-04-01T13:59:57+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-01 13:12",
+      "isoTime": "2026-04-01T13:12:42+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 13:12",
+      "isoTime": "2026-04-01T13:12:42+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：/temp/readonly/command (nmtlkb) 讀 QWEN.md，先做「修正待辦」（還原 quality-validation（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-01 13:12",
+      "isoTime": "2026-04-01T13:12:42+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout：讀 GEMINI.md，按工作流程 4 和 5 執行：更新持股供應鏈關係 + 隨機 fact-check 10 條知識庫 entry",
+      "status": "working"
+    },
     {
       "time": "2026-03-31 11:11",
       "isoTime": "2026-03-31T11:11:42+08:00",
@@ -288,62 +328,6 @@
       "action": "start",
       "message": "主線收斂下一步：抽 useAppRuntimeCoreLifecycle，搬走核心 lifecycle wiring 區段",
       "status": "working"
-    },
-    {
-      "time": "2026-03-30 13:33",
-      "isoTime": "2026-03-30T13:33:44+08:00",
-      "ai": "Claude",
-      "action": "done",
-      "message": "知識庫致命bug修復+品質改善+dossier接線+指南手術修改完成",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 13:33",
-      "isoTime": "2026-03-30T13:33:21+08:00",
-      "ai": "Claude",
-      "action": "progress",
-      "message": "完成 api/knowledge.js bug修復、chip-analysis修正、strategy-cases新增權證/事件驅動案例、knowledgeBase.js建立、dossierUtils接線、指南手術修改",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 13:32",
-      "isoTime": "2026-03-30T13:32:13+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "主線優先任務持續完成：新增 usePostCloseSilentSync 與 useMorningNoteRuntime，useAppRuntime 進一步降到 749 行；hooks tests+fast-refresh+healthcheck 通過",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 13:29",
-      "isoTime": "2026-03-30T13:29:00+08:00",
-      "ai": "Claude",
-      "action": "start",
-      "message": "修知識庫致命bug + 內容品質 + 接線 dossierUtils + 手術式修改指南",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 13:27",
-      "isoTime": "2026-03-30T13:27:19+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "主線優先任務續推：新增 useAppRuntimeWorkflows 承接 workflow wiring（report/daily/stress/review/trade/research/backup/panels），useAppRuntime 從 963 行降到 758 行；lint+hooks tests+fast-refresh+healthcheck 通過",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 13:19",
-      "isoTime": "2026-03-30T13:19:02+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "第三層完成：useAppRuntime 兩段 effect（收盤自我修復同步 / research 自動刷新）已抽成 usePostCloseSelfHealSync 與 useResearchAutoRefresh，小 hook 測試已補齊",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 13:15",
-      "isoTime": "2026-03-30T13:15:53+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "本地部署確認：vercel dev 已固定綁定 127.0.0.1:3002，healthcheck 全綠（Server/Frontend/API）",
-      "status": "idle"
     }
   ]
 }

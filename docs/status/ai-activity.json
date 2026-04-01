@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-31T11:11:42+08:00",
+  "lastUpdated": "2026-04-01T13:59:57+08:00",
   "current": "Qwen",
   "members": [
     {
@@ -8,8 +8,8 @@
       "avatar": "🧠",
       "status": "idle",
       "currentTask": "等待分配新任務",
-      "tasksCompleted": 36,
-      "lastActive": "2026-03-31 10:36",
+      "tasksCompleted": 37,
+      "lastActive": "2026-04-01 13:59",
       "statusSource": "manual",
       "activitySource": "~/.codex/session_index.jsonl"
     },
@@ -18,9 +18,9 @@
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
       "status": "working",
-      "currentTask": "Qwen：現在更新狀態文件，報告完成 70% 里程碑和 buildKnowledgeContext() 優化完成。",
+      "currentTask": "Qwen：現在需要在 usePortfolioDerivedData.js 中接入 FinMind 數據來充實 dossier。",
       "tasksCompleted": 12,
-      "lastActive": "2026-03-31 11:11",
+      "lastActive": "2026-04-01 13:59",
       "statusSource": "auto",
       "activitySource": "~/.qwen/projects/*/chats"
     },
@@ -28,10 +28,12 @@
       "name": "Gemini",
       "role": "公開資料蒐集",
       "avatar": "🔍",
-      "status": "idle",
-      "currentTask": "等待分配新任務",
+      "status": "working",
+      "currentTask": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)",
       "tasksCompleted": 5,
-      "lastActive": "2026-03-25 17:40"
+      "lastActive": "2026-04-01 13:12",
+      "statusSource": "auto",
+      "activitySource": "~/.gemini/usage-log.tsv"
     },
     {
       "name": "Claude",

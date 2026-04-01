@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-01 13:24
+Last updated: 2026-04-01 13:59
 
 ## Objective
 
@@ -43,6 +43,7 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-04-01 13:59` Codex：P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。
 - `2026-04-01 13:24` Codex：完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。
   - P0 prompt 瘦身：新增 `src/lib/promptBudget.js`，`api/research.js` 與 `useDailyAnalysisWorkflow.js` 現在會對 holding summary 套 `3000` 字預算，超限時保留最大部位 5 檔；brain context 超過 `1500` 字時會退回 user rules + 最近 3 條 lessons
   - research API：不再把整個 strategy brain `JSON.stringify` 塞進 prompt，改成結構化摘要再走 budget；候選提案現在附 `evaluation` gate 結果，未過 gate 會標成 `blocked`

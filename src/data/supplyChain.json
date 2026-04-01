@@ -120,5 +120,241 @@
     "suppliers": ["台積電", "Arm", "EDA 工具商"],
     "lastUpdated": "2026-03",
     "coverageSource": "annual-report-2025"
+  },
+  "2308": {
+    "name": "台達電",
+    "sector": "Technology",
+    "industry": "電源供應器",
+    "upstream": [
+      {
+        "code": null,
+        "name": "Infineon",
+        "product": "晶片",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": null,
+        "name": "Texas Instruments",
+        "product": "晶片",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": null,
+        "name": "Nippon Chemi-Con",
+        "product": "電容",
+        "dependency": "low",
+        "substituteRisk": "low"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "NVIDIA",
+        "product": "AI 伺服器電源",
+        "dependency": "high",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "Dell",
+        "product": "伺服器電源",
+        "dependency": "medium",
+        "revenueShare": "~10%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["NVIDIA", "Dell", "HPE", "主要雲端服務供應商 (CSP)"],
+    "suppliers": ["Infineon", "Texas Instruments", "Nippon Chemi-Con"],
+    "lastUpdated": "2026-04",
+    "coverageSource": "gemini-research-2026-04-01"
+  },
+  "3017": {
+    "name": "奇鋐",
+    "sector": "Technology",
+    "industry": "散熱模組",
+    "upstream": [
+      {
+        "code": "5264",
+        "name": "高力",
+        "product": "散熱模組元件",
+        "dependency": "low",
+        "substituteRisk": "low"
+      },
+      {
+        "code": "2426",
+        "name": "健策",
+        "product": "均熱片",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": null,
+        "name": "Nidec",
+        "product": "風扇馬達",
+        "dependency": "low",
+        "substituteRisk": "low"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "NVIDIA",
+        "product": "3D VC 散熱",
+        "dependency": "high",
+        "revenueShare": "~20%",
+        "relationship": "customer"
+      },
+      {
+        "code": "3231",
+        "name": "廣達",
+        "product": "AI 伺服器 ODM",
+        "dependency": "medium",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["NVIDIA", "廣達", "緯創", "Dell", "HPE"],
+    "suppliers": ["高力", "健策", "Nidec"],
+    "lastUpdated": "2026-04",
+    "coverageSource": "gemini-research-2026-04-01"
+  },
+  "3231": {
+    "name": "緯創",
+    "sector": "Technology",
+    "industry": "AI 伺服器組裝",
+    "upstream": [
+      {
+        "code": null,
+        "name": "NVIDIA",
+        "product": "GPU",
+        "dependency": "high",
+        "substituteRisk": "low"
+      },
+      {
+        "code": null,
+        "name": "Intel",
+        "product": "CPU",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": "3017",
+        "name": "奇鋐",
+        "product": "散熱",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "NVIDIA",
+        "product": "DGX/HGX 主機板",
+        "dependency": "high",
+        "revenueShare": "~25%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "Microsoft",
+        "product": "雲端伺服器",
+        "dependency": "medium",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["NVIDIA", "Microsoft", "Meta", "Amazon Web Services"],
+    "suppliers": ["NVIDIA", "Intel", "AMD", "奇鋐"],
+    "lastUpdated": "2026-04",
+    "coverageSource": "gemini-research-2026-04-01"
+  },
+  "2313": {
+    "name": "華通",
+    "sector": "Technology",
+    "industry": "PCB",
+    "upstream": [
+      {
+        "code": "2258",
+        "name": "南亞",
+        "product": "銅箔基板",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": "6274",
+        "name": "台燿",
+        "product": "銅箔基板",
+        "dependency": "low",
+        "substituteRisk": "low"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "Apple",
+        "product": "手機 HDI 板",
+        "dependency": "high",
+        "revenueShare": "~30%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "SpaceX",
+        "product": "低軌衛星板",
+        "dependency": "medium",
+        "revenueShare": "~10%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["Apple", "SpaceX", "主要伺服器 ODM"],
+    "suppliers": ["南亞", "台燿"],
+    "lastUpdated": "2026-04",
+    "coverageSource": "gemini-research-2026-04-01"
+  },
+  "6274": {
+    "name": "台燿",
+    "sector": "Technology",
+    "industry": "銅箔基板",
+    "upstream": [
+      {
+        "code": "2258",
+        "name": "南亞",
+        "product": "銅箔",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      },
+      {
+        "code": null,
+        "name": "長春",
+        "product": "環氧樹脂",
+        "dependency": "low",
+        "substituteRisk": "low"
+      }
+    ],
+    "downstream": [
+      {
+        "code": "3231",
+        "name": "廣達",
+        "product": "AI 伺服器主機板",
+        "dependency": "high",
+        "revenueShare": "~20%",
+        "relationship": "customer"
+      },
+      {
+        "code": "3231",
+        "name": "緯創",
+        "product": "AI 伺服器主機板",
+        "dependency": "medium",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["廣達", "緯創", "Cisco"],
+    "suppliers": ["南亞", "長春"],
+    "lastUpdated": "2026-04",
+    "coverageSource": "gemini-research-2026-04-01"
   }
 }

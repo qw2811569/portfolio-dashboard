@@ -42,6 +42,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-01 21:58` Qwen：新一輪任務 M/N 完成：(M) SupplyChainView.jsx 供應鏈視覺化元件；(N) GeminiResearchBrowser.jsx + /api/gemini-research API。驗證：git commit 49b561d。
+
 - `2026-04-01 21:55` Qwen：新一輪任務 K/L 完成：(K) event-calendar.test.js 已建立；(L) buildFinMindChipContext 加入資產負債表/現金流量表摘要。驗證：git commit 5d1eedb。
 
 - `2026-04-01 21:40` Qwen：新一輪任務 H/I/J 完成：(H) 外資持股比率已存在；(I) HoldingsTable.jsx 加入主題 chips；(J) DailyReportPanel.jsx console.log → console.debug。驗證：git commit 02fd601。

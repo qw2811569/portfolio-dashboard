@@ -126,12 +126,15 @@ function buildCompactFinMindSummary(finmind) {
     const totalLiabilities = latest?.totalLiabilities != null ? Number(latest.totalLiabilities) : null
     const shareholderEquity = latest?.shareholderEquity != null ? Number(latest.shareholderEquity) : null
     const debtRatio = latest?.debtRatio != null ? Number(latest.debtRatio) : null
-    
+
     if (totalAssets != null || debtRatio != null) {
       const assetsStr = totalAssets != null ? `總資產${Math.round(totalAssets)}M` : ''
+      const liabilitiesStr = totalLiabilities != null ? `總負債${Math.round(totalLiabilities)}M` : ''
       const debtStr = debtRatio != null ? `負債比${debtRatio.toFixed(1)}%` : ''
       const equityStr = shareholderEquity != null ? `股東權益${Math.round(shareholderEquity)}M` : ''
-      lines.push(`  資產負債：${[assetsStr, debtStr, equityStr].filter(Boolean).join(', ')}`)
+      parts.push(
+        `資產負債 ${[assetsStr, liabilitiesStr, debtStr, equityStr].filter(Boolean).join(', ')}`
+      )
     }
   }
 
@@ -141,12 +144,12 @@ function buildCompactFinMindSummary(finmind) {
     const operatingCF = latest?.operatingCF != null ? Number(latest.operatingCF) : null
     const investingCF = latest?.investingCF != null ? Number(latest.investingCF) : null
     const financingCF = latest?.financingCF != null ? Number(latest.financingCF) : null
-    
+
     if (operatingCF != null || investingCF != null) {
       const operatingStr = operatingCF != null ? `營業${Math.round(operatingCF)}M` : ''
       const investingStr = investingCF != null ? `投資${Math.round(investingCF)}M` : ''
       const financingStr = financingCF != null ? `籌資${Math.round(financingCF)}M` : ''
-      lines.push(`  現金流：${[operatingStr, investingStr, financingStr].filter(Boolean).join(', ')}`)
+      parts.push(`現金流 ${[operatingStr, investingStr, financingStr].filter(Boolean).join(', ')}`)
     }
   }
 

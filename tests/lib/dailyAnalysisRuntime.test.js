@@ -8,6 +8,8 @@ import {
   buildDailyReport,
   buildPreviousPredictionReviewBlock,
   calculatePredictionScores,
+  extractDailyBrainUpdate,
+  extractDailyEventAssessments,
   stripDailyAnalysisEmbeddedBlocks,
 } from '../../src/lib/dailyAnalysisRuntime.js'
 
@@ -168,6 +170,8 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(analysisRequest.userPrompt).toContain('<portfolio_holdings>')
     expect(analysisRequest.userPrompt).toContain('A 級優先處理只選 1-3 檔')
     expect(analysisRequest.userPrompt).toContain('不要在每檔持股重複改寫整段供應鏈')
+    expect(extractDailyEventAssessments(insight)).toEqual([])
+    expect(extractDailyBrainUpdate(insight)).toEqual({})
     expect(stripDailyAnalysisEmbeddedBlocks(insight)).toBe('## 今日總結\nOK')
     expect(report).toMatchObject({
       date: '2026/03/28',

@@ -15,8 +15,11 @@ import {
   buildMarketContextFromIndexData,
   buildPreviousPredictionReviewBlock,
   calculatePredictionScores,
+  extractDailyBrainUpdate,
+  extractDailyEventAssessments,
   stripDailyAnalysisEmbeddedBlocks,
 } from '../lib/dailyAnalysisRuntime.js'
+import { readEventStream } from '../lib/eventStream.js'
 import {
   buildBudgetedBrainContext,
   buildBudgetedCoverageContext,
@@ -24,6 +27,41 @@ import {
   formatRecentLessons,
 } from '../lib/promptBudget.js'
 import { normalizeAnalysisHistoryEntries, normalizeDailyReportEntry } from '../lib/reportUtils.js'
+
+async function consumeStreamingAnalyzeResponse(response, { onDelta = () => {}, onMeta = () => {} } = {}) {
+  let fullText = ''
+
+  await readEventStream(response, {
+    onEvent: async (event, payload) => {
+      if (event === 'meta') {
+        onMeta(payload)
+        return
+      }
+
+      if (event === 'delta') {
+        const text = String(payload?.text || '')
+        if (!text) return
+        fullText += text
+        onDelta(fullText, text)
+        return
+      }
+
+      if (event === 'done') {
+        const text = String(payload?.text || '')
+        if (text && text.length >= fullText.length) {
+          fullText = text
+        }
+        return
+      }
+
+      if (event === 'error') {
+        throw new Error(payload?.detail || payload?.error || 'AI 串流分析失敗')
+      }
+    },
+  })
+
+  return fullText || null
+}
 
 export function useDailyAnalysisWorkflow({
   analyzing = false,
@@ -336,7 +374,19 @@ ${losers
         const historicalEvents = (newsEvents || defaultNewsEvents).filter(isClosedEvent)
         const hits = historicalEvents.filter((event) => event.correct === true).length
         const total = historicalEvents.filter((event) => event.correct !== null).length
-        const analysisResponse = await fetch('/api/analyze', {
+        const streamPreviewBase = {
+          id: Date.now(),
+          date: today,
+          time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
+          totalTodayPnl,
+          changes,
+          anomalies,
+          eventCorrelations,
+          needsReview,
+          blindPredictions,
+          injectedKnowledgeIds,
+        }
+        const analysisResponse = await fetch('/api/analyze?stream=1', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(
@@ -358,62 +408,73 @@ ${losers
             })
           ),
         })
-        let analysisData
-        try {
-          analysisData = await analysisResponse.json()
-        } catch {
-          const text = await analysisResponse
-            .clone()
-            .text()
-            .catch(() => '')
-          throw new Error(
-            text.includes('TIMEOUT')
-              ? 'AI 分析逾時，請稍後再試（Vercel function timeout）'
-              : `AI 回應格式錯誤：${text.slice(0, 80)}`
-          )
+        const isStreamingResponse =
+          analysisResponse.ok &&
+          analysisResponse.headers.get('content-type')?.includes('text/event-stream') &&
+          analysisResponse.body
+
+        let rawInsight = null
+        if (isStreamingResponse) {
+          setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
+          rawInsight = await consumeStreamingAnalyzeResponse(analysisResponse, {
+            onMeta: () => {
+              setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
+            },
+            onDelta: (fullText) => {
+              setDailyReport(
+                normalizeDailyReportEntry({
+                  ...streamPreviewBase,
+                  aiInsight: stripDailyAnalysisEmbeddedBlocks(fullText),
+                  aiError: null,
+                  eventAssessments: [],
+                  brainAudit: null,
+                })
+              )
+            },
+          })
+          setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiPostProcess)
+        } else {
+          let analysisData
+          try {
+            analysisData = await analysisResponse.json()
+          } catch {
+            const text = await analysisResponse
+              .clone()
+              .text()
+              .catch(() => '')
+            throw new Error(
+              text.includes('TIMEOUT')
+                ? 'AI 分析逾時，請稍後再試（Vercel function timeout）'
+                : `AI 回應格式錯誤：${text.slice(0, 80)}`
+            )
+          }
+          if (!analysisResponse.ok) {
+            throw new Error(
+              analysisData?.detail ||
+                analysisData?.error ||
+                `AI 分析失敗 (${analysisResponse.status})`
+            )
+          }
+          rawInsight = analysisData.content?.[0]?.text || null
         }
-        if (!analysisResponse.ok) {
-          throw new Error(
-            analysisData?.detail ||
-              analysisData?.error ||
-              `AI 分析失敗 (${analysisResponse.status})`
-          )
-        }
-        const rawInsight = analysisData.content?.[0]?.text || null
+
         if (!rawInsight) {
           aiError = 'AI 有回應，但沒有產出可顯示的文字內容'
         } else {
           const displayText = rawInsight
-          const eventMatch = displayText.match(
-            /## 📋 EVENT_ASSESSMENTS[\s\S]*?```json\s*([\s\S]*?)```/
-          )
-          if (eventMatch) {
-            try {
-              const assessments = JSON.parse(eventMatch[1].trim())
-              if (Array.isArray(assessments)) eventAssessments = assessments
-            } catch (parseError) {
-              console.warn('事件評估 JSON 解析失敗:', parseError)
-            }
-          }
+          eventAssessments = extractDailyEventAssessments(displayText)
 
-          const brainMatch = displayText.match(/## 🧬 BRAIN_UPDATE[\s\S]*?```json\s*([\s\S]*?)```/)
-          if (brainMatch) {
-            try {
-              const brainJson = JSON.parse(brainMatch[1].trim())
-              if (brainJson && typeof brainJson === 'object' && brainJson.rules) {
-                brainAudit = ensureBrainAuditCoverage(brainJson, strategyBrain)
-                brainAudit = enforceTaiwanHardGatesOnBrainAudit(brainAudit, strategyBrain, {
-                  dossiers: analysisDossiers,
-                  defaultLastValidatedAt: today,
-                })
-                const newBrain = mergeBrainWithAuditLifecycle(brainJson, strategyBrain, brainAudit)
-                finalBrainForValidation = newBrain
-                setStrategyBrain(newBrain)
-                brainUpdatedInline = true
-              }
-            } catch (parseError) {
-              console.warn('大腦更新 JSON 解析失敗:', parseError)
-            }
+          const brainJson = extractDailyBrainUpdate(displayText)
+          if (brainJson?.rules) {
+            brainAudit = ensureBrainAuditCoverage(brainJson, strategyBrain)
+            brainAudit = enforceTaiwanHardGatesOnBrainAudit(brainAudit, strategyBrain, {
+              dossiers: analysisDossiers,
+              defaultLastValidatedAt: today,
+            })
+            const newBrain = mergeBrainWithAuditLifecycle(brainJson, strategyBrain, brainAudit)
+            finalBrainForValidation = newBrain
+            setStrategyBrain(newBrain)
+            brainUpdatedInline = true
           }
 
           aiInsight = stripDailyAnalysisEmbeddedBlocks(displayText)

@@ -101,6 +101,8 @@ export const APP_STATUS_MESSAGES = {
   dailyLoadingMarketCache: '讀取收盤價快取...',
   dailyBlindPrediction: '盲測預測中（不含今日漲跌）...',
   dailyAiAnalysis: 'AI 策略分析中（約15-30秒）...',
+  dailyAiStreaming: 'AI 串流輸出中（應在 5-10 秒內看到首段）...',
+  dailyAiPostProcess: '整理事件與策略附錄中...',
   stressTesting: '風險壓力測試中...',
   stressTestNoResult: '壓力測試無結果',
   stressTestFailed(detail = '') {

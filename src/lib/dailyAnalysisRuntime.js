@@ -529,3 +529,30 @@ export function stripDailyAnalysisEmbeddedBlocks(displayText = '') {
     .replace(/## 🧬 BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/g, '')
     .trim()
 }
+
+function extractEmbeddedJsonBlock(displayText = '', pattern) {
+  const match = String(displayText || '').match(pattern)
+  if (!match) return null
+
+  try {
+    return JSON.parse(match[1].trim())
+  } catch {
+    return null
+  }
+}
+
+export function extractDailyEventAssessments(displayText = '') {
+  const parsed = extractEmbeddedJsonBlock(
+    displayText,
+    /## 📋 EVENT_ASSESSMENTS[\s\S]*?```json\s*([\s\S]*?)```/
+  )
+  return Array.isArray(parsed) ? parsed : []
+}
+
+export function extractDailyBrainUpdate(displayText = '') {
+  const parsed = extractEmbeddedJsonBlock(
+    displayText,
+    /## 🧬 BRAIN_UPDATE[\s\S]*?```json\s*([\s\S]*?)```/
+  )
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null
+}

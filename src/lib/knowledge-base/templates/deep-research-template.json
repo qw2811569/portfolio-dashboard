@@ -1,0 +1,121 @@
+{
+  "name": "深度研究模板",
+  "version": "1.0.0",
+  "description": "依循 Claude 建議的深度研究模板 - 邏輯、數據、時間點",
+  "templates": {
+    "singleStock": {
+      "name": "單股深度研究",
+      "description": "針對單一標的深度分析",
+      "sections": [
+        {
+          "name": "核心結論",
+          "description": "先講結論與信心度",
+          "structure": {
+            "conclusion": "一句話結論",
+            "confidence": "信心分數 (0.5-1.0)",
+            "timeframe": "適用時間範圍"
+          }
+        },
+        {
+          "name": "多頭邏輯",
+          "description": "2-4 點",
+          "minItems": 2,
+          "maxItems": 4,
+          "example": [
+            "產業趨勢向上，AI 伺服器需求強勁",
+            "公司技術領先，市占率持續提升",
+            "財報優於預期，EPS 年增 30%"
+          ]
+        },
+        {
+          "name": "風險與失敗條件",
+          "description": "2-4 點",
+          "minItems": 2,
+          "maxItems": 4,
+          "example": [
+            "地緣政治風險，中國營收佔比過高",
+            "競爭對手追趕，毛利率可能受壓",
+            "庫存水位上升，需觀察去化速度"
+          ]
+        },
+        {
+          "name": "時間軸",
+          "description": "未來 1 週/1 個月/1 季",
+          "structure": {
+            "week": "未來 1 週觀察重點",
+            "month": "未來 1 個月催化劑",
+            "quarter": "未來 1 季大事件"
+          }
+        },
+        {
+          "name": "操作計畫",
+          "description": "進場區、加減碼條件、停損",
+          "structure": {
+            "entryZone": "進場區間",
+            "addPosition": "加碼條件",
+            "reducePosition": "減碼條件",
+            "stopLoss": "停損條件",
+            "trackingIndicators": "追蹤指標"
+          }
+        },
+        {
+          "name": "是否回寫策略大腦",
+          "description": "新規則、新教訓、要刪的舊規則",
+          "structure": {
+            "newRules": "新規則建議",
+            "lessons": "新教訓",
+            "rulesToRemove": "要刪除的舊規則"
+          }
+        }
+      ]
+    },
+    "portfolio": {
+      "name": "全組合研究",
+      "description": "針對整個投資組合的分析",
+      "sections": [
+        {
+          "name": "哪些部位最需要立即動作",
+          "description": "優先處理的部位",
+          "maxItems": 5
+        },
+        {
+          "name": "資金配置是否失衡",
+          "description": "產業集中度、單一持股佔比",
+          "metrics": ["產業集中度", "前三大持股佔比", "現金水位"]
+        },
+        {
+          "name": "哪些策略規則已過時",
+          "description": "需要更新的規則"
+        },
+        {
+          "name": "哪些錯誤在反覆發生",
+          "description": "需要避免的錯誤模式"
+        },
+        {
+          "name": "下週最該執行的 5 個動作",
+          "description": "具體行動清單",
+          "maxItems": 5
+        }
+      ]
+    }
+  },
+  "rules": [
+    "✅ 邏輯、數據、時間點三者缺一不可",
+    "✅ 每個判斷都要有數據支撐",
+    "✅ 催化劑必須有明確時間點",
+    "✅ 風險分析要具體，不能空泛",
+    "❌ 不要只寫情緒化看法",
+    "❌ 沒有資料就明說缺資料"
+  ],
+  "outputFormat": {
+    "type": "singleStock | portfolio",
+    "date": "YYYY-MM-DD",
+    "stock": "股票代碼（單股研究）",
+    "conclusion": {},
+    "bullCase": [],
+    "risks": [],
+    "timeline": {},
+    "actionPlan": {},
+    "brainUpdate": {}
+  }
+}

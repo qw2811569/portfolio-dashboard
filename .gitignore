@@ -7,3 +7,6 @@ dist/
 .env*.local
 /data/
 blob-backup/
+
+# BlamePrompt staging (auto-generated)
+.blameprompt/

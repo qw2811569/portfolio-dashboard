@@ -35,7 +35,8 @@ export function buildLivePortfolioSnapshot({
 }
 
 export function resolveRuntimeNewsEvents(newsEvents, fallbackEvents = []) {
-  return newsEvents || fallbackEvents
+  if (Array.isArray(newsEvents) && newsEvents.length > 0) return newsEvents
+  return fallbackEvents
 }
 
 export function filterEventsByType({

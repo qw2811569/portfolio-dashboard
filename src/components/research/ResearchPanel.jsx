@@ -31,7 +31,7 @@ export function ResearchHeader({
       'div',
       { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
       '借鑒 Karpathy autoresearch：AI 不只研究個股，更能審視你的整個投資系統 — ',
-      '決策品質、認知盲點、情緒模式、策略一致性 — 並自動進化策略大腦。'
+      '決策品質、認知盲點、情緒模式、策略一致性 — 並產出候選策略提案。'
     ),
     h(
       'div',
@@ -55,7 +55,7 @@ export function ResearchHeader({
             color: researching ? C.textMute : C.onFill,
           },
         },
-        researching ? '全組合研究 + 系統進化中...' : '🧬 全組合研究 + 系統進化'
+        researching ? '全組合研究 + 提案生成中...' : '🧬 全組合研究 + 進化提案'
       ),
       h(
         Button,
@@ -272,14 +272,14 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
         },
       },
       researchTarget === 'EVOLVE'
-        ? 'AI 正在審視你的投資系統並自我進化...'
+        ? 'AI 正在審視你的投資系統並產出候選提案...'
         : `AI 正在進行${researchTarget === 'PORTFOLIO' ? '全組合' : '個股'}深度研究...`
     ),
     h(
       'div',
       { style: { fontSize: 10, color: C.textMute } },
       researchTarget === 'EVOLVE'
-        ? '3 輪迭代：系統診斷 → 進化建議 → 策略大腦更新，預計 1-2 分鐘'
+        ? '3 輪迭代：系統診斷 → 進化建議 → 候選策略提案，預計 1-2 分鐘'
         : researchTarget === 'PORTFOLIO'
           ? `逐一分析 ${holdings?.length || 0} 檔持股 + 組合策略，預計 1-2 分鐘`
           : '3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒'

@@ -1,7 +1,7 @@
 {
   "name": "台股投資知識庫",
-  "version": "2.0.0",
-  "lastUpdated": "2026-03-31T12:00:00+08:00",
+  "version": "2.1.1",
+  "lastUpdated": "2026-03-31T17:00:00+08:00",
   "description": "股票分析知識庫 - 整合產業趨勢、消息連動、籌碼與技術分析",
   "categories": [
     {
@@ -53,6 +53,10 @@
     "progress": 1.0,
     "source": "Manual curation from existing docs + knowledge base enrichment",
     "migratedAt": "2026-03-29",
-    "lastImport": "2026-03-31"
+    "lastImport": "2026-03-31",
+    "qualityMetrics": {
+      "itemsWithConfidenceGte065": 599,
+      "qualityPercentage": 0.998
+    }
   }
 }

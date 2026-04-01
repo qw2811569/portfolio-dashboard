@@ -1,0 +1,314 @@
+{
+  "lastUpdated": "2026-03-31T03:11:42.000Z",
+  "project": {
+    "name": "台股投資決策工作台",
+    "version": "1.0.0",
+    "status": "active",
+    "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
+  },
+  "summary": {
+    "today": "今天新增 4 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "thisWeek": "本週主線維持主 runtime 收斂；最新已知綠燈基線 3 files / 10 tests",
+    "highlights": [
+      "✅ App.jsx 已收斂為 7 行薄入口",
+      "✅ 最新完整基線 3 files / 10 tests",
+      "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
+    ]
+  },
+  "phases": {
+    "phaseA": {
+      "name": "資料基礎建設",
+      "progress": 100,
+      "status": "completed",
+      "completedAt": "2026-03-28",
+      "description": "建立核心資料結構與持久化機制"
+    },
+    "phaseB": {
+      "name": "工作流升級",
+      "progress": 60,
+      "status": "in-progress",
+      "startedAt": "2026-03-28",
+      "description": "外部資源整合與工作流優化",
+      "tasks": [
+        {
+          "name": "外部資源整合設計",
+          "status": "done"
+        },
+        {
+          "name": "工作流優化",
+          "status": "doing",
+          "progress": 60
+        },
+        {
+          "name": "API 串接優化",
+          "status": "todo"
+        }
+      ]
+    },
+    "phaseC": {
+      "name": "晨間筆記功能",
+      "progress": 30,
+      "status": "in-progress",
+      "startedAt": "2026-03-29",
+      "description": "建立每日投資筆記工作流",
+      "tasks": [
+        {
+          "name": "筆記模板設計",
+          "status": "done"
+        },
+        {
+          "name": "每日自動生成",
+          "status": "doing",
+          "progress": 30
+        },
+        {
+          "name": "與策略大腦整合",
+          "status": "todo"
+        }
+      ]
+    }
+  },
+  "metrics": {
+    "appJsxLines": 7,
+    "appJsxLinesChange": 0,
+    "testFiles": 43,
+    "testCases": 10,
+    "totalDocs": 24,
+    "completedTasks": 24,
+    "inProgressTasks": 1
+  },
+  "health": {
+    "overall": "healthy",
+    "build": "passing",
+    "lint": "passing",
+    "tests": "passing",
+    "smoke": "passing"
+  },
+  "timeline": [
+    {
+      "time": "2026-03-31 10:36",
+      "ai": "Codex",
+      "title": "本地部署完成：vercel dev 已在 127.0.0.1:3002 啟動，healthcheck 與 UI smoke 全綠（API 可用、前端標記正常）。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-31 03:38",
+      "ai": "Codex",
+      "title": "優先任務再推進：新增 composeAppRuntimeHeaderInput，將 useAppRuntime 的 header wiring 再外移；workflow/header 組裝已雙收斂。驗證：eslint(2 files)+v…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-31 03:35",
+      "ai": "Codex",
+      "title": "優先任務續推：新增 composeAppRuntimeWorkflowInput，將 useAppRuntime 最大 workflow wiring 組裝外移 composer；useAppRuntime 降至 511 行。驗證：esl…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-31 03:27",
+      "ai": "Codex",
+      "title": "優先任務續推：新增 useAppRuntimeArgs（core/workflow args builder）並把 useAppRuntime 兩段大型參數牆外移；補 useAppRuntimeArgs 測試。驗證：lint+vitest…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-30 23:58",
+      "ai": "Codex",
+      "title": "優先任務續推：新增 useAppRuntimePortfolioDerivedData/useAppRuntimeHeaderProps，將衍生資料與 header props 組裝從 useAppRuntime 再拆一層；compose…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-30 23:20",
+      "ai": "Codex",
+      "title": "優先任務續推：useAppRuntime 兩段大型參數組裝改走 composeAppRuntimeCoreLifecycleArgs/composeAppRuntimeWorkflowsArgs；修正 refs lint 風險，新增 co…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-30 18:18",
+      "ai": "Codex",
+      "title": "優先任務持續完成：新增 useAppRuntimeHelperCatalog 抽出 core/workflow helper 契約，useAppRuntime 再瘦到 556 行；補 helper catalog 測試，lint/vite…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-03-30 18:15",
+      "ai": "Codex",
+      "title": "優先任務續推：把 useAppRuntimeCoreLifecycle/useAppRuntimeWorkflows 的 helper 參數收成 catalog bag，useAppRuntime 再降到 556 行；lint+vites…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    }
+  ],
+  "aiTeam": {
+    "current": "Qwen",
+    "members": [
+      {
+        "name": "Codex",
+        "role": "技術主導 / 最終裁決",
+        "avatar": "🧠",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 36,
+        "lastActive": "2026-03-31 10:36",
+        "statusSource": "manual",
+        "activitySource": "~/.codex/session_index.jsonl"
+      },
+      {
+        "name": "Qwen",
+        "role": "低風險實作 / 文件整理",
+        "avatar": "✍️",
+        "status": "working",
+        "currentTask": "Qwen：現在更新狀態文件，報告完成 70% 里程碑和 buildKnowledgeContext() 優化完成。",
+        "tasksCompleted": 12,
+        "lastActive": "2026-03-31 11:11",
+        "statusSource": "auto",
+        "activitySource": "~/.qwen/projects/*/chats"
+      },
+      {
+        "name": "Gemini",
+        "role": "公開資料蒐集",
+        "avatar": "🔍",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 5,
+        "lastActive": "2026-03-25 17:40"
+      },
+      {
+        "name": "Claude",
+        "role": "strategy brain second opinion",
+        "avatar": "🎯",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 7,
+        "lastActive": "2026-03-30 13:33",
+        "statusSource": "manual"
+      }
+    ]
+  },
+  "handover": {
+    "from": "Codex",
+    "time": "2026-03-31T10:36:00+08:00",
+    "message": "本地部署完成：vercel dev 已在 127.0.0.1:3002 啟動，healthcheck 與 UI smoke 全綠（API 可用、前端標記正常）。",
+    "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
+    "blockers": [],
+    "needsReview": false,
+    "optimizationSuggestions": [
+      "每次更新 docs/status/current-work.md 後執行 bash scripts/sync-state.sh",
+      "若需要重刷 build/lint/test 健康狀態，再執行 bash scripts/sync-state.sh --full"
+    ]
+  },
+  "nextMilestone": {
+    "name": "Phase B 完成",
+    "progress": 60,
+    "estimatedComplete": "2026-04-05",
+    "remainingTasks": 2
+  },
+  "generatedAt": "2026-03-31T03:11:42.920Z",
+  "sources": {
+    "canonicalStatus": "docs/status/current-work.md",
+    "canonicalAiActivity": "docs/status/ai-activity.json",
+    "generatedView": "docs-site/state.json",
+    "generator": "scripts/build-docs-state.mjs"
+  },
+  "liveActivity": [
+    {
+      "time": "2026-03-31 11:11",
+      "isoTime": "2026-03-31T11:11:42+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：現在更新狀態文件，報告完成 70% 里程碑和 buildKnowledgeContext() 優化完成。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 11:06",
+      "isoTime": "2026-03-31T11:06:26+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：更新索引後需要同步狀態到 current-work.md 並執行 sync-state.sh 來更新 docs-site。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 10:36",
+      "isoTime": "2026-03-31T10:36:00+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "超過活動視窗，已自動切回待命",
+      "status": "idle"
+    },
+    {
+      "time": "2026-03-31 10:36",
+      "isoTime": "2026-03-31T10:36:00+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "本地部署完成：vercel dev 已在 127.0.0.1:3002 啟動，healthcheck 與 UI smoke 全綠（API 可用、前端標記正常）。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-03-31 03:38",
+      "isoTime": "2026-03-31T03:38:36+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：更新 index.json 後，需要調用 sync-state.sh 同步狀態並記錄進度到 current-work.md。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 03:38",
+      "isoTime": "2026-03-31T03:38:20+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：用戶要求繼續填充知識庫，我應該繼續填充 news-correlation 或其他需要擴充的分類，目標是達到 350 條 (70%)。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 03:38",
+      "isoTime": "2026-03-31T03:38:20+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "優先任務再推進：新增 composeAppRuntimeHeaderInput，將 useAppRuntime 的 header wiring 再外移；workflow/header 組裝已雙收斂。驗證：eslint(2 files)+vitest(3 files/10 tests)+build+fast-refresh 全綠。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-03-31 03:35",
+      "isoTime": "2026-03-31T03:35:56+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：已完成 ca-021 閾值修正和 news-correlation 填充至 50 條，現在更新 current-work.md 記錄進度。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 03:35",
+      "isoTime": "2026-03-31T03:35:49+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：已修正 ca-021 閾值並填充 news-correlation 至 50 條，現在需要更新 index.json 並回報進度。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-03-31 03:35",
+      "isoTime": "2026-03-31T03:35:49+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "優先任務續推：新增 composeAppRuntimeWorkflowInput，將 useAppRuntime 最大 workflow wiring 組裝外移 composer；useAppRuntime 降至 511 行。驗證：eslint(2 files)+vitest(2 files/8 tests)+build+fast-refresh 全綠。",
+      "status": "idle"
+    }
+  ],
+  "trackingStack": {
+    "gitlensRecommended": true,
+    "blamepromptRecommended": true,
+    "blamepromptCliInstalled": true,
+    "aiStatusPipelineReady": true,
+    "launcherAutoReportReady": true,
+    "liveActivityMirrorReady": true
+  }
+}

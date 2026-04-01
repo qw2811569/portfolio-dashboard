@@ -14,6 +14,7 @@ import {
 } from '../../src/constants.js'
 import { useBrainStore } from '../../src/stores/brainStore.js'
 import { PortfolioLayout } from '../../src/pages/PortfolioLayout.jsx'
+import { EventsPage } from '../../src/pages/EventsPage.jsx'
 import { HoldingsPage } from '../../src/pages/HoldingsPage.jsx'
 import { WatchlistPage } from '../../src/pages/WatchlistPage.jsx'
 import { usePortfolioRouteContext } from '../../src/pages/usePortfolioRouteContext.js'
@@ -195,6 +196,77 @@ describe('routes/PortfolioLayout', () => {
 
       expect(await screen.findByText('焦點觀察')).toBeInTheDocument()
       expect(screen.getByText('聯發科 2454')).toBeInTheDocument()
+    },
+    ROUTE_LAYOUT_TIMEOUT
+  )
+
+  it(
+    'falls back to seed calendar events when stored news events are empty',
+    async () => {
+      const storage = createSeedStorage()
+      storage[`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`] = []
+      installStorage(storage)
+
+      render(
+        <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/events`]}>
+          <Routes>
+            <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
+              <Route path="events" element={<EventsPage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      )
+
+      expect(await screen.findByText('台燿 Q4財報法說會')).toBeInTheDocument()
+    },
+    ROUTE_LAYOUT_TIMEOUT
+  )
+
+  it(
+    'syncs close prices from TWSE when route header refresh is clicked',
+    async () => {
+      const storage = createSeedStorage()
+      delete storage[MARKET_PRICE_CACHE_KEY]
+      delete storage[MARKET_PRICE_SYNC_KEY]
+      installStorage(storage)
+
+      globalThis.fetch = vi.fn(async (input) => {
+        const url = String(input)
+        if (url.includes('/api/twse')) {
+          return {
+            ok: true,
+            json: async () => ({
+              msgArray: [
+                { c: '2330', d: '20260331', z: '960', y: '950' },
+                { c: '2454', d: '20260331', z: '1260', y: '1250' },
+              ],
+            }),
+          }
+        }
+        throw new Error(`unexpected fetch: ${url}`)
+      })
+
+      render(
+        <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/holdings`]}>
+          <Routes>
+            <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
+              <Route path="holdings" element={<HoldingsPage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: /收盤價/ }))
+
+      await waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalled()
+        expect(screen.getByText(/已同步/)).toBeInTheDocument()
+      })
+
+      const persistedCache = JSON.parse(localStorage.getItem(MARKET_PRICE_CACHE_KEY))
+      const persistedSync = JSON.parse(localStorage.getItem(MARKET_PRICE_SYNC_KEY))
+      expect(persistedCache.prices['2330'].price).toBe(960)
+      expect(persistedSync.status).toBe('success')
     },
     ROUTE_LAYOUT_TIMEOUT
   )

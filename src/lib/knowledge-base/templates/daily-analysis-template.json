@@ -1,0 +1,70 @@
+{
+  "name": "收盤分析模板",
+  "version": "1.0.0",
+  "description": "依循 Claude 建議的收盤分析模板 - 短、準、可行動",
+  "template": {
+    "structure": {
+      "fact": "事實層 - 數據、收盤價、成交量、法人買賣超",
+      "interpretation": "解讀層 - 量價背離、題材延續、財報預期變化",
+      "action": "動作層 - 續抱/減碼/停損觀察點"
+    },
+    "sections": [
+      {
+        "name": "今日總結",
+        "description": "組合整體表現一句話",
+        "maxLength": 50,
+        "example": "今日大盤上漲 0.5%，持股漲多跌少，投組增值 1.2%。"
+      },
+      {
+        "name": "異常持股",
+        "description": "只列最重要的 1-3 檔",
+        "maxItems": 3,
+        "structure": {
+          "stock": "股票代碼與名稱",
+          "fact": "事實（今日收盤、成交量、法人買賣超）",
+          "interpretation": "解讀（量價關係、題材狀態）",
+          "action": "動作（續抱/減碼/停損觀察點）"
+        },
+        "example": {
+          "stock": "2330 台積電",
+          "fact": "收盤 580 元 (+2%)，量增 30%，外資買超 5000 張",
+          "interpretation": "AI 題材延續，量價齊揚，外資持續加碼",
+          "action": "續抱，觀察 600 元壓力位"
+        }
+      },
+      {
+        "name": "事件追蹤",
+        "description": "哪些事件與股價反應一致/不一致",
+        "items": [
+          {
+            "event": "事件描述",
+            "expectation": "預期反應",
+            "actual": "實際反應",
+            "conclusion": "一致/不一致，原因"
+          }
+        ]
+      },
+      {
+        "name": "明日優先觀察",
+        "description": "最多 3 點",
+        "maxItems": 3,
+        "example": ["台積電 600 元壓力位突破與否", "投信作帳行情是否延續", "美國 CPI 數據公布"]
+      }
+    ],
+    "rules": [
+      "✅ 短、準、可行動",
+      "✅ 只列 1-3 檔異常持股",
+      "✅ 每檔都要有「事實 + 解讀 + 動作」",
+      "❌ 不要把所有持股都重寫成長報告",
+      "❌ 不要為了完整而塞太多產業背景",
+      "❌ 不要在沒有新資料時重複昨天的結論"
+    ]
+  },
+  "outputFormat": {
+    "date": "YYYY-MM-DD",
+    "summary": "一句話總結",
+    "abnormalStocks": [],
+    "eventTracking": [],
+    "nextDayObservations": []
+  }
+}

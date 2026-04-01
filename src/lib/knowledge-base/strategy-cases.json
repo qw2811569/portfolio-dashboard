@@ -203,7 +203,7 @@
       "title": "均線糾結突破 - 成功案例",
       "fact": "5/10/20MA 糾結後，股價帶量突破",
       "interpretation": "均線糾結後選擇方向，力道強",
-      "action": "帶量突破時買進，停損設在糾結區下緣",
+      "action": "突破日量增>50% 時進場 50%，回測不破時加碼 50%，停損設糾結區下緣 -3%",
       "outcome": "success",
       "return": 0.2,
       "tags": ["均線", "突破", "量價", "成功案例"],
@@ -1566,7 +1566,7 @@
   ],
   "metadata": {
     "itemCount": 120,
-    "lastUpdated": "2026-03-31T16:17:43.187Z",
+    "lastUpdated": "2026-03-31T17:00:00+08:00",
     "targetCount": 120,
     "successCases": 71,
     "failureCases": 49,

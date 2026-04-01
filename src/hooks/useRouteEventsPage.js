@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+import { NEWS_EVENTS } from '../seedData.js'
+import { filterEventsByType } from '../lib/appShellRuntime.js'
 
 export function useRouteEventsPage() {
   const { newsEvents = [] } = usePortfolioRouteContext()
@@ -9,9 +11,11 @@ export function useRouteEventsPage() {
   const [filterType, setFilterType] = useState('全部')
 
   return useMemo(() => {
-    const filteredEvents = newsEvents.filter((event) =>
-      filterType === '全部' ? true : event.type === filterType
-    )
+    const filteredEvents = filterEventsByType({
+      newsEvents,
+      fallbackEvents: NEWS_EVENTS,
+      filterType,
+    })
 
     return {
       showRelayPlan: true,

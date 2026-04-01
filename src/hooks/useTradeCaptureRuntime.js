@@ -6,6 +6,7 @@ import {
   getTradeBatchMode,
   normalizeTradeParseResult,
 } from '../lib/tradeParseUtils.js'
+import { extractTradeParseJsonText } from '../lib/tradeAiResponse.js'
 
 function createEmptyTradeEditorState(createDefaultFundamentalDraft) {
   return {
@@ -261,7 +262,7 @@ export function useTradeCaptureRuntime({
       const data = await response.json()
       if (!response.ok) throw new Error(data.detail || data.error || 'API 錯誤')
 
-      const clean = (data.content?.[0]?.text || '').replace(/```json|```/g, '').trim()
+      const clean = extractTradeParseJsonText(data.content?.[0]?.text || '')
       if (!clean) throw new Error('AI 未回傳可解析的內容')
 
       const normalized = normalizeTradeParseResult(
@@ -334,7 +335,6 @@ export function useTradeCaptureRuntime({
     })
 
     setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
-
     ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
       upsertTargetReport(update)
     })

@@ -121,6 +121,16 @@ describe('normalizeEventRecord catalyst fields', () => {
     expect(result.pillarImpact).toBeNull()
   })
 
+  it('fills label/sub from title/detail for legacy event cards', () => {
+    const result = normalizeEventRecord({
+      ...baseEvent,
+      title: '台積電3月營收公布',
+      detail: '關鍵觀察 3 月營收是否優於市場預期',
+    })
+    expect(result.label).toBe('台積電3月營收公布')
+    expect(result.sub).toBe('關鍵觀察 3 月營收是否優於市場預期')
+  })
+
   it('sets catalystType to null for unclassifiable events', () => {
     const result = normalizeEventRecord({ ...baseEvent, title: '今天天氣不錯' })
     expect(result.catalystType).toBeNull()

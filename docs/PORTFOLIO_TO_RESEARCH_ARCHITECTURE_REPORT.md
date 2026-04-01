@@ -1,6 +1,6 @@
 # 持倉到深度分析架構共識報告
 
-最後更新：2026-03-28  
+最後更新：2026-03-29  
 狀態：目前執行中版本的共識文件  
 適用對象：人類開發者、Codex、Claude、Qwen、Gemini 與其他接手 AI
 
@@ -26,9 +26,11 @@
 
 ---
 
-## 2. 目前真正的執行入口
+## 2. 先分清楚：現在真相與目標藍圖
 
-這一點很重要，因為現有文件裡有歷史版本殘影。
+這一點很重要，因為 repo 內還存在歷史文件與遷移中架構，若不先分清楚，很容易把「未來要走到哪裡」誤當成「今天已經如此」。
+
+### 2.1 現在真相（Current Truth）
 
 目前 runtime source of truth 是：
 
@@ -39,11 +41,13 @@
 
 - `src/main.jsx` 載入 `src/App.jsx`
 - `src/main.jsx` 現在只做 theme / runtime diagnostics boot，畫面級錯誤邊界不再包整個 App
-- `src/App.jsx` 仍是主 orchestrator，但現在更接近 runtime shell，負責狀態接線、使用者流程、AI 任務與頁面切換
+- `src/App.jsx` 現在是很薄的 runtime entry wrapper，主責是呼叫 `src/hooks/useAppRuntime.js` 並 render `src/components/AppShellFrame.jsx`
+- `src/hooks/useAppRuntime.js` 現在承接主 runtime 的狀態接線、workflow wiring、AI 任務與 shell props 組裝
 - `src/hooks/usePortfolioManagement.js` 管 portfolio switching / overview mode / registry 操作
 - `src/hooks/usePortfolioDerivedData.js` 管 holdings / watchlist / overview / refresh candidate 的衍生資料
 - `src/hooks/usePortfolioBootstrap.js` 管 app boot、active portfolio hydrate、owner portfolio 雲端冷啟同步
 - `src/hooks/usePortfolioPersistence.js` 管 localStorage persistence、雲端 debounce save、analysis/research 雲端回補
+- `src/hooks/usePortfolioSnapshotRuntime.js` 管 active snapshot 套用、portfolio flush / load，以及 live snapshot memo，讓 `App.jsx` 不再自己養這批 runtime 組裝 callback
 - `src/hooks/usePortfolioDossierActions.js` 管 target / fundamentals / alert 的 canonical state mutation
 - `src/hooks/useReportRefreshWorkflow.js` 管 analyst report refresh、structured research extract 回寫與相關 UI status
 - `src/hooks/useLocalBackupWorkflow.js` 管本機備份匯出 / 匯入
@@ -53,10 +57,15 @@
 - `src/hooks/useWatchlistActions.js` 管 watchlist upsert / delete 的 canonical normalize 邊界
 - `src/hooks/useTransientUiActions.js` 管 review cancel 與 reversal update 這類薄 UI actions
 - `src/hooks/useSavedToast.js` 管 app-level saved toast、timer cleanup 與 shared `flashSaved()` 邊界
+- `src/hooks/useAppRuntime.js` 管主 runtime 的頂層 state、refs、workflow wiring 與 shell props 組裝
 - `src/hooks/useAppShellUiState.js` 管 `tab / scan / relay / review / research selection` 這批純 UI transient state
 - `src/hooks/useCanonicalLocalhostRedirect.js` 管 `localhost -> 127.0.0.1` canonical redirect，讓主 runtime 不再自己養 redirect effect
+- `src/hooks/useAppRuntimeComposer.js` 管 boot/runtime wiring 的大型 hook args object 組裝，讓 `App.jsx` 不再直接攤開 `useMarketData / usePortfolioBootstrap / usePortfolioPersistence / useEventLifecycleSync` 這批參數包
+- `src/hooks/usePortfolioPanelsContextComposer.js` 管 `AppPanels` 需要的 data/actions slices 組裝，讓 `App.jsx` 不再自己組 `overviewProps / holdingsProps / dailyProps / ...`
 - `src/hooks/useAppRuntimeSyncRefs.js` 管 `activePortfolioId / viewMode / portfolios / bootRuntime` 這批 app runtime refs 的同步邊界
+- `src/hooks/useAppCallbackRefs.js` 管 `refreshAnalystReportsRef / resetTradeCaptureRef` 這批晚期 callback ref 的同步邊界，讓 `App.jsx` 不再自己養這兩段 `useEffect`
 - `src/components/AppPanels.jsx` 管 tab panel registry 與 panel-scoped `ErrorBoundary` render，讓 `App.jsx` 不再自己展開每一段 panel skeleton
+- `src/contexts/PortfolioPanelsContext.jsx` 管 panel-scope data/actions context，讓 `AppPanels` 改走 context，而不是繼續承接海量 props
 - `src/lib/appShellRuntime.js` 管 app-shell 級的 live snapshot 組裝、runtime events fallback 與 event filter helper
 - `src/hooks/useDailyAnalysisWorkflow.js` 管收盤分析的 async orchestration，讓 `App.jsx` 不再直接承擔整段 `runDailyAnalysis()`
 - `src/lib/brainRuntime.js` 管 strategy brain rule lifecycle、validation、audit normalization
@@ -65,16 +74,22 @@
 - `src/lib/datetime.js` 管 storage date、flexible date parsing、Taipei market clock 與共用日期格式化
 - `src/lib/market.js` 管 market cache normalize、post-close sync gate、persisted quotes 與 TWSE price extraction helper
 - `src/lib/portfolioUtils.js` 管 portfolio registry、backup import-export、localStorage key / fallback / migration helper
+- `applyTradeBackfillPatchesIfNeeded()` 已正式收斂進 `src/lib/portfolioUtils.js`，讓歷史成交修補不再留在 `src/App.jsx`
 - `src/lib/reportUtils.js` 管 daily report / analysis history / analyst report normalize 與 merge
 - `src/lib/reportRefreshRuntime.js` 管 analyst report batch merge、report refresh meta merge 與 structured extract plan shaping
 - `src/lib/dossierUtils.js` 管 holding dossier 組裝、台股 hard gate 與 daily/research prompt context builder
 - `src/lib/routeRuntime.js` 管 route shell 讀取 localStorage snapshot、overview summary 與 page-level runtime bridge
 - `src/hooks/useRoute*Page.js` 現在承接 route page 的 action assembly、navigation 與 page-local workflow state，讓 `src/pages/*` 盡量退回薄畫面容器
 - `src/App.jsx` 內部目前以 panel-scoped `ErrorBoundary` 包住 Header 與主要 tab panel，避免單一區塊錯誤直接吞掉整個工作台
-- `src/App.jsx` 目前已降到約 `1111` 行，主要保留狀態接線、hook 組裝與少量入口組裝
+- `src/App.jsx` 目前已降到約 `7` 行，主 runtime wiring 已移到 `src/hooks/useAppRuntime.js`
+- `src/hooks/useAppRuntime.js` 目前約 `928` 行，是新的 runtime wiring 主檔；後續若再瘦主線，優先往這個 hook 與其 composer / workflow hooks 下刀
 - `src/App.jsx` 與 route shell 的 `watchlist / reversal` action 現在已共用相同 hook，避免兩條入口寫出不同 shape 或遺漏 `updatedAt`
 - `src/App.jsx`、`usePortfolioManagement.js`、`usePortfolioPersistence.js` 與 `useRoutePortfolioRuntime.js` 的 saved toast 現在已共用 `notifySaved / flashSaved` 邊界，不再各自手刻 timer
 - `flushCurrentPortfolio()` 與 local backup export 現在已共用同一份 live snapshot builder，新增 persisted field 時不再需要同步維護兩份欄位清單
+- `useAppBootRuntimeComposer()`、`usePortfolioManagementComposer()`、`useAppLifecycleRuntimeComposer()` 現在已成為主 runtime 的參數組裝邊界；若要再拆 `App.jsx`，優先延伸這條 composer，而不是在主檔重長一包大型參數物件
+- `src/components/AppShellFrame.jsx` 現在負責 loading gate、Header boundary、AppPanels provider 與 confirm dialog render；`App.jsx` 已不再直接攤開這些 JSX
+- `AppPanels` 現在只剩 `viewMode / overviewViewMode / tab / errorBoundaryCopy` 這類薄 props；panel data 與 panel actions 已改由 panel-scope contexts 提供
+- `PortfolioPanelsContext` 是去耦邊界，不是新的全域 source of truth；當前狀態權威仍然是 `src/App.jsx` 與其 orchestration hooks
 - `App.jsx` 裡那批 `state -> ref` 同步 effect，現在已收斂到 `useAppRuntimeSyncRefs()`；未使用的 `canUseCloudRef` 也已移除
 - `src/App.routes.jsx` 存在，但不是目前瀏覽器載入的主入口
 - `src/App.routes.jsx` 已補上 route-local `QueryClientProvider`，讓 `Daily / Research` 這類 route hooks 可以在不依賴 `src/App.jsx` 的前提下運作
@@ -97,6 +112,41 @@
 - event / review 與 portfolio storage 純邏輯，現在優先落在 `src/lib/eventUtils.js`、`src/lib/portfolioUtils.js`
 - date / market cache 純邏輯，現在優先落在 `src/lib/datetime.js`、`src/lib/market.js`
 - 只有跨 tab orchestration、使用者流程、最終接線才優先進 `src/App.jsx`
+
+### 2.2 目標藍圖（Target Architecture）
+
+Phoenix 的目標仍然成立，但它是目標藍圖，不是今天已完成的事實。
+
+目標狀態是：
+
+- `src/main.jsx` 最終切到 render `src/App.routes.jsx`
+- route pages 真的能覆蓋主流程，而不是只覆蓋部分流程
+- `activePortfolioId / viewMode / tab` 這類共享狀態有單一權威
+- `runDailyAnalysis / runResearch / report refresh` 這類 server-state 逐步由更統一的 query/mutation 邊界接管
+- `Header` 與其他高階元件不再依賴超大 prop bag
+
+但今天還不能假設：
+
+- `src/App.routes.jsx` 已是主入口
+- Zustand 已經是全域 source of truth
+- TanStack Query 已經接手所有重要 async workflow
+- `src/pages/*` 已能無痛取代 `src/App.jsx`
+
+### 2.3 遷移順序（Migration Order）
+
+為了避免雙 runtime、雙資料權威、雙 async 模型同時膨脹，順序應固定為：
+
+1. 先明確文件真相：先分清楚 Current Truth 與 Target Architecture
+2. 再守住單一主線：bugfix 與核心功能先落在 shared module 或穩定主 runtime
+3. 再收共享狀態：先收 `activePortfolioId / viewMode / tab`
+4. 再收 server-state：從邊界最清楚的 API workflow 開始
+5. 最後才切主入口：只有當 route shell 真能覆蓋主流程，才切 `src/main.jsx`
+
+所以在今天這個時間點，最重要的實務規則是：
+
+- 不要因為 repo 裡已經有 route shell、stores、query hooks，就假設主線已完成遷移
+- 不要新增第三套權威狀態
+- 不要讓 route shell 和 `src/App.jsx` 再各長一份同樣的流程
 
 ---
 
@@ -632,6 +682,50 @@ npm run verify:local
 - `curl 200` 只代表 server 有回應
 - 不代表 React runtime 沒白頁
 - 白頁與 runtime error 要靠 `npm run smoke:ui` 或直接看瀏覽器 console
+
+### 11.1 這段規則為什麼是正確的
+
+目前本地完整模式鎖定 `vercel dev + http://127.0.0.1:3002`，不是口頭約定，而是由多處設定共同決定：
+
+- `vite.config.js` 將 dev server 鎖在 `host: 127.0.0.1`、`port: 3002`
+- `vercel.json` 將 `vercel dev` 的 dev port 鎖在 `3002`
+- `scripts/healthcheck.sh` 與 `scripts/ui-smoke.cjs` 都以 `http://127.0.0.1:3002` 為唯一驗證目標
+- `src/hooks/useCanonicalLocalhostRedirect.js` 會把 `localhost` 導回 `127.0.0.1`
+
+因此，對目前這個 repo 來說：
+
+- `vercel dev` 是完整本地模式
+- `npm run dev` / `vite` 只代表前端 dev server，不代表完整本地模式
+- `127.0.0.1:3002` 是唯一 canonical origin
+- `localhost:3002` 雖然有時候看似能打開頁面，但會造成 localStorage / sync state 分裂
+
+截至 2026-03-29，`npm run healthcheck` 已在這條規則下再次通過。
+
+### 11.2 為什麼其他 AI 可能會啟動失敗
+
+如果只有部分 AI 能成功跑起來，最常見原因不是這條規則錯，而是 repo 內仍有歷史文件殘影。
+
+先前最常見的誤導源包括：
+
+- 歷史文件曾經寫 `127.0.0.1:5173`
+- 舊測試草稿曾經寫 `npm run dev`
+- repo 與聊天紀錄裡曾殘留 `3000`、`5173`、`localhost`
+
+截至 2026-03-29，`docs/SERVER_ACCESS_GUIDE.md` 與 `docs/testing/FUNCTIONAL_TEST_REPORT.md` 都已改成過期入口，會導回 canonical guide。
+
+所以其他 AI 失敗，通常是落在以下幾類：
+
+1. 跑了 `npm run dev` 或 `vite`，只有前端起來，API 沒起來
+2. 開了 `localhost:3002` 或 `127.0.0.1:5173`，結果讀到不同 origin 或根本是舊流程
+3. 參考了舊文件，以為 `App.routes.jsx` 已是主入口
+4. 只檢查 `HTTP 200`，沒有再跑 `healthcheck` / `smoke:ui`
+
+對接手者最安全的做法是：
+
+1. 只看 `docs/AI_COLLABORATION_GUIDE.md`
+2. 啟動 `vercel dev`
+3. 只打 `http://127.0.0.1:3002`
+4. 跑 `npm run verify:local`
 
 ---
 

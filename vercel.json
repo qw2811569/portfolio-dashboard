@@ -1,5 +1,11 @@
 {
   "framework": "vite",
+  "crons": [
+    {
+      "path": "/api/cron/collect-daily-events",
+      "schedule": "0 0 * * 1-5"
+    }
+  ],
   "rewrites": [
     { "source": "/api/twse", "destination": "/api/twse" },
     { "source": "/api/:path*", "destination": "/api/:path*" }

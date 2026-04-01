@@ -1,6 +1,7 @@
 import {
   ACTIVE_PORTFOLIO_KEY,
   APPLIED_TRADE_PATCHES_KEY,
+  API_ENDPOINTS,
   BACKUP_GLOBAL_KEY_SET,
   CURRENT_SCHEMA_VERSION,
   DEFAULT_PORTFOLIO_NOTES,
@@ -13,10 +14,11 @@ import {
   PORTFOLIO_SUFFIX_TO_FIELD,
   PORTFOLIO_VIEW_MODE,
   SCHEMA_VERSION_KEY,
+  TRADE_BACKFILL_PATCHES,
   VIEW_MODE_KEY,
 } from '../constants.js'
 import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../seedData.js'
-import { buildHoldingPriceHints, normalizeHoldings } from './holdings.js'
+import { applyTradeEntryToHoldings, buildHoldingPriceHints, normalizeHoldings } from './holdings.js'
 import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'
 
@@ -99,6 +101,64 @@ export async function loadAppliedTradePatches() {
 
 export async function saveAppliedTradePatches(ids) {
   return save(APPLIED_TRADE_PATCHES_KEY, Array.from(new Set(ids || [])))
+}
+
+export async function applyTradeBackfillPatchesIfNeeded({ fetchImpl = globalThis.fetch } = {}) {
+  const applied = new Set(await loadAppliedTradePatches())
+  let changed = 0
+
+  for (const patch of TRADE_BACKFILL_PATCHES) {
+    if (applied.has(patch.id)) continue
+
+    const tradeLog = await loadPortfolioData(
+      patch.portfolioId,
+      PORTFOLIO_ALIAS_TO_SUFFIX.tradeLog,
+      []
+    )
+    if ((tradeLog || []).some((item) => item?.patchId === patch.id)) {
+      applied.add(patch.id)
+      continue
+    }
+
+    const holdings = await loadPortfolioData(
+      patch.portfolioId,
+      PORTFOLIO_ALIAS_TO_SUFFIX.holdings,
+      getPortfolioFallback(patch.portfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.holdings)
+    )
+    const existing = (holdings || []).find((item) => item.code === patch.entry.code)
+    const currentQty = Number(existing?.qty) || 0
+    const shouldAdjustHoldings =
+      patch.expectedQtyAfter == null || currentQty > patch.expectedQtyAfter
+
+    const nextHoldings = shouldAdjustHoldings
+      ? applyTradeEntryToHoldings(holdings, patch.entry, getPersistedMarketQuotes())
+      : holdings
+    const nextTradeLog = [patch.entry, ...(tradeLog || [])]
+
+    await savePortfolioData(patch.portfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.tradeLog, nextTradeLog)
+    await savePortfolioData(patch.portfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.holdings, nextHoldings)
+
+    if (patch.portfolioId === OWNER_PORTFOLIO_ID && typeof fetchImpl === 'function') {
+      try {
+        await fetchImpl(API_ENDPOINTS.BRAIN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save-holdings', data: nextHoldings }),
+        })
+      } catch {
+        // local copy is still enough; cloud can catch up later
+      }
+    }
+
+    applied.add(patch.id)
+    changed += 1
+  }
+
+  if (applied.size > 0) {
+    await saveAppliedTradePatches(Array.from(applied))
+  }
+
+  return changed
 }
 
 export function sanitizePortfolioField(suffix, data) {

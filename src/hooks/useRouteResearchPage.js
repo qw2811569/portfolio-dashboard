@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
 import { STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
-import { mergeBrainPreservingCoachLessons } from '../lib/brainRuntime.js'
 import {
   getHoldingReturnPct,
   getHoldingUnrealizedPnl,
@@ -25,7 +24,6 @@ export function useRouteResearchPage() {
     portfolioNotes = {},
     researchHistory = [],
     setResearchHistory = () => {},
-    setStrategyBrain = () => {},
     flashSaved = () => {},
   } = usePortfolioRouteContext()
 
@@ -94,10 +92,8 @@ export function useRouteResearchPage() {
     getHoldingReturnPct,
     setResearchResults,
     setResearchHistory,
-    setStrategyBrain,
     notifySaved: flashSaved,
     enrichResearchToDossier,
-    mergeBrainPreservingCoachLessons,
   })
 
   const refreshAnalystReports = useCallback(

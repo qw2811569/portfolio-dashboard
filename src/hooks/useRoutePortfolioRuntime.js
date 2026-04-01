@@ -4,18 +4,44 @@ import { useSavedToast } from './useSavedToast.js'
 import { useTransientUiActions } from './useTransientUiActions.js'
 import { useWatchlistActions } from './useWatchlistActions.js'
 import {
+  API_ENDPOINTS,
   buildPortfolioRoute,
   ACTIVE_PORTFOLIO_KEY,
+  MARKET_PRICE_CACHE_KEY,
+  MARKET_PRICE_SYNC_KEY,
   OWNER_PORTFOLIO_ID,
   OVERVIEW_VIEW_MODE,
+  PORTFOLIO_ALIAS_TO_SUFFIX,
   PORTFOLIOS_KEY,
   PORTFOLIO_STORAGE_FIELDS,
   PORTFOLIO_VIEW_MODE,
   VIEW_MODE_KEY,
 } from '../constants.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
-import { createDefaultReviewForm, normalizeNewsEvents, toSlashDate } from '../lib/eventUtils.js'
-import { applyTradeEntryToHoldings, normalizeHoldings } from '../lib/holdings.js'
+import {
+  createDefaultReviewForm,
+  getEventStockCodes,
+  normalizeNewsEvents,
+  toSlashDate,
+} from '../lib/eventUtils.js'
+import {
+  applyMarketQuotesToHoldings,
+  applyTradeEntryToHoldings,
+  normalizeHoldings,
+} from '../lib/holdings.js'
+import {
+  canRunPostClosePriceSync,
+  createEmptyMarketPriceCache,
+  extractBestPrice,
+  extractYesterday,
+  normalizeMarketPriceCache,
+  normalizeMarketPriceSync,
+} from '../lib/market.js'
+import {
+  buildTwseBatchQueries,
+  collectTrackedCodes as collectTrackedCodesFromPortfolios,
+  extractQuotesFromTwsePayload,
+} from '../lib/marketSyncRuntime.js'
 import { buildPortfolioTabs } from '../lib/navigationTabs.js'
 import {
   buildPortfolioSummariesFromStorage,
@@ -34,6 +60,7 @@ import {
   pfKey,
   save,
   savePortfolioData,
+  readStorageValue,
 } from '../lib/portfolioUtils.js'
 import {
   normalizeAnalysisHistoryEntries,
@@ -96,6 +123,54 @@ function createPortfolioDeleteState() {
     isOpen: false,
     targetId: null,
     submitting: false,
+  }
+}
+
+async function fetchRouteMarketQuotes(codes, timeoutMs = 8000) {
+  const normalizedCodes = buildTwseBatchQueries(codes).flat()
+  if (normalizedCodes.length === 0) {
+    return { quotes: {}, failedCodes: [], marketDate: null }
+  }
+
+  const quotes = {}
+  const failedCodes = new Set()
+  const observedMarketDates = new Set()
+  const batches = buildTwseBatchQueries(normalizedCodes)
+
+  await Promise.all(
+    batches.map(async (batch, batchIndex) => {
+      const queries = batch.flatMap((code) => [`tse_${code}.tw`, `otc_${code}.tw`])
+      const exCh = queries.join('|')
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+      try {
+        const response = await fetch(`${API_ENDPOINTS.TWSE}?ex_ch=${encodeURIComponent(exCh)}`, {
+          signal: controller.signal,
+        })
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.detail || data?.error || `TWSE 請求失敗 (${response.status})`)
+        }
+        const extracted = extractQuotesFromTwsePayload(data, {
+          extractBestPrice,
+          extractYesterday,
+        })
+        Object.assign(quotes, extracted.quotes)
+        if (extracted.marketDate) observedMarketDates.add(extracted.marketDate)
+      } catch (error) {
+        batch.forEach((code) => failedCodes.add(code))
+        console.warn(`路由收盤價同步批次 ${batchIndex + 1} 失敗:`, error)
+      } finally {
+        clearTimeout(timer)
+      }
+    })
+  )
+
+  return {
+    quotes,
+    failedCodes: Array.from(failedCodes).filter((code) => !quotes[code]),
+    marketDate: Array.from(observedMarketDates).sort().slice(-1)[0] || null,
   }
 }
 
@@ -362,12 +437,131 @@ export function useRoutePortfolioRuntime() {
     [setNewsEvents]
   )
 
-  const refreshPrices = useCallback(() => {
+  const collectTrackedCodes = useCallback(
+    () =>
+      collectTrackedCodesFromPortfolios({
+        portfolios,
+        currentActivePortfolioId: routePortfolioId,
+        currentViewMode: PORTFOLIO_VIEW_MODE,
+        liveState: {
+          holdings: routeData.holdings,
+          watchlist: routeData.watchlist,
+          newsEvents: routeData.newsEvents,
+        },
+        readStorageValue,
+        pfKey,
+        portfolioAliasToSuffix: PORTFOLIO_ALIAS_TO_SUFFIX,
+        getEventStockCodes,
+        portfolioViewMode: PORTFOLIO_VIEW_MODE,
+      }),
+    [portfolios, routePortfolioId, routeData.holdings, routeData.newsEvents, routeData.watchlist]
+  )
+
+  const persistMarketPriceState = useCallback(async (cache, syncMeta) => {
+    const normalizedCache = normalizeMarketPriceCache(cache)
+    const normalizedSync = normalizeMarketPriceSync(syncMeta)
+    await save(MARKET_PRICE_CACHE_KEY, normalizedCache)
+    await save(MARKET_PRICE_SYNC_KEY, normalizedSync)
+    setMarketPriceCache(normalizedCache)
+    setMarketPriceSync(normalizedSync)
+    const syncedAt = normalizedSync?.syncedAt || normalizedCache?.syncedAt
+    setLastUpdate(syncedAt ? new Date(syncedAt) : null)
+  }, [])
+
+  const refreshPrices = useCallback(async () => {
+    if (refreshing) return
+
     setRefreshing(true)
-    reloadRuntime()
-    setRefreshing(false)
-    flashSaved('✅ 已重讀本機收盤價快取')
-  }, [flashSaved, reloadRuntime])
+    try {
+      const cachedSync =
+        normalizeMarketPriceSync(readStorageValue(MARKET_PRICE_SYNC_KEY)) || marketPriceSync
+      const cachedPrice =
+        normalizeMarketPriceCache(readStorageValue(MARKET_PRICE_CACHE_KEY)) || marketPriceCache
+      const trackedCodes = collectTrackedCodes()
+      const gate = canRunPostClosePriceSync(new Date(), cachedSync)
+
+      if (trackedCodes.length === 0) {
+        flashSaved('⚠ 無可同步的持倉／觀察股／事件代碼')
+        reloadRuntime()
+        return
+      }
+
+      if (!gate.allowed && cachedPrice?.prices && Object.keys(cachedPrice.prices).length > 0) {
+        reloadRuntime()
+        flashSaved('✅ 已重讀本機收盤價快取')
+        return
+      }
+
+      const syncedAt = new Date().toISOString()
+      const {
+        quotes,
+        failedCodes,
+        marketDate: observedMarketDate,
+      } = await fetchRouteMarketQuotes(trackedCodes)
+      const resolvedMarketDate = observedMarketDate || gate.clock.marketDate
+
+      if (Object.keys(quotes).length === 0) {
+        const failedMeta = {
+          marketDate: resolvedMarketDate,
+          syncedAt,
+          status: 'failed',
+          codes: trackedCodes,
+          failedCodes,
+        }
+        await persistMarketPriceState(cachedPrice || createEmptyMarketPriceCache(), failedMeta)
+        reloadRuntime()
+        flashSaved('❌ 收盤價同步失敗，已保留既有快取')
+        return
+      }
+
+      const nextCache = {
+        ...(cachedPrice || createEmptyMarketPriceCache()),
+        marketDate: resolvedMarketDate,
+        syncedAt,
+        source: 'twse',
+        status: failedCodes.length > 0 ? 'partial' : 'fresh',
+        prices: {
+          ...((cachedPrice && cachedPrice.prices) || {}),
+          ...quotes,
+        },
+      }
+      const nextSync = {
+        marketDate: resolvedMarketDate,
+        syncedAt,
+        status: failedCodes.length > 0 ? 'partial' : 'success',
+        codes: trackedCodes,
+        failedCodes,
+      }
+
+      await persistMarketPriceState(nextCache, nextSync)
+      setRouteData((prev) => ({
+        ...prev,
+        holdings: applyMarketQuotesToHoldings(prev.holdings, nextCache.prices),
+      }))
+      setPortfolios(readRuntimePortfolios())
+
+      if (failedCodes.length > 0) {
+        flashSaved(
+          `⚠ 收盤價已同步 ${trackedCodes.length - failedCodes.length}/${trackedCodes.length} 檔，部分失敗`
+        )
+      } else {
+        flashSaved(`✅ 今日收盤價已同步（${trackedCodes.length} 檔）`)
+      }
+    } catch (error) {
+      console.error('route refreshPrices failed:', error)
+      flashSaved(`❌ 收盤價同步失敗：${error.message || '請稍後再試'}`)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [
+    collectTrackedCodes,
+    flashSaved,
+    marketPriceCache,
+    marketPriceSync,
+    persistMarketPriceState,
+    refreshing,
+    reloadRuntime,
+  ])
 
   const copyWeeklyReport = useCallback(async () => {
     const activePortfolio = portfolios.find((portfolio) => portfolio.id === routePortfolioId)

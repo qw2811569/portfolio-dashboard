@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股投資工作台 - 專案進度儀表板</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>📊 台股投資工作台</h1>
+                <p>專案進度儀表板</p>
+            </div>
+            <div class="header-right">
+                <div class="status-badge healthy" id="health-status">
+                    <span class="status-dot green"></span>
+                    <span>系統正常</span>
+                </div>
+                <button class="refresh-button" id="refresh-button" type="button">立即刷新</button>
+                <div class="last-update" id="last-update">最後更新：載入中...</div>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card highlight">
+                <div class="summary-card-title">📝 今日總結</div>
+                <div class="summary-card-value" id="today-summary">載入中...</div>
+                <div class="summary-progress-line">
+                    <div class="summary-progress-meta" id="today-progress-meta">進度：載入中...</div>
+                    <div class="summary-progress-bar">
+                        <div class="summary-progress-fill today" id="today-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <ul class="summary-card-highlights" id="highlights">
+                    <li>載入中...</li>
+                </ul>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">📈 本週進度</div>
+                <div class="summary-card-value" id="week-summary">載入中...</div>
+                <div class="summary-progress-line">
+                    <div class="summary-progress-meta" id="week-progress-meta">進度：載入中...</div>
+                    <div class="summary-progress-bar">
+                        <div class="summary-progress-fill week" id="week-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div style="font-size: 0.875rem; color: #6b7280;" id="phase-b-status">
+                    Phase B: 載入中...
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-title">🎯 下一里程碑</div>
+                <div class="summary-card-value" id="next-milestone">載入中...</div>
+                <div class="summary-progress-line">
+                    <div class="summary-progress-meta" id="milestone-progress-meta">進度：載入中...</div>
+                    <div class="summary-progress-bar">
+                        <div class="summary-progress-fill milestone" id="milestone-progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div style="font-size: 0.875rem; color: #6b7280;" id="milestone-progress">
+                    進度：載入中...
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">📄</div>
+                <div class="metric-value" id="metric-app-lines">-</div>
+                <div class="metric-change" id="metric-app-change">-</div>
+                <div class="metric-label">App.jsx 行數</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🧪</div>
+                <div class="metric-value" id="metric-tests">-</div>
+                <div class="metric-label">測試案例</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">✅</div>
+                <div class="metric-value" id="metric-completed">-</div>
+                <div class="metric-label">完成任務</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🔄</div>
+                <div class="metric-value" id="metric-progress">-</div>
+                <div class="metric-label">進行中任務</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Phases -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">🚀</span>
+                        <span class="section-title">Phase 進度</span>
+                    </div>
+                    <div id="phases-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">📅</span>
+                        <span class="section-title">最近進度</span>
+                    </div>
+                    <div class="section-progress-inline">
+                        <div class="summary-progress-meta" id="timeline-progress-meta">覆蓋率：載入中...</div>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill" id="timeline-progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="timeline" id="timeline-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- AI Team -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">🤖</span>
+                        <span class="section-title">AI 團隊</span>
+                    </div>
+                    <div class="ai-team-list" id="ai-team-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">🛰️</span>
+                        <span class="section-title">AI 即時動態</span>
+                    </div>
+                    <div class="activity-feed" id="live-activity-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">🧭</span>
+                        <span class="section-title">AI 追蹤堆疊</span>
+                    </div>
+                    <div class="tracking-stack" id="tracking-stack-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">📊</span>
+                        <span class="section-title">資料來源分佈</span>
+                    </div>
+                    <div class="source-mix" id="source-mix-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+
+                <!-- Handover Notes -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <span class="section-icon">📋</span>
+                        <span class="section-title">AI 交接筆記</span>
+                    </div>
+                    <div id="handover-container">
+                        <div class="loading">載入中</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

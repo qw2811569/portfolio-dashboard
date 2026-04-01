@@ -119,10 +119,22 @@ export function normalizePriceHistory(value, event) {
  * Parse event stock descriptor
  */
 export function parseEventStockDescriptor(value) {
-  if (!value || typeof value !== 'object') return null
-  const code = String(value.code || '').trim()
-  const name = String(value.name || '').trim()
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const code = String(value.code || '').trim()
+    const name = String(value.name || '').trim()
+    if (!code) return null
+    return { code, name: name || code }
+  }
+
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  const code = raw.match(/\d{4,6}[A-Z]?L?/i)?.[0] || ''
   if (!code) return null
+  const name = raw
+    .replace(code, ' ')
+    .replace(/[()（）-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
   return { code, name: name || code }
 }
 
@@ -131,20 +143,8 @@ export function parseEventStockDescriptor(value) {
  */
 export function buildEventStockDescriptors(event) {
   if (!event || typeof event !== 'object') return []
-  const stocks = String(event.stocks || '').trim()
-  if (!stocks) return []
-
-  return stocks
-    .split(/[,\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const match = s.match(/^(\d{4,6})\s*(.*)$/)
-      if (match) {
-        return { code: match[1], name: match[2] || match[1] }
-      }
-      return { code: s, name: s }
-    })
+  const stocks = Array.isArray(event.stocks) ? event.stocks : String(event.stocks || '').split(',')
+  return stocks.map(parseEventStockDescriptor).filter(Boolean)
 }
 
 /**
@@ -314,6 +314,8 @@ export function normalizeEventRecord(event) {
 
   return {
     ...event,
+    label: String(event.label || event.title || '').trim(),
+    sub: String(event.sub || event.detail || '').trim(),
     status,
     stocks: buildEventStockDescriptors(event).map((item) => `${item.name} ${item.code}`),
     eventDate,

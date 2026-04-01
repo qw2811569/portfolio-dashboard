@@ -341,6 +341,8 @@ export function normalizeEventRecord(event) {
 
   return {
     ...event,
+    label: String(event.label || event.title || '').trim(),
+    sub: String(event.sub || event.detail || '').trim(),
     status,
     stocks: buildEventStockDescriptors(event).map((item) => `${item.name} ${item.code}`),
     eventDate,

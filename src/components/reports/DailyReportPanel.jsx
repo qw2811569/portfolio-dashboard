@@ -657,9 +657,9 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
 }
 
 /**
- * AI Insight Section
+ * AI Insight Section (with feedback buttons)
  */
-export function AIInsightSection({ insight, error, date, time }) {
+export function AIInsightSection({ insight, error, date, time, onFeedback }) {
   if (!insight && !error) return null
 
   if (insight) {
@@ -693,7 +693,59 @@ export function AIInsightSection({ insight, error, date, time }) {
           `${date} ${time}`
         )
       ),
-      h(Md, { text: insight, color: C.textSec })
+      h(Md, { text: insight, color: C.textSec }),
+      // Feedback buttons
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            gap: 8,
+            marginTop: 10,
+            paddingTop: 8,
+            borderTop: `1px solid ${C.borderSub}`,
+          },
+        },
+        h(
+          'span',
+          { style: { fontSize: 10, color: C.textMute, alignSelf: 'center' } },
+          '這次分析有幫助嗎？'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => onFeedback && onFeedback('helpful'),
+            style: {
+              padding: '4px 10px',
+              borderRadius: 5,
+              border: `1px solid ${alpha(C.up, '30')}`,
+              background: alpha(C.up, '10'),
+              color: C.up,
+              fontSize: 14,
+              cursor: 'pointer',
+              lineHeight: 1,
+            },
+          },
+          '👍'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => onFeedback && onFeedback('misleading'),
+            style: {
+              padding: '4px 10px',
+              borderRadius: 5,
+              border: `1px solid ${alpha(C.down, '30')}`,
+              background: alpha(C.down, '10'),
+              color: C.down,
+              fontSize: 14,
+              cursor: 'pointer',
+              lineHeight: 1,
+            },
+          },
+          '👎'
+        )
+      )
     )
   }
 
@@ -714,9 +766,187 @@ export function AIInsightSection({ insight, error, date, time }) {
 }
 
 /**
+ * Morning Note Section — auto-assembled daily trading memo
+ */
+export function MorningNoteSection({ morningNote }) {
+  if (!morningNote) return null
+  const { sections } = morningNote
+
+  const hasContent =
+    sections.todayEvents?.length > 0 ||
+    sections.holdingStatus?.length > 0 ||
+    sections.watchlistAlerts?.length > 0 ||
+    sections.announcements?.length > 0
+
+  if (!hasContent) return null
+
+  return h(
+    Card,
+    {
+      style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        },
+      },
+      h(
+        'div',
+        { style: { ...lbl, color: C.teal, marginBottom: 0 } },
+        `每日交易備忘 — ${morningNote.date}`
+      )
+    ),
+
+    // Today events
+    sections.todayEvents?.length > 0 &&
+      h(
+        'div',
+        { style: { marginBottom: 8 } },
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '今日事件'
+        ),
+        sections.todayEvents.map((e, i) =>
+          h(
+            'div',
+            {
+              key: i,
+              style: {
+                fontSize: 11,
+                color: C.text,
+                padding: '3px 0',
+                display: 'flex',
+                gap: 6,
+                alignItems: 'center',
+              },
+            },
+            e.impactLabel &&
+              h(
+                'span',
+                {
+                  style: {
+                    fontSize: 9,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    background:
+                      e.impactLabel === 'HIGH'
+                        ? alpha(C.down, '22')
+                        : e.impactLabel === 'MEDIUM'
+                          ? C.amberBg
+                          : alpha(C.textMute, '15'),
+                    color:
+                      e.impactLabel === 'HIGH'
+                        ? C.down
+                        : e.impactLabel === 'MEDIUM'
+                          ? C.amber
+                          : C.textMute,
+                  },
+                },
+                e.impactLabel
+              ),
+            h('span', null, e.title),
+            e.relatedPillars?.length > 0 &&
+              h('span', { style: { fontSize: 9, color: C.teal } }, 'thesis驗證點')
+          )
+        )
+      ),
+
+    // Holding status with thesis scorecard
+    sections.holdingStatus?.length > 0 &&
+      h(
+        'div',
+        { style: { marginBottom: 8 } },
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '持倉概況'
+        ),
+        sections.holdingStatus.map((s) =>
+          h(
+            'div',
+            {
+              key: s.code,
+              style: {
+                fontSize: 11,
+                color: C.text,
+                padding: '3px 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+              },
+            },
+            h(
+              'span',
+              null,
+              `${s.name} `,
+              s.conviction &&
+                h(
+                  'span',
+                  { style: { fontSize: 9, color: C.blue, fontWeight: 600 } },
+                  s.conviction.toUpperCase()
+                )
+            ),
+            h(
+              'span',
+              { style: { fontSize: 10, color: C.textMute } },
+              s.pillarSummary || '',
+              s.stopLossDistance != null && ` 距停損 +${s.stopLossDistance.toFixed(1)}%`
+            )
+          )
+        )
+      ),
+
+    // Watchlist alerts
+    sections.watchlistAlerts?.length > 0 &&
+      h(
+        'div',
+        { style: { marginBottom: 8 } },
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '觀察股提示'
+        ),
+        sections.watchlistAlerts.map((w) =>
+          h(
+            'div',
+            { key: w.code, style: { fontSize: 11, color: C.up, padding: '3px 0' } },
+            `${w.name}(${w.code}) 接近進場價 ${w.entryPrice}（距離 ${w.distance >= 0 ? '+' : ''}${w.distance.toFixed(1)}%）`
+          )
+        )
+      ),
+
+    // Announcements
+    sections.announcements?.length > 0 &&
+      h(
+        'div',
+        null,
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '重大訊息'
+        ),
+        sections.announcements.map((a, i) =>
+          h(
+            'div',
+            { key: i, style: { fontSize: 11, color: C.text, padding: '3px 0' } },
+            `${a.code} ${a.name}：${a.title}`
+          )
+        )
+      )
+  )
+}
+
+/**
  * Main Daily Report Panel
  */
 export function DailyReportPanel({
+  morningNote,
   dailyReport,
   analyzing,
   analyzeStep,
@@ -734,9 +964,33 @@ export function DailyReportPanel({
   setExpandedStock: _setExpandedStock,
   strategyBrain: _strategyBrain,
 }) {
+  // Feedback handler - stores to localStorage
+  function handleFeedback(signal) {
+    try {
+      if (!dailyReport?.id) return
+      const log = JSON.parse(localStorage.getItem('kb-feedback-log') || '[]')
+      log.push({
+        analysisId: dailyReport.id,
+        signal, // 'helpful' or 'misleading'
+        timestamp: Date.now(),
+        date: dailyReport.date,
+      })
+      // Keep last 200 entries
+      if (log.length > 200) log.splice(0, log.length - 200)
+      localStorage.setItem('kb-feedback-log', JSON.stringify(log))
+      // Optional: show toast confirmation
+      console.log(`Feedback recorded: ${signal}`)
+    } catch {
+      // silent fail
+    }
+  }
+
   return h(
     'div',
     null,
+    // Morning note (always shown when available)
+    h(MorningNoteSection, { morningNote }),
+
     // Empty state
     !dailyReport &&
       !analyzing &&
@@ -812,6 +1066,7 @@ export function DailyReportPanel({
               error: dailyReport.aiError,
               date: dailyReport.date,
               time: dailyReport.time,
+              onFeedback: handleFeedback,
             })
           )
       )

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股投資決策工作台 — 專案框架說明</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg:        #0a0e1a;
+            --surface:   #111827;
+            --card:      #1a2235;
+            --border:    #1e2d45;
+            --text:      #c9d6e8;
+            --muted:     #6b7a90;
+            --white:     #ffffff;
+            --teal:      #2dd4bf;
+            --teal-dim:  #14b8a6;
+            --blue:      #60a5fa;
+            --purple:    #a78bfa;
+            --amber:     #fbbf24;
+            --red:       #f87171;
+            --green:     #4ade80;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* ── LAYOUT ── */
+        .container { max-width: 1020px; margin: 0 auto; padding: 0 2rem; }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+            background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(45,212,191,.12) 0%, transparent 70%);
+            border-bottom: 1px solid var(--border);
+        }
+        .hero .badge {
+            display: inline-block;
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--teal);
+            border: 1px solid var(--teal-dim);
+            border-radius: 99px;
+            padding: .3rem .9rem;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1.25;
+            margin-bottom: 1rem;
+        }
+        .hero h1 span { color: var(--teal); }
+        .hero .tagline {
+            font-size: 1.15rem;
+            color: var(--muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        .hero .core-claim {
+            display: inline-block;
+            background: var(--card);
+            border: 1px solid var(--teal-dim);
+            border-radius: 8px;
+            padding: 1rem 1.75rem;
+            font-size: 1rem;
+            color: var(--text);
+            max-width: 680px;
+            line-height: 1.6;
+        }
+        .hero .core-claim strong { color: var(--teal); }
+
+        /* ── SECTION ── */
+        section { padding: 4rem 0; border-bottom: 1px solid var(--border); }
+        section:last-of-type { border-bottom: none; }
+        .section-label {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: .75rem;
+        }
+        h2 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: .6rem;
+        }
+        .section-desc {
+            color: var(--muted);
+            font-size: .95rem;
+            margin-bottom: 2.5rem;
+            max-width: 620px;
+        }
+
+        /* ── PAIN POINTS ── */
+        .pain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 1.25rem;
+        }
+        .pain-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .pain-card .emoji { font-size: 1.5rem; margin-bottom: .75rem; display: block; }
+        .pain-card h3 { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: .5rem; }
+        .pain-card p  { font-size: .9rem; color: var(--muted); line-height: 1.6; }
+        .pain-card .solve {
+            margin-top: .85rem;
+            padding-top: .75rem;
+            border-top: 1px solid var(--border);
+            font-size: .85rem;
+            color: var(--teal);
+        }
+        .pain-card .solve::before { content: "→ "; }
+
+        /* ── FEATURES ── */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: border-color .25s, transform .25s;
+        }
+        .feature-card:hover {
+            border-color: var(--teal-dim);
+            transform: translateY(-3px);
+        }
+        .feature-icon {
+            width: 40px; height: 40px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .feature-card h3 { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: .5rem; }
+        .feature-card p  { font-size: .875rem; color: var(--muted); line-height: 1.65; }
+        .tag {
+            display: inline-block;
+            font-size: .7rem;
+            font-weight: 600;
+            padding: .15rem .55rem;
+            border-radius: 99px;
+            margin-top: .75rem;
+        }
+
+        /* ── WORKFLOW ── */
+        .workflow { display: flex; flex-direction: column; gap: 0; }
+        .wf-item {
+            display: grid;
+            grid-template-columns: 56px 1fr;
+            gap: 0 1.5rem;
+            position: relative;
+        }
+        .wf-item:not(:last-child) .wf-line {
+            position: absolute;
+            left: 27px;
+            top: 52px;
+            bottom: -16px;
+            width: 2px;
+            background: linear-gradient(var(--teal-dim), var(--border));
+        }
+        .wf-num {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--white);
+            background: var(--card);
+            border: 2px solid var(--teal-dim);
+            flex-shrink: 0;
+            z-index: 1;
+        }
+        .wf-body {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .wf-body h4 { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: .35rem; }
+        .wf-body p  { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+        .wf-detail  {
+            display: flex; flex-wrap: wrap; gap: .5rem;
+            margin-top: .75rem;
+        }
+        .wf-detail span {
+            font-size: .75rem;
+            padding: .2rem .6rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+        }
+
+        /* ── ARCHITECTURE ── */
+        .arch-layers { display: flex; flex-direction: column; gap: 1rem; }
+        .arch-layer {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .arch-layer-label {
+            padding: .65rem 1.25rem;
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .arch-layer-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .75rem;
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            background: var(--card);
+        }
+        .arch-chip {
+            font-size: .8rem;
+            padding: .3rem .75rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* ── RELIABILITY ── */
+        .reliability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.25rem;
+        }
+        .rel-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+        .rel-card h3 { font-size: .95rem; font-weight: 600; color: var(--white); margin-bottom: .75rem; }
+        .rel-card ul { list-style: none; padding: 0; }
+        .rel-card li {
+            font-size: .85rem;
+            color: var(--muted);
+            padding: .3rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; gap: .6rem;
+        }
+        .rel-card li:last-child { border-bottom: none; }
+        .rel-card li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+        /* ── USER VALUE ── */
+        .value-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .value-table th {
+            text-align: left;
+            padding: .75rem 1rem;
+            background: var(--surface);
+            color: var(--white);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+        .value-table td {
+            padding: .75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            color: var(--text);
+        }
+        .value-table tr:last-child td { border-bottom: none; }
+        .value-table td:first-child { color: var(--muted); width: 28%; }
+        .value-table td:last-child  { color: var(--teal);  width: 36%; font-size: .85rem; }
+        .value-table-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        /* ── UX SHOTS ── */
+        .ux-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+        .ux-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .ux-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: .45rem;
+        }
+        .ux-card p {
+            font-size: .85rem;
+            color: var(--muted);
+            line-height: 1.65;
+            margin-bottom: .85rem;
+        }
+        .ux-shot {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: block;
+        }
+        .ux-meta {
+            display: inline-block;
+            font-size: .72rem;
+            color: var(--teal);
+            border: 1px solid var(--teal-dim);
+            border-radius: 99px;
+            padding: .15rem .55rem;
+            margin-bottom: .55rem;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 2.5rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: .85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── COLOR UTILITIES ── */
+        .bg-teal   { background: rgba(45,212,191,.12); }
+        .bg-blue   { background: rgba(96,165,250,.12); }
+        .bg-purple { background: rgba(167,139,250,.12); }
+        .bg-amber  { background: rgba(251,191,36,.12);  }
+        .bg-green  { background: rgba(74,222,128,.12);  }
+        .bg-red    { background: rgba(248,113,113,.12); }
+
+        .c-teal   { color: var(--teal);   border: 1px solid rgba(45,212,191,.3); }
+        .c-blue   { color: var(--blue);   border: 1px solid rgba(96,165,250,.3); }
+        .c-purple { color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+        .c-amber  { color: var(--amber);  border: 1px solid rgba(251,191,36,.3);  }
+        .c-green  { color: var(--green);  border: 1px solid rgba(74,222,128,.3);  }
+        .c-red    { color: var(--red);    border: 1px solid rgba(248,113,113,.3); }
+
+        .text-teal   { color: var(--teal); }
+        .text-blue   { color: var(--blue); }
+        .text-purple { color: var(--purple); }
+        .text-amber  { color: var(--amber); }
+
+        /* ── DIVIDER ── */
+        .divider { height: 1px; background: var(--border); margin: 2rem 0; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2rem; }
+            .container { padding: 0 1rem; }
+            section { padding: 2.5rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════ HERO ══════════════ -->
+<div class="hero">
+    <div class="container">
+        <div class="badge">台股投資工作台 · 專案框架說明</div>
+        <h1>把決策過程變成<span>可追蹤、可累積</span>的資產</h1>
+        <p class="tagline">一個整合持倉、事件、AI 分析、策略記憶的閉環投資作業系統</p>
+        <div class="core-claim">
+            <strong>核心定位：</strong>這不是看盤工具，也不是記帳 App。它是一個讓投資者的每一次決策都有<strong>脈絡、可追蹤、可回顧</strong>的工作台——讓「部位、催化事件、研究、復盤、策略記憶」形成完整閉環。
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════ PAIN POINTS ══════════════ -->
+<section id="problem">
+    <div class="section-label">為什麼需要這個</div>
+    <h2>主動投資者面臨的真實困境</h2>
+    <p class="section-desc">這些問題在使用 LINE 群組、Excel、截圖筆記本的投資者身上每天都在發生。</p>
+    <div class="pain-grid">
+        <div class="pain-card">
+            <span class="emoji">📊</span>
+            <h3>部位管理分散，無法即時掌握</h3>
+            <p>多組合、多帳戶的持倉散落在券商 App、截圖、Excel 各處，很難在需要決策的當下有完整視圖。</p>
+            <div class="solve">統一部位管理，支援截圖自動解析回寫</div>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">📅</span>
+            <h3>決策事後說不清楚「當初為什麼買」</h3>
+            <p>投資邏輯只存在腦袋裡，沒有結構化記錄。復盤時無從比較「預期 vs. 實際」，無法真正學習。</p>
+            <div class="solve">催化事件追蹤，讓每筆持倉都有論點記錄</div>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">🤖</span>
+            <h3>每日收盤分析耗時，品質不穩定</h3>
+            <p>要同時看財報、技術面、籌碼、新聞，人工整合費時又容易遺漏，AI 工具又沒有你的持倉 context。</p>
+            <div class="solve">AI 自動整合持倉 context，每日生成結構化復盤</div>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">🧠</span>
+            <h3>教訓反覆犯，成功模式無法複製</h3>
+            <p>每次止損後說「下次不這樣」，但沒有機制讓這句話變成具體的規則，下次還是會重蹈覆轍。</p>
+            <div class="solve">策略大腦沉澱成功 / 失敗案例，讓 AI 下次直接引用</div>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">🔍</span>
+            <h3>研究成果孤立，無法反哺決策</h3>
+            <p>花時間做的個股研究存在文件夾裡，下次要用時找不到，或者已經和當前持倉 context 脫節。</p>
+            <div class="solve">研究與持倉整合，歷史脈絡自動帶入下一次分析</div>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">📋</span>
+            <h3>客戶溝通缺乏可信度與透明度</h3>
+            <p>對客戶說「看好這檔」，卻沒有具體的催化劑、進場邏輯、停損條件。說服力和可信度都不足。</p>
+            <div class="solve">可輸出結構化決策報告，包含論點、事件、追蹤結果</div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ FEATURES ══════════════ -->
+<section id="features">
+    <div class="section-label">核心功能</div>
+    <h2>六個模組，形成一條完整的決策鏈</h2>
+    <p class="section-desc">每個模組獨立可用，但設計目的是讓它們協同運作、互相餵養。</p>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon bg-blue">💼</div>
+            <h3>智慧持倉管理</h3>
+            <p>多組合、多帳戶的持倉統一管理。支援截圖 OCR 解析自動回寫部位，即時計算損益與成本結構。</p>
+            <span class="tag c-blue">持倉 / 損益 / 多組合</span>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon bg-amber">⚡</div>
+            <h3>催化事件追蹤</h3>
+            <p>將投資論點與具體的「催化事件」掛鉤。事件從待定 → 追蹤 → 結束自動流轉，每一筆持倉的進場邏輯都有可查記錄。</p>
+            <span class="tag c-amber">事件生命週期 / 法說 / 月營收 / 政策</span>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon bg-teal">📈</div>
+            <h3>每日 AI 收盤分析</h3>
+            <p>AI 自動整合持倉現況、待追蹤事件、歷史分析脈絡，生成結構化的收盤復盤報告，對比預期與實際，輸出明天的觀察重點。</p>
+            <span class="tag c-teal">AI 復盤 / 結構化報告 / 盲測評分</span>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon bg-purple">🧠</div>
+            <h3>策略大腦（知識沉澱）</h3>
+            <p>將每次的成功邏輯與失敗教訓沉澱成可供 AI 調用的結構化規則。下次 AI 分析時，會自動引用相關的歷史案例與驗證過的策略。</p>
+            <span class="tag c-purple">規則引擎 / 歷史案例 / 策略記憶</span>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon bg-green">🔬</div>
+            <h3>深度研究整合</h3>
+            <p>在同一平台對特定標的發起深度研究，系統自動帶入該標的的歷史分析、持倉記錄與相關事件，讓每次研究都站在之前工作的肩膀上。</p>
+            <span class="tag c-green">個股研究 / 脈絡整合 / 供應鏈</span>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon bg-red">📄</div>
+            <h3>客戶報告輸出</h3>
+            <p>將投資決策從「個人看法」轉化為包含持倉論點、催化事件時間軸、風險因素與追蹤結果的結構化報告，提升對客戶的透明度。</p>
+            <span class="tag c-red">週報 / 決策透明 / 可追蹤</span>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ WORKFLOW ══════════════ -->
+<section id="workflow">
+    <div class="section-label">運作邏輯</div>
+    <h2>一條從「建倉」到「知識沉澱」的閉環</h2>
+    <p class="section-desc">每一個步驟的產出，都是下一個步驟的輸入。系統的價值隨使用時間累積，不是用了就歸零。</p>
+    <div class="workflow">
+
+        <div class="wf-item">
+            <div class="wf-line"></div>
+            <div class="wf-num text-blue">1</div>
+            <div class="wf-body">
+                <h4>建立持倉 + 投資論點</h4>
+                <p>上傳交易截圖或手動輸入，建立真實部位。同時記錄「為什麼買這檔」——催化事件、目標價格、停損條件。</p>
+                <div class="wf-detail">
+                    <span>截圖 OCR 解析</span>
+                    <span>多組合支援</span>
+                    <span>催化事件登記</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-item">
+            <div class="wf-line"></div>
+            <div class="wf-num text-amber">2</div>
+            <div class="wf-body">
+                <h4>市場資料自動同步</h4>
+                <p>系統自動同步 TWSE 收盤價格、法人籌碼、公開資訊（MOPS 重大訊息）與財報數據，確保每次分析都基於最新資料。</p>
+                <div class="wf-detail">
+                    <span>TWSE 收盤報價</span>
+                    <span>法人買賣超</span>
+                    <span>MOPS 公告</span>
+                    <span>月營收</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-item">
+            <div class="wf-line"></div>
+            <div class="wf-num text-teal">3</div>
+            <div class="wf-body">
+                <h4>事件生命週期追蹤</h4>
+                <p>系統根據日期與價格變動，自動追蹤事件進展。法說前 / 法說後、月營收公布前後，事件狀態自動流轉並記錄結果。</p>
+                <div class="wf-detail">
+                    <span>待定 → 追蹤 → 結束</span>
+                    <span>法說 / 財報 / 政策</span>
+                    <span>事件窗口價格記錄</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-item">
+            <div class="wf-line"></div>
+            <div class="wf-num text-purple">4</div>
+            <div class="wf-body">
+                <h4>每日 AI 收盤分析</h4>
+                <p>AI 整合當前持倉、未結事件、歷史脈絡與市場知識庫，生成結構化復盤報告。包含「預期 vs 實際」比對與明日觀察重點。</p>
+                <div class="wf-detail">
+                    <span>結構化復盤</span>
+                    <span>策略知識庫引用</span>
+                    <span>明日行動清單</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-item">
+            <div class="wf-line"></div>
+            <div class="wf-num text-green">5</div>
+            <div class="wf-body">
+                <h4>知識沉澱入策略大腦</h4>
+                <p>每次分析結論、事件教訓、成功 / 失敗案例，都以結構化格式回寫至「策略大腦」。下一次 AI 分析時，自動帶入相關歷史規則。</p>
+                <div class="wf-detail">
+                    <span>成功 / 失敗案例庫</span>
+                    <span>策略規則引擎</span>
+                    <span>知識隨時間累積</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-item">
+            <div class="wf-num" style="border-color: var(--red); color: var(--red)">6</div>
+            <div class="wf-body">
+                <h4>深度研究 + 輸出報告</h4>
+                <p>基於累積的持倉脈絡與歷史分析，對個股發起深度研究，並輸出可對客戶呈現的結構化決策報告，形成完整閉環。</p>
+                <div class="wf-detail">
+                    <span>個股深度研究</span>
+                    <span>週報 / 客戶報告</span>
+                    <span>決策閉環完成</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════ UX REAL SCREENS ══════════════ -->
+<section id="ux-screens">
+    <div class="section-label">UX 實際畫面</div>
+    <h2>使用者每天實際怎麼用這個 App</h2>
+    <p class="section-desc">以下為實際系統截圖（2026/03/30），可直接用來向老闆展示使用者的主流程與頁面體驗。</p>
+    <div class="ux-grid">
+        <div class="ux-card">
+            <span class="ux-meta">步驟 1 · 持倉頁</span>
+            <h3>先看部位全貌與風險結構</h3>
+            <p>使用者每天先進持倉頁，快速掌握總成本 / 總市值 / 持股數、產業集中度、強弱股與持股明細，確認今天該盯哪些部位。</p>
+            <img class="ux-shot" src="docs/assets/ux/holdings-page.png" alt="持倉頁真實截圖">
+        </div>
+        <div class="ux-card">
+            <span class="ux-meta">步驟 2 · 事件頁</span>
+            <h3>把投資論點轉成可追蹤的事件</h3>
+            <p>進入行事曆頁後，使用者會先看接力計畫與事件標籤，再逐筆檢視法說 / 財報 / 催化事件，確認哪些風險與催化已進入決策窗口。</p>
+            <img class="ux-shot" src="docs/assets/ux/events-page.png" alt="事件頁真實截圖">
+        </div>
+        <div class="ux-card">
+            <span class="ux-meta">步驟 3 · 收盤分析報告</span>
+            <h3>收盤後看 AI 復盤與明日行動依據</h3>
+            <p>在收盤分析頁，使用者查看當日報告摘要、持倉漲跌與異常波動，讓「今天發生什麼、接下來怎麼做」有結構化依據可留存與回顧。</p>
+            <img class="ux-shot" src="docs/assets/ux/daily-report-page.png" alt="收盤分析報告真實截圖">
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ ARCHITECTURE ══════════════ -->
+<section id="architecture">
+    <div class="section-label">技術架構</div>
+    <h2>四層架構，每層職責清晰</h2>
+    <p class="section-desc">前端 / 邏輯 / 資料 / AI 明確分離，任何一層出問題都不會拖垮其他層。</p>
+    <div class="arch-layers">
+
+        <div class="arch-layer">
+            <div class="arch-layer-label text-blue" style="background: rgba(96,165,250,.08)">
+                🖥 &nbsp;展示層（使用者介面）
+            </div>
+            <div class="arch-layer-items">
+                <span class="arch-chip bg-blue c-blue">React 19</span>
+                <span class="arch-chip bg-blue c-blue">Vite</span>
+                <span class="arch-chip bg-blue c-blue">React Router</span>
+                <span class="arch-chip bg-blue c-blue">AppShellFrame</span>
+                <span class="arch-chip bg-blue c-blue">Panel ErrorBoundary</span>
+            </div>
+        </div>
+
+        <div class="arch-layer">
+            <div class="arch-layer-label text-teal" style="background: rgba(45,212,191,.08)">
+                ⚙️ &nbsp;邏輯層（Runtime Hooks）
+            </div>
+            <div class="arch-layer-items">
+                <span class="arch-chip bg-teal c-teal">useAppRuntime</span>
+                <span class="arch-chip bg-teal c-teal">usePortfolioManagement</span>
+                <span class="arch-chip bg-teal c-teal">useEventLifecycleSync</span>
+                <span class="arch-chip bg-teal c-teal">useDailyAnalysisWorkflow</span>
+                <span class="arch-chip bg-teal c-teal">useResearchAutoRefresh</span>
+                <span class="arch-chip bg-teal c-teal">brainRuntime</span>
+                <span class="arch-chip bg-teal c-teal">dossierUtils</span>
+            </div>
+        </div>
+
+        <div class="arch-layer">
+            <div class="arch-layer-label text-purple" style="background: rgba(167,139,250,.08)">
+                💾 &nbsp;資料層（Storage / Sync）
+            </div>
+            <div class="arch-layer-items">
+                <span class="arch-chip bg-purple c-purple">Vercel Blob（雲端持久化）</span>
+                <span class="arch-chip bg-purple c-purple">localStorage（本地快取）</span>
+                <span class="arch-chip bg-purple c-purple">TanStack Query</span>
+                <span class="arch-chip bg-purple c-purple">Zustand</span>
+                <span class="arch-chip bg-purple c-purple">自動雲端同步 + debounce save</span>
+            </div>
+        </div>
+
+        <div class="arch-layer">
+            <div class="arch-layer-label text-amber" style="background: rgba(251,191,36,.08)">
+                🤖 &nbsp;AI 層（分析引擎）
+            </div>
+            <div class="arch-layer-items">
+                <span class="arch-chip bg-amber c-amber">Claude（策略 / 高風險邏輯）</span>
+                <span class="arch-chip bg-amber c-amber">Qwen（知識庫建立 / 批量改碼）</span>
+                <span class="arch-chip bg-amber c-amber">Gemini（公開資料 / 研究偵查）</span>
+                <span class="arch-chip bg-amber c-amber">dossierUtils prompt builder</span>
+                <span class="arch-chip bg-amber c-amber">策略知識庫注入</span>
+                <span class="arch-chip bg-amber c-amber">Vercel Serverless API</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ══════════════ RELIABILITY ══════════════ -->
+<section id="reliability">
+    <div class="section-label">可靠度</div>
+    <h2>為什麼可以信任這套系統</h2>
+    <p class="section-desc">從資料完整性、錯誤隔離到 AI 輸出品質，都有對應的機制保護。</p>
+    <div class="reliability-grid">
+        <div class="rel-card">
+            <h3>🛡 資料安全與持久性</h3>
+            <ul>
+                <li>持倉資料雙重存儲：localStorage + Vercel Blob 雲端</li>
+                <li>Debounce 自動儲存，操作不會無聲消失</li>
+                <li>支援本機備份匯出 / 匯入，不依賴單一存儲</li>
+                <li>Schema 升級時有 migration patch 機制</li>
+            </ul>
+        </div>
+        <div class="rel-card">
+            <h3>🔒 UI 錯誤隔離</h3>
+            <ul>
+                <li>Panel 級 ErrorBoundary，單一區塊崩潰不影響其他面板</li>
+                <li>Header 區塊有獨立錯誤邊界</li>
+                <li>AI 分析失敗不會影響持倉顯示</li>
+                <li>雲端同步失敗降回本地模式，不中斷操作</li>
+            </ul>
+        </div>
+        <div class="rel-card">
+            <h3>🧪 程式碼品質保障</h3>
+            <ul>
+                <li>Vitest 單元測試覆蓋核心邏輯</li>
+                <li>Playwright E2E 測試覆蓋主要工作流程</li>
+                <li>ESLint + Prettier 強制代碼規範</li>
+                <li>本地 verify 指令，每次交付前強制過關</li>
+            </ul>
+        </div>
+        <div class="rel-card">
+            <h3>🤖 AI 輸出品質控管</h3>
+            <ul>
+                <li>分析 prompt 帶入完整持倉 context，非憑空生成</li>
+                <li>策略知識庫只注入驗證過的歷史案例</li>
+                <li>結構化輸出格式，禁止模糊描述</li>
+                <li>盲測評分機制，比對預測 vs 實際結果</li>
+            </ul>
+        </div>
+        <div class="rel-card">
+            <h3>📡 資料新鮮度管理</h3>
+            <ul>
+                <li>TWSE 報價 TTL 3-5 分鐘快取</li>
+                <li>法人籌碼 TTL 15 分鐘</li>
+                <li>過期財報 / 舊分析不會當成當下結論</li>
+                <li>API 失敗指數退避重試，不直接崩潰</li>
+            </ul>
+        </div>
+        <div class="rel-card">
+            <h3>🔄 多 AI 協作可靠性</h3>
+            <ul>
+                <li>Claude / Qwen / Gemini 分工明確，不互相覆蓋</li>
+                <li>每次交付前有 canonical 交接格式</li>
+                <li>AI 狀態儀表板即時顯示各 AI 工作狀態</li>
+                <li>唯一 canonical 規則文件，無版本分歧</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ USER VALUE ══════════════ -->
+<section id="user-value">
+    <div class="section-label">使用者為什麼會選擇這個</div>
+    <h2>對每一類使用者，都有具體的使用理由</h2>
+    <p class="section-desc">功能不是賣點，解決的問題才是。</p>
+    <div class="value-table-wrap">
+        <table class="value-table">
+            <thead>
+                <tr>
+                    <th>使用者角色</th>
+                    <th>現在的痛點</th>
+                    <th>這套系統帶來的改變</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>個人主動投資者</td>
+                    <td>決策沒有記錄，無法復盤；教訓反覆犯；AI 工具沒有持倉 context</td>
+                    <td>每日有結構化復盤；教訓沉澱為可引用規則；AI 分析帶入你的真實部位</td>
+                </tr>
+                <tr>
+                    <td>有客戶的理財顧問</td>
+                    <td>投資建議說不清楚依據；客戶問「為什麼」時缺乏書面記錄</td>
+                    <td>每筆推薦都有可輸出的結構化報告：催化事件、論點、追蹤結果</td>
+                </tr>
+                <tr>
+                    <td>權證 / 事件驅動交易者</td>
+                    <td>事件窗口追蹤全憑記憶；時間價值消耗沒有警示；停損紀律難以執行</td>
+                    <td>事件自動追蹤 + 時間軸警示；歷史案例庫提醒常見失誤</td>
+                </tr>
+                <tr>
+                    <td>研究導向投資者</td>
+                    <td>研究孤立存在文件夾，和持倉脈絡脫節；換股時歷史脈絡消失</td>
+                    <td>研究自動整合持倉脈絡；深度研究歷史可供下一次決策引用</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ══════════════ SUMMARY ══════════════ -->
+<section id="summary" style="border-bottom: none;">
+    <div class="section-label">總結</div>
+    <h2>三件事說清楚這個專案</h2>
+    <div class="pain-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        <div class="pain-card">
+            <span class="emoji">🎯</span>
+            <h3>是什麼</h3>
+            <p>台股投資決策工作台。把部位、事件、AI 分析、策略記憶串成閉環，讓每一次投資決策都可追蹤、可復盤、可累積。</p>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">⚙️</span>
+            <h3>怎麼運作</h3>
+            <p>六個模組協同運作：持倉管理 → 事件追蹤 → 資料同步 → AI 收盤分析 → 知識沉澱 → 深度研究。每個模組的產出都餵養下一個模組。</p>
+        </div>
+        <div class="pain-card">
+            <span class="emoji">📈</span>
+            <h3>為什麼值得用</h3>
+            <p>系統的價值隨使用時間累積。用越久，策略大腦的規則越準確，AI 分析的 context 越完整，投資決策品質的提升是可量化的。</p>
+        </div>
+    </div>
+</section>
+
+</div><!-- /container -->
+
+<footer>
+    <p>台股投資決策工作台 &copy; 2026 &nbsp;·&nbsp; 內部專案框架說明文件</p>
+</footer>
+
+</body>
+</html>

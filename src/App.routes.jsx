@@ -8,7 +8,6 @@
  *   are fully wired to real runtime sources.
  */
 
-import { createElement as h } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DEFAULT_PORTFOLIO_ROUTE } from './constants.js'
@@ -39,38 +38,32 @@ const routeQueryClient = new QueryClient({
 })
 
 function App() {
-  return h(
-    QueryClientProvider,
-    { client: routeQueryClient },
-    h(
-      Routes,
-      null,
-      // Root redirect
-      h(Route, { path: '/', element: h(Navigate, { to: DEFAULT_PORTFOLIO_ROUTE }) }),
+  return (
+    <QueryClientProvider client={routeQueryClient}>
+      <Routes>
+        {/* Root redirect */}
+        <Route path="/" element={<Navigate to={DEFAULT_PORTFOLIO_ROUTE} />} />
 
-      // Overview page
-      h(Route, { path: '/overview', element: h(OverviewPage) }),
+        {/* Overview page */}
+        <Route path="/overview" element={<OverviewPage />} />
 
-      // Portfolio pages
-      h(Route, {
-        path: '/portfolio/:portfolioId',
-        element: h(PortfolioLayout),
-        children: [
-          h(Route, { index: true, element: h(Navigate, { to: 'holdings' }) }),
-          h(Route, { path: 'holdings', element: h(HoldingsPage) }),
-          h(Route, { path: 'watchlist', element: h(WatchlistPage) }),
-          h(Route, { path: 'events', element: h(EventsPage) }),
-          h(Route, { path: 'news', element: h(NewsPage) }),
-          h(Route, { path: 'daily', element: h(DailyPage) }),
-          h(Route, { path: 'research', element: h(ResearchPage) }),
-          h(Route, { path: 'trade', element: h(TradePage) }),
-          h(Route, { path: 'log', element: h(LogPage) }),
-        ],
-      }),
+        {/* Portfolio pages */}
+        <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
+          <Route index element={<Navigate to="holdings" />} />
+          <Route path="holdings" element={<HoldingsPage />} />
+          <Route path="watchlist" element={<WatchlistPage />} />
+          <Route path="events" element={<EventsPage />} />
+          <Route path="news" element={<NewsPage />} />
+          <Route path="daily" element={<DailyPage />} />
+          <Route path="research" element={<ResearchPage />} />
+          <Route path="trade" element={<TradePage />} />
+          <Route path="log" element={<LogPage />} />
+        </Route>
 
-      // 404 redirect
-      h(Route, { path: '*', element: h(Navigate, { to: DEFAULT_PORTFOLIO_ROUTE }) })
-    )
+        {/* 404 redirect */}
+        <Route path="*" element={<Navigate to={DEFAULT_PORTFOLIO_ROUTE} />} />
+      </Routes>
+    </QueryClientProvider>
   )
 }
 

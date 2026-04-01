@@ -97,9 +97,15 @@ if [[ "$ROOT_STATUS" == "200" ]]; then
     echo "Response time: ${RESPONSE_TIME} s"
     
     # Check if API is available with a real route
-    API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout "$TIMEOUT" "$API_URL" || true)
+    API_RESPONSE_RAW=$(curl -s --connect-timeout "$TIMEOUT" -w "\n%{http_code}" "$API_URL" || true)
+    API_STATUS=$(printf '%s' "$API_RESPONSE_RAW" | tail -n 1)
+    API_BODY=$(printf '%s' "$API_RESPONSE_RAW" | sed '$d')
     if [[ "$API_STATUS" == "200" ]]; then
-        echo "✅ API is available"
+        if printf '%s' "$API_BODY" | grep -Eiq '<!doctype html|<html'; then
+            echo "⚠️  API route returned HTML fallback at ${API_URL}; backend may not be active."
+        else
+            echo "✅ API is available"
+        fi
     else
         echo "⚠️  API check failed at ${API_URL} (status: ${API_STATUS:-unknown})"
     fi

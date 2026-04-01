@@ -392,6 +392,8 @@ export function RelayPlanCard({ expanded, onToggle }) {
  */
 export function EventCard({ event }) {
   const tc = TYPE_COLOR[event.type] || C.textMute
+  const title = event.label || event.title || '未命名事件'
+  const subtitle = event.sub || event.detail || ''
 
   return h(
     Card,
@@ -453,13 +455,15 @@ export function EventCard({ event }) {
         h(
           'div',
           { style: { fontSize: 12, fontWeight: 500, color: event.urgent ? C.up : C.text } },
-          event.label
+          title
         ),
-        h(
-          'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 3, lineHeight: 1.6 } },
-          event.sub
-        )
+        subtitle
+          ? h(
+              'div',
+              { style: { fontSize: 10, color: C.textMute, marginTop: 3, lineHeight: 1.6 } },
+              subtitle
+            )
+          : null
       )
     )
   )

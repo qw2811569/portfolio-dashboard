@@ -1,121 +1,124 @@
 {
-  "2308": {
-    "name": "台達電",
-    "upstream": [
-      { "name": "國巨", "code": "2327", "product": "被動元件", "dependency": "medium" },
-      { "name": "華新科", "code": "2492", "product": "被動元件", "dependency": "medium" }
-    ],
-    "downstream": [
-      { "name": "Microsoft", "code": null, "product": "資料中心電源方案", "revenueShare": null },
-      { "name": "Google", "code": null, "product": "資料中心散熱方案", "revenueShare": null },
-      { "name": "Amazon", "code": null, "product": "資料中心電源/散熱", "revenueShare": null }
-    ],
-    "customers": ["Microsoft", "Google", "Amazon"],
-    "suppliers": ["國巨", "華新科"]
-  },
-  "2317": {
-    "name": "鴻海",
-    "upstream": [
-      { "name": "鴻準", "code": "2354", "product": "機殼/機構件", "dependency": "medium" },
-      { "name": "臻鼎-KY", "code": "4958", "product": "PCB", "dependency": "medium" }
-    ],
-    "downstream": [
-      { "name": "Apple", "code": null, "product": "iPhone組裝", "revenueShare": "~30%" },
-      { "name": "NVIDIA", "code": null, "product": "AI伺服器組裝", "revenueShare": "~10%" },
-      { "name": "Amazon", "code": null, "product": "伺服器代工", "revenueShare": null },
-      { "name": "Google", "code": null, "product": "伺服器代工", "revenueShare": null }
-    ],
-    "customers": ["Apple", "NVIDIA", "Amazon", "Google"],
-    "suppliers": ["鴻準", "臻鼎-KY"]
-  },
-  "3017": {
-    "name": "奇鋐",
-    "upstream": [
-      { "name": "銅材料供應商", "code": null, "product": "散熱用銅材", "dependency": "high" },
-      { "name": "鋁材料供應商", "code": null, "product": "散熱用鋁材", "dependency": "high" }
-    ],
-    "downstream": [
-      { "name": "NVIDIA", "code": null, "product": "AI伺服器散熱模組", "revenueShare": null },
-      { "name": "廣達", "code": "2382", "product": "伺服器散熱模組", "revenueShare": null },
-      { "name": "緯創", "code": "3231", "product": "伺服器散熱模組", "revenueShare": null }
-    ],
-    "customers": ["NVIDIA", "廣達", "緯創"],
-    "suppliers": ["銅材料供應商", "鋁材料供應商"]
-  },
-  "3231": {
-    "name": "緯創",
-    "upstream": [
-      { "name": "Intel", "code": null, "product": "CPU", "dependency": "high" },
-      { "name": "NVIDIA", "code": null, "product": "GPU", "dependency": "high" }
-    ],
-    "downstream": [
-      { "name": "NVIDIA", "code": null, "product": "AI伺服器代工", "revenueShare": "~15%" },
-      { "name": "Meta", "code": null, "product": "伺服器代工", "revenueShare": null },
-      { "name": "Google", "code": null, "product": "伺服器代工", "revenueShare": null }
-    ],
-    "customers": ["NVIDIA", "Meta", "Google"],
-    "suppliers": ["Intel", "NVIDIA"]
-  },
-  "3443": {
-    "name": "創意",
-    "upstream": [{ "name": "台積電", "code": "2330", "product": "晶圓代工", "dependency": "high" }],
-    "downstream": [
-      { "name": "Alchip客戶群", "code": null, "product": "ASIC設計服務", "revenueShare": null },
-      { "name": "HPC客戶", "code": null, "product": "高效能運算晶片", "revenueShare": null }
-    ],
-    "customers": ["Alchip客戶群", "HPC客戶"],
-    "suppliers": ["台積電"]
-  },
-  "3491": {
-    "name": "昇達科",
-    "upstream": [
-      { "name": "III-V族材料商", "code": null, "product": "砷化鎵/磷化銦", "dependency": "high" }
-    ],
-    "downstream": [
-      { "name": "電信商", "code": null, "product": "光收發模組", "revenueShare": null },
-      { "name": "資料中心運營商", "code": null, "product": "天線/高頻元件", "revenueShare": null }
-    ],
-    "customers": ["電信商", "資料中心運營商"],
-    "suppliers": ["III-V族材料商"]
-  },
-  "1503": {
-    "name": "士電",
-    "upstream": [
-      { "name": "矽鋼片供應商", "code": null, "product": "變壓器鐵芯材料", "dependency": "high" },
-      { "name": "銅線供應商", "code": null, "product": "變壓器繞線", "dependency": "high" }
-    ],
-    "downstream": [
-      { "name": "台電", "code": null, "product": "變壓器/配電設備", "revenueShare": ">50%" }
-    ],
-    "customers": ["台電", "公共工程"],
-    "suppliers": ["矽鋼片供應商", "銅線供應商"]
-  },
-  "1717": {
-    "name": "長興",
-    "upstream": [
-      { "name": "石化原料商", "code": null, "product": "環氧樹脂原料", "dependency": "medium" }
-    ],
-    "downstream": [
-      { "name": "PCB廠", "code": null, "product": "電子級樹脂", "revenueShare": null },
-      { "name": "半導體封裝廠", "code": null, "product": "封裝用樹脂", "revenueShare": null }
-    ],
-    "customers": ["PCB製造商", "半導體封裝廠"],
-    "suppliers": ["石化原料商"]
-  },
-  "6862": {
-    "name": "三集瑞-KY",
+  "2330": {
+    "name": "台積電",
+    "sector": "Technology",
+    "industry": "Semiconductors",
     "upstream": [
       {
-        "name": "金屬材料供應商",
         "code": null,
-        "product": "連接器端子材料",
-        "dependency": "medium"
+        "name": "ASML",
+        "product": "EUV 機台",
+        "dependency": "high",
+        "substituteRisk": "low"
+      },
+      {
+        "code": "6488",
+        "name": "環球晶",
+        "product": "矽晶圓",
+        "dependency": "medium",
+        "substituteRisk": "medium"
       }
     ],
     "downstream": [
-      { "name": "AI伺服器組裝廠", "code": null, "product": "高速連接器", "revenueShare": null }
+      {
+        "code": null,
+        "name": "Apple",
+        "product": "A/M 系列晶片",
+        "dependency": "high",
+        "revenueShare": ">20%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "NVIDIA",
+        "product": "AI GPU",
+        "dependency": "high",
+        "revenueShare": "~12%",
+        "relationship": "customer"
+      }
     ],
-    "customers": ["伺服器組裝廠"],
-    "suppliers": ["金屬材料供應商"]
+    "customers": ["Apple", "NVIDIA", "AMD", "Qualcomm", "聯發科", "Broadcom"],
+    "suppliers": ["ASML", "Applied Materials", "Tokyo Electron", "信越化學"],
+    "lastUpdated": "2026-03",
+    "coverageSource": "annual-report-2025"
+  },
+  "2454": {
+    "name": "聯發科",
+    "sector": "Technology",
+    "industry": "Semiconductors",
+    "upstream": [
+      {
+        "code": "2330",
+        "name": "台積電",
+        "product": "晶圓代工",
+        "dependency": "high",
+        "substituteRisk": "medium"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "小米",
+        "product": "手機晶片",
+        "dependency": "medium",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "OPPO",
+        "product": "手機晶片",
+        "dependency": "medium",
+        "revenueShare": "~10%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["小米", "OPPO", "vivo", "三星"],
+    "suppliers": ["台積電", "日月光", "矽品"],
+    "lastUpdated": "2026-03",
+    "coverageSource": "annual-report-2025"
+  },
+  "3443": {
+    "name": "創意",
+    "sector": "Technology",
+    "industry": "ASIC 設計服務",
+    "upstream": [
+      {
+        "code": "2330",
+        "name": "台積電",
+        "product": "先進製程晶圓代工",
+        "dependency": "high",
+        "substituteRisk": "low"
+      },
+      {
+        "code": null,
+        "name": "Arm",
+        "product": "CPU IP",
+        "dependency": "medium",
+        "substituteRisk": "medium"
+      }
+    ],
+    "downstream": [
+      {
+        "code": null,
+        "name": "雲端 AI 客戶",
+        "product": "客製化 AI ASIC",
+        "dependency": "high",
+        "revenueShare": "~30%",
+        "relationship": "customer"
+      },
+      {
+        "code": null,
+        "name": "HPC 新創",
+        "product": "資料中心 ASIC",
+        "dependency": "medium",
+        "revenueShare": "~15%",
+        "relationship": "customer"
+      }
+    ],
+    "customers": ["雲端 AI 客戶", "HPC 新創", "資料中心業者"],
+    "suppliers": ["台積電", "Arm", "EDA 工具商"],
+    "lastUpdated": "2026-03",
+    "coverageSource": "annual-report-2025"
   }
 }

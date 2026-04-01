@@ -36,9 +36,24 @@
 
 **需要 Gemini 做的部分：**
 
-1. 用 Google 搜尋各持股近期法說會日期（MOPS 只有已公告的，未公告的需要搜尋）
-2. 整理成以下 JSON 格式
-3. 寫入交接文件，**不要直接改代碼**
+1. **必須涵蓋所有持股**（見底部持股代碼清單，共 17 檔+權證 underlying）
+2. 搜尋每檔持股近期法說會、股東會、重大事件日期
+3. **citation 必須是實際來源 URL**（新聞連結、MOPS 公告頁面、公司官網），**不可以是 Google 搜尋頁面 URL**
+4. 如果找不到確認日期，標記 `confidence: "unconfirmed"` 並在 `unresolved_questions` 說明
+5. 如果完全沒有資料，也要在 JSON 中列出該股票並標記 `confidence: "no_data"`
+6. 寫入交接文件，**不要直接改代碼**
+
+**confidence 三級制：**
+
+- `"confirmed"` — 有 MOPS 公告或公司官方來源
+- `"estimated"` — 有新聞報導但非官方確認
+- `"unconfirmed"` — 無法找到可靠來源
+
+**禁止事項：**
+
+- 不可以用 Google 搜尋頁面 URL 當作 citation
+- 不可以用「根據過去週期推估」當作 estimated — 那叫猜測不叫蒐集
+- 不可以只查 3 檔就交差 — 必須涵蓋所有持股
 
 ```json
 {
@@ -48,13 +63,22 @@
       "name": "台達電",
       "eventType": "法說會",
       "date": "2026-04-15",
-      "source": "https://mops.twse.com.tw/...",
+      "source": "https://mops.twse.com.tw/mops/web/t05st01?...",
       "confidence": "confirmed"
+    },
+    {
+      "code": "3443",
+      "name": "創意",
+      "eventType": "法說會",
+      "date": null,
+      "source": null,
+      "confidence": "no_data"
     }
   ],
-  "citations": ["https://mops.twse.com.tw/..."],
+  "citations": ["https://mops.twse.com.tw/...", "https://udn.com/news/..."],
   "freshness": "2026-04-01 蒐集",
-  "unresolved_questions": ["3443 創意下次法說會日期尚未公布"]
+  "unresolved_questions": ["3443 創意下次法說會日期尚未公布", "1503 士電無近期法說會資訊"],
+  "coverage": "17/17 持股已查詢"
 }
 ```
 

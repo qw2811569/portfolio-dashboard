@@ -14,3 +14,11 @@ export {
   createEmptyTheme,
   mergeCompanyData,
 } from './types.js'
+
+export {
+  fetchQuotes,
+  fetchInstitutional,
+  fetchMonthlyRevenue,
+  fetchAnnouncements,
+  fetchCompanyData,
+} from './twsePublicAdapter.js'

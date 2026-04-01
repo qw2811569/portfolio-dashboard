@@ -20,13 +20,12 @@
 
 ## 📚 核心文檔（必讀）
 
-| 文檔                                                          | 用途                   | 讀者            |
-| ------------------------------------------------------------- | ---------------------- | --------------- |
-| [AI 協作指南](AI_COLLABORATION_GUIDE.md)                      | AI 協作規則、分工      | 所有 AI、開發者 |
-| [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md)      | 技術架構、資料流       | 開發者、AI      |
-| [使用者指南](USER_GUIDE_COMPLETE.md)                          | 功能說明、操作指南     | 使用者          |
-| [當前工作](superpowers/status/current-work.md)                | 進行中任務、checkpoint | 開發者、AI      |
-| [AI 角色分工](superpowers/status/ai-collaboration-channel.md) | AI 長期角色定位        | 所有 AI         |
+| 文檔                                                     | 用途                   | 讀者            |
+| -------------------------------------------------------- | ---------------------- | --------------- |
+| [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | AI 協作規則、分工      | 所有 AI、開發者 |
+| [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md) | 技術架構、資料流       | 開發者、AI      |
+| [使用者指南](USER_GUIDE_COMPLETE.md)                     | 功能說明、操作指南     | 使用者          |
+| [當前工作](superpowers/status/current-work.md)           | 進行中任務、checkpoint | 開發者、AI      |
 
 ---
 
@@ -45,32 +44,23 @@
 
 ```
 docs/
-├── README.md                      ← 你目前在這裡
-├── AI_COLLABORATION_GUIDE.md     ← AI 協作規則
+├── README.md                          ← 你目前在這裡
+├── AI_COLLABORATION_GUIDE.md         ← AI 協作規則（唯一 canonical）
 ├── PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md  ← 系統架構
-├── USER_GUIDE_COMPLETE.md        ← 使用者指南
-├── stock-selection-strategy.md   ← 選股策略
-├── phase0-implementation.md      ← Phase 0 實作
-├── THREE_KEY_POINTS_DISCUSSION.md ← 策略討論
-├── MY_TW_COVERAGE_ANALYSIS.md    ← 競品分析
-├── DOCUMENT_CLEANUP_PROPOSAL.md  ← 文檔清理建議
+├── USER_GUIDE_COMPLETE.md            ← 使用者指南
+├── stock-selection-strategy.md       ← 選股策略
+├── phase0-implementation.md          ← Phase 0 實作
+├── THREE_KEY_POINTS_DISCUSSION.md    ← 策略討論
+├── MY_TW_COVERAGE_ANALYSIS.md        ← 競品分析
 │
 ├── superpowers/
-│   ├── status/                   ← 狀態文件
-│   │   ├── current-work.md       ← 當前工作
-│   │   └── ai-collaboration-channel.md
-│   ├── specs/                    ← 規格文件
-│   └── plans/                    ← 計畫文件
+│   ├── status/                       ← 狀態文件
+│   │   └── current-work.md           ← 當前工作
+│   ├── specs/                        ← 規格文件
+│   └── plans/                        ← 計畫文件
 │
-├── archive/                      ← 歸檔區
-│   ├── debug-logs/               ← Debug 報告
-│   ├── optimization-logs/        ← 優化報告
-│   ├── strategy/                 ← 策略歷史
-│   └── historical/               ← 歷史文檔
-│
-├── evals/                        ← 評估框架
-├── refactoring/                  ← 重構記錄
-└── testing/                      ← 測試記錄
+├── evals/                            ← 評估框架
+└── testing/                          ← 測試記錄
 ```
 
 ---
@@ -94,29 +84,35 @@ npm run smoke:ui
 ### 相關文檔
 
 - [快速開始](QUICK_START.md)
-- [本地開發配置](LOCAL_DEV_CONFIG_UPDATE.md)
 - [伺服器訪問指南](SERVER_ACCESS_GUIDE.md)
 
 ---
 
-## 📝 文檔清理記錄
+## 📞 問題排查
 
-**2026-03-28 清理：**
+**遇到問題？依序檢查：**
 
-- 合併選股策略文檔（2 檔 → 1 檔）
-- 合併 Phase 0-4 文檔（2 檔 → 1 檔）
-- 歸檔 Debug 報告（6 檔 → archive）
-- 歸檔 Optimization 報告（5 檔 → archive）
-- 總減少：約 40% 文檔數量
+| 問題類型          | 查看文檔                                                 | 章節                          |
+| ----------------- | -------------------------------------------------------- | ----------------------------- |
+| 白頁 / 無法啟動   | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
+| Fast Refresh 錯誤 | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
+| 測試失敗          | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
+| Lint / Typecheck  | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
+| 策略大腦 / AI     | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 + docs/evals/program.md  |
+| 協作分工          | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §8 AI 分工與任務路由          |
+| Runtime 錯誤      | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 + §6 Runtime diagnostics |
+| 技術架構          | [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md) | 完整架構說明                  |
+| 進行中任務        | [當前工作](superpowers/status/current-work.md)           | 最新 checkpoint               |
 
-詳見：[文檔清理建議](DOCUMENT_CLEANUP_PROPOSAL.md)
+**快速命令：**
 
----
+```bash
+# 完整驗證
+npm run verify:local
 
-## 📞 問題回報
+# 健康檢查
+npm run healthcheck
 
-遇到問題？
-
-1. 先查看 [AI 協作指南](AI_COLLABORATION_GUIDE.md)
-2. 查看 [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md)
-3. 查看 [當前工作](superpowers/status/current-work.md)
+# UI 白頁檢查
+npm run smoke:ui
+```

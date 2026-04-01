@@ -197,14 +197,14 @@ export const PORTFOLIO_STORAGE_FIELDS = [
   {
     suffix: 'holdings-v2',
     alias: 'holdings',
-    ownerFallback: () => [],  // BUG-3 fix: 新用戶應看到空持股列表，而非 seedData 硬編碼
+    ownerFallback: () => INIT_HOLDINGS,
     emptyFallback: () => [],
   },
   { suffix: 'log-v2', alias: 'tradeLog', ownerFallback: () => [], emptyFallback: () => [] },
   {
     suffix: 'targets-v1',
     alias: 'targets',
-    ownerFallback: () => ({}),  // BUG-3 fix: 新用戶應看到空目標價，而非 seedData 硬編碼
+    ownerFallback: () => INIT_TARGETS,
     emptyFallback: () => ({}),
   },
   {
@@ -217,7 +217,7 @@ export const PORTFOLIO_STORAGE_FIELDS = [
   {
     suffix: 'watchlist-v1',
     alias: 'watchlist',
-    ownerFallback: () => [],  // BUG-3 fix: 新用戶應看到空觀察股，而非 seedData 硬編碼
+    ownerFallback: () => normalizeWatchlist(INIT_WATCHLIST),
     emptyFallback: () => [],
     hasLegacy: false,
   },

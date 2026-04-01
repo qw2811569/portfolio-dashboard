@@ -309,15 +309,21 @@ function formatDate(d) {
 
 
 // ── FinMind 個股新聞事件 ──
-async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
+export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
   if (stockCodes.length === 0) return []
 
   const events = []
+  const startDate = new Date(today)
+  startDate.setHours(0, 0, 0, 0)
+
   const endDate = new Date(today)
+  endDate.setHours(23, 59, 59, 999)
   endDate.setDate(endDate.getDate() + rangeDays)
 
-  // 關鍵字：法說、股東會、除權息、財報
-  const eventKeywords = ['法說', '股東會', '除權', '除息', '財報', '營收']
+  const conferencePattern = /法說/
+  const shareholderPattern = /股東(?:常)?會/
+  const dividendPattern = /除權|除息/
+  const earningsPattern = /財報|營收/
   
   try {
     // 對每檔持股查詢新聞
@@ -334,18 +340,23 @@ async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
       
       // 篩選含事件關鍵字的新聞
       for (const item of news) {
-        const hasEventKeyword = eventKeywords.some(kw => item.title?.includes(kw))
+        const title = String(item.title || '')
+        const hasEventKeyword =
+          conferencePattern.test(title) ||
+          shareholderPattern.test(title) ||
+          dividendPattern.test(title) ||
+          earningsPattern.test(title)
         if (!hasEventKeyword) continue
         
         const newsDate = new Date(item.date)
-        if (newsDate < today || newsDate > endDate) continue
+        if (newsDate < startDate || newsDate > endDate) continue
         
         // 判斷事件類型
         let type = 'news'
-        if (item.title?.includes('法說')) type = 'conference'
-        else if (item.title?.includes('股東會')) type = 'shareholder'
-        else if (item.title?.includes('除權') || item.title?.includes('除息')) type = 'dividend'
-        else if (item.title?.includes('財報') || item.title?.includes('營收')) type = 'earnings'
+        if (conferencePattern.test(title)) type = 'conference'
+        else if (shareholderPattern.test(title)) type = 'shareholder'
+        else if (dividendPattern.test(title)) type = 'dividend'
+        else if (earningsPattern.test(title)) type = 'earnings'
         
         events.push({
           id: `finmind-news-${code}-${item.date}`,

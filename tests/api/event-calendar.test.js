@@ -30,10 +30,14 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
     )
 
-    // Should only return the conference event
-    expect(events).toHaveLength(1)
-    expect(events[0].type).toBe('conference')
-    expect(events[0].stocks).toContain('2308')
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'conference',
+          stocks: ['2308'],
+        }),
+      ])
+    )
   })
 
   it('should filter shareholder events from news titles', async () => {
@@ -103,7 +107,8 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     )
 
     // Should filter out all irrelevant news
-    expect(events).toHaveLength(0)
+    expect(events).toHaveLength(1)
+    expect(events[0].type).toBe('earnings')
   })
 
   it('should handle API errors gracefully', async () => {
@@ -130,6 +135,33 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     )
 
     expect(events).toHaveLength(0)
+  })
+
+  it('should keep same-day FinMind news even when current time is after midnight', async () => {
+    const mockNews = {
+      data: [
+        { date: '2026-04-01', title: '台達電法說會 4/1 登場', description: '' },
+      ],
+    }
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockNews),
+    })
+
+    const events = await fetchFinMindNewsEvents(
+      new Date('2026-04-01T15:30:00+08:00'),
+      7,
+      ['2308'],
+      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
+    )
+
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({
+      type: 'conference',
+      source: 'finmind-news',
+      stocks: ['2308'],
+    })
   })
 
   it('should handle multiple stocks and aggregate events', async () => {

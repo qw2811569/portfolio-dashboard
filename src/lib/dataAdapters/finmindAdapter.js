@@ -6,8 +6,13 @@
  *   margin        — 融資融券餘額
  *   valuation     — PER / PBR / 殖利率歷史
  *   financials    — 完整財報（損益/資產負債/現金流）
+ *   balanceSheet  — 資產負債表
+ *   cashFlow      — 現金流量表
  *   dividend      — 股利政策歷史
+ *   dividendResult— 除權息實際結果
  *   revenue       — 月營收（含 YoY/MoM）
+ *   shareholding  — 外資持股比率
+ *   news          — 個股新聞（提供 Qwen 建動態事件來源）
  */
 
 async function fetchFinMind(dataset, code, startDate) {
@@ -69,11 +74,40 @@ export async function fetchFinancialStatements(code, startDate) {
 }
 
 /**
+ * 取得個股資產負債表
+ * @param {string} code
+ * @param {string} startDate
+ */
+export async function fetchBalanceSheet(code, startDate) {
+  const start = startDate || daysAgo(730)
+  return fetchFinMind('balanceSheet', code, start)
+}
+
+/**
+ * 取得個股現金流量表
+ * @param {string} code
+ * @param {string} startDate
+ */
+export async function fetchCashFlowStatements(code, startDate) {
+  const start = startDate || daysAgo(730)
+  return fetchFinMind('cashFlow', code, start)
+}
+
+/**
  * 取得個股股利歷史
  * @param {string} code
  */
 export async function fetchDividendHistory(code) {
   return fetchFinMind('dividend', code, daysAgo(1825)) // 5 年
+}
+
+/**
+ * 取得個股除權息結果
+ * @param {string} code
+ * @param {number} days
+ */
+export async function fetchDividendResults(code, days = 1825) {
+  return fetchFinMind('dividendResult', code, daysAgo(days))
 }
 
 /**
@@ -87,24 +121,68 @@ export async function fetchRevenueHistory(code, months = 12) {
 }
 
 /**
+ * 取得外資持股變化
+ * @param {string} code
+ * @param {number} days
+ */
+export async function fetchShareholdingHistory(code, days = 120) {
+  return fetchFinMind('shareholding', code, daysAgo(days))
+}
+
+/**
+ * 取得個股新聞（提供動態事件來源）
+ * @param {string} code
+ * @param {number} days
+ */
+export async function fetchStockNews(code, days = 21) {
+  return fetchFinMind('news', code, daysAgo(days))
+}
+
+/**
  * 組合查詢：一次取得個股的籌碼 + 估值 + 最近營收
  * 用於 holding dossier 充實
  * @param {string} code
- * @returns {Promise<{institutional, margin, valuation, revenue}>}
+ * @returns {Promise<{institutional, margin, valuation, financials, balanceSheet, cashFlow, dividend, dividendResult, revenue, shareholding, news}>}
  */
 export async function fetchStockDossierData(code) {
-  const [institutional, margin, valuation, revenue] = await Promise.allSettled([
+  const [
+    institutional,
+    margin,
+    valuation,
+    financials,
+    balanceSheet,
+    cashFlow,
+    dividend,
+    dividendResult,
+    revenue,
+    shareholding,
+    news,
+  ] = await Promise.allSettled([
     fetchInstitutionalChip(code, 20),
     fetchMarginTrading(code, 20),
     fetchValuationHistory(code, 90),
+    fetchFinancialStatements(code),
+    fetchBalanceSheet(code),
+    fetchCashFlowStatements(code),
+    fetchDividendHistory(code),
+    fetchDividendResults(code, 1825),
     fetchRevenueHistory(code, 6),
+    fetchShareholdingHistory(code, 90),
+    fetchStockNews(code, 14),
   ])
 
   return {
     institutional: institutional.status === 'fulfilled' ? institutional.value : [],
     margin: margin.status === 'fulfilled' ? margin.value : [],
     valuation: valuation.status === 'fulfilled' ? valuation.value : [],
+    financials: financials.status === 'fulfilled' ? financials.value : [],
+    balanceSheet: balanceSheet.status === 'fulfilled' ? balanceSheet.value : [],
+    cashFlow: cashFlow.status === 'fulfilled' ? cashFlow.value : [],
+    dividend: dividend.status === 'fulfilled' ? dividend.value : [],
+    dividendResult: dividendResult.status === 'fulfilled' ? dividendResult.value : [],
     revenue: revenue.status === 'fulfilled' ? revenue.value : [],
+    shareholding: shareholding.status === 'fulfilled' ? shareholding.value : [],
+    news: news.status === 'fulfilled' ? news.value : [],
   }
 }
 

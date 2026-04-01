@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
+import { buildHoldingCoverageContext } from '../lib/dossierUtils.js'
 import { collectInjectedKnowledgeIdsFromDossiers } from '../lib/knowledgeBase.js'
 import {
   buildAnalysisDossiers,
@@ -18,6 +19,7 @@ import {
 } from '../lib/dailyAnalysisRuntime.js'
 import {
   buildBudgetedBrainContext,
+  buildBudgetedCoverageContext,
   buildBudgetedHoldingSummary,
   formatRecentLessons,
 } from '../lib/promptBudget.js'
@@ -147,13 +149,41 @@ export function useDailyAnalysisWorkflow({
             text: buildDailyHoldingDossierContext(dossier, change, { compact: true }),
           }
         })
-        const holdingSummary =
+        const holdingSummaryBudget =
           holdingPromptEntries.length > 0
             ? buildBudgetedHoldingSummary(holdingPromptEntries, {
                 maxChars: 2200,
                 maxEntries: 5,
+              })
+            : { text: '目前沒有持股 dossier。', retainedKeys: [] }
+        const holdingSummary = holdingSummaryBudget.text
+        const retainedCoverageEntries = dailyDossiers
+          .filter(
+            (dossier) =>
+              holdingPromptEntries.length > 0 &&
+              holdingSummaryBudget.retainedKeys.includes(dossier.code)
+          )
+          .map((dossier) => {
+            const change = changes.find((item) => item.code === dossier.code)
+            return {
+              key: dossier.code,
+              code: dossier.code,
+              name: dossier.name,
+              weight:
+                Number(dossier?.position?.value) ||
+                Number(change?.price || dossier?.position?.price || 0) *
+                  Number(dossier?.position?.qty || 0),
+              text: buildHoldingCoverageContext(dossier),
+            }
+          })
+          .filter((entry) => entry.text)
+        const coverageContext =
+          retainedCoverageEntries.length > 0
+            ? buildBudgetedCoverageContext(retainedCoverageEntries, {
+                maxChars: 700,
+                maxEntries: 4,
               }).text
-            : '目前沒有持股 dossier。'
+            : ''
 
         const eventSummary = pendingEvents
           .map(
@@ -320,6 +350,7 @@ ${losers
               brainContext,
               revContext,
               holdingSummary,
+              coverageContext,
               anomalySummary,
               eventSummary,
               blindPredictions,

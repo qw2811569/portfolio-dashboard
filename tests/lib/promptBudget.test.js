@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildBudgetedBrainContext,
+  buildBudgetedCoverageContext,
   buildBudgetedHoldingSummary,
   formatRecentLessons,
 } from '../../src/lib/promptBudget.js'
@@ -44,5 +45,25 @@ describe('lib/promptBudget', () => {
     expect(budgeted.text).toContain('用戶確認規則')
     expect(budgeted.text).toContain('最近 3 條教訓')
     expect(budgeted.text).not.toContain('完整策略大腦完整策略大腦完整策略大腦')
+  })
+
+  it('keeps only core coverage entries when global supply-chain context exceeds budget', () => {
+    const entries = Array.from({ length: 5 }, (_, index) => ({
+      key: `coverage-${index + 1}`,
+      code: `${index + 1}`,
+      name: `持股${index + 1}`,
+      weight: 500 - index * 100,
+      text: `持股${index + 1} | ${'供應鏈摘要 '.repeat(20)}`,
+    }))
+
+    const budgeted = buildBudgetedCoverageContext(entries, {
+      maxChars: 240,
+      maxEntries: 2,
+    })
+
+    expect(budgeted.truncated).toBe(true)
+    expect(budgeted.text).toContain('供應鏈/主題 context 過長')
+    expect(budgeted.retainedKeys).toEqual(['coverage-1', 'coverage-2'])
+    expect(budgeted.omittedKeys).toContain('coverage-5')
   })
 })

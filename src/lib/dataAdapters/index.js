@@ -28,7 +28,12 @@ export {
   fetchMarginTrading,
   fetchValuationHistory,
   fetchFinancialStatements,
+  fetchBalanceSheet,
+  fetchCashFlowStatements,
   fetchDividendHistory,
+  fetchDividendResults,
   fetchRevenueHistory,
+  fetchShareholdingHistory,
+  fetchStockNews,
   fetchStockDossierData,
 } from './finmindAdapter.js'

@@ -371,6 +371,7 @@ export function buildDailyAnalysisRequest({
   brainContext = '',
   revContext = '',
   holdingSummary = '目前沒有持股 dossier。',
+  coverageContext = '',
   anomalySummary = '無',
   eventSummary = '',
   blindPredictions = [],
@@ -393,6 +394,7 @@ export function buildDailyAnalysisRequest({
       wrapPromptSection('portfolio_notes', notesContext),
       wrapPromptSection('brain_context', brainContext),
       wrapPromptSection('reversal_watch', revContext),
+      wrapPromptSection('coverage_context', coverageContext),
       wrapPromptSection('portfolio_holdings', holdingSummary, '目前沒有持股 dossier。'),
       wrapPromptSection(
         'concentration_risk',
@@ -407,6 +409,7 @@ export function buildDailyAnalysisRequest({
       blindPredictions.length > 0
         ? '先對比 <blind_prediction_review> 與 <today_performance>，指出預測對錯與原因。'
         : '先讀 <portfolio_holdings> 的 thesis / targets / events / brain，再結合 <today_performance> 判斷，不要只看漲跌幅。',
+      '把 <coverage_context> 當成跨持股一次性的供應鏈/主題補充，不要在每檔持股重複改寫整段供應鏈。',
       'A 級優先處理只選 1-3 檔，其餘持股一律用一句話快照。',
       '若資料 freshness 為 stale 或 missing，要直接標明不確定性，不可假裝有最新資料。',
       '只挑 1-3 個與今日走勢真正有因果關聯的事件。',

@@ -138,6 +138,7 @@ describe('lib/dailyAnalysisRuntime', () => {
     const analysisRequest = buildDailyAnalysisRequest({
       today: '2026/03/28',
       holdingSummary: '持股摘要',
+      coverageContext: '創意(3443) | 上游: 台積電 | 相關主題: CoWoS',
       blindPredictions: [],
     })
     const insight = `## 今日總結\nOK\n## 📋 EVENT_ASSESSMENTS\n\`\`\`json\n[]\n\`\`\`\n## 🧬 BRAIN_UPDATE\n\`\`\`json\n{}\n\`\`\`\n`
@@ -162,8 +163,11 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(analysisRequest.maxTokens).toBe(2200)
     expect(analysisRequest.allowThinking).toBe(false)
     expect(analysisRequest.userPrompt).toContain('<analysis_packet mode="daily_close">')
+    expect(analysisRequest.userPrompt).toContain('<coverage_context>')
+    expect(analysisRequest.userPrompt).toContain('創意(3443) | 上游: 台積電 | 相關主題: CoWoS')
     expect(analysisRequest.userPrompt).toContain('<portfolio_holdings>')
     expect(analysisRequest.userPrompt).toContain('A 級優先處理只選 1-3 檔')
+    expect(analysisRequest.userPrompt).toContain('不要在每檔持股重複改寫整段供應鏈')
     expect(stripDailyAnalysisEmbeddedBlocks(insight)).toBe('## 今日總結\nOK')
     expect(report).toMatchObject({
       date: '2026/03/28',

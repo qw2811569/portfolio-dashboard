@@ -84,7 +84,10 @@ function summarizeThesisForPrompt(thesis) {
 function buildCompactFinMindSummary(finmind) {
   if (
     !finmind ||
-    (!finmind.institutional?.length && !finmind.valuation?.length && !finmind.margin?.length)
+    (!finmind.institutional?.length &&
+      !finmind.valuation?.length &&
+      !finmind.margin?.length &&
+      !finmind.shareholding?.length)
   ) {
     return '無'
   }
@@ -112,6 +115,20 @@ function buildCompactFinMindSummary(finmind) {
   if (finmind.margin?.length > 1) {
     const change = (finmind.margin[0]?.marginBalance || 0) - (finmind.margin[1]?.marginBalance || 0)
     parts.push(`融資${formatSignedNumber(change)}張`)
+  }
+
+  if (finmind.shareholding?.length > 0) {
+    const latest = finmind.shareholding[0]
+    const prev = finmind.shareholding[1]
+    const ratio = Number(latest?.foreignShareRatio)
+    const prevRatio = Number(prev?.foreignShareRatio)
+    const delta =
+      Number.isFinite(ratio) && Number.isFinite(prevRatio)
+        ? `${ratio - prevRatio >= 0 ? '+' : ''}${(ratio - prevRatio).toFixed(2)}pp`
+        : null
+    if (Number.isFinite(ratio)) {
+      parts.push(`外資持股 ${ratio.toFixed(2)}%${delta ? `(${delta})` : ''}`)
+    }
   }
 
   return parts.length > 0 ? parts.join(' | ') : '無'
@@ -310,7 +327,13 @@ export function buildResearchHoldingDossierContext(dossier, { compact = false } 
  * 建立 FinMind 籌碼數據上下文（用於 daily analysis prompt）
  */
 export function buildFinMindChipContext(finmind) {
-  if (!finmind || (!finmind.institutional?.length && !finmind.valuation?.length && !finmind.margin?.length)) {
+  if (
+    !finmind ||
+    (!finmind.institutional?.length &&
+      !finmind.valuation?.length &&
+      !finmind.margin?.length &&
+      !finmind.shareholding?.length)
+  ) {
     return ''
   }
 
@@ -341,6 +364,22 @@ export function buildFinMindChipContext(finmind) {
     if (recent.length >= 2) {
       const change = (recent[0].marginBalance || 0) - (recent[1].marginBalance || 0)
       lines.push(`  融資變化：${change >= 0 ? '+' : ''}${change}張`)
+    }
+  }
+
+  if (finmind.shareholding?.length > 0) {
+    const latest = finmind.shareholding[0]
+    const prev = finmind.shareholding[1]
+    const latestRatio = Number(latest?.foreignShareRatio)
+    const prevRatio = Number(prev?.foreignShareRatio)
+    if (Number.isFinite(latestRatio)) {
+      const delta =
+        Number.isFinite(prevRatio) ? latestRatio - prevRatio : null
+      lines.push(
+        `  外資持股比：${latestRatio.toFixed(2)}%${
+          delta != null ? `（${delta >= 0 ? '+' : ''}${delta.toFixed(2)}pp）` : ''
+        }`
+      )
     }
   }
 
@@ -479,7 +518,16 @@ export function formatTaiwanValidationSignalLabel(value) {
 /**
  * 建立供應鏈 context 文字（for AI prompt）
  */
-export function buildSupplyChainContext(code) {
+export function buildSupplyChainContext(
+  code,
+  {
+    upstreamLimit = 3,
+    downstreamLimit = 3,
+    customerLimit = 5,
+    supplierLimit = 5,
+    competitorLimit = 3,
+  } = {}
+) {
   const chain = getSupplyChain(code)
   if (!chain) return ''
 
@@ -487,6 +535,7 @@ export function buildSupplyChainContext(code) {
 
   if (chain.upstream.length > 0) {
     const upstreamText = chain.upstream
+      .slice(0, Math.max(1, upstreamLimit))
       .map((s) => `${s.name}(${s.product}${s.dependency === 'high' ? ',高度依賴' : ''})`)
       .join(', ')
     parts.push(`上游: ${upstreamText}`)
@@ -494,21 +543,24 @@ export function buildSupplyChainContext(code) {
 
   if (chain.downstream.length > 0) {
     const downstreamText = chain.downstream
+      .slice(0, Math.max(1, downstreamLimit))
       .map((s) => `${s.name}(${s.product}${s.revenueShare ? ',' + s.revenueShare + '營收' : ''})`)
       .join(', ')
     parts.push(`下游: ${downstreamText}`)
   }
 
   if (chain.customers.length > 0) {
-    parts.push(`主要客戶: ${chain.customers.join(', ')}`)
+    parts.push(`主要客戶: ${chain.customers.slice(0, Math.max(1, customerLimit)).join(', ')}`)
   }
 
   if (chain.suppliers.length > 0) {
-    parts.push(`主要供應商: ${chain.suppliers.join(', ')}`)
+    parts.push(`主要供應商: ${chain.suppliers.slice(0, Math.max(1, supplierLimit)).join(', ')}`)
   }
 
   if (chain.competitors?.length > 0) {
-    parts.push(`主要競爭對手：${chain.competitors.join(', ')}`)
+    parts.push(
+      `主要競爭對手：${chain.competitors.slice(0, Math.max(1, competitorLimit)).join(', ')}`
+    )
   }
 
   return parts.join('\n')
@@ -517,16 +569,43 @@ export function buildSupplyChainContext(code) {
 /**
  * 建立主題 context 文字（for AI prompt）
  */
-export function buildThemeContext(code, stockMeta) {
+export function buildThemeContext(code, stockMeta, { maxThemes = 4 } = {}) {
   if (!stockMeta?.themes?.length) return ''
 
-  const themes = stockMeta.themes.map((name) => {
+  const themes = stockMeta.themes.slice(0, Math.max(1, maxThemes)).map((name) => {
     const found = getThemesForStock(code).find((t) => t.name === name)
     if (found) return `${name}(${found.count}家)`
     return name
   })
 
   return `相關主題: ${themes.join(', ')}`
+}
+
+export function buildHoldingCoverageContext(
+  dossier,
+  {
+    maxThemes = 4,
+    upstreamLimit = 3,
+    downstreamLimit = 3,
+    customerLimit = 5,
+    supplierLimit = 5,
+    competitorLimit = 3,
+  } = {}
+) {
+  if (!dossier) return ''
+  const supplyChainText = buildSupplyChainContext(dossier.code, {
+    upstreamLimit,
+    downstreamLimit,
+    customerLimit,
+    supplierLimit,
+    competitorLimit,
+  })
+    .replace(/\n+/g, ' | ')
+    .trim()
+  const themeText = buildThemeContext(dossier.code, dossier.stockMeta, { maxThemes }).trim()
+  const parts = [supplyChainText, themeText].filter(Boolean)
+  if (parts.length === 0) return ''
+  return `${dossier.name}(${dossier.code}) | ${parts.join(' | ')}`
 }
 
 /**
@@ -563,9 +642,9 @@ export function buildThemeChips(code) {
  * 建立主題標籤文字（用於 prompt）
  */
 export function buildThemeChipsText(code) {
-  const chips = buildThemeChips(code);
-  if (chips.length === 0) return '';
-  return chips.map(c => c.label).join(' | ');
+  const chips = buildThemeChips(code)
+  if (chips.length === 0) return ''
+  return chips.map((c) => c.label).join(' | ')
 }
 
 export function buildThesisScorecardContext(thesis) {

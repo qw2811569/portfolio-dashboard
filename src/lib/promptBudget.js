@@ -82,6 +82,56 @@ export function buildBudgetedHoldingSummary(
   }
 }
 
+export function buildBudgetedCoverageContext(
+  entries,
+  { maxChars = 900, maxEntries = 5, joiner = '\n' } = {}
+) {
+  const normalizedEntries = (Array.isArray(entries) ? entries : [])
+    .map((entry, index) => {
+      const text = normalizePromptText(entry?.text)
+      if (!text) return null
+      return {
+        key: String(entry?.key || entry?.code || entry?.name || index),
+        code: String(entry?.code || '').trim(),
+        name: String(entry?.name || '').trim(),
+        weight: Number.isFinite(Number(entry?.weight)) ? Number(entry.weight) : 0,
+        index,
+        text,
+      }
+    })
+    .filter(Boolean)
+
+  const fullText = normalizedEntries.map((entry) => entry.text).join(joiner)
+  if (fullText.length <= maxChars) {
+    return {
+      text: fullText,
+      truncated: false,
+      retainedKeys: normalizedEntries.map((entry) => entry.key),
+      omittedKeys: [],
+    }
+  }
+
+  const retained = [...normalizedEntries]
+    .sort((a, b) => b.weight - a.weight || a.index - b.index)
+    .slice(0, Math.max(1, maxEntries))
+  const retainedKeySet = new Set(retained.map((entry) => entry.key))
+  const omitted = normalizedEntries.filter((entry) => !retainedKeySet.has(entry.key))
+  const note = [
+    '【prompt budget】供應鏈/主題 context 過長，已改為只保留核心部位',
+    `${omitted.length}檔已省略，僅保留${retained.length}檔`,
+  ].join('')
+
+  return {
+    text: truncatePromptText(
+      [note, retained.map((entry) => entry.text).join(joiner)].filter(Boolean).join('\n'),
+      maxChars
+    ),
+    truncated: true,
+    retainedKeys: retained.map((entry) => entry.key),
+    omittedKeys: omitted.map((entry) => entry.key),
+  }
+}
+
 export function buildBudgetedBrainContext({
   fullText = '',
   userRulesText = '',

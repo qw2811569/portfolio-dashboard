@@ -1,0 +1,197 @@
+{
+  "1503": {
+    "name": "士電",
+    "themes": [
+      {
+        "theme": "電動車",
+        "position": null
+      }
+    ]
+  },
+  "1717": {
+    "name": "長興",
+    "themes": [
+      {
+        "theme": "Apple",
+        "position": null
+      },
+      {
+        "theme": "CoWoS",
+        "position": "中游"
+      }
+    ]
+  },
+  "2308": {
+    "name": "台達電",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": "中游"
+      },
+      {
+        "theme": "NVIDIA",
+        "position": "下游"
+      },
+      {
+        "theme": "碳化矽",
+        "position": "上游"
+      },
+      {
+        "theme": "資料中心",
+        "position": "下游"
+      },
+      {
+        "theme": "電動車",
+        "position": "下游"
+      }
+    ]
+  },
+  "2313": {
+    "name": "華通",
+    "themes": [
+      {
+        "theme": "低軌衛星",
+        "position": "下游"
+      }
+    ]
+  },
+  "3013": {
+    "name": "晟銘電",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": null
+      },
+      {
+        "theme": "NVIDIA",
+        "position": null
+      }
+    ]
+  },
+  "3017": {
+    "name": "奇鋐",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": "下游"
+      },
+      {
+        "theme": "NVIDIA",
+        "position": null
+      }
+    ]
+  },
+  "3231": {
+    "name": "緯創",
+    "themes": [
+      {
+        "theme": "ABF_載板",
+        "position": null
+      },
+      {
+        "theme": "AI_伺服器",
+        "position": "上游"
+      },
+      {
+        "theme": "HBM",
+        "position": null
+      },
+      {
+        "theme": "NVIDIA",
+        "position": "上游"
+      }
+    ]
+  },
+  "3443": {
+    "name": "創意",
+    "themes": [
+      {
+        "theme": "CoWoS",
+        "position": null
+      }
+    ]
+  },
+  "3491": {
+    "name": "昇達科",
+    "themes": [
+      {
+        "theme": "5G",
+        "position": null
+      },
+      {
+        "theme": "低軌衛星",
+        "position": "下游"
+      }
+    ]
+  },
+  "4979": {
+    "name": "華星光",
+    "themes": [
+      {
+        "theme": "5G",
+        "position": null
+      },
+      {
+        "theme": "資料中心",
+        "position": "上游"
+      }
+    ]
+  },
+  "6139": {
+    "name": "亞翔",
+    "themes": [
+      {
+        "theme": "CoWoS",
+        "position": "下游"
+      }
+    ]
+  },
+  "6274": {
+    "name": "台燿",
+    "themes": [
+      {
+        "theme": "NVIDIA",
+        "position": null
+      },
+      {
+        "theme": "低軌衛星",
+        "position": null
+      }
+    ]
+  },
+  "6770": {
+    "name": "力積電",
+    "themes": [
+      {
+        "theme": "HBM",
+        "position": "下游"
+      },
+      {
+        "theme": "矽晶圓",
+        "position": "上游"
+      }
+    ]
+  },
+  "6862": {
+    "name": "三集瑞-KY",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": "中游"
+      },
+      {
+        "theme": "NVIDIA",
+        "position": "下游"
+      }
+    ]
+  },
+  "8227": {
+    "name": "巨有科技",
+    "themes": [
+      {
+        "theme": "CoWoS",
+        "position": null
+      }
+    ]
+  }
+}

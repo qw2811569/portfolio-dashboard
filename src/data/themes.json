@@ -5,7 +5,7 @@
     "relatedThemes": ["CoWoS", "HBM", "NVIDIA", "CPO", "資料中心"],
     "stocks": {
       "upstream": ["2382", "2324", "3231", "2356"],
-      "midstream": ["2308", "2317", "3044", "3011"],
+      "midstream": ["2308", "2317", "3044", "3011", "3013", "6862"],
       "downstream": ["3017", "3037", "2327", "2383"]
     }
   },
@@ -15,8 +15,8 @@
     "relatedThemes": ["AI伺服器", "HBM", "NVIDIA"],
     "stocks": {
       "upstream": [],
-      "midstream": ["2330"],
-      "downstream": ["3037", "8046", "2344"]
+      "midstream": ["2330", "1717", "3443"],
+      "downstream": ["3037", "8046", "2344", "6139", "8227"]
     }
   },
   "NVIDIA": {
@@ -25,8 +25,8 @@
     "relatedThemes": ["AI伺服器", "CoWoS", "HBM", "資料中心"],
     "stocks": {
       "upstream": ["2330", "3443"],
-      "midstream": ["2317", "2382", "3231"],
-      "downstream": ["3017", "6862"]
+      "midstream": ["2317", "2382", "3231", "6274"],
+      "downstream": ["2308", "3013", "3017", "6862"]
     }
   },
   "HBM": {
@@ -35,8 +35,8 @@
     "relatedThemes": ["AI伺服器", "CoWoS", "NVIDIA"],
     "stocks": {
       "upstream": [],
-      "midstream": [],
-      "downstream": ["3037", "2330"]
+      "midstream": ["3231"],
+      "downstream": ["3037", "2330", "6770"]
     }
   },
   "CPO": {
@@ -54,7 +54,7 @@
     "count": 77,
     "relatedThemes": ["AI伺服器", "CPO", "NVIDIA"],
     "stocks": {
-      "upstream": ["2308", "2317"],
+      "upstream": ["2308", "2317", "4979"],
       "midstream": ["3017", "3231", "2382"],
       "downstream": ["3491"]
     }
@@ -65,8 +65,8 @@
     "relatedThemes": ["低軌衛星"],
     "stocks": {
       "upstream": [],
-      "midstream": [],
-      "downstream": []
+      "midstream": ["3491"],
+      "downstream": ["4979"]
     }
   },
   "電動車": {
@@ -76,7 +76,7 @@
     "stocks": {
       "upstream": [],
       "midstream": [],
-      "downstream": []
+      "downstream": ["1503", "2308"]
     }
   },
   "低軌衛星": {
@@ -85,8 +85,8 @@
     "relatedThemes": ["5G"],
     "stocks": {
       "upstream": [],
-      "midstream": [],
-      "downstream": ["3491"]
+      "midstream": ["6274"],
+      "downstream": ["2313", "3491"]
     }
   },
   "矽光子": {
@@ -104,7 +104,7 @@
     "count": 15,
     "relatedThemes": ["電動車"],
     "stocks": {
-      "upstream": [],
+      "upstream": ["2308"],
       "midstream": [],
       "downstream": []
     }
@@ -115,7 +115,27 @@
     "relatedThemes": ["AI伺服器", "CoWoS"],
     "stocks": {
       "upstream": [],
-      "midstream": ["3037", "8046"],
+      "midstream": ["3037", "8046", "3231"],
+      "downstream": []
+    }
+  },
+  "Apple": {
+    "description": "Apple 供應鏈 — iPhone/Mac 處理器、面板、組裝",
+    "count": 30,
+    "relatedThemes": ["CoWoS"],
+    "stocks": {
+      "upstream": [],
+      "midstream": ["1717"],
+      "downstream": []
+    }
+  },
+  "矽晶圓": {
+    "description": "半導體矽晶圓材料供應鏈",
+    "count": 8,
+    "relatedThemes": ["HBM"],
+    "stocks": {
+      "upstream": ["6770"],
+      "midstream": [],
       "downstream": []
     }
   }

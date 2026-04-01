@@ -75,6 +75,96 @@
 
 參考 `docs/superpowers/specs/2026-03-31-kb-evolution-design.md`。把知識庫的 confidence auto-adjust 接到 research evolve pipeline。
 
+### 新一輪任務（Claude 2026-04-02 指派）
+
+**開始前先 `git pull origin main`。**
+
+#### P3：FinMind adapter 擴充 — 免費 datasets 補齊
+
+Claude 已建好 `docs/finmind-api-reference.md`，列出所有 90 個 datasets 的 tier 和欄位。
+
+目前 `api/finmind.js` 只接了 6 個 datasets，但 FinMind 免費就能用的高價值 datasets 還有很多。
+
+**優先補接的 datasets（全部 Free tier）：**
+
+1. **TaiwanStockBalanceSheet** — 資產負債表（負債比、股東權益）
+   - schema 跟 FinancialStatements 一樣（type/value/origin_name），需要 pivot
+2. **TaiwanStockCashFlowsStatement** — 現金流量表（營運/投資/融資）
+   - 同上 schema
+3. **TaiwanStockShareholding** — 外資持股比率（`ForeignInvestmentRemainRatio`）
+   - 追蹤外資信心度變化
+4. **TaiwanStockDividendResult** — 除權息實際結果（填息狀況）
+5. **TaiwanStockNews** — 個股新聞（title, description, link, source）
+   - Qwen 會用這個建動態事件來源（取代 Gemini 手動蒐集法說會）
+   - Codex 負責確保 api/finmind.js 的 DATASET_MAP 有加入此 dataset
+
+**做法：**
+
+- 在 `api/finmind.js` 的 `DATASET_MAP` 加入這 5 個 dataset
+- 在 `src/lib/dataAdapters/finmindAdapter.js` 加對應的 fetch 函數
+- BalanceSheet 和 CashFlows 可以跟 FinancialStatements 共用 transform 邏輯（pivot by type）
+
+**不需要改前端** — dossier enrichment 會自動吃到新數據。
+
+#### P4：prompt 契約更新 — 供應鏈 + 主題 context
+
+Claude 剛把 `supplyChain.json` 從 8→20 entries，`themes.json` 也全部填滿。這意味著 daily analysis prompt 現在每檔持股都有供應鏈和主題 context。
+
+**需要 Codex 做的：**
+
+1. 確認 `buildSupplyChainContext()` 和 `buildThemeContext()` 的輸出不會讓 prompt 爆掉
+   - 新增的供應鏈 context（20 檔 x 平均 200 字 = 4000 字）可能把 prompt 推回 timeout 邊界
+2. 在 `promptBudget.js` 加入供應鏈 context 的截斷規則
+   - 例如：只保留 upstream/downstream 各 top 3、customers top 5
+3. 考慮把供應鏈 context 從每檔持股重複塞入改成全局一次性附帶
+
+#### P5：Vercel Cron 時區修正（如需要）
+
+`api/cron/collect-daily-events.js` 的 Cron 在 Vercel 上是 UTC 時區。確認 08:00 UTC 是否對應台灣時間 16:00（收盤後），如果不是，調整 cron schedule。
+
+#### P6：streaming response 規劃（長期）
+
+60.21s latency 即使瘦身後仍可能在持股數增加時回到邊界。規劃 `/api/analyze` 改用 streaming response（`ReadableStream` + Vercel Edge Function），讓前端逐步渲染分析結果。
+
+**這是規劃文件，不是立即實作。** 產出一份 `docs/specs/streaming-analysis-design.md`：
+- 前端 `useDailyAnalysisWorkflow.js` 如何改成 streaming consumer
+- Edge Function vs Serverless Function 的 timeout 差異
+- 預估可以省多少 perceived latency
+
+### 新一輪任務（Claude 2026-04-02 第二輪指派）
+
+**開始前先確認 `274cac6` 已 push 到 origin/main。如果沒有，先修 GitHub 認證再 push。**
+
+#### P7：streaming 實作第一階段 — `/api/analyze` 改 streaming response
+
+P6 設計文件已完成。開始實作：
+
+1. `api/analyze.js` 改用 `ReadableStream`（或 Vercel Edge Function），邊生成邊回傳
+2. `api/_lib/ai-provider.js` 加 streaming mode — Anthropic SDK 的 `stream: true`
+3. 前端 `useDailyAnalysisWorkflow.js` 改成 streaming consumer：逐步渲染分析正文，`EVENT_ASSESSMENTS` / `BRAIN_UPDATE` 在流結束後解析
+
+**這是解決 60s timeout 的根本方案。** prompt 瘦身只能治標，streaming 才能讓用戶在 5 秒內看到第一批文字。
+
+#### P8：production smoke test + deploy
+
+push 後部署到 Vercel，驗證：
+1. `/api/analyze` latency（目標 < 40s，之前 60.21s）
+2. FinMind 新 datasets 回傳正常（balanceSheet, cashFlow, shareholding）
+3. 動態事件行事曆（Qwen 建的 FinMind TaiwanStockNews 事件源）
+
+#### P9：FinMind 付費後 — Backer datasets 接入
+
+用戶即將訂閱 FinMind Backer (NT$459/月)。付費後解鎖的高價值 datasets：
+
+1. **TaiwanStockHoldingSharesPer** — 持股分布（散戶 vs 大戶集中度）
+2. **TaiwanBusinessIndicator** — 景氣指標（領先/同時/落後 + 燈號）
+3. **TaiwanStockMarketValue** — 每日市值
+4. **CnnFearGreedIndex** — 恐懼貪婪指數
+
+**這個等付費確認後才做。** 先準備 adapter 的 dataset mapping，付費後加一行 `FINMIND_TOKEN` 環境變數就上線。
+
+完整 dataset 參考見 `docs/finmind-api-reference.md`。
+
 ## Codex 不要做的事
 
 - 不要改知識庫 JSON 內容（Claude/Qwen 負責）

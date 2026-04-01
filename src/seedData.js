@@ -141,14 +141,14 @@ export const STOCK_META = {
     leader: 'N/A',
     underlying: '華星光',
   },
-  1503: { industry: '重電', strategy: '景氣循環', period: '中', position: '衛星', leader: '二線' },
+  1503: { industry: '重電', strategy: '景氣循環', period: '中', position: '衛星', leader: '二線', themes: ['電動車'] },
   1717: {
     industry: 'PCB/材料',
     strategy: '景氣循環',
     period: '中',
     position: '衛星',
     leader: '龍頭',
-    themes: ['ABF載板'],
+    themes: ['CoWoS', 'Apple'],
   },
   2308: {
     industry: 'AI/伺服器',
@@ -156,7 +156,7 @@ export const STOCK_META = {
     period: '中長',
     position: '核心',
     leader: '龍頭',
-    themes: ['AI伺服器', '資料中心', '電動車'],
+    themes: ['AI伺服器', 'NVIDIA', '資料中心', '電動車', '碳化矽'],
   },
   2313: {
     industry: 'PCB/材料',
@@ -164,6 +164,7 @@ export const STOCK_META = {
     period: '中',
     position: '衛星',
     leader: '二線',
+    themes: ['低軌衛星'],
   },
   2543: { industry: '營建', strategy: '景氣循環', period: '中', position: '戰術', leader: '小型' },
   3006: {
@@ -179,7 +180,7 @@ export const STOCK_META = {
     period: '中',
     position: '衛星',
     leader: '小型',
-    themes: ['AI伺服器'],
+    themes: ['AI伺服器', 'NVIDIA'],
   },
   3017: {
     industry: 'AI/伺服器',
@@ -187,7 +188,7 @@ export const STOCK_META = {
     period: '中長',
     position: '核心',
     leader: '龍頭',
-    themes: ['AI伺服器', '資料中心'],
+    themes: ['AI伺服器', 'NVIDIA', '資料中心'],
   },
   3231: {
     industry: 'AI/伺服器',
@@ -195,7 +196,7 @@ export const STOCK_META = {
     period: '中',
     position: '衛星',
     leader: '大型',
-    themes: ['AI伺服器', 'NVIDIA'],
+    themes: ['AI伺服器', 'NVIDIA', 'HBM', 'ABF載板', '資料中心'],
   },
   3443: {
     industry: 'AI/伺服器',
@@ -211,7 +212,7 @@ export const STOCK_META = {
     period: '中長',
     position: '核心',
     leader: '小龍頭',
-    themes: ['CPO', '低軌衛星', '資料中心'],
+    themes: ['CPO', '5G', '低軌衛星', '資料中心'],
   },
   4583: {
     industry: '精密機械',
@@ -226,7 +227,7 @@ export const STOCK_META = {
     period: '中',
     position: '衛星',
     leader: '二線',
-    themes: ['AI伺服器'],
+    themes: ['NVIDIA', '低軌衛星'],
   },
   6770: {
     industry: 'IC/記憶體',
@@ -234,6 +235,7 @@ export const STOCK_META = {
     period: '中長',
     position: '衛星',
     leader: '二線',
+    themes: ['HBM', '矽晶圓'],
   },
   6862: {
     industry: '連接器',
@@ -249,7 +251,7 @@ export const STOCK_META = {
     period: '中長',
     position: '衛星',
     leader: '小型',
-    themes: ['CPO', '資料中心'],
+    themes: ['CoWoS'],
   },
   // ── 金聯成 組合 ──
   '0050': {

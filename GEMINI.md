@@ -253,48 +253,76 @@
 
 **交接方式：** 寫到 `docs/gemini-research/finmind-validation-YYYY-MM-DD.json`。
 
-## 已完成任務（Claude 2026-04-01 晚確認）
+## 已完成任務（Claude 2026-04-02 確認）
 
-- ✅ 工作流程 4：供應鏈更新（supply-chain-2026-04-01.json，6 檔持股）
+- ✅ 工作流程 1：法說會行事曆（event-calendar-2026-04-01.json，20 檔）
+- ✅ 工作流程 2：目標價更新（target-price-2026-04-01.json）— 已匯入 seedData
+- ✅ 工作流程 4：供應鏈更新（supply-chain-2026-04-01.json，6 檔）— Claude 已用 My-TW-Coverage repo 擴充到 20 檔
 - ✅ 工作流程 5：知識庫 fact-check（fact-check-2026-04-01.json）
-- ✅ 工作流程 7：FinMind 數據驗證（finmind-validation-2026-04-01.json，PER 比對 Goodinfo）
-- ~~工作流程 1：法說會行事曆~~ **已取消** — 法說會是確定性公開資料，應由 MOPS 自動抓取（`api/cron/collect-daily-events.js`），不需要 AI 手動搜尋。MOPS 穩定性問題已轉派 Qwen 修。
+- ✅ 工作流程 6：競爭態勢監測（competitive-landscape-2026-04-01.json）
+- ✅ 工作流程 7：FinMind 數據驗證（finmind-validation-2026-04-01.json）
+- ✅ prompt 優化研究（prompt-optimization-research-2026-04-01.json）
 
-## 新一輪任務（Claude 2026-04-01 晚指派）
+## 新一輪任務（Claude 2026-04-02 指派）
 
-### A. 重新啟用：法說會行事曆蒐集（MOPS 確認被擋）
+**開始前先確認日期是 2026-04-02，輸出檔名用 2026-04-02。**
 
-MOPS 確認需要完整瀏覽器會話（cookie/JS），簡單 fetch 被擋。Cron 已改成讀取 Gemini 蒐集的 JSON 作為事件來源。
+### ~~A. 法說會行事曆更新~~ → 已取消
 
-**所以法說會蒐集仍然需要 Gemini 做。** 但品質要求不變：
+法說會手動蒐集不具備多用戶擴展性（只覆蓋固定 17 檔持股）。已改派 Qwen 建立動態事件查詢 API，讓任意股票代碼都能查到法說會。
 
-- 必須涵蓋全部 17 檔
-- citation 必須是實際來源 URL（不可以是 Google 搜尋頁面）
-- 找不到的標 `confidence: "no_data"`
+Gemini 已有的 `event-calendar-2026-04-01.json` 繼續作為 fallback，但不再定期更新。
 
-**重點變化：** 你的輸出現在直接被 `api/cron/collect-daily-events.js` 的 `loadGeminiEvents()` 讀取，會自動出現在用戶的行事曆上。只有 `confidence: "confirmed"` 的事件會被匯入。
+### B. 產業新聞蒐集（工作流程 3 — 首次執行）
 
-刪除 `docs/gemini-research/event-calendar-2026-04-01.json` 並重做。
+這個工作流程之前沒做過。搜尋持股相關的近 7 天產業新聞：
 
-### B. 目標價更新（工作流程 2）
+1. 篩選有投資決策價值的新聞（排除純八卦、重複報導）
+2. 每檔持股至少搜 1 則，重點持股（2308/3017/3231/3443）深入搜
+3. 標記 impact（positive/negative/neutral）
+4. 如果能關聯到知識庫 entry ID 更好（如 `it-051 CoWoS 先進封裝`）
 
-搜尋 STOCK_META 中所有持股的最新券商目標價。比對 `src/seedData.js` 的 `INIT_TARGETS`，找出過時的。產出到 `docs/gemini-research/target-price-2026-04-01.json`。
+產出到 `docs/gemini-research/news-2026-04-02.json`。格式見上方工作流程 3。
 
-**注意：** Gemini 已產出此檔案。Claude 需要審查品質後決定是否讓 Qwen 匯入 seedData。
+### C. 供應鏈 competitors 驗證
 
-### C. 競爭態勢監測（工作流程 6）
+Claude 從 My-TW-Coverage repo 抽取了 competitors 資料（新增在 `src/data/supplyChain.json`），需要 Gemini 驗證：
 
-搜尋持股的主要競爭對手近期動態。產出到 `docs/gemini-research/competitive-2026-04-01.json`。
+```
+3006 晶豪科: competitors: 華邦電、南亞科、Samsung、Micron
+3491 昇達科: competitors: Smiths Microwave、Filtronic
+6770 力積電: competitors: 台積電、聯華電子、世界先進
+8227 巨有科技: competitors: 世芯-KY、創意電子
+1717 長興: competitors: 杜邦、旭化成、Allnex
+```
 
-### D. prompt token 分析（新任務）
+驗證方式：搜尋確認這些競爭關係是否正確、是否有遺漏的重要競爭對手。
 
-Codex 回報收盤分析 API 花了 60.21 秒，接近 timeout。Gemini 幫忙搜尋：
+產出到 `docs/gemini-research/competitor-validation-2026-04-02.json`。
 
-1. Claude API（`claude-sonnet-4`）在 input token 量不同時的回應時間基準
-2. 台股投資分析類的 prompt 最佳實踐 — 其他台股 AI 分析工具的 prompt 長度大概多少
-3. 有沒有台股專用的 prompt template 可以參考，讓分析品質不降但 token 更精簡
+### D. 研究 Anthropic financial-services-plugins 的 prompt 方法論
 
-產出到 `docs/gemini-research/prompt-optimization-research-2026-04-01.json`。
+`https://github.com/anthropics/financial-services-plugins` 的 DCF SKILL.md（50KB）有一套結構化金融分析 prompt 工程方法。
+
+**不是要直接用它的 plugin**（那是美股的），而是研究它的 prompt 結構化方法：
+
+1. 讀取 `financial-analysis/skills/dcf-model/SKILL.md`
+2. 讀取 `equity-research/skills/post-earnings/SKILL.md`
+3. 整理出可以借鑑的 prompt 結構化技巧（validation gates、output formatting、methodology sections）
+4. 建議如何改寫成適合台股 IFRS 的版本
+
+產出到 `docs/gemini-research/prompt-methodology-study-2026-04-02.json`。
+
+### E. FinMind 數據品質驗證 — 新 datasets
+
+Codex 剛接入 5 個新 FinMind datasets（資產負債表、現金流量表、外資持股比率、除權息結果、個股新聞）。
+
+抽查 3 檔持股（建議 2308 台達電、3017 奇鋐、3443 創意），比對 FinMind 回傳的：
+1. **資產負債表**（總資產、負債比）vs Goodinfo
+2. **現金流量表**（營業活動現金流）vs 公司年報
+3. **外資持股比率** vs 證交所每日外資持股
+
+產出到 `docs/gemini-research/finmind-validation-2026-04-02.json`。
 
 ## 持股代碼清單（從 STOCK_META 取）
 

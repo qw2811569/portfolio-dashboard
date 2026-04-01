@@ -42,7 +42,10 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-01 21:13` Qwen：新一輪任務 A-E 完成：(A) 重複 title 清理 0 個；(B) 主題分類前端展示 buildThemeChips/buildThemeChipsText；(C) 供應鏈 competitors 展示；(D) knowledge proposal UI 已存在；(E) import-gemini-research.js 腳本建立。驗證：git commit cf89bb9。
 
+
+- `2026-04-02` Claude：供應鏈圖譜大幅擴充（My-TW-Coverage repo → supplyChain.json 8→20 entries），主題分類全面填滿（themes.json 12→14 主題，15/18 持股有主題標籤），seedData STOCK_META themes 更新。新建 themeClassification.json。FinMind 完整 API 參考文件建立（docs/finmind-api-reference.md，90 datasets 完整分類）。評估 anthropics/financial-services-plugins 不適用（美股專用）。指派 Codex P3-P6、Gemini A-D、Qwen A-E 新任務。
 - `2026-04-01 15:58` Codex：P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.
 - `2026-04-01 15:22` Codex：production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latency 60.21s 仍貼近上限。P2 已接入 research evolve：新增 knowledgeEvolutionRuntime，前端會把 kb-usage-log / kb-feedback-log 帶進 research API，evolve/portfolio 研究結果現在附 knowledgeProposal（confidence adjustments candidate，不自動改寫知識庫 JSON）；daily report 也開始記錄 injectedKnowledgeIds，讓 👍/👎 feedback 能回流到具體 knowledge entry。驗證：vitest 5 files 41 tests 全過，lint 0 err 2 warnings，build 通過。
 

@@ -286,135 +286,105 @@ async function enrichDossierWithFinMind(dossier) {
 
 ---
 
-## 已完成任務（Claude 2026-04-01 晚確認）
+## 已完成任務（Claude 2026-04-02 確認）
 
 - ✅ P0-1: strategy-cases 補 confidence（130 條都有了）
 - ✅ P0-3: Usage tracking 實作
-- ✅ P1-4: Feedback 按鈕 UI（待確認）
-- ✅ P2-6: 事件行事曆接入前端 boot（useAutoEventCalendar 已接入 useAppRuntimeCoreLifecycle）
+- ✅ P1-4: Feedback 按鈕 UI
+- ✅ P2-6: 事件行事曆接入前端 boot
 - ✅ P4-9: useEvents 測試
 - ✅ P4-11: useWatchlistActions 測試
-- ✅ P6-13: FinMind 接入 dossier（usePortfolioDerivedData 已呼叫 fetchStockDossierData）
-- ✅ P6-14: daily analysis prompt 加入 FinMind 數據（dossierUtils 已追加籌碼/估值）
-- ✅ P7: RSS 來源擴充（鉅亨網已加入 analyst-reports.js）
+- ✅ P4-10: useHoldings 測試
+- ✅ P4-12: dossierUtils 測試
+- ✅ P5: quality-validation.json 已還原（qualityCriteria 確認存在）
+- ✅ P6-13: FinMind 接入 dossier
+- ✅ P6-14: daily analysis prompt 加入 FinMind 數據
+- ✅ P7: RSS 來源擴充
+- ✅ Gemini 供應鏈資料匯入
+- ✅ Gemini 法說會行事曆匯入
+- ✅ Gemini 目標價匯入（已 commit: b7ea158）
+- ✅ prompt 字數分析 log（已 commit: a7200e4）
+- ✅ MOPS fallback 改用 Gemini（已 commit: d3f1826）
 
-## 新一輪任務（Claude 2026-04-01 晚指派）
+## 新一輪任務（Claude 2026-04-02 指派）
 
 **開始前先 `git pull origin main`。**
 
-### 必做（修正遺留問題）
+### 必做
 
-#### A. 還原 quality-validation.json
-
-`quality-validation.json` 被你改成評分報告格式，原本的品質框架定義丟了。
-
-```bash
-# 1. 保存現有評分報告
-cp src/lib/knowledge-base/quality-validation.json src/lib/knowledge-base/quality-report-2026-04-01.json
-
-# 2. 從 git 還原原本的框架定義
-git show 1eab1ed:src/lib/knowledge-base/quality-validation.json > src/lib/knowledge-base/quality-validation.json
-
-# 3. 驗證還原成功
-node -e "const d=JSON.parse(require('fs').readFileSync('src/lib/knowledge-base/quality-validation.json','utf-8')); console.log(d.qualityCriteria ? 'OK' : 'FAIL')"
-```
-
-#### B. 清理重複 title
+#### A. 清理重複 title（遺留問題）
 
 `董監持股質押比率` 在 fundamental-analysis 和 chip-analysis 各出現一次。檢查內容是否不同，不同則改 title 區分，相同則刪其中一個。
 
-#### C. commit 你的改動
-
-你有 uncommitted changes（`usePortfolioDerivedData.js`, `dossierUtils.js`, `analyst-reports.js` 等）。用：
-
+驗證：
 ```bash
-AI_NAME=Qwen bash scripts/ai-commit.sh "feat: FinMind dossier enrichment, event calendar boot, RSS expansion, test coverage"
+node -e "
+const fs=require('fs'),dir='src/lib/knowledge-base';
+const titles=[];
+fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&f!=='index.json'&&f!=='quality-validation.json').forEach(f=>{
+  const d=JSON.parse(fs.readFileSync(dir+'/'+f,'utf-8'));
+  (d.items||[]).forEach(i=>titles.push(i.title));
+});
+const dt=titles.filter((t,i)=>titles.indexOf(t)!==i);
+console.log('重複title:',dt.length, dt);
+"
 ```
 
-### 新任務（Claude 2026-04-01 晚第二輪指派）
+#### B. 主題分類前端展示
 
-**開始前先 `git pull origin main`。**
+Claude 剛建了 `src/data/themeClassification.json`（15 檔持股的主題歸屬 + 在供應鏈中的位置）。
 
-#### D. 補 `useHoldings` 測試
+在持股 dossier 或 overview 面板中展示每檔持股的主題標籤。例如：
 
-`src/hooks/useHoldings.js` 的持股增刪改、排序。
+```
+台達電 (2308): AI伺服器(中游) | NVIDIA(下游) | 資料中心(上游) | 電動車(下游) | 碳化矽(上游)
+```
 
-#### E. 補 `dossierUtils` 的 `buildHoldingDossiers` 測試
+**做法：**
+1. 在 `src/lib/dossierUtils.js` 的 `buildDailyHoldingDossierContext` 中，用 `getThemesForStock(code)` 的結果建立更豐富的主題 context（包含上中下游位置）
+2. 或在 holdings 面板加一行主題 chips（純 UI，不需要邏輯）
 
-確認 `stockMeta` 有被正確傳入 dossier（這是之前的致命 bug，需要 regression test）。
+**已建好的 data：**
+- `src/data/themeClassification.json` — per-holding 主題 + 位置
+- `src/data/themes.json` — 已更新，stock arrays 已填滿
+- `src/lib/dataAdapters/coverageAdapter.js` 的 `getThemesForStock()` 已能正確查詢
 
-#### F. Gemini 供應鏈資料匯入
+#### C. 供應鏈 competitors 展示
 
-Gemini 已產出 `docs/gemini-research/supply-chain-2026-04-01.json`（6 檔持股的上下游更新）。
-把這些資料更新到 `src/data/supplyChain.json`。
+Claude 從 My-TW-Coverage 抽取了 competitors 資料到 `supplyChain.json`（5 檔有 competitors 欄位）。
 
-#### G. knowledge proposal UI 展示
-
-Codex 正在建 knowledge proposal 流程（知識庫候選提案）。Qwen 負責前端展示：
-
-- 在研究結果面板顯示 `knowledgeProposal`（如果有的話）
-- 顯示「候選知識更新」列表：新增的 entry、建議 deprecate 的 entry、confidence 調整
-- 加「套用」/「忽略」按鈕（先做 UI，gate 邏輯由 Codex 實作）
-
-**位置：** `src/components/research/ResearchPanel.jsx`，在現有 `brainProposal` 展示區塊旁邊加
-
-**不需要做的：** gate 邏輯、confidence auto-adjust 演算法（Codex 負責）
-
-#### H. prompt 瘦身輔助
-
-Codex 回報 `/api/analyze` 真實 payload 花了 60.21 秒。Qwen 可以幫忙：
-
-- 在 `src/lib/dossierUtils.js` 的 `buildDailyHoldingDossierContext` 加入字數統計 log
-- 找出最胖的 context 區塊（holdingSummary? brainContext? knowledgeInfo?）
-- 回報給 Codex 做截斷決策
+在 `buildSupplyChainContext()` 中加入 competitors 輸出：
 
 ```javascript
-// 在 buildDailyHoldingDossierContext return 前加
-console.log('[prompt-budget]', dossier.code, 'total:', result.length, '字')
+// 在 buildSupplyChainContext 加入 competitors
+if (chain.competitors?.length > 0) {
+  parts.push(`主要競爭對手: ${chain.competitors.join(', ')}`)
+}
 ```
 
----
+**位置：** `src/lib/dossierUtils.js` 的 `buildSupplyChainContext()`
 
-#### I. ~~修復 MOPS 抓取穩定性~~ ✅ 已處理
-
-Qwen 確認 MOPS 需要完整瀏覽器會話（cookie/JS），簡單 fetch 被擋。已改成 Gemini 蒐集作為 fallback。
-
-**長期方案（不急）：** 用 Puppeteer headless browser 抓 MOPS，或找替代 API 來源。
-
-### 新一輪任務（Claude 2026-04-01 深夜第三輪）
-
-**開始前先 `git pull origin main`。**
-
-#### J. commit 你所有 uncommitted changes
-
-你目前有多個檔案改了沒 commit。先用以下指令 commit：
-
-```bash
-git add api/cron/collect-daily-events.js api/analyst-reports.js src/hooks/usePortfolioDerivedData.js src/lib/dossierUtils.js src/hooks/useAppRuntimeCoreLifecycle.js src/lib/knowledge-base/quality-validation.json
-AI_NAME=Qwen bash scripts/ai-commit.sh "feat: MOPS gemini fallback, FinMind dossier, RSS expansion, event boot"
-```
-
-#### K. 幫 Codex 做 prompt 字數分析
-
-收盤分析 API 花了 60.21 秒，接近 timeout。在 `buildDailyHoldingDossierContext` 加字數 log：
+也需要在 `getSupplyChain()` 回傳 competitors：
 
 ```javascript
-// 在 return 前加這一行
-console.log('[prompt-budget]', dossier.code, {
-  total: result.length,
-  holdingSummary: holdingSummary?.length || 0,
-  brainContext: brainContext?.length || 0,
-  knowledgeInfo: knowledgeInfo?.length || 0,
-})
+// coverageAdapter.js getSupplyChain() 補上
+competitors: entry.competitors ?? [],
 ```
 
-然後跑一次本地收盤分析，把 log 貼到 `docs/status/current-work.md` 讓 Codex 看到各區塊多大。
+#### D. knowledge proposal UI 展示（延續）
 
-#### L. Gemini 目標價匯入
+如果 G 任務還沒完成，繼續做。Codex 已建好 `knowledgeProposal` 在 research result 中。
 
-Gemini 已產出 `docs/gemini-research/target-price-2026-04-01.json`。比對 `src/seedData.js` 的 `INIT_TARGETS`，更新過時的目標價。
+- 在 `ResearchPanel.jsx` 顯示候選知識更新列表
+- 加「套用」/「忽略」按鈕（先做 UI）
 
-**規則：** 只更新有 `confidence: "confirmed"` 或 `"estimated"` 的，`"unconfirmed"` 不動。
+#### E. 補 Gemini 最新產業新聞匯入
+
+Gemini 會產出 `docs/gemini-research/news-2026-04-02.json`（首次產業新聞蒐集）。
+
+寫一個簡單的匯入邏輯：讀取 news JSON，把有 `impact: "positive"` 或 `"negative"` 的新聞作為事件加入 newsEvents。
+
+**位置：** 可以在 `scripts/import-gemini-research.js` 中實作（如果已有），或在 `api/cron/collect-daily-events.js` 的 `loadGeminiEvents()` 擴充。
 
 ---
 

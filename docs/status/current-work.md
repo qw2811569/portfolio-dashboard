@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 05:32
+Last updated: 2026-04-02 06:08
 
 ## Objective
 
@@ -42,6 +42,16 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 06:08` Codex：P7/P8 已完成並部署 production。
+  - done：`/api/analyze` 已支援 streaming SSE，`api/_lib/ai-provider.js` 新增 Anthropic `stream: true` 路徑，前端 `useDailyAnalysisWorkflow.js` 現在會逐步渲染分析正文，並在串流結束後解析 `EVENT_ASSESSMENTS / BRAIN_UPDATE`。另外根據 production smoke 結果，修正 `api/event-calendar.js` 的 FinMind same-day 日期過濾 bug，避免今天的新聞因時分秒比較被排除。
+  - changed files：`api/_lib/ai-provider.js`、`api/analyze.js`、`api/event-calendar.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/lib/appMessages.js`、`src/lib/dailyAnalysisRuntime.js`、`src/lib/dossierUtils.js`、`src/lib/eventStream.js`、`tests/api/analyze.test.js`、`tests/api/event-calendar.test.js`、`tests/lib/eventStream.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`
+  - validation：`vitest` targeted 6 files / 20 tests 通過；後續 `event-calendar/analyze/eventStream` targeted 3 files / 13 tests 通過；`npm run build` 通過；`npm run lint` 無 error，仍有既有 2 個 warning（`DailyReportPanel.jsx` console、`GeminiResearchBrowser.jsx` unused arg）
+  - deploy：Git commits `9bd48fd`（streaming analyze）與 `2a0611f`（event-calendar date filtering）皆已 push 到 `origin/main`，production 重新部署完成；inspect：`Adqfg9pfTCC1XR9tcN2GPTspEYGD`、`9RyHL9rZQ66ovPqfnm4BeAy1YSFB`
+  - smoke：production `POST /api/analyze?stream=1` 首包 `0.91s`、總耗時 `7.53s`，已確認回傳 `meta + delta` 串流事件；`/api/finmind` 的 `balanceSheet / cashFlow / shareholding` 皆回傳成功；`/api/event-calendar` production 回應正常，但本次樣本未命中 `finmind-news` source
+  - risks：streaming smoke 使用的是短 prompt，不是完整收盤分析 payload，所以目前能證明的是「首包很快、串流正常」，還不能直接等同先前 `60.21s` 真實 payload 已完全解除；`event-calendar` 雖已修掉 same-day bug 並有測試，但 production 樣本日仍未出現 `finmind-news` source，需再用有明確法說/股東會/除權息/財報關鍵字的當日新聞驗證一次；P9 Backer datasets 尚未開始，等待 FinMind 付費確認
+  - next best step：用一組真實 daily analysis payload 在 production 重跑 streaming `/api/analyze?stream=1`，量測 `time_starttransfer` 與總完成時間；若結果穩定，再開始準備 P9 的 Backer dataset mapping skeleton
+
 - `2026-04-01 21:58` Qwen：新一輪任務 M/N 完成：(M) SupplyChainView.jsx 供應鏈視覺化元件；(N) GeminiResearchBrowser.jsx + /api/gemini-research API。驗證：git commit 49b561d。
 
 - `2026-04-01 21:55` Qwen：新一輪任務 K/L 完成：(K) event-calendar.test.js 已建立；(L) buildFinMindChipContext 加入資產負債表/現金流量表摘要。驗證：git commit 5d1eedb。

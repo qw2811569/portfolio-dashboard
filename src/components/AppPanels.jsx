@@ -1,51 +1,17 @@
-import { Suspense, lazy } from 'react'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 import {
   usePortfolioPanelsActions,
   usePortfolioPanelsData,
 } from '../contexts/PortfolioPanelsContext.jsx'
+import { OverviewPanel } from './overview/index.js'
+import HoldingsPanelChunk from './holdings/HoldingsPanelChunk.jsx'
+import { WatchlistPanel } from './watchlist/index.js'
+import { EventsPanel } from './events/index.js'
 import { DailyReportPanel } from './reports/index.js'
 import { ResearchPanel } from './research/index.js'
-import { createLazyPanelLoader } from '../lib/lazyPanelLoader.js'
-
-const lazyNamedExport = (loader, panelKey, exportName) =>
-  lazy(
-    createLazyPanelLoader({
-      loader,
-      panelKey,
-      exportName,
-    })
-  )
-
-const OverviewPanel = lazyNamedExport(() => import('./overview/index.js'), 'overview', 'OverviewPanel')
-const HoldingsPanelChunk = lazy(
-  createLazyPanelLoader({
-    loader: () => import('./holdings/HoldingsPanelChunk.jsx'),
-    panelKey: 'holdings',
-  })
-)
-const WatchlistPanel = lazyNamedExport(() => import('./watchlist/index.js'), 'watchlist', 'WatchlistPanel')
-const EventsPanel = lazyNamedExport(() => import('./events/index.js'), 'events', 'EventsPanel')
-const TradePanel = lazyNamedExport(() => import('./trade/index.js'), 'trade', 'TradePanel')
-const LogPanel = lazyNamedExport(() => import('./log/index.js'), 'log', 'LogPanel')
-const NewsAnalysisPanel = lazyNamedExport(() => import('./news/index.js'), 'news', 'NewsAnalysisPanel')
-
-function PanelLoadingFallback() {
-  return (
-    <div
-      style={{
-        minHeight: 240,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--app-text-mute, #9aa4b2)',
-        fontSize: 13,
-      }}
-    >
-      正在載入內容...
-    </div>
-  )
-}
+import { TradePanel } from './trade/index.js'
+import { LogPanel } from './log/index.js'
+import { NewsAnalysisPanel } from './news/index.js'
 
 export default function AppPanels({ viewMode, overviewViewMode, tab, errorBoundaryCopy }) {
   const data = usePortfolioPanelsData()
@@ -126,9 +92,7 @@ export default function AppPanels({ viewMode, overviewViewMode, tab, errorBounda
 
   return (
     <ErrorBoundary scope={activePanel.scope} title={activePanel.title}>
-      <Suspense fallback={<PanelLoadingFallback />}>
-        <Component {...props} />
-      </Suspense>
+      <Component {...props} />
     </ErrorBoundary>
   )
 }

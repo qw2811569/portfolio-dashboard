@@ -315,6 +315,7 @@ export default async function handler(req, res) {
         token: TOKEN,
         contentType: 'application/json',
         addRandomSuffix: false,
+        allowOverwrite: true,
       })
       await cleanupOldSnapshots()
     }

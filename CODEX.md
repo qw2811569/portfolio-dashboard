@@ -235,6 +235,68 @@ curl -X POST https://jiucaivoice-dashboard.vercel.app/api/analyze?stream=1 \
 
 打 production `/api/research`，確認 55 秒 timeout 正常回傳錯誤訊息（而不是 hang）。
 
+### 用戶可見 Bug — 最高優先（Claude 2026-04-02 第五輪）
+
+**用戶回報 production 三個可見問題。這比所有新功能都優先。**
+
+**開始前先 `git pull origin main`。**
+
+#### VISIBLE-1：收盤分析 streaming 前端 Load failed
+
+**現象：** 用戶按「收盤分析」，前端顯示「AI 分析未產生：Load failed」。
+
+**API 本身正常：** 直接 curl `POST /api/analyze` 有回傳中文分析。問題在前端 streaming consumer。
+
+**診斷方向：**
+
+1. `useDailyAnalysisWorkflow.js` 的 streaming fetch（`/api/analyze?stream=1`）— 瀏覽器可能因為 response 太慢或太大而中斷
+2. `eventStream.js` 的 SSE parser — 可能在某些 edge case（如 Vercel cold start 延遲）沒有正確處理
+3. 加 fallback：如果 streaming 失敗，自動降級到非 streaming 模式（`/api/analyze` 不帶 `?stream=1`）
+
+**修法建議：**
+
+```javascript
+// useDailyAnalysisWorkflow.js — 在 streaming fetch catch 中加 fallback
+try {
+  // streaming mode
+  const analysisResponse = await fetch('/api/analyze?stream=1', ...)
+  // ... streaming consumer
+} catch (streamError) {
+  console.warn('Streaming failed, falling back to non-streaming:', streamError)
+  // fallback: 非 streaming 模式
+  const fallbackResponse = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(buildDailyAnalysisRequest(...)),
+    signal: AbortSignal.timeout(55000),
+  })
+  const fallbackData = await fallbackResponse.json()
+  aiInsight = fallbackData.content?.[0]?.text || null
+}
+```
+
+#### VISIBLE-2：深度研究回空結果
+
+**現象：** 用戶按「深度研究」，API 回 `{"results":[]}` 沒有錯誤但也沒有結果。
+
+**診斷方向：**
+
+1. `api/research.js` — 檢查 prompt 組裝是否正確（前端傳了什麼 body？API 收到什麼？）
+2. 加 console.log 在 `api/research.js` 印出收到的 request body 和組裝的 prompt
+3. 確認 AI 回覆是否被正確解析（可能 AI 回覆了但 extractInsights 沒抽到）
+
+#### VISIBLE-3：行事曆事件太少
+
+**現象：** 行事曆只有 1 個事件（月營收截止日），沒有法說會、FOMC 等。
+
+**診斷方向：**
+
+1. `event-calendar.js` 的 `generateFixedCalendarEvents()` — 確認 FOMC、央行、財報季事件的日期計算是否正確（今天 2026-04-02，未來 30 天內應該有 FOMC 5/7）
+2. `generateDividendSeasonEvents()` — 確認 4 月是否在除權息季（6-9 月）之外導致沒有事件
+3. FinMind TaiwanStockNews 事件源（Qwen 建的 `fetchFinMindNewsEvents`）— 可能沒有被正確呼叫或沒有命中關鍵字
+
+**注意：** 行事曆的數據擴充部分由 Qwen 負責，Codex 只需確認 API 層面沒有 bug。
+
 ### P9：FinMind 付費後 — Backer datasets 接入（等付費確認）
 
 完整 dataset 參考見 `docs/finmind-api-reference.md`。

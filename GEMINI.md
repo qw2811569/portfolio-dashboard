@@ -152,6 +152,75 @@
 
 **交接方式：** 寫到 `docs/gemini-research/news-YYYY-MM-DD.json`。
 
+### 工作流程 4：產業供應鏈關係更新
+
+**目標：** 驗證並更新 `src/data/supplyChain.json` 中的供應鏈上下游資料。
+
+**做法：**
+
+1. 搜尋持股的最新客戶/供應商關係
+2. 比對現有 `supplyChain.json`，找出過時或缺失的關係
+3. 產出更新建議（不直接改代碼）
+
+```json
+{
+  "facts": [
+    {
+      "code": "3443",
+      "name": "創意",
+      "upstream": ["台積電(CoWoS)", "日月光(封裝)"],
+      "downstream": ["NVIDIA", "Google", "Amazon"],
+      "source": "https://...",
+      "changeNote": "新增 Amazon 為 ASIC 客戶"
+    }
+  ],
+  "citations": ["https://..."],
+  "freshness": "2026-04-01 蒐集"
+}
+```
+
+**交接方式：** 寫到 `docs/gemini-research/supply-chain-YYYY-MM-DD.json`。
+
+### 工作流程 5：知識庫 fact-check
+
+**目標：** 驗證知識庫 entry 中引用的數字門檻是否仍然合理。
+
+**做法：**
+
+1. 隨機抽取 10 條知識庫 entry（跨分類）
+2. 搜尋最新公開資料驗證數字（如「半導體設計毛利率>40% 為優秀」是否仍成立）
+3. 標記需要更新的 entry
+
+```json
+{
+  "facts": [
+    {
+      "entryId": "fa-047",
+      "title": "產業門檻 - 半導體毛利率標準",
+      "currentClaim": "半導體設計毛利率>40% 為優秀",
+      "verification": "2026 年半導體設計業平均毛利率約 45%，40% 門檻仍合理",
+      "status": "confirmed",
+      "source": "https://..."
+    }
+  ],
+  "citations": ["https://..."],
+  "freshness": "2026-04-01 蒐集"
+}
+```
+
+**交接方式：** 寫到 `docs/gemini-research/fact-check-YYYY-MM-DD.json`。Claude 審查後決定是否更新 entry。
+
+### 工作流程 6：競爭對手與替代品監測
+
+**目標：** 監測持股的競爭態勢變化。
+
+**做法：**
+
+1. 搜尋持股的主要競爭對手近期動態（擴產、新產品、市佔變化）
+2. 標記可能影響持股投資論點的競爭變化
+
+**交接方式：** 寫到 `docs/gemini-research/competitive-YYYY-MM-DD.json`。
+
 ## 持股代碼清單（從 STOCK_META 取）
 
 蒐集時以這些持股為範圍：

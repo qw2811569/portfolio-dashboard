@@ -42,6 +42,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-01 21:22` Qwen：新一輪任務 E 完成：動態事件行事曆 — FinMind TaiwanStockNews 作為動態事件來源（法說/股東會/除權息/財報關鍵字篩選），修正 Gemini 事件持股篩選 bug。驗證：git commit 1f2bcd1。
+
 - `2026-04-01 21:13` Qwen：新一輪任務 A-E 完成：(A) 重複 title 清理 0 個；(B) 主題分類前端展示 buildThemeChips/buildThemeChipsText；(C) 供應鏈 competitors 展示；(D) knowledge proposal UI 已存在；(E) import-gemini-research.js 腳本建立。驗證：git commit cf89bb9。
 
 

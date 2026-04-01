@@ -378,13 +378,69 @@ competitors: entry.competitors ?? [],
 - 在 `ResearchPanel.jsx` 顯示候選知識更新列表
 - 加「套用」/「忽略」按鈕（先做 UI）
 
-#### E. 補 Gemini 最新產業新聞匯入
+#### E. 動態事件行事曆 — 讓任意股票都能查法說會（重要架構升級）
+
+目前法說會資料來自 Gemini 手動蒐集的靜態 JSON（只有 17 檔），新用戶的不同持股完全沒有事件資料。需要改成動態查詢。
+
+**方案：用 FinMind `TaiwanStockNews` 作為動態事件來源**
+
+FinMind 的 `TaiwanStockNews` dataset（Free tier）提供個股新聞（title, description, link, source），可以從新聞標題中篩選法說會/股東會/除權息等事件。
+
+**Qwen 要做的：**
+
+1. 在 `api/finmind.js` 加入 `TaiwanStockNews` dataset 支援
+2. 新增 `src/lib/dataAdapters/finmindAdapter.js` 的 `fetchStockNews(code)` 函數
+3. 在 `api/event-calendar.js` 加入新的事件來源：
+
+```javascript
+// 新增第 5 個來源：FinMind 個股新聞 → 篩選事件
+async function fetchFinMindNewsEvents(stockCodes, rangeDays) {
+  const events = []
+  for (const code of stockCodes) {
+    try {
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 7) // 最近 7 天新聞
+      
+      const res = await fetch(
+        `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${fmt(startDate)}`,
+        { signal: AbortSignal.timeout(5000) }
+      )
+      if (!res.ok) continue
+      const data = await res.json()
+      
+      for (const item of (data.data || [])) {
+        const title = item.description || item.title || ''
+        // 篩選法說會/股東會/重大事件
+        if (/法說|法人說明|股東.*會|除權|除息|重訊/.test(title)) {
+          events.push({
+            id: `finmind-news-${code}-${item.date}`,
+            type: inferNewsType(title),
+            title: `${code} ${title.slice(0, 50)}`,
+            date: item.date,
+            stocks: [code],
+            source: 'finmind-news',
+            impact: /法說|股東/.test(title) ? 'high' : 'medium',
+          })
+        }
+      }
+    } catch { /* skip failed stock */ }
+  }
+  return events
+}
+```
+
+4. 在 `useAutoEventCalendar.js` 修正：Gemini 事件目前走 `fixed` 通道不會被用戶持股篩選，需要改成走 `mops` 通道（或新增 `gemini` 通道）
+
+**驗證：** 用一個不在 17 檔持股內的股票代碼（例如 2330 台積電）呼叫 `event-calendar?codes=2330`，確認能回傳該股票的事件。
+
+**不需要做的：** 不需要改 Gemini 的靜態 JSON，它作為 fallback 繼續存在。
+
+#### F. 補 Gemini 產業新聞匯入
 
 Gemini 會產出 `docs/gemini-research/news-2026-04-02.json`（首次產業新聞蒐集）。
 
-寫一個簡單的匯入邏輯：讀取 news JSON，把有 `impact: "positive"` 或 `"negative"` 的新聞作為事件加入 newsEvents。
-
-**位置：** 可以在 `scripts/import-gemini-research.js` 中實作（如果已有），或在 `api/cron/collect-daily-events.js` 的 `loadGeminiEvents()` 擴充。
+在 `api/cron/collect-daily-events.js` 的 `loadGeminiEvents()` 旁邊加一個 `loadGeminiNews()`，讀取 news JSON 中 `impact: "positive"` 或 `"negative"` 的新聞作為事件。
 
 ---
 

@@ -1,6 +1,7 @@
 import { createElement as h } from 'react'
 import { C } from '../../theme.js'
 import { Card } from '../common'
+import { buildThemeChips } from '../../lib/dossierUtils.js'
 import {
   getHoldingMarketValue,
   getHoldingReturnPct,
@@ -141,6 +142,32 @@ export function HoldingRow({
             marginBottom: 6,
           },
         },
+        // 主題 chips
+        (() => {
+          const chips = buildThemeChips(holding.code);
+          return chips.length > 0
+            ? h(
+                'div',
+                { style: { marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 4 } },
+                chips.map((c) =>
+                  h(
+                    'span',
+                    {
+                      key: c.theme,
+                      style: {
+                        fontSize: 9,
+                        padding: '2px 6px',
+                        background: C.fillPrimary,
+                        color: C.text,
+                        borderRadius: 4,
+                      },
+                    },
+                    c.label
+                  )
+                )
+              )
+            : null;
+        })(),
         h(
           'div',
           { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },

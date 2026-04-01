@@ -982,7 +982,7 @@ export function DailyReportPanel({
       if (log.length > 200) log.splice(0, log.length - 200)
       localStorage.setItem('kb-feedback-log', JSON.stringify(log))
       // Optional: show toast confirmation
-      console.log(`Feedback recorded: ${signal}`)
+      console.debug(`Feedback recorded: ${signal}`)
     } catch {
       // silent fail
     }

@@ -14,19 +14,17 @@ export const INIT_TARGETS = {
     isNew: false,
   },
   2308: {
-    reports: [
-      { firm: '元大', target: 1200, date: '2026/01' },
+    reports: [{ firm: '元大', target: 1200, date: '2026/01' },
       { firm: '富邦', target: 1150, date: '2026/02' },
-    ],
-    updatedAt: '2026/02/10',
+      { firm: 'FactSet共識', target: 1575, date: '2026/02/27' }],
+    updatedAt: '2026/04/01',
     isNew: false,
   },
   2313: {
-    reports: [
-      { firm: '凱基', target: 280, date: '2026/01' },
+    reports: [{ firm: '凱基', target: 280, date: '2026/01' },
       { firm: 'FactSet共識', target: 280, date: '2026/01' },
-    ],
-    updatedAt: '2026/01/15',
+      { firm: 'FactSet共識', target: 210, date: '2026/03/16' }],
+    updatedAt: '2026/04/01',
     isNew: false,
   },
   2543: {
@@ -49,17 +47,17 @@ export const INIT_TARGETS = {
     isNew: false,
   },
   3017: {
-    reports: [
-      { firm: '國際共識', target: 2037, date: '2026/03' },
+    reports: [{ firm: '國際共識', target: 2037, date: '2026/03' },
       { firm: '大摩', target: 1800, date: '2025/11' },
       { firm: '大和', target: 1840, date: '2025/10' },
-    ],
-    updatedAt: '2026/03/17',
+      { firm: '大摩', target: 2300, date: '2026/03/13' }],
+    updatedAt: '2026/04/01',
     isNew: true,
   },
   3231: {
-    reports: [{ firm: '中信投顧', target: 195, date: '2026/03/16' }],
-    updatedAt: '2026/03/16',
+    reports: [{ firm: '中信投顧', target: 195, date: '2026/03/16' },
+      { firm: '國內法人', target: 188, date: '2026/03/16' }],
+    updatedAt: '2026/04/01',
     isNew: true,
   },
   3443: {

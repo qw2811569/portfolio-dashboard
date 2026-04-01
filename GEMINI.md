@@ -318,11 +318,48 @@ Claude 從 My-TW-Coverage repo 抽取了 competitors 資料（新增在 `src/dat
 Codex 剛接入 5 個新 FinMind datasets（資產負債表、現金流量表、外資持股比率、除權息結果、個股新聞）。
 
 抽查 3 檔持股（建議 2308 台達電、3017 奇鋐、3443 創意），比對 FinMind 回傳的：
+
 1. **資產負債表**（總資產、負債比）vs Goodinfo
 2. **現金流量表**（營業活動現金流）vs 公司年報
 3. **外資持股比率** vs 證交所每日外資持股
 
 產出到 `docs/gemini-research/finmind-validation-2026-04-02.json`。
+
+### 全面 Bug Sweep — 外部數據源驗證（Claude 2026-04-02 第四輪）
+
+用戶回報 production 有多處錯誤。Gemini 負責驗證所有外部數據源是否正常運作。
+
+#### SWEEP-1：FinMind API 連通測試
+
+用免費 API 測試以下 datasets（不需要 token）：
+
+```
+GET https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=2308&start_date=2026-03-01&end_date=2026-04-01
+GET https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMarginPurchaseShortSale&data_id=2308&start_date=2026-03-25&end_date=2026-04-01
+GET https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2308&start_date=2026-03-25
+GET https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockFinancialStatements&data_id=2308&start_date=2025-01-01
+GET https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockBalanceSheet&data_id=2308&start_date=2025-01-01
+```
+
+每個 dataset 記錄：是否回傳成功、回傳筆數、資料是否合理。
+
+#### SWEEP-2：TWSE 即時報價測試
+
+```
+GET https://jiucaivoice-dashboard.vercel.app/api/twse
+```
+
+確認回傳台股即時報價，格式是否正確。
+
+#### SWEEP-3：Google News RSS 測試
+
+```
+GET https://news.google.com/rss/search?q=台達電+台股+when:2d&hl=zh-TW&gl=TW&ceid=TW:zh-Hant
+```
+
+確認 RSS 回傳有新聞。如果被擋（403），記錄下來。
+
+產出到 `docs/gemini-research/data-source-health-check-2026-04-02.json`。
 
 ## 持股代碼清單（從 STOCK_META 取）
 

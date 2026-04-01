@@ -184,6 +184,57 @@ Claude 剛把 `supplyChain.json` 從 8→20 entries，`themes.json` 也全部填
 2. catch 中區分 timeout vs 其他錯誤，顯示對應訊息
 3. 如果 `/api/research` 也該改成 streaming，參考 `/api/analyze` 的 streaming 改法
 
+### 全面 Bug Sweep（Claude 2026-04-02 第四輪 — 最高優先）
+
+用戶回報 production 出現 403 Forbidden 和 lazy import crash。之前的 bug fix 可能沒完全解決，或引入了新問題。
+
+**Codex 負責：API 層 + 部署層全面檢查**
+
+**開始前先 `git pull origin main`。**
+
+#### SWEEP-1：Vercel 部署狀態確認
+
+1. 確認最新 commit `ba97499` 已在 production 部署成功
+2. 確認 `npm run build` 在 Vercel 上是綠的（不是本地）
+3. curl 測試所有 API endpoints 的 HTTP status：
+   ```bash
+   for ep in /api/twse /api/finmind /api/event-calendar /api/analyze /api/research /api/parse /api/analyst-reports /api/gemini-research; do
+     code=$(curl -s -o /dev/null -w "%{http_code}" "https://jiucaivoice-dashboard.vercel.app$ep")
+     echo "$code $ep"
+   done
+   ```
+4. 如果有 403/500，查 Vercel Dashboard 的 Function Logs
+
+#### SWEEP-2：環境變數確認
+
+在 Vercel Dashboard → Settings → Environment Variables 確認以下都有設定：
+
+- `ANTHROPIC_API_KEY`（必要 — OCR 和分析都靠這個）
+- `PUB_BLOB_READ_WRITE_TOKEN`（行事曆 cron 需要）
+- `CRON_SECRET`（cron 認證需要）
+- `FINMIND_TOKEN`（可選，但有的話 rate limit 更高）
+
+#### SWEEP-3：streaming analyze 端到端測試
+
+用真實 payload 打 production：
+
+```bash
+curl -X POST https://jiucaivoice-dashboard.vercel.app/api/analyze?stream=1 \
+  -H "Content-Type: application/json" \
+  -d '{"holdings":[{"code":"2308","name":"台達電"}],"mode":"daily"}' \
+  -N --max-time 65
+```
+
+確認回傳有 SSE events 且包含中文分析評論（不只是 JSON blocks）。
+
+#### SWEEP-4：OCR parse 端到端測試
+
+用一個最小 base64 image 打 production `/api/parse`，確認不是 500。
+
+#### SWEEP-5：research 端到端測試
+
+打 production `/api/research`，確認 55 秒 timeout 正常回傳錯誤訊息（而不是 hang）。
+
 ### P9：FinMind 付費後 — Backer datasets 接入（等付費確認）
 
 完整 dataset 參考見 `docs/finmind-api-reference.md`。

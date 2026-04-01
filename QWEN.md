@@ -551,6 +551,66 @@ if (finmind.cashFlow?.length > 0) {
 
 **驗證：** 打開 app 行事曆 tab，確認有未來 30 天的事件（月營收截止日、FOMC 等）。
 
+### 全面 Bug Sweep（Claude 2026-04-02 第四輪 — 最高優先）
+
+用戶回報 production 出現 403 和 lazy import crash。Qwen 負責前端層全面檢查。
+
+**開始前先 `git pull origin main`。**
+
+#### SWEEP-1：所有頁面載入測試
+
+用 `npm run dev` 啟動本地開發伺服器，逐一打開所有 tab/頁面，確認沒有白屏或錯誤：
+
+1. Overview（總覽）
+2. Holdings（持倉）
+3. Watchlist（觀察）
+4. Events（行事曆）
+5. Daily（收盤分析）
+6. Research（深度研究）
+7. Trade（交易）
+8. Log（交易紀錄）
+9. News（新聞）
+
+每個頁面記錄是否能正常渲染。如果有錯誤，記下 console 中的具體 error。
+
+#### SWEEP-2：空用戶體驗測試
+
+BUG-3 fix 把 fallback 改成空陣列了。在**無痕視窗**或清除 localStorage 後：
+
+1. 確認首頁不會 crash
+2. 確認持倉頁顯示空狀態（不是 seedData 的 17 檔）
+3. 確認可以手動新增一檔持股
+4. 確認行事曆有公共事件（FOMC、月營收截止日）即使沒有持股
+
+#### SWEEP-3：行事曆 API 連通測試
+
+確認 `useAutoEventCalendar.js` 的 BUG-5 fix 生效：
+
+```javascript
+// 在 browser console 跑
+fetch('/api/event-calendar?codes=2308,3017&range=30')
+  .then((r) => r.json())
+  .then((d) => console.log('events:', d.events?.length, d))
+```
+
+確認有回傳事件。如果沒有，檢查 `event-calendar.js` 的各個事件來源是否正常。
+
+#### SWEEP-4：lint warning 全清
+
+`npm run lint` 目前有 7 個 warnings。全部修掉：
+
+```bash
+npx eslint src/ --ext .js,.jsx 2>&1 | grep warning
+```
+
+常見修法：`console.log` → `console.debug`，未使用的變數刪除或加 `_` 前綴。
+
+#### SWEEP-5：ErrorBoundary 健壯性
+
+確認 `ErrorBoundary.jsx` 在每個 lazy panel 外都有正確包裝。如果某個 panel crash，應該只影響該 panel，不應該讓整個 app 白屏。
+
+檢查 `AppPanels.jsx` — 每個 `<Suspense>` 外面是否都有 `<ErrorBoundary>`。
+
 ---
 
 ## 交接格式

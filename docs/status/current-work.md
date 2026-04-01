@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-01 15:58
+Last updated: 2026-04-02 05:32
 
 ## Objective
 
@@ -42,6 +42,14 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 05:32` Codex：P3-P6 已完成，交接文件已補齊。
+  - done：FinMind adapter 補齊 `balanceSheet / cashFlow / shareholding / dividendResult / news`；`TaiwanStockNews` 角色說明已更新為提供 Qwen 建動態事件來源。daily analysis prompt 已改成全局 `coverage_context` + budget 模式，避免每檔持股重複塞供應鏈/主題 context。Vercel cron 已改成台灣時間收盤後執行。新增 `docs/specs/streaming-analysis-design.md`，完成 streaming 路線規劃。另修復 `src/main.jsx` 在 `main` 上既有的 build blocker，讓本輪驗證可重現。
+  - changed files：`api/finmind.js`、`src/lib/dataAdapters/finmindAdapter.js`、`src/lib/dataAdapters/index.js`、`src/lib/dossierUtils.js`、`src/lib/promptBudget.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/lib/dailyAnalysisRuntime.js`、`src/main.jsx`、`vercel.json`、`tests/lib/finmindAdapter.test.js`、`tests/lib/dossierSupplyChain.test.js`、`tests/lib/promptBudget.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`、`docs/specs/streaming-analysis-design.md`
+  - validation：`vitest` 4 files / 17 tests 通過；`npm run build` 通過；`npm run lint` 無 error，僅剩既有 `DailyReportPanel.jsx` console warning
+  - risks：本地 commit `274cac6` 已完成，但 `git push origin main` 仍被這台機器的 GitHub HTTPS 認證阻擋，尚未上遠端；repo 仍有既有 `DailyReportPanel.jsx` lint warning；工作樹裡還有其他 AI/使用者的未提交變更，我未併入這輪
+  - next best step：先修復這台機器的 GitHub 認證並 push `274cac6`；push 後再視需要做 deploy / smoke test，確認遠端與這次 handoff 狀態一致
+
 - `2026-04-01 21:24` Qwen：新一輪任務 F 完成：Gemini 產業新聞匯入 — scripts/import-gemini-news.js 腳本建立，支援 impact: positive/negative/neutral 過濾、產業趨勢/個別公司/總體經濟分類、自動事件類型判斷。驗證：git commit e17a70d。
 
 - `2026-04-01 21:22` Qwen：新一輪任務 E 完成：動態事件行事曆 — FinMind TaiwanStockNews 作為動態事件來源（法說/股東會/除權息/財報關鍵字篩選），修正 Gemini 事件持股篩選 bug。驗證：git commit 1f2bcd1。

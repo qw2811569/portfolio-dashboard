@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T07:58:48.000Z",
+  "lastUpdated": "2026-04-01T21:32:10.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 13 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 2 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂；最新已知綠燈基線 3 files / 10 tests",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -241,7 +241,7 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 56,
+    "testFiles": 57,
     "testCases": 10,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
@@ -249,8 +249,8 @@
     "dataAdapters": 3,
     "aiAgents": 4,
     "appJsxLinesChange": 0,
-    "totalDocs": 27,
-    "inProgressTasks": 1
+    "totalDocs": 29,
+    "inProgressTasks": 2
   },
   "health": {
     "overall": "warning",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 41,
-        "lastActive": "2026-04-01 15:58",
+        "tasksCompleted": 42,
+        "lastActive": "2026-04-02 05:32",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -305,9 +305,9 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：事件匯入完成，現在提供交接報告。",
+        "currentTask": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。",
         "tasksCompleted": 12,
-        "lastActive": "2026-04-01 15:51",
+        "lastActive": "2026-04-02 05:24",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -315,10 +315,10 @@
         "name": "Gemini",
         "role": "公開資料蒐集",
         "avatar": "🔍",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
+        "status": "working",
+        "currentTask": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)",
         "tasksCompleted": 5,
-        "lastActive": "2026-04-01 13:12",
+        "lastActive": "2026-04-02 05:07",
         "statusSource": "auto",
         "activitySource": "~/.gemini/usage-log.tsv"
       },
@@ -335,6 +335,38 @@
     ]
   },
   "timeline": [
+    {
+      "time": "2026-04-02 05:32",
+      "ai": "Codex",
+      "title": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 cover…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 21:22",
+      "ai": "Qwen",
+      "title": "新一輪任務 E 完成：動態事件行事曆 — FinMind TaiwanStockNews 作為動態事件來源（法說/股東會/除權息/財報關鍵字篩選），修正 Gemini 事件持股篩選 bug。驗證：git commit 1f2bcd1。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-01 21:13",
+      "ai": "Qwen",
+      "title": "新一輪任務 A-E 完成：(A) 重複 title 清理 0 個；(B) 主題分類前端展示 buildThemeChips/buildThemeChipsText；(C) 供應鏈 competitors 展示；(D) knowledge…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-02",
+      "ai": "Claude",
+      "title": "供應鏈圖譜大幅擴充（My-TW-Coverage repo → supplyChain.json 8→20 entries），主題分類全面填滿（themes.json 12→14 主題，15/18 持股有主題標籤），seedData ST…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
     {
       "time": "2026-04-01 15:58",
       "ai": "Codex",
@@ -366,41 +398,9 @@
       "description": "同步自 docs/status/current-work.md",
       "impact": "驗證鏈狀態已更新",
       "status": "done"
-    },
-    {
-      "time": "2026-04-01 06:33",
-      "ai": "Qwen",
-      "title": "P7+P4 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS 來源；(2) 補測試：useEvents(19 測試)+useWatchlistActions(12 測試) 已…",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 06:06",
-      "ai": "Qwen",
-      "title": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化。驗證：lint(0 err)+vitest(25 test…",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 14:05",
-      "ai": "Codex",
-      "title": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-01 13:59",
-      "ai": "Codex",
-      "title": "P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivo…",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T07:58:48.593Z",
+  "generatedAt": "2026-04-01T21:32:10.907Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -417,90 +417,90 @@
   },
   "liveActivity": [
     {
-      "time": "2026-04-01 15:58",
-      "isoTime": "2026-04-01T15:58:48+08:00",
+      "time": "2026-04-02 05:32",
+      "isoTime": "2026-04-02T05:32:10+08:00",
       "ai": "Qwen",
       "action": "auto-detect",
-      "message": "Qwen：事件匯入完成，現在提供交接報告。（自動偵測）",
+      "message": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-01 15:58",
-      "isoTime": "2026-04-01T15:58:48+08:00",
+      "time": "2026-04-02 05:32",
+      "isoTime": "2026-04-02T05:32:10+08:00",
       "ai": "Codex",
       "action": "done",
-      "message": "P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.",
+      "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。",
       "status": "idle"
     },
     {
-      "time": "2026-04-01 15:22",
-      "isoTime": "2026-04-01T15:22:12+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：讓我從 2d6b587 還原 quality-validation.json。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-01 15:22",
-      "isoTime": "2026-04-01T15:22:12+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "production daily-analysis 實測：使用 2026-03-23 真實 20 檔持股 payload 打 production /api/analyze，輸出已收斂為 3 檔 A 級深寫 + 其餘快照，但 latency 60.21s 仍貼近上限。P2 已接入 research evolve：新增 knowledgeEvolutionRuntime，前端會把 kb-usage-log / kb-feedback-log 帶進 research API，evolve/portfolio 研究結果現在附 knowledgeProposal（confidence adjustments candidate，不自動改寫知識庫 JSON）；daily report 也開始記錄 injectedKnowledgeIds，讓 👍/👎 feedback 能回流到具體 knowledge entry。驗證：vitest 5 files 41 tests 全過，lint 0 err 2 warnings，build 通過。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-01 14:53",
-      "isoTime": "2026-04-01T14:53:34+08:00",
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:29+08:00",
       "ai": "Gemini",
       "action": "auto-detect",
-      "message": "超過活動視窗，已自動切回待命",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-01 14:53",
-      "isoTime": "2026-04-01T14:53:34+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：讓我創建 useHoldings 測試和 dossierUtils 測試。（自動偵測）",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-01 14:41",
-      "isoTime": "2026-04-01T14:41:33+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：所有任務已完成，需要提供完整的交接報告，包含完成的任務、修改的檔案、風險評估和下一步建議。（自動偵測）",
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:29+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
       "status": "working"
     },
     {
-      "time": "2026-04-01 14:41",
-      "isoTime": "2026-04-01T14:41:33+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-01 14:05",
-      "isoTime": "2026-04-01T14:05:55+08:00",
-      "ai": "Qwen",
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:06+08:00",
+      "ai": "Gemini",
       "action": "auto-detect",
-      "message": "Qwen：腳本沒有執行權限，讓我直接用 node 來寫入狀態。（自動偵測）",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-01 14:05",
-      "isoTime": "2026-04-01T14:05:55+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化",
-      "status": "idle"
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:06+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:41+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:41+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:17+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:17+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有任務 A-E 都已完成或已建立基礎設施，現在需要提供最終交接報告。（自動偵測）",
+      "status": "working"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-01T15:58:00+08:00",
-    "message": "P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.",
+    "time": "2026-04-02T05:32:00+08:00",
+    "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。- 2026-04-01 21:24 Qwen：新一輪任務 F 完成：Gemini 產業新聞匯入 — scripts/import-gemini-news.js 腳本建立，支援 impact: positive/negative/neutral 過濾、產業趨勢/個別公司/總體經濟分類、自動事件類型判斷。驗證：git commit e17a70d。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

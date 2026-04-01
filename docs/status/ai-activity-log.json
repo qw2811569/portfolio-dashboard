@@ -1,6 +1,94 @@
 {
-  "lastUpdated": "2026-04-01T15:58:48+08:00",
+  "lastUpdated": "2026-04-02T05:32:10+08:00",
   "entries": [
+    {
+      "time": "2026-04-02 05:32",
+      "isoTime": "2026-04-02T05:32:10+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:32",
+      "isoTime": "2026-04-02T05:32:10+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:29+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:29+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:06+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:07",
+      "isoTime": "2026-04-02T05:07:06+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:41+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:41+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:17+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:17+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：所有任務 A-E 都已完成或已建立基礎設施，現在需要提供最終交接報告。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 05:06",
+      "isoTime": "2026-04-02T05:06:17+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout 啟動，等待任務輸入",
+      "status": "working"
+    },
     {
       "time": "2026-04-01 15:58",
       "isoTime": "2026-04-01T15:58:48+08:00",
@@ -240,94 +328,6 @@
       "action": "auto-detect",
       "message": "Qwen：知識庫已達到 300 條 (60%) 里程碑，需要更新 current-work.md 記錄這個進度並慶祝達成目標。（自動偵測）",
       "status": "working"
-    },
-    {
-      "time": "2026-03-31 03:03",
-      "isoTime": "2026-03-31T03:03:29+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：技術分析擴充完成，現在需要更新 current-work.md 報告進度，距離 300 條目標還差 10 條。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:58",
-      "isoTime": "2026-03-30T23:58:06+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：知識庫已達到 280 條 (56%)，需要報告最新進度並確認距離 60% 目標還差 20 條知識。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:58",
-      "isoTime": "2026-03-30T23:58:06+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務續推：新增 useAppRuntimePortfolioDerivedData/useAppRuntimeHeaderProps，將衍生資料與 header props 組裝從 useAppRuntime 再拆一層；composer 補 core/workflow flatten 組裝並新增測試，lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-30 23:55",
-      "isoTime": "2026-03-30T23:55:29+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：更新索引後需要報告進度並寫入 current-work.md 記錄這次知識庫擴充的里程碑。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:25",
-      "isoTime": "2026-03-30T23:25:42+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：已更新知識庫索引，現在需要將進度更新到 current-work.md 並同步狀態。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:22",
-      "isoTime": "2026-03-30T23:22:31+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：所有 P0/P1/P2 工作已完成，需要更新討論文件標記問題已解決並記錄已執行的工作。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:22",
-      "isoTime": "2026-03-30T23:22:19+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：P1 所有工作已完成，現在更新 todo 狀態並報告整體進度。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:21",
-      "isoTime": "2026-03-30T23:21:45+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：P1 的 usageTracking 機制已完成更新，現在需要更新 todo 狀態並記錄進度到 current-work.md。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:20",
-      "isoTime": "2026-03-30T23:20:44+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：P0 工作已完成，需要更新 todo 狀態並記錄進度到 current-work.md。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:20",
-      "isoTime": "2026-03-30T23:20:41+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：已建立新的 api/twse.js，現在需要刪除舊的 src/lib/twseAdapter.js 完成搬移工作。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-30 23:20",
-      "isoTime": "2026-03-30T23:20:41+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務續推：useAppRuntime 兩段大型參數組裝改走 composeAppRuntimeCoreLifecycleArgs/composeAppRuntimeWorkflowsArgs；修正 refs lint 風險，新增 composer flatten 測試；lint/vitest/build/fast-refresh/healthcheck/smoke 全綠。",
-      "status": "idle"
     }
   ]
 }

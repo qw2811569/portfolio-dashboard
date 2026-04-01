@@ -1,0 +1,223 @@
+{
+  "generatedAt": "2026-04-01T04:12:53.244Z",
+  "summary": {
+    "totalItems": 610,
+    "avgScore": 79,
+    "lowScoreCount": 12,
+    "criticalCount": 0
+  },
+  "categoryStats": [
+    {
+      "category": "chip-analysis",
+      "avgScore": 80.5,
+      "itemCount": 80,
+      "lowScoreCount": 2
+    },
+    {
+      "category": "fundamental-analysis",
+      "avgScore": 84.6,
+      "itemCount": 80,
+      "lowScoreCount": 0
+    },
+    {
+      "category": "industry-trends",
+      "avgScore": 81.2,
+      "itemCount": 100,
+      "lowScoreCount": 0
+    },
+    {
+      "category": "news-correlation",
+      "avgScore": 79.9,
+      "itemCount": 80,
+      "lowScoreCount": 1
+    },
+    {
+      "category": "risk-management",
+      "avgScore": 78.1,
+      "itemCount": 40,
+      "lowScoreCount": 1
+    },
+    {
+      "category": "strategy-cases",
+      "avgScore": 75.3,
+      "itemCount": 130,
+      "lowScoreCount": 5
+    },
+    {
+      "category": "technical-analysis",
+      "avgScore": 78.1,
+      "itemCount": 100,
+      "lowScoreCount": 3
+    }
+  ],
+  "lowScoreItems": [
+    {
+      "id": "sc-017",
+      "title": "假突破陷阱 - 失敗案例",
+      "category": "strategy-cases",
+      "confidence": 0.7,
+      "scores": {
+        "actionability": 60,
+        "specificity": 23,
+        "verifiability": 68,
+        "reusability": 63,
+        "sourceQuality": 40
+      },
+      "total": 51
+    },
+    {
+      "id": "ca-043",
+      "title": "大戶與散戶背離",
+      "category": "chip-analysis",
+      "confidence": 0.65,
+      "scores": {
+        "actionability": 43,
+        "specificity": 38,
+        "verifiability": 52,
+        "reusability": 88,
+        "sourceQuality": 69
+      },
+      "total": 53
+    },
+    {
+      "id": "sc-002",
+      "title": "2022 股債雙殺 - 失敗案例",
+      "category": "strategy-cases",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 70,
+        "specificity": 29,
+        "verifiability": 50,
+        "reusability": 68,
+        "sourceQuality": 40
+      },
+      "total": 53
+    },
+    {
+      "id": "rm-017",
+      "title": "交易頻率控制",
+      "category": "risk-management",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 57,
+        "specificity": 23,
+        "verifiability": 51,
+        "reusability": 95,
+        "sourceQuality": 63
+      },
+      "total": 54
+    },
+    {
+      "id": "ta-033",
+      "title": "成交量潮理論",
+      "category": "technical-analysis",
+      "confidence": 0.65,
+      "scores": {
+        "actionability": 58,
+        "specificity": 24,
+        "verifiability": 52,
+        "reusability": 91,
+        "sourceQuality": 68
+      },
+      "total": 54
+    },
+    {
+      "id": "nc-036",
+      "title": "外資期貨結算日效應",
+      "category": "news-correlation",
+      "confidence": 0.65,
+      "scores": {
+        "actionability": 54,
+        "specificity": 39,
+        "verifiability": 54,
+        "reusability": 88,
+        "sourceQuality": 61
+      },
+      "total": 56
+    },
+    {
+      "id": "sc-008",
+      "title": "加碼時機錯誤 - 失敗案例",
+      "category": "strategy-cases",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 94,
+        "specificity": 23,
+        "verifiability": 51,
+        "reusability": 70,
+        "sourceQuality": 40
+      },
+      "total": 58
+    },
+    {
+      "id": "sc-045",
+      "title": "景氣對策信號應用 - 成功案例",
+      "category": "strategy-cases",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 93,
+        "specificity": 26,
+        "verifiability": 51,
+        "reusability": 61,
+        "sourceQuality": 40
+      },
+      "total": 58
+    },
+    {
+      "id": "ta-026",
+      "title": "量價關係 - 量增價漲",
+      "category": "technical-analysis",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 71,
+        "specificity": 24,
+        "verifiability": 51,
+        "reusability": 85,
+        "sourceQuality": 72
+      },
+      "total": 58
+    },
+    {
+      "id": "ca-003",
+      "title": "主力進場特徵",
+      "category": "chip-analysis",
+      "confidence": 0.7,
+      "scores": {
+        "actionability": 75,
+        "specificity": 27,
+        "verifiability": 53,
+        "reusability": 86,
+        "sourceQuality": 65
+      },
+      "total": 59
+    },
+    {
+      "id": "sc-047",
+      "title": "月線行情 - 成功案例",
+      "category": "strategy-cases",
+      "confidence": 0.75,
+      "scores": {
+        "actionability": 92,
+        "specificity": 23,
+        "verifiability": 65,
+        "reusability": 61,
+        "sourceQuality": 40
+      },
+      "total": 59
+    },
+    {
+      "id": "ta-022",
+      "title": "布林帶收縮",
+      "category": "technical-analysis",
+      "confidence": 0.65,
+      "scores": {
+        "actionability": 75,
+        "specificity": 29,
+        "verifiability": 54,
+        "reusability": 83,
+        "sourceQuality": 63
+      },
+      "total": 59
+    }
+  ]
+}

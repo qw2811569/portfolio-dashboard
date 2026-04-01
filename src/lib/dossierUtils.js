@@ -10,6 +10,7 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
   const fundamentals = dossier.fundamentals || {}
   const events = dossier.events || []
   const brainContext = dossier.brainContext || {}
+  const finmind = dossier.finmind || {}
 
   const priceInfo = blind
     ? `收盤價: N/A (盲測模式)`
@@ -34,6 +35,7 @@ export function buildDailyHoldingDossierContext(dossier, change, { blind = false
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
   const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
   const knowledgeInfo = buildKnowledgeContext(dossier.stockMeta ?? {})
+  const finmindInfo = buildFinMindChipContext(finmind)
 
   return `
 股票代碼: ${dossier.code}
@@ -48,10 +50,15 @@ ${dossier.thesis ? buildThesisScorecardContext(dossier.thesis) : '投資論文 (
 ${targetInfo}
 ${fundamentalInfo}
 ${eventInfo}
-${supplyChainInfo ? `\n供應鏈:\n${supplyChainInfo}` : ''}
+${supplyChainInfo ? `
+供應鏈:
+${supplyChainInfo}` : ''}
 ${themeInfo ? `${themeInfo}` : ''}
 ${brainRuleInfo}
-${knowledgeInfo ? `\n${knowledgeInfo}` : ''}
+${finmindInfo ? `
+${finmindInfo}` : ''}
+${knowledgeInfo ? `
+${knowledgeInfo}` : ''}
 `
 }
 
@@ -89,6 +96,7 @@ export function buildHoldingDossiers(input, options = {}) {
     events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
     research: researchHistory.filter((r) => r.code === holding.code),
     stockMeta: stockMeta[holding.code] || null,
+    finmind: null, // 由 usePortfolioDerivedData 異步充實
   }))
 }
 
@@ -115,6 +123,48 @@ export function buildResearchHoldingDossierContext(dossier, { compact = false } 
 目標價: ${targets.map((t) => `${t.firm} ${t.target}`).join(', ') || '無'}
 最新營收: ${fundamentals.revenueMonth ? `${fundamentals.revenueMonth} ${fundamentals.revenueYoY}% YoY` : '無'}
 `
+}
+
+
+/**
+ * 建立 FinMind 籌碼數據上下文（用於 daily analysis prompt）
+ */
+export function buildFinMindChipContext(finmind) {
+  if (!finmind || (!finmind.institutional?.length && !finmind.valuation?.length && !finmind.margin?.length)) {
+    return ''
+  }
+
+  const lines = ['籌碼數據 (FinMind):']
+
+  // 三大法人近 5 日合計
+  if (finmind.institutional?.length > 0) {
+    const recent5 = finmind.institutional.slice(0, 5)
+    const foreignSum = recent5.reduce((s, d) => s + (d.foreign || 0), 0)
+    const investmentSum = recent5.reduce((s, d) => s + (d.investment || 0), 0)
+    const dealerSum = recent5.reduce((s, d) => s + (d.dealer || 0), 0)
+    lines.push(`  三大法人近 5 日：外資${foreignSum >= 0 ? '+' : ''}${foreignSum}張、投信${investmentSum >= 0 ? '+' : ''}${investmentSum}張、自營商${dealerSum >= 0 ? '+' : ''}${dealerSum}張`)
+  }
+
+  // 最新 PER/PBR
+  if (finmind.valuation?.length > 0) {
+    const latest = finmind.valuation[0]
+    const perStr = latest.per ? `PER=${latest.per.toFixed(1)}` : ''
+    const pbrStr = latest.pbr ? `PBR=${latest.pbr.toFixed(2)}` : ''
+    const yieldStr = latest.dividendYield ? `殖利率=${(latest.dividendYield * 100).toFixed(1)}%` : ''
+    const metrics = [perStr, pbrStr, yieldStr].filter(Boolean).join('、')
+    if (metrics) lines.push(`  估值：${metrics}`)
+  }
+
+  // 融資餘額變化
+  if (finmind.margin?.length > 0) {
+    const recent = finmind.margin.slice(0, 2)
+    if (recent.length >= 2) {
+      const change = (recent[0].marginBalance || 0) - (recent[1].marginBalance || 0)
+      lines.push(`  融資變化：${change >= 0 ? '+' : ''}${change}張`)
+    }
+  }
+
+  return lines.join('\n')
 }
 
 export function buildTaiwanHardGateEvidenceRefs(dossier, issues) {
@@ -318,7 +368,12 @@ export function buildThesisScorecardContext(thesis) {
   if (thesis.stopLoss) priceInfo.push(`停損價: ${thesis.stopLoss}`)
 
   return `Thesis (${direction}): ${statement}
-Conviction: ${conviction}${pillarLines ? `\nPillars:\n${pillarLines}` : ''}${riskLines ? `\nRisks:\n${riskLines}` : ''}${priceInfo.length > 0 ? `\n${priceInfo.join(' / ')}` : ''}`
+Conviction: ${conviction}${pillarLines ? `
+Pillars:
+${pillarLines}` : ''}${riskLines ? `
+Risks:
+${riskLines}` : ''}${priceInfo.length > 0 ? `
+${priceInfo.join(' / ')}` : ''}`
 }
 
 export function createDefaultFundamentalDraft(overrides = {}) {

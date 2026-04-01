@@ -6,6 +6,7 @@ import { usePortfolioDossierActions } from './usePortfolioDossierActions.js'
 import { useWatchlistActions } from './useWatchlistActions.js'
 import { useTransientUiActions } from './useTransientUiActions.js'
 import { useAppRuntimeSyncRefs } from './useAppRuntimeSyncRefs.js'
+import { useAutoEventCalendar } from './useAutoEventCalendar.js'
 import {
   useAppBootRuntimeComposer,
   useAppLifecycleRuntimeComposer,
@@ -14,6 +15,7 @@ import {
 import { usePortfolioSnapshotRuntime } from './usePortfolioSnapshotRuntime.js'
 import { useEventLifecycleSync } from './useEventLifecycleSync.js'
 import { useMarketData } from './useMarketData.js'
+import { useEffect, useRef } from 'react'
 
 export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, helpers }) {
   const {
@@ -314,6 +316,17 @@ export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, 
   useAppRuntimeSyncRefs(runtimeSyncRefsArgs)
   usePortfolioBootstrap(portfolioBootstrapArgs)
   usePortfolioPersistence(portfolioPersistenceArgs)
+
+  // 自動事件行事曆：boot 完成後載入公共事件（FOMC、央行、財報季、除權息）
+  const { fetchAutoEvents } = useAutoEventCalendar({ setNewsEvents })
+  const autoEventsFetchedRef = useRef(false)
+  useEffect(() => {
+    if (ready && holdings.length > 0 && !autoEventsFetchedRef.current) {
+      autoEventsFetchedRef.current = true
+      const codes = holdings.map((h) => h.code)
+      fetchAutoEvents(codes)
+    }
+  }, [ready, holdings, fetchAutoEvents])
 
   const { updateTargetPrice, updateAlert, upsertTargetReport, upsertFundamentalsEntry } =
     usePortfolioDossierActions(dossierActionArgs)

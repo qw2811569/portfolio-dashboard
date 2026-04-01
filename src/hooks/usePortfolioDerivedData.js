@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
+import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
@@ -114,7 +115,40 @@ export function usePortfolioDerivedData({
     buildHoldingDossiers,
   ])
 
-  const dossierByCode = useMemo(() => new Map(D.map((item) => [item.code, item])), [D])
+  
+    // FinMind 數據充實：異步載入籌碼/估值/營收數據（best-effort，失敗不影響主流程）
+  const [enrichedDossiers, setEnrichedDossiers] = useState(/** @type {typeof D | null} */ (null))
+  
+  useEffect(() => {
+    let cancelled = false
+    const codesToEnrich = D.filter(d => !d.finmind).map(d => d.code)
+    if (codesToEnrich.length === 0) {
+      return
+    }
+    Promise.allSettled(
+      codesToEnrich.map(async (code) => {
+        try {
+          const fm = await fetchStockDossierData(code)
+          return { code, fm }
+        } catch {
+          return { code, fm: null }
+        }
+      })
+    ).then(results => {
+      if (cancelled) return
+      const fmMap = new Map(results.map(r => [r.value.code, r.value.fm]))
+      const enriched = D.map(d => ({
+        ...d,
+        finmind: fmMap.get(d.code) || d.finmind
+      }))
+      setEnrichedDossiers(enriched)
+    })
+    return () => { cancelled = true }
+  }, [D])
+
+  const dossiersToUse = enrichedDossiers ?? D
+
+  const dossierByCode = useMemo(() => new Map(dossiersToUse.map((item) => [item.code, item])), [dossiersToUse])
   const totalVal = useMemo(
     () => H.reduce((sum, item) => sum + getHoldingMarketValue(item), 0),
     [H, getHoldingMarketValue]

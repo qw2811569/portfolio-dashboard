@@ -68,6 +68,16 @@ async function fetchTextWithTimeout(url, timeoutMs = 8000) {
   }
 }
 
+async function fetchMultipleRss(urls, timeoutMs = 8000) {
+  const results = await Promise.allSettled(
+    urls.map(url => fetchTextWithTimeout(url, timeoutMs))
+  );
+  return results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value)
+    .join('\n');
+}
+
 async function extractInsights(stock, items) {
   if (!Array.isArray(items) || items.length === 0) return new Map();
   try {
@@ -124,9 +134,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "缺少 code 或 name" });
     }
 
-    const query = `${code} ${name} 台股 目標價 投顧 研究報告 法說 財報 when:30d`;
-    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`;
-    const xml = await fetchTextWithTimeout(url);
+    // 多個 RSS 來源：Google News + 鉅亨網 + 經濟日報
+    const rssUrls = [
+      `https://news.google.com/rss/search?q=${encodeURIComponent(`${code} ${name} 台股 目標價 投顧 研究報告 法說 財報 when:30d`)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`,
+      `https://news.cnyes.com/rss/cat/tw_stock`,
+      `https://money.udn.com/rssfeed/news/1001/5710`,
+    ];
+    const xml = await fetchMultipleRss(rssUrls);
     const parsedItems = parseRssItems(xml)
       .filter(item => item.title && item.link)
       .filter(item => looksRelevant(item, code, name))

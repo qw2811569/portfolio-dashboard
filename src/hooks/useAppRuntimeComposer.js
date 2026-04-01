@@ -981,6 +981,7 @@ export function composeResearchWorkflowArgs({
   getHoldingReturnPct,
   setResearchResults,
   setResearchHistory,
+  setStrategyBrain,
   flashSaved,
   enrichResearchToDossier,
 }) {
@@ -1002,6 +1003,7 @@ export function composeResearchWorkflowArgs({
     getHoldingReturnPct,
     setResearchResults,
     setResearchHistory,
+    setStrategyBrain,
     notifySaved: flashSaved,
     enrichResearchToDossier,
   }
@@ -1091,6 +1093,8 @@ export function composePortfolioPanelsContextInput({
     researchResults: resources.researchResults,
     researchHistory: data.researchHistory,
     enrichingResearchCode: asyncState.enrichingResearchCode,
+    proposalActionId: asyncState.proposalActionId,
+    proposalActionType: asyncState.proposalActionType,
     tradeLog: data.tradeLog,
     reviewForm: ui.reviewForm,
     expandedNews: ui.expandedNews,
@@ -1123,6 +1127,8 @@ export function composePortfolioPanelsContextInput({
     refreshAnalystReports: actions.refreshAnalystReports,
     runResearch: actions.runResearch,
     enrichResearchToDossier: actions.enrichResearchToDossier,
+    applyBrainProposal: actions.applyBrainProposal,
+    discardBrainProposal: actions.discardBrainProposal,
     setResearchResults: controls.setResearchResults,
     setReviewForm: controls.setReviewForm,
     submitReview: actions.submitReview,

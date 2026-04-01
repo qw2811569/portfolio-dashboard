@@ -1,5 +1,7 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { API_ENDPOINTS, STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
+import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
+import { evaluateBrainProposal } from '../lib/researchProposalRuntime.js'
 import {
   buildResearchDossiers,
   buildResearchRequestBody,
@@ -7,6 +9,8 @@ import {
   getPrimaryResearchResult,
   getResearchTargetKey,
   mergeResearchHistoryEntries,
+  patchResearchProposalState,
+  updateResearchReportsProposalState,
 } from '../lib/researchRuntime.js'
 
 async function defaultRunResearchRequest(body) {
@@ -24,6 +28,19 @@ async function defaultRunResearchRequest(body) {
     )
   }
   return res.json()
+}
+
+async function defaultSaveBrainRequest(brainData) {
+  const res = await fetch(API_ENDPOINTS.BRAIN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'save-brain', data: brainData }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data?.error || `策略大腦保存失敗 (${res.status})`)
+  }
+  return data
 }
 
 export function useResearchWorkflow({
@@ -44,11 +61,14 @@ export function useResearchWorkflow({
   getHoldingReturnPct = () => 0,
   setResearchResults = () => {},
   setResearchHistory = () => {},
+  setStrategyBrain = () => {},
   setSaved = () => {},
   notifySaved = null,
   enrichResearchToDossier = async () => false,
   runResearchRequest = defaultRunResearchRequest,
+  saveBrainRequest = defaultSaveBrainRequest,
 }) {
+  const [proposalAction, setProposalAction] = useState({ id: null, type: null })
   const emitSaved = useCallback(
     (message, timeout = STATUS_MESSAGE_TIMEOUT_MS.DEFAULT) => {
       if (typeof notifySaved === 'function') {
@@ -61,6 +81,21 @@ export function useResearchWorkflow({
       }
     },
     [notifySaved, setSaved]
+  )
+
+  const patchProposalState = useCallback(
+    (targetReport, patch) => {
+      const targetTimestamp = Number(targetReport?.timestamp)
+      if (!Number.isFinite(targetTimestamp)) return
+
+      setResearchResults((prev) =>
+        Number(prev?.timestamp) === targetTimestamp ? patchResearchProposalState(prev, patch) : prev
+      )
+      setResearchHistory((prev) =>
+        updateResearchReportsProposalState(prev, targetTimestamp, patch)
+      )
+    },
+    [setResearchHistory, setResearchResults]
   )
 
   const runResearch = useCallback(
@@ -166,5 +201,115 @@ export function useResearchWorkflow({
     ]
   )
 
-  return { runResearch }
+  const applyBrainProposal = useCallback(
+    async (targetReport) => {
+      const proposal = targetReport?.brainProposal
+      if (!proposal?.proposedBrain) {
+        emitSaved('⚠️ 沒有可套用的候選提案')
+        return false
+      }
+
+      const targetTimestamp = Number(targetReport?.timestamp)
+      setProposalAction({
+        id: Number.isFinite(targetTimestamp) ? targetTimestamp : proposal.id || 'proposal',
+        type: 'apply',
+      })
+
+      try {
+        const evaluation = evaluateBrainProposal(proposal, strategyBrain)
+        if (!evaluation.passed) {
+          patchProposalState(targetReport, {
+            proposalStatus: 'blocked',
+            brainProposal: {
+              status: 'blocked',
+              evaluation,
+            },
+          })
+          emitSaved('⚠️ 提案未通過 gate，暫不能套用', STATUS_MESSAGE_TIMEOUT_MS.NOTICE)
+          return false
+        }
+
+        const nextBrain = normalizeStrategyBrain(proposal.proposedBrain, { allowEmpty: true })
+        if (!nextBrain) {
+          emitSaved('⚠️ 提案內容無法正規化，請重新產生')
+          return false
+        }
+
+        setStrategyBrain(nextBrain)
+        if (canUseCloud) {
+          await saveBrainRequest(nextBrain)
+        }
+
+        patchProposalState(targetReport, {
+          proposalStatus: 'applied',
+          report: {
+            appliedBrainAt: new Date().toISOString(),
+          },
+          brainProposal: {
+            status: 'applied',
+            evaluation,
+            appliedAt: new Date().toISOString(),
+          },
+        })
+
+        emitSaved('✅ 候選提案已套用到正式策略大腦', STATUS_MESSAGE_TIMEOUT_MS.NOTICE)
+        return true
+      } catch (error) {
+        console.error('Apply brain proposal failed:', error)
+        emitSaved(`❌ 套用提案失敗：${error?.message?.slice(0, 50) || '未知錯誤'}`)
+        return false
+      } finally {
+        setProposalAction({ id: null, type: null })
+      }
+    },
+    [
+      canUseCloud,
+      emitSaved,
+      patchProposalState,
+      saveBrainRequest,
+      setStrategyBrain,
+      strategyBrain,
+    ]
+  )
+
+  const discardBrainProposal = useCallback(
+    async (targetReport) => {
+      if (!targetReport?.brainProposal) {
+        emitSaved('⚠️ 沒有可放棄的候選提案')
+        return false
+      }
+
+      const targetTimestamp = Number(targetReport?.timestamp)
+      setProposalAction({
+        id: Number.isFinite(targetTimestamp) ? targetTimestamp : targetReport.brainProposal.id || 'proposal',
+        type: 'discard',
+      })
+
+      try {
+        patchProposalState(targetReport, {
+          proposalStatus: 'discarded',
+          report: {
+            discardedBrainAt: new Date().toISOString(),
+          },
+          brainProposal: {
+            status: 'discarded',
+            discardedAt: new Date().toISOString(),
+          },
+        })
+        emitSaved('✅ 已放棄候選提案', STATUS_MESSAGE_TIMEOUT_MS.BRIEF)
+        return true
+      } finally {
+        setProposalAction({ id: null, type: null })
+      }
+    },
+    [emitSaved, patchProposalState]
+  )
+
+  return {
+    runResearch,
+    applyBrainProposal,
+    discardBrainProposal,
+    proposalActionId: proposalAction.id,
+    proposalActionType: proposalAction.type,
+  }
 }

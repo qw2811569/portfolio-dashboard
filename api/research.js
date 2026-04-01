@@ -5,6 +5,13 @@ import { put, list, del } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
+import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
+import {
+  buildBudgetedBrainContext,
+  buildBudgetedHoldingSummary,
+  formatRecentLessons,
+} from '../src/lib/promptBudget.js'
+import { evaluateBrainProposal } from '../src/lib/researchProposalRuntime.js'
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
 const RESEARCH_INDEX_KEY = 'research-index.json'
@@ -75,17 +82,27 @@ async function updateResearchIndex(report) {
   await write(RESEARCH_INDEX_KEY, next)
 }
 
-function buildBrainProposal({ proposalId, parsedBrain, today, mode, diagnostics, advice }) {
+function buildBrainProposal({
+  proposalId,
+  parsedBrain,
+  currentBrain,
+  today,
+  mode,
+  diagnostics,
+  advice,
+}) {
   if (!parsedBrain || typeof parsedBrain !== 'object') return null
+  const evaluation = evaluateBrainProposal({ proposedBrain: parsedBrain }, currentBrain)
   return {
     id: proposalId,
-    status: 'candidate',
+    status: evaluation.passed ? 'candidate' : 'blocked',
     createdAt: new Date().toISOString(),
     date: today,
     mode,
     summary: String(parsedBrain.evolution || '').trim() || '候選策略提案已生成',
     diagnostics,
     advice,
+    evaluation,
     metrics: {
       ruleCount: Array.isArray(parsedBrain.rules) ? parsedBrain.rules.length : 0,
       candidateRuleCount: Array.isArray(parsedBrain.candidateRules)
@@ -244,6 +261,44 @@ function summarizeBrainChecklists(checklists) {
   return sections.length > 0 ? sections.join('\n') : '無'
 }
 
+function buildResearchBrainContext(brain) {
+  const normalizedBrain = normalizeStrategyBrain(brain, { allowEmpty: true })
+  const hasContent =
+    (normalizedBrain.rules || []).length > 0 ||
+    (normalizedBrain.candidateRules || []).length > 0 ||
+    (normalizedBrain.lessons || []).length > 0 ||
+    (normalizedBrain.commonMistakes || []).length > 0 ||
+    Object.keys(normalizedBrain.stats || {}).length > 0
+
+  if (!hasContent) return '（尚未建立）'
+
+  const userRules = (normalizedBrain.rules || []).filter((rule) => rule?.source === 'user')
+  const aiRules = (normalizedBrain.rules || []).filter((rule) => rule?.source !== 'user')
+  const recentLessons = formatRecentLessons(normalizedBrain.lessons || [], { limit: 6 })
+  const recentLessonBudget = formatRecentLessons(normalizedBrain.lessons || [], { limit: 3 })
+  const fullText = [
+    '══ 策略大腦 ══',
+    userRules.length > 0 ? `✅ 用戶確認規則：\n${summarizeBrainRules(userRules, 8)}` : '',
+    aiRules.length > 0 ? `🤖 核心規則：\n${summarizeBrainRules(aiRules, 8)}` : '',
+    (normalizedBrain.candidateRules || []).length > 0
+      ? `🧪 候選規則：\n${summarizeBrainRules(normalizedBrain.candidateRules, 4)}`
+      : '',
+    `📋 決策檢查表：\n${summarizeBrainChecklists(normalizedBrain.checklists)}`,
+    recentLessons ? `📚 最近教訓：\n${recentLessons}` : '',
+    `⚠️ 常犯錯誤：${(normalizedBrain.commonMistakes || []).join('、') || '無'}`,
+    `📈 勝率統計：${normalizedBrain.stats?.hitRate || '尚無'}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+
+  return buildBudgetedBrainContext({
+    fullText,
+    userRulesText: summarizeBrainRules(userRules, 6),
+    recentLessonsText: recentLessonBudget,
+    maxChars: 1500,
+  }).text
+}
+
 function buildResearchDossierContext(dossier, { compact = false } = {}) {
   if (!dossier) return '無 dossier，可依持倉與 meta 基本資料分析。'
   const position = dossier.position || {}
@@ -361,8 +416,21 @@ export default async function handler(req, res) {
       const s = stocks[0]
       const m = meta?.[s.code] || {}
       const dossier = dossierByCode.get(s.code) || null
-      const dossierContext = buildResearchDossierContext(dossier)
       const holdingRow = holdings?.find((h) => h.code === s.code) || null
+      const dossierContext = buildBudgetedHoldingSummary(
+        [
+          {
+            key: s.code,
+            code: s.code,
+            name: s.name,
+            text: buildResearchDossierContext(dossier),
+            weight:
+              Number(holdingRow?.qty || dossier?.position?.qty || 0) *
+              Number(s.price || dossier?.position?.price || 0),
+          },
+        ],
+        { maxChars: 3000, maxEntries: 1 }
+      ).text
 
       const round1 = await callClaude(
         `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
@@ -402,9 +470,7 @@ ${dossierContext}
 現有持倉：${s.code} 持有 ${holdingRow?.qty || '?'}股，成本 ${s.cost}`
       )
 
-      const brainCtx = brain
-        ? `策略大腦核心規則：\n${summarizeBrainRules(brain.rules, 8)}\n候選規則：${summarizeBrainRules(brain.candidateRules, 4)}\n決策檢查表：\n${summarizeBrainChecklists(brain.checklists)}\n常犯錯誤：${(brain.commonMistakes || []).join('、') || '無'}`
-        : ''
+      const brainCtx = brain ? buildResearchBrainContext(brain) : ''
       const round3 = await callClaude(
         `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
         `${notesContext}
@@ -453,7 +519,7 @@ ${dossierContext}
       // 合併了舊的 portfolio（個股掃描+組合建議）和 evolve（系統診斷+大腦進化）
       // 現在不管從哪個按鈕觸發，都走同一個完整流程
 
-      const brainCtx = brain ? JSON.stringify(brain) : '（尚未建立）'
+      const brainCtx = brain ? buildResearchBrainContext(brain) : '（尚未建立）'
       const evtSummary = (events || [])
         .slice(0, 15)
         .map(
@@ -488,14 +554,21 @@ ${dossierContext}
 如果資料偏舊，請在摘要中直接點出。`,
           800
         )
-        stockSummaries.push({ code: s.code, name: s.name, summary, meta: m })
+        stockSummaries.push({ code: s.code, name: s.name, summary, meta: m, stock: s })
       }
-      const stockSummaryText = stockSummaries
-        .map(
-          (s) =>
-            `${s.name}(${s.code})[${s.meta.industry || ''}/${s.meta.position || ''}]: ${s.summary}`
-        )
-        .join('\n\n')
+      const stockSummaryText =
+        buildBudgetedHoldingSummary(
+          stockSummaries.map((item) => ({
+            key: item.code,
+            code: item.code,
+            name: item.name,
+            weight:
+              Number(item?.stock?.value) ||
+              Number(item?.stock?.price || 0) * Number(item?.stock?.qty || 0),
+            text: `${item.name}(${item.code})[${item.meta.industry || ''}/${item.meta.position || ''}]: ${item.summary}`,
+          })),
+          { maxChars: 3000, maxEntries: 5, joiner: '\n\n' }
+        ).text || '目前沒有持股摘要。'
 
       // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
       const diag = await callClaude(
@@ -571,6 +644,7 @@ ${histSummary || '（無紀錄）'}
       const brainProposal = buildBrainProposal({
         proposalId,
         parsedBrain,
+        currentBrain: brain,
         today,
         mode,
         diagnostics: diag,
@@ -603,13 +677,18 @@ ${histSummary || '（無紀錄）'}
           {
             title: '候選策略提案',
             content: brainProposal
-              ? `📝 已生成候選策略提案（尚未自動套用）\n\n**提案摘要：** ${brainProposal.summary || '—'}\n\n**新規則數：** ${brainProposal.metrics?.ruleCount || 0}\n**候選規則數：** ${brainProposal.metrics?.candidateRuleCount || 0}\n**累積教訓：** ${brainProposal.metrics?.lessonCount || 0}`
+              ? `📝 已生成候選策略提案（${brainProposal.status === 'candidate' ? '通過 gate，尚未自動套用' : '未通過 gate'}）\n\n**提案摘要：** ${brainProposal.summary || '—'}\n\n**Gate 結論：** ${brainProposal.evaluation?.summary || '—'}\n\n**新規則數：** ${brainProposal.metrics?.ruleCount || 0}\n**候選規則數：** ${brainProposal.metrics?.candidateRuleCount || 0}\n**累積教訓：** ${brainProposal.metrics?.lessonCount || 0}${
+                  Array.isArray(brainProposal.evaluation?.issues) &&
+                  brainProposal.evaluation.issues.length > 0
+                    ? `\n\n**阻塞原因：** ${brainProposal.evaluation.issues.join('；')}`
+                    : ''
+                }`
               : '⚠️ 候選策略提案生成失敗，請手動檢查',
           },
         ],
         stockSummaries,
         brainProposal,
-        proposalStatus: brainProposal ? 'candidate' : 'failed',
+        proposalStatus: brainProposal?.status || 'failed',
       }
       if (persist) {
         writeLocal(reportKey, report)

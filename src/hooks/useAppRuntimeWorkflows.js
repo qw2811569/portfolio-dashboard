@@ -348,7 +348,13 @@ export function useAppRuntimeWorkflows({
     resetTradeCaptureRef,
   })
 
-  const { runResearch } = useAppResearchRuntime({
+  const {
+    runResearch,
+    applyBrainProposal,
+    discardBrainProposal,
+    proposalActionId,
+    proposalActionType,
+  } = useAppResearchRuntime({
     researching,
     setResearching,
     setResearchTarget,
@@ -365,6 +371,7 @@ export function useAppRuntimeWorkflows({
     getHoldingReturnPct,
     setResearchResults,
     setResearchHistory,
+    setStrategyBrain,
     flashSaved,
     enrichResearchToDossier,
   })
@@ -443,6 +450,8 @@ export function useAppRuntimeWorkflows({
       reportRefreshing,
       reportRefreshStatus,
       enrichingResearchCode,
+      proposalActionId,
+      proposalActionType,
     },
     resources: {
       researchResults,
@@ -482,6 +491,8 @@ export function useAppRuntimeWorkflows({
       refreshAnalystReports,
       runResearch,
       enrichResearchToDossier,
+      applyBrainProposal,
+      discardBrainProposal,
       submitReview,
       cancelReview,
     },

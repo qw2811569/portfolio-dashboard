@@ -6,6 +6,8 @@ import {
   getPrimaryResearchResult,
   getResearchTargetKey,
   mergeResearchHistoryEntries,
+  patchResearchProposalState,
+  updateResearchReportsProposalState,
 } from '../../src/lib/researchRuntime.js'
 
 describe('lib/researchRuntime', () => {
@@ -27,8 +29,8 @@ describe('lib/researchRuntime', () => {
     expect(getResearchTargetKey('single', holdings[0])).toBe('2330')
     expect(getResearchTargetKey('evolve')).toBe('EVOLVE')
     expect(stocks).toEqual([
-      expect.objectContaining({ code: '2330', pnl: 50000, pct: 5.56 }),
-      expect.objectContaining({ code: '2454', pnl: -10000, pct: -1.67 }),
+      expect.objectContaining({ code: '2330', qty: 1000, value: 950000, pnl: 50000, pct: 5.56 }),
+      expect.objectContaining({ code: '2454', qty: 500, value: 590000, pnl: -10000, pct: -1.67 }),
     ])
   })
 
@@ -64,7 +66,13 @@ describe('lib/researchRuntime', () => {
     expect(researchDossiers).toEqual([
       expect.objectContaining({
         code: '2330',
-        position: expect.objectContaining({ price: 950, pnl: 50000, pct: 5.56 }),
+        position: expect.objectContaining({
+          price: 950,
+          qty: 0,
+          value: 0,
+          pnl: 50000,
+          pct: 5.56,
+        }),
       }),
     ])
     expect(body).toMatchObject({
@@ -92,5 +100,37 @@ describe('lib/researchRuntime', () => {
       code: '2330',
     })
     expect(getPrimaryResearchResult({ results: [] })).toBeNull()
+  })
+
+  it('patches proposal state in selected reports and history collections', () => {
+    const baseReport = {
+      timestamp: 10,
+      proposalStatus: 'candidate',
+      brainProposal: { status: 'candidate', summary: '候選提案' },
+    }
+
+    expect(
+      patchResearchProposalState(baseReport, {
+        proposalStatus: 'applied',
+        brainProposal: { status: 'applied' },
+      })
+    ).toMatchObject({
+      proposalStatus: 'applied',
+      brainProposal: { status: 'applied', summary: '候選提案' },
+    })
+
+    expect(
+      updateResearchReportsProposalState([baseReport, { timestamp: 11 }], 10, {
+        proposalStatus: 'discarded',
+        brainProposal: { status: 'discarded' },
+      })
+    ).toEqual([
+      expect.objectContaining({
+        timestamp: 10,
+        proposalStatus: 'discarded',
+        brainProposal: expect.objectContaining({ status: 'discarded' }),
+      }),
+      { timestamp: 11 },
+    ])
   })
 })

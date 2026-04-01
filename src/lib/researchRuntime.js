@@ -22,6 +22,8 @@ export function buildResearchStocks({
     name: holding.name,
     price: resolveHoldingPrice(holding),
     cost: holding.cost,
+    qty: holding.qty,
+    value: Number(resolveHoldingPrice(holding)) * Number(holding.qty || 0),
     pnl: getHoldingUnrealizedPnl(holding),
     pct: getHoldingReturnPct(holding),
     type: holding.type,
@@ -41,6 +43,11 @@ export function buildResearchDossiers({ stocks = [], dossierByCode = new Map() }
           pnl: stock.pnl,
           pct: stock.pct,
           cost: stock.cost,
+          qty: stock.qty ?? dossier.position?.qty ?? 0,
+          value:
+            stock.value ??
+            Number(stock.price || dossier.position?.price || 0) *
+              Number(stock.qty ?? dossier.position?.qty ?? 0),
           type: stock.type || dossier.position?.type || '股票',
         },
       }
@@ -81,6 +88,29 @@ export function buildResearchRequestBody({
 
 export function getPrimaryResearchResult(data) {
   return Array.isArray(data?.results) && data.results.length > 0 ? data.results[0] : null
+}
+
+export function patchResearchProposalState(report, patch = {}) {
+  if (!report || typeof report !== 'object' || Array.isArray(report)) return report
+  const nextProposal = report?.brainProposal
+    ? {
+        ...report.brainProposal,
+        ...(patch.brainProposal || {}),
+      }
+    : report.brainProposal
+
+  return {
+    ...report,
+    ...(patch.report || {}),
+    brainProposal: nextProposal,
+    proposalStatus: patch.proposalStatus ?? nextProposal?.status ?? report.proposalStatus,
+  }
+}
+
+export function updateResearchReportsProposalState(rows, targetTimestamp, patch = {}) {
+  return (Array.isArray(rows) ? rows : []).map((report) =>
+    Number(report?.timestamp) === Number(targetTimestamp) ? patchResearchProposalState(report, patch) : report
+  )
 }
 
 export function mergeResearchHistoryEntries(existingReports, incomingReports, limit = 30) {

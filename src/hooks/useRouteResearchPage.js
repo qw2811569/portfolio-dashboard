@@ -24,6 +24,7 @@ export function useRouteResearchPage() {
     portfolioNotes = {},
     researchHistory = [],
     setResearchHistory = () => {},
+    setStrategyBrain = () => {},
     flashSaved = () => {},
   } = usePortfolioRouteContext()
 
@@ -74,7 +75,13 @@ export function useRouteResearchPage() {
     [enrichResearchToDossierMutation, portfolioId]
   )
 
-  const { runResearch } = useResearchWorkflow({
+  const {
+    runResearch,
+    applyBrainProposal,
+    discardBrainProposal,
+    proposalActionId,
+    proposalActionType,
+  } = useResearchWorkflow({
     researching,
     setResearching,
     setResearchTarget,
@@ -92,6 +99,7 @@ export function useRouteResearchPage() {
     getHoldingReturnPct,
     setResearchResults,
     setResearchHistory,
+    setStrategyBrain,
     notifySaved: flashSaved,
     enrichResearchToDossier,
   })
@@ -126,16 +134,22 @@ export function useRouteResearchPage() {
       researchResults,
       researchHistory,
       enrichingResearchCode,
+      proposalActionId,
+      proposalActionType,
       STOCK_META,
       IND_COLOR,
       onEvolve: () => runResearch('evolve'),
       onRefresh: refreshAnalystReports,
       onResearch: runResearch,
       onEnrich: enrichResearchToDossier,
+      onApplyProposal: applyBrainProposal,
+      onDiscardProposal: discardBrainProposal,
       onSelectHistory: setResearchResults,
     }),
     [
+      applyBrainProposal,
       dataRefreshRows,
+      discardBrainProposal,
       enrichResearchToDossier,
       enrichingResearchCode,
       holdings,
@@ -146,7 +160,10 @@ export function useRouteResearchPage() {
       researchResults,
       researchTarget,
       researching,
+      proposalActionId,
+      proposalActionType,
       runResearch,
+      setResearchResults,
     ]
   )
 }

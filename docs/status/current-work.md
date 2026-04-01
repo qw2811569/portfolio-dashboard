@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-01 00:21
+Last updated: 2026-04-01 13:24
 
 ## Objective
 
@@ -43,6 +43,16 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-04-01 13:24` Codex：完成 P0/P1 第一輪落地，research prompt budget 與 brain proposal gate/UI 已接上。
+  - P0 prompt 瘦身：新增 `src/lib/promptBudget.js`，`api/research.js` 與 `useDailyAnalysisWorkflow.js` 現在會對 holding summary 套 `3000` 字預算，超限時保留最大部位 5 檔；brain context 超過 `1500` 字時會退回 user rules + 最近 3 條 lessons
+  - research API：不再把整個 strategy brain `JSON.stringify` 塞進 prompt，改成結構化摘要再走 budget；候選提案現在附 `evaluation` gate 結果，未過 gate 會標成 `blocked`
+  - P1 gate/eval：新增 `src/lib/researchProposalRuntime.js` 的 `evaluateBrainProposal()`；固定 gate 已實作
+    - 不可刪除 user-confirmed rules
+    - 單次新增規則不可超過 3 條
+    - 新增規則必須帶 `evidenceRefs`
+    - 新增規則不可與現有 rules 語意重複
+  - UI：`ResearchPanel` 新增候選提案狀態卡與「套用提案 / 放棄提案」按鈕；`useResearchWorkflow()` 會在套用時更新正式 strategy brain，並同步更新 research result/history 的 proposal status
+  - 驗證：targeted `vitest`（6 files / 24 tests）全過；`npm run build` 全過；`npm run lint` 僅剩 repo 既有 warnings（`DailyReportPanel.jsx` console、`useAutoEventCalendar.js` unused var），本輪未新增 lint error
 - `2026-04-01 00:21` Codex：補齊 route-based 入口仍殘留的收盤價 / 行事曆 / 成交 OCR 解析缺口。
   - route 收盤價：`useRoutePortfolioRuntime.js` 的 Header `⟳ 收盤價` 原本只會重讀本機快取，現在會真正打 `/api/twse`、寫回 `MARKET_PRICE_CACHE_KEY` / `MARKET_PRICE_SYNC_KEY`，並把新報價套回 route holdings
   - route 行事曆：`useRouteEventsPage.js` 現在會在 `newsEvents` 為空時回退 `NEWS_EVENTS`，不再因空 storage 讓 `/portfolio/:id/events` 整頁空白

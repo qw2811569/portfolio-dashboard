@@ -15,6 +15,11 @@ import {
   calculatePredictionScores,
   stripDailyAnalysisEmbeddedBlocks,
 } from '../lib/dailyAnalysisRuntime.js'
+import {
+  buildBudgetedBrainContext,
+  buildBudgetedHoldingSummary,
+  formatRecentLessons,
+} from '../lib/promptBudget.js'
 import { normalizeAnalysisHistoryEntries, normalizeDailyReportEntry } from '../lib/reportUtils.js'
 
 export function useDailyAnalysisWorkflow({
@@ -126,14 +131,25 @@ export function useDailyAnalysisWorkflow({
         const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode })
         analysisDossiers = dailyDossiers
 
+        const holdingPromptEntries = dailyDossiers.map((dossier) => {
+          const change = changes.find((item) => item.code === dossier.code)
+          return {
+            key: dossier.code,
+            code: dossier.code,
+            name: dossier.name,
+            weight:
+              Number(dossier?.position?.value) ||
+              Number(change?.price || dossier?.position?.price || 0) *
+                Number(dossier?.position?.qty || 0),
+            text: buildDailyHoldingDossierContext(dossier, change),
+          }
+        })
         const holdingSummary =
-          dailyDossiers.length > 0
-            ? dailyDossiers
-                .map((dossier) => {
-                  const change = changes.find((item) => item.code === dossier.code)
-                  return buildDailyHoldingDossierContext(dossier, change)
-                })
-                .join('\n\n')
+          holdingPromptEntries.length > 0
+            ? buildBudgetedHoldingSummary(holdingPromptEntries, {
+                maxChars: 3000,
+                maxEntries: 5,
+              }).text
             : '目前沒有持股 dossier。'
 
         const eventSummary = pendingEvents
@@ -170,7 +186,7 @@ ${brain.coachLessons
         const candidateRules = brain?.candidateRules || []
         const checklistText = formatBrainChecklistsForPrompt(brain?.checklists)
 
-        const brainContext = brain
+        const fullBrainContext = brain
           ? `
 ══ 策略大腦（累積知識庫）══
 ${
@@ -204,6 +220,14 @@ ${(brain.lessons || [])
 ${coachContext}
 ══════════════════════════`
           : ''
+        const brainContext = brain
+          ? buildBudgetedBrainContext({
+              fullText: fullBrainContext,
+              userRulesText: formatBrainRulesForValidationPrompt(userRules, { limit: 6 }),
+              recentLessonsText: formatRecentLessons(brain.lessons || [], { limit: 3 }),
+              maxChars: 1500,
+            }).text
+          : ''
 
         const revContext =
           losers.length > 0
@@ -219,13 +243,26 @@ ${losers
 
         setAnalyzeStep(APP_STATUS_MESSAGES.dailyBlindPrediction)
         const blindHoldingSummary =
-          dailyDossiers.length > 0
-            ? dailyDossiers
-                .map((dossier) => {
+          holdingPromptEntries.length > 0
+            ? buildBudgetedHoldingSummary(
+                dailyDossiers.map((dossier) => {
                   const change = changes.find((item) => item.code === dossier.code)
-                  return buildDailyHoldingDossierContext(dossier, change, { blind: true })
-                })
-                .join('\n\n')
+                  return {
+                    key: dossier.code,
+                    code: dossier.code,
+                    name: dossier.name,
+                    weight:
+                      Number(dossier?.position?.value) ||
+                      Number(change?.price || dossier?.position?.price || 0) *
+                        Number(dossier?.position?.qty || 0),
+                    text: buildDailyHoldingDossierContext(dossier, change, { blind: true }),
+                  }
+                }),
+                {
+                  maxChars: 3000,
+                  maxEntries: 5,
+                }
+              ).text
             : '目前沒有持股 dossier。'
 
         blindPredictions = []

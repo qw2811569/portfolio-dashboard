@@ -771,6 +771,8 @@ describe('hooks/useAppRuntimeComposer.js', () => {
         reportRefreshing: false,
         reportRefreshStatus: '',
         enrichingResearchCode: null,
+        proposalActionId: null,
+        proposalActionType: null,
       },
       resources: {
         researchResults: null,
@@ -810,6 +812,8 @@ describe('hooks/useAppRuntimeComposer.js', () => {
         refreshAnalystReports: vi.fn(),
         runResearch: vi.fn(),
         enrichResearchToDossier: vi.fn(),
+        applyBrainProposal: vi.fn(),
+        discardBrainProposal: vi.fn(),
         submitReview: vi.fn(),
         cancelReview: vi.fn(),
       },

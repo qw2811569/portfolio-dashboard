@@ -308,10 +308,143 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
   )
 }
 
+function proposalStatusMeta(proposalStatus, gatePassed) {
+  if (proposalStatus === 'applied') return { label: '已套用', color: C.olive }
+  if (proposalStatus === 'discarded') return { label: '已放棄', color: C.textMute }
+  if (proposalStatus === 'blocked' || gatePassed === false) return { label: 'Gate 未通過', color: C.down }
+  return { label: '待決策', color: C.amber }
+}
+
+export function ResearchProposalCard({
+  results,
+  onApplyProposal,
+  onDiscardProposal,
+  proposalActionId,
+  proposalActionType,
+}) {
+  const proposal = results?.brainProposal
+  if (!proposal?.proposedBrain) return null
+
+  const evaluation = proposal.evaluation || {}
+  const proposalStatus = results?.proposalStatus || proposal.status || 'candidate'
+  const statusMeta = proposalStatusMeta(proposalStatus, evaluation.passed)
+  const actionBusy = Number(proposalActionId) === Number(results?.timestamp)
+  const canApply =
+    proposalStatus !== 'applied' &&
+    proposalStatus !== 'discarded' &&
+    evaluation.passed !== false
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(statusMeta.color, '45')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        },
+      },
+      h(
+        'div',
+        null,
+        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, '候選策略提案'),
+        h('div', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, proposal.summary || '—'),
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+          `${statusMeta.label} · ${evaluation.summary || '尚未評估'}`
+        )
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
+        h(
+          Button,
+          {
+            onClick: () => onApplyProposal?.(results),
+            disabled: !canApply || actionBusy,
+            style: {
+              padding: '7px 10px',
+              borderRadius: 7,
+              border: 'none',
+              background: canApply ? alpha(C.olive, '22') : C.subtle,
+              color: canApply ? C.olive : C.textMute,
+              fontSize: 10,
+              fontWeight: 600,
+              cursor: !canApply || actionBusy ? 'not-allowed' : 'pointer',
+            },
+          },
+          actionBusy && proposalActionType === 'apply' ? '套用中...' : '套用提案'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => onDiscardProposal?.(results),
+            disabled: proposalStatus === 'discarded' || actionBusy,
+            style: {
+              padding: '7px 10px',
+              borderRadius: 7,
+              border: `1px solid ${alpha(C.down, '2a')}`,
+              background: alpha(C.down, '12'),
+              color: proposalStatus === 'discarded' ? C.textMute : C.down,
+              fontSize: 10,
+              fontWeight: 600,
+              cursor: proposalStatus === 'discarded' || actionBusy ? 'not-allowed' : 'pointer',
+            },
+          },
+          actionBusy && proposalActionType === 'discard' ? '放棄中...' : '放棄提案'
+        )
+      )
+    ),
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gap: 4,
+          fontSize: 10,
+          color: C.textSec,
+          lineHeight: 1.7,
+        },
+      },
+      h(
+        'div',
+        null,
+        `規則 ${proposal.metrics?.ruleCount || 0} 條 · 候選 ${proposal.metrics?.candidateRuleCount || 0} 條 · 教訓 ${proposal.metrics?.lessonCount || 0} 條`
+      ),
+      Array.isArray(evaluation.issues) &&
+        evaluation.issues.length > 0 &&
+        h(
+          'div',
+          { style: { color: C.down } },
+          `Gate 阻塞：${evaluation.issues.join('；')}`
+        )
+    )
+  )
+}
+
 /**
  * Research Results
  */
-export function ResearchResults({ results, onEnrich, enriching }) {
+export function ResearchResults({
+  results,
+  onEnrich,
+  enriching,
+  onApplyProposal,
+  onDiscardProposal,
+  proposalActionId,
+  proposalActionType,
+}) {
   if (!results) return null
 
   return h(
@@ -370,6 +503,13 @@ export function ResearchResults({ results, onEnrich, enriching }) {
           )
       )
     ),
+    h(ResearchProposalCard, {
+      results,
+      onApplyProposal,
+      onDiscardProposal,
+      proposalActionId,
+      proposalActionType,
+    }),
     results.rounds?.map((round, i) =>
       h(
         Card,
@@ -463,12 +603,16 @@ export function ResearchPanel({
   researchResults,
   researchHistory,
   enrichingResearchCode,
+  proposalActionId,
+  proposalActionType,
   STOCK_META,
   IND_COLOR,
   onEvolve,
   onRefresh,
   onResearch,
   onEnrich,
+  onApplyProposal,
+  onDiscardProposal,
   onSelectHistory,
 }) {
   return h(
@@ -504,6 +648,10 @@ export function ResearchPanel({
       results: researchResults,
       onEnrich,
       enriching: enrichingResearchCode,
+      onApplyProposal,
+      onDiscardProposal,
+      proposalActionId,
+      proposalActionType,
     }),
     !researchResults &&
       !researching &&

@@ -375,26 +375,46 @@ console.log('[prompt-budget]', dossier.code, 'total:', result.length, '字')
 
 ---
 
-#### I. 修復 MOPS 抓取穩定性
+#### I. ~~修復 MOPS 抓取穩定性~~ ✅ 已處理
 
-`api/cron/collect-daily-events.js` 從 MOPS 抓法說會公告在 Vercel 環境超時或被擋（production 回傳 0 筆 MOPS 事件）。
+Qwen 確認 MOPS 需要完整瀏覽器會話（cookie/JS），簡單 fetch 被擋。已改成 Gemini 蒐集作為 fallback。
 
-**問題診斷：**
+**長期方案（不急）：** 用 Puppeteer headless browser 抓 MOPS，或找替代 API 來源。
 
-- MOPS (`mops.twse.com.tw`) 可能封鎖 Vercel IP 或需要特定 headers
-- `fetchMopsAnnouncements` 的 HTML regex parsing 可能因 MOPS 改版失效
-- Vercel serverless 的 1.5 秒 rate limit delay × 4 天 = 6 秒，加上 MOPS 回應慢可能超過 10 秒 function timeout
+### 新一輪任務（Claude 2026-04-01 深夜第三輪）
 
-**修復方向：**
+**開始前先 `git pull origin main`。**
 
-1. 在本地跑 `curl -s 'https://mops.twse.com.tw/mops/web/ajax_t05st01' -X POST -d 'encodeURIComponent=1&step=1&firstin=1&off=1&TYPEK=all&isnew=true&date1=114/04/01&date2=114/04/01'` 確認 MOPS 是否回傳 HTML
-2. 如果 MOPS 封鎖 Vercel IP，改成 **本地 cron**（用 `schedule` skill 或 `scripts/` 排程）抓完後 push 到 Blob
-3. 如果是 parsing 問題，修 `fetchMopsAnnouncements` 的 regex
-4. 降低 rate limit delay 到 500ms 或改成只查今天（不查未來 3 天）
+#### J. commit 你所有 uncommitted changes
 
-**驗證：** `curl https://jiucaivoice-dashboard.vercel.app/api/cron/collect-daily-events` 回傳 `mopsCount > 0`
+你目前有多個檔案改了沒 commit。先用以下指令 commit：
 
-**優先度高** — 這是事件自動化的核心管線，修好了就不需要 Gemini 手動搜尋法說會。
+```bash
+git add api/cron/collect-daily-events.js api/analyst-reports.js src/hooks/usePortfolioDerivedData.js src/lib/dossierUtils.js src/hooks/useAppRuntimeCoreLifecycle.js src/lib/knowledge-base/quality-validation.json
+AI_NAME=Qwen bash scripts/ai-commit.sh "feat: MOPS gemini fallback, FinMind dossier, RSS expansion, event boot"
+```
+
+#### K. 幫 Codex 做 prompt 字數分析
+
+收盤分析 API 花了 60.21 秒，接近 timeout。在 `buildDailyHoldingDossierContext` 加字數 log：
+
+```javascript
+// 在 return 前加這一行
+console.log('[prompt-budget]', dossier.code, {
+  total: result.length,
+  holdingSummary: holdingSummary?.length || 0,
+  brainContext: brainContext?.length || 0,
+  knowledgeInfo: knowledgeInfo?.length || 0,
+})
+```
+
+然後跑一次本地收盤分析，把 log 貼到 `docs/status/current-work.md` 讓 Codex 看到各區塊多大。
+
+#### L. Gemini 目標價匯入
+
+Gemini 已產出 `docs/gemini-research/target-price-2026-04-01.json`。比對 `src/seedData.js` 的 `INIT_TARGETS`，更新過時的目標價。
+
+**規則：** 只更新有 `confidence: "confirmed"` 或 `"estimated"` 的，`"unconfirmed"` 不動。
 
 ---
 

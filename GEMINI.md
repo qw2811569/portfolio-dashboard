@@ -262,9 +262,19 @@
 
 ## 新一輪任務（Claude 2026-04-01 晚指派）
 
-### ~~A. 重做法說會行事曆~~ 已取消
+### A. 重新啟用：法說會行事曆蒐集（MOPS 確認被擋）
 
-法說會日期改由 MOPS 自動管線抓取，不再需要 Gemini 手動搜尋。
+MOPS 確認需要完整瀏覽器會話（cookie/JS），簡單 fetch 被擋。Cron 已改成讀取 Gemini 蒐集的 JSON 作為事件來源。
+
+**所以法說會蒐集仍然需要 Gemini 做。** 但品質要求不變：
+
+- 必須涵蓋全部 17 檔
+- citation 必須是實際來源 URL（不可以是 Google 搜尋頁面）
+- 找不到的標 `confidence: "no_data"`
+
+**重點變化：** 你的輸出現在直接被 `api/cron/collect-daily-events.js` 的 `loadGeminiEvents()` 讀取，會自動出現在用戶的行事曆上。只有 `confidence: "confirmed"` 的事件會被匯入。
+
+刪除 `docs/gemini-research/event-calendar-2026-04-01.json` 並重做。
 
 ### B. 目標價更新（工作流程 2）
 

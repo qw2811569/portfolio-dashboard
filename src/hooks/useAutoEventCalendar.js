@@ -20,7 +20,6 @@ export function useAutoEventCalendar({ setNewsEvents }) {
         // 1. 嘗試讀取 Vercel Blob 的每日快照（cron 產生的）
         let snapshot = null
         try {
-          const today = new Date().toISOString().slice(0, 10)
           const blobUrl = `/api/cron/collect-daily-events`
           const blobRes = await fetch(blobUrl, { signal: AbortSignal.timeout(5000) })
           if (blobRes.ok) {

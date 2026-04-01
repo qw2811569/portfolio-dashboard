@@ -1,5 +1,5 @@
 // Vercel Cron Job — 每日自動蒐集事件與新聞
-// 排程：每天台灣時間 08:00（UTC 00:00）盤前執行
+// 排程：每天台灣時間 16:00（UTC 08:00）收盤後執行
 // 資料寫入 Vercel Blob，前端 boot 時讀取
 //
 // 蒐集來源：
@@ -217,7 +217,7 @@ export default async function handler(req, res) {
 
     // 3. Gemini 蒐集的事件（fallback for MOPS）
     // 讀取最新的 event-calendar-*.json
-    const geminiEvents = await loadGeminiEvents(todayISO)
+    const geminiEvents = await loadGeminiEvents(todayISO, stockCodes)
 
     // 組裝快照
     const snapshot = {
@@ -256,7 +256,7 @@ export default async function handler(req, res) {
 }
 
 // ── 載入 Gemini 蒐集的事件 ──
-async function loadGeminiEvents(todayISO) {
+async function loadGeminiEvents(todayISO, stockCodes = []) {
   try {
     // 讀取最新的 event-calendar JSON（從 docs/gemini-research/）
     const fs = await import('fs')
@@ -280,6 +280,9 @@ async function loadGeminiEvents(todayISO) {
     
     for (const fact of facts) {
       if (!fact.date || !fact.eventType || fact.confidence !== 'confirmed') continue
+      
+      // 如果有指定持股代碼，只回傳相關的事件
+      if (stockCodes.length > 0 && !stockCodes.includes(fact.code)) continue
       
       const eventDate = new Date(fact.date)
       const daysDiff = (eventDate - today) / (1000 * 60 * 60 * 24)

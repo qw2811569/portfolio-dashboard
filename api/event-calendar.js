@@ -47,6 +47,15 @@ export default async function handler(req, res) {
     }
     events.push(...mopsEvents)
 
+    // ── 5. FinMind 個股新聞（動態事件來源）─
+    let finmindNewsEvents = []
+    try {
+      finmindNewsEvents = await fetchFinMindNewsEvents(today, rangeDays, stockCodes, req)
+    } catch (finmindError) {
+      console.warn('FinMind 新聞抓取失敗（不影響其他事件）:', finmindError.message)
+    }
+    events.push(...finmindNewsEvents)
+
     // 按日期排序
     events.sort((a, b) => a.date.localeCompare(b.date))
 
@@ -58,6 +67,7 @@ export default async function handler(req, res) {
         'fixed-calendar',
         'dividend-season',
         mopsEvents.length > 0 ? 'mops' : null,
+      finmindNewsEvents.length > 0 ? 'finmind-news' : null,
       ].filter(Boolean),
       generatedAt: new Date().toISOString(),
     })
@@ -295,4 +305,75 @@ function formatDate(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}${m}${day}`
+}
+
+
+// ── FinMind 個股新聞事件 ──
+async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
+  if (stockCodes.length === 0) return []
+
+  const events = []
+  const endDate = new Date(today)
+  endDate.setDate(endDate.getDate() + rangeDays)
+
+  // 關鍵字：法說、股東會、除權息、財報
+  const eventKeywords = ['法說', '股東會', '除權', '除息', '財報', '營收']
+  
+  try {
+    // 對每檔持股查詢新聞
+    for (const code of stockCodes) {
+      const protocol = req.headers['x-forwarded-proto'] || 'http'
+      const host = req.headers.host || '127.0.0.1:3002'
+      const newsUrl = `${protocol}://${host}/api/finmind?dataset=news&code=${code}&start_date=${formatDateForFinMind(today)}`
+      
+      const newsRes = await fetch(newsUrl)
+      if (!newsRes.ok) continue
+      
+      const newsData = await newsRes.json()
+      const news = newsData.data || []
+      
+      // 篩選含事件關鍵字的新聞
+      for (const item of news) {
+        const hasEventKeyword = eventKeywords.some(kw => item.title?.includes(kw))
+        if (!hasEventKeyword) continue
+        
+        const newsDate = new Date(item.date)
+        if (newsDate < today || newsDate > endDate) continue
+        
+        // 判斷事件類型
+        let type = 'news'
+        if (item.title?.includes('法說')) type = 'conference'
+        else if (item.title?.includes('股東會')) type = 'shareholder'
+        else if (item.title?.includes('除權') || item.title?.includes('除息')) type = 'dividend'
+        else if (item.title?.includes('財報') || item.title?.includes('營收')) type = 'earnings'
+        
+        events.push({
+          id: `finmind-news-${code}-${item.date}`,
+          date: item.date,
+          type: type,
+          source: 'finmind-news',
+          title: `${item.title}`,
+          detail: item.description || item.link || '',
+          stocks: [code],
+          status: 'pending',
+          pred: 'neutral',
+          predReason: '新聞事件待觀察',
+          catalystType: type === 'conference' ? 'conference' : type === 'shareholder' ? 'shareholder' : type === 'dividend' ? 'dividend' : 'earnings',
+          impact: type === 'conference' || type === 'earnings' ? 'high' : 'medium',
+          link: item.link,
+        })
+      }
+    }
+  } catch (err) {
+    console.warn('FinMind news fetch error:', err.message)
+  }
+  
+  return events
+}
+
+function formatDateForFinMind(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }

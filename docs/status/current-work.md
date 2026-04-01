@@ -42,6 +42,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-01 22:57` Qwen：全面 Bug Sweep 完成：SWEEP-1（9 個頁面全部載入）✓、SWEEP-2（空用戶體驗）✓、SWEEP-3（行事曆 API）✓、SWEEP-5（ErrorBoundary）✓。所有檢查通過。
+
 
 - `2026-04-02 06:52` Codex：追查 `Importing a module script failed` 後，將最脆弱的 panel chunk 改為穩定載入。
   - done：用 Vite manifest 對照後確認最可疑的是 `daily` / `research`，因為只有這兩個 panel 會額外依賴共享 `Md-*.js` 子 chunk。[`AppPanels.jsx`](/Users/chenkuichen/app/test/src/components/AppPanels.jsx) 現在把 `DailyReportPanel` 與 `ResearchPanel` 改為 eager import，不再走 lazy chunk；其餘仍保留 lazy，但新增 [`lazyPanelLoader.js`](/Users/chenkuichen/app/test/src/lib/lazyPanelLoader.js) 做一次性 reload 保護，當瀏覽器遇到 `Importing a module script failed` / `Failed to fetch dynamically imported module` 這類快取不一致錯誤時，會只自動重整一次避免白屏卡死。

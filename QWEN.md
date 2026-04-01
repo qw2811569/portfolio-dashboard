@@ -512,6 +512,8 @@ if (finmind.cashFlow?.length > 0) {
 
 #### ~~N~~ ✅ 已完成（GeminiResearchBrowser + API，commit 49b561d）
 
+- ✅ 全面 Bug Sweep：SWEEP-1~5 全部通過（所有頁面載入、空用戶體驗、行事曆 API、ErrorBoundary 健壯性）
+
 ### 緊急 Bug 修復（Claude 2026-04-02 第三輪 — 用戶回報）
 
 **用戶實際使用時發現 5 個 bug，其中 2 個由 Qwen 負責修。優先於所有新功能。**

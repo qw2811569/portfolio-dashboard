@@ -2,13 +2,13 @@
 // 供 dossierUtils.js 等 prompt 組裝層使用
 // 只注入高信心度、與持股策略相關的條目，避免 prompt 膨脹
 
-import chipAnalysis from './knowledge-base/chip-analysis.json'
-import technicalAnalysis from './knowledge-base/technical-analysis.json'
-import industryTrends from './knowledge-base/industry-trends.json'
-import fundamentalAnalysis from './knowledge-base/fundamental-analysis.json'
-import riskManagement from './knowledge-base/risk-management.json'
-import strategyCases from './knowledge-base/strategy-cases.json'
-import newsCorrelation from './knowledge-base/news-correlation.json'
+import chipAnalysis from './knowledge-base/chip-analysis.json' with { type: 'json' }
+import technicalAnalysis from './knowledge-base/technical-analysis.json' with { type: 'json' }
+import industryTrends from './knowledge-base/industry-trends.json' with { type: 'json' }
+import fundamentalAnalysis from './knowledge-base/fundamental-analysis.json' with { type: 'json' }
+import riskManagement from './knowledge-base/risk-management.json' with { type: 'json' }
+import strategyCases from './knowledge-base/strategy-cases.json' with { type: 'json' }
+import newsCorrelation from './knowledge-base/news-correlation.json' with { type: 'json' }
 
 // strategy 欄位 → 最相關的知識庫分類
 const STRATEGY_KNOWLEDGE_MAP = {

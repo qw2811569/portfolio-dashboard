@@ -1,10 +1,10 @@
-import chipAnalysis from './knowledge-base/chip-analysis.json'
-import technicalAnalysis from './knowledge-base/technical-analysis.json'
-import industryTrends from './knowledge-base/industry-trends.json'
-import fundamentalAnalysis from './knowledge-base/fundamental-analysis.json'
-import riskManagement from './knowledge-base/risk-management.json'
-import strategyCases from './knowledge-base/strategy-cases.json'
-import newsCorrelation from './knowledge-base/news-correlation.json'
+import chipAnalysis from './knowledge-base/chip-analysis.json' with { type: 'json' }
+import technicalAnalysis from './knowledge-base/technical-analysis.json' with { type: 'json' }
+import industryTrends from './knowledge-base/industry-trends.json' with { type: 'json' }
+import fundamentalAnalysis from './knowledge-base/fundamental-analysis.json' with { type: 'json' }
+import riskManagement from './knowledge-base/risk-management.json' with { type: 'json' }
+import strategyCases from './knowledge-base/strategy-cases.json' with { type: 'json' }
+import newsCorrelation from './knowledge-base/news-correlation.json' with { type: 'json' }
 
 const KNOWLEDGE_SOURCES = [
   { key: 'chip-analysis', kind: 'knowledge', data: chipAnalysis },

@@ -22,3 +22,13 @@ export {
   fetchAnnouncements,
   fetchCompanyData,
 } from './twsePublicAdapter.js'
+
+export {
+  fetchInstitutionalChip,
+  fetchMarginTrading,
+  fetchValuationHistory,
+  fetchFinancialStatements,
+  fetchDividendHistory,
+  fetchRevenueHistory,
+  fetchStockDossierData,
+} from './finmindAdapter.js'

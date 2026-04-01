@@ -221,6 +221,38 @@
 
 **交接方式：** 寫到 `docs/gemini-research/competitive-YYYY-MM-DD.json`。
 
+### 工作流程 7：FinMind 數據品質驗證
+
+**背景：** 應用已接入 FinMind API（`/api/finmind`），提供三大法人、融資融券、PER/PBR、財報、股利、月營收。
+
+**Gemini 的工作：** 抽查 FinMind 回傳的數據是否跟其他公開來源一致。
+
+**做法：**
+
+1. 選 3 檔持股，搜尋其最新三大法人買賣超數據（從證交所網站或新聞）
+2. 比對 FinMind 回傳的 `institutional` dataset 是否一致
+3. 選 2 檔持股的 PER，比對 FinMind vs Goodinfo / Yahoo Finance
+
+```json
+{
+  "facts": [
+    {
+      "code": "2308",
+      "metric": "外資買賣超",
+      "finmindValue": "+1234 張",
+      "publicSource": "證交所公告",
+      "publicValue": "+1234 張",
+      "match": true,
+      "source": "https://www.twse.com.tw/..."
+    }
+  ],
+  "citations": ["https://..."],
+  "freshness": "2026-04-01"
+}
+```
+
+**交接方式：** 寫到 `docs/gemini-research/finmind-validation-YYYY-MM-DD.json`。
+
 ## 持股代碼清單（從 STOCK_META 取）
 
 蒐集時以這些持股為範圍：

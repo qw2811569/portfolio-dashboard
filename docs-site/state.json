@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T23:04:36.000Z",
+  "lastUpdated": "2026-04-01T23:46:53.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,11 +7,11 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 1 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 3 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 目前測試檔 62 個",
+      "✅ 目前測試檔 65 個",
       "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
@@ -241,8 +241,8 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 62,
-    "testCases": 343,
+    "testFiles": 65,
+    "testCases": 355,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
@@ -287,7 +287,7 @@
       "configFile": "GEMINI.md",
       "workflows": 7
     },
-    "current": "Qwen",
+    "current": "Codex",
     "members": [
       {
         "name": "Codex",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 45,
-        "lastActive": "2026-04-02 07:04",
+        "tasksCompleted": 46,
+        "lastActive": "2026-04-02 07:46",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -336,6 +336,22 @@
   },
   "timeline": [
     {
+      "time": "2026-04-02 07:46",
+      "ai": "Codex",
+      "title": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-02 07:50",
+      "ai": "Codex",
+      "title": "修復三個用戶可見 bug：收盤分析 streaming fallback、深度研究空結果、行事曆事件過少。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
       "time": "2026-04-02 07:04",
       "ai": "Codex",
       "title": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- 2026-04-02 07:04 Codex：完成全面 Bug Sweep，並修掉 production re…",
@@ -344,7 +360,7 @@
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T23:04:36.647Z",
+  "generatedAt": "2026-04-01T23:46:53.964Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -360,6 +376,14 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-02 07:46",
+      "isoTime": "2026-04-02T07:46:53+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 07:04",
       "isoTime": "2026-04-02T07:04:36+08:00",
@@ -431,20 +455,12 @@
       "action": "done",
       "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。",
       "status": "idle"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:29+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-02T07:04:00+08:00",
-    "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- 2026-04-02 07:04 Codex：完成全面 Bug Sweep，並修掉 production research serverless 啟動即 crash 的問題。",
+    "time": "2026-04-02T07:46:00+08:00",
+    "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { fetchFinMindNewsEvents } from '../../api/event-calendar.js'
+import {
+  fetchFinMindNewsEvents,
+  mapGeminiFactsToEvents,
+  dedupeCalendarEvents,
+} from '../../api/event-calendar.js'
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -236,5 +240,65 @@ describe('event-calendar.js - Gemini event filtering', () => {
     })
 
     expect(filtered).toHaveLength(2)
+  })
+
+  it('maps confirmed Gemini facts into calendar events within the planning window', async () => {
+    const events = mapGeminiFactsToEvents(
+      [
+        {
+          code: '2308',
+          name: '台達電',
+          eventType: '法說會',
+          date: '2026-04-10',
+          source: 'https://example.com/2308',
+          confidence: 'confirmed',
+        },
+        {
+          code: '2330',
+          name: '台積電',
+          eventType: '法說會',
+          date: '2026-06-20',
+          source: 'https://example.com/2330',
+          confidence: 'confirmed',
+        },
+      ],
+      new Date('2026-04-02'),
+      60,
+      ['2308']
+    )
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        source: 'gemini-research',
+        type: 'conference',
+        stocks: ['2308'],
+        date: '2026-04-10',
+      }),
+    ])
+  })
+
+  it('dedupes duplicate events from different fallback sources', () => {
+    const rows = dedupeCalendarEvents([
+      {
+        date: '2026-04-10',
+        type: 'conference',
+        title: '台達電(2308) 法說會',
+        stocks: ['2308'],
+      },
+      {
+        date: '2026-04-10',
+        type: 'conference',
+        title: '台達電(2308) 法說會',
+        stocks: ['2308'],
+      },
+      {
+        date: '2026-04-10',
+        type: 'earnings',
+        title: '營收公布',
+        stocks: ['2308'],
+      },
+    ])
+
+    expect(rows).toHaveLength(2)
   })
 })

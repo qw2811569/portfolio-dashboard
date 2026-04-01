@@ -13,6 +13,11 @@ import {
   formatRecentLessons,
 } from '../src/lib/promptBudget.js'
 import { evaluateBrainProposal } from '../src/lib/researchProposalRuntime.js'
+import {
+  normalizeResearchRequestInput,
+  summarizeResearchRequestInput,
+  validateResearchRequestInput,
+} from '../src/lib/researchRequestRuntime.js'
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
 const RESEARCH_INDEX_KEY = 'research-index.json'
@@ -423,6 +428,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  const normalizedRequest = normalizeResearchRequestInput(req.body || {})
   const {
     stocks,
     holdings,
@@ -436,7 +442,7 @@ export default async function handler(req, res) {
     knowledgeFeedbackLog,
     mode,
     persist = true,
-  } = req.body
+  } = normalizedRequest
 
   try {
     const today = new Date().toLocaleDateString('zh-TW')
@@ -444,6 +450,24 @@ export default async function handler(req, res) {
     const dossiers = normalizeHoldingDossiers(holdingDossiers)
     const dossierByCode = new Map(dossiers.map((item) => [item.code, item]))
     const notesContext = formatPortfolioNotesContext(portfolioNotes)
+    const requestSummary = summarizeResearchRequestInput({
+      ...normalizedRequest,
+      holdingDossiers: dossiers,
+    })
+    const validationError = validateResearchRequestInput({ mode, stocks, holdings })
+
+    console.log('[research] request', requestSummary)
+
+    if (validationError) {
+      console.warn('[research] invalid request', {
+        ...requestSummary,
+        validationError,
+      })
+      return res.status(400).json({
+        error: validationError,
+        requestSummary,
+      })
+    }
 
     if (mode === 'single' && stocks?.length === 1) {
       // ── 單股深度研究：3 輪迭代 ──
@@ -465,6 +489,13 @@ export default async function handler(req, res) {
         ],
         { maxChars: 3000, maxEntries: 1 }
       ).text
+
+      console.log('[research] single prompt ready', {
+        code: s.code,
+        name: s.name,
+        dossierChars: dossierContext.length,
+        noteChars: notesContext.length,
+      })
 
       const round1 = await callClaude(
         `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
@@ -571,7 +602,10 @@ ${dossierContext}
 
       // ── Round 1：個股快掃（由下往上）──
       const stockSummaries = []
-      for (const s of (stocks || []).slice(0, 20)) {
+      const researchUniverseStocks =
+        Array.isArray(stocks) && stocks.length > 0 ? stocks : holdings || []
+
+      for (const s of researchUniverseStocks.slice(0, 20)) {
         const m = meta?.[s.code] || {}
         const dossier = dossierByCode.get(s.code) || null
         const dossierContext = buildResearchDossierContext(dossier, { compact: true })
@@ -603,6 +637,14 @@ ${dossierContext}
           })),
           { maxChars: 3000, maxEntries: 5, joiner: '\n\n' }
         ).text || '目前沒有持股摘要。'
+
+      console.log('[research] portfolio prompt ready', {
+        mode,
+        stockSummaryChars: stockSummaryText.length,
+        eventSummaryChars: evtSummary.length,
+        analysisHistoryChars: histSummary.length,
+        brainContextChars: brainCtx.length,
+      })
 
       // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
       const diag = await callClaude(
@@ -747,6 +789,14 @@ ${histSummary || '（無紀錄）'}
         } catch {}
       }
       results.push(report)
+    }
+
+    if (results.length === 0) {
+      console.warn('[research] no report generated', requestSummary)
+      return res.status(422).json({
+        error: '研究未產生結果',
+        requestSummary,
+      })
     }
 
     return res.status(200).json({ results })

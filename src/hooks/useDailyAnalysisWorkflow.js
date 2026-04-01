@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
+import { requestAnalyzeWithFallback } from '../lib/analyzeRequest.js'
 import { buildHoldingCoverageContext } from '../lib/dossierUtils.js'
 import { collectInjectedKnowledgeIdsFromDossiers } from '../lib/knowledgeBase.js'
 import {
@@ -386,77 +387,46 @@ ${losers
           blindPredictions,
           injectedKnowledgeIds,
         }
-        const analysisResponse = await fetch('/api/analyze?stream=1', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            buildDailyAnalysisRequest({
-              today,
-              prevReviewBlock,
-              blindPredBlock,
-              totalTodayPnl,
-              marketContext,
-              notesContext,
-              brainContext,
-              revContext,
-              holdingSummary,
-              coverageContext,
-              anomalySummary,
-              eventSummary,
-              blindPredictions,
-              predictionHitRate: `${hits}/${total}`,
-            })
-          ),
+        const analysisRequestBody = buildDailyAnalysisRequest({
+          today,
+          prevReviewBlock,
+          blindPredBlock,
+          totalTodayPnl,
+          marketContext,
+          notesContext,
+          brainContext,
+          revContext,
+          holdingSummary,
+          coverageContext,
+          anomalySummary,
+          eventSummary,
+          blindPredictions,
+          predictionHitRate: `${hits}/${total}`,
         })
-        const isStreamingResponse =
-          analysisResponse.ok &&
-          analysisResponse.headers.get('content-type')?.includes('text/event-stream') &&
-          analysisResponse.body
 
-        let rawInsight = null
-        if (isStreamingResponse) {
-          setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
-          rawInsight = await consumeStreamingAnalyzeResponse(analysisResponse, {
-            onMeta: () => {
-              setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
-            },
-            onDelta: (fullText) => {
-              setDailyReport(
-                normalizeDailyReportEntry({
-                  ...streamPreviewBase,
-                  aiInsight: stripDailyAnalysisEmbeddedBlocks(fullText),
-                  aiError: null,
-                  eventAssessments: [],
-                  brainAudit: null,
-                })
-              )
-            },
-          })
-          setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiPostProcess)
-        } else {
-          let analysisData
-          try {
-            analysisData = await analysisResponse.json()
-          } catch {
-            const text = await analysisResponse
-              .clone()
-              .text()
-              .catch(() => '')
-            throw new Error(
-              text.includes('TIMEOUT')
-                ? 'AI 分析逾時，請稍後再試（Vercel function timeout）'
-                : `AI 回應格式錯誤：${text.slice(0, 80)}`
+        const { rawText: rawInsight } = await requestAnalyzeWithFallback({
+          requestBody: analysisRequestBody,
+          consumeStream: consumeStreamingAnalyzeResponse,
+          onMeta: () => {
+            setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
+          },
+          onDelta: (fullText) => {
+            setDailyReport(
+              normalizeDailyReportEntry({
+                ...streamPreviewBase,
+                aiInsight: stripDailyAnalysisEmbeddedBlocks(fullText),
+                aiError: null,
+                eventAssessments: [],
+                brainAudit: null,
+              })
             )
-          }
-          if (!analysisResponse.ok) {
-            throw new Error(
-              analysisData?.detail ||
-                analysisData?.error ||
-                `AI 分析失敗 (${analysisResponse.status})`
-            )
-          }
-          rawInsight = analysisData.content?.[0]?.text || null
-        }
+          },
+          onFallback: (streamError) => {
+            console.warn('收盤分析串流失敗，改走非串流 fallback:', streamError)
+            setAnalyzeStep('AI 串流失敗，切換一般模式重試...')
+          },
+        })
+        setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiPostProcess)
 
         if (!rawInsight) {
           aiError = 'AI 有回應，但沒有產出可顯示的文字內容'

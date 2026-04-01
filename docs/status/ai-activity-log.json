@@ -1,6 +1,14 @@
 {
-  "lastUpdated": "2026-04-02T07:04:36+08:00",
+  "lastUpdated": "2026-04-02T07:46:53+08:00",
   "entries": [
+    {
+      "time": "2026-04-02 07:46",
+      "isoTime": "2026-04-02T07:46:53+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
+      "status": "idle"
+    },
     {
       "time": "2026-04-02 07:04",
       "isoTime": "2026-04-02T07:04:36+08:00",
@@ -311,22 +319,6 @@
       "ai": "Qwen",
       "action": "auto-detect",
       "message": "Qwen：用戶要求繼續填充知識庫，我應該繼續填充 news-correlation 或其他需要擴充的分類，目標是達到 350 條 (70%)。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-03-31 03:38",
-      "isoTime": "2026-03-31T03:38:20+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "優先任務再推進：新增 composeAppRuntimeHeaderInput，將 useAppRuntime 的 header wiring 再外移；workflow/header 組裝已雙收斂。驗證：eslint(2 files)+vitest(3 files/10 tests)+build+fast-refresh 全綠。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-03-31 03:35",
-      "isoTime": "2026-03-31T03:35:56+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：已完成 ca-021 閾值修正和 news-correlation 填充至 50 條，現在更新 current-work.md 記錄進度。（自動偵測）",
       "status": "working"
     }
   ]

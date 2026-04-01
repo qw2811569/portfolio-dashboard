@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-04-02T07:04:36+08:00",
-  "current": "Qwen",
+  "lastUpdated": "2026-04-02T07:46:53+08:00",
+  "current": "Codex",
   "members": [
     {
       "name": "Codex",
@@ -8,8 +8,8 @@
       "avatar": "🧠",
       "status": "idle",
       "currentTask": "等待分配新任務",
-      "tasksCompleted": 45,
-      "lastActive": "2026-04-02 07:04",
+      "tasksCompleted": 46,
+      "lastActive": "2026-04-02 07:46",
       "statusSource": "manual",
       "activitySource": "~/.codex/session_index.jsonl"
     },

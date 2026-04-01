@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 07:04
+Last updated: 2026-04-02 07:46
 
 ## Objective
 
@@ -42,6 +42,14 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+
+- `2026-04-02 07:46` Codex：修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback
+- `2026-04-02 07:50` Codex：修復三個用戶可見 bug：收盤分析 streaming fallback、深度研究空結果、行事曆事件過少。
+  - done：新增 `src/lib/analyzeRequest.js`，`useDailyAnalysisWorkflow.js` 現在會先嘗試 `/api/analyze?stream=1`，若串流 fetch / SSE consumer / 空正文失敗，會自動 fallback 到非串流 `/api/analyze`，避免前端只剩 `AI 分析未產生：Load failed`。`api/research.js` 接入 `src/lib/researchRequestRuntime.js`，會正規化 legacy `target` / `mode` request，對無效 body 直接回 400，不再默默回 `results: []`；同時補上 request/prompt 摘要 log。`api/event-calendar.js` 則把 Gemini `event-calendar-*.json` fallback 接回即時 API，並將固定事件規劃視窗擴到可包含近期 FOMC / 財報季；本地 mock handler 驗證 `2308,2492,3443` 在 `range=30` 下可回 5 個事件，包含 `2026-05-07 FOMC`、`2026-05-21 創意股東常會`、`2026-05-25 禾伸堂股東常會`。
+  - changed files：`src/lib/analyzeRequest.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/lib/researchRequestRuntime.js`、`api/research.js`、`src/hooks/useResearchWorkflow.js`、`api/event-calendar.js`、`tests/lib/analyzeRequest.test.js`、`tests/lib/researchRequestRuntime.test.js`、`tests/api/research.test.js`、`tests/api/event-calendar.test.js`
+  - validation：`vitest` targeted 4 files / 22 tests 通過；`npm run build` 通過；`npm run lint` 無 error，仍有既有 warnings：`DailyReportPanel.jsx` console、`GeminiResearchBrowser.jsx` unused arg、`useAutoEventCalendar.js` unused `codesSet`
+  - risks：這輪尚未 deploy production，因此 `VISIBLE-1/2/3` 的修補目前只在本地測試與 handler smoke 驗證；`event-calendar` 在本地 smoke 因無本機 FinMind API 連線而跳過 `finmind-news`，目前能確認的是 fixed + gemini fallback 已足夠讓事件不再過少
+  - next best step：commit + push 這輪修補，接著部署 production，再用實際 UI 驗證 `收盤分析` 不再出現 `Load failed`、`深度研究` 不再回空結果、`事件面板` 顯示至少 4-5 筆事件
 
 - `2026-04-02 07:04` Codex：完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- `2026-04-02 07:04` Codex：完成全面 Bug Sweep，並修掉 production `research` serverless 啟動即 crash 的問題。
   - done：依照 `CODEX.md` 的 5 項 sweep 完成 production 驗證。最新 production 已是 commit `939ca51`；Vercel deployment `dpl_EYZHzhbn3jTpdrMy1JfgZmy63GfP` build 綠燈。`/api/research` 原本 bare GET 與 POST 都是 `FUNCTION_INVOCATION_FAILED`，Vercel logs 顯示根因是 Node ESM 載入 `src/lib/knowledge-base/*.json` 缺少 import attribute；已在 `src/lib/knowledgeBase.js` 與 `src/lib/knowledgeEvolutionRuntime.js` 補上 `with { type: 'json' }`，修補後 production `GET /api/research` 已恢復 `200`，`POST /api/research` 會進到真正研究流程，不再 instant crash。

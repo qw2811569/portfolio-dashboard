@@ -52,10 +52,18 @@ async function defaultRunResearchRequest(body) {
     })
     if (!res.ok) {
       const text = await res.text()
+      let payload = null
+      try {
+        payload = JSON.parse(text)
+      } catch {
+        payload = null
+      }
       throw new Error(
-        text.includes('TIMEOUT')
+        payload?.detail ||
+          payload?.error ||
+          (text.includes('TIMEOUT')
           ? '深度研究逾時，請稍後再試（Vercel function timeout）'
-          : text.slice(0, 120) || `研究 API 失敗 (${res.status})`
+          : text.slice(0, 120) || `研究 API 失敗 (${res.status})`)
       )
     }
     return res.json()

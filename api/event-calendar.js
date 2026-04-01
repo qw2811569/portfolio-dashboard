@@ -5,6 +5,9 @@
 // 3. TWSE 除權息日程
 // 4. 固定行事曆（FOMC、央行、財報季）
 
+const FIXED_EVENT_LOOKAHEAD_DAYS = 45
+const GEMINI_EVENT_LOOKAHEAD_DAYS = 60
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -21,6 +24,8 @@ export default async function handler(req, res) {
         .filter(Boolean)
     : []
   const rangeDays = Math.min(parseInt(range) || 30, 90)
+  const fixedLookaheadDays = Math.max(rangeDays, FIXED_EVENT_LOOKAHEAD_DAYS)
+  const geminiLookaheadDays = Math.max(rangeDays, GEMINI_EVENT_LOOKAHEAD_DAYS)
 
   try {
     const today = new Date()
@@ -31,11 +36,11 @@ export default async function handler(req, res) {
     events.push(...revenueEvents)
 
     // ── 2. 固定行事曆事件（FOMC、台灣央行、財報季） ──
-    const fixedEvents = generateFixedCalendarEvents(today, rangeDays)
+    const fixedEvents = generateFixedCalendarEvents(today, fixedLookaheadDays)
     events.push(...fixedEvents)
 
     // ── 3. 除權息預估（6-9 月旺季） ──
-    const dividendEvents = generateDividendSeasonEvents(today, rangeDays, stockCodes)
+    const dividendEvents = generateDividendSeasonEvents(today, fixedLookaheadDays, stockCodes)
     events.push(...dividendEvents)
 
     // ── 4. MOPS 法說會（嘗試從 MOPS 抓取，失敗不影響其他來源） ──
@@ -56,18 +61,29 @@ export default async function handler(req, res) {
     }
     events.push(...finmindNewsEvents)
 
-    // 按日期排序
-    events.sort((a, b) => a.date.localeCompare(b.date))
+    // ── 6. Gemini 蒐集的已確認事件（即時 API fallback） ──
+    let geminiEvents = []
+    try {
+      geminiEvents = await loadGeminiCalendarEvents(today, geminiLookaheadDays, stockCodes)
+    } catch (geminiError) {
+      console.warn('Gemini 事件載入失敗（不影響其他事件）:', geminiError.message)
+    }
+    events.push(...geminiEvents)
+
+    // 去重後按日期排序
+    const dedupedEvents = dedupeCalendarEvents(events)
+    dedupedEvents.sort((a, b) => a.date.localeCompare(b.date))
 
     return res.status(200).json({
       success: true,
-      events,
+      events: dedupedEvents,
       sources: [
         'revenue-calendar',
         'fixed-calendar',
         'dividend-season',
         mopsEvents.length > 0 ? 'mops' : null,
-      finmindNewsEvents.length > 0 ? 'finmind-news' : null,
+        finmindNewsEvents.length > 0 ? 'finmind-news' : null,
+        geminiEvents.length > 0 ? 'gemini-research' : null,
       ].filter(Boolean),
       generatedAt: new Date().toISOString(),
     })
@@ -380,6 +396,104 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
   }
   
   return events
+}
+
+function buildCalendarEventDedupeKey(event) {
+  return [
+    String(event?.date || ''),
+    String(event?.type || ''),
+    String(event?.title || ''),
+    (Array.isArray(event?.stocks) ? event.stocks : []).join(','),
+  ].join('|')
+}
+
+export function dedupeCalendarEvents(events) {
+  const seen = new Set()
+  const rows = []
+
+  for (const event of Array.isArray(events) ? events : []) {
+    const key = buildCalendarEventDedupeKey(event)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    rows.push(event)
+  }
+
+  return rows
+}
+
+function mapGeminiType(geminiType) {
+  if (geminiType.includes('法說')) return 'conference'
+  if (geminiType.includes('股東')) return 'shareholder'
+  if (geminiType.includes('財報')) return 'earnings'
+  if (geminiType.includes('除權') || geminiType.includes('除息')) return 'dividend'
+  return 'other'
+}
+
+export function mapGeminiFactsToEvents(facts = [], today, rangeDays, stockCodes = []) {
+  const startDate = new Date(today)
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = new Date(startDate)
+  endDate.setDate(endDate.getDate() + rangeDays)
+
+  const events = []
+  for (const fact of Array.isArray(facts) ? facts : []) {
+    if (!fact?.date || !fact?.eventType || fact?.confidence !== 'confirmed') continue
+    if (stockCodes.length > 0 && !stockCodes.includes(fact.code)) continue
+
+    const eventDate = new Date(fact.date)
+    if (Number.isNaN(eventDate.getTime()) || eventDate < startDate || eventDate > endDate) continue
+
+    const type = mapGeminiType(String(fact.eventType))
+    events.push({
+      id: `gemini-${fact.code}-${fact.date}-${type}`,
+      date: fact.date,
+      type,
+      source: 'gemini-research',
+      title: `${fact.name}(${fact.code}) ${fact.eventType}`,
+      detail: fact.source || 'Gemini 事件蒐集',
+      stocks: fact.code ? [fact.code] : [],
+      status: 'pending',
+      pred: 'neutral',
+      predReason: '已確認事件，待觀察實際影響',
+      catalystType:
+        type === 'conference'
+          ? 'conference'
+          : type === 'shareholder'
+            ? 'shareholder'
+            : type === 'dividend'
+              ? 'dividend'
+              : type === 'earnings'
+                ? 'earnings'
+                : 'other',
+      impact: type === 'conference' || type === 'earnings' || type === 'shareholder' ? 'high' : 'medium',
+      citation: fact.source || '',
+      link: fact.source || '',
+    })
+  }
+
+  return events
+}
+
+export async function loadGeminiCalendarEvents(today, rangeDays, stockCodes = []) {
+  try {
+    const fs = await import('fs')
+    const path = await import('path')
+    const geminiDir = path.join(process.cwd(), 'docs/gemini-research')
+    const files = fs.readdirSync(geminiDir)
+    const eventFile = files
+      .filter((file) => file.startsWith('event-calendar-') && file.endsWith('.json'))
+      .sort()
+      .pop()
+
+    if (!eventFile) return []
+
+    const filePath = path.join(geminiDir, eventFile)
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    return mapGeminiFactsToEvents(data?.facts || [], today, rangeDays, stockCodes)
+  } catch (error) {
+    console.warn('Gemini event file load error:', error.message)
+    return []
+  }
 }
 
 function formatDateForFinMind(d) {

@@ -42,6 +42,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-01 22:18` Qwen：緊急 Bug 修復完成：BUG-3（持倉硬編碼→空陣列 fallback）+ BUG-5（行事曆直接呼叫 event-calendar API）。驗證：git commit 372ac12。
+
 
 - `2026-04-02 06:08` Codex：P7/P8 已完成並部署 production。
   - done：`/api/analyze` 已支援 streaming SSE，`api/_lib/ai-provider.js` 新增 Anthropic `stream: true` 路徑，前端 `useDailyAnalysisWorkflow.js` 現在會逐步渲染分析正文，並在串流結束後解析 `EVENT_ASSESSMENTS / BRAIN_UPDATE`。另外根據 production smoke 結果，修正 `api/event-calendar.js` 的 FinMind same-day 日期過濾 bug，避免今天的新聞因時分秒比較被排除。

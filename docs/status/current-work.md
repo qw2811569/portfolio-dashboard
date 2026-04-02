@@ -72,6 +72,13 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 ## Latest checkpoint
 
+- `2026-04-02 16:49` Codex：第六輪 FIX-1~4 已完成第一批 API / prompt 修補，並完成本地驗證。
+  - done：[`src/lib/dailyAnalysisRuntime.js`](/src/lib/dailyAnalysisRuntime.js) 的 `stripDailyAnalysisEmbeddedBlocks()` / `extractDailyEventAssessments()` / `extractDailyBrainUpdate()` 已從脆弱 regex 改成先定位 section、再抽 JSON、最後移除 block 的做法，現在可處理 `## / ### / 無標題`、`🛠 / 🧬`、有無 ```json fence 的變體。[`api/research.js`](/api/research.js) 的單股研究改成 `local-fast` 與 `production full` 雙模式：本地 / vercel dev 預設只跑 1 輪完整研究，production 才維持 3 輪，避免本地 30s timeout。研究 dossier prompt 也補回知識庫與 FinMind 摘要，不再只有 thesis / target / fundamentals。[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 則補齊 `revenue / balanceSheet / cashFlow / shareholding` 到 daily analysis 的 FinMind prompt 摘要，確認 7 個關鍵 dataset 都能進 prompt。
+  - changed files：`api/research.js`、`src/lib/dailyAnalysisRuntime.js`、`src/lib/dossierUtils.js`、`tests/api/research.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`、`tests/lib/dossierUtils.buildHoldingDossiers.test.js`
+  - validation：`vitest` targeted 3 files / 24 tests 通過；`npm run build` 通過；targeted `eslint`（上述 6 檔）通過。程式碼 commit：`6fd8ab6 fix daily parser and local research prompt coverage`
+  - risks：這輪尚未 push，也還沒做 production smoke，所以 `production 3 輪` 與新 prompt coverage 還沒在線上再驗一次；另外我早前有一筆本地 commit `eff32a2 gracefully degrade FinMind rate limits` 也還沒 push。`current-work.md` 的 checkpoint 已補，但我沒有去動 `ai-activity.json` / `ai-activity-log.json`，避免覆蓋其他 AI 的即時狀態。
+  - next best step：先把 `eff32a2` 與 `6fd8ab6` 一起 push，再用 production 驗三件事：1. daily report 不再殘留 `BRAIN_UPDATE` JSON；2. research 在 production 維持 3 輪；3. FinMind prompt coverage 與 rate-limit graceful fallback 在線上都生效。
+
 - `2026-04-02 06:12` Qwen：行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。
 
 - `2026-04-02 07:49` Codex：visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回

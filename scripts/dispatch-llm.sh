@@ -117,8 +117,27 @@ case "$LLM" in
       bash scripts/claude-review.sh "$TASK" 2>&1
     fi
     ;;
+  recover)
+    echo "[dispatch] 啟動自動恢復..."
+    bash scripts/auto-recover.sh 2>&1
+    ;;
+  report)
+    bash scripts/progress-report.sh 2>&1
+    ;;
   *)
     echo "用法：bash scripts/dispatch-llm.sh <command> [task]"
-    echo "命令：gemini, codex, qwen, claude, status, restart, push, analyze, evolve, claude-review, ask-claude"
+    echo ""
+    echo "自動化循環："
+    echo "  evolve        — 偵測 build/test/lint/UI 問題，自動派 Codex+Qwen 修"
+    echo "  recover       — 偵測卡住的 AI，自動重新派工"
+    echo "  report        — 進度彙報（你回到電腦時看這個）"
+    echo ""
+    echo "Claude 對話："
+    echo "  claude-review — Claude 審查全局，給下一步建議"
+    echo "  ask-claude    — 直接問 Claude 問題"
+    echo ""
+    echo "手動調度："
+    echo "  codex/qwen/claude/gemini [task] — 派特定 AI 做事"
+    echo "  status/restart/push/analyze     — 系統操作"
     ;;
 esac

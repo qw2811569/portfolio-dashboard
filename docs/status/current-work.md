@@ -41,9 +41,37 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `QWEN.md`
 - `GEMINI.md`
 
-## Latest checkpoint
-- `2026-04-02 06:12` Qwen：行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。
+## 第六輪任務指派（Claude 2026-04-02 晚）
 
+必讀：`docs/status/session-handoff-2026-04-02.md`
+
+### Codex — FIX-1~4（API + prompt 層修復）
+
+1. **FIX-1 BRAIN_UPDATE 沒被 strip** — `src/lib/dailyAnalysisRuntime.js` stripDailyAnalysisEmbeddedBlocks 的 regex 不夠穩健。AI 輸出格式不固定（🛠 vs 🧬，有無 ##，JSON 有無 ``` 包裹）。改用先 extract 再 remove 的方式
+2. **FIX-2 深度研究超時** — `api/research.js` 做 3 輪 AI 迭代需 60s，vercel dev 只有 30s。改成本地 1 輪、production 3 輪
+3. **FIX-3 知識庫 600 條驗證** — 確認 `buildDailyHoldingDossierContext()` 有注入 knowledgeInfo。如果是 0，追蹤為什麼
+4. **FIX-4 FinMind 付費驗證** — 用戶已付費。確認 institutional/valuation/margin/revenue/balanceSheet/cashFlow/shareholding 7 個 dataset 都有出現在分析 prompt
+
+### Qwen — UI 修復
+
+1. **收盤分析等待提示** — 非 streaming 模式要等 20-40 秒但 UI 沒有進度提示。在按鈕旁加「正在分析，約需 30 秒...」的文字
+2. **SupplyChainView 接入持倉頁** — 已建好但沒接入，加到持倉詳情展開區
+3. **補測試** — stripDailyAnalysisEmbeddedBlocks 的 edge cases
+
+### Gemini — 資料蒐集
+
+1. **4月法說會更新** — 搜尋持股的 4 月法說會日期，更新 event-calendar-2026-04-02.json
+2. **產業新聞** — news-2026-04-02.json（上輪未完成）
+
+### 成本守則（所有 LLM 必讀）
+
+- **不要頻繁 push** — Ignored Build Step 已設 exit 0
+- **本地測試用 vercel dev** — FINMIND_TOKEN 必須在 .env（不是 .env.local）
+- **不要手動 Redeploy** 除非用戶要求
+
+## Latest checkpoint
+
+- `2026-04-02 06:12` Qwen：行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。
 
 - `2026-04-02 07:49` Codex：visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回
 - `2026-04-02 07:46` Codex：修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback
@@ -63,7 +91,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-01 22:57` Qwen：全面 Bug Sweep 完成：SWEEP-1（9 個頁面全部載入）✓、SWEEP-2（空用戶體驗）✓、SWEEP-3（行事曆 API）✓、SWEEP-5（ErrorBoundary）✓。所有檢查通過。
 
-
 - `2026-04-02 06:52` Codex：追查 `Importing a module script failed` 後，將最脆弱的 panel chunk 改為穩定載入。
   - done：用 Vite manifest 對照後確認最可疑的是 `daily` / `research`，因為只有這兩個 panel 會額外依賴共享 `Md-*.js` 子 chunk。[`AppPanels.jsx`](/src/components/AppPanels.jsx) 現在把 `DailyReportPanel` 與 `ResearchPanel` 改為 eager import，不再走 lazy chunk；其餘仍保留 lazy，但新增 [`lazyPanelLoader.js`](/src/lib/lazyPanelLoader.js) 做一次性 reload 保護，當瀏覽器遇到 `Importing a module script failed` / `Failed to fetch dynamically imported module` 這類快取不一致錯誤時，會只自動重整一次避免白屏卡死。
   - changed files：`src/components/AppPanels.jsx`、`src/lib/lazyPanelLoader.js`、`tests/lib/lazyPanelLoader.test.js`
@@ -81,7 +108,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-01 22:18` Qwen：緊急 Bug 修復完成：BUG-3（持倉硬編碼→空陣列 fallback）+ BUG-5（行事曆直接呼叫 event-calendar API）。驗證：git commit 372ac12。
 
-
 - `2026-04-02 06:08` Codex：P7/P8 已完成並部署 production。
   - done：`/api/analyze` 已支援 streaming SSE，`api/_lib/ai-provider.js` 新增 Anthropic `stream: true` 路徑，前端 `useDailyAnalysisWorkflow.js` 現在會逐步渲染分析正文，並在串流結束後解析 `EVENT_ASSESSMENTS / BRAIN_UPDATE`。另外根據 production smoke 結果，修正 `api/event-calendar.js` 的 FinMind same-day 日期過濾 bug，避免今天的新聞因時分秒比較被排除。
   - changed files：`api/_lib/ai-provider.js`、`api/analyze.js`、`api/event-calendar.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/lib/appMessages.js`、`src/lib/dailyAnalysisRuntime.js`、`src/lib/dossierUtils.js`、`src/lib/eventStream.js`、`tests/api/analyze.test.js`、`tests/api/event-calendar.test.js`、`tests/lib/eventStream.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`
@@ -97,7 +123,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-01 21:40` Qwen：新一輪任務 H/I/J 完成：(H) 外資持股比率已存在；(I) HoldingsTable.jsx 加入主題 chips；(J) DailyReportPanel.jsx console.log → console.debug。驗證：git commit 02fd601。
 
-
 - `2026-04-02 05:32` Codex：P3-P6 已完成，交接文件已補齊。
   - done：FinMind adapter 補齊 `balanceSheet / cashFlow / shareholding / dividendResult / news`；`TaiwanStockNews` 角色說明已更新為提供 Qwen 建動態事件來源。daily analysis prompt 已改成全局 `coverage_context` + budget 模式，避免每檔持股重複塞供應鏈/主題 context。Vercel cron 已改成台灣時間收盤後執行。新增 `docs/specs/streaming-analysis-design.md`，完成 streaming 路線規劃。另修復 `src/main.jsx` 在 `main` 上既有的 build blocker，讓本輪驗證可重現。
   - changed files：`api/finmind.js`、`src/lib/dataAdapters/finmindAdapter.js`、`src/lib/dataAdapters/index.js`、`src/lib/dossierUtils.js`、`src/lib/promptBudget.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/lib/dailyAnalysisRuntime.js`、`src/main.jsx`、`vercel.json`、`tests/lib/finmindAdapter.test.js`、`tests/lib/dossierSupplyChain.test.js`、`tests/lib/promptBudget.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`、`docs/specs/streaming-analysis-design.md`
@@ -111,7 +136,6 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-01 21:13` Qwen：新一輪任務 A-E 完成：(A) 重複 title 清理 0 個；(B) 主題分類前端展示 buildThemeChips/buildThemeChipsText；(C) 供應鏈 competitors 展示；(D) knowledge proposal UI 已存在；(E) import-gemini-research.js 腳本建立。驗證：git commit cf89bb9。
 
-
 - `2026-04-02 05:40` Claude：第二輪任務指派 — Codex P7-P9（streaming 實作+smoke test+Backer datasets 準備）、Qwen G-J（動態事件測試+外資持股展示+主題 chips UI+lint fix）、Gemini B-E（產業新聞+competitors 驗證+prompt 方法論+新 datasets 驗證）。Codex 的 git push 認證問題是最高優先。
 - `2026-04-02` Claude：供應鏈圖譜大幅擴充（My-TW-Coverage repo → supplyChain.json 8→20 entries），主題分類全面填滿（themes.json 12→14 主題，15/18 持股有主題標籤），seedData STOCK_META themes 更新。新建 themeClassification.json。FinMind 完整 API 參考文件建立（docs/finmind-api-reference.md，90 datasets 完整分類）。評估 anthropics/financial-services-plugins 不適用（美股專用）。指派 Codex P3-P6、Gemini A-D、Qwen A-E 新任務。
 - `2026-04-01 15:58` Codex：P0 prompt slimming for /api/analyze in progress: daily analysis now uses compact holding summaries + XML sectioned prompt + explicit maxTokens/allowThinking=false. Local measurement with real top 5 holdings reduced holding summary from 3000 chars to 1664 chars (-44.5%); brain context budget tightened to 1000 chars. Validation: vitest 4 files 47 tests pass, build pass, lint only existing 2 warnings. Next: production smoke test daily analysis latency, then knowledge proposal gate/apply flow.
@@ -119,13 +143,11 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-01 06:54` Qwen：P4+P7 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS；(2) 補測試：useEvents(11 測試)+useWatchlistActions(12 測試)=23/23 通過。驗證：lint(0 err)+vitest(23 tests) 全綠。
 
-
 - `2026-04-01 14:41` Codex：補完 route research 的 enrichResearchToDossier 流程：route page 改接 shared useReportRefreshWorkflow，不再依賴舊的 /api/research action；抽出 buildReportRefreshCandidates 供主 runtime 與 route 共用。另根據本地 analysis-history 範例輸出，收盤分析 system prompt 新增篇幅控制與 A 級 1-3 檔優先規則，避免把全部持股平均展開、動作不夠具體。驗證：targeted vitest 13/13 通過，lint 僅剩既有 2 warnings，build 通過。
 
 - `2026-04-01 06:33` Qwen：P7+P4 任務完成：(1) RSS 擴充：api/analyst-reports.js 已加入鉅亨網 + 經濟日報 RSS 來源；(2) 補測試：useEvents(19 測試)+useWatchlistActions(12 測試) 已通過，共 31/31 綠燈。驗證：lint(0 err)+vitest(31 tests) 全綠。
 
 - `2026-04-01 06:06` Qwen：FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化。驗證：lint(0 err)+vitest(25 tests) 全綠。
-
 
 - `2026-04-01 14:05` Codex：FinMind 數據接入完成：dossier 已接入 FinMind 籌碼/估值/營收數據，daily analysis prompt 自動注入三大法人/PER/PBR/融資變化
 - `2026-04-01 13:59` Codex：P0/P1 已 push 到 origin/main 並部署 production；Vercel deployment dpl_GdoAe29qkPBe79MB8MSpRX7BQe2x ready，正式站 https://jiucaivoice-dashboard.vercel.app 已更新；實測 POST /api/analyze 回應 9.81s 且為 valid JSON，低於 30s 目標。

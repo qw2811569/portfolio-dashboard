@@ -43,23 +43,11 @@ export default async function handler(req, res) {
     const dividendEvents = generateDividendSeasonEvents(today, fixedLookaheadDays, stockCodes)
     events.push(...dividendEvents)
 
-    // ── 4. MOPS 法說會（嘗試從 MOPS 抓取，失敗不影響其他來源） ──
-    let mopsEvents = []
-    try {
-      mopsEvents = await fetchMopsConferenceEvents(today, rangeDays, stockCodes, req)
-    } catch (mopsError) {
-      console.warn('MOPS 法說會抓取失敗（不影響其他事件）:', mopsError.message)
-    }
-    events.push(...mopsEvents)
+    // ── 4. MOPS 法說會 ── 已停用（MOPS 需要瀏覽器會話，self-request 會 deadlock）
+    // 改由 Gemini 靜態事件 (section 6) 提供法說會資料
 
-    // ── 5. FinMind 個股新聞（動態事件來源）─
-    let finmindNewsEvents = []
-    try {
-      finmindNewsEvents = await fetchFinMindNewsEvents(today, rangeDays, stockCodes, req)
-    } catch (finmindError) {
-      console.warn('FinMind 新聞抓取失敗（不影響其他事件）:', finmindError.message)
-    }
-    events.push(...finmindNewsEvents)
+    // ── 5. FinMind 個股新聞 ── 已停用（self-request 在 vercel dev 會 deadlock，且消耗 FinMind API quota）
+    // 改由前端 dossier enrichment 提供個股新聞
 
     // ── 6. Gemini 蒐集的已確認事件（即時 API fallback） ──
     let geminiEvents = []
@@ -92,7 +80,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message })
   }
 }
-
 
 // 輔助函數：比較日期（忽略時間，只比較日期部分）
 function isDateInRange(dateStr, today, endDate) {
@@ -292,7 +279,7 @@ async function fetchMopsConferenceEvents(today, rangeDays, stockCodes, req) {
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const host = req.headers.host || '127.0.0.1:3002'
       const mopsUrl = `${protocol}://${host}/api/mops-announcements?date=${dateStr}`
-      const mopsRes = await fetch(mopsUrl)
+      const mopsRes = await fetch(mopsUrl, { signal: AbortSignal.timeout(3000) })
       if (!mopsRes.ok) continue
 
       const mopsData = await mopsRes.json()
@@ -333,7 +320,6 @@ function formatDate(d) {
   return `${y}${m}${day}`
 }
 
-
 // ── FinMind 個股新聞事件 ──
 export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
   if (stockCodes.length === 0) return []
@@ -350,20 +336,20 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
   const shareholderPattern = /股東(?:常)?會/
   const dividendPattern = /除權|除息/
   const earningsPattern = /財報|營收/
-  
+
   try {
     // 對每檔持股查詢新聞
     for (const code of stockCodes) {
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const host = req.headers.host || '127.0.0.1:3002'
       const newsUrl = `${protocol}://${host}/api/finmind?dataset=news&code=${code}&start_date=${formatDateForFinMind(today)}`
-      
-      const newsRes = await fetch(newsUrl)
+
+      const newsRes = await fetch(newsUrl, { signal: AbortSignal.timeout(5000) })
       if (!newsRes.ok) continue
-      
+
       const newsData = await newsRes.json()
       const news = newsData.data || []
-      
+
       // 篩選含事件關鍵字的新聞
       for (const item of news) {
         const title = String(item.title || '')
@@ -373,17 +359,17 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
           dividendPattern.test(title) ||
           earningsPattern.test(title)
         if (!hasEventKeyword) continue
-        
+
         const newsDate = new Date(item.date)
         if (newsDate < startDate || newsDate > endDate) continue
-        
+
         // 判斷事件類型
         let type = 'news'
         if (conferencePattern.test(title)) type = 'conference'
         else if (shareholderPattern.test(title)) type = 'shareholder'
         else if (dividendPattern.test(title)) type = 'dividend'
         else if (earningsPattern.test(title)) type = 'earnings'
-        
+
         events.push({
           id: `finmind-news-${code}-${item.date}`,
           date: item.date,
@@ -395,7 +381,14 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
           status: 'pending',
           pred: 'neutral',
           predReason: '新聞事件待觀察',
-          catalystType: type === 'conference' ? 'conference' : type === 'shareholder' ? 'shareholder' : type === 'dividend' ? 'dividend' : 'earnings',
+          catalystType:
+            type === 'conference'
+              ? 'conference'
+              : type === 'shareholder'
+                ? 'shareholder'
+                : type === 'dividend'
+                  ? 'dividend'
+                  : 'earnings',
           impact: type === 'conference' || type === 'earnings' ? 'high' : 'medium',
           link: item.link,
         })
@@ -404,7 +397,7 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
   } catch (err) {
     console.warn('FinMind news fetch error:', err.message)
   }
-  
+
   return events
 }
 
@@ -475,7 +468,8 @@ export function mapGeminiFactsToEvents(facts = [], today, rangeDays, stockCodes 
               : type === 'earnings'
                 ? 'earnings'
                 : 'other',
-      impact: type === 'conference' || type === 'earnings' || type === 'shareholder' ? 'high' : 'medium',
+      impact:
+        type === 'conference' || type === 'earnings' || type === 'shareholder' ? 'high' : 'medium',
       citation: fact.source || '',
       link: fact.source || '',
     })

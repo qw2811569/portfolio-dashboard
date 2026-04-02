@@ -159,6 +159,11 @@ export function StressResult({ result, onClose }) {
  * Daily Report Summary Card
  */
 export function DailyReportSummary({ report, expanded, onToggle }) {
+  // Calculate analysis stats
+  const eventCount = report.eventCorrelations?.length || 0
+  const knowledgeCount = report.injectedKnowledgeIds?.length || 0
+  const finmindCount = report.finmindDataCount || 0
+
   return h(
     Card,
     {
@@ -203,7 +208,37 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
         ),
         h('span', { style: { fontSize: 9, color: C.textMute } }, expanded ? '▲' : '▼')
       )
-    )
+    ),
+    // Analysis stats (shown when expanded)
+    expanded &&
+      h(
+        'div',
+        {
+          style: {
+            marginTop: 10,
+            paddingTop: 10,
+            borderTop: `1px solid ${C.border}`,
+            display: 'flex',
+            gap: 12,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textSec } },
+          `引用 ${eventCount} 個事件`
+        ),
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textSec } },
+          `${knowledgeCount} 條知識庫規則`
+        ),
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textSec } },
+          `${finmindCount} 筆 FinMind 數據`
+        )
+      )
   )
 }
 

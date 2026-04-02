@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 import { C } from '../../theme.js'
 import { Card } from '../common'
-import { buildThemeChips } from '../../lib/dossierUtils.js'
+import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
   getHoldingMarketValue,
@@ -220,6 +220,30 @@ export function HoldingRow({
 
         // Supply chain view
         h(SupplyChainView, { code: holding.code, name: holding.name }),
+
+        // FinMind data panel
+        holding.finmind &&
+          h(
+            'div',
+            {
+              style: {
+                marginTop: 10,
+                paddingTop: 10,
+                borderTop: `1px solid ${C.border}`,
+              },
+            },
+            h('div', { style: { ...lbl, marginBottom: 6 } }, 'FinMind 數據'),
+            (() => {
+              const finmindText = buildFinMindChipContext(holding.finmind)
+              return finmindText
+                ? h(
+                    'div',
+                    { style: { fontSize: 9, color: C.textSec, lineHeight: 1.6, whiteSpace: 'pre-line' } },
+                    finmindText
+                  )
+                : h('div', { style: { fontSize: 9, color: C.textMute } }, '暫無 FinMind 數據')
+            })()
+          ),
 
         // Additional info
         holding.type &&

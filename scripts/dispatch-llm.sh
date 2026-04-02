@@ -106,8 +106,19 @@ case "$LLM" in
     echo "[dispatch] 啟動自動進化循環..."
     bash scripts/auto-evolve.sh 2>&1
     ;;
+  claude-review)
+    echo "[dispatch] 啟動 Claude 審查..."
+    bash scripts/claude-review.sh "$TASK" 2>&1
+    ;;
+  ask-claude)
+    if [[ -z "$TASK" ]]; then
+      echo "[dispatch] 用法：bash scripts/dispatch-llm.sh ask-claude \"你的問題\""
+    else
+      bash scripts/claude-review.sh "$TASK" 2>&1
+    fi
+    ;;
   *)
     echo "用法：bash scripts/dispatch-llm.sh <command> [task]"
-    echo "命令：gemini, codex, qwen, claude, status, restart, push, analyze, evolve"
+    echo "命令：gemini, codex, qwen, claude, status, restart, push, analyze, evolve, claude-review, ask-claude"
     ;;
 esac

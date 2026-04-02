@@ -71,6 +71,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - **不要手動 Redeploy** 除非用戶要求
 
 ## Latest checkpoint
+- `2026-04-02 08:53` Qwen：Qwen UI 任務 1-2 完成：(1) 收盤分析等待提示「正在分析，約需 30 秒...」已加入 AnalyzingState；(2) SupplyChainView 已接入持倉頁展開區。驗證：git commit 0be44de。
+
 
 - `2026-04-02 16:49` Codex：第六輪 FIX-1~4 已完成第一批 API / prompt 修補，並完成本地驗證。
   - done：[`src/lib/dailyAnalysisRuntime.js`](/src/lib/dailyAnalysisRuntime.js) 的 `stripDailyAnalysisEmbeddedBlocks()` / `extractDailyEventAssessments()` / `extractDailyBrainUpdate()` 已從脆弱 regex 改成先定位 section、再抽 JSON、最後移除 block 的做法，現在可處理 `## / ### / 無標題`、`🛠 / 🧬`、有無 ```json fence 的變體。[`api/research.js`](/api/research.js) 的單股研究改成 `local-fast` 與 `production full` 雙模式：本地 / vercel dev 預設只跑 1 輪完整研究，production 才維持 3 輪，避免本地 30s timeout。研究 dossier prompt 也補回知識庫與 FinMind 摘要，不再只有 thesis / target / fundamentals。[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 則補齊 `revenue / balanceSheet / cashFlow / shareholding` 到 daily analysis 的 FinMind prompt 摘要，確認 7 個關鍵 dataset 都能進 prompt。

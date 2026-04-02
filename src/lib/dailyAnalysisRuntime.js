@@ -528,8 +528,10 @@ export function buildDailyReport({
 export function stripDailyAnalysisEmbeddedBlocks(displayText = '') {
   const rawText = String(displayText || '').trim()
   const cleaned = rawText
-    .replace(/## 📋 EVENT_ASSESSMENTS[\s\S]*?```[\s\S]*?```/g, '')
-    .replace(/## 🧬 BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/g, '')
+    // 匹配各種格式的 EVENT_ASSESSMENTS block（有無 ##，各種 emoji）
+    .replace(/#{0,3}\s*.*?EVENT_ASSESSMENTS[\s\S]*?```[\s\S]*?```/gi, '')
+    // 匹配各種格式的 BRAIN_UPDATE block（有無 ##，各種 emoji）
+    .replace(/#{0,3}\s*.*?BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/gi, '')
     .trim()
   return cleaned || rawText
 }

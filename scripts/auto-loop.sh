@@ -54,7 +54,8 @@ run_qa() {
   # Lint
   log "QA: npm run lint..."
   LINT_OUT=$(npm run lint 2>&1) || true
-  LINT_ERRS=$(echo "$LINT_OUT" | grep -c " error " 2>/dev/null || echo "0")
+  LINT_ERRS="$(echo "$LINT_OUT" | grep -c " error " || true)"
+  LINT_ERRS="${LINT_ERRS:-0}"
   if [[ "$LINT_ERRS" -gt 0 ]]; then
     problems=$((problems + 1))
     details+="LINT_ERROR: $(echo "$LINT_OUT" | grep ' error ' | head -5)\n"
@@ -163,7 +164,7 @@ while [[ $ROUND -lt $MAX_ROUNDS ]]; do
       run_claude_review
       CLAUDE_RESULT=$(cat /tmp/auto-loop-claude-result)
 
-      if echo "$CLAUDE_RESULT" | grep -qi "STABLE"; then
+      if echo "$CLAUDE_RESULT" | grep -qi "^STABLE\|: STABLE\| STABLE$" && ! echo "$CLAUDE_RESULT" | grep -qi "UNSTABLE"; then
         log ""
         log "========================================="
         log "✅ 閉環完成！連續 $CONSECUTIVE_PASS 輪 QA 通過 + Claude 確認穩定"
@@ -188,9 +189,12 @@ RESULTEOF
         AI_NAME=OpenClaw bash scripts/ai-status.sh done "自動閉環完成：$ROUND 輪後穩定" >/dev/null 2>&1 || true
         exit 0
       else
-        log "Claude 認為還不穩定，重置連續通過計數"
+        log "Claude 認為還不穩定：$CLAUDE_RESULT"
+        log "派 Codex 處理 Claude 指出的問題..."
+        openclaw agent --agent codex \
+          --message "Claude 審查結果：$CLAUDE_RESULT。請針對 Claude 指出的問題進行修復或補強。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" \
+          --timeout 300 2>&1 | head -5 || true
         CONSECUTIVE_PASS=0
-        # Claude 可能指出新問題，下一輪 QA 會抓到
       fi
     else
       log "再通過 $((REQUIRED_CONSECUTIVE_PASS - CONSECUTIVE_PASS)) 次才做最終審查"

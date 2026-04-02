@@ -102,8 +102,12 @@ case "$LLM" in
       -d '{"systemPrompt":"測試","userPrompt":"用30字分析台達電","maxTokens":100}' \
       --max-time 20 | tail -3
     ;;
+  evolve)
+    echo "[dispatch] 啟動自動進化循環..."
+    bash scripts/auto-evolve.sh 2>&1
+    ;;
   *)
     echo "用法：bash scripts/dispatch-llm.sh <command> [task]"
-    echo "命令：gemini, codex, qwen, claude, status, restart, push, analyze"
+    echo "命令：gemini, codex, qwen, claude, status, restart, push, analyze, evolve"
     ;;
 esac

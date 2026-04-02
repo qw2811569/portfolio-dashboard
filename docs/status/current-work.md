@@ -42,6 +42,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `GEMINI.md`
 
 ## Latest checkpoint
+- `2026-04-02 06:12` Qwen：行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。
+
 
 - `2026-04-02 07:49` Codex：visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回
 - `2026-04-02 07:46` Codex：修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback

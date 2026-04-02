@@ -216,34 +216,22 @@ TASKEOF
 
 echo "任務已寫入 $TASK_FILE"
 
-# ─── Step 7: 自動派工 ───
+# ─── Step 7: 透過 ACP 自動派工 ───
+# OpenClaw 的 main agent 會讀 auto-evolve-tasks.md 自行決定派工
+# 這裡只輸出建議指令供 OpenClaw 執行
 
-# 派 Codex 修後端問題
 if [[ ${#CODEX_TASKS[@]} -gt 0 ]]; then
-  if command -v codex >/dev/null 2>&1; then
-    CODEX_PROMPT="讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區。裡面有 build/test/lint 的失敗項目。請逐一修復，每修一項跑驗證確認通過。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。"
-    echo "[dispatch] 派 Codex 修復 ${#CODEX_TASKS[@]} 個後端問題..."
-    AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 修復：${#CODEX_TASKS[@]} 個後端問題" >/dev/null 2>&1 || true
-    nohup codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C "$ROOT_DIR" "$CODEX_PROMPT" > /tmp/codex-auto-evolve.log 2>&1 &
-    echo "[dispatch] Codex 已在背景啟動 (PID: $!)"
-  else
-    echo "[dispatch] Codex CLI 不存在，後端問題等待手動處理"
-    AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "auto-evolve 發現 ${#CODEX_TASKS[@]} 個後端問題但 Codex 不可用" >/dev/null 2>&1 || true
-  fi
+  echo ""
+  echo "[suggest] 後端問題建議派 Codex："
+  echo "  /acp spawn codex \"讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區，逐一修復 build/test/lint 失敗項，每修一項跑驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。\""
+  AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 待修：${#CODEX_TASKS[@]} 個後端問題" >/dev/null 2>&1 || true
 fi
 
-# 派 Qwen 修前台問題
 if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
-  if command -v qwen >/dev/null 2>&1; then
-    QWEN_PROMPT="讀 docs/status/auto-evolve-tasks.md 的 Qwen 任務區。裡面有前台 UI 和 API 的問題。請逐一修復，每修一項驗證確認通過。完成後用 AI_NAME=Qwen bash scripts/ai-status.sh done 回報。"
-    echo "[dispatch] 派 Qwen 修復 ${#QWEN_TASKS[@]} 個前台問題..."
-    AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 修復：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
-    nohup qwen --auth-type qwen-oauth --approval-mode yolo --sandbox false "$QWEN_PROMPT" > /tmp/qwen-auto-evolve.log 2>&1 &
-    echo "[dispatch] Qwen 已在背景啟動 (PID: $!)"
-  else
-    echo "[dispatch] Qwen CLI 不存在，前台問題等待手動處理"
-    AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "auto-evolve 發現 ${#QWEN_TASKS[@]} 個前台問題但 Qwen 不可用" >/dev/null 2>&1 || true
-  fi
+  echo ""
+  echo "[suggest] 前台問題建議派 Qwen："
+  echo "  /acp spawn qwen \"讀 docs/status/auto-evolve-tasks.md 的 Qwen 任務區，逐一修復前台 UI 和 API 問題。完成後用 AI_NAME=Qwen bash scripts/ai-status.sh done 回報。\""
+  AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 待修：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
 fi
 
 echo ""

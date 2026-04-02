@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# OpenClaw 用這個腳本調度 LLM
-# 用法：bash scripts/dispatch-llm.sh <llm> <task>
-# 範例：bash scripts/dispatch-llm.sh gemini "蒐集產業新聞"
-#       bash scripts/dispatch-llm.sh codex "修復 BRAIN_UPDATE strip"
-#       bash scripts/dispatch-llm.sh qwen "補測試"
-#       bash scripts/dispatch-llm.sh status "查看所有 LLM 狀態"
+# OpenClaw 系統操作腳本
+# AI 調度已遷移到 ACP（/acp spawn codex|claude|qwen）
+# 這個腳本只保留系統維運指令
+#
+# 用法：bash scripts/dispatch-llm.sh <command> [args]
 
 set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:$PATH"
@@ -12,63 +11,19 @@ export PATH="/usr/local/bin:/usr/bin:$PATH"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# 載入 nvm（確保非 login shell 也能找到 CLI）
+# 載入 nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 nvm use 24 > /dev/null 2>&1 || true
-# fallback：如果 nvm 沒成功載入，直接把 node 24 bin 加進 PATH
 if ! command -v node >/dev/null 2>&1; then
   NODE24_BIN="$HOME/.nvm/versions/node/v24.13.1/bin"
   [ -d "$NODE24_BIN" ] && export PATH="$NODE24_BIN:$PATH"
 fi
 
-LLM="${1:-status}"
-TASK="${2:-}"
+CMD="${1:-status}"
+ARG="${2:-}"
 
-case "$LLM" in
-  gemini)
-    if command -v gemini >/dev/null 2>&1; then
-      echo "[dispatch] 啟動 Gemini：$TASK"
-      bash scripts/launch-gemini-research-scout.sh "$TASK" &
-      echo "[dispatch] Gemini 已在背景啟動 (PID: $!)"
-    else
-      echo "[dispatch] Gemini CLI 不存在，已寫入 current-work blocker"
-      AI_NAME=Gemini bash scripts/ai-status.sh blocker "Gemini CLI 不存在，無法自動啟動。請先執行 npm install -g @anthropic-ai/gemini-cli 或手動安裝。" >/dev/null 2>&1 || true
-    fi
-    ;;
-  codex)
-    if command -v codex >/dev/null 2>&1; then
-      echo "[dispatch] 啟動 Codex：$TASK"
-      AI_NAME=Codex bash scripts/ai-status.sh start "Codex CLI 啟動：$TASK" >/dev/null 2>&1 || true
-      nohup codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C "$ROOT_DIR" "$TASK" > /tmp/codex-dispatch.log 2>&1 &
-      echo "[dispatch] Codex 已在背景啟動 (PID: $!)"
-    else
-      echo "[dispatch] Codex CLI 不存在，已寫入 current-work blocker"
-      AI_NAME=Codex bash scripts/ai-status.sh blocker "Codex CLI 不存在，無法自動啟動。請先安裝 codex CLI 或提供可執行入口。" >/dev/null 2>&1 || true
-    fi
-    ;;
-  qwen)
-    if command -v qwen >/dev/null 2>&1; then
-      echo "[dispatch] 啟動 Qwen：$TASK"
-      AI_NAME=Qwen bash scripts/ai-status.sh start "Qwen CLI 啟動：$TASK" >/dev/null 2>&1 || true
-      nohup qwen --auth-type qwen-oauth --approval-mode yolo --sandbox false "$TASK" > /tmp/qwen-dispatch.log 2>&1 &
-      echo "[dispatch] Qwen 已在背景啟動 (PID: $!)"
-    else
-      echo "[dispatch] Qwen CLI 不存在，已寫入 current-work blocker"
-      AI_NAME=Qwen bash scripts/ai-status.sh blocker "Qwen CLI 不存在，無法自動啟動。請先安裝 qwen CLI 或提供可執行入口。" >/dev/null 2>&1 || true
-    fi
-    ;;
-  claude)
-    if command -v claude >/dev/null 2>&1; then
-      echo "[dispatch] 啟動 Claude：$TASK"
-      AI_NAME=Claude bash scripts/ai-status.sh start "Claude CLI 啟動：$TASK" >/dev/null 2>&1 || true
-      nohup claude --print --permission-mode bypassPermissions "$TASK" > /tmp/claude-dispatch.log 2>&1 &
-      echo "[dispatch] Claude 已在背景啟動 (PID: $!)"
-    else
-      echo "[dispatch] Claude CLI 不存在，已寫入 current-work blocker"
-      AI_NAME=Claude bash scripts/ai-status.sh blocker "Claude CLI 不存在，無法自動啟動。請先安裝 claude CLI 或提供可執行入口。" >/dev/null 2>&1 || true
-    fi
-    ;;
+case "$CMD" in
   status)
     echo "=== 最近 commit ==="
     git log --oneline -5
@@ -106,38 +61,23 @@ case "$LLM" in
     echo "[dispatch] 啟動自動進化循環..."
     bash scripts/auto-evolve.sh 2>&1
     ;;
-  claude-review)
-    echo "[dispatch] 啟動 Claude 審查..."
-    bash scripts/claude-review.sh "$TASK" 2>&1
-    ;;
-  ask-claude)
-    if [[ -z "$TASK" ]]; then
-      echo "[dispatch] 用法：bash scripts/dispatch-llm.sh ask-claude \"你的問題\""
-    else
-      bash scripts/claude-review.sh "$TASK" 2>&1
-    fi
-    ;;
-  recover)
-    echo "[dispatch] 啟動自動恢復..."
-    bash scripts/auto-recover.sh 2>&1
-    ;;
   report)
     bash scripts/progress-report.sh 2>&1
     ;;
   *)
-    echo "用法：bash scripts/dispatch-llm.sh <command> [task]"
+    echo "用法：bash scripts/dispatch-llm.sh <command>"
     echo ""
-    echo "自動化循環："
-    echo "  evolve        — 偵測 build/test/lint/UI 問題，自動派 Codex+Qwen 修"
-    echo "  recover       — 偵測卡住的 AI，自動重新派工"
-    echo "  report        — 進度彙報（你回到電腦時看這個）"
+    echo "系統操作："
+    echo "  status   — 查看專案狀態"
+    echo "  restart  — 重啟 vercel dev"
+    echo "  push     — 推送到 GitHub"
+    echo "  analyze  — 測試收盤分析 API"
+    echo "  evolve   — 自動偵測+修復 build/test/lint 問題"
+    echo "  report   — 進度彙報"
     echo ""
-    echo "Claude 對話："
-    echo "  claude-review — Claude 審查全局，給下一步建議"
-    echo "  ask-claude    — 直接問 Claude 問題"
-    echo ""
-    echo "手動調度："
-    echo "  codex/qwen/claude/gemini [task] — 派特定 AI 做事"
-    echo "  status/restart/push/analyze     — 系統操作"
+    echo "AI 調度（已遷移到 ACP）："
+    echo "  /acp spawn codex \"任務描述\"  — 派 Codex"
+    echo "  /acp spawn claude \"任務描述\" — 派 Claude"
+    echo "  /acp spawn qwen \"任務描述\"   — 派 Qwen"
     ;;
 esac

@@ -43,11 +43,25 @@ export default async function handler(req, res) {
     const dividendEvents = generateDividendSeasonEvents(today, fixedLookaheadDays, stockCodes)
     events.push(...dividendEvents)
 
-    // ── 4. MOPS 法說會 ── 已停用（MOPS 需要瀏覽器會話，self-request 會 deadlock）
-    // 改由 Gemini 靜態事件 (section 6) 提供法說會資料
+    // ── 4. MOPS 法說會 ── 已停用（需要瀏覽器會話）
 
-    // ── 5. FinMind 個股新聞 ── 已停用（self-request 在 vercel dev 會 deadlock，且消耗 FinMind API quota）
-    // 改由前端 dossier enrichment 提供個股新聞
+    // ── 5. FinMind 個股新聞（直接呼叫外部 API，不走 self-request）──
+    let finmindNewsEvents = []
+    if (stockCodes.length > 0) {
+      try {
+        console.log(
+          '[event-calendar] FinMind news: querying',
+          stockCodes.length,
+          'stocks, token:',
+          process.env.FINMIND_TOKEN ? 'SET' : 'MISSING'
+        )
+        finmindNewsEvents = await fetchFinMindNewsDirectly(stockCodes)
+        console.log('[event-calendar] FinMind news: got', finmindNewsEvents.length, 'events')
+      } catch (finmindError) {
+        console.warn('[event-calendar] FinMind news failed:', finmindError.message)
+      }
+    }
+    events.push(...finmindNewsEvents)
 
     // ── 6. Gemini 蒐集的已確認事件（即時 API fallback） ──
     let geminiEvents = []
@@ -69,6 +83,7 @@ export default async function handler(req, res) {
         'revenue-calendar',
         'fixed-calendar',
         'dividend-season',
+        finmindNewsEvents.length > 0 ? 'finmind-news' : null,
         geminiEvents.length > 0 ? 'gemini-research' : null,
       ].filter(Boolean),
       generatedAt: new Date().toISOString(),
@@ -503,4 +518,53 @@ function formatDateForFinMind(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+// ── 直接呼叫 FinMind 外部 API（不走 self-request，避免 deadlock）──
+// 取最近 3 天的持股新聞作為行事曆事件（需要 FINMIND_TOKEN）
+async function fetchFinMindNewsDirectly(stockCodes) {
+  const events = []
+  const token = process.env.FINMIND_TOKEN || ''
+  if (!token) return events // 無 token 無法取得新聞
+
+  const today = new Date()
+  const startDate = new Date(today)
+  startDate.setDate(startDate.getDate() - 3)
+  const startStr = formatDateForFinMind(startDate)
+
+  // 最多查前 5 檔重點持股
+  for (const code of stockCodes.slice(0, 5)) {
+    try {
+      const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${startStr}&token=${token}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!res.ok) continue
+
+      const json = await res.json()
+      const items = (json.data || []).slice(0, 5) // 每檔最多 5 則
+      for (const item of items) {
+        const title = String(item.title || '')
+        if (!title || title.length < 10) continue
+
+        events.push({
+          id: `finmind-news-${code}-${item.date?.slice(0, 10) || 'unknown'}`,
+          date: item.date?.slice(0, 10) || formatDateForFinMind(today),
+          type: 'news',
+          source: 'finmind-news',
+          title: `${code} ${title.slice(0, 60)}`,
+          detail: title,
+          stocks: [code],
+          status: 'closed',
+          pred: 'neutral',
+          predReason: '持股相關新聞',
+          catalystType: 'news',
+          impact: 'low',
+          link: item.link || '',
+        })
+      }
+    } catch {
+      // skip failed stock
+    }
+  }
+
+  return events
 }

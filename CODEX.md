@@ -297,9 +297,15 @@ try {
 
 **注意：** 行事曆的數據擴充部分由 Qwen 負責，Codex 只需確認 API 層面沒有 bug。
 
-### P9：FinMind 付費後 — Backer datasets 接入（等付費確認）
+### 成本守則（所有 LLM 必讀）
 
-完整 dataset 參考見 `docs/finmind-api-reference.md`。
+**必讀：** `docs/deployment-and-api-strategy.md`
+
+1. **不要頻繁 push** — push 可能觸發 Vercel build（$0.126/分/Turbo 機器）。批量改動後一次 push
+2. **本地測試用 `npm run build` + `npx vite preview`** 或 `vercel dev` — 不花 Vercel 額度
+3. **不要手動觸發 Vercel Redeploy** — 除非用戶明確要求
+4. **OCR `api/parse.js` 改用 Haiku 模型** — `claude-haiku-4-5-20251001`，省 3 倍且足夠
+5. **system prompt 加 Prompt Caching** — 每次分析的 system prompt 都一樣，cache 省 90% input cost
 
 ## Codex 不要做的事
 
@@ -307,6 +313,7 @@ try {
 - 不要改事件行事曆 Cron（Claude 負責）
 - 不要改 GEMINI.md / QWEN.md（各自負責）
 - 不要留 uncommitted changes 給別人
+- **不要頻繁 push 或觸發 deploy**（見成本守則）
 
 ## 交接格式
 

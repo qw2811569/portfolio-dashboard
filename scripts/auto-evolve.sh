@@ -229,9 +229,9 @@ fi
 
 if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
   echo ""
-  echo "[suggest] 前台問題建議派 Qwen："
-  echo "  /acp spawn qwen \"讀 docs/status/auto-evolve-tasks.md 的 Qwen 任務區，逐一修復前台 UI 和 API 問題。完成後用 AI_NAME=Qwen bash scripts/ai-status.sh done 回報。\""
-  AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 待修：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
+  echo "[suggest] 前台問題建議派 Qwen 做 QA 驗證："
+  echo "  /acp spawn qwen \"讀 QWEN.md 的 QA 檢查清單，跑 Level 1 + Level 2 檢查，回報 QA Report。發現的問題不要自己修，寫清楚回報讓 Codex 修。\""
+  AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 待驗證：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
 fi
 
 echo ""

@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react'
 import { API_ENDPOINTS, STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
+import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
+import { hydrateDossiersWithFinMind } from '../lib/finmindPromptRuntime.js'
 import { readKnowledgeEvolutionLogs } from '../lib/knowledgeEvolutionRuntime.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
 import { evaluateBrainProposal } from '../lib/researchProposalRuntime.js'
@@ -97,6 +99,8 @@ export function useResearchWorkflow({
   holdings = [],
   portfolioHoldings = [],
   dossierByCode = new Map(),
+  fetchStockDossierData = defaultFetchStockDossierData,
+  hydrateDossierFinMind = hydrateDossiersWithFinMind,
   stockMeta = {},
   strategyBrain = null,
   portfolioNotes = {},
@@ -162,7 +166,26 @@ export function useResearchWorkflow({
           getHoldingUnrealizedPnl,
           getHoldingReturnPct,
         })
-        const researchDossiers = buildResearchDossiers({ stocks, dossierByCode })
+        let promptDossierByCode = dossierByCode
+        const promptCodes = stocks.map((stock) => stock.code)
+
+        if (promptCodes.length > 0) {
+          try {
+            const hydrated = await hydrateDossierFinMind({
+              codes: promptCodes,
+              dossierByCode,
+              fetchStockDossierData,
+              contextLabel: `research-${mode}`,
+            })
+            if (hydrated?.dossierByCode instanceof Map) {
+              promptDossierByCode = hydrated.dossierByCode
+            }
+          } catch (finmindError) {
+            console.warn('研究 prompt FinMind hydration 失敗（改用既有 dossier）:', finmindError)
+          }
+        }
+
+        const researchDossiers = buildResearchDossiers({ stocks, dossierByCode: promptDossierByCode })
         const { usageLog: knowledgeUsageLog, feedbackLog: knowledgeFeedbackLog } =
           readKnowledgeLogs(
             typeof globalThis !== 'undefined' ? globalThis.localStorage : null
@@ -239,9 +262,11 @@ export function useResearchWorkflow({
       dossierByCode,
       emitSaved,
       enrichResearchToDossier,
+      fetchStockDossierData,
       getHoldingReturnPct,
       getHoldingUnrealizedPnl,
       holdings,
+      hydrateDossierFinMind,
       newsEvents,
       portfolioHoldings,
       portfolioNotes,

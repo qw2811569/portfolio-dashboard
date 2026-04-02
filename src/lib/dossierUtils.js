@@ -1,5 +1,9 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
 import { getEventStockCodes } from './eventUtils.js'
+import {
+  shouldDebugFinMindPromptCoverage,
+  summarizeFinMindPromptDatasets,
+} from './finmindPromptRuntime.js'
 import { getSupplyChain, getThemesForStock } from './dataAdapters/index.js'
 import { buildCompactKnowledgeContext, buildKnowledgeContext } from './knowledgeBase.js'
 
@@ -81,7 +85,14 @@ function summarizeThesisForPrompt(thesis) {
   return [statement, direction, conviction, target, stopLoss].filter(Boolean).join(' | ') || '無'
 }
 
-function buildCompactFinMindSummary(finmind) {
+function buildCompactFinMindSummary(finmind, { debugLabel = '' } = {}) {
+  if (debugLabel && shouldDebugFinMindPromptCoverage()) {
+    console.warn('[finmind-summary]', {
+      code: debugLabel,
+      datasets: summarizeFinMindPromptDatasets(finmind),
+    })
+  }
+
   if (
     !finmind ||
     (!finmind.institutional?.length &&
@@ -244,7 +255,7 @@ export function buildDailyHoldingDossierContext(
       `fundamentals=${formatFundamentalsSummary(fundamentals)}`,
       `events=${summarizeEventsForPrompt(events)}`,
       `brain=${summarizeMatchedRulesForPrompt(brainContext)}`,
-      `finmind=${buildCompactFinMindSummary(finmind)}`,
+      `finmind=${buildCompactFinMindSummary(finmind, { debugLabel: dossier.code })}`,
       knowledgeInfo ? `knowledge=${knowledgeInfo}` : '',
       summarizeFreshnessForPrompt(dossier.freshness)
         ? `freshness=${summarizeFreshnessForPrompt(dossier.freshness)}`

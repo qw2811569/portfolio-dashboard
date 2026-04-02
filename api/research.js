@@ -159,6 +159,15 @@ function normalizeHoldingDossiers(value) {
     : []
 }
 
+function compactInlineText(value, limit = 40) {
+  const text = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  if (text.length <= limit) return text
+  return `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…`
+}
+
 function formatPromptNumber(value, digits = 1) {
   const num = Number(value)
   if (!Number.isFinite(num)) return '—'
@@ -401,6 +410,92 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
 
 function getSingleResearchRoundCount() {
   return process.env.VERCEL_ENV === 'production' ? 3 : 1
+}
+
+function getPortfolioResearchRoundMode() {
+  return process.env.VERCEL_ENV === 'production' ? 'full' : 'local-fast'
+}
+
+function parseJsonText(text = '') {
+  const cleaned = String(text || '')
+    .replace(/```json|```/gi, '')
+    .trim()
+  if (!cleaned) return null
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    return null
+  }
+}
+
+function buildPortfolioFallbackSummary(stock, dossier, metaEntry) {
+  const thesisText = compactInlineText(
+    dossier?.thesis?.summary || dossier?.thesis?.statement || dossier?.research?.latestConclusion,
+    32
+  )
+  const target = Number(dossier?.targets?.avgTarget)
+  const finmindReady = buildFinMindChipContext(dossier?.finmind) ? 'FinMind有' : 'FinMind缺'
+  const strategy = compactInlineText(
+    metaEntry?.strategy ||
+      dossier?.meta?.strategy ||
+      dossier?.stockMeta?.strategy ||
+      stock?.type ||
+      '未分類',
+    12
+  )
+  return [
+    strategy,
+    thesisText || '需補研究',
+    Number.isFinite(target) ? `目標${Math.round(target)}` : '目標待補',
+    finmindReady,
+  ]
+    .filter(Boolean)
+    .join(' | ')
+}
+
+function normalizePortfolioStockSummaries(rawText, universeStocks, dossierByCode, meta) {
+  const parsed = parseJsonText(rawText)
+  const entries = Array.isArray(parsed) ? parsed : []
+  const entryByCode = new Map(
+    entries
+      .map((entry) => [String(entry?.code || '').trim(), entry])
+      .filter(([code]) => code)
+  )
+
+  return (Array.isArray(universeStocks) ? universeStocks : []).map((stock) => {
+    const entry = entryByCode.get(stock.code)
+    const dossier = dossierByCode.get(stock.code) || null
+    const metaEntry = meta?.[stock.code] || {}
+
+    if (!entry) {
+      return {
+        code: stock.code,
+        name: stock.name,
+        summary: buildPortfolioFallbackSummary(stock, dossier, metaEntry),
+        meta: metaEntry,
+        stock,
+      }
+    }
+
+    const summary = [
+      compactInlineText(entry?.thesisStatus, 28),
+      compactInlineText(entry?.actionBias, 24),
+      compactInlineText(entry?.validationPoint ? `驗證:${entry.validationPoint}` : '', 28),
+      Number.isFinite(Number(entry?.confidence))
+        ? `信心${Math.round(Number(entry.confidence))}/10`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' | ')
+
+    return {
+      code: stock.code,
+      name: stock.name,
+      summary: summary || buildPortfolioFallbackSummary(stock, dossier, metaEntry),
+      meta: metaEntry,
+      stock,
+    }
+  })
 }
 
 export default async function handler(req, res) {
@@ -668,17 +763,67 @@ ${dossierContext}
         .join('\n---\n')
 
       // ── Round 1：個股快掃（由下往上）──
-      const stockSummaries = []
       const researchUniverseStocks =
         Array.isArray(stocks) && stocks.length > 0 ? stocks : holdings || []
+      const portfolioRoundMode = getPortfolioResearchRoundMode()
+      let stockSummaries = []
+      let stockSummaryText = '目前沒有持股摘要。'
 
-      for (const s of researchUniverseStocks.slice(0, 20)) {
-        const m = meta?.[s.code] || {}
-        const dossier = dossierByCode.get(s.code) || null
-        const dossierContext = buildResearchDossierContext(dossier, { compact: true })
-        const summary = await callClaude(
-          `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。`,
+      if (portfolioRoundMode === 'local-fast') {
+        const portfolioScanContext =
+          buildBudgetedHoldingSummary(
+            researchUniverseStocks.slice(0, 20).map((s) => {
+              const dossier = dossierByCode.get(s.code) || null
+              return {
+                key: s.code,
+                code: s.code,
+                name: s.name,
+                weight: Number(s?.value) || Number(s?.price || 0) * Number(s?.qty || 0),
+                text: buildResearchDossierContext(dossier, { compact: true }),
+              }
+            }),
+            { maxChars: 6500, maxEntries: 20, joiner: '\n\n' }
+          ).text || '目前沒有持股摘要。'
+
+        const stockScanText = await callClaude(
+          `你是台股組合研究員。請先讀完整個持股清單 dossier，再一次快掃所有持股。回傳純 JSON 陣列，不要 markdown。`,
           `${notesContext}
+
+持股清單 dossier：
+${portfolioScanContext}
+
+請依照輸入持股順序，對每一檔輸出一筆 JSON：
+[{"code":"2330","name":"台積電","thesisStatus":"一句話判斷 thesis 是否仍成立","actionBias":"一句話操作方向","validationPoint":"一句話最大驗證點","confidence":1到10}]
+
+要求：
+1. 每檔都要出現且只出現一次
+2. thesisStatus / actionBias / validationPoint 各限 18 字內
+3. 若資料偏舊，直接在文字中點出
+4. 不要輸出任何 JSON 以外的說明文字`,
+          2200
+        )
+
+        stockSummaries = normalizePortfolioStockSummaries(
+          stockScanText,
+          researchUniverseStocks,
+          dossierByCode,
+          meta
+        )
+        stockSummaryText =
+          stockSummaries
+            .map(
+              (item) =>
+                `${item.name}(${item.code})[${item.meta.industry || ''}/${item.meta.position || ''}]: ${item.summary}`
+            )
+            .join('\n\n') || '目前沒有持股摘要。'
+      } else {
+        for (const s of researchUniverseStocks.slice(0, 20)) {
+          const m = meta?.[s.code] || {}
+          const dossier = dossierByCode.get(s.code) || null
+          const dossierContext = buildResearchDossierContext(dossier, { compact: true })
+          const summary = await callClaude(
+            `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。`,
+            `${notesContext}
 ${dossierContext}
 
 請給出：
@@ -687,26 +832,28 @@ ${dossierContext}
 3. 最大驗證點（1句）
 4. 信心度(1-10)
 如果資料偏舊，請在摘要中直接點出。`,
-          800
-        )
-        stockSummaries.push({ code: s.code, name: s.name, summary, meta: m, stock: s })
+            800
+          )
+          stockSummaries.push({ code: s.code, name: s.name, summary, meta: m, stock: s })
+        }
+        stockSummaryText =
+          buildBudgetedHoldingSummary(
+            stockSummaries.map((item) => ({
+              key: item.code,
+              code: item.code,
+              name: item.name,
+              weight:
+                Number(item?.stock?.value) ||
+                Number(item?.stock?.price || 0) * Number(item?.stock?.qty || 0),
+              text: `${item.name}(${item.code})[${item.meta.industry || ''}/${item.meta.position || ''}]: ${item.summary}`,
+            })),
+            { maxChars: 3000, maxEntries: 5, joiner: '\n\n' }
+          ).text || '目前沒有持股摘要。'
       }
-      const stockSummaryText =
-        buildBudgetedHoldingSummary(
-          stockSummaries.map((item) => ({
-            key: item.code,
-            code: item.code,
-            name: item.name,
-            weight:
-              Number(item?.stock?.value) ||
-              Number(item?.stock?.price || 0) * Number(item?.stock?.qty || 0),
-            text: `${item.name}(${item.code})[${item.meta.industry || ''}/${item.meta.position || ''}]: ${item.summary}`,
-          })),
-          { maxChars: 3000, maxEntries: 5, joiner: '\n\n' }
-        ).text || '目前沒有持股摘要。'
 
       console.log('[research] portfolio prompt ready', {
         mode,
+        roundMode: portfolioRoundMode,
         stockSummaryChars: stockSummaryText.length,
         eventSummaryChars: evtSummary.length,
         analysisHistoryChars: histSummary.length,
@@ -812,6 +959,7 @@ ${histSummary || '（無紀錄）'}
         date: today,
         timestamp: Date.now(),
         mode,
+        roundMode: portfolioRoundMode,
         rounds: [
           {
             title: '個股快掃',

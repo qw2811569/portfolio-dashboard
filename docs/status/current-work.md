@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 07:49
+Last updated: 2026-04-02 17:29
 
 ## Objective
 
@@ -41,36 +41,27 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `QWEN.md`
 - `GEMINI.md`
 
-## 第六輪任務指派（Claude 2026-04-02 晚）
+## 當前任務（第七輪）
 
-必讀：`docs/status/session-handoff-2026-04-02.md`
+任務詳情在各 LLM 的 .md 檔：
+- Codex → `CODEX.md`
+- Qwen → `QWEN.md`
+- Gemini → `GEMINI.md`
 
-### Codex — FIX-1~4（API + prompt 層修復）
-
-1. **FIX-1 BRAIN_UPDATE 沒被 strip** — `src/lib/dailyAnalysisRuntime.js` stripDailyAnalysisEmbeddedBlocks 的 regex 不夠穩健。AI 輸出格式不固定（🛠 vs 🧬，有無 ##，JSON 有無 ``` 包裹）。改用先 extract 再 remove 的方式
-2. **FIX-2 深度研究超時** — `api/research.js` 做 3 輪 AI 迭代需 60s，vercel dev 只有 30s。改成本地 1 輪、production 3 輪
-3. **FIX-3 知識庫 600 條驗證** — 確認 `buildDailyHoldingDossierContext()` 有注入 knowledgeInfo。如果是 0，追蹤為什麼
-4. **FIX-4 FinMind 付費驗證** — 用戶已付費。確認 institutional/valuation/margin/revenue/balanceSheet/cashFlow/shareholding 7 個 dataset 都有出現在分析 prompt
-
-### Qwen — UI 修復
-
-1. **收盤分析等待提示** — 非 streaming 模式要等 20-40 秒但 UI 沒有進度提示。在按鈕旁加「正在分析，約需 30 秒...」的文字
-2. **SupplyChainView 接入持倉頁** — 已建好但沒接入，加到持倉詳情展開區
-3. **補測試** — stripDailyAnalysisEmbeddedBlocks 的 edge cases
-
-### Gemini — 資料蒐集
-
-1. **產業新聞** — news-2026-04-02.json（上輪未完成）
-2. **FinMind 數據品質驗證** — 抽查 3 檔持股的三大法人/資產負債表 vs Goodinfo
-3. ~~法說會~~ 已取消 — 法說會由 FinMind/MOPS 自動取得，不需手動蒐集
-
-### 成本守則（所有 LLM 必讀）
-
-- **不要頻繁 push** — Ignored Build Step 已設 exit 0
-- **本地測試用 vercel dev** — FINMIND_TOKEN 必須在 .env（不是 .env.local）
-- **不要手動 Redeploy** 除非用戶要求
+重點問題：
+1. 全組合研究 local-fast 只跑 1 Round，應該跑完 4 Round
+2. 頁面間數據沒有串成閉環
+3. 分析顯示「資料來源不足」— FinMind 數據沒進 prompt
+4. FinMind 付費功能未全面發揮
 
 ## Latest checkpoint
+- `2026-04-02 17:29` Codex：已完成 `session-handoff-2026-04-02-v2.md` 指定的 FIX-5 / FIX-6 / FIX-7，本地驗證通過。
+  - done：[`api/research.js`](/api/research.js) 的全組合研究現在補上真正的 `local-fast` 4 輪流程：本地 / vercel dev 會維持「個股快掃 → 系統診斷 → 進化建議 → 候選提案」完整 4 輪，但 Round 1 改成單次 AI call 掃完整個持股清單，不再因 per-stock loop 或摘要截斷讓使用者誤以為只研究一檔；報告也新增 `roundMode` 標記。[`src/hooks/useDailyAnalysisWorkflow.js`](/src/hooks/useDailyAnalysisWorkflow.js) 與 [`src/hooks/useResearchWorkflow.js`](/src/hooks/useResearchWorkflow.js) 都補了 on-demand FinMind hydration：若 dossier 還沒帶進 7 個 prompt 關鍵 datasets，會先呼叫 `fetchStockDossierData()` 補齊，再組 prompt，避免「資料來源不足」其實只是 enrichment 還沒完成。[`src/lib/finmindPromptRuntime.js`](/src/lib/finmindPromptRuntime.js) 新增 prompt coverage helper，用來統一判斷 7 個 FinMind datasets 的覆蓋率與 hydration 行為；[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 也補了可開關的 FinMind summary debug。最後，[`src/hooks/useDailyAnalysisWorkflow.js`](/src/hooks/useDailyAnalysisWorkflow.js) 的 inline `BRAIN_UPDATE` 不再只接受 `rules`，只要 payload 有有效內容（例如 `candidateRules` / `lessons` / `checklists`）就會走 merge + `setStrategyBrain()`，修掉收盤分析有回 `BRAIN_UPDATE` 卻沒更新策略大腦的問題。
+  - changed files：`api/research.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/hooks/useResearchWorkflow.js`、`src/lib/dossierUtils.js`、`src/lib/finmindPromptRuntime.js`、`tests/api/research.test.js`、`tests/hooks/useResearchWorkflow.test.jsx`、`tests/hooks/useDailyAnalysisWorkflow.test.jsx`、`tests/lib/finmindPromptRuntime.test.js`
+  - validation：`vitest` targeted 5 files / 19 tests 通過；targeted `eslint`（source + relevant tests）通過；`npm run build` 通過。build 仍有既有 `index` chunk >500 kB warning，但沒有新 build error。
+  - risks：這輪尚未 push，也還沒跑 production smoke，所以 `local-fast` 4 輪、FinMind hydration、以及 inline brain update 都還只在本地驗過。FinMind debug log 預設不會自動噴出，要在 local 手動設 `globalThis.__DEBUG_FINMIND_PROMPT__ = true` 才會看到 7 datasets coverage。`FIX-6` 目前補的是 on-demand hydration，不是改掉整個 async enrichment 架構本體；如果後續要更省 API 次數，可以再把 dossier enrichment promise 往上提到 shared derived state。
+  - next best step：等你同意後一次 push，然後用 `vercel dev` / production 各做一輪 smoke：1. `evolve`/`portfolio` 確認 4 輪內容完整；2. 收盤分析確認 prompt 內已有 FinMind coverage；3. 收盤分析回傳只有 `candidateRules/lessons` 時，策略大腦仍會即時更新。
+
 - `2026-04-02 09:13` Qwen：閉環 UI 串接完成：(1) 事件→分析串接可視化 — DailyReportSummary 顯示「引用 X 個事件、Y 條知識庫規則、Z 筆 FinMind 數據」；(2) FinMind 數據面板 — HoldingsTable 展開區顯示三大法人/PER/融資融券數據。驗證：git commit 9c89eb9。
 
 - `2026-04-02 08:53` Qwen：Qwen UI 任務 1-2 完成：(1) 收盤分析等待提示「正在分析，約需 30 秒...」已加入 AnalyzingState；(2) SupplyChainView 已接入持倉頁展開區。驗證：git commit 0be44de。

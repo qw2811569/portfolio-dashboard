@@ -2,7 +2,9 @@ import { useCallback } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
 import { requestAnalyzeWithFallback } from '../lib/analyzeRequest.js'
+import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { buildHoldingCoverageContext } from '../lib/dossierUtils.js'
+import { hydrateDossiersWithFinMind } from '../lib/finmindPromptRuntime.js'
 import { collectInjectedKnowledgeIdsFromDossiers } from '../lib/knowledgeBase.js'
 import {
   buildAnalysisDossiers,
@@ -67,6 +69,17 @@ async function consumeStreamingAnalyzeResponse(
   return fullText || null
 }
 
+function hasMeaningfulBrainUpdate(brainUpdate) {
+  if (!brainUpdate || typeof brainUpdate !== 'object' || Array.isArray(brainUpdate)) return false
+
+  return Object.values(brainUpdate).some((value) => {
+    if (Array.isArray(value)) return value.length > 0
+    if (value && typeof value === 'object') return Object.keys(value).length > 0
+    if (typeof value === 'string') return value.trim().length > 0
+    return value != null
+  })
+}
+
 export function useDailyAnalysisWorkflow({
   analyzing = false,
   setAnalyzing = () => {},
@@ -82,6 +95,8 @@ export function useDailyAnalysisWorkflow({
   reportRefreshMeta = {},
   todayRefreshKey = '',
   dossierByCode = new Map(),
+  fetchStockDossierData = defaultFetchStockDossierData,
+  hydrateDossierFinMind = hydrateDossiersWithFinMind,
   activePortfolioId = OWNER_PORTFOLIO_ID,
   canUseCloud = false,
   getMarketQuotesForCodes = async () => ({}),
@@ -174,7 +189,26 @@ export function useDailyAnalysisWorkflow({
       let blindPredictions = []
 
       try {
-        const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode })
+        let promptDossierByCode = dossierByCode
+        const promptCodes = changes.map((item) => item.code)
+
+        if (promptCodes.length > 0) {
+          try {
+            const hydrated = await hydrateDossierFinMind({
+              codes: promptCodes,
+              dossierByCode,
+              fetchStockDossierData,
+              contextLabel: 'daily-analysis',
+            })
+            if (hydrated?.dossierByCode instanceof Map) {
+              promptDossierByCode = hydrated.dossierByCode
+            }
+          } catch (finmindError) {
+            console.warn('收盤分析 FinMind prompt hydration 失敗（改用既有 dossier）:', finmindError)
+          }
+        }
+
+        const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode: promptDossierByCode })
         analysisDossiers = dailyDossiers
         injectedKnowledgeIds = collectInjectedKnowledgeIdsFromDossiers(dailyDossiers)
 
@@ -438,7 +472,7 @@ ${losers
           eventAssessments = extractDailyEventAssessments(displayText)
 
           const brainJson = extractDailyBrainUpdate(displayText)
-          if (brainJson?.rules) {
+          if (hasMeaningfulBrainUpdate(brainJson)) {
             brainAudit = ensureBrainAuditCoverage(brainJson, strategyBrain)
             brainAudit = enforceTaiwanHardGatesOnBrainAudit(brainAudit, strategyBrain, {
               dossiers: analysisDossiers,
@@ -583,6 +617,7 @@ ${losers
     createEmptyBrainAudit,
     defaultNewsEvents,
     dossierByCode,
+    fetchStockDossierData,
     enforceTaiwanHardGatesOnBrainAudit,
     formatBrainChecklistsForPrompt,
     formatBrainRulesForValidationPrompt,
@@ -598,6 +633,7 @@ ${losers
     normalizeHoldings,
     normalizeStrategyBrain,
     portfolioNotes,
+    hydrateDossierFinMind,
     refreshAnalystReportsRef,
     reportRefreshMeta,
     resolveHoldingPrice,

@@ -283,4 +283,93 @@ describe('hooks/useResearchWorkflow.js', () => {
       global.fetch = originalFetch
     }
   })
+
+  it('hydrates missing FinMind dossier data before building the research request body', async () => {
+    const runResearchRequest = vi.fn(async () => ({
+      results: [
+        {
+          code: '2308',
+          mode: 'single',
+          name: '台達電',
+          timestamp: 1,
+        },
+      ],
+    }))
+    const fetchStockDossierData = vi.fn(async () => ({
+      institutional: [{ foreign: 100, investment: 20 }],
+      valuation: [{ per: 18.2, pbr: 3.1 }],
+      margin: [{ marginBalance: 1200 }, { marginBalance: 1180 }],
+      revenue: [{ revenueMonth: '2026/03', revenueYoY: 12, revenueMoM: 3 }],
+      balanceSheet: [{ totalAssets: 120000, totalLiabilities: 52000 }],
+      cashFlow: [{ operatingCF: 18000, investingCF: -3200, financingCF: -1400 }],
+      shareholding: [{ foreignShareRatio: 61.5 }, { foreignShareRatio: 61.1 }],
+    }))
+
+    const targetStock = {
+      code: '2308',
+      name: '台達電',
+      price: 380,
+      cost: 350,
+      qty: 10,
+      pnl: 300,
+      pct: 8.5,
+    }
+
+    const { result } = renderHook(() =>
+      useResearchWorkflow({
+        researching: false,
+        setResearching: vi.fn(),
+        setResearchTarget: vi.fn(),
+        holdings: [targetStock],
+        portfolioHoldings: [targetStock],
+        dossierByCode: new Map([
+          [
+            '2308',
+            {
+              code: '2308',
+              name: '台達電',
+              position: { qty: 10, cost: 350, price: 380, pnl: 300, pct: 8.5, type: 'stock' },
+              finmind: null,
+            },
+          ],
+        ]),
+        stockMeta: {},
+        strategyBrain: {},
+        portfolioNotes: {},
+        canUseCloud: false,
+        newsEvents: [],
+        analysisHistory: [],
+        resolveHoldingPrice: () => 380,
+        getHoldingUnrealizedPnl: () => 300,
+        getHoldingReturnPct: () => 8.5,
+        setResearchResults: vi.fn(),
+        setResearchHistory: vi.fn(),
+        notifySaved: vi.fn(),
+        enrichResearchToDossier: vi.fn(async () => false),
+        runResearchRequest,
+        fetchStockDossierData,
+        readKnowledgeLogs: vi.fn(() => ({ usageLog: [], feedbackLog: [] })),
+      })
+    )
+
+    await act(async () => {
+      await result.current.runResearch('single', targetStock)
+    })
+
+    expect(fetchStockDossierData).toHaveBeenCalledWith('2308')
+    expect(runResearchRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        holdingDossiers: [
+          expect.objectContaining({
+            code: '2308',
+            finmind: expect.objectContaining({
+              revenue: [expect.objectContaining({ revenueMonth: '2026/03' })],
+              balanceSheet: [expect.objectContaining({ totalAssets: 120000 })],
+            }),
+          }),
+        ],
+      }),
+      expect.anything()
+    )
+  })
 })

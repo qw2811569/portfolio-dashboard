@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-01T23:49:42.000Z",
+  "lastUpdated": "2026-04-02T06:20:34.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 3 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 4 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -249,8 +249,8 @@
     "dataAdapters": 3,
     "aiAgents": 4,
     "appJsxLinesChange": 0,
-    "totalDocs": 29,
-    "inProgressTasks": 1
+    "totalDocs": 30,
+    "inProgressTasks": 2
   },
   "health": {
     "overall": "warning",
@@ -287,7 +287,7 @@
       "configFile": "GEMINI.md",
       "workflows": 7
     },
-    "current": "Codex",
+    "current": "Gemini",
     "members": [
       {
         "name": "Codex",
@@ -305,9 +305,9 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。",
+        "currentTask": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報",
         "tasksCompleted": 12,
-        "lastActive": "2026-04-02 06:57",
+        "lastActive": "2026-04-02 14:13",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -315,10 +315,10 @@
         "name": "Gemini",
         "role": "公開資料蒐集",
         "avatar": "🔍",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
+        "status": "working",
+        "currentTask": "Gemini：interactive/general (gemini-2.5-flash)",
         "tasksCompleted": 5,
-        "lastActive": "2026-04-02 05:07",
+        "lastActive": "2026-04-02 14:20",
         "statusSource": "auto",
         "activitySource": "~/.gemini/usage-log.tsv"
       },
@@ -335,6 +335,14 @@
     ]
   },
   "timeline": [
+    {
+      "time": "2026-04-02 06:12",
+      "ai": "Qwen",
+      "title": "行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
     {
       "time": "2026-04-02 07:49",
       "ai": "Codex",
@@ -360,7 +368,7 @@
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-01T23:49:42.896Z",
+  "generatedAt": "2026-04-02T06:20:34.226Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -377,90 +385,90 @@
   },
   "liveActivity": [
     {
-      "time": "2026-04-02 07:49",
-      "isoTime": "2026-04-02T07:49:42+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 07:46",
-      "isoTime": "2026-04-02T07:46:53+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 07:04",
-      "isoTime": "2026-04-02T07:04:36+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 07:04",
-      "isoTime": "2026-04-02T07:04:36+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:50",
-      "isoTime": "2026-04-02T06:50:00+08:00",
+      "time": "2026-04-02 14:20",
+      "isoTime": "2026-04-02T14:20:34+08:00",
       "ai": "Gemini",
       "action": "auto-detect",
-      "message": "超過活動視窗，已自動切回待命",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:24",
-      "isoTime": "2026-04-02T06:24:20+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：兩個 bug 都已修復並 commit，現在需要提供完整的交接報告，包含 done、changed files、risks 和 next bes（自動偵測）",
+      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-02 06:24",
-      "isoTime": "2026-04-02T06:24:19+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:08",
-      "isoTime": "2026-04-02T06:08:39+08:00",
+      "time": "2026-04-02 14:20",
+      "isoTime": "2026-04-02T14:20:34+08:00",
       "ai": "Qwen",
       "action": "auto-detect",
-      "message": "Qwen：All tasks K-N have been completed. Let me provide a final summary交接 repo（自動偵測）",
+      "message": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-02 06:08",
-      "isoTime": "2026-04-02T06:08:39+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P7/P8 完成：/api/analyze 已支援 streaming SSE，前端 useDailyAnalysisWorkflow 可逐步渲染正文；production 已部署。Smoke：streaming /api/analyze 首包 0.91s、總耗時 7.53s；/api/finmind 的 balanceSheet/cashFlow/shareholding production 正常。另修正 event-calendar 的 FinMind same-day 日期過濾 bug 並補測試。風險：event-calendar 本次 production 樣本雖成功回應，但未命中 finmind-news source，代表目前樣本日沒有符合關鍵字的當日新聞，或仍需更完整的 production 驗證。",
-      "status": "idle"
+      "time": "2026-04-02 14:20",
+      "isoTime": "2026-04-02T14:20:34+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini CLI 啟動，等待任務輸入",
+      "status": "working"
     },
     {
-      "time": "2026-04-02 05:32",
-      "isoTime": "2026-04-02T05:32:10+08:00",
+      "time": "2026-04-02 14:11",
+      "isoTime": "2026-04-02T14:11:54+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:11",
+      "isoTime": "2026-04-02T14:11:54+08:00",
       "ai": "Qwen",
       "action": "auto-detect",
-      "message": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。（自動偵測）",
+      "message": "Qwen：問題找到了！2026-05-07 在 30 天範圍內（2026-04-02 到 2026-05-02），但因為 UTC 時間比較的問題，導致不在（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:11",
+      "isoTime": "2026-04-02T14:11:54+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini CLI 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:09",
+      "isoTime": "2026-04-02T14:09:50+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:09",
+      "isoTime": "2026-04-02T14:09:50+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini CLI 啟動，等待任務輸入",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:09",
+      "isoTime": "2026-04-02T14:09:10+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 14:09",
+      "isoTime": "2026-04-02T14:09:10+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini CLI 啟動，等待任務輸入",
       "status": "working"
     }
   ],
   "handover": {
-    "from": "Codex",
-    "time": "2026-04-02T07:49:00+08:00",
-    "message": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
+    "from": "Qwen",
+    "time": "2026-04-02T06:12:00+08:00",
+    "message": "行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。",
     "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
     "blockers": [],
     "needsReview": false,

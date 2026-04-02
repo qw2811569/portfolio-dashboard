@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-04-02T07:49:42+08:00",
-  "current": "Codex",
+  "lastUpdated": "2026-04-02T14:20:34+08:00",
+  "current": "Gemini",
   "members": [
     {
       "name": "Codex",
@@ -18,9 +18,9 @@
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
       "status": "working",
-      "currentTask": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。",
+      "currentTask": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報",
       "tasksCompleted": 12,
-      "lastActive": "2026-04-02 06:57",
+      "lastActive": "2026-04-02 14:13",
       "statusSource": "auto",
       "activitySource": "~/.qwen/projects/*/chats"
     },
@@ -28,10 +28,10 @@
       "name": "Gemini",
       "role": "公開資料蒐集",
       "avatar": "🔍",
-      "status": "idle",
-      "currentTask": "等待分配新任務",
+      "status": "working",
+      "currentTask": "Gemini：interactive/general (gemini-2.5-flash)",
       "tasksCompleted": 5,
-      "lastActive": "2026-04-02 05:07",
+      "lastActive": "2026-04-02 14:20",
       "statusSource": "auto",
       "activitySource": "~/.gemini/usage-log.tsv"
     },

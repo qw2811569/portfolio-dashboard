@@ -32,8 +32,31 @@ CONSECUTIVE_PASS=0
 REQUIRED_CONSECUTIVE_PASS=2
 ROUND=0
 RESULT_FILE="docs/status/auto-loop-result.md"
+CONVO_FILE="docs/status/loop-conversation.md"
 
 log() { echo "[loop $(date '+%H:%M')] $*"; }
+
+# 追加對話紀錄
+convo() {
+  local role="$1"
+  shift
+  local msg="$*"
+  local ts
+  ts=$(date '+%Y-%m-%d %H:%M')
+  # 用 python 插入到 --- 之後（最新在最上面）
+  python3 -c "
+content = open('$CONVO_FILE').read()
+entry = '### [$ts] $role (Round $ROUND)\n$msg\n'
+marker = '---'
+idx = content.find(marker)
+if idx >= 0:
+    pos = idx + len(marker)
+    content = content[:pos] + '\n\n' + entry + content[pos:]
+else:
+    content += '\n' + entry
+open('$CONVO_FILE', 'w').write(content)
+" 2>/dev/null || true
+}
 
 # ─── QA 函數：跑 build/lint/test，回傳問題數 ───
 run_qa() {
@@ -90,6 +113,13 @@ run_qa() {
   # 寫結果到暫存
   echo "$problems" > /tmp/auto-loop-qa-count
   printf "%b" "$details" > /tmp/auto-loop-qa-details
+
+  # 追加到對話紀錄
+  if [[ "$problems" -eq 0 ]]; then
+    convo "QA" "全部通過 ✅ build/lint/test/frontend"
+  else
+    convo "QA" "發現 $problems 個問題：$(printf '%b' "$details" | tr '\n' ' ')"
+  fi
   return 0
 }
 
@@ -121,6 +151,7 @@ TASKEOF
 
   log "Codex 回覆：$(echo "$CODEX_RESULT" | head -3)"
   echo "$CODEX_RESULT" > /tmp/auto-loop-codex-result
+  convo "Codex" "$(echo "$CODEX_RESULT" | head -10)"
 }
 
 # ─── Claude 審查函數 ───
@@ -128,17 +159,21 @@ run_claude_review() {
   log "請 Claude 做最終審查..."
 
   CLAUDE_RESULT=$(openclaw agent --agent claude \
-    --message "專案剛跑完自動 QA 循環第 $ROUND 輪，build/lint/test 全部通過。請快速審查：
-1. 跑 git log --oneline -5 看最近改動
-2. 跑 git diff --stat HEAD~3 看改動範圍
+    --message "你是這個專案的技術架構師。自動閉環已跑到第 $ROUND 輪，build/lint/test 全部通過。
+
+先讀 docs/status/loop-conversation.md 了解完整歷程，再做以下檢查：
+1. git log --oneline -5
+2. git diff --stat HEAD~3
 3. 讀 docs/status/current-work.md 的 Latest checkpoint
 
-用 50 字以內回答：專案目前是否穩定可交付？如果不是，列出最關鍵的 1-2 個問題。
-回答格式：STABLE 或 UNSTABLE: [原因]" \
+判斷專案是否穩定可交付。
+回答第一個詞必須是 STABLE 或 UNSTABLE，然後用 50 字以內說明原因。
+如果是 UNSTABLE，列出最關鍵的 1-2 個 Codex 可以修的具體問題。" \
     --timeout 120 2>&1) || true
 
   log "Claude 回覆：$CLAUDE_RESULT"
   echo "$CLAUDE_RESULT" > /tmp/auto-loop-claude-result
+  convo "Claude" "$CLAUDE_RESULT"
 }
 
 # ─── 主循環 ───

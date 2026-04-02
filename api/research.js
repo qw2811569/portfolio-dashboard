@@ -7,12 +7,14 @@ import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
 import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
+import { buildCompactKnowledgeContext, buildKnowledgeContext } from '../src/lib/knowledgeBase.js'
 import {
   buildBudgetedBrainContext,
   buildBudgetedHoldingSummary,
   formatRecentLessons,
 } from '../src/lib/promptBudget.js'
 import { evaluateBrainProposal } from '../src/lib/researchProposalRuntime.js'
+import { buildFinMindChipContext } from '../src/lib/dossierUtils.js'
 import {
   normalizeResearchRequestInput,
   summarizeResearchRequestInput,
@@ -339,7 +341,7 @@ function buildResearchBrainContext(brain) {
 function buildResearchDossierContext(dossier, { compact = false } = {}) {
   if (!dossier) return '無 dossier，可依持倉與 meta 基本資料分析。'
   const position = dossier.position || {}
-  const meta = dossier.meta || {}
+  const meta = dossier.meta || dossier.stockMeta || {}
   const thesis = dossier.thesis || {}
   const targets = dossier.targets || {}
   const fundamentals = dossier.fundamentals || {}
@@ -348,6 +350,11 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
   const research = dossier.research || {}
   const brainContext = dossier.brainContext || {}
   const freshness = dossier.freshness || {}
+  const finmind = dossier.finmind || {}
+  const knowledgeContext = compact
+    ? buildCompactKnowledgeContext(meta, { maxItems: 3, maxCaseItems: 1 })
+    : buildKnowledgeContext(meta)
+  const finmindContext = buildFinMindChipContext(finmind)
 
   return [
     `【${dossier.name}(${dossier.code})】`,
@@ -384,10 +391,16 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
     Array.isArray(brainContext.matchedMistakes) && brainContext.matchedMistakes.length > 0
       ? `常見風險：${brainContext.matchedMistakes.slice(0, compact ? 2 : 4).join('；')}`
       : null,
+    finmindContext ? `FinMind：\n${finmindContext}` : null,
+    knowledgeContext ? `知識庫參考：\n${knowledgeContext}` : null,
     `資料新鮮度：價格${formatFreshnessLabel(freshness.price)} / 目標價${formatFreshnessLabel(freshness.targets)} / 財報${formatFreshnessLabel(freshness.fundamentals)} / 研究${formatFreshnessLabel(freshness.research)}`,
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+function getSingleResearchRoundCount() {
+  return process.env.VERCEL_ENV === 'production' ? 3 : 1
 }
 
 export default async function handler(req, res) {
@@ -470,11 +483,12 @@ export default async function handler(req, res) {
     }
 
     if (mode === 'single' && stocks?.length === 1) {
-      // ── 單股深度研究：3 輪迭代 ──
+      // ── 單股深度研究：本地快速版 1 輪 / production 3 輪 ──
       const s = stocks[0]
       const m = meta?.[s.code] || {}
       const dossier = dossierByCode.get(s.code) || null
       const holdingRow = holdings?.find((h) => h.code === s.code) || null
+      const researchRoundCount = getSingleResearchRoundCount()
       const dossierContext = buildBudgetedHoldingSummary(
         [
           {
@@ -493,15 +507,66 @@ export default async function handler(req, res) {
       console.log('[research] single prompt ready', {
         code: s.code,
         name: s.name,
+        researchRoundCount,
         dossierChars: dossierContext.length,
         noteChars: notesContext.length,
       })
 
-      const round1 = await callClaude(
-        `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
+      if (researchRoundCount === 1) {
+        const brainCtx = brain ? buildResearchBrainContext(brain) : ''
+        const singlePass = await callClaude(
+          `你是專業的台股研究分析師兼持倉策略顧問。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做一輪完整深度研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
 產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}`,
-        `${notesContext}
+          `${notesContext}
+
+持股 dossier：
+${dossierContext}
+
+${brainCtx}
+股票：${s.name}(${s.code}) | 現價：${s.price} | 成本：${s.cost} | 損益：${s.pnl >= 0 ? '+' : ''}${s.pnl}(${s.pct}%)
+
+請一次完成：
+1. 公司定位與護城河：主要業務、競爭優勢、市場地位，並檢查 thesis 是否仍成立
+2. 財務體質：營收、毛利率、EPS、ROE、估值與籌碼摘要；若缺資料要明講
+3. 產業趨勢與事件驗證點：未來 1-2 季展望、法說/財報/目標價 freshness、最近待觀察事件
+4. 反面風險：最可能導致 thesis 失效的 2-3 個風險
+5. 操作建議：具體到價位/條件/觀察點，並補一句「如果我錯了」
+
+請用繁中輸出，保持 5 個小節，直接給可執行結論，不要空泛描述。`
+        )
+
+        const report = {
+          code: s.code,
+          name: s.name,
+          date: today,
+          timestamp: Date.now(),
+          mode: 'single',
+          roundMode: 'local-fast',
+          rounds: [{ title: '深度研究（本地快速版）', content: singlePass }],
+          meta: m,
+          priceAtResearch: s.price,
+        }
+        if (persist) {
+          writeLocal(`research/${s.code}/${Date.now()}.json`, report)
+          await updateResearchIndex(report)
+        }
+        if (persist && TOKEN) {
+          try {
+            await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
+              access: 'public',
+              token: TOKEN,
+              contentType: 'application/json',
+            })
+          } catch {}
+        }
+        results.push(report)
+      } else {
+        const round1 = await callClaude(
+          `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
+如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
+產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}`,
+          `${notesContext}
 
 持股 dossier：
 ${dossierContext}
@@ -517,14 +582,14 @@ ${dossierContext}
 現價：${s.price} | 成本：${s.cost} | 損益：${s.pnl >= 0 ? '+' : ''}${s.pnl}(${s.pct}%)
 
 請用 dossier 內已有的具體數據和邏輯推演，不要空泛描述。`
-      )
+        )
 
-      const round2 = await callClaude(
-        `你是台股風險評估專家，你的工作是挑戰 Round 1 的結論。
+        const round2 = await callClaude(
+          `你是台股風險評估專家，你的工作是挑戰 Round 1 的結論。
 如果 Round 1 看多，你要找出看空的理由；如果 Round 1 看空，你要找出被低估的可能。
 你的價值在於找到分析師遺漏的風險，而不是附和前一輪的結論。
 禁止使用「短期震盪不改長期趨勢」「逢低布局」「持續觀察」等模糊用語。`,
-        `${notesContext}
+          `${notesContext}
 持股 dossier：\n${dossierContext}\n\n前一輪分析結果：\n${round1}\n\n你的任務是反駁上面的分析，請：
 1. **挑戰 Round 1 結論**：Round 1 的判斷哪裡可能是錯的？有什麼被忽略的反面證據？
 2. **主要風險因子**：最可能導致下跌的 3 個因素（必須給具體情境和觸發條件）
@@ -533,12 +598,12 @@ ${dossierContext}
 5. **黑天鵝情境**：最壞情況下的股價目標和虧損金額
 
 現有持倉：${s.code} 持有 ${holdingRow?.qty || '?'}股，成本 ${s.cost}`
-      )
+        )
 
-      const brainCtx = brain ? buildResearchBrainContext(brain) : ''
-      const round3 = await callClaude(
-        `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
-        `${notesContext}
+        const brainCtx = brain ? buildResearchBrainContext(brain) : ''
+        const round3 = await callClaude(
+          `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
+          `${notesContext}
 持股 dossier：\n${dossierContext}\n\n基本面分析：\n${round1}\n\n風險催化劑分析：\n${round2}\n\n${brainCtx}
 股票：${s.name}(${s.code}) | 策略定位：${m.strategy}/${m.period}期/${m.position}
 
@@ -547,36 +612,38 @@ ${dossierContext}
 2. **操作建議**：具體的買賣策略（何時加碼/減碼/停損，目標價位），要明確引用 dossier 中的 thesis / 目標價 / 事件
 3. **關鍵觀察指標**：接下來最需要追蹤的 3 個指標/事件，並標明哪些資料目前偏舊
 4. **持倉調整建議**：是否調整倉位大小、持有週期`
-      )
+        )
 
-      const report = {
-        code: s.code,
-        name: s.name,
-        date: today,
-        timestamp: Date.now(),
-        mode: 'single',
-        rounds: [
-          { title: '基本面深度分析', content: round1 },
-          { title: '風險與催化劑', content: round2 },
-          { title: '策略建議', content: round3 },
-        ],
-        meta: m,
-        priceAtResearch: s.price,
+        const report = {
+          code: s.code,
+          name: s.name,
+          date: today,
+          timestamp: Date.now(),
+          mode: 'single',
+          roundMode: 'full',
+          rounds: [
+            { title: '基本面深度分析', content: round1 },
+            { title: '風險與催化劑', content: round2 },
+            { title: '策略建議', content: round3 },
+          ],
+          meta: m,
+          priceAtResearch: s.price,
+        }
+        if (persist) {
+          writeLocal(`research/${s.code}/${Date.now()}.json`, report)
+          await updateResearchIndex(report)
+        }
+        if (persist && TOKEN) {
+          try {
+            await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
+              access: 'public',
+              token: TOKEN,
+              contentType: 'application/json',
+            })
+          } catch {}
+        }
+        results.push(report)
       }
-      if (persist) {
-        writeLocal(`research/${s.code}/${Date.now()}.json`, report)
-        await updateResearchIndex(report)
-      }
-      if (persist && TOKEN) {
-        try {
-          await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
-            access: 'public',
-            token: TOKEN,
-            contentType: 'application/json',
-          })
-        } catch {}
-      }
-      results.push(report)
     } else if (mode === 'evolve' || mode === 'portfolio') {
       // ══════════════════════════════════════════════════════════════
       // ── 統一的全組合研究 + 系統進化流程（4 輪迭代）──

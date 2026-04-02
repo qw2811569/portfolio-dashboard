@@ -192,6 +192,20 @@ describe('dossierUtils - buildHoldingDossiers', () => {
           institutional: [{ foreign: 1200, investment: 80, dealer: -20 }],
           valuation: [{ per: 24.3, pbr: 7.12 }],
           margin: [{ marginBalance: 15000 }, { marginBalance: 15300 }],
+          revenue: [{ revenueMonth: '2026/03', revenueYoY: 32, revenueMoM: 8 }],
+          balanceSheet: [
+            {
+              totalAssets: 520000,
+              totalLiabilities: 210000,
+              shareholderEquity: 310000,
+              debtRatio: 40.4,
+            },
+          ],
+          cashFlow: [{ operatingCF: 62000, investingCF: -18000, financingCF: -9000 }],
+          shareholding: [
+            { foreignShareRatio: 72.5 },
+            { foreignShareRatio: 71.8 },
+          ],
         },
         freshness: { fundamentals: 'fresh', targets: 'fresh', events: 'tracking' },
       }
@@ -201,9 +215,19 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       const compact = buildDailyHoldingDossierContext(dossier, change, { compact: true })
 
       expect(verbose).toContain('股票代碼: 2330')
+      expect(verbose).toContain('=== 知識庫參考 ===')
+      expect(verbose).toContain('月營收：月營收 2026/03')
+      expect(verbose).toContain('資產負債表：')
+      expect(verbose).toContain('現金流量表：')
+      expect(verbose).toContain('外資持股比')
       expect(compact).toContain('<holding code="2330"')
       expect(compact).toContain('snapshot=')
       expect(compact).toContain('knowledge=')
+      expect(compact).toContain('finmind=')
+      expect(compact).toContain('營收2026/03')
+      expect(compact).toContain('資產負債')
+      expect(compact).toContain('現金流')
+      expect(compact).toContain('外資持股')
       expect(compact.length).toBeLessThan(verbose.length)
     })
   })

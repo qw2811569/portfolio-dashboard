@@ -527,38 +527,135 @@ export function buildDailyReport({
 
 export function stripDailyAnalysisEmbeddedBlocks(displayText = '') {
   const rawText = String(displayText || '').trim()
-  const cleaned = rawText
-    // 匹配各種格式的 EVENT_ASSESSMENTS block（有無 ##，各種 emoji）
-    .replace(/#{0,3}\s*.*?EVENT_ASSESSMENTS[\s\S]*?```[\s\S]*?```/gi, '')
-    // 匹配各種格式的 BRAIN_UPDATE block（有無 ##，各種 emoji）
-    .replace(/#{0,3}\s*.*?BRAIN_UPDATE[\s\S]*?```[\s\S]*?```/gi, '')
+  const sections = ['EVENT_ASSESSMENTS', 'BRAIN_UPDATE']
+    .map((label) => locateEmbeddedSection(rawText, label))
+    .filter(Boolean)
+    .sort((a, b) => b.start - a.start)
+
+  const cleaned = sections
+    .reduce((text, section) => `${text.slice(0, section.start)}${text.slice(section.end)}`, rawText)
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
+
   return cleaned || rawText
 }
 
-function extractEmbeddedJsonBlock(displayText = '', pattern) {
-  const match = String(displayText || '').match(pattern)
-  if (!match) return null
-
+function extractEmbeddedJsonBlock(displayText = '', label) {
+  const section = locateEmbeddedSection(displayText, label)
+  if (!section) return null
+  const candidate = extractJsonCandidate(section.text)
+  if (!candidate) return null
   try {
-    return JSON.parse(match[1].trim())
+    return JSON.parse(candidate)
   } catch {
     return null
   }
 }
 
 export function extractDailyEventAssessments(displayText = '') {
-  const parsed = extractEmbeddedJsonBlock(
-    displayText,
-    /## 📋 EVENT_ASSESSMENTS[\s\S]*?```json\s*([\s\S]*?)```/
-  )
+  const parsed = extractEmbeddedJsonBlock(displayText, 'EVENT_ASSESSMENTS')
   return Array.isArray(parsed) ? parsed : []
 }
 
 export function extractDailyBrainUpdate(displayText = '') {
-  const parsed = extractEmbeddedJsonBlock(
-    displayText,
-    /## 🧬 BRAIN_UPDATE[\s\S]*?```json\s*([\s\S]*?)```/
-  )
+  const parsed = extractEmbeddedJsonBlock(displayText, 'BRAIN_UPDATE')
   return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null
+}
+
+function locateEmbeddedSection(displayText = '', label = '') {
+  const text = String(displayText || '')
+  if (!text || !label) return null
+
+  const startRegex = new RegExp(
+    `(?:^|\\n)(?:#{1,6}\\s*)?(?:[^\\n]*?\\s)?${label}\\b[^\\n]*`,
+    'i'
+  )
+  const startMatch = startRegex.exec(text)
+  if (!startMatch) return null
+
+  const start = startMatch.index + (startMatch[0].startsWith('\n') ? 1 : 0)
+  const searchStart = start + startMatch[0].trimStart().length
+  const nextStart = ['EVENT_ASSESSMENTS', 'BRAIN_UPDATE']
+    .filter((item) => item !== label)
+    .map((nextLabel) => {
+      const nextRegex = new RegExp(
+        `(?:^|\\n)(?:#{1,6}\\s*)?(?:[^\\n]*?\\s)?${nextLabel}\\b[^\\n]*`,
+        'ig'
+      )
+      nextRegex.lastIndex = searchStart
+      const match = nextRegex.exec(text)
+      return match ? match.index + (match[0].startsWith('\n') ? 1 : 0) : null
+    })
+    .filter((value) => Number.isInteger(value))
+    .sort((a, b) => a - b)[0]
+
+  const end = nextStart ?? text.length
+  return {
+    start,
+    end,
+    text: text.slice(start, end).trim(),
+  }
+}
+
+function extractJsonCandidate(sectionText = '') {
+  const text = String(sectionText || '').trim()
+  if (!text) return null
+
+  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  if (fencedMatch?.[1]) {
+    return fencedMatch[1].trim()
+  }
+
+  const jsonStart = [text.indexOf('['), text.indexOf('{')]
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0]
+
+  if (!Number.isInteger(jsonStart)) return null
+
+  const candidate = scanBalancedJson(text.slice(jsonStart))
+  return candidate?.trim() || null
+}
+
+function scanBalancedJson(text = '') {
+  const stack = []
+  let inString = false
+  let escaped = false
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index]
+
+    if (escaped) {
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      continue
+    }
+
+    if (inString) continue
+
+    if (char === '{' || char === '[') {
+      stack.push(char)
+      continue
+    }
+
+    if (char === '}' || char === ']') {
+      const open = stack.pop()
+      if (!open) return null
+      const pairMatches = (open === '{' && char === '}') || (open === '[' && char === ']')
+      if (!pairMatches) return null
+      if (stack.length === 0) {
+        return text.slice(0, index + 1)
+      }
+    }
+  }
+
+  return null
 }

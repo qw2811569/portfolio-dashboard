@@ -87,6 +87,7 @@ function buildCompactFinMindSummary(finmind) {
     (!finmind.institutional?.length &&
       !finmind.valuation?.length &&
       !finmind.margin?.length &&
+      !finmind.revenue?.length &&
       !finmind.shareholding?.length &&
       !finmind.balanceSheet?.length &&
       !finmind.cashFlow?.length)
@@ -117,6 +118,19 @@ function buildCompactFinMindSummary(finmind) {
   if (finmind.margin?.length > 1) {
     const change = (finmind.margin[0]?.marginBalance || 0) - (finmind.margin[1]?.marginBalance || 0)
     parts.push(`融資${formatSignedNumber(change)}張`)
+  }
+
+  if (finmind.revenue?.length > 0) {
+    const latest = finmind.revenue[0]
+    const revenueMonth = compactPromptText(latest?.revenueMonth || latest?.date, 12)
+    const yoy = Number(latest?.revenueYoY)
+    const mom = Number(latest?.revenueMoM)
+    const revenueParts = [
+      revenueMonth ? `營收${revenueMonth}` : '',
+      Number.isFinite(yoy) ? `YoY ${formatSignedNumber(yoy, 1)}%` : '',
+      Number.isFinite(mom) ? `MoM ${formatSignedNumber(mom, 1)}%` : '',
+    ].filter(Boolean)
+    if (revenueParts.length > 0) parts.push(revenueParts.join(' '))
   }
 
   // 資產負債表摘要
@@ -368,6 +382,9 @@ export function buildFinMindChipContext(finmind) {
     (!finmind.institutional?.length &&
       !finmind.valuation?.length &&
       !finmind.margin?.length &&
+      !finmind.revenue?.length &&
+      !finmind.balanceSheet?.length &&
+      !finmind.cashFlow?.length &&
       !finmind.shareholding?.length)
   ) {
     return ''
@@ -400,6 +417,59 @@ export function buildFinMindChipContext(finmind) {
     if (recent.length >= 2) {
       const change = (recent[0].marginBalance || 0) - (recent[1].marginBalance || 0)
       lines.push(`  融資變化：${change >= 0 ? '+' : ''}${change}張`)
+    }
+  }
+
+  if (finmind.revenue?.length > 0) {
+    const latest = finmind.revenue[0]
+    const revenueParts = [
+      latest.revenueMonth ? `月營收 ${latest.revenueMonth}` : '',
+      Number.isFinite(Number(latest.revenueYoY))
+        ? `YoY ${Number(latest.revenueYoY) >= 0 ? '+' : ''}${Number(latest.revenueYoY).toFixed(1)}%`
+        : '',
+      Number.isFinite(Number(latest.revenueMoM))
+        ? `MoM ${Number(latest.revenueMoM) >= 0 ? '+' : ''}${Number(latest.revenueMoM).toFixed(1)}%`
+        : '',
+    ].filter(Boolean)
+    if (revenueParts.length > 0) {
+      lines.push(`  月營收：${revenueParts.join('、')}`)
+    }
+  }
+
+  if (finmind.balanceSheet?.length > 0) {
+    const latest = finmind.balanceSheet[0]
+    const balanceSheetParts = [
+      Number.isFinite(Number(latest.totalAssets)) ? `總資產 ${Math.round(Number(latest.totalAssets))}M` : '',
+      Number.isFinite(Number(latest.totalLiabilities))
+        ? `總負債 ${Math.round(Number(latest.totalLiabilities))}M`
+        : '',
+      Number.isFinite(Number(latest.debtRatio))
+        ? `負債比 ${Number(latest.debtRatio).toFixed(1)}%`
+        : '',
+      Number.isFinite(Number(latest.shareholderEquity))
+        ? `股東權益 ${Math.round(Number(latest.shareholderEquity))}M`
+        : '',
+    ].filter(Boolean)
+    if (balanceSheetParts.length > 0) {
+      lines.push(`  資產負債表：${balanceSheetParts.join('、')}`)
+    }
+  }
+
+  if (finmind.cashFlow?.length > 0) {
+    const latest = finmind.cashFlow[0]
+    const cashFlowParts = [
+      Number.isFinite(Number(latest.operatingCF))
+        ? `營業 ${Math.round(Number(latest.operatingCF))}M`
+        : '',
+      Number.isFinite(Number(latest.investingCF))
+        ? `投資 ${Math.round(Number(latest.investingCF))}M`
+        : '',
+      Number.isFinite(Number(latest.financingCF))
+        ? `籌資 ${Math.round(Number(latest.financingCF))}M`
+        : '',
+    ].filter(Boolean)
+    if (cashFlowParts.length > 0) {
+      lines.push(`  現金流量表：${cashFlowParts.join('、')}`)
     }
   }
 

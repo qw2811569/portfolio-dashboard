@@ -187,4 +187,16 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(stripDailyAnalysisEmbeddedBlocks(jsonOnlyInsight)).toContain('## 📋 EVENT_ASSESSMENTS')
     expect(stripDailyAnalysisEmbeddedBlocks(jsonOnlyInsight)).toContain('## 🧬 BRAIN_UPDATE')
   })
+
+  it('extracts and strips embedded blocks even when headings, emoji, and code fences vary', () => {
+    const mixedInsight = `## 今日總結\n先看評論\n\n🛠 EVENT_ASSESSMENTS\n[{"eventId":"evt-1","todayImpact":"positive"}]\n\n### 🧬 BRAIN_UPDATE\n{"rules":[{"text":"法說前兩週布局"}]}\n`
+
+    expect(extractDailyEventAssessments(mixedInsight)).toEqual([
+      { eventId: 'evt-1', todayImpact: 'positive' },
+    ])
+    expect(extractDailyBrainUpdate(mixedInsight)).toEqual({
+      rules: [{ text: '法說前兩週布局' }],
+    })
+    expect(stripDailyAnalysisEmbeddedBlocks(mixedInsight)).toBe('## 今日總結\n先看評論')
+  })
 })

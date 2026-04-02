@@ -187,6 +187,7 @@ export function useDailyAnalysisWorkflow({
       let analysisDossiers = []
       let injectedKnowledgeIds = []
       let blindPredictions = []
+      let finmindDataCount = 0
 
       try {
         let promptDossierByCode = dossierByCode
@@ -204,13 +205,31 @@ export function useDailyAnalysisWorkflow({
               promptDossierByCode = hydrated.dossierByCode
             }
           } catch (finmindError) {
-            console.warn('收盤分析 FinMind prompt hydration 失敗（改用既有 dossier）:', finmindError)
+            console.warn(
+              '收盤分析 FinMind prompt hydration 失敗（改用既有 dossier）:',
+              finmindError
+            )
           }
         }
 
         const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode: promptDossierByCode })
         analysisDossiers = dailyDossiers
         injectedKnowledgeIds = collectInjectedKnowledgeIdsFromDossiers(dailyDossiers)
+
+        // Calculate FinMind data count across all dossiers
+        finmindDataCount = dailyDossiers.reduce((sum, dossier) => {
+          const finmind = dossier?.finmind
+          if (!finmind) return sum
+          let count = 0
+          if (Array.isArray(finmind.institutional)) count += finmind.institutional.length
+          if (Array.isArray(finmind.valuation)) count += finmind.valuation.length
+          if (Array.isArray(finmind.margin)) count += finmind.margin.length
+          if (Array.isArray(finmind.revenue)) count += finmind.revenue.length
+          if (Array.isArray(finmind.balanceSheet)) count += finmind.balanceSheet.length
+          if (Array.isArray(finmind.cashFlow)) count += finmind.cashFlow.length
+          if (Array.isArray(finmind.shareholding)) count += finmind.shareholding.length
+          return sum + count
+        }, 0)
 
         const holdingPromptEntries = dailyDossiers.map((dossier) => {
           const change = changes.find((item) => item.code === dossier.code)
@@ -423,6 +442,7 @@ ${losers
           needsReview,
           blindPredictions,
           injectedKnowledgeIds,
+          finmindDataCount,
         }
         const analysisRequestBody = buildDailyAnalysisRequest({
           today,
@@ -505,6 +525,7 @@ ${losers
         predictionScores,
         brainAudit,
         injectedKnowledgeIds,
+        finmindDataCount,
       })
 
       setDailyReport(normalizeDailyReportEntry(report))

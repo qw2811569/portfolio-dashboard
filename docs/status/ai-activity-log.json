@@ -1,6 +1,126 @@
 {
-  "lastUpdated": "2026-04-02T14:20:34+08:00",
+  "lastUpdated": "2026-04-02T21:28:01+08:00",
   "entries": [
+    {
+      "time": "2026-04-02 21:28",
+      "isoTime": "2026-04-02T21:28:01+08:00",
+      "ai": "Qwen",
+      "action": "start",
+      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:57+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：I need to read both files to understand the project's frontend closure s（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:57+08:00",
+      "ai": "Codex",
+      "action": "start",
+      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:02+08:00",
+      "ai": "Qwen",
+      "action": "start",
+      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認前台最後閉環是否已清楚定義，然後用一句話寫出你現在最該做的前台確認任務。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:26",
+      "isoTime": "2026-04-02T21:26:59+08:00",
+      "ai": "Codex",
+      "action": "start",
+      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認主線目標與目前可交付風險，然後用一句話寫出你現在最該做的驗收任務。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Claude",
+      "action": "handover",
+      "message": "已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Qwen",
+      "action": "done",
+      "message": "done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Claude",
+      "action": "handover",
+      "message": "已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 19:03",
+      "isoTime": "2026-04-02T19:03:00+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 19:00",
+      "isoTime": "2026-04-02T19:00:00+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "超過活動視窗，已自動切回待命",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 19:00",
+      "isoTime": "2026-04-02T19:00:00+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout：請以較高品質模式接手公開資料蒐集：聚焦 news / 法說 / 公告 / 目標價報導的 citations 與 freshness，輸出讓 Daily Report 與 Deep Research 可直接採用的來源品質建議。避免架構建議與最終投資裁決。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 17:36",
+      "isoTime": "2026-04-02T17:36:45+08:00",
+      "ai": "Gemini",
+      "action": "auto-detect",
+      "message": "Gemini：headless/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 17:36",
+      "isoTime": "2026-04-02T17:36:45+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：閉環 UI 串接任務已完成。讓我提供交接報告。（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 17:36",
+      "isoTime": "2026-04-02T17:36:45+08:00",
+      "ai": "Gemini",
+      "action": "start",
+      "message": "Gemini research scout：請蒐集 portfolio-dashboard 研究流程可用的外部 citations 與 freshness 訊號，優先涵蓋新聞、法說、公告、目標價報導；輸出來源品質建議、過期判定建議，以及哪些來源適合 Daily Report、哪些適合 Deep Research。",
+      "status": "working"
+    },
     {
       "time": "2026-04-02 14:20",
       "isoTime": "2026-04-02T14:20:34+08:00",
@@ -200,142 +320,6 @@
       "action": "done",
       "message": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
       "status": "idle"
-    },
-    {
-      "time": "2026-04-02 07:04",
-      "isoTime": "2026-04-02T07:04:36+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：所有 SWEEP 檢查都已完成並通過驗證，現在整理最終交接報告總結所有完成的任務。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 07:04",
-      "isoTime": "2026-04-02T07:04:36+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:50",
-      "isoTime": "2026-04-02T06:50:00+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "超過活動視窗，已自動切回待命",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:24",
-      "isoTime": "2026-04-02T06:24:20+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：兩個 bug 都已修復並 commit，現在需要提供完整的交接報告，包含 done、changed files、risks 和 next bes（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 06:24",
-      "isoTime": "2026-04-02T06:24:19+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "完成緊急 bug 修復：OCR 辨識錯誤訊息、收盤分析正文 fallback、深度研究 55 秒 timeout",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 06:08",
-      "isoTime": "2026-04-02T06:08:39+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：All tasks K-N have been completed. Let me provide a final summary交接 repo（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 06:08",
-      "isoTime": "2026-04-02T06:08:39+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P7/P8 完成：/api/analyze 已支援 streaming SSE，前端 useDailyAnalysisWorkflow 可逐步渲染正文；production 已部署。Smoke：streaming /api/analyze 首包 0.91s、總耗時 7.53s；/api/finmind 的 balanceSheet/cashFlow/shareholding production 正常。另修正 event-calendar 的 FinMind same-day 日期過濾 bug 並補測試。風險：event-calendar 本次 production 樣本雖成功回應，但未命中 finmind-news source，代表目前樣本日沒有符合關鍵字的當日新聞，或仍需更完整的 production 驗證。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 05:32",
-      "isoTime": "2026-04-02T05:32:10+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：任務 F 已完成，需要總結完成的工作內容、變更的檔案、風險評估和下一步行動。（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:32",
-      "isoTime": "2026-04-02T05:32:10+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "P3-P6 完成並已本地 commit：FinMind adapter 補齊 balanceSheet/cashFlow/shareholding/dividendResult/news、daily analysis 加入全局 coverage_context 與 budget、Vercel cron 調整為台灣時間收盤後、streaming-analysis-design 文件完成。風險：commit 274cac6 尚未 push，這台機器的 GitHub HTTPS 認證失敗；repo 仍有既有 DailyReportPanel lint warning；另外順手修復 src/main.jsx 的既有 build blocker。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:29+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:29+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:06+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:07",
-      "isoTime": "2026-04-02T05:07:06+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:41+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:41+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:17+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/taiwan-scout (gemini-3.1-flash-lite-preview)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 05:06",
-      "isoTime": "2026-04-02T05:06:17+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：所有任務 A-E 都已完成或已建立基礎設施，現在需要提供最終交接報告。（自動偵測）",
-      "status": "working"
     }
   ]
 }

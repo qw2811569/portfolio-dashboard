@@ -1,15 +1,15 @@
 {
-  "lastUpdated": "2026-04-02T14:20:34+08:00",
-  "current": "Gemini",
+  "lastUpdated": "2026-04-02T21:28:01+08:00",
+  "current": "Qwen",
   "members": [
     {
       "name": "Codex",
       "role": "技術主導 / 最終裁決",
       "avatar": "🧠",
-      "status": "idle",
-      "currentTask": "等待分配新任務",
-      "tasksCompleted": 47,
-      "lastActive": "2026-04-02 07:49",
+      "status": "working",
+      "currentTask": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
+      "tasksCompleted": 48,
+      "lastActive": "2026-04-02 21:27",
       "statusSource": "manual",
       "activitySource": "~/.codex/session_index.jsonl"
     },
@@ -18,10 +18,10 @@
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
       "status": "working",
-      "currentTask": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報",
-      "tasksCompleted": 12,
-      "lastActive": "2026-04-02 14:13",
-      "statusSource": "auto",
+      "currentTask": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
+      "tasksCompleted": 13,
+      "lastActive": "2026-04-02 21:28",
+      "statusSource": "manual",
       "activitySource": "~/.qwen/projects/*/chats"
     },
     {
@@ -29,10 +29,10 @@
       "role": "公開資料蒐集",
       "avatar": "🔍",
       "status": "working",
-      "currentTask": "Gemini：interactive/general (gemini-2.5-flash)",
+      "currentTask": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
       "tasksCompleted": 5,
-      "lastActive": "2026-04-02 14:20",
-      "statusSource": "auto",
+      "lastActive": "2026-04-02 19:03",
+      "statusSource": "manual",
       "activitySource": "~/.gemini/usage-log.tsv"
     },
     {
@@ -42,7 +42,7 @@
       "status": "idle",
       "currentTask": "等待分配新任務",
       "tasksCompleted": 7,
-      "lastActive": "2026-03-30 13:33",
+      "lastActive": "2026-04-02 21:05",
       "statusSource": "manual"
     }
   ]

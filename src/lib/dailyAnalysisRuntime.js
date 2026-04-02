@@ -503,6 +503,7 @@ export function buildDailyReport({
   predictionScores = null,
   brainAudit = null,
   injectedKnowledgeIds = [],
+  finmindDataCount = 0,
 }) {
   return {
     id: Date.now(),
@@ -522,6 +523,7 @@ export function buildDailyReport({
     injectedKnowledgeIds: Array.isArray(injectedKnowledgeIds)
       ? Array.from(new Set(injectedKnowledgeIds.filter(Boolean)))
       : [],
+    finmindDataCount,
   }
 }
 
@@ -566,10 +568,7 @@ function locateEmbeddedSection(displayText = '', label = '') {
   const text = String(displayText || '')
   if (!text || !label) return null
 
-  const startRegex = new RegExp(
-    `(?:^|\\n)(?:#{1,6}\\s*)?(?:[^\\n]*?\\s)?${label}\\b[^\\n]*`,
-    'i'
-  )
+  const startRegex = new RegExp(`(?:^|\\n)(?:#{1,6}\\s*)?(?:[^\\n]*?\\s)?${label}\\b[^\\n]*`, 'i')
   const startMatch = startRegex.exec(text)
   if (!startMatch) return null
 

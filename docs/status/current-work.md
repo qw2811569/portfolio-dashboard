@@ -1,17 +1,45 @@
 # Current Work
 
-Last updated: 2026-04-02 17:29
+Last updated: 2026-04-02 21:05
+
+## Management preferences
+
+- 對使用者回報請用白話，少用 coding 術語。
+- 回報重點聚焦：目前目標、專案架構是否落地、流程是否順、是否還有 bug。
+- 決策與整體邏輯複查由小奎 + Claude 主導，再分派給 Codex / Qwen / Gemini。
+- 成本意識：Claude/API 分析昂貴，正式測試前先盡量用低成本方式把流程理順。
+- 不要為了內部討論過度消耗 token，結論要短、清楚、可執行。
+
+## Start here
+
+- 第一入口：`docs/status/PROJECT_ENTRY.md`
+- canonical 細節狀態：`docs/status/current-work.md`
+
+## Working loop
+
+- 小奎負責持續派工與節奏控制。
+- Codex / Qwen 完成工作後，必須把成果寫回各自文件與 `docs/status/current-work.md`。
+- 回報格式優先用：`done` / `changed files` / `risks` / `next best step`。
+- 若卡住、驗證失敗、或無法繼續，需立即用 `blocker` 寫回 `docs/status/current-work.md`。
+- repo 內已有既有機制：`AI_NAME=<Name> bash scripts/ai-status.sh done|blocker|handover "訊息"`，會自動更新 `current-work.md` 與 AI 狀態。
+- Claude 不主動接機械作業；Claude 在下一輪負責閱讀最新回報、做整體判斷、決定下一步。
 
 ## Objective
 
-Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。
+目前主線目標：**把專案核心主流程做成可交付狀態——架構落地、流程閉環、明顯 bug 收斂。**
+
+優先順序：
+
+1. 先確認核心流程真的跑順（持倉 / 事件 / FinMind → 分析 / 研究 → 策略更新 → 前台顯示）
+2. 再做正式驗收與 smoke，區分「本地已完成」和「已可交付」
+3. 最後再收斂剩餘零散 bug 與次要整理
 
 ## Active slices
 
-- `Codex`：最終策略邏輯、schema、rule lifecycle、prompt 契約、驗收。`api/research.js` candidate brain proposal 已切第一版
-- `Claude`：知識庫品質審查完成（600/600 已達標）。待 Codex 完成 proposal 後驗證 schema + gate 邏輯
-- `Gemini CLI`：公開資料、新聞 / 法說 / 公告 / 目標價報導的 citations 與 freshness 蒐集
-- `Qwen Code`：低風險 UI / helper / parsing / test patch、文件整理。知識庫機械改寫（模糊 action 修正等）
+- `小奎 + Claude`：主導決策、整體邏輯複查、成本控制、文件真相收斂
+- `Codex`：核心主流程與正式可交付驗收，重點是把已完成主線做成正式驗收狀態
+- `Qwen Code`：前台收尾與最後一段顯示閉環，重點是讓使用者真的看得到完整結果
+- `Gemini CLI`：暫不納入主線，待使用者回到電腦後再決定是否啟用
 
 固定角色與能力邊界見：
 
@@ -41,21 +69,22 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `QWEN.md`
 - `GEMINI.md`
 
-## 當前任務（第七輪）
+## 當前任務（主線收斂）
 
-任務詳情在各 LLM 的 .md 檔：
-- Codex → `CODEX.md`
-- Qwen → `QWEN.md`
-- Gemini → `GEMINI.md`
+任務詳情仍可參考各 LLM 的 .md 檔，但本輪以主線為準，不再分散擴張。
 
-重點問題：
-1. 全組合研究 local-fast 只跑 1 Round，應該跑完 4 Round
-2. 頁面間數據沒有串成閉環
-3. 分析顯示「資料來源不足」— FinMind 數據沒進 prompt
-4. FinMind 付費功能未全面發揮
+目前只盯 3 件事：
+
+1. **架構落地**：核心主流程的真相版本要清楚，文件與實際狀態一致
+2. **流程閉環**：持倉 / 事件 / FinMind → 分析 / 研究 → 策略更新 → 前台顯示，要真的串通
+3. **明顯 bug 收斂**：先收斂會破壞主流程或讓使用者誤判系統沒反應的問題
 
 ## Latest checkpoint
-- `2026-04-02 17:29` Codex：已完成 `session-handoff-2026-04-02-v2.md` 指定的 FIX-5 / FIX-6 / FIX-7，本地驗證通過。
+
+- `2026-04-02 21:05` Claude：交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。
+- `2026-04-02 21:05` Qwen：done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。
+- `2026-04-02 21:05` Claude：交接：已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。
+- `2026-04-02 21:05` Codex：done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。- `2026-04-02 17:29` Codex：已完成 `session-handoff-2026-04-02-v2.md` 指定的 FIX-5 / FIX-6 / FIX-7，本地驗證通過。
   - done：[`api/research.js`](/api/research.js) 的全組合研究現在補上真正的 `local-fast` 4 輪流程：本地 / vercel dev 會維持「個股快掃 → 系統診斷 → 進化建議 → 候選提案」完整 4 輪，但 Round 1 改成單次 AI call 掃完整個持股清單，不再因 per-stock loop 或摘要截斷讓使用者誤以為只研究一檔；報告也新增 `roundMode` 標記。[`src/hooks/useDailyAnalysisWorkflow.js`](/src/hooks/useDailyAnalysisWorkflow.js) 與 [`src/hooks/useResearchWorkflow.js`](/src/hooks/useResearchWorkflow.js) 都補了 on-demand FinMind hydration：若 dossier 還沒帶進 7 個 prompt 關鍵 datasets，會先呼叫 `fetchStockDossierData()` 補齊，再組 prompt，避免「資料來源不足」其實只是 enrichment 還沒完成。[`src/lib/finmindPromptRuntime.js`](/src/lib/finmindPromptRuntime.js) 新增 prompt coverage helper，用來統一判斷 7 個 FinMind datasets 的覆蓋率與 hydration 行為；[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 也補了可開關的 FinMind summary debug。最後，[`src/hooks/useDailyAnalysisWorkflow.js`](/src/hooks/useDailyAnalysisWorkflow.js) 的 inline `BRAIN_UPDATE` 不再只接受 `rules`，只要 payload 有有效內容（例如 `candidateRules` / `lessons` / `checklists`）就會走 merge + `setStrategyBrain()`，修掉收盤分析有回 `BRAIN_UPDATE` 卻沒更新策略大腦的問題。
   - changed files：`api/research.js`、`src/hooks/useDailyAnalysisWorkflow.js`、`src/hooks/useResearchWorkflow.js`、`src/lib/dossierUtils.js`、`src/lib/finmindPromptRuntime.js`、`tests/api/research.test.js`、`tests/hooks/useResearchWorkflow.test.jsx`、`tests/hooks/useDailyAnalysisWorkflow.test.jsx`、`tests/lib/finmindPromptRuntime.test.js`
   - validation：`vitest` targeted 5 files / 19 tests 通過；targeted `eslint`（source + relevant tests）通過；`npm run build` 通過。build 仍有既有 `index` chunk >500 kB warning，但沒有新 build error。
@@ -66,9 +95,8 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 
 - `2026-04-02 08:53` Qwen：Qwen UI 任務 1-2 完成：(1) 收盤分析等待提示「正在分析，約需 30 秒...」已加入 AnalyzingState；(2) SupplyChainView 已接入持倉頁展開區。驗證：git commit 0be44de。
 
-
 - `2026-04-02 16:49` Codex：第六輪 FIX-1~4 已完成第一批 API / prompt 修補，並完成本地驗證。
-  - done：[`src/lib/dailyAnalysisRuntime.js`](/src/lib/dailyAnalysisRuntime.js) 的 `stripDailyAnalysisEmbeddedBlocks()` / `extractDailyEventAssessments()` / `extractDailyBrainUpdate()` 已從脆弱 regex 改成先定位 section、再抽 JSON、最後移除 block 的做法，現在可處理 `## / ### / 無標題`、`🛠 / 🧬`、有無 ```json fence 的變體。[`api/research.js`](/api/research.js) 的單股研究改成 `local-fast` 與 `production full` 雙模式：本地 / vercel dev 預設只跑 1 輪完整研究，production 才維持 3 輪，避免本地 30s timeout。研究 dossier prompt 也補回知識庫與 FinMind 摘要，不再只有 thesis / target / fundamentals。[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 則補齊 `revenue / balanceSheet / cashFlow / shareholding` 到 daily analysis 的 FinMind prompt 摘要，確認 7 個關鍵 dataset 都能進 prompt。
+  - done：[`src/lib/dailyAnalysisRuntime.js`](/src/lib/dailyAnalysisRuntime.js) 的 `stripDailyAnalysisEmbeddedBlocks()` / `extractDailyEventAssessments()` / `extractDailyBrainUpdate()` 已從脆弱 regex 改成先定位 section、再抽 JSON、最後移除 block 的做法，現在可處理 `## / ### / 無標題`、`🛠 / 🧬`、有無 ```json fence 的變體。[`api/research.js`](/api/research.js) 的單股研究改成 `local-fast`與`production full` 雙模式：本地 / vercel dev 預設只跑 1 輪完整研究，production 才維持 3 輪，避免本地 30s timeout。研究 dossier prompt 也補回知識庫與 FinMind 摘要，不再只有 thesis / target / fundamentals。[`src/lib/dossierUtils.js`](/src/lib/dossierUtils.js) 則補齊 `revenue / balanceSheet / cashFlow / shareholding` 到 daily analysis 的 FinMind prompt 摘要，確認 7 個關鍵 dataset 都能進 prompt。
   - changed files：`api/research.js`、`src/lib/dailyAnalysisRuntime.js`、`src/lib/dossierUtils.js`、`tests/api/research.test.js`、`tests/lib/dailyAnalysisRuntime.test.js`、`tests/lib/dossierUtils.buildHoldingDossiers.test.js`
   - validation：`vitest` targeted 3 files / 24 tests 通過；`npm run build` 通過；targeted `eslint`（上述 6 檔）通過。程式碼 commit：`6fd8ab6 fix daily parser and local research prompt coverage`
   - risks：這輪尚未 push，也還沒做 production smoke，所以 `production 3 輪` 與新 prompt coverage 還沒在線上再驗一次；另外我早前有一筆本地 commit `eff32a2 gracefully degrade FinMind rate limits` 也還沒 push。`current-work.md` 的 checkpoint 已補，但我沒有去動 `ai-activity.json` / `ai-activity-log.json`，避免覆蓋其他 AI 的即時狀態。
@@ -566,3 +594,15 @@ Task A / B 已有穩定基線。當前收斂重點轉為把 `src/App.jsx` 剩餘
 - `2026-03-30 12:00` Qwen：news-correlation 填充至 60 條（+10 條台股特定事件）。總計 330 條 (66%)。
 - `2026-03-30 12:30` Qwen：news-correlation 填充至 70 條（+10 條）。總計 340 條 (68%)。
 - `2026-03-30 13:00` Qwen：**🎉 知識庫突破 70% 里程碑！** news-correlation 完成 80 條目標，buildKnowledgeContext() 已優化為結構化輸出格式。總計 350 條 (70%)。
+- [2026-04-02 17:36] Qwen 新任務（via OpenClaw）：請接前端 UX 收尾：補 Daily Report 與 Research 的 loading/progress/error states，讓 20-40 秒等待不再像沒反應；評估並接入 Holdings 的 SupplyChainView；補 Trade OCR 異常圖片的 graceful error 顯示。避免碰 api/research.js 核心策略邏輯，完成後回報 changed files / risks / next best step。
+- [2026-04-02 17:36] Claude 新任務（via OpenClaw）：請接品質與驗證工作：審查並加固 Daily Report 的 BRAIN_UPDATE extraction/strip/parser/gate，避免分析結果底部漏出 JSON；同時驗證 knowledge base 與 FinMind 是否真的注入 analyze/research prompt，必要時提出最小修補。請依 done / changed files / risks / next best step 回報。
+- [2026-04-02 17:36] Codex 新任務（via OpenClaw）：優先處理 research 主流程閉環：完成 api/research.js 的 local-fast/full mode 收斂，維持四輪研究結構，確認 candidate brain proposal schema、rule lifecycle 與 round metadata 一致；補齊 malformed JSON、fallback summary、no-finmind/stale-finmind 測試。避免大改 UI，完成後回報 changed files / risks / next best step。
+
+- 2026-04-02 19:02 管理決策：Gemini 不再做外部資料蒐集，因專案已有 FinMind API。Gemini 改做低成本支援：FinMind 欄位覆蓋盤點、現有 API/文件對照、prompt/資料缺口整理；主架構決策與複查仍由小奎 + Claude 主導。
+- [2026-04-02 19:02] Claude 新任務（via OpenClaw）：管理決策更新：Gemini 不再做外部資料蒐集，因專案已有 FinMind API。請你之後與小奎主導決策與複查，Gemini 只做低成本支援：FinMind 欄位 coverage 檢查、現有 API/文件對照、prompt/資料缺口整理。回報請用白話，聚焦架構是否落地、流程是否順、還有哪些 bug。
+- [2026-04-02 20:54] Qwen 新任務（via OpenClaw）：請只做一件事：把前台最後一段閉環確認清楚。優先確認使用者看得到完整結果，不只是系統內部有資料。聚焦 Daily Report / Research / Holdings 的最後顯示與狀態提示是否真的連通。完成後把 done / risks / next best step 寫回 docs/status/current-work.md；若卡住，立即寫 blocker。
+- [2026-04-02 20:54] Claude 新任務（via OpenClaw）：請待 Codex / Qwen 把最新成果寫回 docs/status/current-work.md 後，閱讀整體狀態，做下一步整體判斷。你這輪不做機械修改，重點是：確認目前主線離可交付還差什麼、下一輪應該只派哪兩件事。若發現主線卡住或方向錯，立即寫 blocker 到 current-work.md。
+- [2026-04-02 20:54] Codex 新任務（via OpenClaw）：請只做一件事：把目前已完成的核心主流程做成正式驗收狀態。優先驗證：1) 全組合研究 4 輪是否真的完整；2) FinMind 是否真的進分析/研究；3) 收盤分析回傳 candidateRules/lessons 時策略更新是否仍成立。完成後把 done / risks / next best step 寫回 docs/status/current-work.md；若卡住，立即寫 blocker。
+- [2026-04-02 21:02] Codex 新任務（via OpenClaw）：補充規則確認：repo 內已有回報機制，請在完成或卡住時用 AI_NAME=Codex bash scripts/ai-status.sh done|blocker '訊息' 寫回 current-work。回報格式優先：done / changed files / risks / next best step。
+- [2026-04-02 21:02] Qwen 新任務（via OpenClaw）：補充規則確認：repo 內已有回報機制，請在完成或卡住時用 AI_NAME=Qwen bash scripts/ai-status.sh done|blocker '訊息' 寫回 current-work。回報格式優先：done / changed files / risks / next best step。
+- [2026-04-02 21:02] Claude 新任務（via OpenClaw）：補充規則確認：請以 current-work 的最新 checkpoint / blocker 當作主要判斷依據。你這輪的責任是讀完回報後，判斷主線離可交付還差哪兩件事，以及下一輪只該派哪兩件事。

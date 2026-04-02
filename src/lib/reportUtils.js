@@ -18,6 +18,7 @@ export function normalizeDailyReportEntry(value) {
     injectedKnowledgeIds: Array.isArray(value.injectedKnowledgeIds)
       ? Array.from(new Set(value.injectedKnowledgeIds.filter(Boolean)))
       : [],
+    finmindDataCount: Number(value.finmindDataCount) || 0,
   }
 }
 

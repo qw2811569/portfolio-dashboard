@@ -22,24 +22,47 @@ TASK="${2:-}"
 
 case "$LLM" in
   gemini)
-    echo "[dispatch] 啟動 Gemini：$TASK"
-    bash scripts/launch-gemini-research-scout.sh "$TASK" &
-    echo "[dispatch] Gemini 已在背景啟動 (PID: $!)"
+    if command -v gemini >/dev/null 2>&1; then
+      echo "[dispatch] 啟動 Gemini：$TASK"
+      bash scripts/launch-gemini-research-scout.sh "$TASK" &
+      echo "[dispatch] Gemini 已在背景啟動 (PID: $!)"
+    else
+      echo "[dispatch] Gemini CLI 不存在，已寫入 current-work blocker"
+      AI_NAME=Gemini bash scripts/ai-status.sh blocker "Gemini CLI 不存在，無法自動啟動。請先執行 npm install -g @anthropic-ai/gemini-cli 或手動安裝。" >/dev/null 2>&1 || true
+    fi
     ;;
   codex)
-    echo "[dispatch] Codex 任務已寫入 current-work.md"
-    echo "- [$(date '+%Y-%m-%d %H:%M')] Codex 新任務（via OpenClaw）：$TASK" >> docs/status/current-work.md
-    echo "[dispatch] 請在 VS Code 終端機啟動 Codex 並告訴他讀 current-work.md"
+    if command -v codex >/dev/null 2>&1; then
+      echo "[dispatch] 啟動 Codex：$TASK"
+      AI_NAME=Codex bash scripts/ai-status.sh start "Codex CLI 啟動：$TASK" >/dev/null 2>&1 || true
+      nohup codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C "$ROOT_DIR" "$TASK" > /tmp/codex-dispatch.log 2>&1 &
+      echo "[dispatch] Codex 已在背景啟動 (PID: $!)"
+    else
+      echo "[dispatch] Codex CLI 不存在，已寫入 current-work blocker"
+      AI_NAME=Codex bash scripts/ai-status.sh blocker "Codex CLI 不存在，無法自動啟動。請先安裝 codex CLI 或提供可執行入口。" >/dev/null 2>&1 || true
+    fi
     ;;
   qwen)
-    echo "[dispatch] Qwen 任務已寫入 current-work.md"
-    echo "- [$(date '+%Y-%m-%d %H:%M')] Qwen 新任務（via OpenClaw）：$TASK" >> docs/status/current-work.md
-    echo "[dispatch] 請在 VS Code 終端機啟動 Qwen 並告訴他讀 current-work.md"
+    if command -v qwen >/dev/null 2>&1; then
+      echo "[dispatch] 啟動 Qwen：$TASK"
+      AI_NAME=Qwen bash scripts/ai-status.sh start "Qwen CLI 啟動：$TASK" >/dev/null 2>&1 || true
+      nohup qwen --auth-type qwen-oauth --approval-mode yolo --sandbox false "$TASK" > /tmp/qwen-dispatch.log 2>&1 &
+      echo "[dispatch] Qwen 已在背景啟動 (PID: $!)"
+    else
+      echo "[dispatch] Qwen CLI 不存在，已寫入 current-work blocker"
+      AI_NAME=Qwen bash scripts/ai-status.sh blocker "Qwen CLI 不存在，無法自動啟動。請先安裝 qwen CLI 或提供可執行入口。" >/dev/null 2>&1 || true
+    fi
     ;;
   claude)
-    echo "[dispatch] Claude 任務已寫入 current-work.md"
-    echo "- [$(date '+%Y-%m-%d %H:%M')] Claude 新任務（via OpenClaw）：$TASK" >> docs/status/current-work.md
-    echo "[dispatch] Claude 會在下次 session 看到這個任務"
+    if command -v claude >/dev/null 2>&1; then
+      echo "[dispatch] 啟動 Claude：$TASK"
+      AI_NAME=Claude bash scripts/ai-status.sh start "Claude CLI 啟動：$TASK" >/dev/null 2>&1 || true
+      nohup claude --print --permission-mode bypassPermissions "$TASK" > /tmp/claude-dispatch.log 2>&1 &
+      echo "[dispatch] Claude 已在背景啟動 (PID: $!)"
+    else
+      echo "[dispatch] Claude CLI 不存在，已寫入 current-work blocker"
+      AI_NAME=Claude bash scripts/ai-status.sh blocker "Claude CLI 不存在，無法自動啟動。請先安裝 claude CLI 或提供可執行入口。" >/dev/null 2>&1 || true
+    fi
     ;;
   status)
     echo "=== 最近 commit ==="

@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-02T06:20:34.000Z",
+  "lastUpdated": "2026-04-02T13:28:01.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,11 +7,11 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 4 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 5 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 目前測試檔 65 個",
+      "✅ 目前測試檔 68 個",
       "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
@@ -241,16 +241,16 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 65,
-    "testCases": 355,
+    "testFiles": 68,
+    "testCases": 365,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
     "dataAdapters": 3,
     "aiAgents": 4,
     "appJsxLinesChange": 0,
-    "totalDocs": 30,
-    "inProgressTasks": 2
+    "totalDocs": 33,
+    "inProgressTasks": 3
   },
   "health": {
     "overall": "warning",
@@ -287,16 +287,16 @@
       "configFile": "GEMINI.md",
       "workflows": 7
     },
-    "current": "Gemini",
+    "current": "Qwen",
     "members": [
       {
         "name": "Codex",
         "role": "技術主導 / 最終裁決",
         "avatar": "🧠",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
-        "tasksCompleted": 47,
-        "lastActive": "2026-04-02 07:49",
+        "status": "working",
+        "currentTask": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
+        "tasksCompleted": 48,
+        "lastActive": "2026-04-02 21:27",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -305,10 +305,10 @@
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
         "status": "working",
-        "currentTask": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報",
-        "tasksCompleted": 12,
-        "lastActive": "2026-04-02 14:13",
-        "statusSource": "auto",
+        "currentTask": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
+        "tasksCompleted": 13,
+        "lastActive": "2026-04-02 21:28",
+        "statusSource": "manual",
         "activitySource": "~/.qwen/projects/*/chats"
       },
       {
@@ -316,10 +316,10 @@
         "role": "公開資料蒐集",
         "avatar": "🔍",
         "status": "working",
-        "currentTask": "Gemini：interactive/general (gemini-2.5-flash)",
+        "currentTask": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
         "tasksCompleted": 5,
-        "lastActive": "2026-04-02 14:20",
-        "statusSource": "auto",
+        "lastActive": "2026-04-02 19:03",
+        "statusSource": "manual",
         "activitySource": "~/.gemini/usage-log.tsv"
       },
       {
@@ -329,46 +329,54 @@
         "status": "idle",
         "currentTask": "等待分配新任務",
         "tasksCompleted": 7,
-        "lastActive": "2026-03-30 13:33",
+        "lastActive": "2026-04-02 21:05",
         "statusSource": "manual"
       }
     ]
   },
   "timeline": [
     {
-      "time": "2026-04-02 06:12",
+      "time": "2026-04-02 21:05",
+      "ai": "Claude",
+      "title": "交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-02 21:05",
       "ai": "Qwen",
-      "title": "行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件…",
+      "title": "done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-02 07:49",
-      "ai": "Codex",
-      "title": "visible bug 修補已 push+deploy：analyze fallback、research 空結果修正、event-calendar 事件補回",
+      "time": "2026-04-02 21:05",
+      "ai": "Claude",
+      "title": "交接：已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-02 07:46",
+      "time": "2026-04-02 21:05",
       "ai": "Codex",
-      "title": "修復三個用戶可見 bug：streaming fallback、research 空結果、event-calendar 補回 Gemini fallback",
+      "title": "done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。- 2026-04-02 1…",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-02 07:50",
-      "ai": "Codex",
-      "title": "修復三個用戶可見 bug：收盤分析 streaming fallback、深度研究空結果、行事曆事件過少。",
+      "time": "2026-04-02 09:13",
+      "ai": "Qwen",
+      "title": "閉環 UI 串接完成：(1) 事件→分析串接可視化 — DailyReportSummary 顯示「引用 X 個事件、Y 條知識庫規則、",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-02T06:20:34.226Z",
+  "generatedAt": "2026-04-02T13:28:01.922Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -385,91 +393,91 @@
   },
   "liveActivity": [
     {
-      "time": "2026-04-02 14:20",
-      "isoTime": "2026-04-02T14:20:34+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
+      "time": "2026-04-02 21:28",
+      "isoTime": "2026-04-02T21:28:01+08:00",
+      "ai": "Qwen",
+      "action": "start",
+      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
       "status": "working"
     },
     {
-      "time": "2026-04-02 14:20",
-      "isoTime": "2026-04-02T14:20:34+08:00",
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:57+08:00",
       "ai": "Qwen",
       "action": "auto-detect",
-      "message": "Qwen：好的，commit 已建立但未 push（branch ahead of origin/main by 3 commits）。讓我提供最終交接報（自動偵測）",
+      "message": "Qwen：I need to read both files to understand the project's frontend closure s（自動偵測）",
       "status": "working"
     },
     {
-      "time": "2026-04-02 14:20",
-      "isoTime": "2026-04-02T14:20:34+08:00",
-      "ai": "Gemini",
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:57+08:00",
+      "ai": "Codex",
       "action": "start",
-      "message": "Gemini CLI 啟動，等待任務輸入",
+      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
       "status": "working"
     },
     {
-      "time": "2026-04-02 14:11",
-      "isoTime": "2026-04-02T14:11:54+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 14:11",
-      "isoTime": "2026-04-02T14:11:54+08:00",
+      "time": "2026-04-02 21:27",
+      "isoTime": "2026-04-02T21:27:02+08:00",
       "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：問題找到了！2026-05-07 在 30 天範圍內（2026-04-02 到 2026-05-02），但因為 UTC 時間比較的問題，導致不在（自動偵測）",
+      "action": "start",
+      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認前台最後閉環是否已清楚定義，然後用一句話寫出你現在最該做的前台確認任務。",
       "status": "working"
     },
     {
-      "time": "2026-04-02 14:11",
-      "isoTime": "2026-04-02T14:11:54+08:00",
+      "time": "2026-04-02 21:26",
+      "isoTime": "2026-04-02T21:26:59+08:00",
+      "ai": "Codex",
+      "action": "start",
+      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認主線目標與目前可交付風險，然後用一句話寫出你現在最該做的驗收任務。",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Claude",
+      "action": "handover",
+      "message": "已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Qwen",
+      "action": "done",
+      "message": "done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Claude",
+      "action": "handover",
+      "message": "已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 21:05",
+      "isoTime": "2026-04-02T21:05:06+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-02 19:03",
+      "isoTime": "2026-04-02T19:03:00+08:00",
       "ai": "Gemini",
       "action": "start",
-      "message": "Gemini CLI 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 14:09",
-      "isoTime": "2026-04-02T14:09:50+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 14:09",
-      "isoTime": "2026-04-02T14:09:50+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini CLI 啟動，等待任務輸入",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 14:09",
-      "isoTime": "2026-04-02T14:09:10+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：interactive/general (gemini-2.5-flash)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 14:09",
-      "isoTime": "2026-04-02T14:09:10+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini CLI 啟動，等待任務輸入",
+      "message": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
       "status": "working"
     }
   ],
   "handover": {
-    "from": "Qwen",
-    "time": "2026-04-02T06:12:00+08:00",
-    "message": "行事曆日期比較修復：generateFixedCalendarEvents() 改用字串比較（ISO date string）而非 Date 物件比較，避免 UTC/本地時區問題。驗證：2026-04-02 起 30 天內應有 1 個事件（4/9 3 月營收截止），FOMC/央行/財報季都在範圍外。git commit 已建立但未 push。",
-    "nextStep": "Task A / B 已有穩定基線。當前收斂重點轉為把 src/App.jsx 剩餘 orchestration 周邊 helper 持續外移，並維持 Fast Refresh、panel-scoped ErrorBoundary 與本地驗證鏈一致。",
+    "from": "Claude",
+    "time": "2026-04-02T21:05:00+08:00",
+    "message": "交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
+    "nextStep": "目前主線目標：把專案核心主流程做成可交付狀態——架構落地、流程閉環、明顯 bug 收斂。",
     "blockers": [],
     "needsReview": false,
     "optimizationSuggestions": [

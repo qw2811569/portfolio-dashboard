@@ -69,12 +69,6 @@
 
 **驗證：** 確認 `extractDailyBrainUpdate()` 能正確從 AI 回覆中解析 JSON，且 `hasMeaningfulBrainUpdate()` 回傳 true。
 
-- holdingSummary 超過 3000 字時截斷（保留最大部位 5 檔）
-- brainContext 超過 1500 字時只保留 user rules + 最近 3 條 lessons
-- 或改用 streaming response
-
-### P1：brain proposal 加上 gate/eval
-
 ### 成本守則
 
 必讀：`docs/deployment-and-api-strategy.md`

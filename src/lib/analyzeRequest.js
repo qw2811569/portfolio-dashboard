@@ -14,14 +14,16 @@ export function createAnalyzeTimeoutSignal(timeoutMs = ANALYZE_REQUEST_TIMEOUT_M
 }
 
 function isTimeoutLikeText(text = '') {
-  return String(text || '').toUpperCase().includes('TIMEOUT')
+  return String(text || '')
+    .toUpperCase()
+    .includes('TIMEOUT')
 }
 
 export function isAnalyzeStreamResponse(response) {
   return Boolean(
     response?.ok &&
-      response?.body &&
-      response?.headers?.get?.('content-type')?.includes('text/event-stream')
+    response?.body &&
+    response?.headers?.get?.('content-type')?.includes('text/event-stream')
   )
 }
 
@@ -68,6 +70,16 @@ export async function parseAnalyzeJsonResponse(response) {
   }
 }
 
+// localhost / vercel dev 不支援 SSE streaming，直接走非 streaming
+function isLocalDev() {
+  try {
+    const host = globalThis.location?.hostname || ''
+    return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.')
+  } catch {
+    return false
+  }
+}
+
 export async function requestAnalyzeWithFallback({
   requestBody,
   fetchImpl = globalThis.fetch,
@@ -93,31 +105,37 @@ export async function requestAnalyzeWithFallback({
     signal,
   })
 
-  let streamError = null
-  const streamAttempt = createAnalyzeTimeoutSignal(timeoutMs)
-  try {
-    const response = await fetchImpl(streamUrl, requestInit(streamAttempt.signal))
-    if (!response.ok) {
-      throw await buildAnalyzeHttpError(response)
-    }
-    if (!isAnalyzeStreamResponse(response)) {
-      throw new Error('AI 串流回應不可用')
+  const local = isLocalDev()
+
+  // 本地開發跳過 streaming（vercel dev 不支援 SSE）
+  if (!local) {
+    let streamError = null
+    const streamAttempt = createAnalyzeTimeoutSignal(timeoutMs)
+    try {
+      const response = await fetchImpl(streamUrl, requestInit(streamAttempt.signal))
+      if (!response.ok) {
+        throw await buildAnalyzeHttpError(response)
+      }
+      if (!isAnalyzeStreamResponse(response)) {
+        throw new Error('AI 串流回應不可用')
+      }
+
+      const rawText = await consumeStream(response, { onMeta, onDelta })
+      if (!String(rawText || '').trim()) {
+        throw new Error('AI 串流分析沒有產出文字內容')
+      }
+
+      return { rawText, mode: 'stream', streamError: null }
+    } catch (error) {
+      streamError = error
+    } finally {
+      streamAttempt.cancel()
     }
 
-    const rawText = await consumeStream(response, { onMeta, onDelta })
-    if (!String(rawText || '').trim()) {
-      throw new Error('AI 串流分析沒有產出文字內容')
-    }
-
-    return { rawText, mode: 'stream', streamError: null }
-  } catch (error) {
-    streamError = error
-  } finally {
-    streamAttempt.cancel()
+    onFallback(streamError)
   }
 
-  onFallback(streamError)
-
+  // 非 streaming 模式（本地開發的主要路徑，production 的 fallback）
   const fallbackAttempt = createAnalyzeTimeoutSignal(timeoutMs)
   try {
     const response = await fetchImpl(fallbackUrl, requestInit(fallbackAttempt.signal))
@@ -131,7 +149,7 @@ export async function requestAnalyzeWithFallback({
       throw new Error('AI 有回應，但沒有產出可顯示的文字內容')
     }
 
-    return { rawText, mode: 'fallback', streamError }
+    return { rawText, mode: local ? 'local' : 'fallback', streamError: null }
   } finally {
     fallbackAttempt.cancel()
   }

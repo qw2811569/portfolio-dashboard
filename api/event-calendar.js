@@ -69,8 +69,6 @@ export default async function handler(req, res) {
         'revenue-calendar',
         'fixed-calendar',
         'dividend-season',
-        mopsEvents.length > 0 ? 'mops' : null,
-        finmindNewsEvents.length > 0 ? 'finmind-news' : null,
         geminiEvents.length > 0 ? 'gemini-research' : null,
       ].filter(Boolean),
       generatedAt: new Date().toISOString(),

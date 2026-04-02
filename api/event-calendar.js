@@ -93,6 +93,16 @@ export default async function handler(req, res) {
   }
 }
 
+
+// 輔助函數：比較日期（忽略時間，只比較日期部分）
+function isDateInRange(dateStr, today, endDate) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const todayStr = today.toISOString().slice(0, 10)
+  const endStr = endDate.toISOString().slice(0, 10)
+  const dStr = dateStr
+  return dStr >= todayStr && dStr <= endStr
+}
+
 // ── 月營收公布日 ──
 function generateRevenueAnnouncementEvents(today, rangeDays, stockCodes) {
   const events = []

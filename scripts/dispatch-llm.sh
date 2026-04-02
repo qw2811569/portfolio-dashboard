@@ -12,10 +12,15 @@ export PATH="/usr/local/bin:/usr/bin:$PATH"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# 載入 nvm
+# 載入 nvm（確保非 login shell 也能找到 CLI）
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 nvm use 24 > /dev/null 2>&1 || true
+# fallback：如果 nvm 沒成功載入，直接把 node 24 bin 加進 PATH
+if ! command -v node >/dev/null 2>&1; then
+  NODE24_BIN="$HOME/.nvm/versions/node/v24.13.1/bin"
+  [ -d "$NODE24_BIN" ] && export PATH="$NODE24_BIN:$PATH"
+fi
 
 LLM="${1:-status}"
 TASK="${2:-}"

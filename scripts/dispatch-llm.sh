@@ -61,6 +61,10 @@ case "$CMD" in
     echo "[dispatch] 啟動自動進化循環..."
     bash scripts/auto-evolve.sh 2>&1
     ;;
+  loop)
+    echo "[dispatch] 啟動自動閉環（QA→修→驗→審，直到零 bug）..."
+    bash scripts/auto-loop.sh 2>&1
+    ;;
   report)
     bash scripts/progress-report.sh 2>&1
     ;;
@@ -72,7 +76,8 @@ case "$CMD" in
     echo "  restart  — 重啟 vercel dev"
     echo "  push     — 推送到 GitHub"
     echo "  analyze  — 測試收盤分析 API"
-    echo "  evolve   — 自動偵測+修復 build/test/lint 問題"
+    echo "  evolve   — 單次偵測+建議修復"
+    echo "  loop     — 自動閉環（QA→修→驗→審，直到零 bug）"
     echo "  report   — 進度彙報"
     echo ""
     echo "AI 調度（已遷移到 ACP）："

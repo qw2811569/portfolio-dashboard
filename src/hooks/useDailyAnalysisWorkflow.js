@@ -126,22 +126,13 @@ export function useDailyAnalysisWorkflow({
   )
 
   const runDailyAnalysis = useCallback(async () => {
-    if (analyzing) {
-      console.warn('[daily-debug] 已在分析中，跳過')
-      return
-    }
-    console.log('[daily-debug] 開始分析', {
-      holdingsCount: holdings?.length,
-      hasAnalyzing: analyzing,
-    })
+    if (analyzing) return
     setAnalyzing(true)
     setAnalyzeStep(APP_STATUS_MESSAGES.dailyLoadingMarketCache)
 
     try {
       const codes = holdings.map((holding) => holding.code)
-      console.log('[daily-debug] 持股代碼:', codes)
       const priceMap = await getMarketQuotesForCodes(codes)
-      console.log('[daily-debug] 報價結果:', Object.keys(priceMap).length, '檔')
       const changes = buildDailyChanges({
         holdings,
         priceMap,
@@ -416,11 +407,6 @@ ${losers
           predictionHitRate: `${hits}/${total}`,
         })
 
-        console.log('[daily-debug] 送出分析請求', {
-          systemPromptLen: analysisRequestBody?.systemPrompt?.length || 0,
-          userPromptLen: analysisRequestBody?.userPrompt?.length || 0,
-          maxTokens: analysisRequestBody?.maxTokens,
-        })
         const { rawText: rawInsight } = await requestAnalyzeWithFallback({
           requestBody: analysisRequestBody,
           consumeStream: consumeStreamingAnalyzeResponse,
@@ -467,7 +453,6 @@ ${losers
           aiInsight = stripDailyAnalysisEmbeddedBlocks(displayText)
         }
       } catch (analysisError) {
-        console.error('[daily-debug] AI 分析失敗:', analysisError?.message, analysisError)
         aiError = analysisError?.message || 'AI 分析失敗'
       }
 

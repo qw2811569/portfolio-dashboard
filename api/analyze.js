@@ -26,12 +26,16 @@ export default async function handler(req, res) {
 
   try {
     const stream = wantsStreamingResponse(req)
-    const {
-      systemPrompt,
-      userPrompt,
-      maxTokens = 2200,
-      allowThinking = false,
-    } = req.body || {}
+    const { systemPrompt, userPrompt, maxTokens = 2200, allowThinking = false } = req.body || {}
+
+    if (!userPrompt) {
+      return res
+        .status(400)
+        .json({
+          error: 'userPrompt is required',
+          detail: 'The request body must include a non-empty userPrompt field',
+        })
+    }
 
     if (stream) {
       res.statusCode = 200

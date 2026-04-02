@@ -532,15 +532,15 @@ async function fetchFinMindNewsDirectly(stockCodes) {
   startDate.setDate(startDate.getDate() - 3)
   const startStr = formatDateForFinMind(startDate)
 
-  // 最多查前 5 檔重點持股
-  for (const code of stockCodes.slice(0, 5)) {
+  // 查全部持股（FinMind 付費版無 rate limit 問題）
+  for (const code of stockCodes) {
     try {
       const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${startStr}&token=${token}`
       const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) continue
 
       const json = await res.json()
-      const items = (json.data || []).slice(0, 5) // 每檔最多 5 則
+      const items = (json.data || []).slice(0, 3) // 每檔最多 3 則最新
       for (const item of items) {
         const title = String(item.title || '')
         if (!title || title.length < 10) continue

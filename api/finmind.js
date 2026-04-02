@@ -18,6 +18,18 @@
 
 const FINMIND_BASE = 'https://api.finmindtrade.com/api/v4/data'
 const TOKEN = process.env.FINMIND_TOKEN || ''
+const FINMIND_RATE_LIMIT_COOLDOWN_MS = 5 * 60 * 1000
+let finmindRateLimitedUntil = 0
+
+class FinMindApiError extends Error {
+  constructor(message, { status = 500, code = 'unknown', body = '' } = {}) {
+    super(message)
+    this.name = 'FinMindApiError'
+    this.status = status
+    this.code = code
+    this.body = body
+  }
+}
 
 function toNumber(value) {
   const number = Number(value)
@@ -29,6 +41,13 @@ function sortByDateDesc(rows = []) {
 }
 
 async function queryFinMind(dataset, params = {}) {
+  if (Date.now() < finmindRateLimitedUntil) {
+    throw new FinMindApiError('FinMind requests temporarily rate limited', {
+      status: 402,
+      code: 'rate_limited_cached',
+    })
+  }
+
   const searchParams = new URLSearchParams({
     dataset,
     ...Object.fromEntries(
@@ -46,12 +65,40 @@ async function queryFinMind(dataset, params = {}) {
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`FinMind ${dataset} failed (${res.status}): ${text.slice(0, 100)}`)
+    const snippet = text.slice(0, 160)
+
+    if (res.status === 402 && /upper limit/i.test(text)) {
+      finmindRateLimitedUntil = Date.now() + FINMIND_RATE_LIMIT_COOLDOWN_MS
+      throw new FinMindApiError(`FinMind ${dataset} requests reached upper limit`, {
+        status: 402,
+        code: 'rate_limited',
+        body: snippet,
+      })
+    }
+
+    throw new FinMindApiError(`FinMind ${dataset} failed (${res.status}): ${snippet}`, {
+      status: res.status,
+      code: 'upstream_error',
+      body: snippet,
+    })
   }
 
   const data = await res.json()
   if (data.status !== 200 && data.msg !== 'success') {
-    throw new Error(`FinMind ${dataset}: ${data.msg || 'unknown error'}`)
+    if (Number(data.status) === 402 || /upper limit/i.test(String(data.msg || ''))) {
+      finmindRateLimitedUntil = Date.now() + FINMIND_RATE_LIMIT_COOLDOWN_MS
+      throw new FinMindApiError(`FinMind ${dataset} requests reached upper limit`, {
+        status: 402,
+        code: 'rate_limited',
+        body: String(data.msg || '').slice(0, 160),
+      })
+    }
+
+    throw new FinMindApiError(`FinMind ${dataset}: ${data.msg || 'unknown error'}`, {
+      status: Number(data.status) || 500,
+      code: 'upstream_payload_error',
+      body: String(data.msg || '').slice(0, 160),
+    })
   }
 
   return Array.isArray(data.data) ? data.data : []
@@ -311,6 +358,23 @@ export default async function handler(req, res) {
       fetchedAt: new Date().toISOString(),
     })
   } catch (error) {
+    if (isFinMindRateLimitError(error)) {
+      return res.status(200).json({
+        success: true,
+        degraded: true,
+        reason: 'rate_limited',
+        warning: 'FinMind requests temporarily rate limited; returned empty dataset fallback',
+        dataset,
+        code,
+        startDate,
+        endDate: end_date || null,
+        count: 0,
+        data: [],
+        source: 'finmind',
+        fetchedAt: new Date().toISOString(),
+      })
+    }
+
     return res.status(500).json({ error: error.message, source: 'finmind' })
   }
 }
@@ -319,4 +383,8 @@ function defaultStartDate(days = 90) {
   const d = new Date()
   d.setDate(d.getDate() - Number(days || 90))
   return d.toISOString().slice(0, 10)
+}
+
+function isFinMindRateLimitError(error) {
+  return error instanceof FinMindApiError && String(error.code || '').startsWith('rate_limited')
 }

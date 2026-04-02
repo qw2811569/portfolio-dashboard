@@ -34,7 +34,7 @@ ${USER_TASK}"
   fi
   gemini_log_launch "headless" "${MODEL}" "taiwan-scout" "${PWD}"
   report_ai_start "Gemini research scout：${USER_TASK}"
-  exec gemini -m "${MODEL}" -p "${BOOTSTRAP_PROMPT}
+  exec gemini -m "${MODEL}" --yolo --sandbox false -p "${BOOTSTRAP_PROMPT}
 
 目前任務：
 ${USER_TASK}" </dev/null

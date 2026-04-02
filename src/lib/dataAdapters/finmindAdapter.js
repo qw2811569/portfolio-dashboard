@@ -15,7 +15,42 @@
  *   news          — 個股新聞（提供 Qwen 建動態事件來源）
  */
 
+// ── FinMind 快取層 ── 同一天同一 dataset+code 只呼叫一次 API
+const CACHE_PREFIX = 'fm-cache-'
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000 // 4 小時
+
+function getCacheKey(dataset, code) {
+  return `${CACHE_PREFIX}${dataset}-${code}`
+}
+
+function readCache(dataset, code) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(dataset, code))
+    if (!raw) return null
+    const { data, ts } = JSON.parse(raw)
+    if (Date.now() - ts > CACHE_TTL_MS) {
+      localStorage.removeItem(getCacheKey(dataset, code))
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
+}
+
+function writeCache(dataset, code, data) {
+  try {
+    localStorage.setItem(getCacheKey(dataset, code), JSON.stringify({ data, ts: Date.now() }))
+  } catch {
+    /* storage full — ignore */
+  }
+}
+
 async function fetchFinMind(dataset, code, startDate) {
+  // 先查快取
+  const cached = readCache(dataset, code)
+  if (cached) return cached
+
   const params = new URLSearchParams({ dataset, code })
   if (startDate) params.set('start_date', startDate)
 
@@ -29,7 +64,11 @@ async function fetchFinMind(dataset, code, startDate) {
   }
 
   const json = await res.json()
-  return json.data || []
+  const data = json.data || []
+
+  // 寫入快取
+  writeCache(dataset, code, data)
+  return data
 }
 
 /**

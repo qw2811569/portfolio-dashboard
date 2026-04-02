@@ -58,67 +58,174 @@ open('$CONVO_FILE', 'w').write(content)
 " 2>/dev/null || true
 }
 
-# ─── QA 函數：跑 build/lint/test，回傳問題數 ───
+# ─── QA 函數：分三層檢查 ───
 run_qa() {
   local problems=0
   local details=""
+  local qa_summary=""
+
+  # ═══ Level 1：CI 基礎（build/lint/test）═══
+  log "QA Level 1: CI 基礎..."
 
   # Build
-  log "QA: npm run build..."
   BUILD_OUT=$(npm run build 2>&1) || true
   if echo "$BUILD_OUT" | grep -qE "error TS|Build failed|ERROR|SyntaxError"; then
     problems=$((problems + 1))
     details+="BUILD_FAIL: $(echo "$BUILD_OUT" | grep -E 'error TS|ERROR|SyntaxError|Build failed' | head -3)\n"
     log "  🔴 build FAIL"
+    qa_summary+="build:FAIL "
   else
-    log "  ✅ build PASS"
+    log "  ✅ build"
+    qa_summary+="build:OK "
   fi
 
   # Lint
-  log "QA: npm run lint..."
   LINT_OUT=$(npm run lint 2>&1) || true
   LINT_ERRS="$(echo "$LINT_OUT" | grep -c " error " || true)"
   LINT_ERRS="${LINT_ERRS:-0}"
   if [[ "$LINT_ERRS" -gt 0 ]]; then
     problems=$((problems + 1))
     details+="LINT_ERROR: $(echo "$LINT_OUT" | grep ' error ' | head -5)\n"
-    log "  🔴 lint FAIL ($LINT_ERRS errors)"
+    log "  🔴 lint ($LINT_ERRS errors)"
+    qa_summary+="lint:FAIL "
   else
-    log "  ✅ lint PASS"
+    log "  ✅ lint"
+    qa_summary+="lint:OK "
   fi
 
   # Test
-  log "QA: npx vitest run..."
   TEST_OUT=$(npx vitest run 2>&1) || true
   if echo "$TEST_OUT" | grep -qE "Tests.*failed|FAIL "; then
     problems=$((problems + 1))
-    details+="TEST_FAIL: $(echo "$TEST_OUT" | grep -E 'FAIL |×|✗' | head -5)\n"
+    TEST_FAILS=$(echo "$TEST_OUT" | grep -E "FAIL |×|✗" | head -5)
+    details+="TEST_FAIL: $TEST_FAILS\n"
     log "  🔴 test FAIL"
+    qa_summary+="test:FAIL "
   else
-    log "  ✅ test PASS"
+    TEST_SUMMARY=$(echo "$TEST_OUT" | grep -E "Test Files|Tests " | tail -2 | tr '\n' ', ')
+    log "  ✅ test ($TEST_SUMMARY)"
+    qa_summary+="test:OK "
   fi
 
-  # API（如果 vercel dev 在跑）
+  # ═══ Level 2：API 功能（vercel dev 在跑才測）═══
   FRONTEND=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 http://localhost:3002/ 2>/dev/null || echo "000")
-  if [[ "$FRONTEND" == "200" ]]; then
-    log "  ✅ frontend HTTP 200"
-  elif [[ "$FRONTEND" != "000" ]]; then
-    problems=$((problems + 1))
-    details+="FRONTEND_ERROR: HTTP $FRONTEND\n"
-    log "  🔴 frontend HTTP $FRONTEND"
+
+  if [[ "$FRONTEND" != "000" ]]; then
+    log "QA Level 2: API 功能..."
+
+    if [[ "$FRONTEND" != "200" ]]; then
+      problems=$((problems + 1))
+      details+="FRONTEND_DOWN: HTTP $FRONTEND\n"
+      log "  🔴 首頁 HTTP $FRONTEND"
+      qa_summary+="frontend:FAIL "
+    else
+      log "  ✅ 首頁 200"
+      qa_summary+="frontend:OK "
+    fi
+
+    # brain API — 策略大腦
+    BRAIN_OUT=$(curl -s --connect-timeout 5 "http://localhost:3002/api/brain?action=all" 2>/dev/null || echo "")
+    BRAIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "http://localhost:3002/api/brain?action=all" 2>/dev/null || echo "000")
+    if [[ "$BRAIN_STATUS" == "200" ]] && echo "$BRAIN_OUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
+      log "  ✅ /api/brain 回傳有效 JSON"
+      qa_summary+="brain:OK "
+    else
+      problems=$((problems + 1))
+      details+="API_BRAIN_FAIL: HTTP $BRAIN_STATUS or invalid JSON\n"
+      log "  🔴 /api/brain HTTP $BRAIN_STATUS"
+      qa_summary+="brain:FAIL "
+    fi
+
+    # event-calendar API — 事件行事曆
+    EVENT_OUT=$(curl -s --connect-timeout 5 "http://localhost:3002/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "")
+    EVENT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "http://localhost:3002/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "000")
+    if [[ "$EVENT_STATUS" == "200" ]]; then
+      EVENT_COUNT=$(echo "$EVENT_OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('events',d.get('data',[]))))" 2>/dev/null || echo "0")
+      if [[ "$EVENT_COUNT" -gt 0 ]]; then
+        log "  ✅ /api/event-calendar 回傳 $EVENT_COUNT 個事件"
+        qa_summary+="events:OK($EVENT_COUNT) "
+      else
+        problems=$((problems + 1))
+        details+="API_EVENTS_EMPTY: HTTP 200 但 0 個事件\n"
+        log "  🔴 /api/event-calendar 回傳 0 個事件"
+        qa_summary+="events:EMPTY "
+      fi
+    else
+      problems=$((problems + 1))
+      details+="API_EVENTS_FAIL: HTTP $EVENT_STATUS\n"
+      log "  🔴 /api/event-calendar HTTP $EVENT_STATUS"
+      qa_summary+="events:FAIL "
+    fi
+
+    # analyze API — 收盤分析（用最小 payload 測試）
+    ANALYZE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 20 \
+      -X POST "http://localhost:3002/api/analyze" \
+      -H "Content-Type: application/json" \
+      -d '{"systemPrompt":"測試","userPrompt":"用10字回覆OK","maxTokens":50}' \
+      2>/dev/null || echo "000")
+    if [[ "$ANALYZE_STATUS" == "200" ]]; then
+      log "  ✅ /api/analyze 回傳 200"
+      qa_summary+="analyze:OK "
+    elif [[ "$ANALYZE_STATUS" == "000" ]]; then
+      log "  ⚠️ /api/analyze timeout（可能是 API key 問題，不算 fail）"
+      qa_summary+="analyze:TIMEOUT "
+    else
+      problems=$((problems + 1))
+      details+="API_ANALYZE_FAIL: HTTP $ANALYZE_STATUS\n"
+      log "  🔴 /api/analyze HTTP $ANALYZE_STATUS"
+      qa_summary+="analyze:FAIL "
+    fi
+
+    # research API — 深度研究（只測 GET 是否存活）
+    RESEARCH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "http://localhost:3002/api/research" 2>/dev/null || echo "000")
+    if [[ "$RESEARCH_STATUS" == "200" || "$RESEARCH_STATUS" == "405" ]]; then
+      log "  ✅ /api/research 存活 (HTTP $RESEARCH_STATUS)"
+      qa_summary+="research:OK "
+    else
+      problems=$((problems + 1))
+      details+="API_RESEARCH_FAIL: HTTP $RESEARCH_STATUS\n"
+      log "  🔴 /api/research HTTP $RESEARCH_STATUS"
+      qa_summary+="research:FAIL "
+    fi
+
   else
-    log "  ⏭️ frontend not running, skip"
+    log "QA Level 2: ⏭️ vercel dev 未啟動，跳過 API 測試"
+    qa_summary+="api:SKIPPED "
   fi
 
-  # 寫結果到暫存
+  # ═══ Level 3：Qwen 深度驗證（派 Qwen 跑功能測試）═══
+  log "QA Level 3: Qwen 深度驗證..."
+  QWEN_REPORT=$(openclaw agent --agent qwen \
+    --message "你是 QA 測試員。讀 QWEN.md 了解你的角色。現在做快速功能檢查：
+1. 跑 node -e \"const kb = require('./src/lib/knowledgeBase.js'); console.log('KB entries:', Object.keys(kb).length)\" 看知識庫是否能載入
+2. 檢查 src/App.jsx 是否存在且無明顯語法問題
+3. 檢查 src/hooks/useDailyAnalysisWorkflow.js 是否存在
+4. 跑 git log --oneline -3 確認最近改動合理
+
+用以下格式回報，第一行必須是 PASS 或 FAIL：
+PASS/FAIL
+- 項目1: OK/FAIL 原因
+- 項目2: OK/FAIL 原因" \
+    --timeout 90 2>&1) || true
+
+  log "  Qwen: $(echo "$QWEN_REPORT" | head -1)"
+  if echo "$QWEN_REPORT" | head -1 | grep -qi "FAIL"; then
+    problems=$((problems + 1))
+    details+="QWEN_QA_FAIL: $(echo "$QWEN_REPORT" | head -5 | tr '\n' ' ')\n"
+    qa_summary+="qwen:FAIL "
+  else
+    qa_summary+="qwen:OK "
+  fi
+
+  # ═══ 寫結果 ═══
   echo "$problems" > /tmp/auto-loop-qa-count
   printf "%b" "$details" > /tmp/auto-loop-qa-details
 
   # 追加到對話紀錄
   if [[ "$problems" -eq 0 ]]; then
-    convo "QA" "全部通過 ✅ build/lint/test/frontend"
+    convo "QA" "全部通過 ✅ [$qa_summary]"
   else
-    convo "QA" "發現 $problems 個問題：$(printf '%b' "$details" | tr '\n' ' ')"
+    convo "QA" "發現 $problems 個問題 [$qa_summary]：$(printf '%b' "$details" | tr '\n' ' ')"
   fi
   return 0
 }
@@ -159,16 +266,22 @@ run_claude_review() {
   log "請 Claude 做最終審查..."
 
   CLAUDE_RESULT=$(openclaw agent --agent claude \
-    --message "你是這個專案的技術架構師。自動閉環已跑到第 $ROUND 輪，build/lint/test 全部通過。
+    --message "你是這個專案的技術架構師。自動閉環已跑到第 $ROUND 輪。
 
-先讀 docs/status/loop-conversation.md 了解完整歷程，再做以下檢查：
-1. git log --oneline -5
-2. git diff --stat HEAD~3
-3. 讀 docs/status/current-work.md 的 Latest checkpoint
+先讀 docs/status/loop-conversation.md 了解完整歷程（包括 QA 的詳細結果），再做以下檢查：
+1. git log --oneline -10
+2. 讀 docs/status/auto-loop-result.md（如果有）
+3. 讀 docs/status/current-work.md 的 Objective 和 Latest checkpoint
+4. 如果 vercel dev 在跑（localhost:3002），curl 測幾個 API 端點確認功能正常
 
-判斷專案是否穩定可交付。
-回答第一個詞必須是 STABLE 或 UNSTABLE，然後用 50 字以內說明原因。
-如果是 UNSTABLE，列出最關鍵的 1-2 個 Codex 可以修的具體問題。" \
+判斷標準（全部滿足才算 STABLE）：
+- build/lint/test 全綠
+- 如果有 API 測試結果，關鍵 API（brain/events/analyze）要正常
+- 沒有已知的未修復 bug（看 current-work.md 的 blocker）
+- Qwen QA 沒有回報 FAIL
+
+回答第一個詞必須是 STABLE 或 UNSTABLE，然後說明原因。
+如果是 UNSTABLE，必須列出 1-3 個具體的、Codex 可以直接修的問題（附檔名和行為描述）。" \
     --timeout 120 2>&1) || true
 
   log "Claude 回覆：$CLAUDE_RESULT"

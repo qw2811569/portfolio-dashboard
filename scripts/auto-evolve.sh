@@ -2,10 +2,11 @@
 # OpenClaw 自動進化循環
 # 用法：bash scripts/auto-evolve.sh
 #
-# 這個腳本做三件事：
-# 1. 健康檢查（測試、build、lint）
+# 這個腳本做四件事：
+# 1. 健康檢查（測試、build、lint、前台）
 # 2. 把問題寫到 docs/status/auto-evolve-tasks.md
-# 3. 自動派工給 Codex 修復
+# 3. 後端/邏輯問題 → 派 Codex 修復
+# 4. 前台/UI 問題 → 派 Qwen 修復
 #
 # OpenClaw 只需要定期跑這個腳本，不需要人盯。
 
@@ -27,6 +28,8 @@ TASK_FILE="docs/status/auto-evolve-tasks.md"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
 PROBLEMS=()
 WARNINGS=()
+QWEN_TASKS=()
+CODEX_TASKS=()
 
 echo "=== auto-evolve 開始 ($TIMESTAMP) ==="
 
@@ -65,15 +68,65 @@ else
   echo "[✅] 測試通過 — $TEST_SUMMARY"
 fi
 
-# ─── Step 4: Git 狀態 ───
+# ─── Step 4: 前台 UI 檢查 ───
+echo "[check] 前台元件完整性..."
+
+# 檢查關鍵 UI 元件是否存在且無語法錯誤
+UI_ISSUES=""
+for comp in src/components/AppPanels.jsx src/components/reports/DailyReportPanel.jsx src/components/research/ResearchPanel.jsx src/App.jsx; do
+  if [[ ! -f "$comp" ]]; then
+    UI_ISSUES+="缺少關鍵元件 $comp; "
+  fi
+done
+
+# 檢查 build 產出的 chunk 大小警告（UI 體驗相關）
+if echo "$BUILD_OUTPUT" | grep -q "kB.*│.*kB\|chunk .* is larger"; then
+  CHUNK_WARNINGS=$(echo "$BUILD_OUTPUT" | grep -E "kB.*│|chunk .* is larger" | tail -3)
+  WARNINGS+=("UI_CHUNK_SIZE: $CHUNK_WARNINGS")
+fi
+
+# 如果 vercel dev 有在跑，檢查首頁是否正常回應
+FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 http://localhost:3002/ 2>/dev/null || echo "000")
+if [[ "$FRONTEND_STATUS" == "200" ]]; then
+  echo "[✅] 前台服務正常 (HTTP 200)"
+
+  # 檢查關鍵 API 端點
+  for api in "/api/brain?action=all" "/api/event-calendar?range=7&codes=2308"; do
+    API_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "http://localhost:3002${api}" 2>/dev/null || echo "000")
+    if [[ "$API_STATUS" != "200" && "$API_STATUS" != "400" && "$API_STATUS" != "405" ]]; then
+      QWEN_TASKS+=("API_ERROR: ${api} 回傳 HTTP $API_STATUS")
+    fi
+  done
+elif [[ "$FRONTEND_STATUS" == "000" ]]; then
+  echo "[⚠️] 前台未啟動（localhost:3002 無回應）"
+  WARNINGS+=("vercel dev 未啟動，跳過前台 API 檢查")
+else
+  QWEN_TASKS+=("FRONTEND_ERROR: 首頁回傳 HTTP $FRONTEND_STATUS")
+  echo "[❌] 前台異常 (HTTP $FRONTEND_STATUS)"
+fi
+
+if [[ -n "$UI_ISSUES" ]]; then
+  QWEN_TASKS+=("UI_MISSING: $UI_ISSUES")
+  echo "[❌] 前台元件缺失"
+else
+  echo "[✅] 前台關鍵元件完整"
+fi
+
+# ─── Step 5: Git 狀態 ───
 UNCOMMITTED=$(git status --short | grep -v "^??" | wc -l | tr -d ' ')
 UNTRACKED=$(git status --short | grep "^??" | wc -l | tr -d ' ')
 if [[ "$UNCOMMITTED" -gt 0 ]]; then
   WARNINGS+=("有 $UNCOMMITTED 個未 commit 的改動")
 fi
 
-# ─── Step 5: 產出任務檔 ───
-if [[ ${#PROBLEMS[@]} -eq 0 ]]; then
+# 把 build/test/lint 問題歸到 Codex
+for p in "${PROBLEMS[@]}"; do
+  CODEX_TASKS+=("$p")
+done
+
+# ─── Step 6: 產出任務檔 ───
+TOTAL_ISSUES=$(( ${#CODEX_TASKS[@]} + ${#QWEN_TASKS[@]} ))
+if [[ "$TOTAL_ISSUES" -eq 0 ]]; then
   echo ""
   echo "=== 全部通過，沒有需要修的問題 ==="
 
@@ -100,11 +153,17 @@ fi
 
 # 有問題，產出任務
 echo ""
-echo "=== 發現 ${#PROBLEMS[@]} 個問題，準備派工 ==="
+echo "=== 發現 $TOTAL_ISSUES 個問題（Codex: ${#CODEX_TASKS[@]}, Qwen: ${#QWEN_TASKS[@]}），準備派工 ==="
 
-TASK_DESCRIPTION=""
-for p in "${PROBLEMS[@]}"; do
-  TASK_DESCRIPTION+="- $p
+CODEX_DESC=""
+for p in "${CODEX_TASKS[@]}"; do
+  CODEX_DESC+="- $p
+"
+done
+
+QWEN_DESC=""
+for p in "${QWEN_TASKS[@]}"; do
+  QWEN_DESC+="- $p
 "
 done
 
@@ -115,11 +174,14 @@ Last check: $TIMESTAMP
 
 ## Status: ❌ NEEDS FIX
 
-發現 ${#PROBLEMS[@]} 個問題需要修復：
+發現 $TOTAL_ISSUES 個問題（Codex: ${#CODEX_TASKS[@]}, Qwen: ${#QWEN_TASKS[@]}）
 
-$TASK_DESCRIPTION
+$(if [[ ${#CODEX_TASKS[@]} -gt 0 ]]; then
+cat <<CODEXEOF
+## Codex 任務（後端 / 邏輯 / 測試）
 
-## Instructions for Codex
+$CODEX_DESC
+### Instructions for Codex
 
 請依照以下順序修復：
 1. 先修 BUILD_FAIL（如果有的話）
@@ -127,6 +189,24 @@ $TASK_DESCRIPTION
 3. 最後修 LINT_ERROR
 4. 每修一項跑一次驗證（build / test / lint）
 5. 完成後用 \`AI_NAME=Codex bash scripts/ai-status.sh done "auto-evolve 修復完成"\` 回報
+CODEXEOF
+fi)
+
+$(if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
+cat <<QWENEOF
+## Qwen 任務（前台 / UI / API 端點）
+
+$QWEN_DESC
+### Instructions for Qwen
+
+請依照以下順序修復：
+1. 先修 FRONTEND_ERROR（首頁無法載入）
+2. 再修 API_ERROR（API 端點異常）
+3. 最後修 UI_MISSING（缺少元件）
+4. 每修一項用瀏覽器或 curl 驗證
+5. 完成後用 \`AI_NAME=Qwen bash scripts/ai-status.sh done "auto-evolve UI 修復完成"\` 回報
+QWENEOF
+fi)
 
 $(if [[ ${#WARNINGS[@]} -gt 0 ]]; then
   echo "## Warnings"
@@ -136,16 +216,34 @@ TASKEOF
 
 echo "任務已寫入 $TASK_FILE"
 
-# ─── Step 6: 自動派 Codex ───
-if command -v codex >/dev/null 2>&1; then
-  CODEX_PROMPT="讀 docs/status/auto-evolve-tasks.md，裡面有 build/test/lint 的失敗項目。請逐一修復，每修一項跑驗證確認通過。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。"
-  echo "[dispatch] 派 Codex 修復..."
-  AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 修復：${#PROBLEMS[@]} 個問題" >/dev/null 2>&1 || true
-  nohup codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C "$ROOT_DIR" "$CODEX_PROMPT" > /tmp/codex-auto-evolve.log 2>&1 &
-  echo "[dispatch] Codex 已在背景啟動 (PID: $!)"
-else
-  echo "[dispatch] Codex CLI 不存在，問題已寫入 $TASK_FILE，等待手動處理"
-  AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "auto-evolve 發現 ${#PROBLEMS[@]} 個問題但 Codex 不可用" >/dev/null 2>&1 || true
+# ─── Step 7: 自動派工 ───
+
+# 派 Codex 修後端問題
+if [[ ${#CODEX_TASKS[@]} -gt 0 ]]; then
+  if command -v codex >/dev/null 2>&1; then
+    CODEX_PROMPT="讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區。裡面有 build/test/lint 的失敗項目。請逐一修復，每修一項跑驗證確認通過。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。"
+    echo "[dispatch] 派 Codex 修復 ${#CODEX_TASKS[@]} 個後端問題..."
+    AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 修復：${#CODEX_TASKS[@]} 個後端問題" >/dev/null 2>&1 || true
+    nohup codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C "$ROOT_DIR" "$CODEX_PROMPT" > /tmp/codex-auto-evolve.log 2>&1 &
+    echo "[dispatch] Codex 已在背景啟動 (PID: $!)"
+  else
+    echo "[dispatch] Codex CLI 不存在，後端問題等待手動處理"
+    AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "auto-evolve 發現 ${#CODEX_TASKS[@]} 個後端問題但 Codex 不可用" >/dev/null 2>&1 || true
+  fi
+fi
+
+# 派 Qwen 修前台問題
+if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
+  if command -v qwen >/dev/null 2>&1; then
+    QWEN_PROMPT="讀 docs/status/auto-evolve-tasks.md 的 Qwen 任務區。裡面有前台 UI 和 API 的問題。請逐一修復，每修一項驗證確認通過。完成後用 AI_NAME=Qwen bash scripts/ai-status.sh done 回報。"
+    echo "[dispatch] 派 Qwen 修復 ${#QWEN_TASKS[@]} 個前台問題..."
+    AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 修復：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
+    nohup qwen --auth-type qwen-oauth --approval-mode yolo --sandbox false "$QWEN_PROMPT" > /tmp/qwen-auto-evolve.log 2>&1 &
+    echo "[dispatch] Qwen 已在背景啟動 (PID: $!)"
+  else
+    echo "[dispatch] Qwen CLI 不存在，前台問題等待手動處理"
+    AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "auto-evolve 發現 ${#QWEN_TASKS[@]} 個前台問題但 Qwen 不可用" >/dev/null 2>&1 || true
+  fi
 fi
 
 echo ""

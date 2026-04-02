@@ -2,6 +2,7 @@ import { createElement as h } from 'react'
 import { C } from '../../theme.js'
 import { Card } from '../common'
 import { buildThemeChips } from '../../lib/dossierUtils.js'
+import { SupplyChainView } from './SupplyChainView.jsx'
 import {
   getHoldingMarketValue,
   getHoldingReturnPct,
@@ -216,6 +217,9 @@ export function HoldingRow({
             })
           )
         ),
+
+        // Supply chain view
+        h(SupplyChainView, { code: holding.code, name: holding.name }),
 
         // Additional info
         holding.type &&

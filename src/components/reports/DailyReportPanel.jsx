@@ -92,39 +92,22 @@ export function AnalyzingState({ step }) {
       {
         style: {
           fontSize: 13,
-          color: C.amber,
-          fontWeight: 500,
-          animation: 'pulse 1.5s ease-in-out infinite',
+          color: C.text,
+          fontWeight: 600,
+          marginBottom: 8,
         },
       },
-      step || '正在分析今日收盤數據...'
-    ),
-    h(
-      'div',
-      { style: { fontSize: 11, color: C.textMute, marginTop: 8 } },
-      '取得股價 → 比對事件 → AI 策略分析 → 大腦進化'
+      '正在分析，約需 30 秒...'
     ),
     h(
       'div',
       {
         style: {
-          width: '100%',
-          height: 3,
-          background: C.borderSub,
-          borderRadius: 2,
-          marginTop: 12,
-          overflow: 'hidden',
+          fontSize: 11,
+          color: C.textMute,
         },
       },
-      h('div', {
-        style: {
-          height: '100%',
-          background: C.amber,
-          borderRadius: 2,
-          animation: 'progress 8s ease-in-out infinite',
-          width: '70%',
-        },
-      })
+      step || '分析中...'
     )
   )
 }

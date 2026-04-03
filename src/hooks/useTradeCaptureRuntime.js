@@ -268,6 +268,12 @@ export function useTradeCaptureRuntime({
         throw new Error('沒有辨識到有效成交，請改用更清晰的截圖或手動修正')
       }
 
+      const tradeCount = normalized.trades.length
+      const targetCount = (normalized.targetPriceUpdates || []).length
+      let successMsg = `✅ 成功辨識 ${tradeCount} 筆交易`
+      if (targetCount > 0) successMsg += `、${targetCount} 筆目標價`
+      flashSaved(successMsg, 3000)
+
       updateActiveUpload((upload) => ({
         ...upload,
         parsed: normalized,
@@ -289,7 +295,7 @@ export function useTradeCaptureRuntime({
     } finally {
       setParsing(false)
     }
-  }, [activeUpload, toSlashDate, updateActiveUpload])
+  }, [activeUpload, flashSaved, toSlashDate, updateActiveUpload])
 
   const parsed = activeUpload?.parsed || null
   const memoBatchMode = useMemo(() => getTradeBatchMode(parsed?.trades || []), [parsed])

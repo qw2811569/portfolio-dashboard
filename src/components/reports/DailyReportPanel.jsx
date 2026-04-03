@@ -79,14 +79,30 @@ export function DailyAnalysisEmpty({ onAnalyze, onStressTest, analyzing, stressT
 }
 
 /**
- * Analyzing state
+ * Analyzing state — with spinner and step progress
  */
 export function AnalyzingState({ step }) {
   return h(
     Card,
     {
-      style: { textAlign: 'center', padding: '36px 16px' },
+      style: {
+        textAlign: 'center',
+        padding: '40px 16px',
+        background: `linear-gradient(135deg, ${alpha(C.blue, '08')}, ${alpha(C.lavender, '08')})`,
+      },
     },
+    // Spinning loader
+    h('div', {
+      style: {
+        width: 36,
+        height: 36,
+        margin: '0 auto 16px',
+        border: `3px solid ${alpha(C.blue, '20')}`,
+        borderTop: `3px solid ${C.blue}`,
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      },
+    }),
     h(
       'div',
       {
@@ -94,20 +110,58 @@ export function AnalyzingState({ step }) {
           fontSize: 13,
           color: C.text,
           fontWeight: 600,
-          marginBottom: 8,
+          marginBottom: 10,
         },
       },
-      '正在分析，約需 30 秒...'
+      '正在進行收盤分析'
     ),
+    // Step indicator
     h(
       'div',
       {
         style: {
           fontSize: 11,
-          color: C.textMute,
+          color: C.blue,
+          fontWeight: 500,
+          marginBottom: 12,
+          minHeight: 16,
         },
       },
-      step || '分析中...'
+      step || '準備中...'
+    ),
+    // Progress bar
+    h(
+      'div',
+      {
+        style: {
+          maxWidth: 240,
+          margin: '0 auto',
+          height: 4,
+          background: C.subtle,
+          borderRadius: 2,
+          overflow: 'hidden',
+        },
+      },
+      h('div', {
+        style: {
+          height: '100%',
+          width: '60%',
+          background: `linear-gradient(90deg, ${C.blue}, ${C.lavender})`,
+          borderRadius: 2,
+          animation: 'indeterminate 1.8s ease-in-out infinite',
+        },
+      })
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 10,
+          color: C.textMute,
+          marginTop: 10,
+        },
+      },
+      'AI 正在分析持股、事件與市場訊號，請稍候...'
     )
   )
 }
@@ -289,9 +343,7 @@ export function HoldingsChanges({ changes }) {
                 textAlign: 'right',
               },
             },
-            c.changePct != null
-              ? `${c.changePct >= 0 ? '+' : ''}${c.changePct.toFixed(2)}%`
-              : '—'
+            c.changePct != null ? `${c.changePct >= 0 ? '+' : ''}${c.changePct.toFixed(2)}%` : '—'
           ),
           h(
             'span',

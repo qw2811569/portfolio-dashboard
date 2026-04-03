@@ -255,41 +255,65 @@ export function DataRefreshCenter({ dataRefreshRows, onResearch, researching, ho
 export function ResearchProgress({ researching, researchTarget, holdings }) {
   if (!researching) return null
 
+  const isEvolve = researchTarget === 'EVOLVE'
+  const isPortfolio = researchTarget === 'PORTFOLIO'
+  const label = isEvolve
+    ? 'AI 正在審視你的投資系統並產出策略建議'
+    : isPortfolio
+      ? `AI 正在進行全組合深度研究（${holdings?.length || 0} 檔持股）`
+      : `AI 正在進行個股深度研究`
+
   return h(
     Card,
     {
-      style: { marginBottom: 10, textAlign: 'center', padding: '20px 14px' },
+      style: {
+        marginBottom: 10,
+        textAlign: 'center',
+        padding: '32px 16px',
+        background: `linear-gradient(135deg, ${alpha(C.teal, '08')}, ${alpha(C.olive, '08')})`,
+      },
     },
+    // Spinning loader
+    h('div', {
+      style: {
+        width: 36,
+        height: 36,
+        margin: '0 auto 16px',
+        border: `3px solid ${alpha(C.teal, '20')}`,
+        borderTop: `3px solid ${C.teal}`,
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      },
+    }),
     h(
       'div',
       {
         style: {
-          fontSize: 12,
-          color: researchTarget === 'EVOLVE' ? C.up : C.teal,
-          fontWeight: 500,
-          marginBottom: 6,
-          animation: 'pulse 2s infinite',
+          fontSize: 13,
+          color: isEvolve ? C.up : C.teal,
+          fontWeight: 600,
+          marginBottom: 8,
         },
       },
-      researchTarget === 'EVOLVE'
-        ? 'AI 正在審視你的投資系統並產出策略建議...'
-        : `AI 正在進行${researchTarget === 'PORTFOLIO' ? '全組合' : '個股'}深度研究...`
+      label
     ),
     h(
       'div',
-      { style: { fontSize: 10, color: C.textMute } },
-      researchTarget === 'EVOLVE'
+      { style: { fontSize: 10, color: C.textMute, marginBottom: 14 } },
+      isEvolve
         ? '3 輪迭代：系統診斷 → 進化建議 → AI 策略建議，預計 1-2 分鐘'
-        : researchTarget === 'PORTFOLIO'
-          ? `逐一分析 ${holdings?.length || 0} 檔持股 + 組合策略，預計 1-2 分鐘`
+        : isPortfolio
+          ? '逐一分析持股 + 組合策略 + AI 建議，預計 1-2 分鐘'
           : '3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒'
     ),
+    // Progress bar
     h(
       'div',
       {
         style: {
-          marginTop: 10,
-          height: 3,
+          maxWidth: 240,
+          margin: '0 auto',
+          height: 4,
           background: C.subtle,
           borderRadius: 2,
           overflow: 'hidden',
@@ -298,10 +322,10 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
       h('div', {
         style: {
           height: '100%',
-          background: C.teal,
+          width: '60%',
+          background: `linear-gradient(90deg, ${C.teal}, ${C.olive})`,
           borderRadius: 2,
-          animation: 'progress 15s ease-in-out infinite',
-          width: '70%',
+          animation: 'indeterminate 1.8s ease-in-out infinite',
         },
       })
     )

@@ -10,31 +10,22 @@ const lbl = {
   marginBottom: 5,
 }
 
-const TYPE_COLOR = {
-  法說: C.up,
-  財報: C.teal,
-  營收: C.olive,
-  催化: C.amber,
-  操作: C.text,
-  總經: C.lavender,
-  權證: C.choco,
-}
-
+// 簡化：只用三色表示方向（紅=利多/黃=中性/綠=利空）
 const IMPACT_META = {
-  high: { label: '高影響', color: C.up, bg: C.upBg },
-  medium: { label: '中影響', color: C.amber, bg: alpha(C.amber, '18') },
-  low: { label: '低影響', color: C.textMute, bg: alpha(C.textMute, '14') },
-  positive: { label: '偏多', color: C.up, bg: C.upBg },
-  negative: { label: '偏空', color: C.down, bg: C.downBg },
-  neutral: { label: '中性', color: C.textMute, bg: alpha(C.textMute, '14') },
+  positive: { label: '🔴 利多', color: C.up, bg: C.upBg },
+  negative: { label: '🟢 利空', color: C.down, bg: C.downBg },
+  neutral: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
+  high: { label: '🔴 利多', color: C.up, bg: C.upBg },
+  medium: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
+  low: { label: '🟡 中性', color: C.textMute, bg: alpha(C.textMute, '14') },
 }
 
 function formatEventSource(source) {
-  if (!source) return 'manual'
-  if (source === 'auto-calendar') return 'auto-calendar'
+  if (!source) return '手動'
+  if (source === 'auto-calendar') return '行事曆'
   if (source === 'finmind-news') return 'FinMind'
-  if (source === 'gemini-research') return 'Gemini'
-  return source
+  // 不再顯示 gemini-research
+  return '手動'
 }
 
 function buildNewsEventKey(event, index) {
@@ -147,7 +138,8 @@ export function LogPanel({ tradeLog }) {
  * Event Card for News Analysis
  */
 export function NewsEventCard({ event, onReview, onToggle }) {
-  const tc = TYPE_COLOR[event.type] || C.textMute
+  const impactInfo = IMPACT_META[event.impact] || IMPACT_META.neutral
+  const tc = impactInfo.color || C.textMute
   const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
 
   return h(

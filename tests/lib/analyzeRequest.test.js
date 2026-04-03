@@ -5,7 +5,10 @@ import {
   requestAnalyzeWithFallback,
 } from '../../src/lib/analyzeRequest.js'
 
-function createJsonResponse(payload, { ok = true, status = 200, contentType = 'application/json' } = {}) {
+function createJsonResponse(
+  payload,
+  { ok = true, status = 200, contentType = 'application/json' } = {}
+) {
   const bodyText = JSON.stringify(payload)
   return {
     ok,
@@ -44,6 +47,7 @@ describe('lib/analyzeRequest', () => {
       requestBody: { systemPrompt: 'system', userPrompt: 'user' },
       fetchImpl,
       consumeStream,
+      localRuntime: false,
     })
 
     expect(fetchImpl).toHaveBeenCalledTimes(1)
@@ -71,6 +75,7 @@ describe('lib/analyzeRequest', () => {
       fetchImpl,
       consumeStream: vi.fn(),
       onFallback,
+      localRuntime: false,
     })
 
     expect(fetchImpl).toHaveBeenCalledTimes(2)

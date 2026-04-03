@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 11:00
+Last updated: 2026-04-03 11:41
 
 ## Management preferences
 
@@ -82,6 +82,19 @@ Last updated: 2026-04-03 11:00
 
 ## Latest checkpoint
 
+- `2026-04-03 11:41` Codex：修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。
+- `2026-04-03 11:22` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 11:21` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 11:20` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 11:19` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 11:17` Codex：Round 1 修復完成
+- `2026-04-03 11:14` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 11:13` OpenClaw：自動閉環完成：5 輪後穩定
+- `2026-04-03 11:11` Codex：Round 4 修復完成
+- `2026-04-03 11:06` Codex：Round 2 修復完成
+- `2026-04-03 10:57` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 10:55` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 10:50` Codex：修復 auto-evolve 列出的本地 API routing 問題：vercel dev 不再把 /api/\* 當成 vite 前端路徑；已補 install/build commands，並完成 build/lint/test 驗證。
 - `2026-04-03 10:15` OpenClaw：自動閉環完成：2 輪後穩定
 - `2026-04-03 10:09` OpenClaw：自動閉環完成：2 輪後穩定
 - `2026-04-03 10:07` OpenClaw：自動閉環完成：2 輪後穩定

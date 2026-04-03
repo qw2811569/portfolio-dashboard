@@ -4,6 +4,15 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${REPO_ROOT}"
 
+# 強制使用 Node 24，避免背景啟動時落到舊版 node / npx
+NODE24_BIN="$HOME/.nvm/versions/node/v24.13.1/bin"
+if [[ -d "$NODE24_BIN" ]]; then
+  export PATH="$NODE24_BIN:$PATH"
+fi
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+nvm use 24 > /dev/null 2>&1 || true
+
 PORT="3002"
 LISTEN_HOST="0.0.0.0"
 LOCAL_URL="http://127.0.0.1:${PORT}"
@@ -25,14 +34,11 @@ fi
 
 mkdir -p .tmp
 
-COMMAND="cd ${REPO_ROOT} && npx vercel dev --listen ${LISTEN_HOST}:${PORT} | tee .tmp/vercel-dev.log"
-echo "Starting vercel dev in a new Terminal window..."
-osascript <<OSA
-tell application "Terminal"
-  activate
-  do script "${COMMAND}"
-end tell
-OSA
+echo "Starting Vite frontend in background on ${PORT}..."
+nohup bash -lc "export PATH='${NODE24_BIN}:$PATH'; cd '${REPO_ROOT}' && '${NODE24_BIN}/npx' vite --host ${LISTEN_HOST} --port ${PORT} --strictPort" \
+  > .tmp/vercel-dev.log 2>&1 &
+VDEV_PID=$!
+echo "frontend pid: ${VDEV_PID}"
 
 echo "Waiting for server to be ready..."
 for i in $(seq 1 15); do

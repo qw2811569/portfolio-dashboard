@@ -85,8 +85,18 @@ if echo "$BUILD_OUTPUT" | grep -q "kB.*│.*kB\|chunk .* is larger"; then
   WARNINGS+=("UI_CHUNK_SIZE: $CHUNK_WARNINGS")
 fi
 
-# 如果 vercel dev 有在跑，檢查首頁是否正常回應
+# 如果本地前台沒啟動，先嘗試自動拉起再檢查
 FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 http://localhost:3002/ 2>/dev/null || echo "000")
+if [[ "$FRONTEND_STATUS" == "000" ]]; then
+  echo "[⚠️] 前台未啟動（localhost:3002 無回應），嘗試自動啟動..."
+  if bash scripts/redeploy-local.sh >/tmp/auto-evolve-redeploy.log 2>&1; then
+    sleep 2
+    FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 http://localhost:3002/ 2>/dev/null || echo "000")
+  else
+    WARNINGS+=("本地前台未啟動，且自動啟動失敗：$(tail -n 5 /tmp/auto-evolve-redeploy.log 2>/dev/null | tr '\n' ' ') ")
+  fi
+fi
+
 if [[ "$FRONTEND_STATUS" == "200" ]]; then
   echo "[✅] 前台服務正常 (HTTP 200)"
 
@@ -98,8 +108,8 @@ if [[ "$FRONTEND_STATUS" == "200" ]]; then
     fi
   done
 elif [[ "$FRONTEND_STATUS" == "000" ]]; then
-  echo "[⚠️] 前台未啟動（localhost:3002 無回應）"
-  WARNINGS+=("vercel dev 未啟動，跳過前台 API 檢查")
+  echo "[⚠️] 前台仍未啟動（localhost:3002 無回應）"
+  WARNINGS+=("本地前台未啟動，跳過前台 API 檢查")
 else
   QWEN_TASKS+=("FRONTEND_ERROR: 首頁回傳 HTTP $FRONTEND_STATUS")
   echo "[❌] 前台異常 (HTTP $FRONTEND_STATUS)"

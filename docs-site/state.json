@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-02T13:28:01.000Z",
+  "lastUpdated": "2026-04-03T03:41:19.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 5 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 19 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -249,8 +249,8 @@
     "dataAdapters": 3,
     "aiAgents": 4,
     "appJsxLinesChange": 0,
-    "totalDocs": 33,
-    "inProgressTasks": 3
+    "totalDocs": 36,
+    "inProgressTasks": 0
   },
   "health": {
     "overall": "warning",
@@ -287,16 +287,16 @@
       "configFile": "GEMINI.md",
       "workflows": 7
     },
-    "current": "Qwen",
+    "current": "Codex",
     "members": [
       {
         "name": "Codex",
         "role": "技術主導 / 最終裁決",
         "avatar": "🧠",
-        "status": "working",
-        "currentTask": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
-        "tasksCompleted": 48,
-        "lastActive": "2026-04-02 21:27",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 54,
+        "lastActive": "2026-04-03 11:41",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -304,22 +304,22 @@
         "name": "Qwen",
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
-        "status": "working",
-        "currentTask": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
         "tasksCompleted": 13,
-        "lastActive": "2026-04-02 21:28",
-        "statusSource": "manual",
+        "lastActive": "2026-04-02 22:35",
+        "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
       {
         "name": "Gemini",
         "role": "公開資料蒐集",
         "avatar": "🔍",
-        "status": "working",
-        "currentTask": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
         "tasksCompleted": 5,
-        "lastActive": "2026-04-02 19:03",
-        "statusSource": "manual",
+        "lastActive": "2026-04-02 23:31",
+        "statusSource": "auto",
         "activitySource": "~/.gemini/usage-log.tsv"
       },
       {
@@ -331,52 +331,86 @@
         "tasksCompleted": 7,
         "lastActive": "2026-04-02 21:05",
         "statusSource": "manual"
+      },
+      {
+        "name": "OpenClaw",
+        "role": "外部協作 AI",
+        "avatar": "🤖",
+        "status": "idle",
+        "currentTask": "等待分配新任務",
+        "tasksCompleted": 14,
+        "lastActive": "2026-04-03 11:22",
+        "statusSource": "manual"
       }
     ]
   },
   "timeline": [
     {
-      "time": "2026-04-02 21:05",
-      "ai": "Claude",
-      "title": "交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "ai": "Qwen",
-      "title": "done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "ai": "Claude",
-      "title": "交接：已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-02 21:05",
+      "time": "2026-04-03 11:41",
       "ai": "Codex",
-      "title": "done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。- 2026-04-02 1…",
+      "title": "修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:22",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     },
     {
-      "time": "2026-04-02 09:13",
-      "ai": "Qwen",
-      "title": "閉環 UI 串接完成：(1) 事件→分析串接可視化 — DailyReportSummary 顯示「引用 X 個事件、Y 條知識庫規則、",
+      "time": "2026-04-03 11:21",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:20",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:19",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:17",
+      "ai": "Codex",
+      "title": "Round 1 修復完成",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:14",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 11:13",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：5 輪後穩定",
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
     }
   ],
-  "generatedAt": "2026-04-02T13:28:01.922Z",
+  "generatedAt": "2026-04-03T03:41:20.035Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -393,90 +427,90 @@
   },
   "liveActivity": [
     {
-      "time": "2026-04-02 21:28",
-      "isoTime": "2026-04-02T21:28:01+08:00",
-      "ai": "Qwen",
-      "action": "start",
-      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:57+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：I need to read both files to understand the project's frontend closure s（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:57+08:00",
-      "ai": "Codex",
-      "action": "start",
-      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:02+08:00",
-      "ai": "Qwen",
-      "action": "start",
-      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認前台最後閉環是否已清楚定義，然後用一句話寫出你現在最該做的前台確認任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:26",
-      "isoTime": "2026-04-02T21:26:59+08:00",
-      "ai": "Codex",
-      "action": "start",
-      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認主線目標與目前可交付風險，然後用一句話寫出你現在最該做的驗收任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "isoTime": "2026-04-02T21:05:06+08:00",
-      "ai": "Claude",
-      "action": "handover",
-      "message": "已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "isoTime": "2026-04-02T21:05:06+08:00",
-      "ai": "Qwen",
-      "action": "done",
-      "message": "done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "isoTime": "2026-04-02T21:05:06+08:00",
-      "ai": "Claude",
-      "action": "handover",
-      "message": "已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "isoTime": "2026-04-02T21:05:06+08:00",
+      "time": "2026-04-03 11:41",
+      "isoTime": "2026-04-03T11:41:19+08:00",
       "ai": "Codex",
       "action": "done",
-      "message": "done：完成第一輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 讀回報後判斷下一輪。",
+      "message": "修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。",
       "status": "idle"
     },
     {
-      "time": "2026-04-02 19:03",
-      "isoTime": "2026-04-02T19:03:00+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout：請改做低成本支援，不要蒐集外部資料。聚焦現有 FinMind 與 repo 內 API：盤點 Daily Report / Deep Research 真正用到哪些 FinMind 欄位、哪些欄位已有 API 但還沒進 prompt、哪些地方仍會出現資料不足。請輸出簡潔結論與缺口清單，避免架構決策與最終投資判斷。",
-      "status": "working"
+      "time": "2026-04-03 11:22",
+      "isoTime": "2026-04-03T11:22:28+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:21",
+      "isoTime": "2026-04-03T11:21:23+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:20",
+      "isoTime": "2026-04-03T11:20:19+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:19",
+      "isoTime": "2026-04-03T11:19:00+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:17",
+      "isoTime": "2026-04-03T11:17:47+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "Round 1 修復完成",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:14",
+      "isoTime": "2026-04-03T11:14:26+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:13",
+      "isoTime": "2026-04-03T11:13:26+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：5 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:11",
+      "isoTime": "2026-04-03T11:11:53+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "Round 4 修復完成",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 11:06",
+      "isoTime": "2026-04-03T11:06:45+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "Round 2 修復完成",
+      "status": "idle"
     }
   ],
   "handover": {
-    "from": "Claude",
-    "time": "2026-04-02T21:05:00+08:00",
-    "message": "交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
+    "from": "Codex",
+    "time": "2026-04-03T11:41:00+08:00",
+    "message": "修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。",
     "nextStep": "目前主線目標：把專案核心主流程做成可交付狀態——架構落地、流程閉環、明顯 bug 收斂。",
     "blockers": [],
     "needsReview": false,

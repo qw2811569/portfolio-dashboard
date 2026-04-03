@@ -18,19 +18,17 @@ export function useAutoEventCalendar({ setNewsEvents }) {
   const fetchAutoEvents = useCallback(
     async (stockCodes = []) => {
       try {
-        const codesSet = new Set(stockCodes)
-
         // 直接呼叫 event-calendar API（不需要經過 cron endpoint）
         const params = new URLSearchParams({ range: '30' })
         if (stockCodes.length > 0) params.set('codes', stockCodes.join(','))
         const res = await fetch(`/api/event-calendar?${params}`, {
           signal: AbortSignal.timeout(8000),
         })
-        
+
         if (!res.ok) {
           return []
         }
-        
+
         const data = await res.json()
         const events = data.events || []
 

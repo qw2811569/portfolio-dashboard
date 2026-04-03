@@ -90,6 +90,7 @@ export async function requestAnalyzeWithFallback({
   onMeta = () => {},
   onDelta = () => {},
   onFallback = () => {},
+  localRuntime = isLocalDev(),
 }) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('Analyze fetch implementation unavailable')
@@ -105,7 +106,7 @@ export async function requestAnalyzeWithFallback({
     signal,
   })
 
-  const local = isLocalDev()
+  const local = Boolean(localRuntime)
 
   // 本地開發跳過 streaming（vercel dev 不支援 SSE）
   if (!local) {

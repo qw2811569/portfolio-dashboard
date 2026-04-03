@@ -20,6 +20,22 @@ const TYPE_COLOR = {
   權證: C.choco,
 }
 
+function buildNewsEventKey(event, index) {
+  const base =
+    event?.id ||
+    [event?.date, event?.type, event?.title || event?.label, (event?.stocks || []).join(',')]
+      .filter(Boolean)
+      .join('|') ||
+    'news-event'
+
+  const titleSuffix = String(event?.title || event?.label || '')
+    .trim()
+    .slice(0, 40)
+    .replace(/\s+/g, '_')
+
+  return `${base}::${titleSuffix}::${index}`
+}
+
 /**
  * Log Panel - Trade history
  */
@@ -346,9 +362,9 @@ export function NewsAnalysisPanel({
         Card,
         { style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.amber, '40')}` } },
         h('div', { style: { ...lbl, color: C.amber } }, `待處理 (${pending.length})`),
-        pending.map((e) =>
+        pending.map((e, index) =>
           h(NewsEventCard, {
-            key: e.id,
+            key: buildNewsEventKey(e, index),
             event: e,
             onReview: (ev) => {
               setReviewingEvent(ev)
@@ -370,7 +386,7 @@ export function NewsAnalysisPanel({
         Card,
         { style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.teal, '40')}` } },
         h('div', { style: { ...lbl, color: C.teal } }, `追蹤中 (${tracking.length})`),
-        tracking.map((e) => h(NewsEventCard, { key: e.id, event: e }))
+        tracking.map((e, index) => h(NewsEventCard, { key: buildNewsEventKey(e, index), event: e }))
       ),
 
     // Past events
@@ -379,9 +395,9 @@ export function NewsAnalysisPanel({
         Card,
         { style: { marginBottom: 10 } },
         h('div', { style: { ...lbl } }, `歷史事件 (${past.length})`),
-        past.map((e) =>
+        past.map((e, index) =>
           h(NewsEventCard, {
-            key: e.id,
+            key: buildNewsEventKey(e, index),
             event: e,
             isExpanded: expandedNews?.has(e.id),
             onToggle: () => {

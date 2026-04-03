@@ -223,21 +223,9 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
             flexWrap: 'wrap',
           },
         },
-        h(
-          'div',
-          { style: { fontSize: 9, color: C.textSec } },
-          `引用 ${eventCount} 個事件`
-        ),
-        h(
-          'div',
-          { style: { fontSize: 9, color: C.textSec } },
-          `${knowledgeCount} 條知識庫規則`
-        ),
-        h(
-          'div',
-          { style: { fontSize: 9, color: C.textSec } },
-          `${finmindCount} 筆 FinMind 數據`
-        )
+        h('div', { style: { fontSize: 9, color: C.textSec } }, `引用 ${eventCount} 個事件`),
+        h('div', { style: { fontSize: 9, color: C.textSec } }, `${knowledgeCount} 條知識庫規則`),
+        h('div', { style: { fontSize: 9, color: C.textSec } }, `${finmindCount} 筆 FinMind 數據`)
       )
   )
 }
@@ -999,8 +987,6 @@ export function DailyReportPanel({
       // Keep last 200 entries
       if (log.length > 200) log.splice(0, log.length - 200)
       localStorage.setItem('kb-feedback-log', JSON.stringify(log))
-      // Optional: show toast confirmation
-      console.debug(`Feedback recorded: ${signal}`)
     } catch {
       // silent fail
     }

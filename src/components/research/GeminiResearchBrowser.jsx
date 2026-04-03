@@ -108,15 +108,15 @@ function ResearchFileItem({ file, onClick }) {
       'div',
       { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, file.displayName),
-      h(
-        'span',
-        { style: { fontSize: 9, color: freshnessColor } },
-        freshness
-      )
+      h('span', { style: { fontSize: 9, color: freshnessColor } }, freshness)
     ),
     h('div', { style: { fontSize: 9, color: C.textMute, marginTop: 4 } }, file.type),
     file.itemCount &&
-      h('div', { style: { fontSize: 9, color: C.textSec, marginTop: 2 } }, `${file.itemCount} 筆資料`)
+      h(
+        'div',
+        { style: { fontSize: 9, color: C.textSec, marginTop: 2 } },
+        `${file.itemCount} 筆資料`
+      )
   )
 }
 
@@ -162,8 +162,16 @@ function ResearchFileDetail({ file, onBack }) {
     Card,
     { style: { padding: '12px 14px' } },
     h(Button, { onClick: onBack, children: '← 返回' }),
-    h('div', { style: { ...lbl, color: C.teal, marginTop: 10, marginBottom: 8 } }, file.displayName),
-    h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 12 } }, `蒐集日期：${file.date}`),
+    h(
+      'div',
+      { style: { ...lbl, color: C.teal, marginTop: 10, marginBottom: 8 } },
+      file.displayName
+    ),
+    h(
+      'div',
+      { style: { fontSize: 9, color: C.textMute, marginBottom: 12 } },
+      `蒐集日期：${file.date}`
+    ),
 
     // Render content based on type
     content?.facts &&
@@ -209,14 +217,14 @@ function ResearchFileDetail({ file, onBack }) {
         'div',
         { style: { marginTop: 12, fontSize: 9, color: C.textMute } },
         `新鮮度：${content.freshness}`
-      ),
+      )
   )
 }
 
 /**
  * Fact Item Renderer
  */
-function FactItem({ fact, type }) {
+function FactItem({ fact, type: _type }) {
   const impactColors = {
     positive: C.olive,
     negative: C.down,
@@ -249,7 +257,7 @@ function FactItem({ fact, type }) {
         'div',
         { style: { fontSize: 9, color: C.textSec, marginBottom: 4 } },
         [fact.code, fact.date].filter(Boolean).join(' | ')
-    ),
+      ),
 
     // Summary/Description
     (fact.summary || fact.description) &&
@@ -279,11 +287,7 @@ function FactItem({ fact, type }) {
 
     // Target price (for target-price type)
     fact.target &&
-      h(
-        'div',
-        { style: { fontSize: 10, color: C.info, marginTop: 4 } },
-        `目標價：${fact.target}`
-      ),
+      h('div', { style: { fontSize: 10, color: C.info, marginTop: 4 } }, `目標價：${fact.target}`),
 
     // Stocks (for news type)
     fact.stocks &&
@@ -293,11 +297,20 @@ function FactItem({ fact, type }) {
         fact.stocks.map((code) =>
           h(
             'span',
-            { key: code, style: { fontSize: 9, padding: '2px 4px', background: C.fillPrimary, borderRadius: 4, marginRight: 4 } },
+            {
+              key: code,
+              style: {
+                fontSize: 9,
+                padding: '2px 4px',
+                background: C.fillPrimary,
+                borderRadius: 4,
+                marginRight: 4,
+              },
+            },
             code
           )
         )
-      ),
+      )
   )
 }
 

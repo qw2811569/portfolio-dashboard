@@ -12,9 +12,12 @@ function truncateForLog(value, maxLength = 4000) {
 function buildParsePrompt(systemPrompt = '') {
   return [
     systemPrompt,
-    '請使用 Claude Vision 直接閱讀這張台股成交截圖，抽取成交資料。',
+    '請閱讀這張台股成交或持倉截圖，抽取所有股票交易資料。',
     '若圖片模糊或欄位不完整，請盡可能保留可辨識欄位，並在 note 說明缺漏。',
-    '只輸出 JSON。',
+    '必須嚴格按以下 JSON 格式回傳，不要加任何說明文字或 markdown：',
+    '{"trades":[{"code":"股票代碼","name":"股票名稱","action":"buy或sell","price":數字,"quantity":數字,"time":"日期時間","cost":成本價或null,"note":"備註"}]}',
+    '如果是持倉截圖（不是成交單），action 用 "hold"，price 用現價，cost 用成本價。',
+    '如果看到目標價資訊，加入 "targetPrice":數字 欄位。',
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -61,15 +64,25 @@ export default async function handler(req, res) {
 
   let rawText = ''
   try {
-    const { systemPrompt, base64, mediaType } = req.body || {}
+    const { systemPrompt, base64, mediaType: explicitMediaType } = req.body || {}
     if (!base64) {
       return res.status(400).json({ error: '缺少圖片內容(base64)' })
     }
 
+    // 自動偵測圖片格式
+    const detectMediaType = (b64) => {
+      if (b64.startsWith('iVBOR')) return 'image/png'
+      if (b64.startsWith('/9j/')) return 'image/jpeg'
+      if (b64.startsWith('R0lG')) return 'image/gif'
+      if (b64.startsWith('UklG')) return 'image/webp'
+      return 'image/jpeg'
+    }
+    const mediaType = explicitMediaType || detectMediaType(base64)
+
     const data = await callAiImage({
       system: buildParsePrompt(systemPrompt),
       base64,
-      mediaType: mediaType || 'image/jpeg',
+      mediaType,
       prompt:
         '請解析這張成交截圖，抽取股票代碼、買賣方向、價格、數量、時間，以及可能出現的目標價資訊。',
       maxTokens: 900,

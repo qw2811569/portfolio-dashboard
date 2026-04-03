@@ -39,19 +39,20 @@ function normalizeTradeNumeric(value) {
 function normalizeTradeRow(row, fallbackDate) {
   if (!row || typeof row !== 'object') return null
 
-  const code = String(row.code || '').trim()
-  const name = String(row.name || '').trim()
+  const code = String(row.code || row.stock_code || row.stockCode || row.symbol || '').trim()
+  const name = String(row.name || row.stock_name || row.stockName || '').trim()
   if (!code && !name) return null
 
   return {
-    action: normalizeTradeAction(row.action),
+    action: normalizeTradeAction(row.action || row.side || row.direction || 'hold'),
     code,
     name,
-    qty: normalizeTradeNumeric(row.qty),
-    price: normalizeTradeNumeric(row.price),
-    amount: row.amount == null ? null : normalizeTradeNumeric(row.amount),
-    date: normalizeTradeDate(row.date || row.tradeDate, fallbackDate),
+    qty: normalizeTradeNumeric(row.qty || row.quantity || row.shares || row.volume),
+    price: normalizeTradeNumeric(row.price || row.close || row.currentPrice),
+    amount: row.amount == null ? null : normalizeTradeNumeric(row.amount || row.value || row.total),
+    date: normalizeTradeDate(row.date || row.tradeDate || row.time, fallbackDate),
     time: String(row.time || '').trim(),
+    cost: row.cost != null ? normalizeTradeNumeric(row.cost || row.avgCost) : null,
   }
 }
 
@@ -74,8 +75,9 @@ function normalizeTargetPriceUpdate(update) {
 
 export function normalizeTradeParseResult(raw, fallbackDate = toSlashDate()) {
   const tradeDate = normalizeTradeDate(raw?.tradeDate, fallbackDate)
-  const trades = Array.isArray(raw?.trades)
-    ? raw.trades.map((row) => normalizeTradeRow(row, tradeDate)).filter(Boolean)
+  const rawTrades = raw?.trades || raw?.transactions || raw?.holdings || raw?.data || []
+  const trades = Array.isArray(rawTrades)
+    ? rawTrades.map((row) => normalizeTradeRow(row, tradeDate)).filter(Boolean)
     : []
   const targetPriceUpdates = [
     ...(Array.isArray(raw?.targetPriceUpdates) ? raw.targetPriceUpdates : []),

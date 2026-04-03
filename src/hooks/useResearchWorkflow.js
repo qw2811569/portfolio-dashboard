@@ -47,13 +47,17 @@ function isTimeoutError(error) {
   )
 }
 
-async function defaultRunResearchRequest(body) {
+async function defaultRunResearchRequest(body, { onProgress } = {}) {
   const isLongRunning = body?.mode === 'evolve' || body?.mode === 'portfolio'
   const { signal, cancel } = createTimeoutSignal(
     isLongRunning ? EVOLVE_REQUEST_TIMEOUT_MS : RESEARCH_REQUEST_TIMEOUT_MS
   )
   try {
-    const res = await fetch(API_ENDPOINTS.RESEARCH, {
+    // evolve/portfolio 用 SSE streaming 防 timeout
+    const useStream = isLongRunning
+    const url = useStream ? `${API_ENDPOINTS.RESEARCH}?stream=1` : API_ENDPOINTS.RESEARCH
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -75,10 +79,53 @@ async function defaultRunResearchRequest(body) {
             : text.slice(0, 120) || `研究 API 失敗 (${res.status})`)
       )
     }
+
+    // SSE streaming：逐 event 讀取，最後 done event 包含完整結果
+    if (useStream && res.headers.get('content-type')?.includes('text/event-stream')) {
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalResult = null
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            if (line.startsWith('event: ')) {
+              const eventType = line.slice(7).trim()
+              // round progress → 通知 UI
+              if (eventType === 'round' && typeof onProgress === 'function') {
+                onProgress(eventType)
+              }
+            }
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6))
+                if (data.results) finalResult = data
+              } catch {
+                /* partial JSON, ignore */
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock?.()
+      }
+
+      if (finalResult) return finalResult
+      throw new Error('SSE streaming 結束但沒收到研究結果')
+    }
+
     return res.json()
   } catch (error) {
     if (isTimeoutError(error)) {
-      throw new Error('深度研究逾時，請稍後再試（55 秒內未完成）')
+      throw new Error('深度研究逾時，請稍後再試')
     }
     throw error
   } finally {

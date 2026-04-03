@@ -1,6 +1,14 @@
 {
-  "lastUpdated": "2026-04-03T12:04:30+08:00",
+  "lastUpdated": "2026-04-03T12:09:20+08:00",
   "entries": [
+    {
+      "time": "2026-04-03 12:09",
+      "isoTime": "2026-04-03T12:09:20+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 12:04",
       "isoTime": "2026-04-03T12:04:30+08:00",
@@ -311,14 +319,6 @@
       "ai": "Qwen",
       "action": "start",
       "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認前台最後閉環是否已清楚定義，然後用一句話寫出你現在最該做的前台確認任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:26",
-      "isoTime": "2026-04-02T21:26:59+08:00",
-      "ai": "Codex",
-      "action": "start",
-      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認主線目標與目前可交付風險，然後用一句話寫出你現在最該做的驗收任務。",
       "status": "working"
     }
   ]

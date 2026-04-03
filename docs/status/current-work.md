@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 12:04
+Last updated: 2026-04-03 12:09
 
 ## Management preferences
 
@@ -82,6 +82,7 @@ Last updated: 2026-04-03 12:04
 
 ## Latest checkpoint
 
+- `2026-04-03 12:09` Codex：緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。
 - `2026-04-03 12:04` Codex：完成 Batch 3：3A /api/parse 接 Claude Vision 並回 structured OCR JSON、補具體錯誤處理；3B OCR 目標價結果自動更新 holdings targetPrice，且已通過 build/vitest。
 - `2026-04-03 11:59` Codex：完成 Batch 2：2A 收盤分析 prompt 注入台股市場訊號（營收/事件窗口/目標價 freshness/法人5日）；2B 新增 historical analogs 比對並注入 prompt，且已通過 build/vitest。
 - `2026-04-03 11:51` Codex：完成 Batch 1：1A News/Analysis Panel 顯示 impact/source；1B 新增 collect-daily-events cron + CRON_SECRET + Blob put；1C knowledge evolution confidence 自動調整，並逐項通過 build/vitest 驗證。

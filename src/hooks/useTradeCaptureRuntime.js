@@ -6,7 +6,7 @@ import {
   getTradeBatchMode,
   normalizeTradeParseResult,
 } from '../lib/tradeParseUtils.js'
-import { buildTradeParseErrorMessage, extractTradeParseJsonText } from '../lib/tradeAiResponse.js'
+import { buildTradeParseErrorMessage } from '../lib/tradeAiResponse.js'
 
 function createEmptyTradeEditorState(createDefaultFundamentalDraft) {
   return {

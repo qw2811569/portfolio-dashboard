@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-03T04:04:30.000Z",
+  "lastUpdated": "2026-04-03T04:09:20.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,7 +7,7 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 22 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 23 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 57,
-        "lastActive": "2026-04-03 12:04",
+        "tasksCompleted": 58,
+        "lastActive": "2026-04-03 12:09",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -345,6 +345,14 @@
     ]
   },
   "timeline": [
+    {
+      "time": "2026-04-03 12:09",
+      "ai": "Codex",
+      "title": "緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
     {
       "time": "2026-04-03 12:04",
       "ai": "Codex",
@@ -400,17 +408,9 @@
       "description": "同步自 docs/status/current-work.md",
       "impact": "詳見 docs/status/current-work.md",
       "status": "done"
-    },
-    {
-      "time": "2026-04-03 11:19",
-      "ai": "OpenClaw",
-      "title": "自動閉環完成：2 輪後穩定",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
     }
   ],
-  "generatedAt": "2026-04-03T04:04:30.300Z",
+  "generatedAt": "2026-04-03T04:09:20.538Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -426,6 +426,14 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-03 12:09",
+      "isoTime": "2026-04-03T12:09:20+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 12:04",
       "isoTime": "2026-04-03T12:04:30+08:00",
@@ -497,20 +505,12 @@
       "action": "done",
       "message": "Round 1 修復完成",
       "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:14",
-      "isoTime": "2026-04-03T11:14:26+08:00",
-      "ai": "OpenClaw",
-      "action": "done",
-      "message": "自動閉環完成：2 輪後穩定",
-      "status": "idle"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-03T12:04:00+08:00",
-    "message": "完成 Batch 3：3A /api/parse 接 Claude Vision 並回 structured OCR JSON、補具體錯誤處理；3B OCR 目標價結果自動更新 holdings targetPrice，且已通過 build/vitest。",
+    "time": "2026-04-03T12:09:00+08:00",
+    "message": "緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。",
     "nextStep": "目前主線目標：把專案核心主流程做成可交付狀態——架構落地、流程閉環、明顯 bug 收斂。",
     "blockers": [],
     "needsReview": false,

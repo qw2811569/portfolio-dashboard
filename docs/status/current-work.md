@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-02 21:05
+Last updated: 2026-04-03 11:00
 
 ## Management preferences
 
@@ -36,10 +36,11 @@ Last updated: 2026-04-02 21:05
 
 ## Active slices
 
-- `小奎 + Claude`：主導決策、整體邏輯複查、成本控制、文件真相收斂
-- `Codex`：核心主流程與正式可交付驗收，重點是把已完成主線做成正式驗收狀態
-- `Qwen Code`：前台收尾與最後一段顯示閉環，重點是讓使用者真的看得到完整結果
-- `Gemini CLI`：暫不納入主線，待使用者回到電腦後再決定是否啟用
+- `小奎 + Claude`：主導決策、整體邏輯複查、透過 OpenClaw ACP 調度
+- `Codex`：工程師 — 修 bug、寫邏輯、改 API，不做測試
+- `Qwen`：QA 測試員 — 跑 build/lint/test、production API 測試、寫 bug 回報（不修 bug）
+- `Gemini CLI`：暫停（API 限流）
+- `OpenClaw`：Telegram 調度員，ACP 原生管理所有 AI agent
 
 固定角色與能力邊界見：
 
@@ -81,6 +82,13 @@ Last updated: 2026-04-02 21:05
 
 ## Latest checkpoint
 
+- `2026-04-03 10:15` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 10:09` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 10:07` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 02:32` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 02:29` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 02:23` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-02 23:37` Codex：auto-evolve 修復完成
 - `2026-04-02 21:05` Claude：交接：已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。
 - `2026-04-02 21:05` Qwen：done：完成第二輪模擬回報。changed files：docs/status/current-work.md。risks：目前為手動試跑。next best step：請 Claude 再次確認循環可持續。
 - `2026-04-02 21:05` Claude：交接：已讀第一輪模擬回報。主線離可交付還差兩件事：正式驗收與前台最後閉環。下一輪應派 Codex 做驗收、Qwen 做前台閉環確認。

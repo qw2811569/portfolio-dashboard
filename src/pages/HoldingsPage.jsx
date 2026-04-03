@@ -7,3 +7,4 @@ export function HoldingsPage() {
 
   return h(HoldingsPanel, panelProps, h(HoldingsTable, tableProps))
 }
+export default HoldingsPage

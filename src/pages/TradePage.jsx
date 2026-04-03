@@ -7,3 +7,4 @@ export function TradePage() {
 
   return h(TradePanel, panelProps)
 }
+export default TradePage

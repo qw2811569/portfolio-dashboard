@@ -7,3 +7,4 @@ export function ResearchPage() {
 
   return h(ResearchPanel, panelProps)
 }
+export default ResearchPage

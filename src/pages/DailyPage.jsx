@@ -7,3 +7,4 @@ export function DailyPage() {
 
   return h(DailyReportPanel, panelProps)
 }
+export default DailyPage

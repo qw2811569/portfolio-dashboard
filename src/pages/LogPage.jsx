@@ -7,3 +7,4 @@ export function LogPage() {
 
   return h(LogPanel, panelProps)
 }
+export default LogPage

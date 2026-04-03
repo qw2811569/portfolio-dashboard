@@ -7,3 +7,4 @@ export function NewsPage() {
 
   return h(NewsAnalysisPanel, panelProps)
 }
+export default NewsPage

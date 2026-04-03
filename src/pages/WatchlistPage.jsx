@@ -7,3 +7,4 @@ export function WatchlistPage() {
 
   return h(WatchlistPanel, panelProps)
 }
+export default WatchlistPage

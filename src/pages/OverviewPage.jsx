@@ -7,3 +7,4 @@ export function OverviewPage() {
 
   return h(OverviewPanel, panelProps)
 }
+export default OverviewPage

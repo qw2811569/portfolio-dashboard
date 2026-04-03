@@ -7,3 +7,4 @@ export function EventsPage() {
 
   return h(EventsPanel, panelProps)
 }
+export default EventsPage

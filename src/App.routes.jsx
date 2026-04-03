@@ -24,6 +24,7 @@ const DailyPage = lazy(() => import('./pages/DailyPage.jsx'))
 const ResearchPage = lazy(() => import('./pages/ResearchPage.jsx'))
 const TradePage = lazy(() => import('./pages/TradePage.jsx'))
 const LogPage = lazy(() => import('./pages/LogPage.jsx'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'))
 
 const routeQueryClient = new QueryClient({
   defaultOptions: {
@@ -55,8 +56,8 @@ function App() {
           {/* Portfolio pages — grouped into 4 main tabs with sub-navigation:
                總覽 | 持倉(持股+觀察股) | 研究(分析+事件+新聞+深度研究) | 記帳(成交+日誌) */}
           <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
-            {/* 總覽 — default landing page */}
-            <Route index element={<OverviewPage />} />
+            {/* 總覽 — default landing page (dashboard with today's summary) */}
+            <Route index element={<DashboardPage />} />
 
             {/* 持倉 Tab */}
             <Route path="holdings" element={<HoldingsPage />} />

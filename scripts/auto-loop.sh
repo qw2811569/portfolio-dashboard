@@ -27,6 +27,9 @@ if ! command -v node >/dev/null 2>&1; then
   [ -d "$NODE24_BIN" ] && export PATH="$NODE24_BIN:$PATH"
 fi
 
+# 確保本地伺服器在跑
+bash "$ROOT_DIR/scripts/ensure-server.sh" 2>&1 || true
+
 MAX_ROUNDS=5
 CONSECUTIVE_PASS=0
 REQUIRED_CONSECUTIVE_PASS=2

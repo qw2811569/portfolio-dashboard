@@ -22,6 +22,21 @@ fi
 
 CMD="${1:-status}"
 ARG="${2:-}"
+PORT="3002"
+LOCAL_URL="http://127.0.0.1:${PORT}"
+TAILSCALE_IP="$(tailscale ip -4 2>/dev/null | head -n 1 || true)"
+TAILSCALE_DNS="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys; data=json.load(sys.stdin); print((data.get("Self",{}).get("DNSName","") or "").rstrip("."))' 2>/dev/null || true)"
+
+print_access_urls() {
+  echo "=== Access URLs ==="
+  echo "Local : ${LOCAL_URL}"
+  if [[ -n "${TAILSCALE_DNS}" ]]; then
+    echo "Remote: http://${TAILSCALE_DNS}:${PORT}"
+  fi
+  if [[ -n "${TAILSCALE_IP}" ]]; then
+    echo "IP    : http://${TAILSCALE_IP}:${PORT}"
+  fi
+}
 
 case "$CMD" in
   status)
@@ -31,20 +46,20 @@ case "$CMD" in
     echo "=== 最新 checkpoint ==="
     grep -m3 "^- " docs/status/current-work.md | head -3
     echo ""
-    echo "=== vercel dev ==="
-    curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:3002/ 2>/dev/null || echo "未啟動"
+    print_access_urls
+    echo ""
+    echo "=== local server ==="
+    curl -s -o /dev/null -w "HTTP %{http_code}" "${LOCAL_URL}/" 2>/dev/null || echo "未啟動"
     echo ""
     echo "=== 未 commit 的改動 ==="
     git status --short | grep -v "anythingllm" | head -5
     ;;
   restart)
     echo "[dispatch] 重啟 vercel dev..."
-    pkill -f "vercel dev" 2>/dev/null || true
-    sleep 1
-    nohup npx vercel dev --listen 0.0.0.0:3002 > /tmp/vercel-dev.log 2>&1 &
-    sleep 5
-    echo "[dispatch] vercel dev 已重啟 (PID: $!)"
-    curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:3002/
+    bash scripts/redeploy-local.sh
+    ;;
+  url|urls)
+    print_access_urls
     ;;
   push)
     echo "[dispatch] 推送到 GitHub..."
@@ -52,7 +67,7 @@ case "$CMD" in
     ;;
   analyze)
     echo "[dispatch] 測試收盤分析 API..."
-    curl -s -w "\nHTTP:%{http_code} TIME:%{time_total}s" -X POST "http://localhost:3002/api/analyze" \
+    curl -s -w "\nHTTP:%{http_code} TIME:%{time_total}s" -X POST "${LOCAL_URL}/api/analyze" \
       -H "Content-Type: application/json" \
       -d '{"systemPrompt":"測試","userPrompt":"用30字分析台達電","maxTokens":100}' \
       --max-time 20 | tail -3
@@ -74,6 +89,7 @@ case "$CMD" in
     echo "系統操作："
     echo "  status   — 查看專案狀態"
     echo "  restart  — 重啟 vercel dev"
+    echo "  url      — 顯示本機 / 遠端訪問網址"
     echo "  push     — 推送到 GitHub"
     echo "  analyze  — 測試收盤分析 API"
     echo "  evolve   — 單次偵測+建議修復"

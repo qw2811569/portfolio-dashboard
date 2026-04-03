@@ -1,28 +1,43 @@
 # 本地開發伺服器訪問指南
 
-狀態：已過期，僅保留為歷史入口  
-最後更新：2026-03-29
+狀態：有效
+最後更新：2026-04-03
 
 ---
 
-這份文件先前記錄的是舊的 Vite-only 本地訪問方式，內容中的 `5173`、`localhost`、`npm run dev` 已不再代表目前 repo 的完整本地模式。
+這份文件只說「怎麼從這台 Mac mini 本機與另一台 MacBook 連到同一個本地開發服務」，不再混用 `vite`、`localhost`、production URL。
 
-目前唯一正確的本地規則是：
+## 正確啟動方式
 
-- 啟動命令：`vercel dev`
-- canonical URL：`http://127.0.0.1:3002`
+- 啟動命令：`bash scripts/redeploy-local.sh`
+- 實際服務：`npx vercel dev --listen 0.0.0.0:3002`
 - 完整驗證：`npm run verify:local`
 
-請改讀：
+## 兩組可用網址
 
-1. `docs/AI_COLLABORATION_GUIDE.md`
-2. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
+- Mac mini 本機瀏覽器用：
+  - `http://127.0.0.1:3002`
+- 另一台 MacBook 透過 Tailscale 用：
+  - `http://mac-mini.taila0e378.ts.net:3002`
+  - 或 `http://100.80.250.41:3002`
 
-若看到任何舊截圖、舊聊天紀錄或舊文件仍提到：
+## 不要再混用的入口
 
-- `http://127.0.0.1:5173`
-- `http://localhost:5173`
 - `npm run dev`
 - `vite`
+- `http://localhost:3002`
+- `http://127.0.0.1:5173`
+- 任意新的 `*.vercel.app` 臨時網址來當本地開發入口
 
-都應視為歷史資訊，不是目前真相。
+原因：
+
+- `vite` 只保證前端，不代表 repo 內 API 一定可用
+- `localhost:3002` 和 `127.0.0.1:3002` 是不同 origin，會讓同一台機器上的 localStorage 分裂
+- production `vercel.app` 是正式部署，不是本地開發入口
+
+## 一個重要限制
+
+遠端 MacBook 雖然可以打開這台 Mac mini 的本地服務，但因為它是另一個瀏覽器 origin / 裝置：
+
+- 不會自動共用這台 Mac mini 瀏覽器裡的 localStorage
+- 如果需要同一份投資資料，請走 app 內的雲端同步 / 匯入匯出流程，不要假設遠端瀏覽器會直接看到本機瀏覽器狀態

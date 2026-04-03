@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react'
 const DEV_HOST = '127.0.0.1'
 const DEV_PORT = 3002
 const API_PROXY_TARGET = process.env.VITE_API_PROXY_TARGET?.trim() || ''
+const DEV_ALLOWED_HOSTS = [
+  'mac-mini.taila0e378.ts.net',
+  '.taila0e378.ts.net',
+]
 
 const shouldProxyApi = (() => {
   if (!API_PROXY_TARGET) return false
@@ -23,6 +27,7 @@ export default defineConfig({
     host: DEV_HOST,
     port: DEV_PORT,
     strictPort: true,
+    allowedHosts: DEV_ALLOWED_HOSTS,
     watch: {
       ignored: [
         '**/.archive/**',

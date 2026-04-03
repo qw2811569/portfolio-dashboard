@@ -1,6 +1,6 @@
 # AI 協作指南
 
-最後更新：2026-03-30
+最後更新：2026-04-03
 狀態：唯一 canonical AI 規則文件
 
 ---
@@ -8,7 +8,7 @@
 > **TL;DR — 接手前先確認這三件事**
 >
 > 1. 執行入口是 `src/main.jsx → src/App.jsx`（經由 `useAppRuntime.js` + `AppShellFrame.jsx`），不是 `App.routes.jsx`
-> 2. 啟動用 `vercel dev`，網址固定 `http://127.0.0.1:3002`
+> 2. 啟動用 `vercel dev --listen 0.0.0.0:3002`；Mac mini 本機看 `http://127.0.0.1:3002`，遠端 MacBook 經 Tailscale 看 `http://mac-mini.taila0e378.ts.net:3002`
 > 3. 改完跑 `npm run verify:local`；宣稱「已完整驗證」前必須貼完整輸出
 
 ---
@@ -308,7 +308,7 @@
 唯一正確啟動方式：
 
 ```bash
-vercel dev
+vercel dev --listen 0.0.0.0:3002
 ```
 
 不要用：
@@ -320,13 +320,10 @@ vercel dev
 
 ### 固定網址
 
-唯一正確網址：
+- Mac mini 本機 canonical URL：`http://127.0.0.1:3002`
+- 遠端 MacBook 經 Tailscale canonical URL：`http://mac-mini.taila0e378.ts.net:3002`
 
-```text
-http://127.0.0.1:3002
-```
-
-不要改用 `localhost:3002`，否則會造成 localStorage 分裂。
+不要改用 `localhost:3002`，否則同一台機器上的 localStorage 會分裂。遠端 MacBook 雖然能連進來，但它是另一個瀏覽器 origin，不會自動共用 Mac mini 本機瀏覽器狀態。
 
 ---
 
@@ -371,7 +368,7 @@ npm run build
 1. 跑 `npm run healthcheck` 檢查基本健康狀態
 2. 跑 `npm run verify:local` 完整驗證
 3. 檢查 `.tmp/vercel-dev.log` 看 Vite frontend 訊號
-4. 確認使用 `http://127.0.0.1:3002`（不是 `localhost:3002`）
+4. 若你人在 Mac mini 本機，確認使用 `http://127.0.0.1:3002`；若你從遠端 MacBook 驗證，使用 `http://mac-mini.taila0e378.ts.net:3002`
 
 ### Fast Refresh 問題
 

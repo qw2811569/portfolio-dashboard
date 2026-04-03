@@ -14,11 +14,21 @@ export function useRouteDailyPage() {
     setAnalysisHistory = () => {},
     newsEvents = [],
     strategyBrain = null,
+    analyzing: ctxAnalyzing,
+    setAnalyzing: ctxSetAnalyzing,
+    analyzeStep: ctxAnalyzeStep,
+    setAnalyzeStep: ctxSetAnalyzeStep,
   } = usePortfolioRouteContext()
 
+  const [fallbackAnalyzing, setFallbackAnalyzing] = useState(false)
+  const [fallbackAnalyzeStep, setFallbackAnalyzeStep] = useState('')
+
+  const analyzing = ctxAnalyzing ?? fallbackAnalyzing
+  const setAnalyzing = ctxSetAnalyzing ?? setFallbackAnalyzing
+  const analyzeStep = ctxAnalyzeStep ?? fallbackAnalyzeStep
+  const setAnalyzeStep = ctxSetAnalyzeStep ?? setFallbackAnalyzeStep
+
   const [dailyExpanded, setDailyExpanded] = useState(false)
-  const [analyzing, setAnalyzing] = useState(false)
-  const [analyzeStep, setAnalyzeStep] = useState('')
   const [stressResult, setStressResult] = useState(null)
   const [stressTesting, setStressTesting] = useState(false)
   const [expandedNews, setExpandedNews] = useState(() => new Set())
@@ -46,7 +56,15 @@ export function useRouteDailyPage() {
       setAnalyzing(false)
       setAnalyzeStep('')
     }
-  }, [analysisHistory, portfolioId, runDailyAnalysisMutation, setAnalysisHistory, setDailyReport])
+  }, [
+    analysisHistory,
+    portfolioId,
+    runDailyAnalysisMutation,
+    setAnalysisHistory,
+    setAnalyzeStep,
+    setAnalyzing,
+    setDailyReport,
+  ])
 
   const runStressTest = useCallback(async () => {
     setStressTesting(true)

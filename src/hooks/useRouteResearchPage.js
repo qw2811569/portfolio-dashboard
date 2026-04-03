@@ -32,10 +32,19 @@ export function useRouteResearchPage() {
     upsertTargetReport = () => false,
     upsertFundamentalsEntry = () => false,
     flashSaved = () => {},
+    researching: ctxResearching,
+    setResearching: ctxSetResearching,
+    researchTarget: ctxResearchTarget,
+    setResearchTarget: ctxSetResearchTarget,
   } = usePortfolioRouteContext()
 
-  const [researching, setResearching] = useState(false)
-  const [researchTarget, setResearchTarget] = useState(null)
+  const [fallbackResearching, setFallbackResearching] = useState(false)
+  const [fallbackResearchTarget, setFallbackResearchTarget] = useState(null)
+
+  const researching = ctxResearching ?? fallbackResearching
+  const setResearching = ctxSetResearching ?? setFallbackResearching
+  const researchTarget = ctxResearchTarget ?? fallbackResearchTarget
+  const setResearchTarget = ctxSetResearchTarget ?? setFallbackResearchTarget
   const [researchResults, setResearchResults] = useState(null)
   const [reportRefreshMeta, setReportRefreshMeta] = useState({})
 

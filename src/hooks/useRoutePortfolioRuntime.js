@@ -200,6 +200,10 @@ export function useRoutePortfolioRuntime() {
       marketPriceCache: initialMarketState.marketPriceCache,
     })
   )
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analyzeStep, setAnalyzeStep] = useState('')
+  const [researching, setResearching] = useState(false)
+  const [researchTarget, setResearchTarget] = useState(null)
   const backupFileInputRef = useRef(null)
 
   const reloadRuntime = useCallback(
@@ -897,11 +901,36 @@ export function useRoutePortfolioRuntime() {
       createDefaultReviewForm,
       createDefaultFundamentalDraft,
       applyTradeEntryToHoldings,
+      analyzing,
+      setAnalyzing,
+      analyzeStep,
+      setAnalyzeStep,
+      researching,
+      setResearching,
+      researchTarget,
+      setResearchTarget,
+      toSlashDate,
+      switchPortfolio,
+      createPortfolio,
+      renamePortfolio,
+      deletePortfolio,
+      openOverview,
+      exitOverview,
+      portfolioEditorState,
+      closePortfolioEditor,
+      submitPortfolioEditor,
+      portfolioDeleteState,
+      closePortfolioDeleteDialog,
+      submitPortfolioDelete,
     }),
     [
       routePortfolioId,
       routeData,
       todayTotalPnl,
+      analyzing,
+      analyzeStep,
+      researching,
+      researchTarget,
       setHoldings,
       setWatchlist,
       setTargets,
@@ -927,6 +956,18 @@ export function useRoutePortfolioRuntime() {
       refreshPrices,
       reloadRuntime,
       flashSaved,
+      switchPortfolio,
+      createPortfolio,
+      renamePortfolio,
+      deletePortfolio,
+      openOverview,
+      exitOverview,
+      portfolioEditorState,
+      closePortfolioEditor,
+      submitPortfolioEditor,
+      portfolioDeleteState,
+      closePortfolioDeleteDialog,
+      submitPortfolioDelete,
     ]
   )
 

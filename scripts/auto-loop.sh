@@ -123,9 +123,10 @@ run_qa() {
     qa_summary+="home:FAIL "
   fi
 
-  # brain API — 策略大腦要回有效 JSON
-  BRAIN_OUT=$(curl -s --connect-timeout 10 "$PROD_URL/api/brain?action=all" 2>/dev/null || echo "")
-  BRAIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$PROD_URL/api/brain?action=all" 2>/dev/null || echo "000")
+  # brain API — 策略大腦要回有效 JSON（單次 curl）
+  BRAIN_RAW=$(curl -s -w "\n%{http_code}" --connect-timeout 10 "$PROD_URL/api/brain?action=all" 2>/dev/null || echo -e "\n000")
+  BRAIN_STATUS=$(echo "$BRAIN_RAW" | tail -1)
+  BRAIN_OUT=$(echo "$BRAIN_RAW" | sed '$d')
   if [[ "$BRAIN_STATUS" == "200" ]] && echo "$BRAIN_OUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
     log "  ✅ /api/brain 回傳有效 JSON"
     qa_summary+="brain:OK "
@@ -136,9 +137,10 @@ run_qa() {
     qa_summary+="brain:FAIL "
   fi
 
-  # event-calendar API — 要有事件
-  EVENT_OUT=$(curl -s --connect-timeout 15 --max-time 20 "$PROD_URL/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "")
-  EVENT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 20 "$PROD_URL/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "000")
+  # event-calendar API — 要有事件（單次 curl）
+  EVENT_RAW=$(curl -s -w "\n%{http_code}" --connect-timeout 15 --max-time 20 "$PROD_URL/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo -e "\n000")
+  EVENT_STATUS=$(echo "$EVENT_RAW" | tail -1)
+  EVENT_OUT=$(echo "$EVENT_RAW" | sed '$d')
   if [[ "$EVENT_STATUS" == "200" ]]; then
     EVENT_COUNT=$(echo "$EVENT_OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('events',d.get('data',[]))))" 2>/dev/null || echo "0")
     if [[ "$EVENT_COUNT" -gt 0 ]]; then

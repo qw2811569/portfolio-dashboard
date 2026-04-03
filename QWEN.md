@@ -135,7 +135,42 @@ Recommendation:
 
 先 `git pull origin main`。
 
-### 任務 A：知識庫四人格分類（最高優先）
+### ~~任務 A：知識庫四人格分類~~ ✅ 完成
+
+### ~~任務 B：知識庫缺口分析~~ ✅ 完成
+
+### ~~任務 C：網站 QA~~ ✅ 完成
+
+---
+
+### 任務 D：補齊知識庫缺口（新任務）
+
+讀你剛產出的 `docs/status/knowledge-gap-report.md`，針對缺口最大的兩個人格補知識：
+
+1. **價值者（44 條，最少）** — 補 10 條新規則到 `src/lib/knowledge-base/fundamental-analysis.json`
+   - ROE 趨勢判斷（連續 3 年 > 15% 的意義）
+   - 自由現金流分析（正vs負、燒錢速度）
+   - 股利穩定度（連續配息年數、殖利率合理區間）
+   - PBR 低估判斷（配合 ROE 看）
+   - 負債比警戒線
+
+2. **短線客（101 條但缺權證 Greeks）** — 補 5 條新規則到 `src/lib/knowledge-base/technical-analysis.json`
+   - 權證 Delta 最佳區間（0.4-0.7）
+   - Theta 時間衰減加速期（到期前 30 天）
+   - IV（隱含波動率）偏高時不追買
+   - 暴量突破型態（量比 > 2 且突破 N 日高）
+   - RSI 超買超賣反轉
+
+每條規則格式跟現有的一樣（id, title, fact, interpretation, action, confidence, tags）。
+confidence 新規則一律設 0.70。
+
+完成後跑 `npx vitest run tests/lib/knowledge-base.test.js` 確認測試通過。
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 D：補 15 條知識庫規則（價值者 10 + 短線客 5）"
+```
+
+### 任務 A：知識庫四人格分類（已完成）
 
 讀設計文件 `docs/specs/four-persona-analysis-design.md` 了解四個人格。
 

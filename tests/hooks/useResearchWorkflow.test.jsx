@@ -272,7 +272,7 @@ describe('hooks/useResearchWorkflow.js', () => {
       })
 
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/research',
+        expect.stringMatching(/\/api\/research(\?stream=1)?$/),
         expect.objectContaining({
           method: 'POST',
           signal: expect.any(AbortSignal),

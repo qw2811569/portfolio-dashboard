@@ -29,8 +29,9 @@ import {
   selectAnalysisFramework,
   formatFrameworkSections,
   formatReliabilityContext,
+  getBacktestReliability,
 } from '../lib/analysisFramework.js'
-import { formatPersonaContext } from '../lib/personaEngine.js'
+import { formatPersonaContext, selectPersona, scoreByPersona } from '../lib/personaEngine.js'
 import { readEventStream } from '../lib/eventStream.js'
 import {
   buildBudgetedBrainContext,
@@ -242,7 +243,41 @@ export function useDailyAnalysisWorkflow({
           return sum + count
         }, 0)
 
-        const holdingPromptEntries = dailyDossiers.map((dossier) => {
+        // ── 分群提速：高可信度股票走量化快掃，不送 AI ──
+        const highTierQuickScan = []
+        const aiAnalysisDossiers = []
+
+        dailyDossiers.forEach((dossier) => {
+          const change = changes.find((item) => item.code === dossier.code)
+          const reliability = getBacktestReliability(dossier.code)
+          const persona = selectPersona(dossier?.stockMeta || dossier?.meta || {})
+
+          if (reliability.tier === 'high') {
+            // 高可信度：量化打分，不送 AI
+            const signals = {
+              changePct: change?.changePct || 0,
+              price: change?.price || dossier?.position?.price || 0,
+              cost: dossier?.position?.cost || 0,
+              qty: dossier?.position?.qty || 0,
+              todayPnl: change?.todayPnl || 0,
+            }
+            const result = scoreByPersona(persona, signals)
+            highTierQuickScan.push({
+              code: dossier.code,
+              name: dossier.name,
+              persona: persona.label,
+              reliability: reliability.rate,
+              score: result.score,
+              verdict: result.verdict,
+              reasons: result.reasons,
+            })
+          } else {
+            // 中低可信度：送 AI 深度分析
+            aiAnalysisDossiers.push(dossier)
+          }
+        })
+
+        const holdingPromptEntries = aiAnalysisDossiers.map((dossier) => {
           const change = changes.find((item) => item.code === dossier.code)
           return {
             key: dossier.code,
@@ -263,7 +298,7 @@ export function useDailyAnalysisWorkflow({
               })
             : { text: '目前沒有持股 dossier。', retainedKeys: [] }
         const holdingSummary = holdingSummaryBudget.text
-        const retainedCoverageEntries = dailyDossiers
+        const retainedCoverageEntries = aiAnalysisDossiers
           .filter(
             (dossier) =>
               holdingPromptEntries.length > 0 &&
@@ -577,6 +612,19 @@ ${losers
           }
 
           aiInsight = stripDailyAnalysisEmbeddedBlocks(displayText)
+        }
+
+        // 附加量化快掃結果（高可信度股票不送 AI，直接打分）
+        if (highTierQuickScan.length > 0) {
+          const quickScanText = highTierQuickScan
+            .map(
+              (item) =>
+                `**${item.code} ${item.name}**（${item.persona}，回測準確度 ${item.reliability}%）\n` +
+                `- 判定：${item.verdict}（分數 ${item.score}）\n` +
+                `- 依據：${item.reasons.join('、') || '無特殊訊號'}`
+            )
+            .join('\n\n')
+          aiInsight = (aiInsight || '') + '\n\n---\n\n## 📊 量化快掃（高可信度持股，不經 AI）\n\n' + quickScanText
         }
       } catch (analysisError) {
         aiError = analysisError?.message || 'AI 分析失敗'

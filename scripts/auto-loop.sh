@@ -197,20 +197,35 @@ run_qa() {
     qa_summary+="research:FAIL "
   fi
 
-  # ═══ Level 3：Qwen 深度驗證（派 Qwen 跑功能測試）═══
+  # ═══ Level 3：Qwen 深度驗證（本地頁面 + 功能檢查）═══
   log "QA Level 3: Qwen 深度驗證..."
   QWEN_REPORT=$(openclaw agent --agent qwen \
-    --message "你是 QA 測試員。讀 QWEN.md 了解你的角色。現在做快速功能檢查：
-1. 跑 node -e \"const kb = require('./src/lib/knowledgeBase.js'); console.log('KB entries:', Object.keys(kb).length)\" 看知識庫是否能載入
-2. 檢查 src/App.jsx 是否存在且無明顯語法問題
-3. 檢查 src/hooks/useDailyAnalysisWorkflow.js 是否存在
-4. 跑 git log --oneline -3 確認最近改動合理
+    --message "你是 QA 測試員。讀 QWEN.md 了解你的角色。
+
+本地伺服器在 http://127.0.0.1:3002，請逐一檢查以下頁面和功能：
+
+1. 用 curl http://127.0.0.1:3002/ 確認首頁有回傳 HTML 且包含 id=root
+2. 用 curl 測試以下本地 API 端點，記錄每個的 HTTP status：
+   - GET http://127.0.0.1:3002/api/brain?action=all
+   - GET http://127.0.0.1:3002/api/event-calendar?range=30&codes=2308
+   - GET http://127.0.0.1:3002/api/research
+3. 檢查 src/App.jsx 是否存在
+4. 檢查關鍵元件是否存在：
+   - src/components/AppPanels.jsx
+   - src/components/reports/DailyReportPanel.jsx
+   - src/components/research/ResearchPanel.jsx
+   - src/components/holdings/HoldingsTable.jsx
+5. 跑 node --check api/brain.js api/analyze.js api/event-calendar.js api/research.js 確認 API 無語法錯誤
+6. 跑 git log --oneline -5 確認最近改動合理
+
+注意：本地 vercel dev 的 API 路由可能回傳原始碼而非 JSON，這是已知問題不算 FAIL。
+只有當檔案缺失、語法錯誤、或首頁完全無法載入時才算 FAIL。
 
 用以下格式回報，第一行必須是 PASS 或 FAIL：
 PASS/FAIL
 - 項目1: OK/FAIL 原因
 - 項目2: OK/FAIL 原因" \
-    --timeout 90 2>&1) || true
+    --timeout 120 2>&1) || true
 
   log "  Qwen: $(echo "$QWEN_REPORT" | head -1)"
   if echo "$QWEN_REPORT" | head -1 | grep -qi "FAIL"; then

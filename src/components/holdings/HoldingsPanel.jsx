@@ -23,17 +23,26 @@ const metricCard = {
 /**
  * Holdings Summary Metrics
  */
-export function HoldingsSummary({ holdings, totalVal, totalCost }) {
+export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl = 0 }) {
+  const todayPnlColor = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
+  const todayPnlText =
+    todayTotalPnl > 0
+      ? `+${todayTotalPnl.toLocaleString()}`
+      : todayTotalPnl < 0
+        ? todayTotalPnl.toLocaleString()
+        : '0'
+
   const metrics = [
     ['總成本', totalCost.toLocaleString(), C.textSec],
     ['總市值', totalVal.toLocaleString(), C.blue],
     ['持股數', `${holdings.length}檔`, C.lavender],
+    ['今日損益', todayPnlText, todayPnlColor],
   ]
 
   return h(
     'div',
     {
-      style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 },
+      style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 },
     },
     metrics.map(([label, value, color]) =>
       h(
@@ -421,6 +430,7 @@ export function HoldingsPanel({
   holdings = [],
   totalVal = 0,
   totalCost = 0,
+  todayTotalPnl = 0,
   winners = [],
   losers = [],
   top5: _top5 = [],
@@ -435,7 +445,7 @@ export function HoldingsPanel({
     'div',
     null,
     // Summary metrics
-    h(HoldingsSummary, { holdings, totalVal, totalCost }),
+    h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl }),
 
     // Daily insight card
     h(DailyInsightCard, { latestInsight }),

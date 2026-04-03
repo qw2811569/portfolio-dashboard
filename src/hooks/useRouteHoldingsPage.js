@@ -5,6 +5,7 @@ import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 export function useRouteHoldingsPage() {
   const {
     holdings = [],
+    todayTotalPnl = 0,
     reversalConditions = {},
     updateTargetPrice = () => {},
     updateAlert = () => {},
@@ -35,6 +36,7 @@ export function useRouteHoldingsPage() {
         holdings,
         totalVal,
         totalCost,
+        todayTotalPnl,
         winners,
         losers,
         holdingsIntegrityIssues,
@@ -54,6 +56,7 @@ export function useRouteHoldingsPage() {
   }, [
     expandedStock,
     holdings,
+    todayTotalPnl,
     reversalConditions,
     setExpandedStock,
     updateAlert,

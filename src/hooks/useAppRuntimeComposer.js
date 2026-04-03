@@ -1055,6 +1055,7 @@ export function composePortfolioPanelsContextInput({
     holdings: data.holdings,
     totalVal: data.totalVal,
     totalCost: data.totalCost,
+    todayTotalPnl: data.todayTotalPnl,
     winners: data.winners,
     losers: data.losers,
     top5: data.top5,

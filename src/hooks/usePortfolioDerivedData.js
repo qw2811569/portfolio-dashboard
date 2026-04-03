@@ -115,13 +115,12 @@ export function usePortfolioDerivedData({
     buildHoldingDossiers,
   ])
 
-  
-    // FinMind 數據充實：異步載入籌碼/估值/營收數據（best-effort，失敗不影響主流程）
+  // FinMind 數據充實：異步載入籌碼/估值/營收數據（best-effort，失敗不影響主流程）
   const [enrichedDossiers, setEnrichedDossiers] = useState(/** @type {typeof D | null} */ (null))
-  
+
   useEffect(() => {
     let cancelled = false
-    const codesToEnrich = D.filter(d => !d.finmind).map(d => d.code)
+    const codesToEnrich = D.filter((d) => !d.finmind).map((d) => d.code)
     if (codesToEnrich.length === 0) {
       return
     }
@@ -134,21 +133,26 @@ export function usePortfolioDerivedData({
           return { code, fm: null }
         }
       })
-    ).then(results => {
+    ).then((results) => {
       if (cancelled) return
-      const fmMap = new Map(results.map(r => [r.value.code, r.value.fm]))
-      const enriched = D.map(d => ({
+      const fmMap = new Map(results.map((r) => [r.value.code, r.value.fm]))
+      const enriched = D.map((d) => ({
         ...d,
-        finmind: fmMap.get(d.code) || d.finmind
+        finmind: fmMap.get(d.code) || d.finmind,
       }))
       setEnrichedDossiers(enriched)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [D])
 
   const dossiersToUse = enrichedDossiers ?? D
 
-  const dossierByCode = useMemo(() => new Map(dossiersToUse.map((item) => [item.code, item])), [dossiersToUse])
+  const dossierByCode = useMemo(
+    () => new Map(dossiersToUse.map((item) => [item.code, item])),
+    [dossiersToUse]
+  )
   const totalVal = useMemo(
     () => H.reduce((sum, item) => sum + getHoldingMarketValue(item), 0),
     [H, getHoldingMarketValue]
@@ -159,6 +163,19 @@ export function usePortfolioDerivedData({
   )
   const totalPnl = totalVal - totalCost
   const retPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
+  const todayTotalPnl = useMemo(() => {
+    const prices = marketPriceCache?.prices
+    if (!prices || H.length === 0) return 0
+    return Math.round(
+      H.reduce((sum, item) => {
+        const quote = prices[item.code]
+        if (!quote) return sum
+        const change = Number(quote.change)
+        const qty = Number(item.qty) || 0
+        return sum + (Number.isFinite(change) ? change * qty : 0)
+      }, 0)
+    )
+  }, [H, marketPriceCache])
   const todayMarketClock = getTaipeiClock(new Date())
   const activeMarketDate = marketPriceSync?.marketDate || marketPriceCache?.marketDate || null
   const activePriceSyncAt = parseStoredDate(
@@ -531,6 +548,7 @@ export function usePortfolioDerivedData({
     totalVal,
     totalCost,
     totalPnl,
+    todayTotalPnl,
     retPct,
     todayMarketClock,
     activeMarketDate,

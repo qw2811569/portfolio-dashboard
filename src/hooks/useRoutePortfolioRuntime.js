@@ -825,6 +825,19 @@ export function useRoutePortfolioRuntime() {
   )
   const displayedTotalPnl = totalValue - totalCost
   const displayedRetPct = totalCost > 0 ? (displayedTotalPnl / totalCost) * 100 : 0
+  const todayTotalPnl = (() => {
+    const prices = marketPriceCache?.prices
+    if (!prices || routeData.holdings.length === 0) return 0
+    return Math.round(
+      routeData.holdings.reduce((sum, item) => {
+        const quote = prices[item.code]
+        if (!quote) return sum
+        const change = Number(quote.change)
+        const qty = Number(item.qty) || 0
+        return sum + (Number.isFinite(change) ? change * qty : 0)
+      }, 0)
+    )
+  })()
   const { urgentCount, todayAlertSummary } = buildHoldingAlertSummary(routeData.holdings)
   const tabs = buildPortfolioTabs({ urgentCount })
   const overviewTotalValue = portfolioSummaries.reduce(
@@ -855,6 +868,7 @@ export function useRoutePortfolioRuntime() {
     () => ({
       portfolioId: routePortfolioId,
       ...routeData,
+      todayTotalPnl,
       setHoldings,
       setWatchlist,
       setTargets,
@@ -887,6 +901,7 @@ export function useRoutePortfolioRuntime() {
     [
       routePortfolioId,
       routeData,
+      todayTotalPnl,
       setHoldings,
       setWatchlist,
       setTargets,

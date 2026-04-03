@@ -457,9 +457,7 @@ function normalizePortfolioStockSummaries(rawText, universeStocks, dossierByCode
   const parsed = parseJsonText(rawText)
   const entries = Array.isArray(parsed) ? parsed : []
   const entryByCode = new Map(
-    entries
-      .map((entry) => [String(entry?.code || '').trim(), entry])
-      .filter(([code]) => code)
+    entries.map((entry) => [String(entry?.code || '').trim(), entry]).filter(([code]) => code)
   )
 
   return (Array.isArray(universeStocks) ? universeStocks : []).map((stock) => {
@@ -535,6 +533,17 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Streaming support for evolve/portfolio mode (prevents timeout)
+  const wantsStream = String(req.query?.stream || '').trim() === '1'
+  function sendProgress(res, event, data) {
+    if (!wantsStream) return
+    try {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    } catch {
+      /* connection closed */
+    }
+  }
 
   const normalizedRequest = normalizeResearchRequestInput(req.body || {})
   const {
@@ -746,6 +755,16 @@ ${dossierContext}
       // 合併了舊的 portfolio（個股掃描+組合建議）和 evolve（系統診斷+大腦進化）
       // 現在不管從哪個按鈕觸發，都走同一個完整流程
 
+      // 如果是 streaming 模式，設置 SSE headers 防止 timeout
+      if (wantsStream) {
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+        res.setHeader('Cache-Control', 'no-cache, no-transform')
+        res.setHeader('Connection', 'keep-alive')
+        res.flushHeaders?.()
+        sendProgress(res, 'start', { mode, stocks: stocks?.length || 0 })
+      }
+
       const brainCtx = brain ? buildResearchBrainContext(brain) : '（尚未建立）'
       const evtSummary = (events || [])
         .slice(0, 15)
@@ -860,6 +879,8 @@ ${dossierContext}
         brainContextChars: brainCtx.length,
       })
 
+      sendProgress(res, 'round', { round: 1, title: '個股快掃', done: true })
+
       // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
       const diag = await callClaude(
         `你是投資系統架構師。基於個股研究結果和完整系統資料，診斷這個交易者的投資系統。`,
@@ -896,6 +917,8 @@ ${histSummary || '（無紀錄）'}
 7. **AI 顧問自我檢討**：如果你就是之前做出這些分析的 AI，你自己最大的盲點是什麼？`
       )
 
+      sendProgress(res, 'round', { round: 2, title: '系統診斷', done: true })
+
       // ── Round 3：進化建議 + 組合調整（合併策略建議與系統改善）──
       const evolveAdvice = await callClaude(
         `你是投資系統優化顧問兼組合管理專家。基於個股研究和系統診斷，提出完整的改善方案。`,
@@ -914,6 +937,8 @@ ${histSummary || '（無紀錄）'}
 3. **事件追蹤優化**：目前追蹤夠不夠？漏掉哪些重要的觀察角度？
 4. **下週具體行動清單**：按優先順序列出 5 個最應該做的事`
       )
+
+      sendProgress(res, 'round', { round: 3, title: '進化建議', done: true })
 
       // ── Round 4：生成候選策略提案（JSON output）──
       const newBrainText = await callClaude(
@@ -1014,8 +1039,18 @@ ${histSummary || '（無紀錄）'}
       })
     }
 
+    if (wantsStream) {
+      sendProgress(res, 'done', { results })
+      res.end()
+      return
+    }
     return res.status(200).json({ results })
   } catch (err) {
+    if (wantsStream) {
+      sendProgress(res, 'error', { error: err.message })
+      res.end()
+      return
+    }
     return res.status(500).json({ error: '研究失敗', detail: err.message })
   }
 }

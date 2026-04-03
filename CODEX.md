@@ -142,8 +142,31 @@ import { getBacktestReliability } from '../lib/analysisFramework.js'
 - 自動從 `/api/brain?action=all` 或 Vercel Blob 拉持股資料回來
 - 不要 fallback 到 seedData
 
-### 完成後
+### ~~任務 1/2/3~~ ✅ 完成
+
+---
+
+### 任務 4：接入事件自動預測（新任務）
+
+Claude 建了 `src/lib/eventPredictionEngine.js`，有 `predictAllEvents(events, contextByStock)` 函數。
+
+接入 `src/stores/eventStore.js` 或 `src/hooks/useAutoEventCalendar.js`：
+
+1. 載入事件後，對所有 pending 事件跑 `predictAllEvents`
+2. 每個事件的 `pred` 欄位自動填入（up/down/flat）
+3. context 從 `dossierByCode` 或 FinMind cache 取（revenueYoY、foreignFlow）
+4. 如果事件已有手動 pred，不覆蓋
+
+### 任務 5：收盤分析接入 eventPredictionEngine
+
+在 `src/hooks/useDailyAnalysisWorkflow.js` 的 eventSummary 組裝時：
+
+1. 對 pending 事件跑 predictEventDirection 拿到自動預測
+2. 把預測方向和理由注入到 eventSummary
+3. AI 收到的 prompt 會包含「知識引擎預測：看漲，因為營收 YoY +20% + 外資偏多」
+
+每任務做完跑 build + test。
 
 ```
-AI_NAME=Codex bash scripts/ai-status.sh done "任務 1/2/3 完成：分群提速、streaming 前端、cloud sync"
+AI_NAME=Codex bash scripts/ai-status.sh done "任務 4/5：事件預測接入"
 ```

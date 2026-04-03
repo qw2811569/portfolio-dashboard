@@ -147,7 +147,48 @@ Recommendation:
 
 ---
 
-### 任務 E：端到端功能測試（新任務）
+### ~~任務 E：端到端功能測試~~ ✅ 完成
+
+---
+
+### 任務 F：事件預測引擎測試 + 知識庫品質驗證（新任務）
+
+#### F1. 測試事件預測引擎
+
+Claude 剛建了 `src/lib/eventPredictionEngine.js`。寫測試：
+
+新建 `tests/lib/eventPredictionEngine.test.js`：
+
+1. 測 `predictEventDirection` — 法說會事件應回 neutral、新品事件應回 positive、降價應回 negative
+2. 測營收佐證：營收 YoY +20% 應加分、-15% 應減分
+3. 測法人佐證：外資買應加分、外資賣應減分
+4. 測 `predictAllEvents` — 批次處理 3 個事件，每個都有 pred 和 predReasons
+
+#### F2. 知識庫品質回歸
+
+你剛補了 15 條規則，跑：
+
+```
+npx vitest run tests/lib/knowledge-base.test.js
+```
+
+確認 25 個 KB 測試全過。
+
+#### F3. 掃描 Codex 的改動
+
+Codex 剛做了分群提速和 streaming，跑全量測試確認沒破壞：
+
+```
+npx vitest run
+npm run build
+npm run lint
+```
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 F：事件預測測試 + KB 回歸 + Codex 改動驗證"
+```
+
+### 任務 E：端到端功能測試（已完成）
 
 在 http://127.0.0.1:3002 做 Level 3 QA（核心流程端到端）：
 

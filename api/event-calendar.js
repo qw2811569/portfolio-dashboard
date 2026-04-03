@@ -523,48 +523,49 @@ function formatDateForFinMind(d) {
 // ── 直接呼叫 FinMind 外部 API（不走 self-request，避免 deadlock）──
 // 取最近 3 天的持股新聞作為行事曆事件（需要 FINMIND_TOKEN）
 async function fetchFinMindNewsDirectly(stockCodes) {
-  const events = []
   const token = process.env.FINMIND_TOKEN || ''
-  if (!token) return events // 無 token 無法取得新聞
+  if (!token) return [] // 無 token 無法取得新聞
 
   const today = new Date()
   const startDate = new Date(today)
   startDate.setDate(startDate.getDate() - 3)
   const startStr = formatDateForFinMind(startDate)
+  const limitedCodes = (Array.isArray(stockCodes) ? stockCodes : []).filter(Boolean).slice(0, 12)
 
-  // 查全部持股（FinMind 付費版無 rate limit 問題）
-  for (const code of stockCodes) {
+  const perCodeTasks = limitedCodes.map(async (code) => {
     try {
       const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${startStr}&token=${token}`
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) continue
+      const res = await fetch(url, { signal: AbortSignal.timeout(2500) })
+      if (!res.ok) return []
 
       const json = await res.json()
-      const items = (json.data || []).slice(0, 3) // 每檔最多 3 則最新
-      for (const item of items) {
-        const title = String(item.title || '')
-        if (!title || title.length < 10) continue
-
-        events.push({
-          id: `finmind-news-${code}-${item.date?.slice(0, 10) || 'unknown'}`,
-          date: item.date?.slice(0, 10) || formatDateForFinMind(today),
-          type: 'news',
-          source: 'finmind-news',
-          title: `${code} ${title.slice(0, 60)}`,
-          detail: title,
-          stocks: [code],
-          status: 'closed',
-          pred: 'neutral',
-          predReason: '持股相關新聞',
-          catalystType: 'news',
-          impact: 'low',
-          link: item.link || '',
+      return (json.data || [])
+        .slice(0, 2) // 每檔最多 2 則最新，避免事件過多拖慢 response
+        .map((item) => {
+          const title = String(item.title || '')
+          if (!title || title.length < 10) return null
+          return {
+            id: `finmind-news-${code}-${item.date?.slice(0, 10) || 'unknown'}-${title.slice(0, 12)}`,
+            date: item.date?.slice(0, 10) || formatDateForFinMind(today),
+            type: 'news',
+            source: 'finmind-news',
+            title: `${code} ${title.slice(0, 60)}`,
+            detail: title,
+            stocks: [code],
+            status: 'closed',
+            pred: 'neutral',
+            predReason: '持股相關新聞',
+            catalystType: 'news',
+            impact: 'low',
+            link: item.link || '',
+          }
         })
-      }
+        .filter(Boolean)
     } catch {
-      // skip failed stock
+      return []
     }
-  }
+  })
 
-  return events
+  const settled = await Promise.allSettled(perCodeTasks)
+  return settled.flatMap((item) => (item.status === 'fulfilled' ? item.value : []))
 }

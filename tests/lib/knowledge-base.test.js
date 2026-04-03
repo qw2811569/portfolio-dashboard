@@ -3,10 +3,11 @@ import { readdirSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import {
-  collectInjectedKnowledgeIdsFromDossiers,
-  getRelevantKnowledge,
-  getRelevantCases,
   buildKnowledgeContext,
+  buildKnowledgeQueryProfile,
+  collectInjectedKnowledgeIdsFromDossiers,
+  getRelevantCases,
+  getRelevantKnowledge,
 } from '../../src/lib/knowledgeBase.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -307,6 +308,23 @@ describe('知識庫基礎驗證', () => {
 })
 
 describe('knowledgeBase.js 檢索模組', () => {
+  describe('buildKnowledgeQueryProfile', () => {
+    it('builds short/mid/long horizon profiles from holding period', () => {
+      expect(buildKnowledgeQueryProfile({ holdingPeriod: '短' })).toMatchObject({
+        technical: 0.4,
+        news: 0.3,
+      })
+      expect(buildKnowledgeQueryProfile({ holdingPeriod: '中長' })).toMatchObject({
+        fundamentals: 0.4,
+        strategyCases: 0.2,
+      })
+      expect(buildKnowledgeQueryProfile({ holdingPeriod: '中' })).toMatchObject({
+        chip: 0.25,
+        fundamentals: 0.3,
+      })
+    })
+  })
+
   describe('getRelevantKnowledge', () => {
     it('每個策略類型都能回傳結果', () => {
       const strategies = [
@@ -345,13 +363,19 @@ describe('knowledgeBase.js 檢索模組', () => {
       }
     })
 
-    it('回傳結果包含風險管理知識', () => {
+    it('會依 query profile 權重調整選出的知識類型', () => {
       const results = getRelevantKnowledge(
-        { strategy: '成長股' },
-        { maxItems: 10, minConfidence: 0.6 }
+        { strategy: '成長股', holdingPeriod: '短' },
+        {
+          maxItems: 10,
+          minConfidence: 0.6,
+          queryProfile: buildKnowledgeQueryProfile({ holdingPeriod: '短' }),
+        }
       )
-      const hasRm = results.some((item) => item.id.startsWith('rm-'))
-      expect(hasRm).toBe(true)
+      const hasTechnicalOrNews = results.some(
+        (item) => item.id.startsWith('ta-') || item.id.startsWith('nc-')
+      )
+      expect(hasTechnicalOrNews).toBe(true)
     })
 
     it('策略知識區段內按信心度降序排列', () => {

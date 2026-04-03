@@ -1,6 +1,54 @@
 {
-  "lastUpdated": "2026-04-03T12:09:20+08:00",
+  "lastUpdated": "2026-04-03T12:23:29+08:00",
   "entries": [
+    {
+      "time": "2026-04-03 12:23",
+      "isoTime": "2026-04-03T12:23:29+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增 buildColdStartDossierSummary，並逐項通過 build/vitest。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:17",
+      "isoTime": "2026-04-03T12:17:58+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:16",
+      "isoTime": "2026-04-03T12:16:35+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：Now I have all three documents. Let me analyze them from a QA perspectiv（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-03 12:16",
+      "isoTime": "2026-04-03T12:16:35+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "Round 1 修復完成",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:15",
+      "isoTime": "2026-04-03T12:15:13+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：I need to read the three specified files first before I can provide QA v（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-03 12:15",
+      "isoTime": "2026-04-03T12:15:13+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成歷史回測框架：新增 scripts/backtest.sh 與 src/lib/backtestRuntime.js，支援指定日期/代碼/回數、歷史 FinMind dossier、規則式分析、未來價格評估與知識回饋，並通過 build/vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 12:09",
       "isoTime": "2026-04-03T12:09:20+08:00",
@@ -271,54 +319,6 @@
       "ai": "Gemini",
       "action": "auto-detect",
       "message": "Gemini：headless/taiwan-scout (gemini-2.5-flash)（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 23:17",
-      "isoTime": "2026-04-02T23:17:00+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：All changes are complete and verified - build passes, tests pass, server（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 23:16",
-      "isoTime": "2026-04-02T23:16:59+08:00",
-      "ai": "Gemini",
-      "action": "start",
-      "message": "Gemini research scout：測試連線",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:28",
-      "isoTime": "2026-04-02T21:28:01+08:00",
-      "ai": "Qwen",
-      "action": "start",
-      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的前台確認任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:57+08:00",
-      "ai": "Qwen",
-      "action": "auto-detect",
-      "message": "Qwen：I need to read both files to understand the project's frontend closure s（自動偵測）",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:57+08:00",
-      "ai": "Codex",
-      "action": "start",
-      "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，僅輸出一句：你現在最該做的驗收任務。",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:27",
-      "isoTime": "2026-04-02T21:27:02+08:00",
-      "ai": "Qwen",
-      "action": "start",
-      "message": "Qwen CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認前台最後閉環是否已清楚定義，然後用一句話寫出你現在最該做的前台確認任務。",
       "status": "working"
     }
   ]

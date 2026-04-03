@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-03T04:09:20.000Z",
+  "lastUpdated": "2026-04-03T04:23:29.000Z",
   "project": {
     "name": "台股投資決策工作台",
     "version": "2.0.0",
@@ -7,11 +7,11 @@
     "description": "把「部位、事件、研究、復盤、策略記憶」串成閉環的台股投資作業系統"
   },
   "summary": {
-    "today": "今天新增 23 個 checkpoint，App.jsx 已是 7 行薄入口",
+    "today": "今天新增 27 個 checkpoint，App.jsx 已是 7 行薄入口",
     "thisWeek": "本週主線維持主 runtime 收斂與驗證鏈綠燈",
     "highlights": [
       "✅ App.jsx 已收斂為 7 行薄入口",
-      "✅ 目前測試檔 69 個",
+      "✅ 目前測試檔 72 個",
       "🔄 docs-site 狀態改由 current-work.md 單一真相生成"
     ]
   },
@@ -241,8 +241,8 @@
   },
   "metrics": {
     "appJsxLines": 7,
-    "testFiles": 69,
-    "testCases": 366,
+    "testFiles": 72,
+    "testCases": 375,
     "knowledgeBaseEntries": 600,
     "apiEndpoints": 12,
     "hooks": 65,
@@ -250,7 +250,7 @@
     "aiAgents": 4,
     "appJsxLinesChange": 0,
     "totalDocs": 37,
-    "inProgressTasks": 0
+    "inProgressTasks": 1
   },
   "health": {
     "overall": "warning",
@@ -295,8 +295,8 @@
         "avatar": "🧠",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 58,
-        "lastActive": "2026-04-03 12:09",
+        "tasksCompleted": 61,
+        "lastActive": "2026-04-03 12:23",
         "statusSource": "manual",
         "activitySource": "~/.codex/session_index.jsonl"
       },
@@ -304,10 +304,10 @@
         "name": "Qwen",
         "role": "低風險實作 / 文件整理",
         "avatar": "✍️",
-        "status": "idle",
-        "currentTask": "等待分配新任務",
+        "status": "working",
+        "currentTask": "Qwen：Now I have all three documents. Let me analyze them from a QA perspectiv",
         "tasksCompleted": 13,
-        "lastActive": "2026-04-02 22:35",
+        "lastActive": "2026-04-03 12:15",
         "statusSource": "auto",
         "activitySource": "~/.qwen/projects/*/chats"
       },
@@ -338,13 +338,45 @@
         "avatar": "🤖",
         "status": "idle",
         "currentTask": "等待分配新任務",
-        "tasksCompleted": 14,
-        "lastActive": "2026-04-03 11:22",
+        "tasksCompleted": 15,
+        "lastActive": "2026-04-03 12:17",
         "statusSource": "manual"
       }
     ]
   },
   "timeline": [
+    {
+      "time": "2026-04-03 12:23",
+      "ai": "Codex",
+      "title": "完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 12:17",
+      "ai": "OpenClaw",
+      "title": "自動閉環完成：2 輪後穩定",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 12:16",
+      "ai": "Codex",
+      "title": "Round 1 修復完成",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "詳見 docs/status/current-work.md",
+      "status": "done"
+    },
+    {
+      "time": "2026-04-03 12:15",
+      "ai": "Codex",
+      "title": "完成歷史回測框架：新增 scripts/backtest.sh 與 src/lib/backtestRuntime.js，支援指定日期/代碼/回數、歷史 FinMind dossier、規則式分析、未來價格評估與知識回饋，並通過 buil…",
+      "description": "同步自 docs/status/current-work.md",
+      "impact": "驗證鏈狀態已更新",
+      "status": "done"
+    },
     {
       "time": "2026-04-03 12:09",
       "ai": "Codex",
@@ -376,41 +408,9 @@
       "description": "同步自 docs/status/current-work.md",
       "impact": "驗證鏈狀態已更新",
       "status": "done"
-    },
-    {
-      "time": "2026-04-03 11:41",
-      "ai": "Codex",
-      "title": "修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "驗證鏈狀態已更新",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-03 11:22",
-      "ai": "OpenClaw",
-      "title": "自動閉環完成：2 輪後穩定",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-03 11:21",
-      "ai": "OpenClaw",
-      "title": "自動閉環完成：2 輪後穩定",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
-    },
-    {
-      "time": "2026-04-03 11:20",
-      "ai": "OpenClaw",
-      "title": "自動閉環完成：2 輪後穩定",
-      "description": "同步自 docs/status/current-work.md",
-      "impact": "詳見 docs/status/current-work.md",
-      "status": "done"
     }
   ],
-  "generatedAt": "2026-04-03T04:09:20.538Z",
+  "generatedAt": "2026-04-03T04:23:29.906Z",
   "sources": {
     "canonicalStatus": "docs/status/current-work.md",
     "canonicalAiActivity": "docs/status/ai-activity.json",
@@ -426,6 +426,54 @@
     "liveActivityMirrorReady": true
   },
   "liveActivity": [
+    {
+      "time": "2026-04-03 12:23",
+      "isoTime": "2026-04-03T12:23:29+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增 buildColdStartDossierSummary，並逐項通過 build/vitest。",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:17",
+      "isoTime": "2026-04-03T12:17:58+08:00",
+      "ai": "OpenClaw",
+      "action": "done",
+      "message": "自動閉環完成：2 輪後穩定",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:16",
+      "isoTime": "2026-04-03T12:16:35+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：Now I have all three documents. Let me analyze them from a QA perspectiv（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-03 12:16",
+      "isoTime": "2026-04-03T12:16:35+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "Round 1 修復完成",
+      "status": "idle"
+    },
+    {
+      "time": "2026-04-03 12:15",
+      "isoTime": "2026-04-03T12:15:13+08:00",
+      "ai": "Qwen",
+      "action": "auto-detect",
+      "message": "Qwen：I need to read the three specified files first before I can provide QA v（自動偵測）",
+      "status": "working"
+    },
+    {
+      "time": "2026-04-03 12:15",
+      "isoTime": "2026-04-03T12:15:13+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成歷史回測框架：新增 scripts/backtest.sh 與 src/lib/backtestRuntime.js，支援指定日期/代碼/回數、歷史 FinMind dossier、規則式分析、未來價格評估與知識回饋，並通過 build/vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 12:09",
       "isoTime": "2026-04-03T12:09:20+08:00",
@@ -457,60 +505,12 @@
       "action": "done",
       "message": "完成 Batch 1：1A News/Analysis Panel 顯示 impact/source；1B 新增 collect-daily-events cron + CRON_SECRET + Blob put；1C knowledge evolution confidence 自動調整，並逐項通過 build/vitest 驗證。",
       "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:41",
-      "isoTime": "2026-04-03T11:41:19+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:22",
-      "isoTime": "2026-04-03T11:22:28+08:00",
-      "ai": "OpenClaw",
-      "action": "done",
-      "message": "自動閉環完成：2 輪後穩定",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:21",
-      "isoTime": "2026-04-03T11:21:23+08:00",
-      "ai": "OpenClaw",
-      "action": "done",
-      "message": "自動閉環完成：2 輪後穩定",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:20",
-      "isoTime": "2026-04-03T11:20:19+08:00",
-      "ai": "OpenClaw",
-      "action": "done",
-      "message": "自動閉環完成：2 輪後穩定",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:19",
-      "isoTime": "2026-04-03T11:19:00+08:00",
-      "ai": "OpenClaw",
-      "action": "done",
-      "message": "自動閉環完成：2 輪後穩定",
-      "status": "idle"
-    },
-    {
-      "time": "2026-04-03 11:17",
-      "isoTime": "2026-04-03T11:17:47+08:00",
-      "ai": "Codex",
-      "action": "done",
-      "message": "Round 1 修復完成",
-      "status": "idle"
     }
   ],
   "handover": {
     "from": "Codex",
-    "time": "2026-04-03T12:09:00+08:00",
-    "message": "緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。",
+    "time": "2026-04-03T12:23:00+08:00",
+    "message": "完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增 buildColdStartDossierSummary，並逐項通過 build/vitest。",
     "nextStep": "目前主線目標：把專案核心主流程做成可交付狀態——架構落地、流程閉環、明顯 bug 收斂。",
     "blockers": [],
     "needsReview": false,

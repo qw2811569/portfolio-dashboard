@@ -5,7 +5,11 @@ import {
   summarizeFinMindPromptDatasets,
 } from './finmindPromptRuntime.js'
 import { getSupplyChain, getThemesForStock } from './dataAdapters/index.js'
-import { buildCompactKnowledgeContext, buildKnowledgeContext } from './knowledgeBase.js'
+import {
+  buildCompactKnowledgeContext,
+  buildKnowledgeContext,
+  getTopKnowledgeRules,
+} from './knowledgeBase.js'
 
 function compactPromptText(value, limit = 48) {
   const text = String(value || '')
@@ -112,14 +116,20 @@ function buildCompactFinMindSummary(finmind, { debugLabel = '' } = {}) {
     const recent5 = finmind.institutional.slice(0, 5)
     const foreignSum = recent5.reduce((sum, item) => sum + (item.foreign || 0), 0)
     const investmentSum = recent5.reduce((sum, item) => sum + (item.investment || 0), 0)
-    parts.push(`法人5日 外資${formatSignedNumber(foreignSum)} 投信${formatSignedNumber(investmentSum)}`)
+    parts.push(
+      `法人5日 外資${formatSignedNumber(foreignSum)} 投信${formatSignedNumber(investmentSum)}`
+    )
   }
 
   if (finmind.valuation?.length > 0) {
     const latest = finmind.valuation[0]
     const valuation = [
-      Number.isFinite(Number(latest?.per)) && latest.per !== 0 ? `PER ${Number(latest.per).toFixed(1)}` : '',
-      Number.isFinite(Number(latest?.pbr)) && latest.pbr !== 0 ? `PBR ${Number(latest.pbr).toFixed(2)}` : '',
+      Number.isFinite(Number(latest?.per)) && latest.per !== 0
+        ? `PER ${Number(latest.per).toFixed(1)}`
+        : '',
+      Number.isFinite(Number(latest?.pbr)) && latest.pbr !== 0
+        ? `PBR ${Number(latest.pbr).toFixed(2)}`
+        : '',
     ]
       .filter(Boolean)
       .join(' ')
@@ -148,13 +158,16 @@ function buildCompactFinMindSummary(finmind, { debugLabel = '' } = {}) {
   if (finmind.balanceSheet?.length > 0) {
     const latest = finmind.balanceSheet[0]
     const totalAssets = latest?.totalAssets != null ? Number(latest.totalAssets) : null
-    const totalLiabilities = latest?.totalLiabilities != null ? Number(latest.totalLiabilities) : null
-    const shareholderEquity = latest?.shareholderEquity != null ? Number(latest.shareholderEquity) : null
+    const totalLiabilities =
+      latest?.totalLiabilities != null ? Number(latest.totalLiabilities) : null
+    const shareholderEquity =
+      latest?.shareholderEquity != null ? Number(latest.shareholderEquity) : null
     const debtRatio = latest?.debtRatio != null ? Number(latest.debtRatio) : null
 
     if (totalAssets != null || debtRatio != null) {
       const assetsStr = totalAssets != null ? `總資產${Math.round(totalAssets)}M` : ''
-      const liabilitiesStr = totalLiabilities != null ? `總負債${Math.round(totalLiabilities)}M` : ''
+      const liabilitiesStr =
+        totalLiabilities != null ? `總負債${Math.round(totalLiabilities)}M` : ''
       const debtStr = debtRatio != null ? `負債比${debtRatio.toFixed(1)}%` : ''
       const equityStr = shareholderEquity != null ? `股東權益${Math.round(shareholderEquity)}M` : ''
       parts.push(
@@ -229,7 +242,7 @@ export function buildDailyHoldingDossierContext(
       ? `匹配規則: ${brainContext.matchedRules.map((r) => r.text).join('；')}`
       : '匹配規則: 無'
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
-  const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : '';
+  const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
   const themeChipsText = buildThemeChipsText(dossier.code)
   const knowledgeInfo = compact
     ? buildCompactKnowledgeContext(dossier.stockMeta ?? {})
@@ -279,16 +292,28 @@ ${dossier.thesis ? buildThesisScorecardContext(dossier.thesis) : '投資論文 (
 ${targetInfo}
 ${fundamentalInfo}
 ${eventInfo}
-${supplyChainInfo ? `
+${
+  supplyChainInfo
+    ? `
 供應鏈:
-${supplyChainInfo}` : ''}
+${supplyChainInfo}`
+    : ''
+}
 ${themeInfo ? `${themeInfo}` : ''}
 ${themeChipsText ? `主題標籤：${themeChipsText}` : ''}
 ${brainRuleInfo}
-${finmindInfo ? `
-${finmindInfo}` : ''}
-${knowledgeInfo ? `
-${knowledgeInfo}` : ''}
+${
+  finmindInfo
+    ? `
+${finmindInfo}`
+    : ''
+}
+${
+  knowledgeInfo
+    ? `
+${knowledgeInfo}`
+    : ''
+}
 `
 
   // Prompt 瘦身輔助：記錄字數統計供 Codex 分析
@@ -324,6 +349,48 @@ export function buildEventReviewDossiers(reviewedEvent, dossierByCode) {
   if (!reviewedEvent || !dossierByCode) return []
   const codes = getEventStockCodes(reviewedEvent)
   return codes.map((code) => dossierByCode.get(code)).filter(Boolean)
+}
+
+export function buildColdStartDossierSummary(
+  code,
+  finmindData = {},
+  events = [],
+  knowledgeRules = [],
+  { maxChars = 2000 } = {}
+) {
+  const supplyChain = getSupplyChain(code)
+  const topRules = (
+    Array.isArray(knowledgeRules) && knowledgeRules.length > 0
+      ? knowledgeRules
+      : getTopKnowledgeRules({ maxItems: 10 })
+  )
+    .slice(0, 10)
+    .map(
+      (rule) => `${compactPromptText(rule.title, 18)}(${Math.round((rule.confidence || 0) * 100)}%)`
+    )
+    .join('、')
+
+  const recentEvents = (Array.isArray(events) ? events : [])
+    .slice(0, 7)
+    .map((event) => `${compactPromptText(event.date, 10)} ${compactPromptText(event.title, 18)}`)
+    .join('；')
+
+  const finmindSummary = buildCompactFinMindSummary(finmindData, { debugLabel: code })
+  const supplySummary = buildSupplyChainContext(code)
+  const themeSummary = buildThemeChipsText(code)
+
+  const text = [
+    `標的: ${code}`,
+    `FinMind七組摘要: ${finmindSummary || '無'}`,
+    `知識庫高信心規則: ${topRules || '無'}`,
+    `近7天事件: ${recentEvents || '無'}`,
+    `供應鏈上下游: ${compactPromptText(supplySummary || supplyChain?.summary || '無', 300)}`,
+    themeSummary ? `主題: ${compactPromptText(themeSummary, 180)}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  return text.length > maxChars ? `${text.slice(0, maxChars - 1).trimEnd()}…` : text
 }
 
 export function buildHoldingDossiers(input, options = {}) {
@@ -383,7 +450,6 @@ export function buildResearchHoldingDossierContext(dossier, { compact = false } 
 `
 }
 
-
 /**
  * 建立 FinMind 籌碼數據上下文（用於 daily analysis prompt）
  */
@@ -409,7 +475,9 @@ export function buildFinMindChipContext(finmind) {
     const foreignSum = recent5.reduce((s, d) => s + (d.foreign || 0), 0)
     const investmentSum = recent5.reduce((s, d) => s + (d.investment || 0), 0)
     const dealerSum = recent5.reduce((s, d) => s + (d.dealer || 0), 0)
-    lines.push(`  三大法人近 5 日：外資${foreignSum >= 0 ? '+' : ''}${foreignSum}張、投信${investmentSum >= 0 ? '+' : ''}${investmentSum}張、自營商${dealerSum >= 0 ? '+' : ''}${dealerSum}張`)
+    lines.push(
+      `  三大法人近 5 日：外資${foreignSum >= 0 ? '+' : ''}${foreignSum}張、投信${investmentSum >= 0 ? '+' : ''}${investmentSum}張、自營商${dealerSum >= 0 ? '+' : ''}${dealerSum}張`
+    )
   }
 
   // 最新 PER/PBR
@@ -417,7 +485,9 @@ export function buildFinMindChipContext(finmind) {
     const latest = finmind.valuation[0]
     const perStr = latest.per ? `PER=${latest.per.toFixed(1)}` : ''
     const pbrStr = latest.pbr ? `PBR=${latest.pbr.toFixed(2)}` : ''
-    const yieldStr = latest.dividendYield ? `殖利率=${(latest.dividendYield * 100).toFixed(1)}%` : ''
+    const yieldStr = latest.dividendYield
+      ? `殖利率=${(latest.dividendYield * 100).toFixed(1)}%`
+      : ''
     const metrics = [perStr, pbrStr, yieldStr].filter(Boolean).join('、')
     if (metrics) lines.push(`  估值：${metrics}`)
   }
@@ -450,7 +520,9 @@ export function buildFinMindChipContext(finmind) {
   if (finmind.balanceSheet?.length > 0) {
     const latest = finmind.balanceSheet[0]
     const balanceSheetParts = [
-      Number.isFinite(Number(latest.totalAssets)) ? `總資產 ${Math.round(Number(latest.totalAssets))}M` : '',
+      Number.isFinite(Number(latest.totalAssets))
+        ? `總資產 ${Math.round(Number(latest.totalAssets))}M`
+        : '',
       Number.isFinite(Number(latest.totalLiabilities))
         ? `總負債 ${Math.round(Number(latest.totalLiabilities))}M`
         : '',
@@ -490,8 +562,7 @@ export function buildFinMindChipContext(finmind) {
     const latestRatio = Number(latest?.foreignShareRatio)
     const prevRatio = Number(prev?.foreignShareRatio)
     if (Number.isFinite(latestRatio)) {
-      const delta =
-        Number.isFinite(prevRatio) ? latestRatio - prevRatio : null
+      const delta = Number.isFinite(prevRatio) ? latestRatio - prevRatio : null
       lines.push(
         `  外資持股比：${latestRatio.toFixed(2)}%${
           delta != null ? `（${delta >= 0 ? '+' : ''}${delta.toFixed(2)}pp）` : ''
@@ -729,29 +800,28 @@ export function buildHoldingCoverageContext(
  * Build thesis scorecard context for AI prompt
  */
 
-
 /**
  * 建立主題標籤展示（含上中下游位置）- 用於前端 UI
  * 從 themeClassification.json 讀取每檔持股的主題 + 位置
  */
 export function buildThemeChips(code) {
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const themeFile = path.join(process.cwd(), 'src/data/themeClassification.json');
-    if (!fs.existsSync(themeFile)) return [];
-    
-    const themeData = JSON.parse(fs.readFileSync(themeFile, 'utf-8'));
-    const entry = themeData[code];
-    if (!entry?.themes) return [];
-    
-    return entry.themes.map(t => ({
+    const fs = require('fs')
+    const path = require('path')
+    const themeFile = path.join(process.cwd(), 'src/data/themeClassification.json')
+    if (!fs.existsSync(themeFile)) return []
+
+    const themeData = JSON.parse(fs.readFileSync(themeFile, 'utf-8'))
+    const entry = themeData[code]
+    if (!entry?.themes) return []
+
+    return entry.themes.map((t) => ({
       theme: t.theme,
       position: t.position || null,
       label: t.position ? t.theme + '(' + t.position + ')' : t.theme,
-    }));
+    }))
   } catch {
-    return [];
+    return []
   }
 }
 
@@ -784,12 +854,24 @@ export function buildThesisScorecardContext(thesis) {
   if (thesis.stopLoss) priceInfo.push(`停損價: ${thesis.stopLoss}`)
 
   return `Thesis (${direction}): ${statement}
-Conviction: ${conviction}${pillarLines ? `
+Conviction: ${conviction}${
+    pillarLines
+      ? `
 Pillars:
-${pillarLines}` : ''}${riskLines ? `
+${pillarLines}`
+      : ''
+  }${
+    riskLines
+      ? `
 Risks:
-${riskLines}` : ''}${priceInfo.length > 0 ? `
-${priceInfo.join(' / ')}` : ''}`
+${riskLines}`
+      : ''
+  }${
+    priceInfo.length > 0
+      ? `
+${priceInfo.join(' / ')}`
+      : ''
+  }`
 }
 
 export function createDefaultFundamentalDraft(overrides = {}) {

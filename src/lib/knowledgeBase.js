@@ -10,6 +10,16 @@ import riskManagement from './knowledge-base/risk-management.json' with { type: 
 import strategyCases from './knowledge-base/strategy-cases.json' with { type: 'json' }
 import newsCorrelation from './knowledge-base/news-correlation.json' with { type: 'json' }
 
+const KNOWLEDGE_CATALOG = {
+  chip: chipAnalysis,
+  technical: technicalAnalysis,
+  industry: industryTrends,
+  fundamentals: fundamentalAnalysis,
+  risk: riskManagement,
+  strategyCases,
+  news: newsCorrelation,
+}
+
 // strategy 欄位 → 最相關的知識庫分類
 const STRATEGY_KNOWLEDGE_MAP = {
   成長股: [fundamentalAnalysis, industryTrends, technicalAnalysis],
@@ -29,49 +39,101 @@ const STRATEGY_KNOWLEDGE_MAP = {
 // 所有策略通用的風險管理知識（每次都會附加）
 const UNIVERSAL_SOURCES = [riskManagement]
 
+const DEFAULT_QUERY_PROFILE = {
+  fundamentals: 0.3,
+  industry: 0.25,
+  chip: 0.25,
+  technical: 0.1,
+  news: 0.1,
+}
+
+export function buildKnowledgeQueryProfile(holding = {}, marketContext = {}) {
+  const holdingPeriod = String(
+    holding?.holdingPeriod ||
+      holding?.period ||
+      holding?.stockMeta?.period ||
+      holding?.meta?.period ||
+      ''
+  )
+  const profile = holdingPeriod.includes('短')
+    ? { technical: 0.4, news: 0.3, risk: 0.2, fundamentals: 0.05, industry: 0.05 }
+    : holdingPeriod.includes('長')
+      ? { fundamentals: 0.4, industry: 0.3, strategyCases: 0.2, risk: 0.05, others: 0.05 }
+      : holdingPeriod.includes('中')
+        ? { fundamentals: 0.3, industry: 0.25, chip: 0.25, technical: 0.1, news: 0.1 }
+        : { ...DEFAULT_QUERY_PROFILE }
+
+  if (String(marketContext?.regime || marketContext?.sentiment || '').includes('risk-off')) {
+    profile.risk = Math.max(profile.risk || 0, 0.15)
+  }
+
+  return profile
+}
+
+function getCatalogItemsByKey(key) {
+  return Array.isArray(KNOWLEDGE_CATALOG[key]?.items) ? KNOWLEDGE_CATALOG[key].items : []
+}
+
 /**
  * 依持股的 strategy 類型，回傳最相關的高信心度知識條目
  * @param {{ strategy?: string, industry?: string }} stockMeta
  * @param {{ maxItems?: number, minConfidence?: number }} options
  * @returns {{ fact: string, interpretation: string, action: string, title: string }[]}
  */
-export function getRelevantKnowledge(stockMeta = {}, { maxItems = 5, minConfidence = 0.7 } = {}) {
+export function getRelevantKnowledge(
+  stockMeta = {},
+  { maxItems = 5, minConfidence = 0.7, queryProfile = null } = {}
+) {
   const { strategy } = stockMeta
-  const strategySources = STRATEGY_KNOWLEDGE_MAP[strategy] ?? [
-    technicalAnalysis,
-    fundamentalAnalysis,
-  ]
+  const resolvedProfile = queryProfile || buildKnowledgeQueryProfile(stockMeta)
+  const weightedCandidates = []
 
-  // 策略知識和風險管理知識分開選取，各佔固定名額
-  // 避免高 confidence 的 rm 擠掉策略相關知識
-  const rmSlots = Math.min(1, maxItems - 1) // 風險管理最多 1 條
-  const strategySlots = maxItems - rmSlots // 其餘給策略知識
+  Object.entries(resolvedProfile || {}).forEach(([key, weight]) => {
+    if (key === 'others') return
+    const items = getCatalogItemsByKey(key)
+    items.forEach((item) => {
+      const confidence = Number(item?.confidence ?? 0)
+      if (confidence < minConfidence) return
+      weightedCandidates.push({
+        ...item,
+        __sourceKey: key,
+        __score: confidence * Number(weight || 0),
+      })
+    })
+  })
 
-  const strategyCandidates = strategySources.flatMap((source) =>
-    (source.items ?? []).filter((item) => (item.confidence ?? 0) >= minConfidence)
-  )
-  const rmCandidates = UNIVERSAL_SOURCES.flatMap((source) =>
-    (source.items ?? []).filter((item) => (item.confidence ?? 0) >= minConfidence)
-  )
+  if (weightedCandidates.length === 0) {
+    const strategySources = STRATEGY_KNOWLEDGE_MAP[strategy] ?? [
+      technicalAnalysis,
+      fundamentalAnalysis,
+    ]
+    strategySources.forEach((source) => {
+      ;(source.items ?? []).forEach((item) => {
+        if ((item.confidence ?? 0) >= minConfidence) {
+          weightedCandidates.push({
+            ...item,
+            __sourceKey: 'fallback',
+            __score: item.confidence ?? 0,
+          })
+        }
+      })
+    })
+  }
 
-  // 去重
   const seen = new Set()
-  const dedup = (items) =>
-    items.filter((item) => {
-      if (seen.has(item.id)) return false
+  return weightedCandidates
+    .sort((a, b) => {
+      const scoreDiff = (b.__score ?? 0) - (a.__score ?? 0)
+      if (scoreDiff !== 0) return scoreDiff
+      return (b.confidence ?? 0) - (a.confidence ?? 0)
+    })
+    .filter((item) => {
+      if (!item?.id || seen.has(item.id)) return false
       seen.add(item.id)
       return true
     })
-
-  // 策略知識優先選滿，再補風險管理
-  const strategyPicks = dedup(
-    strategyCandidates.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
-  ).slice(0, strategySlots)
-  const rmPicks = dedup(
-    rmCandidates.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
-  ).slice(0, rmSlots)
-
-  return [...strategyPicks, ...rmPicks]
+    .slice(0, maxItems)
+    .map(({ __sourceKey, __score, ...item }) => item)
 }
 
 /**
@@ -127,11 +189,7 @@ export function getKnowledgeSelection(
     knowledge,
     cases,
     itemIds: Array.from(
-      new Set(
-        [...knowledge, ...cases]
-          .map((item) => String(item?.id || '').trim())
-          .filter(Boolean)
-      )
+      new Set([...knowledge, ...cases].map((item) => String(item?.id || '').trim()).filter(Boolean))
     ),
   }
 }
@@ -151,12 +209,13 @@ export function collectInjectedKnowledgeIdsFromDossiers(
 ) {
   return Array.from(
     new Set(
-      (Array.isArray(dossiers) ? dossiers : []).flatMap((dossier) =>
-        getKnowledgeSelection(dossier?.stockMeta ?? {}, {
-          maxItems,
-          minConfidence,
-          maxCaseItems,
-        }).itemIds
+      (Array.isArray(dossiers) ? dossiers : []).flatMap(
+        (dossier) =>
+          getKnowledgeSelection(dossier?.stockMeta ?? {}, {
+            maxItems,
+            minConfidence,
+            maxCaseItems,
+          }).itemIds
       )
     )
   )
@@ -178,14 +237,20 @@ export function buildCompactKnowledgeContext(
   if (knowledge.length > 0) {
     lines.push(
       `知識: ${knowledge
-        .map((item) => `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.action, 26)}`)
+        .map(
+          (item) =>
+            `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.action, 26)}`
+        )
         .join(' | ')}`
     )
   }
   if (cases.length > 0) {
     lines.push(
       `案例: ${cases
-        .map((item) => `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.lessons, 24)}`)
+        .map(
+          (item) =>
+            `${compactKnowledgeText(item.title, 18)}→${compactKnowledgeText(item.lessons, 24)}`
+        )
         .join(' | ')}`
     )
   }
@@ -219,6 +284,22 @@ export function formatCaseItem(item) {
 /**
  * 回傳 prompt 可用的知識摘要區塊（有內容才回傳，空字串代表略過）
  */
+export function getTopKnowledgeRules({ maxItems = 10, minConfidence = 0.75 } = {}) {
+  const items = Object.values(KNOWLEDGE_CATALOG)
+    .flatMap((catalog) => catalog?.items || [])
+    .filter((item) => Number(item?.confidence || 0) >= minConfidence)
+    .sort((a, b) => Number(b?.confidence || 0) - Number(a?.confidence || 0))
+
+  const seen = new Set()
+  return items
+    .filter((item) => {
+      if (!item?.id || seen.has(item.id)) return false
+      seen.add(item.id)
+      return true
+    })
+    .slice(0, maxItems)
+}
+
 export function buildKnowledgeContext(stockMeta = {}) {
   const { knowledge, cases } = getKnowledgeSelection(stockMeta)
 

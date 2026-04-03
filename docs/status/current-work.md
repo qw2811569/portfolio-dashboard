@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 12:09
+Last updated: 2026-04-03 12:23
 
 ## Management preferences
 
@@ -82,6 +82,10 @@ Last updated: 2026-04-03 12:09
 
 ## Latest checkpoint
 
+- `2026-04-03 12:23` Codex：完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增 buildColdStartDossierSummary，並逐項通過 build/vitest。
+- `2026-04-03 12:17` OpenClaw：自動閉環完成：2 輪後穩定
+- `2026-04-03 12:16` Codex：Round 1 修復完成
+- `2026-04-03 12:15` Codex：完成歷史回測框架：新增 scripts/backtest.sh 與 src/lib/backtestRuntime.js，支援指定日期/代碼/回數、歷史 FinMind dossier、規則式分析、未來價格評估與知識回饋，並通過 build/vitest。
 - `2026-04-03 12:09` Codex：緊急前端 bug 修復完成：新用戶 fallback 不再自動載入 seed holdings/targets/watchlist；/api/brain 無資料時回空預設結構避免 500；並已通過 lint 與 vitest。
 - `2026-04-03 12:04` Codex：完成 Batch 3：3A /api/parse 接 Claude Vision 並回 structured OCR JSON、補具體錯誤處理；3B OCR 目標價結果自動更新 holdings targetPrice，且已通過 build/vitest。
 - `2026-04-03 11:59` Codex：完成 Batch 2：2A 收盤分析 prompt 注入台股市場訊號（營收/事件窗口/目標價 freshness/法人5日）；2B 新增 historical analogs 比對並注入 prompt，且已通過 build/vitest。

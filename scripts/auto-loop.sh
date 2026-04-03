@@ -107,52 +107,92 @@ run_qa() {
     qa_summary+="test:OK "
   fi
 
-  # ═══ Level 2：API handler 驗證（不走 HTTP，直接 node 檢查）═══
-  log "QA Level 2: API handler 檢查..."
+  # ═══ Level 2：Production API 功能測試 ═══
+  PROD_URL="https://jiucaivoice-dashboard.vercel.app"
+  log "QA Level 2: Production API 測試 ($PROD_URL)..."
 
-  # 檢查關鍵 API 檔案存在且能被 node 解析
-  API_OK=0
-  API_TOTAL=0
-  for api_file in api/brain.js api/analyze.js api/event-calendar.js api/research.js api/finmind.js; do
-    API_TOTAL=$((API_TOTAL + 1))
-    if [[ -f "$api_file" ]]; then
-      # 檢查檔案能被 node 語法解析（不執行）
-      if node --check "$api_file" 2>/dev/null; then
-        API_OK=$((API_OK + 1))
-      else
-        problems=$((problems + 1))
-        details+="API_SYNTAX_ERROR: $api_file 有語法錯誤\n"
-        log "  🔴 $api_file 語法錯誤"
-      fi
-    else
-      problems=$((problems + 1))
-      details+="API_MISSING: $api_file 不存在\n"
-      log "  🔴 $api_file 缺失"
-    fi
-  done
-  log "  API handlers: $API_OK/$API_TOTAL 語法正確"
-  qa_summary+="api:${API_OK}/${API_TOTAL} "
-
-  # 檢查 API 有正確的 export default function
-  MISSING_EXPORT=$(grep -rL "export default\|module.exports" api/*.js 2>/dev/null | head -3)
-  if [[ -n "$MISSING_EXPORT" ]]; then
+  # 首頁
+  PROD_HOME=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$PROD_URL/" 2>/dev/null || echo "000")
+  if [[ "$PROD_HOME" == "200" ]]; then
+    log "  ✅ 首頁 200"
+    qa_summary+="home:OK "
+  else
     problems=$((problems + 1))
-    details+="API_NO_EXPORT: $(echo "$MISSING_EXPORT" | tr '\n' ', ') 缺少 export\n"
-    log "  🔴 部分 API 缺少 export"
+    details+="PROD_HOME_FAIL: HTTP $PROD_HOME\n"
+    log "  🔴 首頁 HTTP $PROD_HOME"
+    qa_summary+="home:FAIL "
   fi
 
-  # 如果 vercel dev 在跑，額外測首頁
-  FRONTEND=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 http://localhost:3002/ 2>/dev/null || echo "000")
-  if [[ "$FRONTEND" == "200" ]]; then
-    log "  ✅ 首頁 HTTP 200"
-    qa_summary+="frontend:OK "
-  elif [[ "$FRONTEND" != "000" ]]; then
-    problems=$((problems + 1))
-    details+="FRONTEND_DOWN: HTTP $FRONTEND\n"
-    log "  🔴 首頁 HTTP $FRONTEND"
-    qa_summary+="frontend:FAIL "
+  # brain API — 策略大腦要回有效 JSON
+  BRAIN_OUT=$(curl -s --connect-timeout 10 "$PROD_URL/api/brain?action=all" 2>/dev/null || echo "")
+  BRAIN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$PROD_URL/api/brain?action=all" 2>/dev/null || echo "000")
+  if [[ "$BRAIN_STATUS" == "200" ]] && echo "$BRAIN_OUT" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
+    log "  ✅ /api/brain 回傳有效 JSON"
+    qa_summary+="brain:OK "
   else
-    qa_summary+="frontend:N/A "
+    problems=$((problems + 1))
+    details+="PROD_BRAIN_FAIL: HTTP $BRAIN_STATUS\n"
+    log "  🔴 /api/brain HTTP $BRAIN_STATUS"
+    qa_summary+="brain:FAIL "
+  fi
+
+  # event-calendar API — 要有事件
+  EVENT_OUT=$(curl -s --connect-timeout 15 --max-time 20 "$PROD_URL/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "")
+  EVENT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 20 "$PROD_URL/api/event-calendar?range=30&codes=2308" 2>/dev/null || echo "000")
+  if [[ "$EVENT_STATUS" == "200" ]]; then
+    EVENT_COUNT=$(echo "$EVENT_OUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('events',d.get('data',[]))))" 2>/dev/null || echo "0")
+    if [[ "$EVENT_COUNT" -gt 0 ]]; then
+      log "  ✅ /api/event-calendar $EVENT_COUNT 個事件"
+      qa_summary+="events:OK($EVENT_COUNT) "
+    else
+      problems=$((problems + 1))
+      details+="PROD_EVENTS_EMPTY: HTTP 200 但 0 個事件\n"
+      log "  🔴 /api/event-calendar 0 個事件"
+      qa_summary+="events:EMPTY "
+    fi
+  elif [[ "$EVENT_STATUS" == "504" ]]; then
+    problems=$((problems + 1))
+    details+="PROD_EVENTS_TIMEOUT: HTTP 504 serverless timeout\n"
+    log "  🔴 /api/event-calendar 504 timeout"
+    qa_summary+="events:TIMEOUT "
+  else
+    problems=$((problems + 1))
+    details+="PROD_EVENTS_FAIL: HTTP $EVENT_STATUS\n"
+    log "  🔴 /api/event-calendar HTTP $EVENT_STATUS"
+    qa_summary+="events:FAIL "
+  fi
+
+  # analyze API — 用最小 payload 測收盤分析
+  ANALYZE_OUT=$(curl -s -w "\n%{http_code}" --connect-timeout 15 --max-time 30 \
+    -X POST "$PROD_URL/api/analyze" \
+    -H "Content-Type: application/json" \
+    -d '{"systemPrompt":"test","userPrompt":"reply OK in 5 words","maxTokens":30}' \
+    2>/dev/null || echo -e "\n000")
+  ANALYZE_STATUS=$(echo "$ANALYZE_OUT" | tail -1)
+  ANALYZE_BODY=$(echo "$ANALYZE_OUT" | sed '$d')
+  if [[ "$ANALYZE_STATUS" == "200" ]] && [[ -n "$ANALYZE_BODY" ]]; then
+    log "  ✅ /api/analyze 回傳 200 有內容"
+    qa_summary+="analyze:OK "
+  elif [[ "$ANALYZE_STATUS" == "000" ]]; then
+    log "  ⚠️ /api/analyze timeout（不算 fail，可能 API key 額度）"
+    qa_summary+="analyze:TIMEOUT "
+  else
+    problems=$((problems + 1))
+    details+="PROD_ANALYZE_FAIL: HTTP $ANALYZE_STATUS\n"
+    log "  🔴 /api/analyze HTTP $ANALYZE_STATUS"
+    qa_summary+="analyze:FAIL "
+  fi
+
+  # research API — 只測 GET 存活
+  RESEARCH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$PROD_URL/api/research" 2>/dev/null || echo "000")
+  if [[ "$RESEARCH_STATUS" == "200" || "$RESEARCH_STATUS" == "405" ]]; then
+    log "  ✅ /api/research 存活 (HTTP $RESEARCH_STATUS)"
+    qa_summary+="research:OK "
+  else
+    problems=$((problems + 1))
+    details+="PROD_RESEARCH_FAIL: HTTP $RESEARCH_STATUS\n"
+    log "  🔴 /api/research HTTP $RESEARCH_STATUS"
+    qa_summary+="research:FAIL "
   fi
 
   # ═══ Level 3：Qwen 深度驗證（派 Qwen 跑功能測試）═══

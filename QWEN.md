@@ -151,7 +151,35 @@ Recommendation:
 
 ---
 
-### 任務 F：事件預測引擎測試 + 知識庫品質驗證（新任務）
+### ~~任務 F~~ ✅ 完成
+
+---
+
+### 任務 G：修兩個前端 Bug（新任務）
+
+Codex 額度到 4/8 才恢復，你接手兩個前端 bug。
+
+#### G1. 非交易時間零波動修復
+
+問題：非交易時間跑收盤分析，所有持股顯示 +0.00%。
+位置：`src/hooks/useMarketData.js` 或收盤價同步邏輯
+修法：如果今天不是交易日或收盤價沒更新，用最近一個交易日的收盤價和前一日收盤價比較，而非顯示 0。
+驗證：週末或收盤後跑分析，持股應顯示最後交易日的漲跌幅。
+
+#### G2. 事件引用數計數修復
+
+問題：收盤分析結果顯示「引用 0 個事件」但分析內容有事件。
+位置：`src/lib/dailyAnalysisRuntime.js` 的 `buildDailyReport` 或 `src/hooks/useDailyAnalysisWorkflow.js`
+修法：找到 `injectedEventCount` 或類似欄位，確認事件注入後有正確計數。
+驗證：跑收盤分析後「引用 X 個事件」應 > 0。
+
+每個修完跑 `npm run build` + `npx vitest run`。
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 G：零波動修復 + 事件計數修復"
+```
+
+### 任務 F：事件預測引擎測試（已完成）
 
 #### F1. 測試事件預測引擎
 

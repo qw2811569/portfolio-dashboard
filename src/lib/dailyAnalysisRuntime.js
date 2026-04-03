@@ -197,8 +197,8 @@ export function buildDailyChanges({
         type: holding.type,
         price: marketPrice?.price || resolveHoldingPrice(holding),
         yesterday: marketPrice?.yesterday || resolveHoldingPrice(holding),
-        change: marketPrice?.change || 0,
-        changePct: marketPrice?.changePct || 0,
+        change: marketPrice ? (marketPrice.change ?? 0) : null,
+        changePct: marketPrice ? (marketPrice.changePct ?? 0) : null,
         cost: holding.cost,
         qty: holding.qty,
         todayPnl: marketPrice ? Math.round(marketPrice.change * holding.qty) : 0,
@@ -210,7 +210,7 @@ export function buildDailyChanges({
           : getHoldingReturnPct(holding),
       }
     })
-    .sort((a, b) => b.changePct - a.changePct)
+    .sort((a, b) => (b.changePct ?? -Infinity) - (a.changePct ?? -Infinity))
 }
 
 export function buildMarketContextFromIndexData(indexData) {
@@ -265,11 +265,7 @@ export function buildDailyEventCollections({
         .filter(Boolean)
       return { ...event, relatedStocks }
     })
-    .filter(
-      (event) =>
-        event.relatedStocks.length > 0 &&
-        event.relatedStocks.some((stock) => Math.abs(stock.changePct) > 1)
-    )
+    .filter((event) => event.relatedStocks.length > 0)
 
   const anomalies = changes.filter((change) => Math.abs(change.changePct) > 3)
   const needsReview = pendingEvents.filter((event) => {

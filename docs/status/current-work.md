@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 12:29
+Last updated: 2026-04-03 17:32
 
 ## Management preferences
 
@@ -82,6 +82,11 @@ Last updated: 2026-04-03 12:29
 
 ## Latest checkpoint
 
+- `2026-04-03 17:32` Qwen：任務 G：零波動修復 + 事件計數修復，build ✅ vitest 369/369 ✅ lint ✅
+- `2026-04-03 17:32` Qwen：任務 G 完成：G1 零波動修復（changePct null 處理 + UI 顯示 —）+ G2 事件計數修復（移除 >1% 嚴格過濾），build ✅ vitest 369/369 ✅ lint ✅
+- `2026-04-03 17:18` Qwen：交接：任務 F 完成，請 Claude 指派新任務
+- `2026-04-03 17:15` Qwen：任務 F：事件預測測試 19/19 + KB 回歸 27/27（615條）+ 全量 369/369 + build + lint 全過
+- `2026-04-03 17:14` Qwen：任務 F 完成：事件預測引擎 19/19 ✅、KB 回歸 27/27（615 條）✅、全量測試 369/369 ✅、build ✅、lint ✅（0 errors）
 - `2026-04-03 12:29` Codex：完成 Batch C Evolution Loop：新增 observation log、rule outcome scorer、confidence batch adjustment/evolution log，並在 daily analysis / research 完成時寫 observation；已通過 build/vitest。
 - `2026-04-03 12:23` Codex：完成 Batch A Decision Layer：A1 buildKnowledgeQueryProfile + weighted knowledge retrieval；A2 新增 analysisFramework.js；A3 新增 buildColdStartDossierSummary，並逐項通過 build/vitest。
 - `2026-04-03 12:17` OpenClaw：自動閉環完成：2 輪後穩定

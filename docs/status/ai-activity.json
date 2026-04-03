@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-04-03T12:29:51+08:00",
-  "current": "Codex",
+  "lastUpdated": "2026-04-03T17:32:42+08:00",
+  "current": "Qwen",
   "members": [
     {
       "name": "Codex",
@@ -18,9 +18,9 @@
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
       "status": "working",
-      "currentTask": "Qwen：Now I have all three documents. Let me analyze them from a QA perspectiv",
-      "tasksCompleted": 13,
-      "lastActive": "2026-04-03 12:15",
+      "currentTask": "Qwen：Let me report the completion status.",
+      "tasksCompleted": 15,
+      "lastActive": "2026-04-03 17:32",
       "statusSource": "auto",
       "activitySource": "~/.qwen/projects/*/chats"
     },

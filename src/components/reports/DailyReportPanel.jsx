@@ -284,12 +284,14 @@ export function HoldingsChanges({ changes }) {
               style: {
                 fontSize: 12,
                 fontWeight: 600,
-                color: pc(c.changePct),
+                color: c.changePct != null ? pc(c.changePct) : C.textSec,
                 minWidth: 55,
                 textAlign: 'right',
               },
             },
-            `${c.changePct >= 0 ? '+' : ''}${c.changePct.toFixed(2)}%`
+            c.changePct != null
+              ? `${c.changePct >= 0 ? '+' : ''}${c.changePct.toFixed(2)}%`
+              : '—'
           ),
           h(
             'span',

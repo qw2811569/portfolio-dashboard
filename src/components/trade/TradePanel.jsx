@@ -786,6 +786,106 @@ export function ParseResults({
 }
 
 /**
+ * Manual Trade Entry — 手動輸入買進/賣出
+ */
+export function ManualTradeEntry({ setParsed, toSlashDate }) {
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [action, setAction] = useState('賣出')
+  const [qty, setQty] = useState('')
+  const [price, setPrice] = useState('')
+
+  const handleSubmit = () => {
+    const q = parseInt(qty, 10)
+    const p = parseFloat(price)
+    if (!code.trim() || !q || !p) return
+    setParsed({
+      trades: [
+        {
+          code: code.trim(),
+          name: name.trim() || code.trim(),
+          action,
+          qty: q,
+          price: p,
+        },
+      ],
+      targetPriceUpdates: [],
+      tradeDate: toSlashDate(),
+      note: '手動輸入',
+    })
+    setCode('')
+    setName('')
+    setQty('')
+    setPrice('')
+  }
+
+  const inputStyle = {
+    background: C.cardBg,
+    border: `1px solid ${C.border}`,
+    borderRadius: 4,
+    color: C.text,
+    padding: '4px 8px',
+    fontSize: 11,
+    width: '100%',
+  }
+
+  return h(
+    Card,
+    { style: { marginTop: 12 } },
+    h('div', { style: lbl }, '手動新增交易'),
+    h(
+      'div',
+      { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+      h('input', {
+        style: inputStyle,
+        placeholder: '股票代碼',
+        value: code,
+        onChange: (e) => setCode(e.target.value),
+      }),
+      h('input', {
+        style: inputStyle,
+        placeholder: '名稱（選填）',
+        value: name,
+        onChange: (e) => setName(e.target.value),
+      }),
+      h(
+        'select',
+        {
+          style: { ...inputStyle, cursor: 'pointer' },
+          value: action,
+          onChange: (e) => setAction(e.target.value),
+        },
+        h('option', { value: '買進' }, '買進'),
+        h('option', { value: '賣出' }, '賣出')
+      ),
+      h('input', {
+        style: inputStyle,
+        placeholder: '股數',
+        type: 'number',
+        value: qty,
+        onChange: (e) => setQty(e.target.value),
+      }),
+      h('input', {
+        style: inputStyle,
+        placeholder: '價格',
+        type: 'number',
+        step: '0.01',
+        value: price,
+        onChange: (e) => setPrice(e.target.value),
+      }),
+      h(
+        Button,
+        {
+          onClick: handleSubmit,
+          style: { fontSize: 11, padding: '4px 12px' },
+        },
+        '新增'
+      )
+    )
+  )
+}
+
+/**
  * Manual Update Forms
  */
 export function ManualUpdateForms({
@@ -1097,6 +1197,7 @@ export function TradePanel({
       uploadCount,
       activeUploadIndex,
     }),
+    h(ManualTradeEntry, { setParsed, toSlashDate }),
     h(ManualUpdateForms, {
       tpCode,
       tpFirm,

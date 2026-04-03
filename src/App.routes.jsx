@@ -52,15 +52,23 @@ function App() {
           {/* Overview page */}
           <Route path="/overview" element={<OverviewPage />} />
 
-          {/* Portfolio pages */}
+          {/* Portfolio pages — grouped into 4 main tabs with sub-navigation:
+               總覽 | 持倉(持股+觀察股) | 研究(分析+事件+新聞+深度研究) | 記帳(成交+日誌) */}
           <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
-            <Route index element={<Navigate to="holdings" />} />
+            {/* 總覽 — default landing page */}
+            <Route index element={<OverviewPage />} />
+
+            {/* 持倉 Tab */}
             <Route path="holdings" element={<HoldingsPage />} />
             <Route path="watchlist" element={<WatchlistPage />} />
-            <Route path="events" element={<EventsPage />} />
-            <Route path="news" element={<NewsPage />} />
+
+            {/* 研究 Tab */}
             <Route path="daily" element={<DailyPage />} />
             <Route path="research" element={<ResearchPage />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="news" element={<NewsPage />} />
+
+            {/* 記帳 Tab */}
             <Route path="trade" element={<TradePage />} />
             <Route path="log" element={<LogPage />} />
           </Route>

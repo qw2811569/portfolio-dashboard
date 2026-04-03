@@ -123,5 +123,51 @@ Recommendation:
 ## 交接格式
 
 - `done`：QA 結果摘要
+- `changed files`：你改了或產出了哪些檔案
 - `bugs found`：發現的問題清單
 - `recommendation`：建議下一步（派誰修什麼）
+
+回報用：`AI_NAME=Qwen bash scripts/ai-status.sh done "你的摘要"`
+
+---
+
+## 當前任務（2026-04-03 Claude 指派）
+
+先 `git pull origin main`。
+
+### 任務 A：知識庫四人格分類（最高優先）
+
+讀設計文件 `docs/specs/four-persona-analysis-design.md` 了解四個人格。
+
+然後讀 `src/lib/knowledge-base/` 下 7 個 JSON（排除 index.json 和 quality-validation.json），把 600 條規則按人格分類。
+
+分類規則：
+
+- 看技術面（K線、RSI、均線、成交量）→ scalper
+- 看籌碼面（法人買賣超、融資融券）→ swing
+- 看基本面（營收、EPS、PER、產業趨勢）→ trend
+- 看長期（ROE、現金流、護城河、配息）→ value
+- 通用（停損、部位管理、風險控制）→ shared
+
+產出：`data/persona-knowledge-map.json`
+格式：`{"規則id": "scalper|swing|trend|value|shared", ...}`
+
+### 任務 B：知識庫缺口分析
+
+讀完 600 條後，列出每個人格缺少什麼知識。
+
+產出：`docs/status/knowledge-gap-report.md`
+
+### 任務 C：網站 QA
+
+跑 Level 1 + Level 2 QA（見上方清單）。
+
+回報格式用上方的 QA Report 格式。
+
+### 完成後
+
+三個任務都做完後：
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 A/B/C 完成：600 條分類完成、缺口報告產出、QA X pass / Y fail"
+```

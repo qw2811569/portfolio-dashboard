@@ -155,7 +155,37 @@ Recommendation:
 
 ---
 
-### 任務 G：修兩個前端 Bug（新任務）
+### ~~任務 G~~ ✅ 完成
+
+---
+
+### 任務 H：收盤分析分群提速 + 全量回歸測試（新任務）
+
+#### H1. 分群提速
+
+目前 22 檔持股全塞進一份 prompt 太長太慢。
+
+修改 `src/hooks/useDailyAnalysisWorkflow.js`：
+
+1. import `selectPersona` from `../lib/personaEngine.js` 和 `getBacktestReliability` from `../lib/analysisFramework.js`
+2. 在組 prompt 前，把持股分群：
+   - 高可信度（tier=high）的股票：不送 AI，用 `scoreByPersona` 量化打分直接出結論，結果附在報告最後當「量化快掃」段落
+   - 中低可信度的才送 AI 做深度分析
+3. 效果：prompt 變短（可能從 22 檔變 15 檔），回應更快
+
+注意：不要破壞現有的 `buildDailyAnalysisRequest` 格式，只是減少送入的持股數。
+
+#### H2. 全量回歸測試
+
+跑 `npx vitest run` 確認 71+ files 全過。
+跑 `npm run build` 確認 build 通過。
+跑 `npm run lint` 確認無 error。
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 H：分群提速完成 + 回歸全過"
+```
+
+### 任務 G：修兩個前端 Bug（已完成）
 
 Codex 額度到 4/8 才恢復，你接手兩個前端 bug。
 

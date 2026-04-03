@@ -9,7 +9,7 @@
 // - AI_THINKING_BUDGET_TOKENS
 
 const DEFAULT_ENDPOINT = 'https://api.anthropic.com/v1/messages'
-const DEFAULT_MODEL = 'claude-sonnet-4-6-20250610'
+const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const DEFAULT_VERSION = '2023-06-01'
 const MIN_THINKING_BUDGET = 1024
 

@@ -30,6 +30,7 @@ import {
   formatFrameworkSections,
   formatReliabilityContext,
 } from '../lib/analysisFramework.js'
+import { formatPersonaContext } from '../lib/personaEngine.js'
 import { readEventStream } from '../lib/eventStream.js'
 import {
   buildBudgetedBrainContext,
@@ -501,6 +502,8 @@ ${losers
             .join('\n\n'),
           '',
           formatReliabilityContext(analysisDossiers),
+          '',
+          formatPersonaContext(analysisDossiers),
         ].join('\n')
 
         const analysisRequestBody = buildDailyAnalysisRequest({

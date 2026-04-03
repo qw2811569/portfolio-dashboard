@@ -189,19 +189,23 @@ Claude 剛修了 cloud sync（`usePortfolioBootstrap.js`），需要驗證：
 AI_NAME=Qwen bash scripts/ai-status.sh done "任務 K：回歸全過 + E2E X pass / Y fail"
 ```
 
-### 任務 L：lint warning 掃除
+### ~~任務 L：lint warning 掃除~~ ✅ Claude 已完成（0 warnings）
 
-跑 `npm run lint` 後，把所有 **warning** 修掉（不只是 error）。
-常見的：
+### 任務 M：seedData 拆分
 
-- `no-unused-vars` — 刪掉沒用到的變數
-- `no-console` — `console.log` 改成 `console.warn` 或刪掉
-- `prefer-const` — `let` 改 `const`
+目前 `src/seedData.js` 有 1178 行、29KB，所有資料都打包在 bundle 裡。
 
-每改完一批跑 `npx vitest run` 確認沒破。
+**拆分方式：**
+
+1. 新建 `src/seedDataEvents.js`，把 `NEWS_EVENTS`、`EVENTS`、`RELAY_PLAN`、`RELAY_PLAN_CODES` 移過去
+2. `src/seedData.js` 只留首屏必需的：`STOCK_META`、`INIT_HOLDINGS`、`INIT_TARGETS`、`INIT_WATCHLIST`、`IND_COLOR`、`avgTarget`
+3. 所有 import `NEWS_EVENTS` / `RELAY_PLAN` 的檔案改成從 `seedDataEvents.js` import
+4. `INIT_HOLDINGS_JINLIANCHENG` 和 `INIT_TARGETS_JINLIANCHENG` 也移到 `src/seedDataJinliancheng.js`
+
+每步改完跑 `npx vitest run` + `npm run build` 確認沒破。
 
 ```
-AI_NAME=Qwen bash scripts/ai-status.sh done "任務 L：lint warnings 清零"
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 M：seedData 拆分完成"
 ```
 
 ### 任務 G：修兩個前端 Bug（已完成）

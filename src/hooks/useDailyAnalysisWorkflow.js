@@ -25,6 +25,7 @@ import {
   formatTaiwanMarketSignals,
   formatHistoricalAnalogsForPrompt,
 } from '../lib/dailyAnalysisRuntime.js'
+import { selectAnalysisFramework, formatFrameworkSections } from '../lib/analysisFramework.js'
 import { readEventStream } from '../lib/eventStream.js'
 import {
   buildBudgetedBrainContext,
@@ -33,6 +34,7 @@ import {
   formatRecentLessons,
 } from '../lib/promptBudget.js'
 import { findHistoricalAnalogs } from '../lib/brainRuntime.js'
+import { logAnalysisObservation } from '../lib/knowledgeEvolutionRuntime.js'
 import { normalizeAnalysisHistoryEntries, normalizeDailyReportEntry } from '../lib/reportUtils.js'
 
 async function consumeStreamingAnalyzeResponse(
@@ -469,6 +471,22 @@ ${losers
           ])
         )
 
+        // 為每檔持股選分析框架，組成整體 context
+        const frameworksByStock = analysisDossiers.map((dossier) => {
+          const meta = dossier?.meta || dossier?.stockMeta || {}
+          const stockEvents = (dossier?.events?.pending || []).concat(
+            dossier?.events?.tracking || []
+          )
+          const framework = selectAnalysisFramework(meta, dossier, stockEvents)
+          return { code: dossier.code, name: dossier.name, framework }
+        })
+        const analysisFrameworkContext = frameworksByStock
+          .map(
+            ({ code, name, framework }) =>
+              `${code} ${name}：${framework.mode}（${framework.reason}）\n${formatFrameworkSections(framework, {})}`
+          )
+          .join('\n\n')
+
         const analysisRequestBody = buildDailyAnalysisRequest({
           today,
           prevReviewBlock,
@@ -486,6 +504,7 @@ ${losers
           predictionHitRate: `${hits}/${total}`,
           taiwanMarketSignals: formatTaiwanMarketSignals(taiwanMarketSignals),
           historicalAnalogs: formatHistoricalAnalogsForPrompt(historicalAnalogs),
+          analysisFrameworkContext,
         })
 
         const { rawText: rawInsight } = await requestAnalyzeWithFallback({
@@ -557,6 +576,15 @@ ${losers
 
       setDailyReport(normalizeDailyReportEntry(report))
       setAnalysisHistory((prev) => normalizeAnalysisHistoryEntries([report, ...(prev || [])]))
+      ;(analysisDossiers || []).forEach((dossier) => {
+        logAnalysisObservation({
+          ruleIds: injectedKnowledgeIds,
+          stockCode: dossier?.code,
+          date: today,
+          outcome: aiError ? 'negative' : 'positive',
+          evidenceRefs: Array.isArray(dossier?.events) ? dossier.events.slice(0, 3) : [],
+        })
+      })
 
       if (canUseCloud) {
         fetch('/api/brain', {

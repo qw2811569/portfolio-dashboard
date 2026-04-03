@@ -34,6 +34,17 @@ function readStorageArray(storage, key, limit = 200) {
   }
 }
 
+function writeStorageArray(storage, key, rows, limit = 500) {
+  try {
+    if (!storage?.setItem) return []
+    const normalized = Array.isArray(rows) ? rows.slice(-limit) : []
+    storage.setItem(key, JSON.stringify(normalized))
+    return normalized
+  } catch {
+    return []
+  }
+}
+
 function resolveStorage(storage) {
   if (storage?.getItem) return storage
   if (typeof window !== 'undefined' && window.localStorage?.getItem) return window.localStorage
@@ -110,7 +121,117 @@ export function readKnowledgeEvolutionLogs(storage = null) {
     feedbackLog: normalizeKnowledgeFeedbackLog(
       readStorageArray(targetStorage, 'kb-feedback-log', 200)
     ),
+    observationLog: readStorageArray(targetStorage, 'kb-observation-log', 500),
+    evolutionLog: readStorageArray(targetStorage, 'kb-evolution-log', 500),
   }
+}
+
+export function logAnalysisObservation(params = {}, storage = null) {
+  const targetStorage = resolveStorage(storage)
+  const current = readStorageArray(targetStorage, 'kb-observation-log', 500)
+  const entry = {
+    ruleIds: Array.from(
+      new Set((params.ruleIds || []).map((id) => String(id || '').trim()).filter(Boolean))
+    ),
+    stockCode: String(params.stockCode || '').trim(),
+    date: String(params.date || '').trim() || null,
+    outcome: String(params.outcome || '').trim() || 'neutral',
+    evidenceRefs: Array.isArray(params.evidenceRefs) ? params.evidenceRefs : [],
+    timestamp: Number(params.timestamp) || Date.now(),
+  }
+  if (entry.ruleIds.length === 0) return current
+  return writeStorageArray(targetStorage, 'kb-observation-log', [...current, entry], 500)
+}
+
+export function scoreKnowledgeRuleOutcomes(observations = [], { now = Date.now() } = {}) {
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+  const byRule = new Map()
+
+  ;(Array.isArray(observations) ? observations : []).forEach((observation) => {
+    const outcome = String(observation?.outcome || '').trim()
+    const isPositive = ['positive', 'correct', 'helpful', 'up'].includes(outcome)
+    const isNegative = ['negative', 'wrong', 'misleading', 'down'].includes(outcome)
+    ;(Array.isArray(observation?.ruleIds) ? observation.ruleIds : []).forEach((ruleId) => {
+      const current = byRule.get(ruleId) || {
+        ruleId,
+        hitCount: 0,
+        positiveCount: 0,
+        negativeCount: 0,
+        lastUsedAt: 0,
+      }
+      current.hitCount += 1
+      if (isPositive) current.positiveCount += 1
+      if (isNegative) current.negativeCount += 1
+      current.lastUsedAt = Math.max(current.lastUsedAt, Number(observation?.timestamp) || 0)
+      byRule.set(ruleId, current)
+    })
+  })
+
+  return Array.from(byRule.values()).map((item) => {
+    const positiveRate = item.hitCount > 0 ? item.positiveCount / item.hitCount : 0
+    let suggestedConfidenceChange = 0
+    const reasons = []
+
+    if (positiveRate > 0.7) {
+      suggestedConfidenceChange += 0.02
+      reasons.push('正面率 > 70%')
+    } else if (positiveRate < 0.3) {
+      suggestedConfidenceChange -= 0.03
+      reasons.push('正面率 < 30%')
+    }
+
+    if (item.lastUsedAt > 0 && now - item.lastUsedAt > THIRTY_DAYS_MS) {
+      suggestedConfidenceChange -= 0.01
+      reasons.push('未使用 > 30 天')
+    }
+
+    if (suggestedConfidenceChange > 0.05) suggestedConfidenceChange = 0.05
+    if (suggestedConfidenceChange < -0.05) suggestedConfidenceChange = -0.05
+
+    return {
+      ruleId: item.ruleId,
+      hitCount: item.hitCount,
+      positiveRate: Math.round(positiveRate * 10000) / 10000,
+      suggestedConfidenceChange: roundDelta(suggestedConfidenceChange),
+      lastUsedAt: item.lastUsedAt,
+      reason: reasons.join('；'),
+    }
+  })
+}
+
+export function applyKnowledgeConfidenceAdjustments(scores = [], { storage = null } = {}) {
+  const catalog = buildKnowledgeCatalog()
+  const catalogById = new Map(catalog.map((item) => [item.id, item]))
+  const applied = (Array.isArray(scores) ? scores : [])
+    .map((score) => {
+      const current = catalogById.get(score.ruleId)
+      if (!current || !score.suggestedConfidenceChange) return null
+      const nextConfidence = clampConfidence(
+        current.confidence + Number(score.suggestedConfidenceChange || 0),
+        0.5,
+        0.95
+      )
+      return {
+        ruleId: score.ruleId,
+        sourceKey: current.sourceKey,
+        fromConfidence: current.confidence,
+        toConfidence: nextConfidence,
+        delta: roundDelta(nextConfidence - current.confidence),
+        reason: score.reason || '',
+      }
+    })
+    .filter(Boolean)
+
+  const targetStorage = resolveStorage(storage)
+  const evolutionLog = readStorageArray(targetStorage, 'kb-evolution-log', 500)
+  writeStorageArray(
+    targetStorage,
+    'kb-evolution-log',
+    [...evolutionLog, ...applied.map((item) => ({ ...item, timestamp: Date.now() }))],
+    500
+  )
+
+  return applied
 }
 
 export function buildKnowledgeEvolutionProposal({

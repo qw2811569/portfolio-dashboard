@@ -510,6 +510,7 @@ export function buildDailyAnalysisRequest({
   predictionHitRate = '0/0',
   taiwanMarketSignals = '',
   historicalAnalogs = '',
+  analysisFrameworkContext = '',
 }) {
   return {
     maxTokens: 2200,
@@ -518,6 +519,7 @@ export function buildDailyAnalysisRequest({
     userPrompt: [
       '<analysis_packet mode="daily_close">',
       wrapPromptSection('date', today, '未提供'),
+      wrapPromptSection('analysis_framework', analysisFrameworkContext),
       wrapPromptSection('previous_review', prevReviewBlock),
       wrapPromptSection('blind_prediction_review', blindPredBlock),
       wrapPromptSection(

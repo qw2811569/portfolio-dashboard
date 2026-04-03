@@ -1,6 +1,14 @@
 {
-  "lastUpdated": "2026-04-03T12:23:29+08:00",
+  "lastUpdated": "2026-04-03T12:29:51+08:00",
   "entries": [
+    {
+      "time": "2026-04-03 12:29",
+      "isoTime": "2026-04-03T12:29:51+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成 Batch C Evolution Loop：新增 observation log、rule outcome scorer、confidence batch adjustment/evolution log，並在 daily analysis / research 完成時寫 observation；已通過 build/vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 12:23",
       "isoTime": "2026-04-03T12:23:29+08:00",
@@ -311,14 +319,6 @@
       "ai": "Gemini",
       "action": "start",
       "message": "Gemini research scout：測試連線",
-      "status": "working"
-    },
-    {
-      "time": "2026-04-02 23:17",
-      "isoTime": "2026-04-02T23:17:00+08:00",
-      "ai": "Gemini",
-      "action": "auto-detect",
-      "message": "Gemini：headless/taiwan-scout (gemini-2.5-flash)（自動偵測）",
       "status": "working"
     }
   ]

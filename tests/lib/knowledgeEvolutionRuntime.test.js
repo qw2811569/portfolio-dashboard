@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyKnowledgeConfidenceAdjustments,
   buildKnowledgeEvolutionProposal,
+  logAnalysisObservation,
   normalizeKnowledgeFeedbackLog,
   normalizeKnowledgeUsageLog,
+  scoreKnowledgeRuleOutcomes,
 } from '../../src/lib/knowledgeEvolutionRuntime.js'
 
 describe('lib/knowledgeEvolutionRuntime', () => {
@@ -71,5 +74,86 @@ describe('lib/knowledgeEvolutionRuntime', () => {
     expect(proposal.status).toBe('no-op')
     expect(proposal.confidenceAdjustments).toEqual([])
     expect(proposal.metrics.feedbackMissingLinkCount).toBe(1)
+  })
+
+  it('logs observations and keeps only the latest 500 entries', () => {
+    const storage = {
+      data: new Map(),
+      getItem(key) {
+        return this.data.get(key) || null
+      },
+      setItem(key, value) {
+        this.data.set(key, value)
+      },
+    }
+
+    for (let i = 0; i < 505; i++) {
+      logAnalysisObservation(
+        {
+          ruleIds: ['fa-001'],
+          stockCode: '2330',
+          date: '2026-04-03',
+          outcome: i % 2 === 0 ? 'positive' : 'negative',
+          evidenceRefs: [],
+          timestamp: i + 1,
+        },
+        storage
+      )
+    }
+
+    const rows = JSON.parse(storage.getItem('kb-observation-log'))
+    expect(rows).toHaveLength(500)
+    expect(rows[0].timestamp).toBe(6)
+  })
+
+  it('scores rule outcomes and caps single-step confidence deltas', () => {
+    const now = 40 * 24 * 60 * 60 * 1000
+    const scores = scoreKnowledgeRuleOutcomes(
+      [
+        { ruleIds: ['fa-001'], outcome: 'positive', timestamp: now - 1000 },
+        { ruleIds: ['fa-001'], outcome: 'positive', timestamp: now - 2000 },
+        { ruleIds: ['fa-001'], outcome: 'positive', timestamp: now - 3000 },
+        { ruleIds: ['rm-001'], outcome: 'negative', timestamp: 1 },
+        { ruleIds: ['rm-001'], outcome: 'negative', timestamp: 2 },
+      ],
+      { now }
+    )
+
+    expect(scores).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'fa-001', suggestedConfidenceChange: 0.02 }),
+        expect.objectContaining({ ruleId: 'rm-001', suggestedConfidenceChange: -0.04 }),
+      ])
+    )
+  })
+
+  it('applies confidence adjustments and writes evolution log entries', () => {
+    const storage = {
+      data: new Map(),
+      getItem(key) {
+        return this.data.get(key) || null
+      },
+      setItem(key, value) {
+        this.data.set(key, value)
+      },
+    }
+
+    const applied = applyKnowledgeConfidenceAdjustments(
+      [
+        { ruleId: 'fa-001', suggestedConfidenceChange: 0.02, reason: '正面率 > 70%' },
+        { ruleId: 'rm-001', suggestedConfidenceChange: -0.03, reason: '正面率 < 30%' },
+      ],
+      { storage }
+    )
+
+    expect(applied).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: 'fa-001', delta: 0.02 }),
+        expect.objectContaining({ ruleId: 'rm-001', delta: -0.03 }),
+      ])
+    )
+
+    const evolutionLog = JSON.parse(storage.getItem('kb-evolution-log'))
+    expect(evolutionLog.length).toBeGreaterThan(0)
   })
 })

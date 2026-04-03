@@ -59,7 +59,7 @@ describe('api/parse', () => {
     const req = {
       method: 'POST',
       body: {
-        systemPrompt: 'parse prompt',
+        systemPrompt: '台股交易截圖',
         base64: 'ZmFrZS1pbWFnZQ==',
         mediaType: 'image/png',
       },
@@ -70,11 +70,11 @@ describe('api/parse', () => {
       await handler(req, res)
 
       expect(callAiImage).toHaveBeenCalledWith({
-        system: expect.stringContaining('parse prompt'),
+        system: expect.stringContaining('台股交易截圖'),
         base64: 'ZmFrZS1pbWFnZQ==',
         mediaType: 'image/png',
-        prompt: expect.stringContaining('股票代碼、買賣方向、價格、數量、時間'),
-        maxTokens: 900,
+        prompt: expect.stringContaining('成交截圖'),
+        maxTokens: 4000,
       })
       expect(res.payload).toMatchObject({
         tradeDate: '2026/04/02',
@@ -102,7 +102,7 @@ describe('api/parse', () => {
     const req = {
       method: 'POST',
       body: {
-        systemPrompt: 'parse prompt',
+        systemPrompt: '台股交易截圖',
       },
     }
     const res = createMockResponse()

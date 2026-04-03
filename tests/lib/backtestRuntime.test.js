@@ -7,10 +7,10 @@ import {
 } from '../../src/lib/backtestRuntime.js'
 
 describe('lib/backtestRuntime', () => {
-  it('contains the requested 10 backtest dates', () => {
-    expect(BACKTEST_DATES).toHaveLength(10)
-    expect(BACKTEST_DATES[0]).toBe('2024-03-15')
-    expect(BACKTEST_DATES[9]).toBe('2026-03-01')
+  it('contains the requested 20 backtest dates', () => {
+    expect(BACKTEST_DATES).toHaveLength(20)
+    expect(BACKTEST_DATES[0]).toBe('2024-02-15')
+    expect(BACKTEST_DATES[19]).toBe('2026-02-15')
   })
 
   it('builds rule-based backtest analysis without calling AI', () => {

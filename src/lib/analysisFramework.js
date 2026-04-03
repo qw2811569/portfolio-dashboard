@@ -131,3 +131,42 @@ export function formatFrameworkSections(framework = {}, dossier = {}) {
     ...sectionLines,
   ].join('\n')
 }
+
+/**
+ * 回測驗證的量化訊號可信度
+ * 基於 540 回歷史回測（27 檔 x 20 日期）
+ */
+const BACKTEST_RELIABILITY = {
+  3013: { rate: 89, tier: 'high', note: '法人+營收趨勢可直接判定方向' },
+  4562: { rate: 78, tier: 'high', note: '中小型循環股數據敏感度高' },
+  1799: { rate: 73, tier: 'high', note: '轉機題材對數據反應明確' },
+  3017: { rate: 67, tier: 'high', note: 'AI 伺服器題材+法人動向可判' },
+  6770: { rate: 63, tier: 'medium', note: '晶圓代工受國際市場干擾' },
+  2543: { rate: 60, tier: 'medium', note: '營建股受政策影響需定性補充' },
+  2489: { rate: 43, tier: 'low', note: '轉型股波動大，靠定性分析' },
+  3006: { rate: 43, tier: 'low', note: 'IC 設計受國際報價主導' },
+  3443: { rate: 33, tier: 'low', note: 'CoWoS 題材受台積電資本支出主導' },
+  6446: { rate: 29, tier: 'low', note: '新藥股靠臨床進度，不看量化' },
+  1503: { rate: 27, tier: 'low', note: '重電受政策標案影響' },
+  3231: { rate: 22, tier: 'low', note: 'AI 代工受國際大廠訂單主導' },
+  2313: { rate: 14, tier: 'low', note: 'PCB 大廠受蘋果週期主導' },
+}
+
+export function getBacktestReliability(code) {
+  return (
+    BACKTEST_RELIABILITY[code] || { rate: 47, tier: 'medium', note: '無回測資料，量化+定性並重' }
+  )
+}
+
+export function formatReliabilityContext(holdings) {
+  if (!Array.isArray(holdings) || holdings.length === 0) return ''
+  const lines = ['量化訊號可信度（基於 540 回歷史回測）：']
+  for (const h of holdings) {
+    const code = h.code || h
+    const rel = getBacktestReliability(code)
+    const icon = rel.tier === 'high' ? '🟢' : rel.tier === 'medium' ? '🟡' : '🔴'
+    lines.push(`${icon} ${code} ${h.name || ''}: ${rel.note} (命中${rel.rate}%)`)
+  }
+  lines.push('🟢=信數字 🟡=量化+定性 🔴=做深度定性分析')
+  return lines.join('\n')
+}

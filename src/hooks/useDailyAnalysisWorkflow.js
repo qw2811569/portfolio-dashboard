@@ -25,7 +25,11 @@ import {
   formatTaiwanMarketSignals,
   formatHistoricalAnalogsForPrompt,
 } from '../lib/dailyAnalysisRuntime.js'
-import { selectAnalysisFramework, formatFrameworkSections } from '../lib/analysisFramework.js'
+import {
+  selectAnalysisFramework,
+  formatFrameworkSections,
+  formatReliabilityContext,
+} from '../lib/analysisFramework.js'
 import { readEventStream } from '../lib/eventStream.js'
 import {
   buildBudgetedBrainContext,
@@ -488,12 +492,16 @@ ${losers
           const framework = selectAnalysisFramework(meta, dossier, stockEvents)
           return { code: dossier.code, name: dossier.name, framework }
         })
-        const analysisFrameworkContext = frameworksByStock
-          .map(
-            ({ code, name, framework }) =>
-              `${code} ${name}：${framework.mode}（${framework.reason}）\n${formatFrameworkSections(framework, {})}`
-          )
-          .join('\n\n')
+        const analysisFrameworkContext = [
+          frameworksByStock
+            .map(
+              ({ code, name, framework }) =>
+                `${code} ${name}：${framework.mode}（${framework.reason}）\n${formatFrameworkSections(framework, {})}`
+            )
+            .join('\n\n'),
+          '',
+          formatReliabilityContext(analysisDossiers),
+        ].join('\n')
 
         const analysisRequestBody = buildDailyAnalysisRequest({
           today,

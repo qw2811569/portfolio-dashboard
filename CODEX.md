@@ -91,3 +91,59 @@
 - `changed files`
 - `risks`
 - `next best step`
+
+回報用：`AI_NAME=Codex bash scripts/ai-status.sh done "你的摘要"`
+
+---
+
+## 當前任務（2026-04-03 Claude 指派）
+
+先 `git pull origin main`。
+
+### 任務 1：收盤分析分群提速（最高優先）
+
+目前 22 檔持股全部塞進一份 prompt 太長太慢。改成分群送：
+
+修改 `src/hooks/useDailyAnalysisWorkflow.js`：
+
+1. 用 `selectPersona()` 把持股分成 4 群（scalper/swing/trend/value）
+2. 高可信度（BACKTEST_RELIABILITY tier=high）的股票用量化打分 `scoreByPersona()` 直接出結論，不送 AI
+3. 中低可信度的才送 AI 分析
+4. 每群最多送一次 /api/analyze，而非全部一包
+
+效果：prompt 更短、回應更快、AI 能更專注
+
+需要 import：
+
+```javascript
+import { selectPersona, scoreByPersona } from '../lib/personaEngine.js'
+import { getBacktestReliability } from '../lib/analysisFramework.js'
+```
+
+### 任務 2：research API streaming 前端接收
+
+`api/research.js` 已加 SSE streaming（`?stream=1`），但前端 `useResearchWorkflow.js` 還沒接。
+
+修改 `src/hooks/useResearchWorkflow.js` 的 `defaultRunResearchRequest()`：
+
+1. evolve/portfolio mode 改用 `?stream=1` 呼叫
+2. 讀 SSE events，每收到 `event:round` 就更新 UI 進度
+3. 收到 `event:done` 時解析最終結果
+
+參考 `src/lib/analyzeRequest.js` 的 SSE 消費方式。
+
+### 任務 3：持股資料 cloud sync 修復
+
+「我」帳戶的持股每次換瀏覽器就丟（只存 localStorage）。金聯成帳戶有 cloud sync 所以不丟。
+
+修改 `src/hooks/usePortfolioBootstrap.js` 或 `usePortfolioPersistence.js`：
+
+- boot 時如果 localStorage 的 `pf-me-holdings-v2` 是空的
+- 自動從 `/api/brain?action=all` 或 Vercel Blob 拉持股資料回來
+- 不要 fallback 到 seedData
+
+### 完成後
+
+```
+AI_NAME=Codex bash scripts/ai-status.sh done "任務 1/2/3 完成：分群提速、streaming 前端、cloud sync"
+```

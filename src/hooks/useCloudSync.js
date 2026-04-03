@@ -99,8 +99,8 @@ export const useCloudSync = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action, data }),
           })
-          const data = await res.json().catch(() => ({}))
-          if (!res.ok) throw new Error(data?.error || `Sync failed (${res.status})`)
+          const resBody = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(resBody?.error || `Sync failed (${res.status})`)
 
           const now = Date.now()
           cloudSyncStateRef.current.syncedAt = now

@@ -143,11 +143,10 @@ describe('hooks/useCloudSync.js', () => {
   it('scheduleCloudSave schedules a debounced save attempt when cloud is enabled', async () => {
     vi.useFakeTimers()
 
-    // NOTE: The source has a known variable shadowing bug (const data on line 102
-    // shadows the parameter data on line 91 inside the setTimeout arrow function).
-    // This causes a ReferenceError before fetch is called, caught by the catch block.
-    // The test verifies the debounce scheduling works (timer fires after delay).
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    })
 
     const { result } = renderHook(() =>
       useCloudSync({
@@ -160,16 +159,19 @@ describe('hooks/useCloudSync.js', () => {
       result.current.scheduleCloudSave('test-action', { foo: 'bar' }, 'saved!')
     })
 
-    // Before debounce fires — no warning yet
-    expect(warnSpy).not.toHaveBeenCalled()
+    // Before debounce fires — fetch not called yet
+    expect(global.fetch).not.toHaveBeenCalled()
 
-    // After debounce — the timer fires, hits the variable shadowing bug, and warns
+    // After debounce — the timer fires and fetch is called with correct data
     await act(async () => {
       await vi.advanceTimersByTimeAsync(600)
     })
 
-    expect(warnSpy).toHaveBeenCalledWith('Cloud save failed:', expect.any(ReferenceError))
-    warnSpy.mockRestore()
+    expect(global.fetch).toHaveBeenCalledWith('/api/brain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test-action', data: { foo: 'bar' } }),
+    })
   })
 
   it('scheduleCloudSave does nothing when cloud is disabled', async () => {

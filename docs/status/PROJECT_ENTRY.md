@@ -91,11 +91,20 @@
 - 暫不納入主線（API 限流）
 - 可用時負責公開資料蒐集
 
-### OpenClaw（調度員）
+### OpenClaw（純調度員 — 不做推理）
 
-- 透過 Telegram 接收指令
-- ACP 原生調度 Claude/Codex/Qwen
-- 自動閉環：`bash scripts/dispatch-llm.sh loop`
+只負責：
+
+- 接 Telegram webhook/polling，轉傳訊息給 AI
+- 維持 gateway 背景執行
+- 管理 token、session、排程、錯誤重試
+- ACP 調度 Claude/Codex/Qwen 的 session 生命週期
+
+不負責：
+
+- 模型推理（那是 Claude/Codex/Qwen 的事）
+- 工具標準定義
+- 策略判斷或程式碼修改
 
 ---
 

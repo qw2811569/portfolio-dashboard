@@ -12,15 +12,28 @@ function truncateForLog(value, maxLength = 4000) {
 function buildParsePrompt(systemPrompt = '') {
   return [
     systemPrompt,
-    '請閱讀這張台股成交或持倉截圖，抽取所有股票交易資料。',
-    '若圖片模糊或欄位不完整，請盡可能保留可辨識欄位，並在 note 說明缺漏。',
-    '必須嚴格按以下 JSON 格式回傳，不要加任何說明文字或 markdown：',
-    '{"trades":[{"code":"股票代碼","name":"股票名稱","action":"buy或sell","price":數字,"quantity":數字,"time":"日期時間","cost":成本價或null,"note":"備註"}]}',
-    '如果是持倉截圖（不是成交單），action 用 "hold"，price 用現價，cost 用成本價。',
-    '如果看到目標價資訊，加入 "targetPrice":數字 欄位。',
+    '你是台股交易截圖 OCR 專家。請仔細閱讀這張圖片，辨識所有股票資料。',
+    '',
+    '台股代碼規則：',
+    '- 一般股票：4 位數字（如 2308、3443、1503）',
+    '- 權證：6 位數字（如 053848、702157、084891）',
+    '- ETF：4-5 位數字或代碼（如 0050、00637L、00918）',
+    '- 注意區分：不要把股票名稱的數字跟代碼搞混',
+    '',
+    '常見台股券商截圖欄位：股票代碼、股票名稱、買/賣/庫存、成交價/現價、張數/股數、成本均價、損益',
+    '',
+    '必須嚴格按以下 JSON 格式回傳，不要加任何說明文字、markdown 或 code fence：',
+    '{"trades":[{"code":"股票代碼","name":"股票名稱","action":"buy或sell或hold","price":現價數字,"quantity":股數數字,"cost":成本均價數字或null,"pnl":損益數字或null,"note":"備註"}]}',
+    '',
+    '重要：',
+    '- code 必須是正確的台股代碼格式',
+    '- 如果是持倉庫存截圖，action 用 "hold"',
+    '- price 和 cost 用實際數字，不要帶逗號或千分位',
+    '- quantity 是股數（1張=1000股，如果看到"張"要乘1000）',
+    '- 如果某欄看不清楚，寧可填 null 也不要亂猜',
   ]
     .filter(Boolean)
-    .join('\n\n')
+    .join('\n')
 }
 
 function buildUserFacingParseError(error, rawText = '') {
@@ -85,7 +98,7 @@ export default async function handler(req, res) {
       mediaType,
       prompt:
         '請解析這張成交截圖，抽取股票代碼、買賣方向、價格、數量、時間，以及可能出現的目標價資訊。',
-      maxTokens: 900,
+      maxTokens: 4000,
     })
 
     rawText = extractAiText(data)
@@ -113,24 +126,30 @@ export default async function handler(req, res) {
 
     const normalized = normalizeTradeParseResult(parsedPayload)
 
-    // Fuzzy match：用 STOCK_META 修正 OCR 辨識錯誤
+    // Fuzzy match：用 STOCK_META + INIT_HOLDINGS 修正 OCR 辨識錯誤
     try {
-      const { STOCK_META } = await import('../src/seedData.js')
+      const { STOCK_META, INIT_HOLDINGS } = await import('../src/seedData.js')
       const knownStocks = Object.entries(STOCK_META).map(([code, meta]) => ({
         code,
         name: meta.name || '',
         industry: meta.industry || '',
       }))
 
+      // 也收集已知持股的價格資訊（從 localStorage 無法取，但從 holdings 可以推）
+      const holdingCodes = new Set((INIT_HOLDINGS || []).map((h) => h.code))
+
       normalized.trades = normalized.trades.map((trade) => {
-        // 先試精確匹配
+        // 1. 精確匹配代碼
         const exact = knownStocks.find((s) => s.code === trade.code)
         if (exact) return { ...trade, name: exact.name || trade.name, matched: true }
 
-        // 用名稱 fuzzy match
+        // 2. 名稱包含匹配（「台達電」→ 2308）
         if (trade.name) {
           const byName = knownStocks.find(
-            (s) => s.name && (trade.name.includes(s.name) || s.name.includes(trade.name))
+            (s) =>
+              s.name &&
+              s.name.length >= 2 &&
+              (trade.name.includes(s.name) || s.name.includes(trade.name))
           )
           if (byName)
             return {
@@ -138,11 +157,30 @@ export default async function handler(req, res) {
               code: byName.code,
               name: byName.name,
               matched: true,
-              matchNote: `OCR原始代碼:${trade.code}→修正為:${byName.code}`,
+              matchNote: 'name-match:' + trade.code + '→' + byName.code,
             }
         }
 
-        // 用價格+數量匹配（如果價格和數量跟已知持股很接近）
+        // 3. 代碼相似度（允許 1 位數錯誤：2308 vs 2303）
+        if (trade.code && trade.code.length === 4) {
+          const similar = knownStocks.find((s) => {
+            if (s.code.length !== 4) return false
+            let diff = 0
+            for (let i = 0; i < 4; i++) {
+              if (s.code[i] !== trade.code[i]) diff++
+            }
+            return diff === 1
+          })
+          if (similar)
+            return {
+              ...trade,
+              code: similar.code,
+              name: similar.name,
+              matched: true,
+              matchNote: 'code-fuzzy:' + trade.code + '→' + similar.code,
+            }
+        }
+
         return { ...trade, matched: false }
       })
     } catch {

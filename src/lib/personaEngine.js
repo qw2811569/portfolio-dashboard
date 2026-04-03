@@ -95,6 +95,11 @@ export function selectPersona(stockMeta = {}) {
   const period = (stockMeta.period || '').toLowerCase()
   const code = stockMeta.code || ''
 
+  // ETF → 價值者（必須在權證前判斷，因為 00637L 也是 6 碼）
+  if (strategy.includes('etf') || strategy.includes('指數') || /^00\d{3}/.test(code)) {
+    return PERSONAS.value
+  }
+
   // 權證 → 一律短線客
   if (
     strategy.includes('權證') ||
@@ -103,11 +108,6 @@ export function selectPersona(stockMeta = {}) {
     (stockMeta.name || '').includes('售')
   ) {
     return PERSONAS.scalper
-  }
-
-  // ETF → 價值者（長期配置）
-  if (strategy.includes('etf') || strategy.includes('指數') || /^00\d{3}/.test(code)) {
-    return PERSONAS.value
   }
 
   // 事件驅動 → 波段手

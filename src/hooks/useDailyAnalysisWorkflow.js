@@ -286,12 +286,20 @@ export function useDailyAnalysisWorkflow({
               }).text
             : ''
 
-        const eventSummary = pendingEvents
-          .map(
+        // 合併手動事件 + 自動事件（行事曆/FinMind/Gemini），全部注入分析
+        const allEvents = [
+          ...pendingEvents.map(
             (event) =>
               `[eventId:${event.id}] [${event.date}] ${event.title} — 預測:${event.pred === 'up' ? '看漲' : event.pred === 'down' ? '看跌' : '中性'} — 狀態:${event.status}`
-          )
-          .join('\n')
+          ),
+          ...(newsEvents || defaultNewsEvents || [])
+            .slice(0, 10)
+            .map(
+              (event) =>
+                `[auto] [${event.date || ''}] ${event.title || event.type || ''} — 來源:${event.source || 'auto'} — 影響:${event.impact || 'unknown'}`
+            ),
+        ]
+        const eventSummary = allEvents.join('\n')
 
         const anomalySummary =
           anomalies.length > 0

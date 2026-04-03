@@ -676,8 +676,16 @@ export function stripDailyAnalysisEmbeddedBlocks(displayText = '') {
     .filter(Boolean)
     .sort((a, b) => b.start - a.start)
 
-  const cleaned = sections
-    .reduce((text, section) => `${text.slice(0, section.start)}${text.slice(section.end)}`, rawText)
+  let cleaned = sections.reduce(
+    (text, section) => `${text.slice(0, section.start)}${text.slice(section.end)}`,
+    rawText
+  )
+
+  // 清除 AI 回傳的裸 JSON block（```json ... ``` 或尾部的 [{...}] / {...}）
+  cleaned = cleaned
+    .replace(/```json[\s\S]*?```/g, '')
+    .replace(/\n\s*\[[\s\S]*?"eventId"[\s\S]*?\]\s*$/g, '')
+    .replace(/\n\s*\{[\s\S]*?"(?:validatedRules|staleRules|invalidatedRules)"[\s\S]*?\}\s*$/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 

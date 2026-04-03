@@ -951,6 +951,22 @@ ${histSummary || '（無紀錄）'}
       try {
         const clean = newBrainText.replace(/```json|```/g, '').trim()
         parsedBrain = JSON.parse(clean)
+
+        // 自動截斷：AI 常生超過 3 條新規則，把超出的降級到 candidateRules
+        if (parsedBrain && Array.isArray(parsedBrain.rules) && brain) {
+          const currentTexts = [...(brain.rules || []), ...(brain.candidateRules || [])].map((r) =>
+            String(r?.text || '').slice(0, 30)
+          )
+          const isNew = (rule) =>
+            !currentTexts.some((t) => t && String(rule?.text || '').startsWith(t))
+          const newRules = parsedBrain.rules.filter(isNew)
+          if (newRules.length > 3) {
+            const keep = newRules.slice(0, 3)
+            const demote = newRules.slice(3).map((r) => ({ ...r, status: 'candidate' }))
+            parsedBrain.rules = parsedBrain.rules.filter((r) => !isNew(r) || keep.includes(r))
+            parsedBrain.candidateRules = [...(parsedBrain.candidateRules || []), ...demote]
+          }
+        }
       } catch (e) {
         /* 解析失敗就不更新 */
       }

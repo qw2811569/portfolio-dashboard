@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C } from '../../theme.js'
-import { Card, Sparkline } from '../common'
+import { Card } from '../common'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
@@ -27,16 +27,6 @@ const lbl = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
-
-/** Extract most recent 7 close prices from finmind.price (sorted oldest-first for sparkline). */
-function getSparklineData(holding) {
-  const priceArr = holding?.finmind?.price
-  if (!Array.isArray(priceArr) || priceArr.length < 2) return null
-  // finmind.price is sorted date-desc; take up to 7, reverse to oldest-first
-  const recent = priceArr.slice(0, 7).reverse()
-  const closes = recent.map((p) => p?.close).filter((v) => Number.isFinite(v))
-  return closes.length >= 2 ? closes : null
-}
 
 /**
  * Single Holding Row
@@ -80,11 +70,7 @@ export function HoldingRow({
           null,
           h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, holding.name),
           h('div', { style: { fontSize: 9, color: C.textMute } }, holding.code)
-        ),
-        (() => {
-          const sparkData = getSparklineData(holding)
-          return sparkData ? h(Sparkline, { data: sparkData, width: 60, height: 24 }) : null
-        })()
+        )
       ),
 
       // Qty + Cost

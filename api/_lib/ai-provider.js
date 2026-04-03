@@ -154,23 +154,34 @@ function parseSseChunk(chunk = '') {
 export async function callAiRaw({ system, messages, maxTokens = 3000, allowThinking = true }) {
   const config = ensureAiConfigured()
   const thinking = buildThinkingConfig({ allowThinking, config, maxTokens })
-  const response = await fetch(config.endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': config.apiKey,
-      'anthropic-version': config.apiVersion,
-    },
-    body: JSON.stringify(
-      buildAiRequestBody({
-        model: config.model,
-        system,
-        maxTokens,
-        thinking,
-        messages,
-      })
-    ),
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 55_000) // 55s timeout
+  let response
+  try {
+    response = await fetch(config.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': config.apiKey,
+        'anthropic-version': config.apiVersion,
+      },
+      signal: controller.signal,
+      body: JSON.stringify(
+        buildAiRequestBody({
+          model: config.model,
+          system,
+          maxTokens,
+          thinking,
+          messages,
+        })
+      ),
+    })
+  } catch (err) {
+    clearTimeout(timer)
+    if (err.name === 'AbortError') throw new Error('AI API 逾時（55秒），請稍後再試')
+    throw err
+  }
+  clearTimeout(timer)
   const data = await response.json()
   if (!response.ok) {
     const detail =

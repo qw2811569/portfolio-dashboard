@@ -11,3 +11,4 @@ blob-backup/
 # BlamePrompt staging (auto-generated)
 .blameprompt/
 .gstack/
+data/finmind-cache/

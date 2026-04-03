@@ -112,6 +112,43 @@ export default async function handler(req, res) {
     }
 
     const normalized = normalizeTradeParseResult(parsedPayload)
+
+    // Fuzzy match：用 STOCK_META 修正 OCR 辨識錯誤
+    try {
+      const { STOCK_META } = await import('../src/seedData.js')
+      const knownStocks = Object.entries(STOCK_META).map(([code, meta]) => ({
+        code,
+        name: meta.name || '',
+        industry: meta.industry || '',
+      }))
+
+      normalized.trades = normalized.trades.map((trade) => {
+        // 先試精確匹配
+        const exact = knownStocks.find((s) => s.code === trade.code)
+        if (exact) return { ...trade, name: exact.name || trade.name, matched: true }
+
+        // 用名稱 fuzzy match
+        if (trade.name) {
+          const byName = knownStocks.find(
+            (s) => s.name && (trade.name.includes(s.name) || s.name.includes(trade.name))
+          )
+          if (byName)
+            return {
+              ...trade,
+              code: byName.code,
+              name: byName.name,
+              matched: true,
+              matchNote: `OCR原始代碼:${trade.code}→修正為:${byName.code}`,
+            }
+        }
+
+        // 用價格+數量匹配（如果價格和數量跟已知持股很接近）
+        return { ...trade, matched: false }
+      })
+    } catch {
+      /* STOCK_META 載入失敗不影響主流程 */
+    }
+
     if (!normalized.trades.length && !normalized.targetPriceUpdates.length) {
       return res.status(422).json({
         error: '圖片中未辨識到有效成交或目標價資訊',

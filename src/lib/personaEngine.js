@@ -180,6 +180,17 @@ export function scoreScalper(signals = {}) {
     reasons.push('Delta太低，時間衰減致命')
   }
 
+  // 到期日保護（權證獨有）
+  if (signals.daysToExpiry != null) {
+    if (signals.daysToExpiry < 14) {
+      score -= 3
+      reasons.push('距到期<14天，時間衰減致命')
+    } else if (signals.daysToExpiry < 30) {
+      score -= 1
+      reasons.push('距到期<30天，注意時間價值')
+    }
+  }
+
   // 外資短線
   if (signals.foreignShort5d > 0) {
     score += 1

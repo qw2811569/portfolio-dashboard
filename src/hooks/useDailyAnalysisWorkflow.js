@@ -21,6 +21,9 @@ import {
   extractDailyBrainUpdate,
   extractDailyEventAssessments,
   stripDailyAnalysisEmbeddedBlocks,
+  buildTaiwanMarketSignals,
+  formatTaiwanMarketSignals,
+  formatHistoricalAnalogsForPrompt,
 } from '../lib/dailyAnalysisRuntime.js'
 import { readEventStream } from '../lib/eventStream.js'
 import {
@@ -29,6 +32,7 @@ import {
   buildBudgetedHoldingSummary,
   formatRecentLessons,
 } from '../lib/promptBudget.js'
+import { findHistoricalAnalogs } from '../lib/brainRuntime.js'
 import { normalizeAnalysisHistoryEntries, normalizeDailyReportEntry } from '../lib/reportUtils.js'
 
 async function consumeStreamingAnalyzeResponse(
@@ -444,6 +448,27 @@ ${losers
           injectedKnowledgeIds,
           finmindDataCount,
         }
+        const taiwanMarketSignals = buildTaiwanMarketSignals({
+          holdings,
+          dossiers: analysisDossiers,
+          newsEvents: newsEvents || defaultNewsEvents,
+          today,
+        })
+        const historicalAnalogs = Object.fromEntries(
+          analysisDossiers.map((dossier) => [
+            dossier.code,
+            findHistoricalAnalogs(
+              { code: dossier.code, name: dossier.name, sector: dossier?.meta?.industry },
+              {
+                eventType: (dossier?.events?.pending || [])[0]?.type || '',
+                title: (dossier?.events?.pending || [])[0]?.title || dossier?.thesis?.summary || '',
+                thesis: dossier?.thesis?.summary || '',
+                summary: `${dossier?.meta?.strategy || ''} ${dossier?.meta?.industry || ''}`,
+              }
+            ),
+          ])
+        )
+
         const analysisRequestBody = buildDailyAnalysisRequest({
           today,
           prevReviewBlock,
@@ -459,6 +484,8 @@ ${losers
           eventSummary,
           blindPredictions,
           predictionHitRate: `${hits}/${total}`,
+          taiwanMarketSignals: formatTaiwanMarketSignals(taiwanMarketSignals),
+          historicalAnalogs: formatHistoricalAnalogsForPrompt(historicalAnalogs),
         })
 
         const { rawText: rawInsight } = await requestAnalyzeWithFallback({

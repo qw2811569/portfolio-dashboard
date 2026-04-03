@@ -333,6 +333,137 @@ ${text || fallback}
 </${tag}>`
 }
 
+function getLatestTargetInfo(dossier = {}) {
+  const targets = Array.isArray(dossier?.targets) ? dossier.targets : []
+  const dated = targets
+    .map((item) => {
+      const date = String(item?.date || item?.updatedAt || item?.publishedAt || '').trim()
+      const parsed = date ? new Date(date) : null
+      return Number.isNaN(parsed?.getTime?.()) ? null : { ...item, date, parsed }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.parsed.getTime() - a.parsed.getTime())
+  return dated[0] || null
+}
+
+function daysBetween(from, to = new Date()) {
+  const left = from instanceof Date ? from : new Date(from)
+  const right = to instanceof Date ? to : new Date(to)
+  if (Number.isNaN(left.getTime()) || Number.isNaN(right.getTime())) return null
+  return Math.floor((right.getTime() - left.getTime()) / (24 * 60 * 60 * 1000))
+}
+
+export function buildTaiwanMarketSignals({
+  holdings = [],
+  dossiers = [],
+  newsEvents = [],
+  today = new Date(),
+} = {}) {
+  const dossierMap = new Map((Array.isArray(dossiers) ? dossiers : []).map((d) => [d.code, d]))
+  const eventSource = Array.isArray(newsEvents) ? newsEvents : []
+  const todayDate = today instanceof Date ? today : new Date(today)
+  const sevenDaysLater = new Date(todayDate)
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+
+  return (Array.isArray(holdings) ? holdings : []).map((holding) => {
+    const dossier = dossierMap.get(holding.code) || {}
+    const fundamentals = dossier.fundamentals || {}
+    const latestRevenue =
+      fundamentals.monthRevenue ||
+      fundamentals.latestMonthRevenue ||
+      fundamentals.revenueLatest ||
+      null
+    const revenueValue = Number(
+      latestRevenue?.revenue || latestRevenue?.value || latestRevenue?.current
+    )
+    const revenueLastYear = Number(
+      latestRevenue?.lastYearRevenue || latestRevenue?.lastYear || latestRevenue?.previousYearValue
+    )
+    const revenueYoY =
+      Number.isFinite(revenueValue) && Number.isFinite(revenueLastYear) && revenueLastYear > 0
+        ? Math.round((revenueValue / revenueLastYear - 1) * 100 * 100) / 100
+        : Number.isFinite(Number(fundamentals.revenueYoY))
+          ? Number(fundamentals.revenueYoY)
+          : null
+
+    const upcomingEvents = eventSource.filter((event) => {
+      const eventDate = new Date(String(event?.date || event?.eventDate || '').replace(/\//g, '-'))
+      const codeHit = (Array.isArray(event?.stocks) ? event.stocks : []).some((stock) =>
+        String(stock || '').includes(holding.code)
+      )
+      const typeHit = ['conference', 'earnings', 'dividend'].includes(String(event?.type || ''))
+      return (
+        codeHit &&
+        typeHit &&
+        !Number.isNaN(eventDate.getTime()) &&
+        eventDate >= todayDate &&
+        eventDate <= sevenDaysLater
+      )
+    })
+
+    const latestTarget = getLatestTargetInfo(dossier)
+    const targetFreshnessDays = latestTarget?.parsed
+      ? daysBetween(latestTarget.parsed, todayDate)
+      : null
+
+    const institutional =
+      fundamentals.institutionalInvestors || fundamentals.institutionalFlow || {}
+    const buySell = institutional.last5Days || institutional.fiveDayNetBuySell || institutional
+    const foreignNet = Number(buySell?.foreign || buySell?.foreignInvestor || buySell?.外資)
+    const investmentTrustNet = Number(buySell?.investmentTrust || buySell?.trust || buySell?.投信)
+    const dealerNet = Number(buySell?.dealer || buySell?.自營商)
+
+    return {
+      code: holding.code,
+      name: holding.name,
+      revenueYoY,
+      eventWindow: upcomingEvents
+        .map((event) => `${event.date || event.eventDate} ${event.title}`)
+        .slice(0, 3),
+      targetFreshnessDays,
+      institutionalFlow5d: {
+        foreign: Number.isFinite(foreignNet) ? foreignNet : null,
+        investmentTrust: Number.isFinite(investmentTrustNet) ? investmentTrustNet : null,
+        dealer: Number.isFinite(dealerNet) ? dealerNet : null,
+      },
+      sector: dossier?.meta?.industry || '',
+    }
+  })
+}
+
+export function formatTaiwanMarketSignals(signals = []) {
+  const rows = (Array.isArray(signals) ? signals : []).map((signal) => {
+    const revenueText =
+      signal.revenueYoY == null
+        ? '月營收YoY: 無資料'
+        : `月營收YoY: ${signal.revenueYoY >= 0 ? '+' : ''}${signal.revenueYoY}%`
+    const eventText = signal.eventWindow?.length
+      ? `事件窗口: ${signal.eventWindow.join('；')}`
+      : '事件窗口: 近7日無法說/財報/除權息'
+    const targetText =
+      signal.targetFreshnessDays == null
+        ? '目標價新鮮度: 無資料'
+        : `目標價新鮮度: ${signal.targetFreshnessDays} 天前更新`
+    const flow = signal.institutionalFlow5d || {}
+    const flowText = `三大法人5日: 外資 ${flow.foreign ?? 'NA'} / 投信 ${flow.investmentTrust ?? 'NA'} / 自營商 ${flow.dealer ?? 'NA'}`
+    return `${signal.code} ${signal.name}｜${revenueText}｜${eventText}｜${targetText}｜${flowText}`
+  })
+  return rows.length > 0 ? rows.join('\n') : '無'
+}
+
+export function formatHistoricalAnalogsForPrompt(analogsByCode = {}) {
+  const sections = Object.entries(analogsByCode || {})
+    .map(([code, analogs]) => {
+      const rows = (Array.isArray(analogs) ? analogs : []).map(
+        (analog, index) =>
+          `${index + 1}. ${code} ← ${analog.name}｜${analog.period}｜${analog.thesis}｜${analog.verdict}${analog.note ? `｜${analog.note}` : ''}`
+      )
+      return rows.length > 0 ? rows.join('\n') : null
+    })
+    .filter(Boolean)
+  return sections.length > 0 ? sections.join('\n') : '無'
+}
+
 export function buildBlindPredictionRequest({
   today = '',
   notesContext = '',
@@ -377,6 +508,8 @@ export function buildDailyAnalysisRequest({
   eventSummary = '',
   blindPredictions = [],
   predictionHitRate = '0/0',
+  taiwanMarketSignals = '',
+  historicalAnalogs = '',
 }) {
   return {
     maxTokens: 2200,
@@ -396,6 +529,8 @@ export function buildDailyAnalysisRequest({
       wrapPromptSection('brain_context', brainContext),
       wrapPromptSection('reversal_watch', revContext),
       wrapPromptSection('coverage_context', coverageContext),
+      wrapPromptSection('taiwan_market_signals', taiwanMarketSignals),
+      wrapPromptSection('historical_analogs', historicalAnalogs),
       wrapPromptSection('portfolio_holdings', holdingSummary, '目前沒有持股 dossier。'),
       wrapPromptSection(
         'concentration_risk',

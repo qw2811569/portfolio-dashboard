@@ -1,6 +1,7 @@
 import { OWNER_PORTFOLIO_ID, BRAIN_VALIDATION_CASE_LIMIT } from '../constants.js'
 import { parseFlexibleDate, daysSince, computeStaleness } from './datetime.js'
 import { normalizeEventOutcomeLabel } from './events.js'
+import strategyCases from './knowledge-base/strategy-cases.json' with { type: 'json' }
 import {
   buildTaiwanHardGateEvidenceRefs,
   formatTaiwanHardGateIssueList,
@@ -1337,6 +1338,95 @@ export function formatBrainChecklistsForPrompt(checklists) {
     )
     .filter(Boolean)
   return sections.length > 0 ? sections.join('\n') : '無'
+}
+
+function inferAnalogEventType(context = {}) {
+  const source = [context.eventType, context.title, context.thesis, context.summary]
+    .filter(Boolean)
+    .join(' ')
+  if (/法說/.test(source)) return 'conference'
+  if (/財報|季報|年報/.test(source)) return 'earnings'
+  if (/除權|除息|股息|配息/.test(source)) return 'dividend'
+  if (/月營收|營收/.test(source)) return 'revenue'
+  if (/AI|伺服器|ASIC|HBM|CoWoS/.test(source)) return 'ai'
+  return 'generic'
+}
+
+function inferAnalogOutcomePattern(context = {}) {
+  const source = [context.outcomePattern, context.verdict, context.summary, context.thesis]
+    .filter(Boolean)
+    .join(' ')
+  if (/up|positive|突破|成長|轉正|成功/.test(source)) return 'positive'
+  if (/down|negative|失敗|利多出盡|衰退|停損/.test(source)) return 'negative'
+  return 'neutral'
+}
+
+function buildStrategyCaseAnalog(caseItem) {
+  const returnValue = Number(caseItem?.return)
+  const verdict =
+    caseItem?.outcome === 'success'
+      ? 'supported'
+      : caseItem?.outcome === 'failure'
+        ? 'contradicted'
+        : 'mixed'
+  return {
+    code: String(caseItem?.id || '').trim(),
+    name: String(caseItem?.title || '').trim(),
+    period: String(caseItem?.createdAt || '').trim(),
+    thesis: String(caseItem?.interpretation || caseItem?.fact || '').trim(),
+    verdict,
+    differenceType: 'none',
+    note: Number.isFinite(returnValue)
+      ? `historical return ${(returnValue * 100).toFixed(0)}%，tags: ${(caseItem?.tags || []).slice(0, 3).join('/')}`
+      : String(caseItem?.lessons || '').trim(),
+  }
+}
+
+export function findHistoricalAnalogs(stock = {}, context = {}) {
+  const sector = String(stock?.sector || stock?.industry || context?.sector || '').trim()
+  const eventType = inferAnalogEventType(context)
+  const outcomePattern = inferAnalogOutcomePattern(context)
+
+  return (Array.isArray(strategyCases?.items) ? strategyCases.items : [])
+    .map((caseItem) => {
+      const haystack = [
+        caseItem.title,
+        caseItem.fact,
+        caseItem.interpretation,
+        ...(caseItem.tags || []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+      let score = 0
+      if (sector && haystack.includes(sector)) score += 3
+      if (
+        eventType !== 'generic' &&
+        haystack.includes(
+          eventType === 'conference'
+            ? '法說'
+            : eventType === 'earnings'
+              ? '財報'
+              : eventType === 'dividend'
+                ? '除權息'
+                : eventType === 'revenue'
+                  ? '月營收'
+                  : 'AI'
+        )
+      )
+        score += 2
+      if (
+        (outcomePattern === 'positive' && caseItem.outcome === 'success') ||
+        (outcomePattern === 'negative' && caseItem.outcome === 'failure')
+      ) {
+        score += 2
+      }
+      if (score <= 0) return null
+      return { score, analog: buildStrategyCaseAnalog(caseItem) }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => item.analog)
 }
 
 export function createEmptyStrategyBrain() {

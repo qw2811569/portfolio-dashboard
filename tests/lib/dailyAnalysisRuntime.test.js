@@ -11,6 +11,9 @@ import {
   extractDailyBrainUpdate,
   extractDailyEventAssessments,
   stripDailyAnalysisEmbeddedBlocks,
+  buildTaiwanMarketSignals,
+  formatTaiwanMarketSignals,
+  formatHistoricalAnalogsForPrompt,
 } from '../../src/lib/dailyAnalysisRuntime.js'
 
 describe('lib/dailyAnalysisRuntime', () => {
@@ -137,11 +140,51 @@ describe('lib/dailyAnalysisRuntime', () => {
       blindHoldingSummary: '持股摘要',
       eventSummary: '事件摘要',
     })
+    const signals = buildTaiwanMarketSignals({
+      today: '2026-03-28',
+      holdings: [{ code: '2330', name: '台積電' }],
+      dossiers: [
+        {
+          code: '2330',
+          name: '台積電',
+          meta: { industry: '半導體' },
+          fundamentals: {
+            revenueYoY: 25.6,
+            institutionalInvestors: {
+              last5Days: { foreign: 1200, investmentTrust: 150, dealer: -20 },
+            },
+          },
+          targets: [{ firm: '高盛', target: 1200, date: '2026-03-20' }],
+        },
+      ],
+      newsEvents: [
+        {
+          id: 'e1',
+          title: '台積電法說會',
+          type: 'conference',
+          date: '2026-03-30',
+          stocks: ['台積電 2330'],
+        },
+      ],
+    })
     const analysisRequest = buildDailyAnalysisRequest({
       today: '2026/03/28',
       holdingSummary: '持股摘要',
       coverageContext: '創意(3443) | 上游: 台積電 | 相關主題: CoWoS',
       blindPredictions: [],
+      taiwanMarketSignals: formatTaiwanMarketSignals(signals),
+      historicalAnalogs: formatHistoricalAnalogsForPrompt({
+        2330: [
+          {
+            code: 'sc-001',
+            name: '2023 台積電 AI 行情 - 成功案例',
+            period: '2026-03-30',
+            thesis: 'AI 趨勢',
+            verdict: 'supported',
+            note: 'test note',
+          },
+        ],
+      }),
     })
     const insight = `## 今日總結\nOK\n## 📋 EVENT_ASSESSMENTS\n\`\`\`json\n[]\n\`\`\`\n## 🧬 BRAIN_UPDATE\n\`\`\`json\n{}\n\`\`\`\n`
     const report = buildDailyReport({
@@ -167,6 +210,10 @@ describe('lib/dailyAnalysisRuntime', () => {
     expect(analysisRequest.userPrompt).toContain('<analysis_packet mode="daily_close">')
     expect(analysisRequest.userPrompt).toContain('<coverage_context>')
     expect(analysisRequest.userPrompt).toContain('創意(3443) | 上游: 台積電 | 相關主題: CoWoS')
+    expect(analysisRequest.userPrompt).toContain('<taiwan_market_signals>')
+    expect(analysisRequest.userPrompt).toContain('月營收YoY')
+    expect(analysisRequest.userPrompt).toContain('<historical_analogs>')
+    expect(analysisRequest.userPrompt).toContain('2023 台積電 AI 行情 - 成功案例')
     expect(analysisRequest.userPrompt).toContain('<portfolio_holdings>')
     expect(analysisRequest.userPrompt).toContain('A 級優先處理只選 1-3 檔')
     expect(analysisRequest.userPrompt).toContain('不要在每檔持股重複改寫整段供應鏈')

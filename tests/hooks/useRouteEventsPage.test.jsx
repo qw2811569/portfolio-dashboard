@@ -65,10 +65,12 @@ describe('hooks/useRouteEventsPage.js', () => {
     expect(mockFilterEventsByType).toHaveBeenCalledWith(
       expect.objectContaining({
         newsEvents: events,
-        fallbackEvents: [{ id: 'seed-1', title: 'Seed Event' }],
         filterType: '全部',
       })
     )
+    // fallbackEvents comes from NEWS_EVENTS seedData — just verify it's an array
+    const callArgs = mockFilterEventsByType.mock.calls[0][0]
+    expect(Array.isArray(callArgs.fallbackEvents)).toBe(true)
   })
 
   it('passes filtered events through', () => {

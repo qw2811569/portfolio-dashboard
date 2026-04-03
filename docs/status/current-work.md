@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 11:41
+Last updated: 2026-04-03 11:51
 
 ## Management preferences
 
@@ -82,6 +82,7 @@ Last updated: 2026-04-03 11:41
 
 ## Latest checkpoint
 
+- `2026-04-03 11:51` Codex：完成 Batch 1：1A News/Analysis Panel 顯示 impact/source；1B 新增 collect-daily-events cron + CRON_SECRET + Blob put；1C knowledge evolution confidence 自動調整，並逐項通過 build/vitest 驗證。
 - `2026-04-03 11:41` Codex：修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。
 - `2026-04-03 11:22` OpenClaw：自動閉環完成：2 輪後穩定
 - `2026-04-03 11:21` OpenClaw：自動閉環完成：2 輪後穩定

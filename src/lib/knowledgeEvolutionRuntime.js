@@ -67,11 +67,7 @@ export function normalizeKnowledgeUsageLog(entries = []) {
       if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null
       const itemIds = Array.isArray(entry.itemIds)
         ? Array.from(
-            new Set(
-              entry.itemIds
-                .map((itemId) => String(itemId || '').trim())
-                .filter(Boolean)
-            )
+            new Set(entry.itemIds.map((itemId) => String(itemId || '').trim()).filter(Boolean))
           )
         : []
       return {
@@ -107,9 +103,7 @@ export function normalizeKnowledgeFeedbackLog(entries = []) {
     .filter(Boolean)
 }
 
-export function readKnowledgeEvolutionLogs(
-  storage = null
-) {
+export function readKnowledgeEvolutionLogs(storage = null) {
   const targetStorage = resolveStorage(storage)
   return {
     usageLog: normalizeKnowledgeUsageLog(readStorageArray(targetStorage, 'kb-usage-log', 500)),
@@ -123,11 +117,13 @@ export function buildKnowledgeEvolutionProposal({
   usageLog = [],
   feedbackLog = [],
   maxAdjustments = 12,
+  now = Date.now(),
 } = {}) {
   const catalog = buildKnowledgeCatalogMap()
   const normalizedUsageLog = normalizeKnowledgeUsageLog(usageLog)
   const normalizedFeedbackLog = normalizeKnowledgeFeedbackLog(feedbackLog)
   const usageCountById = new Map()
+  const lastUsedAtById = new Map()
   const feedbackStatsById = new Map()
   let feedbackMissingLinkCount = 0
   let ignoredFeedbackIdCount = 0
@@ -136,6 +132,10 @@ export function buildKnowledgeEvolutionProposal({
     entry.itemIds.forEach((itemId) => {
       if (!catalog.has(itemId)) return
       usageCountById.set(itemId, (usageCountById.get(itemId) || 0) + 1)
+      const timestamp = Number(entry.timestamp) || 0
+      if (timestamp > (lastUsedAtById.get(itemId) || 0)) {
+        lastUsedAtById.set(itemId, timestamp)
+      }
     })
   })
 
@@ -156,28 +156,38 @@ export function buildKnowledgeEvolutionProposal({
     })
   })
 
-  const confidenceAdjustments = Array.from(feedbackStatsById.entries())
-    .map(([itemId, feedbackStats]) => {
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+  const allItemIds = new Set([...usageCountById.keys(), ...feedbackStatsById.keys()])
+
+  const confidenceAdjustments = Array.from(allItemIds)
+    .map((itemId) => {
       const item = catalog.get(itemId)
       if (!item) return null
 
-      const helpfulCount = feedbackStats.helpful || 0
-      const misleadingCount = feedbackStats.misleading || 0
+      const helpfulCount = feedbackStatsById.get(itemId)?.helpful || 0
+      const misleadingCount = feedbackStatsById.get(itemId)?.misleading || 0
       const usageCount = usageCountById.get(itemId) || 0
+      const lastUsedAt = lastUsedAtById.get(itemId) || 0
+      const unusedTooLong = lastUsedAt > 0 && now - lastUsedAt > THIRTY_DAYS_MS
+
       let targetConfidence = item.confidence
-      let reason = ''
+      const reasons = []
       let statusAction = 'keep'
 
-      if (misleadingCount >= 2 && misleadingCount > helpfulCount) {
-        targetConfidence = clampConfidence(item.confidence - 0.1)
-        reason = `誤導回饋 ${misleadingCount} 次，高於 helpful ${helpfulCount} 次`
-        statusAction = 'pending-review'
-      } else if (helpfulCount >= 3 && helpfulCount > misleadingCount * 2) {
-        targetConfidence = clampConfidence(item.confidence + 0.05)
-        reason = `helpful 回饋 ${helpfulCount} 次，顯著高於 misleading ${misleadingCount} 次`
+      if (helpfulCount > misleadingCount) {
+        targetConfidence = clampConfidence(targetConfidence + 0.02, 0.5, 0.95)
+        reasons.push(`正面回饋 ${helpfulCount} 次，高於負面 ${misleadingCount} 次`)
         statusAction = 'reinforce'
-      } else {
-        return null
+      } else if (misleadingCount > helpfulCount) {
+        targetConfidence = clampConfidence(targetConfidence - 0.03, 0.5, 0.95)
+        reasons.push(`負面回饋 ${misleadingCount} 次，高於正面 ${helpfulCount} 次`)
+        statusAction = 'pending-review'
+      }
+
+      if (unusedTooLong) {
+        targetConfidence = clampConfidence(targetConfidence - 0.01, 0.5, 0.95)
+        reasons.push('超過 30 天未使用')
+        if (statusAction === 'keep') statusAction = 'cooldown'
       }
 
       const delta = roundDelta(targetConfidence - item.confidence)
@@ -194,8 +204,9 @@ export function buildKnowledgeEvolutionProposal({
         usageCount,
         helpfulCount,
         misleadingCount,
+        lastUsedAt,
         statusAction,
-        reason,
+        reason: reasons.join('；'),
       }
     })
     .filter(Boolean)
@@ -209,7 +220,9 @@ export function buildKnowledgeEvolutionProposal({
 
   const issues = []
   if (confidenceAdjustments.length > maxAdjustments) {
-    issues.push(`confidence 調整 ${confidenceAdjustments.length} 筆，超過單次 ${maxAdjustments} 筆上限`)
+    issues.push(
+      `confidence 調整 ${confidenceAdjustments.length} 筆，超過單次 ${maxAdjustments} 筆上限`
+    )
   }
 
   const actionableAdjustments = confidenceAdjustments.slice(0, maxAdjustments)

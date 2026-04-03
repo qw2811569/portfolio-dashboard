@@ -8,10 +8,7 @@ import {
 describe('lib/knowledgeEvolutionRuntime', () => {
   it('normalizes usage and feedback logs into safe arrays', () => {
     expect(
-      normalizeKnowledgeUsageLog([
-        null,
-        { timestamp: 'x', itemIds: ['fa-001', '', 'fa-001'] },
-      ])
+      normalizeKnowledgeUsageLog([null, { timestamp: 'x', itemIds: ['fa-001', '', 'fa-001'] }])
     ).toEqual([{ timestamp: 0, itemIds: ['fa-001'] }])
 
     expect(
@@ -30,15 +27,15 @@ describe('lib/knowledgeEvolutionRuntime', () => {
     ])
   })
 
-  it('builds confidence adjustments from linked feedback signals', () => {
+  it('builds confidence adjustments from usage recency and linked feedback signals', () => {
+    const now = 31 * 24 * 60 * 60 * 1000
     const proposal = buildKnowledgeEvolutionProposal({
+      now,
       usageLog: [
-        { timestamp: 1, itemIds: ['fa-001', 'rm-001'] },
-        { timestamp: 2, itemIds: ['fa-001'] },
-        { timestamp: 3, itemIds: ['rm-001'] },
+        { timestamp: now - 5_000, itemIds: ['fa-001'] },
+        { timestamp: 1, itemIds: ['rm-001'] },
       ],
       feedbackLog: [
-        { signal: 'helpful', injectedKnowledgeIds: ['fa-001'] },
         { signal: 'helpful', injectedKnowledgeIds: ['fa-001'] },
         { signal: 'helpful', injectedKnowledgeIds: ['fa-001'] },
         { signal: 'misleading', injectedKnowledgeIds: ['rm-001'] },
@@ -52,12 +49,12 @@ describe('lib/knowledgeEvolutionRuntime', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: 'rm-001',
-          delta: -0.1,
+          delta: -0.04,
           statusAction: 'pending-review',
         }),
         expect.objectContaining({
           id: 'fa-001',
-          delta: 0.05,
+          delta: 0.02,
           statusAction: 'reinforce',
         }),
       ])
@@ -66,6 +63,7 @@ describe('lib/knowledgeEvolutionRuntime', () => {
 
   it('returns a no-op proposal when feedback cannot be linked to knowledge ids', () => {
     const proposal = buildKnowledgeEvolutionProposal({
+      now: 2,
       usageLog: [{ timestamp: 1, itemIds: ['fa-001'] }],
       feedbackLog: [{ signal: 'helpful', injectedKnowledgeIds: [] }],
     })

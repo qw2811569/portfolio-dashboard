@@ -20,6 +20,23 @@ const TYPE_COLOR = {
   權證: C.choco,
 }
 
+const IMPACT_META = {
+  high: { label: '高影響', color: C.up, bg: C.upBg },
+  medium: { label: '中影響', color: C.amber, bg: alpha(C.amber, '18') },
+  low: { label: '低影響', color: C.textMute, bg: alpha(C.textMute, '14') },
+  positive: { label: '偏多', color: C.up, bg: C.upBg },
+  negative: { label: '偏空', color: C.down, bg: C.downBg },
+  neutral: { label: '中性', color: C.textMute, bg: alpha(C.textMute, '14') },
+}
+
+function formatEventSource(source) {
+  if (!source) return 'manual'
+  if (source === 'auto-calendar') return 'auto-calendar'
+  if (source === 'finmind-news') return 'FinMind'
+  if (source === 'gemini-research') return 'Gemini'
+  return source
+}
+
 function buildNewsEventKey(event, index) {
   const base =
     event?.id ||
@@ -131,6 +148,7 @@ export function LogPanel({ tradeLog }) {
  */
 export function NewsEventCard({ event, onReview, onToggle }) {
   const tc = TYPE_COLOR[event.type] || C.textMute
+  const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
 
   return h(
     Card,
@@ -182,6 +200,46 @@ export function NewsEventCard({ event, onReview, onToggle }) {
           'div',
           { style: { fontSize: 10, color: C.textMute, marginTop: 3, lineHeight: 1.6 } },
           event.sub
+        ),
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              gap: 6,
+              flexWrap: 'wrap',
+              marginTop: 6,
+              alignItems: 'center',
+            },
+          },
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 999,
+                background: impactMeta.bg,
+                color: impactMeta.color,
+                fontWeight: 600,
+              },
+            },
+            impactMeta.label
+          ),
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 999,
+                background: alpha(C.textMute, '12'),
+                color: C.textMute,
+                fontWeight: 600,
+              },
+            },
+            formatEventSource(event.source)
+          )
         ),
         onReview &&
           h(

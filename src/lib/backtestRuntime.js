@@ -5,16 +5,26 @@ import { buildDailyAnalysisRequest } from './dailyAnalysisRuntime.js'
 import { findHistoricalAnalogs } from './brainRuntime.js'
 
 export const BACKTEST_DATES = [
+  '2024-02-15',
   '2024-03-15',
-  '2024-06-01',
+  '2024-04-15',
+  '2024-05-15',
+  '2024-06-15',
+  '2024-07-15',
   '2024-08-05',
-  '2024-10-01',
+  '2024-09-15',
+  '2024-10-15',
+  '2024-11-15',
   '2024-12-15',
+  '2025-01-15',
   '2025-03-01',
+  '2025-04-15',
   '2025-06-01',
+  '2025-07-15',
   '2025-09-15',
-  '2025-12-01',
-  '2026-03-01',
+  '2025-11-01',
+  '2025-12-15',
+  '2026-02-15',
 ]
 
 const FINMIND_ENDPOINT = 'https://api.finmindtrade.com/api/v4/data'

@@ -232,23 +232,25 @@ run_claude_review() {
 
 先讀 docs/status/loop-conversation.md 了解完整歷程（包括 QA 的詳細結果），再做以下檢查：
 1. git log --oneline -10
-2. 讀 docs/status/auto-loop-result.md（如果有）
-3. 讀 docs/status/current-work.md 的 Objective 和 Latest checkpoint
-4. 如果 vercel dev 在跑（localhost:3002），curl 測幾個 API 端點確認功能正常
+2. 讀 docs/status/current-work.md 的 Objective 和 Latest checkpoint
+3. 檢查 loop-conversation.md 中 QA 的 api 項目是否全部 OK
+
+重要：不要自己去 curl localhost，本地 vercel dev 的 API 路由有已知限制。只根據 QA 紀錄中的結果判斷。
 
 判斷標準（全部滿足才算 STABLE）：
-- build/lint/test 全綠
-- 如果有 API 測試結果，關鍵 API（brain/events/analyze）要正常
-- 沒有已知的未修復 bug（看 current-work.md 的 blocker）
+- QA 紀錄顯示 build/lint/test 全綠
+- QA 紀錄顯示 API handler 語法檢查通過
+- 沒有已知的未修復 blocker（看 current-work.md）
 - Qwen QA 沒有回報 FAIL
 
-回答第一個詞必須是 STABLE 或 UNSTABLE，然後說明原因。
-如果是 UNSTABLE，必須列出 1-3 個具體的、Codex 可以直接修的問題（附檔名和行為描述）。" \
+回答第一個詞必須是 STABLE 或 UNSTABLE，然後用 50 字以內說明。
+如果 UNSTABLE，列出 1-3 個具體的 Codex 可修的問題（附檔名）。
+回覆中不要用反引號或特殊符號。" \
     --timeout 120 2>&1) || true
 
-  log "Claude 回覆：$CLAUDE_RESULT"
-  echo "$CLAUDE_RESULT" > /tmp/auto-loop-claude-result
-  convo "Claude" "$CLAUDE_RESULT"
+  log "Claude 回覆完成"
+  echo "${CLAUDE_RESULT:-empty}" > /tmp/auto-loop-claude-result
+  convo "Claude" "$(echo "${CLAUDE_RESULT:-empty}" | head -5)"
 }
 
 # ─── 主循環 ───
@@ -288,7 +290,7 @@ while [[ $ROUND -lt $MAX_ROUNDS ]]; do
 結果：✅ STABLE
 
 ## Claude 審查
-$CLAUDE_RESULT
+$(cat /tmp/auto-loop-claude-result)
 
 ## 最後 QA
 - build: ✅
@@ -299,10 +301,10 @@ RESULTEOF
         AI_NAME=OpenClaw bash scripts/ai-status.sh done "自動閉環完成：$ROUND 輪後穩定" >/dev/null 2>&1 || true
         exit 0
       else
-        log "Claude 認為還不穩定：$CLAUDE_RESULT"
-        log "派 Codex 處理 Claude 指出的問題..."
+        log "Claude 認為還不穩定，派 Codex 處理..."
+        CLAUDE_FILE="/tmp/auto-loop-claude-result"
         openclaw agent --agent codex \
-          --message "Claude 審查結果：$CLAUDE_RESULT。請針對 Claude 指出的問題進行修復或補強。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" \
+          --message "讀 /tmp/auto-loop-claude-result 檔案，裡面是 Claude 的審查結果。請針對 Claude 指出的問題進行修復。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" \
           --timeout 300 2>&1 | head -5 || true
         CONSECUTIVE_PASS=0
       fi

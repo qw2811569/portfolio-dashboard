@@ -9,7 +9,7 @@
 // - AI_THINKING_BUDGET_TOKENS
 
 const DEFAULT_ENDPOINT = 'https://api.anthropic.com/v1/messages'
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const DEFAULT_MODEL = 'claude-sonnet-4-6-20250610'
 const DEFAULT_VERSION = '2023-06-01'
 const MIN_THINKING_BUDGET = 1024
 
@@ -58,17 +58,15 @@ export function extractAiText(data) {
 }
 
 function buildThinkingConfig({ allowThinking, config, maxTokens }) {
-  return (
-    allowThinking &&
+  return allowThinking &&
     config.enableExtendedThinking &&
     config.thinkingBudgetTokens >= MIN_THINKING_BUDGET &&
     config.thinkingBudgetTokens < maxTokens
-      ? {
-          type: 'enabled',
-          budget_tokens: config.thinkingBudgetTokens,
-        }
-      : undefined
-  )
+    ? {
+        type: 'enabled',
+        budget_tokens: config.thinkingBudgetTokens,
+      }
+    : undefined
 }
 
 function buildAiRequestBody({ model, system, messages, maxTokens, thinking, stream = false }) {
@@ -260,9 +258,7 @@ export async function callAiRawStream({
       }
 
       if (event.event === 'error') {
-        throw new Error(
-          payload?.error?.message || payload?.message || 'AI streaming 過程發生錯誤'
-        )
+        throw new Error(payload?.error?.message || payload?.message || 'AI streaming 過程發生錯誤')
       }
     }
   })()

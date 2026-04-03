@@ -103,7 +103,7 @@ export default async function handler(req, res) {
 
     rawText = extractAiText(data)
 
-    console.log(
+    console.debug(
       '[api/parse] OCR AI raw response:',
       truncateForLog({
         mediaType: mediaType || 'image/jpeg',

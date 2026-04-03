@@ -45,7 +45,7 @@ describe('api/parse', () => {
   })
 
   it('passes base64 image payloads to Claude Vision and returns normalized OCR json', async () => {
-    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
     callAiImage.mockResolvedValueOnce({
       id: 'msg_parse_1',
       content: [
@@ -89,12 +89,12 @@ describe('api/parse', () => {
           }),
         ],
       })
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect(consoleDebugSpy).toHaveBeenCalledWith(
         '[api/parse] OCR AI raw response:',
         expect.stringContaining('"base64Length":16')
       )
     } finally {
-      consoleLogSpy.mockRestore()
+      consoleDebugSpy.mockRestore()
     }
   })
 

@@ -573,7 +573,7 @@ export default async function handler(req, res) {
     })
     const validationError = validateResearchRequestInput({ mode, stocks, holdings })
 
-    console.log('[research] request', requestSummary)
+    console.debug('[research] request', requestSummary)
 
     if (validationError) {
       console.warn('[research] invalid request', {
@@ -608,7 +608,7 @@ export default async function handler(req, res) {
         { maxChars: 3000, maxEntries: 1 }
       ).text
 
-      console.log('[research] single prompt ready', {
+      console.debug('[research] single prompt ready', {
         code: s.code,
         name: s.name,
         researchRoundCount,
@@ -870,7 +870,7 @@ ${dossierContext}
           ).text || '目前沒有持股摘要。'
       }
 
-      console.log('[research] portfolio prompt ready', {
+      console.debug('[research] portfolio prompt ready', {
         mode,
         roundMode: portfolioRoundMode,
         stockSummaryChars: stockSummaryText.length,

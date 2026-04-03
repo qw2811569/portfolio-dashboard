@@ -49,14 +49,14 @@ export default async function handler(req, res) {
     let finmindNewsEvents = []
     if (stockCodes.length > 0) {
       try {
-        console.log(
+        console.debug(
           '[event-calendar] FinMind news: querying',
           stockCodes.length,
           'stocks, token:',
           process.env.FINMIND_TOKEN ? 'SET' : 'MISSING'
         )
         finmindNewsEvents = await fetchFinMindNewsDirectly(stockCodes)
-        console.log('[event-calendar] FinMind news: got', finmindNewsEvents.length, 'events')
+        console.debug('[event-calendar] FinMind news: got', finmindNewsEvents.length, 'events')
       } catch (finmindError) {
         console.warn('[event-calendar] FinMind news failed:', finmindError.message)
       }

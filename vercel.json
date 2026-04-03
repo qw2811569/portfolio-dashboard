@@ -27,7 +27,7 @@
       "maxDuration": 60
     },
     "api/research.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "api/event-calendar.js": {
       "maxDuration": 60

@@ -291,18 +291,25 @@ export function useDailyAnalysisWorkflow({
               }).text
             : ''
 
-        // 合併手動事件 + 自動事件（行事曆/FinMind/Gemini），全部注入分析
+        // 合併手動事件 + 自動事件，注入知識引擎預測
         const allEvents = [
-          ...pendingEvents.map(
-            (event) =>
-              `[eventId:${event.id}] [${event.date}] ${event.title} — 預測:${event.pred === 'up' ? '看漲' : event.pred === 'down' ? '看跌' : '中性'} — 狀態:${event.status}`
-          ),
-          ...(newsEvents || defaultNewsEvents || [])
-            .slice(0, 10)
-            .map(
-              (event) =>
-                `[auto] [${event.date || ''}] ${event.title || event.type || ''} — 來源:${event.source || 'auto'} — 影響:${event.impact || 'unknown'}`
-            ),
+          ...pendingEvents.map((event) => {
+            const predLabel = event.pred === 'up' ? '看漲' : event.pred === 'down' ? '看跌' : '中性'
+            const predSource = event.predSource === 'knowledge-engine' ? '（知識引擎）' : ''
+            const predReasons = (event.predReasons || []).join('、')
+            return `[eventId:${event.id}] [${event.date}] ${event.title} — 預測:${predLabel}${predSource} ${predReasons ? '因為:' + predReasons : ''} — 狀態:${event.status}`
+          }),
+          ...(newsEvents || defaultNewsEvents || []).slice(0, 10).map((event) => {
+            const predLabel =
+              event.pred === 'up'
+                ? '看漲'
+                : event.pred === 'down'
+                  ? '看跌'
+                  : event.pred === 'flat'
+                    ? '持平'
+                    : ''
+            return `[auto] [${event.date || ''}] ${event.title || event.type || ''} — 來源:${event.source || 'auto'} ${predLabel ? '— 知識引擎預測:' + predLabel : ''}`
+          }),
         ]
         const eventSummary = allEvents.join('\n')
 

@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C } from '../../theme.js'
-import { Card } from '../common'
+import { Card, Sparkline } from '../common'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
@@ -27,6 +27,16 @@ const lbl = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
+
+/** Extract most recent 7 close prices from finmind.price (sorted oldest-first for sparkline). */
+function getSparklineData(holding) {
+  const priceArr = holding?.finmind?.price
+  if (!Array.isArray(priceArr) || priceArr.length < 2) return null
+  // finmind.price is sorted date-desc; take up to 7, reverse to oldest-first
+  const recent = priceArr.slice(0, 7).reverse()
+  const closes = recent.map((p) => p?.close).filter((v) => Number.isFinite(v))
+  return closes.length >= 2 ? closes : null
+}
 
 /**
  * Single Holding Row
@@ -61,7 +71,7 @@ export function HoldingRow({
           marginBottom: expanded ? 0 : 6,
         },
       },
-      // Name + Code
+      // Name + Code + Sparkline
       h(
         'div',
         { style: { display: 'flex', alignItems: 'center', gap: 6 } },
@@ -70,7 +80,11 @@ export function HoldingRow({
           null,
           h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, holding.name),
           h('div', { style: { fontSize: 9, color: C.textMute } }, holding.code)
-        )
+        ),
+        (() => {
+          const sparkData = getSparklineData(holding)
+          return sparkData ? h(Sparkline, { data: sparkData, width: 60, height: 24 }) : null
+        })()
       ),
 
       // Qty + Cost
@@ -145,7 +159,7 @@ export function HoldingRow({
         },
         // 主題 chips
         (() => {
-          const chips = buildThemeChips(holding.code);
+          const chips = buildThemeChips(holding.code)
           return chips.length > 0
             ? h(
                 'div',
@@ -167,7 +181,7 @@ export function HoldingRow({
                   )
                 )
               )
-            : null;
+            : null
         })(),
         h(
           'div',
@@ -238,7 +252,14 @@ export function HoldingRow({
               return finmindText
                 ? h(
                     'div',
-                    { style: { fontSize: 9, color: C.textSec, lineHeight: 1.6, whiteSpace: 'pre-line' } },
+                    {
+                      style: {
+                        fontSize: 9,
+                        color: C.textSec,
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-line',
+                      },
+                    },
                     finmindText
                   )
                 : h('div', { style: { fontSize: 9, color: C.textMute } }, '暫無 FinMind 數據')

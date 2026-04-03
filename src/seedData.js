@@ -153,6 +153,14 @@ export const STOCK_META = {
     leader: 'N/A',
     underlying: '華星光',
   },
+  705200: {
+    industry: '製鞋/紡織',
+    strategy: '權證',
+    period: '短',
+    position: '戰術',
+    leader: 'N/A',
+    underlying: '加百裕',
+  },
   1503: {
     industry: '重電',
     strategy: '景氣循環',
@@ -430,6 +438,17 @@ export const INIT_HOLDINGS = [
     value: 13400,
     pnl: 8167,
     pct: 157.66,
+    type: '權證',
+  },
+  {
+    code: '705200',
+    name: '加百裕國票58購01',
+    qty: 8000,
+    price: 1.06,
+    cost: 1.06,
+    value: 8480,
+    pnl: 0,
+    pct: 0,
     type: '權證',
   },
   {

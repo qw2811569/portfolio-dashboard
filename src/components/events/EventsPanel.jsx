@@ -1,4 +1,5 @@
 import { createElement as h } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { C, alpha } from '../../theme.js'
 import { Card, Button } from '../common'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
@@ -547,6 +548,8 @@ export function EventsPanel({
   catalystFilter,
   setCatalystFilter,
 }) {
+  const navigate = useNavigate()
+
   return h(
     'div',
     null,
@@ -562,6 +565,62 @@ export function EventsPanel({
 
     // Catalyst type filter buttons (only shown if props provided)
     setCatalystFilter && h(CatalystFilter, { catalystFilter, setCatalystFilter }),
+
+    // Events list — empty state
+    (!filteredEvents || filteredEvents.length === 0) &&
+      h(
+        Card,
+        {
+          style: {
+            textAlign: 'center',
+            padding: '40px 20px',
+          },
+        },
+        h('div', { style: { fontSize: 40, marginBottom: 12, opacity: 0.5 } }, '📅'),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 16,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 8,
+            },
+          },
+          '歡迎來到事件行事曆'
+        ),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 12,
+              color: C.textSec,
+              lineHeight: 1.7,
+              maxWidth: 320,
+              margin: '0 auto 16px',
+            },
+          },
+          '這裡會顯示影響你持股的重要事件，包括法說會、財報公布、產業動態等。'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => navigate('/portfolio/me/daily'),
+            style: {
+              padding: '10px 24px',
+              borderRadius: 8,
+              border: 'none',
+              background: C.cardBlue,
+              color: C.text,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: C.shadow,
+            },
+          },
+          '🔍 開始收盤分析'
+        )
+      ),
 
     // Events list
     filteredEvents.map((e, i) => h(EventCard, { key: i, event: e }))

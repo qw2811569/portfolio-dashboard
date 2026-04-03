@@ -1,4 +1,5 @@
 import { createElement as h } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { C, alpha } from '../../theme.js'
 import { Card, Button } from '../common'
 
@@ -274,6 +275,7 @@ export function NewsAnalysisPanel({
   setReviewingEvent,
   createDefaultReviewForm,
 }) {
+  const navigate = useNavigate()
   const NE = newsEvents || []
   const past = NE.filter((e) => e.status === 'closed' || e.status === 'past').sort(
     (a, b) => b.id - a.id
@@ -281,9 +283,67 @@ export function NewsAnalysisPanel({
   const tracking = NE.filter((e) => e.status === 'tracking').sort((a, b) => a.id - b.id)
   const pending = NE.filter((e) => e.status === 'pending').sort((a, b) => a.id - b.id)
 
+  const hasAnyEvents = past.length > 0 || tracking.length > 0 || pending.length > 0
+
   return h(
     'div',
     null,
+    // Empty state
+    !hasAnyEvents &&
+      h(
+        Card,
+        {
+          style: {
+            textAlign: 'center',
+            padding: '40px 20px',
+          },
+        },
+        h('div', { style: { fontSize: 40, marginBottom: 12, opacity: 0.5 } }, '📰'),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 16,
+              fontWeight: 600,
+              color: C.text,
+              marginBottom: 8,
+            },
+          },
+          '歡迎來到新聞事件追蹤'
+        ),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 12,
+              color: C.textSec,
+              lineHeight: 1.7,
+              maxWidth: 320,
+              margin: '0 auto 16px',
+            },
+          },
+          '這裡會顯示與持股相關的新聞事件，AI 會自動判斷利多或利空。'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => navigate('/portfolio/me/daily'),
+            style: {
+              padding: '10px 24px',
+              borderRadius: 8,
+              border: 'none',
+              background: C.cardBlue,
+              color: C.text,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: C.shadow,
+            },
+          },
+          '🔍 開始收盤分析'
+        )
+      ),
+
     // Review modal
     reviewingEvent &&
       h(

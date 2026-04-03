@@ -1,5 +1,6 @@
 import { C } from '../theme.js'
-import { IND_COLOR, NEWS_EVENTS, RELAY_PLAN_CODES, STOCK_META } from '../seedData.js'
+import { IND_COLOR, STOCK_META } from '../seedData.js'
+import { NEWS_EVENTS, RELAY_PLAN_CODES } from '../seedDataEvents.js'
 import { useAppConfirmationDialog } from './useAppConfirmationDialog.js'
 import { useSavedToast } from './useSavedToast.js'
 import { useAppShellUiState } from './useAppShellUiState.js'

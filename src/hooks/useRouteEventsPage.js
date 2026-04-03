@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
-import { NEWS_EVENTS } from '../seedData.js'
+import { NEWS_EVENTS } from '../seedDataEvents.js'
 import { filterEventsByType } from '../lib/appShellRuntime.js'
 
 export function useRouteEventsPage() {

@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button } from '../common'
-import { RELAY_PLAN } from '../../seedData.js'
+import { RELAY_PLAN } from '../../seedDataEvents.js'
 
 const TYPE_COLOR = {
   法說: C.up,

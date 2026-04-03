@@ -17,7 +17,7 @@ import {
   TRADE_BACKFILL_PATCHES,
   VIEW_MODE_KEY,
 } from '../constants.js'
-import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../seedData.js'
+import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../seedDataJinliancheng.js'
 import { applyTradeEntryToHoldings, buildHoldingPriceHints, normalizeHoldings } from './holdings.js'
 import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'

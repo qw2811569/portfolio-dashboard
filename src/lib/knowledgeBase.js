@@ -80,12 +80,33 @@ function getCatalogItemsByKey(key) {
  * @param {{ maxItems?: number, minConfidence?: number }} options
  * @returns {{ fact: string, interpretation: string, action: string, title: string }[]}
  */
+// 載入 persona-knowledge-map（Qwen 產出的 600 條分類）
+let _personaMap = null
+function getPersonaMap() {
+  if (_personaMap) return _personaMap
+  try {
+    // Node 環境（回測/API）
+    if (
+      typeof globalThis !== 'undefined' &&
+      typeof globalThis.__personaKnowledgeMap !== 'undefined'
+    ) {
+      _personaMap = globalThis.__personaKnowledgeMap
+      return _personaMap
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
 export function getRelevantKnowledge(
   stockMeta = {},
-  { maxItems = 5, minConfidence = 0.7, queryProfile = null } = {}
+  { maxItems = 5, minConfidence = 0.7, queryProfile = null, persona = null } = {}
 ) {
   const { strategy } = stockMeta
   const resolvedProfile = queryProfile || buildKnowledgeQueryProfile(stockMeta)
+  const personaMap = getPersonaMap()?.classifications || null
+  const personaId = persona?.id || null
   const weightedCandidates = []
 
   Object.entries(resolvedProfile || {}).forEach(([key, weight]) => {
@@ -94,10 +115,22 @@ export function getRelevantKnowledge(
     items.forEach((item) => {
       const confidence = Number(item?.confidence ?? 0)
       if (confidence < minConfidence) return
+
+      // 如果有 persona filtering，優先選該人格的規則
+      let personaBoost = 1.0
+      if (personaId && personaMap && item.id) {
+        const rulePersona = personaMap[item.id]
+        if (rulePersona === personaId)
+          personaBoost = 1.5 // 對應人格加 50% 權重
+        else if (rulePersona === 'shared')
+          personaBoost = 1.2 // 通用規則加 20%
+        else personaBoost = 0.5 // 不對應的人格降 50%
+      }
+
       weightedCandidates.push({
         ...item,
         __sourceKey: key,
-        __score: confidence * Number(weight || 0),
+        __score: confidence * Number(weight || 0) * personaBoost,
       })
     })
   })

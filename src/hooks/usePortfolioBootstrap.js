@@ -136,32 +136,37 @@ export function usePortfolioBootstrap({
       }
 
       try {
-        const [cloudBrain, cloudEvents, cloudHoldings, cloudHistory, cloudResearch] =
-          await Promise.all([
-            fetch('/api/brain?action=brain')
-              .then((res) => res.json())
-              .catch(() => ({ brain: null })),
-            fetch('/api/brain', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'load-events' }),
-            })
-              .then((res) => res.json())
-              .catch(() => ({ events: null })),
-            fetch('/api/brain', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'load-holdings' }),
-            })
-              .then((res) => res.json())
-              .catch(() => ({ holdings: null })),
-            fetch('/api/brain?action=history')
-              .then((res) => res.json())
-              .catch(() => ({ history: null })),
-            fetch('/api/research')
-              .then((res) => res.json())
-              .catch(() => ({ reports: null })),
-          ])
+        // Holdings 最重要，單獨 fetch 確保失敗不影響
+        let cloudHoldings = { holdings: null }
+        try {
+          cloudHoldings = await fetch('/api/brain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'load-holdings' }),
+          }).then((res) => res.json())
+        } catch {
+          console.warn('Cloud holdings fetch failed')
+        }
+
+        // 其他資料平行 fetch，個別失敗不影響整體
+        const [cloudBrain, cloudEvents, cloudHistory, cloudResearch] = await Promise.all([
+          fetch('/api/brain?action=brain')
+            .then((res) => res.json())
+            .catch(() => ({ brain: null })),
+          fetch('/api/brain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'load-events' }),
+          })
+            .then((res) => res.json())
+            .catch(() => ({ events: null })),
+          fetch('/api/brain?action=history')
+            .then((res) => res.json())
+            .catch(() => ({ history: null })),
+          fetch('/api/research')
+            .then((res) => res.json())
+            .catch(() => ({ reports: null })),
+        ])
         if (cancelled) return
 
         if (cloudBrain.brain && !snapshot.strategyBrain) {
@@ -230,9 +235,17 @@ export function usePortfolioBootstrap({
         }
         writeSyncAt('pf-cloud-sync-at', syncedAt)
         setCloudSync(true)
-      } catch {
-        // localStorage fallback keeps app usable offline
+      } catch (syncErr) {
+        console.warn('Cloud full sync failed, localStorage fallback:', syncErr)
       } finally {
+        // 無論 full sync 成功或失敗，都啟用 cloud sync 以確保後續改動能存上去
+        if (!cancelled) {
+          cloudSyncStateRef.current = {
+            enabled: true,
+            syncedAt: cloudSyncStateRef.current.syncedAt || Date.now(),
+          }
+          setCloudSync(true)
+        }
         portfolioTransitionRef.current = {
           isHydrating: false,
           fromPid: pid,

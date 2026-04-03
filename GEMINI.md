@@ -263,9 +263,57 @@
 - ✅ 工作流程 7：FinMind 數據驗證（finmind-validation-2026-04-01.json）
 - ✅ prompt 優化研究（prompt-optimization-research-2026-04-01.json）
 
-## 新一輪任務（Claude 2026-04-02 指派）
+## 新一輪任務（Claude 2026-04-04 指派）
 
-**開始前先確認日期是 2026-04-02，輸出檔名用 2026-04-02。**
+### 最新任務：研究 Google Code Assist: Chat 如何為本專案服務
+
+**目標：** 用戶有 Google Code Assist: Chat（IDE 內的 AI 助手），需要研究如何讓它融入我們的多 AI 協作工作流。
+
+**搜尋以下問題：**
+
+1. **Google Code Assist: Chat 的最新功能與限制**
+   - 支援哪些 IDE？（VS Code / JetBrains / Cloud Shell Editor）
+   - context window 多大？能讀多少檔案？
+   - 能不能存取本地終端機跑指令（build/test/lint）？
+   - 有沒有 workspace indexing（類似 Cursor 的 codebase 理解能力）？
+   - 是否支援自訂 system prompt 或 instructions 檔案（像 CLAUDE.md）？
+
+2. **跟其他 AI coding tools 的比較**
+   - vs GitHub Copilot Chat
+   - vs Cursor
+   - vs Claude Code CLI
+   - 重點比：codebase 理解能力、multi-file editing、terminal 整合
+
+3. **最佳實踐與進階用法**
+   - 有沒有 `.gemini/` 或類似的設定目錄可以放專案指引？
+   - 能不能自訂 code style rules 讓它遵守？
+   - 社群有什麼 tips 讓它更好用？
+   - 企業用戶的評價如何？
+
+4. **建議如何融入我們的工作流**
+   - 它適合接手哪些角色？（QA？小修？code review？）
+   - 能不能取代或輔助 Qwen 的部分工作？
+   - 跟 Gemini CLI 是什麼關係？共用額度嗎？
+
+**產出到：** `docs/gemini-research/google-code-assist-review-2026-04-04.json`
+
+格式：
+
+```json
+{
+  "facts": [...],
+  "citations": ["..."],
+  "freshness": "2026-04-04",
+  "recommendations": ["建議 1", "建議 2"],
+  "unresolved_questions": ["..."]
+}
+```
+
+完成後：`AI_NAME=Gemini bash scripts/ai-status.sh done "Google Code Assist 調研完成"`
+
+---
+
+### 舊任務（2026-04-02，已完成的跳過，未完成的繼續）
 
 ### ~~A. 法說會行事曆更新~~ → 已取消
 

@@ -1,0 +1,4 @@
+# Gemini Code Assist configuration
+code_review:
+  # Only flag HIGH+ severity issues (skip minor style nits)
+  comment_severity_threshold: MEDIUM

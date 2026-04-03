@@ -1,0 +1,52 @@
+{
+  "facts": [
+    {
+      "topic": "Google Code Assist: Chat (Gemini Code Assist) - 最新功能與限制",
+      "details": {
+        "IDE Support": "VS Code (全功能/Agent Mode), JetBrains (IntelliJ, PyCharm, GoLand, WebStorm, Android Studio), Cloud Shell Editor, Cloud Workstations.",
+        "Context Window": "1M+ tokens (powered by Gemini 2.5/3.x models), 可處理 50,000+ 行程式碼。",
+        "Terminal Access": "具備 Deep Terminal Integration，Agent 可以跑 shell 指令 (build/test/lint) 來驗證修改內容。",
+        "Workspace Indexing": "支援 Local Codebase Indexing 以及 Remote Repository Context (Enterprise)，可用 @ 標記參考遠端倉庫。",
+        "Custom Instructions": "支援自訂 system prompt，可透過 `.gemini/system.md` 檔案或環境變數 `GEMINI_SYSTEM_MD` 設定。"
+      },
+      "source": "https://cloud.google.com/products/gemini/code-assist",
+      "confidence": "confirmed"
+    },
+    {
+      "topic": "與其他 AI Coding Tools 比較",
+      "details": {
+        "vs GitHub Copilot Chat": "Gemini 擁有極大 context window (1M+ vs Copilot ~32k-128k)；支援跨檔案自主 Agent Mode。",
+        "vs Cursor": "Cursor 以 RAG 為基礎，Gemini 則是原生長文本支援；Gemini 在 Google Cloud 生態圈整合更深 (Cloud Console 整合)。",
+        "vs Claude Code CLI": "Claude Code (Anthropic) 強項在於推理能力與工具呼叫 (MCP)，而 Gemini Code Assist 則是透過 Gemini CLI 提供類似的終端機 agent 體驗，並擁有更大的記憶體 (Context)。"
+      },
+      "source": "https://github.com/google-gemini/gemini-cli",
+      "confidence": "confirmed"
+    },
+    {
+      "topic": "最佳實踐與進階用法",
+      "details": {
+        "Project Guidance": "使用 `.gemini/` 目錄放置專案指引，讓 AI 遵守特定程式碼規範。",
+        "Model Context Protocol (MCP)": "支援透過 MCP 連接外部工具與數據源，取代舊有的 Tool Calling API。",
+        "Unified Diff": "變更預覽採用 side-by-side diff 視圖，確保安全性。"
+      },
+      "source": "https://cloud.google.com/vertex-ai/docs/release-notes",
+      "confidence": "confirmed"
+    }
+  ],
+  "citations": [
+    "https://cloud.google.com/products/gemini/code-assist",
+    "https://github.com/google-gemini/gemini-cli",
+    "https://cloud.google.com/vertex-ai/docs/release-notes"
+  ],
+  "freshness": "2026-04-04",
+  "recommendations": [
+    "Gemini Code Assist 適合擔任「大塊頭任務」(Heavy Lifting) 的執行者，例如全專案重構或跨檔案 bug 排除，因為它有 1M+ 的 context。",
+    "可取代 Qwen 的部分程式碼分析工作，Qwen 可轉向更專精的單檔邏輯優化或 UI 調整。",
+    "Gemini CLI 與 Code Assist 共用後端模型，Gemini CLI 可用於 CI/CD 或自動化腳本中，而 Code Assist 用於 IDE 內即時開發。",
+    "建議將本專案的 GEMINI.md 內容整合至 `.gemini/system.md` 以強化 IDE 內的 AI 遵守度。"
+  ],
+  "unresolved_questions": [
+    "免費版與企業版在 2026 年的「思考預算」(thinking budget) 具體額度仍有動態調整空間。",
+    "JetBrains 插件的本地索引速度在超大型專案中仍略遜於 VS Code 版本。"
+  ]
+}

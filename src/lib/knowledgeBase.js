@@ -36,9 +36,6 @@ const STRATEGY_KNOWLEDGE_MAP = {
   轉型股: [fundamentalAnalysis, newsCorrelation, chipAnalysis],
 }
 
-// 所有策略通用的風險管理知識（每次都會附加）
-const UNIVERSAL_SOURCES = [riskManagement]
-
 const DEFAULT_QUERY_PROFILE = {
   fundamentals: 0.3,
   industry: 0.25,

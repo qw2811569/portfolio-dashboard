@@ -159,30 +159,49 @@ Recommendation:
 
 ---
 
-### 任務 H：收盤分析分群提速 + 全量回歸測試（新任務）
+### ~~任務 H：收盤分析分群提速 + 全量回歸測試~~ ✅ 完成
 
-#### H1. 分群提速
+---
 
-目前 22 檔持股全塞進一份 prompt 太長太慢。
+## Qwen 接手 Codex 工程任務（2026-04-04 起）
 
-修改 `src/hooks/useDailyAnalysisWorkflow.js`：
+Codex 額度長期不足，Qwen 正式接手工程實作角色。以下是待做任務：
 
-1. import `selectPersona` from `../lib/personaEngine.js` 和 `getBacktestReliability` from `../lib/analysisFramework.js`
-2. 在組 prompt 前，把持股分群：
-   - 高可信度（tier=high）的股票：不送 AI，用 `scoreByPersona` 量化打分直接出結論，結果附在報告最後當「量化快掃」段落
-   - 中低可信度的才送 AI 做深度分析
-3. 效果：prompt 變短（可能從 22 檔變 15 檔），回應更快
+### ~~任務 I：持股資料 cloud sync 修復~~ ✅ Claude 已完成
 
-注意：不要破壞現有的 `buildDailyAnalysisRequest` 格式，只是減少送入的持股數。
+### ~~任務 J：useResearchWorkflow 測試修復~~ ✅ 測試本來就過
 
-#### H2. 全量回歸測試
+### 任務 K：全量回歸 + E2E 驗證
 
-跑 `npx vitest run` 確認 71+ files 全過。
-跑 `npm run build` 確認 build 通過。
-跑 `npm run lint` 確認無 error。
+先 `git pull origin main`。
+
+Claude 剛修了 cloud sync（`usePortfolioBootstrap.js`），需要驗證：
+
+1. `npm run build` — 確認 build 通過
+2. `npx vitest run` — 確認 71 files / 369+ tests 全過
+3. `npm run lint` — 確認無 error
+4. 如果 vercel dev 有跑（`http://127.0.0.1:3002`），做 Level 2 QA：
+   - `curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/`
+   - `curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/api/brain?action=all`
+   - `curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/api/event-calendar?range=7&codes=2308`
 
 ```
-AI_NAME=Qwen bash scripts/ai-status.sh done "任務 H：分群提速完成 + 回歸全過"
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 K：回歸全過 + E2E X pass / Y fail"
+```
+
+### 任務 L：lint warning 掃除
+
+跑 `npm run lint` 後，把所有 **warning** 修掉（不只是 error）。
+常見的：
+
+- `no-unused-vars` — 刪掉沒用到的變數
+- `no-console` — `console.log` 改成 `console.warn` 或刪掉
+- `prefer-const` — `let` 改 `const`
+
+每改完一批跑 `npx vitest run` 確認沒破。
+
+```
+AI_NAME=Qwen bash scripts/ai-status.sh done "任務 L：lint warnings 清零"
 ```
 
 ### 任務 G：修兩個前端 Bug（已完成）

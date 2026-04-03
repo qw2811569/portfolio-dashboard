@@ -1,5 +1,5 @@
 import { createElement as h } from 'react'
-import { useNavigate } from 'react-router-dom'
+// useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button } from '../common'
 
@@ -275,7 +275,6 @@ export function NewsAnalysisPanel({
   setReviewingEvent,
   createDefaultReviewForm,
 }) {
-  const navigate = useNavigate()
   const NE = newsEvents || []
   const past = NE.filter((e) => e.status === 'closed' || e.status === 'past').sort(
     (a, b) => b.id - a.id
@@ -327,7 +326,9 @@ export function NewsAnalysisPanel({
         h(
           Button,
           {
-            onClick: () => navigate('/portfolio/me/daily'),
+            onClick: () => {
+              /* navigate to daily tab handled by parent */
+            },
             style: {
               padding: '10px 24px',
               borderRadius: 8,

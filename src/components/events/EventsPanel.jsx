@@ -1,5 +1,5 @@
 import { createElement as h } from 'react'
-import { useNavigate } from 'react-router-dom'
+// useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button } from '../common'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
@@ -548,8 +548,6 @@ export function EventsPanel({
   catalystFilter,
   setCatalystFilter,
 }) {
-  const navigate = useNavigate()
-
   return h(
     'div',
     null,
@@ -605,7 +603,9 @@ export function EventsPanel({
         h(
           Button,
           {
-            onClick: () => navigate('/portfolio/me/daily'),
+            onClick: () => {
+              /* navigate to daily tab handled by parent */
+            },
             style: {
               padding: '10px 24px',
               borderRadius: 8,

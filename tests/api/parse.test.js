@@ -3,10 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const callAiImage = vi.fn()
 const ensureAiConfigured = vi.fn()
 
-vi.mock('../../api/_lib/ai-provider.js', () => ({
-  callAiImage,
-  ensureAiConfigured,
-}))
+vi.mock('../../api/_lib/ai-provider.js', async () => {
+  const actual = await import('../../api/_lib/ai-provider.js')
+  return {
+    ...actual,
+    callAiImage,
+    ensureAiConfigured,
+  }
+})
 
 const { default: handler } = await import('../../api/parse.js')
 
@@ -40,11 +44,16 @@ describe('api/parse', () => {
     ensureAiConfigured.mockReturnValue({ provider: 'anthropic' })
   })
 
-  it('passes base64 image payloads to the AI OCR adapter and logs the raw response', async () => {
+  it('passes base64 image payloads to Claude Vision and returns normalized OCR json', async () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     callAiImage.mockResolvedValueOnce({
       id: 'msg_parse_1',
-      content: [{ type: 'text', text: '{"tradeDate":"2026/04/02","trades":[]}' }],
+      content: [
+        {
+          type: 'text',
+          text: '{"tradeDate":"2026/04/02","trades":[{"action":"買進","code":"2330","name":"台積電","qty":"1000","price":"952","time":"09:01"}]}',
+        },
+      ],
     })
 
     const req = {
@@ -61,14 +70,24 @@ describe('api/parse', () => {
       await handler(req, res)
 
       expect(callAiImage).toHaveBeenCalledWith({
-        system: 'parse prompt',
+        system: expect.stringContaining('parse prompt'),
         base64: 'ZmFrZS1pbWFnZQ==',
         mediaType: 'image/png',
-        prompt: '解析這張成交截圖',
-        maxTokens: 600,
+        prompt: expect.stringContaining('股票代碼、買賣方向、價格、數量、時間'),
+        maxTokens: 900,
       })
       expect(res.payload).toMatchObject({
-        id: 'msg_parse_1',
+        tradeDate: '2026/04/02',
+        trades: [
+          expect.objectContaining({
+            action: '買進',
+            code: '2330',
+            name: '台積電',
+            qty: 1000,
+            price: 952,
+            time: '09:01',
+          }),
+        ],
       })
       expect(consoleLogSpy).toHaveBeenCalledWith(
         '[api/parse] OCR AI raw response:',

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 11:59
+Last updated: 2026-04-03 12:04
 
 ## Management preferences
 
@@ -82,6 +82,7 @@ Last updated: 2026-04-03 11:59
 
 ## Latest checkpoint
 
+- `2026-04-03 12:04` Codex：完成 Batch 3：3A /api/parse 接 Claude Vision 並回 structured OCR JSON、補具體錯誤處理；3B OCR 目標價結果自動更新 holdings targetPrice，且已通過 build/vitest。
 - `2026-04-03 11:59` Codex：完成 Batch 2：2A 收盤分析 prompt 注入台股市場訊號（營收/事件窗口/目標價 freshness/法人5日）；2B 新增 historical analogs 比對並注入 prompt，且已通過 build/vitest。
 - `2026-04-03 11:51` Codex：完成 Batch 1：1A News/Analysis Panel 顯示 impact/source；1B 新增 collect-daily-events cron + CRON_SECRET + Blob put；1C knowledge evolution confidence 自動調整，並逐項通過 build/vitest 驗證。
 - `2026-04-03 11:41` Codex：修復 NewsPanel duplicate key：FinMind 同股同日多則新聞改用更唯一 key（id + title + index），並完成 build/lint 驗證。

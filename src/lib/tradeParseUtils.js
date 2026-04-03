@@ -58,15 +58,17 @@ function normalizeTradeRow(row, fallbackDate) {
 function normalizeTargetPriceUpdate(update) {
   if (!update || typeof update !== 'object') return null
   const code = String(update.code || '').trim()
-  const firm = String(update.firm || '').trim()
-  const target = normalizeTradeNumeric(update.target)
+  const firm = String(update.firm || update.source || 'OCR').trim()
+  const target = normalizeTradeNumeric(update.target ?? update.targetPrice)
   if (!code || !firm || !Number.isFinite(target) || target <= 0) return null
 
   return {
     code,
     firm,
     target,
+    targetPrice: target,
     date: normalizeTradeDate(update.date, toSlashDate()),
+    source: String(update.source || 'OCR').trim() || 'OCR',
   }
 }
 
@@ -75,9 +77,12 @@ export function normalizeTradeParseResult(raw, fallbackDate = toSlashDate()) {
   const trades = Array.isArray(raw?.trades)
     ? raw.trades.map((row) => normalizeTradeRow(row, tradeDate)).filter(Boolean)
     : []
-  const targetPriceUpdates = Array.isArray(raw?.targetPriceUpdates)
-    ? raw.targetPriceUpdates.map(normalizeTargetPriceUpdate).filter(Boolean)
-    : []
+  const targetPriceUpdates = [
+    ...(Array.isArray(raw?.targetPriceUpdates) ? raw.targetPriceUpdates : []),
+    ...(raw?.targetPrice && typeof raw.targetPrice === 'object' ? [raw.targetPrice] : []),
+  ]
+    .map(normalizeTargetPriceUpdate)
+    .filter(Boolean)
 
   return {
     tradeDate,

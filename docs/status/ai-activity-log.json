@@ -1,6 +1,14 @@
 {
-  "lastUpdated": "2026-04-03T11:59:33+08:00",
+  "lastUpdated": "2026-04-03T12:04:30+08:00",
   "entries": [
+    {
+      "time": "2026-04-03 12:04",
+      "isoTime": "2026-04-03T12:04:30+08:00",
+      "ai": "Codex",
+      "action": "done",
+      "message": "完成 Batch 3：3A /api/parse 接 Claude Vision 並回 structured OCR JSON、補具體錯誤處理；3B OCR 目標價結果自動更新 holdings targetPrice，且已通過 build/vitest。",
+      "status": "idle"
+    },
     {
       "time": "2026-04-03 11:59",
       "isoTime": "2026-04-03T11:59:33+08:00",
@@ -312,14 +320,6 @@
       "action": "start",
       "message": "Codex CLI 啟動：讀 docs/status/PROJECT_ENTRY.md 與 docs/status/current-work.md，確認主線目標與目前可交付風險，然後用一句話寫出你現在最該做的驗收任務。",
       "status": "working"
-    },
-    {
-      "time": "2026-04-02 21:05",
-      "isoTime": "2026-04-02T21:05:06+08:00",
-      "ai": "Claude",
-      "action": "handover",
-      "message": "已讀第二輪模擬回報。確認『回報→整體判斷→續派』循環可運作；下一步改回真實任務，不再用模擬訊息。",
-      "status": "idle"
     }
   ]
 }

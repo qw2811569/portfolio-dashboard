@@ -41,6 +41,7 @@ export function useTradeCaptureRuntime({
   setHoldings = () => {},
   setTradeLog = () => {},
   upsertTargetReport = () => false,
+  updateTargetPrice = () => false,
   upsertFundamentalsEntry = () => false,
   applyTradeEntryToHoldings = (rows) => rows,
   createDefaultFundamentalDraft = () => ({}),
@@ -262,35 +263,7 @@ export function useTradeCaptureRuntime({
       const data = await response.json()
       if (!response.ok) throw new Error(data.detail || data.error || 'API 錯誤')
 
-      const rawText = String(data.content?.[0]?.text || '')
-      const clean = extractTradeParseJsonText(rawText)
-      if (!clean) {
-        throw new Error(
-          buildTradeParseErrorMessage({
-            error: new Error('AI 未回傳可解析的內容'),
-            rawText,
-            responseData: data,
-          })
-        )
-      }
-
-      let parsedPayload
-      try {
-        parsedPayload = JSON.parse(clean)
-      } catch (parseError) {
-        throw new Error(
-          buildTradeParseErrorMessage({
-            error: parseError,
-            rawText,
-            responseData: data,
-          })
-        )
-      }
-
-      const normalized = normalizeTradeParseResult(
-        parsedPayload,
-        activeUpload.tradeDate || toSlashDate()
-      )
+      const normalized = normalizeTradeParseResult(data, activeUpload.tradeDate || toSlashDate())
       if (!normalized.trades.length && !normalized.targetPriceUpdates.length) {
         throw new Error('沒有辨識到有效成交，請改用更清晰的截圖或手動修正')
       }
@@ -362,6 +335,10 @@ export function useTradeCaptureRuntime({
     setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
     ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
       upsertTargetReport(update)
+      const targetValue = Number(update?.targetPrice ?? update?.target)
+      if (update?.code && Number.isFinite(targetValue) && targetValue > 0) {
+        updateTargetPrice(update.code, targetValue)
+      }
     })
 
     const remainingUploads = Math.max(tradeEditorState.uploads.length - 1, 0)
@@ -394,6 +371,7 @@ export function useTradeCaptureRuntime({
     tradeEditorState.uploads.length,
     tradeLog,
     updateActiveUpload,
+    updateTargetPrice,
     upsertTargetReport,
   ])
 

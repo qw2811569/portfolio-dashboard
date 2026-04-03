@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react'
 import { API_ENDPOINTS, STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
 import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { hydrateDossiersWithFinMind } from '../lib/finmindPromptRuntime.js'
-import { readKnowledgeEvolutionLogs } from '../lib/knowledgeEvolutionRuntime.js'
+import {
+  logAnalysisObservation,
+  readKnowledgeEvolutionLogs,
+} from '../lib/knowledgeEvolutionRuntime.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
 import { evaluateBrainProposal } from '../lib/researchProposalRuntime.js'
 import {
@@ -17,6 +20,7 @@ import {
 } from '../lib/researchRuntime.js'
 
 const RESEARCH_REQUEST_TIMEOUT_MS = 55_000
+const EVOLVE_REQUEST_TIMEOUT_MS = 180_000 // evolve 模式需要 3 分鐘（4 輪 AI call）
 
 function createTimeoutSignal(timeoutMs = RESEARCH_REQUEST_TIMEOUT_MS) {
   if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
@@ -44,7 +48,10 @@ function isTimeoutError(error) {
 }
 
 async function defaultRunResearchRequest(body) {
-  const { signal, cancel } = createTimeoutSignal()
+  const isLongRunning = body?.mode === 'evolve' || body?.mode === 'portfolio'
+  const { signal, cancel } = createTimeoutSignal(
+    isLongRunning ? EVOLVE_REQUEST_TIMEOUT_MS : RESEARCH_REQUEST_TIMEOUT_MS
+  )
   try {
     const res = await fetch(API_ENDPOINTS.RESEARCH, {
       method: 'POST',
@@ -64,8 +71,8 @@ async function defaultRunResearchRequest(body) {
         payload?.detail ||
           payload?.error ||
           (text.includes('TIMEOUT')
-          ? '深度研究逾時，請稍後再試（Vercel function timeout）'
-          : text.slice(0, 120) || `研究 API 失敗 (${res.status})`)
+            ? '深度研究逾時，請稍後再試（Vercel function timeout）'
+            : text.slice(0, 120) || `研究 API 失敗 (${res.status})`)
       )
     }
     return res.json()
@@ -143,9 +150,7 @@ export function useResearchWorkflow({
       setResearchResults((prev) =>
         Number(prev?.timestamp) === targetTimestamp ? patchResearchProposalState(prev, patch) : prev
       )
-      setResearchHistory((prev) =>
-        updateResearchReportsProposalState(prev, targetTimestamp, patch)
-      )
+      setResearchHistory((prev) => updateResearchReportsProposalState(prev, targetTimestamp, patch))
     },
     [setResearchHistory, setResearchResults]
   )
@@ -185,11 +190,12 @@ export function useResearchWorkflow({
           }
         }
 
-        const researchDossiers = buildResearchDossiers({ stocks, dossierByCode: promptDossierByCode })
+        const researchDossiers = buildResearchDossiers({
+          stocks,
+          dossierByCode: promptDossierByCode,
+        })
         const { usageLog: knowledgeUsageLog, feedbackLog: knowledgeFeedbackLog } =
-          readKnowledgeLogs(
-            typeof globalThis !== 'undefined' ? globalThis.localStorage : null
-          )
+          readKnowledgeLogs(typeof globalThis !== 'undefined' ? globalThis.localStorage : null)
         const body = buildResearchRequestBody({
           mode,
           stocks,
@@ -211,6 +217,17 @@ export function useResearchWorkflow({
         if (result) {
           setResearchResults(result)
           setResearchHistory((prev) => mergeResearchHistoryEntries([result], prev))
+          ;(researchDossiers || []).forEach((dossier) => {
+            logAnalysisObservation({
+              ruleIds: (result?.knowledgeProposal?.confidenceAdjustments || []).map(
+                (item) => item.id
+              ),
+              stockCode: dossier?.code,
+              date: new Date().toISOString().slice(0, 10),
+              outcome: result?.error ? 'negative' : 'positive',
+              evidenceRefs: Array.isArray(dossier?.events) ? dossier.events.slice(0, 3) : [],
+            })
+          })
 
           if (mode === 'single' && result.code) {
             enrichResearchToDossier(result, { silent: true })
@@ -344,14 +361,7 @@ export function useResearchWorkflow({
         setProposalAction({ id: null, type: null })
       }
     },
-    [
-      canUseCloud,
-      emitSaved,
-      patchProposalState,
-      saveBrainRequest,
-      setStrategyBrain,
-      strategyBrain,
-    ]
+    [canUseCloud, emitSaved, patchProposalState, saveBrainRequest, setStrategyBrain, strategyBrain]
   )
 
   const discardBrainProposal = useCallback(
@@ -363,7 +373,9 @@ export function useResearchWorkflow({
 
       const targetTimestamp = Number(targetReport?.timestamp)
       setProposalAction({
-        id: Number.isFinite(targetTimestamp) ? targetTimestamp : targetReport.brainProposal.id || 'proposal',
+        id: Number.isFinite(targetTimestamp)
+          ? targetTimestamp
+          : targetReport.brainProposal.id || 'proposal',
         type: 'discard',
       })
 

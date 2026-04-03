@@ -1,4 +1,5 @@
-import { NEWS_EVENTS } from './seedData.js'
+import { INIT_HOLDINGS, INIT_TARGETS, INIT_WATCHLIST, NEWS_EVENTS } from './seedData.js'
+import { normalizeWatchlist } from './lib/watchlistUtils.js'
 
 export const MEMO_Q = {
   買進: ['為什麼選這檔？核心邏輯是什麼？', '進場的技術或籌碼依據？', '出場計畫：目標價？停損價？'],
@@ -196,14 +197,14 @@ export const PORTFOLIO_STORAGE_FIELDS = [
   {
     suffix: 'holdings-v2',
     alias: 'holdings',
-    ownerFallback: () => [],
+    ownerFallback: () => INIT_HOLDINGS,
     emptyFallback: () => [],
   },
   { suffix: 'log-v2', alias: 'tradeLog', ownerFallback: () => [], emptyFallback: () => [] },
   {
     suffix: 'targets-v1',
     alias: 'targets',
-    ownerFallback: () => ({}),
+    ownerFallback: () => INIT_TARGETS,
     emptyFallback: () => ({}),
   },
   {
@@ -216,7 +217,7 @@ export const PORTFOLIO_STORAGE_FIELDS = [
   {
     suffix: 'watchlist-v1',
     alias: 'watchlist',
-    ownerFallback: () => [],
+    ownerFallback: () => normalizeWatchlist(INIT_WATCHLIST),
     emptyFallback: () => [],
     hasLegacy: false,
   },

@@ -254,12 +254,47 @@ export function useDailyAnalysisWorkflow({
 
           if (reliability.tier === 'high') {
             // 高可信度：量化打分，不送 AI
+            const fm = dossier?.finmind || {}
+            const latestRevenue = fm.revenue?.[0]
+            const latestValuation = fm.valuation?.[0]
+            const latestBalance = fm.balanceSheet?.[0]
+            const institutional5d = (fm.institutional || []).slice(0, 5)
+            const foreignSum = institutional5d.reduce((s, d) => s + (d.foreign || 0), 0)
+            const trustSum = institutional5d.reduce((s, d) => s + (d.investment || 0), 0)
+            const marginArr = fm.margin || []
+            const marginDelta =
+              marginArr.length > 1
+                ? (marginArr[0]?.marginBalance || 0) - (marginArr[1]?.marginBalance || 0)
+                : 0
+
             const signals = {
               changePct: change?.changePct || 0,
               price: change?.price || dossier?.position?.price || 0,
               cost: dossier?.position?.cost || 0,
               qty: dossier?.position?.qty || 0,
               todayPnl: change?.todayPnl || 0,
+              // FinMind 營收
+              revenueYoY: Number(latestRevenue?.revenueYoY) || 0,
+              revenueMoM: Number(latestRevenue?.revenueMoM) || 0,
+              // 法人
+              foreignBuy: foreignSum,
+              trustBuy: trustSum,
+              foreignShort5d: foreignSum,
+              institutionalStreakDays:
+                foreignSum > 0
+                  ? institutional5d.length
+                  : foreignSum < 0
+                    ? -institutional5d.length
+                    : 0,
+              // 估值
+              per: Number(latestValuation?.per) || 0,
+              pbr: Number(latestValuation?.pbr) || 0,
+              // 融資
+              marginDelta,
+              priceChange: change?.changePct || 0,
+              // 財務
+              debtRatio: Number(latestBalance?.debtRatio) || 0,
+              roe: Number(latestBalance?.roe) || 0,
             }
             const result = scoreByPersona(persona, signals)
             highTierQuickScan.push({
@@ -624,7 +659,10 @@ ${losers
                 `- 依據：${item.reasons.join('、') || '無特殊訊號'}`
             )
             .join('\n\n')
-          aiInsight = (aiInsight || '') + '\n\n---\n\n## 📊 量化快掃（高可信度持股，不經 AI）\n\n' + quickScanText
+          aiInsight =
+            (aiInsight || '') +
+            '\n\n---\n\n## 📊 量化快掃（高可信度持股，不經 AI）\n\n' +
+            quickScanText
         }
       } catch (analysisError) {
         aiError = analysisError?.message || 'AI 分析失敗'

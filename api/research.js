@@ -944,7 +944,7 @@ ${histSummary || '（無紀錄）'}
       const newBrainText = await callClaude(
         `基於所有研究和診斷結果，輸出「候選策略提案」的內容本體。回傳**純JSON**（不要markdown code block）。
 結構：{"rules":[{"text":"規則","when":"適用情境","action":"建議動作","scope":"適用範圍","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"lastValidatedAt":"日期","staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"source":"ai/user","status":"active","checklistStage":"preEntry/preAdd/preExit"}],"candidateRules":[{"text":"待驗證規則","when":"情境","action":"動作","confidence":1到10,"evidenceCount":整數,"validationScore":0到100,"staleness":"fresh/aging/stale/missing","evidenceRefs":[{"type":"analysis/research/review/event/fundamental/target/report/dossier/note","refId":"來源ID或空字串","code":"股票代號或空字串","label":"證據標籤","date":"日期或空字串"}],"status":"candidate"}],"checklists":{"preEntry":["進場前檢查項"],"preAdd":["加碼前檢查項"],"preExit":["出場前檢查項"]},"lessons":[{"date":"日期","text":"教訓"}],"commonMistakes":[...],"stats":{"hitRate":"X/Y","totalAnalyses":N},"lastUpdate":"日期","evolution":"這次進化摘要一句話"}`,
-        `個股研究：\n${stockSummaryText}\n\n系統診斷：\n${diag}\n\n進化建議：\n${evolveAdvice}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出「候選策略提案」對應的 brain JSON 內容本體。注意：這是候選提案，不是已自動生效的正式策略大腦。保留有效的舊規則，加入新的候選內容。`
+        `個股研究：\n${stockSummaryText}\n\n系統診斷：\n${diag}\n\n進化建議：\n${evolveAdvice}\n\n現有策略大腦：\n${brainCtx}\n\n今天是 ${today}。請整合以上所有資訊，輸出「候選策略提案」對應的 brain JSON 內容本體。注意：這是候選提案，不是已自動生效的正式策略大腦。保留有效的舊規則，加入新的候選內容。\n\n**重要限制：新增規則最多 3 條（gate 上限），挑最有證據支撐的 3 條，其餘放 candidateRules。不要跟現有 rules 語意重複。**`
       )
 
       let parsedBrain = null

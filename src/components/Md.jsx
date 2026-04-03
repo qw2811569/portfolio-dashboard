@@ -110,6 +110,87 @@ export default function Md({ text, color }) {
           renderInline(txt)
         )
       )
+    } else if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      flushList()
+      // Markdown table: collect consecutive | rows
+      const tableRows = []
+      let ti = i
+      while (
+        ti < lines.length &&
+        lines[ti].trim().startsWith('|') &&
+        lines[ti].trim().endsWith('|')
+      ) {
+        tableRows.push(lines[ti].trim())
+        ti++
+      }
+      i = ti - 1 // advance outer loop
+
+      // Parse: skip separator rows (|---|---|)
+      const dataRows = tableRows.filter((r) => !/^\|[\s\-:|]+\|$/.test(r))
+      if (dataRows.length > 0) {
+        const parseRow = (row) =>
+          row
+            .slice(1, -1)
+            .split('|')
+            .map((c) => c.trim())
+        const headerCells = parseRow(dataRows[0])
+        const bodyRows = dataRows.slice(1).map(parseRow)
+        const cellStyle = {
+          fontSize: 11,
+          color: textColor,
+          padding: '3px 8px',
+          borderBottom: `1px solid ${C.border || '#333'}`,
+          whiteSpace: 'nowrap',
+        }
+        els.push(
+          h(
+            'table',
+            {
+              key: `tbl-${i}`,
+              style: {
+                width: '100%',
+                borderCollapse: 'collapse',
+                margin: '6px 0',
+                fontSize: 11,
+              },
+            },
+            h(
+              'thead',
+              null,
+              h(
+                'tr',
+                null,
+                headerCells.map((c, ci) =>
+                  h(
+                    'th',
+                    {
+                      key: ci,
+                      style: {
+                        ...cellStyle,
+                        fontWeight: 600,
+                        color: C.text,
+                        textAlign: 'left',
+                      },
+                    },
+                    renderInline(c)
+                  )
+                )
+              )
+            ),
+            h(
+              'tbody',
+              null,
+              bodyRows.map((row, ri) =>
+                h(
+                  'tr',
+                  { key: ri },
+                  row.map((c, ci) => h('td', { key: ci, style: cellStyle }, renderInline(c)))
+                )
+              )
+            )
+          )
+        )
+      }
     } else if (line.trim() === '') {
       flushList()
       els.push(h('div', { key: `br-${i}`, style: { height: 4 } }))

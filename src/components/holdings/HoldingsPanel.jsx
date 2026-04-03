@@ -3,6 +3,7 @@ import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { Card } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
+import Md from '../Md.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -338,23 +339,21 @@ export function WinLossSummary({ winners, losers }) {
         },
       },
       h('div', { style: { ...lbl, color: C.up, marginBottom: 3 } }, `獲利 ${winners.length}檔`),
-      winners
-        .slice(0, 3)
-        .map((holding) =>
+      winners.slice(0, 3).map((holding) =>
+        h(
+          'div',
+          {
+            key: holding.code,
+            style: { display: 'flex', justifyContent: 'space-between', marginTop: 4 },
+          },
+          h('span', { style: { fontSize: 11, color: C.textSec } }, holding.name),
           h(
-            'div',
-            {
-              key: holding.code,
-              style: { display: 'flex', justifyContent: 'space-between', marginTop: 4 },
-            },
-            h('span', { style: { fontSize: 11, color: C.textSec } }, holding.name),
-            h(
-              'span',
-              { style: { fontSize: 11, fontWeight: 600, color: C.up } },
-              `+${getHoldingReturnPct(holding).toFixed(2)}%`
-            )
+            'span',
+            { style: { fontSize: 11, fontWeight: 600, color: C.up } },
+            `+${getHoldingReturnPct(holding).toFixed(2)}%`
           )
         )
+      )
     ),
     h(
       Card,
@@ -365,24 +364,53 @@ export function WinLossSummary({ winners, losers }) {
         },
       },
       h('div', { style: { ...lbl, color: C.down, marginBottom: 3 } }, `虧損 ${losers.length}檔`),
-      losers
-        .slice(0, 3)
-        .map((holding) =>
+      losers.slice(0, 3).map((holding) =>
+        h(
+          'div',
+          {
+            key: holding.code,
+            style: { display: 'flex', justifyContent: 'space-between', marginTop: 4 },
+          },
+          h('span', { style: { fontSize: 11, color: C.textSec } }, holding.name),
           h(
-            'div',
-            {
-              key: holding.code,
-              style: { display: 'flex', justifyContent: 'space-between', marginTop: 4 },
-            },
-            h('span', { style: { fontSize: 11, color: C.textSec } }, holding.name),
-            h(
-              'span',
-              { style: { fontSize: 11, fontWeight: 600, color: C.down } },
-              `${getHoldingReturnPct(holding).toFixed(2)}%`
-            )
+            'span',
+            { style: { fontSize: 11, fontWeight: 600, color: C.down } },
+            `${getHoldingReturnPct(holding).toFixed(2)}%`
           )
         )
+      )
     )
+  )
+}
+
+/**
+ * Daily Insight Card — 今日收盤快評摘要
+ */
+function DailyInsightCard({ latestInsight }) {
+  if (!latestInsight) return null
+  // 取第一段（到第一個 ## 或 --- 為止）作為摘要
+  const full = String(latestInsight || '')
+  const firstBreak = full.search(/\n#{1,3}\s|\n---/)
+  const summary = firstBreak > 0 ? full.slice(0, firstBreak).trim() : full.slice(0, 200).trim()
+  if (!summary) return null
+
+  return h(
+    Card,
+    { style: { marginBottom: 8, borderLeft: `3px solid ${C.accent}` } },
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 10,
+          color: C.textMute,
+          marginBottom: 4,
+          letterSpacing: '0.06em',
+          fontWeight: 600,
+        },
+      },
+      'AI 今日快評'
+    ),
+    h(Md, { text: summary, color: C.textSec })
   )
 }
 
@@ -400,6 +428,7 @@ export function HoldingsPanel({
   showReversal: _showReversal = false,
   setShowReversal: _setShowReversal = () => {},
   reversalConditions: _reversalConditions = {},
+  latestInsight = null,
   children,
 }) {
   return h(
@@ -407,6 +436,9 @@ export function HoldingsPanel({
     null,
     // Summary metrics
     h(HoldingsSummary, { holdings, totalVal, totalCost }),
+
+    // Daily insight card
+    h(DailyInsightCard, { latestInsight }),
 
     // Integrity warning
     h(HoldingsIntegrityWarning, { issues: holdingsIntegrityIssues }),

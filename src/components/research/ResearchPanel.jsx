@@ -26,12 +26,12 @@ export function ResearchHeader({
     {
       style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.teal, marginBottom: 6 } }, 'AutoResearch · 自主進化系統'),
+    h('div', { style: { ...lbl, color: C.teal, marginBottom: 6 } }, 'AI 投資助手'),
     h(
       'div',
       { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
-      '借鑒 Karpathy autoresearch：AI 不只研究個股，更能審視你的整個投資系統 — ',
-      '決策品質、認知盲點、情緒模式、策略一致性 — 並產出候選策略提案。'
+      'AI 自動分析：不只研究個股，更能審視你的整個投資系統 — ',
+      '決策品質、認知盲點、情緒模式、策略一致性 — 並產出 AI 策略建議。'
     ),
     h(
       'div',
@@ -55,7 +55,7 @@ export function ResearchHeader({
             color: researching ? C.textMute : C.onFill,
           },
         },
-        researching ? '全組合研究 + 提案生成中...' : '🧬 全組合研究 + 進化提案'
+        researching ? '全組合研究 + 建議生成中...' : '🧬 全組合研究 + AI 策略建議'
       ),
       h(
         Button,
@@ -162,7 +162,7 @@ export function DataRefreshCenter({ dataRefreshRows, onResearch, researching, ho
         h(
           'div',
           { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7 } },
-          '先補齊 stale / missing 的財報與目標價，AI 之後的分析會更扎實。'
+          '先補齊過期 / 缺少的財報與目標價，AI 之後的分析會更扎實。'
         )
       ),
       h(
@@ -272,14 +272,14 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
         },
       },
       researchTarget === 'EVOLVE'
-        ? 'AI 正在審視你的投資系統並產出候選提案...'
+        ? 'AI 正在審視你的投資系統並產出策略建議...'
         : `AI 正在進行${researchTarget === 'PORTFOLIO' ? '全組合' : '個股'}深度研究...`
     ),
     h(
       'div',
       { style: { fontSize: 10, color: C.textMute } },
       researchTarget === 'EVOLVE'
-        ? '3 輪迭代：系統診斷 → 進化建議 → 候選策略提案，預計 1-2 分鐘'
+        ? '3 輪迭代：系統診斷 → 進化建議 → AI 策略建議，預計 1-2 分鐘'
         : researchTarget === 'PORTFOLIO'
           ? `逐一分析 ${holdings?.length || 0} 檔持股 + 組合策略，預計 1-2 分鐘`
           : '3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒'
@@ -311,13 +311,16 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
 function proposalStatusMeta(proposalStatus, gatePassed) {
   if (proposalStatus === 'applied') return { label: '已套用', color: C.olive }
   if (proposalStatus === 'discarded') return { label: '已放棄', color: C.textMute }
-  if (proposalStatus === 'blocked' || gatePassed === false) return { label: 'Gate 未通過', color: C.down }
+  if (proposalStatus === 'blocked' || gatePassed === false)
+    return { label: '風險偏高，暫不建議採用', color: C.down }
   return { label: '待決策', color: C.amber }
 }
 
 function knowledgeProposalStatusMeta(status, gatePassed) {
-  if (status === 'candidate' && gatePassed !== false) return { label: '候選調整', color: C.teal }
-  if (status === 'blocked' || gatePassed === false) return { label: 'Gate 未通過', color: C.down }
+  if (status === 'candidate' && gatePassed !== false)
+    return { label: '建議可考慮採用', color: C.teal }
+  if (status === 'blocked' || gatePassed === false)
+    return { label: '風險偏高，暫不建議採用', color: C.down }
   return { label: '暫無調整', color: C.textMute }
 }
 
@@ -336,9 +339,7 @@ export function ResearchProposalCard({
   const statusMeta = proposalStatusMeta(proposalStatus, evaluation.passed)
   const actionBusy = Number(proposalActionId) === Number(results?.timestamp)
   const canApply =
-    proposalStatus !== 'applied' &&
-    proposalStatus !== 'discarded' &&
-    evaluation.passed !== false
+    proposalStatus !== 'applied' && proposalStatus !== 'discarded' && evaluation.passed !== false
 
   return h(
     Card,
@@ -363,8 +364,12 @@ export function ResearchProposalCard({
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, '候選策略提案'),
-        h('div', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, proposal.summary || '—'),
+        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, 'AI 策略建議'),
+        h(
+          'div',
+          { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
+          proposal.summary || '—'
+        ),
         h(
           'div',
           { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
@@ -430,11 +435,7 @@ export function ResearchProposalCard({
       ),
       Array.isArray(evaluation.issues) &&
         evaluation.issues.length > 0 &&
-        h(
-          'div',
-          { style: { color: C.down } },
-          `Gate 阻塞：${evaluation.issues.join('；')}`
-        )
+        h('div', { style: { color: C.down } }, `風險提醒：${evaluation.issues.join('；')}`)
     )
   )
 }
@@ -472,8 +473,12 @@ export function KnowledgeProposalCard({ results }) {
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, '知識庫演化提案'),
-        h('div', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, proposal.summary || '—'),
+        h('div', { style: { ...lbl, marginBottom: 4, color: statusMeta.color } }, '知識更新建議'),
+        h(
+          'div',
+          { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
+          proposal.summary || '—'
+        ),
         h(
           'div',
           { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
@@ -485,20 +490,22 @@ export function KnowledgeProposalCard({ results }) {
         { style: { fontSize: 10, color: C.textMute, textAlign: 'right', lineHeight: 1.6 } },
         `調整 ${proposal.metrics?.adjustmentCount || adjustments.length} 筆`,
         h('br'),
-        `linked feedback ${proposal.metrics?.feedbackLinkedCount || 0} / 缺 link ${proposal.metrics?.feedbackMissingLinkCount || 0}`
+        `已連結回饋 ${proposal.metrics?.feedbackLinkedCount || 0} / 未連結 ${proposal.metrics?.feedbackMissingLinkCount || 0}`
       )
     ),
     adjustments.length > 0 &&
       h(
         'div',
         { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textSec, lineHeight: 1.7 } },
-        adjustments.slice(0, 5).map((item) =>
-          h(
-            'div',
-            { key: item.id },
-            `${item.id} ${item.title}：${Math.round(item.fromConfidence * 100)}% → ${Math.round(item.toConfidence * 100)}% · ${item.reason}`
+        adjustments
+          .slice(0, 5)
+          .map((item) =>
+            h(
+              'div',
+              { key: item.id },
+              `${item.id} ${item.title}：${Math.round(item.fromConfidence * 100)}% → ${Math.round(item.toConfidence * 100)}% · ${item.reason}`
+            )
           )
-        )
       )
   )
 }
@@ -569,7 +576,7 @@ export function ResearchResults({
                 cursor: enriching === results.code ? 'not-allowed' : 'pointer',
               },
             },
-            enriching === results.code ? '同步中...' : '同步到 dossier'
+            enriching === results.code ? '同步中...' : '存到持股筆記'
           )
       )
     ),

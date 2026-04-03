@@ -278,6 +278,7 @@ export function ParseResults({
   setMemoIn,
   memoStep,
   submitMemo,
+  skipMemo,
   tradeDate,
   setTradeDate,
   memoBatchMode,
@@ -780,7 +781,28 @@ export function ParseResults({
           },
         },
         memoStep === qs.length - 1 ? '完成備忘 · 更新持倉' : `下一題 (${memoStep + 1}/${qs.length})`
-      )
+      ),
+      skipMemo &&
+        h(
+          Button,
+          {
+            onClick: skipMemo,
+            style: {
+              width: '100%',
+              padding: '10px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              background: 'transparent',
+              color: C.textMute,
+              fontSize: 12,
+              fontWeight: 400,
+              cursor: 'pointer',
+              marginTop: 6,
+              letterSpacing: '0.02em',
+            },
+          },
+          '跳過備忘，直接寫入'
+        )
     )
   )
 }
@@ -1146,6 +1168,7 @@ export function TradePanel({
   setMemoIn,
   memoStep,
   submitMemo,
+  skipMemo,
   selectUpload,
   removeUpload,
   clearUploads,
@@ -1194,6 +1217,7 @@ export function TradePanel({
       setMemoIn,
       memoStep,
       submitMemo,
+      skipMemo,
       uploadCount,
       activeUploadIndex,
     }),

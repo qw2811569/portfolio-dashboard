@@ -119,6 +119,7 @@ export function usePortfolioPanelsContextComposer({
         scanFilter,
         sortBy,
         expandedStock,
+        latestInsight: dailyReport?.insight || dailyReport?.aiInsight || null,
       },
       holdingsTable: {
         holdings,

@@ -295,6 +295,77 @@ export function useTradeCaptureRuntime({
   const memoBatchMode = useMemo(() => getTradeBatchMode(parsed?.trades || []), [parsed])
   const memoQuestions = useMemo(() => MEMO_Q[memoBatchMode] || MEMO_Q['買進'], [memoBatchMode])
 
+  const finalizeTradeSubmit = useCallback(
+    (memoAnswers) => {
+      if (!activeUpload?.parsed?.trades?.length) return
+
+      const selectedTradeDate = String(activeUpload.tradeDate || '').trim() || toSlashDate()
+      const entries = buildTradeLogEntries({
+        parsed: activeUpload.parsed,
+        tradeDate: selectedTradeDate,
+        memoQuestions,
+        memoAnswers,
+        now: new Date(),
+      })
+
+      setHoldings((prev) => {
+        try {
+          return applyParsedTradesToHoldings({
+            holdings: Array.isArray(prev) ? prev : holdings,
+            parsed: activeUpload.parsed,
+            applyTradeEntryToHoldings,
+            marketQuotes,
+          })
+        } catch (error) {
+          console.error('Holdings update failed:', error)
+          return Array.isArray(prev) ? prev : holdings
+        }
+      })
+
+      setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
+      ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
+        upsertTargetReport(update)
+        const targetValue = Number(update?.targetPrice ?? update?.target)
+        if (update?.code && Number.isFinite(targetValue) && targetValue > 0) {
+          updateTargetPrice(update.code, targetValue)
+        }
+      })
+
+      const remainingUploads = Math.max(tradeEditorState.uploads.length - 1, 0)
+      flashSaved(
+        remainingUploads > 0
+          ? `✅ 已寫入 ${entries.length} 筆成交，還有 ${remainingUploads} 張待處理`
+          : `✅ 已寫入 ${entries.length} 筆成交`,
+        3000
+      )
+
+      const processedUploadId = activeUpload.id
+      removeUpload(processedUploadId)
+      afterSubmit({
+        processedTrades: entries.length,
+        remainingUploads,
+        processedUploadId,
+      })
+    },
+    [
+      activeUpload,
+      afterSubmit,
+      applyTradeEntryToHoldings,
+      flashSaved,
+      holdings,
+      marketQuotes,
+      memoQuestions,
+      removeUpload,
+      setHoldings,
+      setTradeLog,
+      toSlashDate,
+      tradeEditorState.uploads.length,
+      tradeLog,
+      updateTargetPrice,
+      upsertTargetReport,
+    ]
+  )
+
   const submitMemo = useCallback(() => {
     if (!activeUpload?.parsed?.trades?.length) return
 
@@ -309,71 +380,14 @@ export function useTradeCaptureRuntime({
       return
     }
 
-    const selectedTradeDate = String(activeUpload.tradeDate || '').trim() || toSlashDate()
-    const entries = buildTradeLogEntries({
-      parsed: activeUpload.parsed,
-      tradeDate: selectedTradeDate,
-      memoQuestions,
-      memoAnswers: nextAnswers,
-      now: new Date(),
-    })
+    finalizeTradeSubmit(nextAnswers)
+  }, [activeUpload, finalizeTradeSubmit, memoQuestions, updateActiveUpload])
 
-    setHoldings((prev) => {
-      try {
-        return applyParsedTradesToHoldings({
-          holdings: Array.isArray(prev) ? prev : holdings,
-          parsed: activeUpload.parsed,
-          applyTradeEntryToHoldings,
-          marketQuotes,
-        })
-      } catch (error) {
-        console.error('Holdings update failed:', error)
-        return Array.isArray(prev) ? prev : holdings
-      }
-    })
-
-    setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
-    ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
-      upsertTargetReport(update)
-      const targetValue = Number(update?.targetPrice ?? update?.target)
-      if (update?.code && Number.isFinite(targetValue) && targetValue > 0) {
-        updateTargetPrice(update.code, targetValue)
-      }
-    })
-
-    const remainingUploads = Math.max(tradeEditorState.uploads.length - 1, 0)
-    flashSaved(
-      remainingUploads > 0
-        ? `✅ 已寫入 ${entries.length} 筆成交，還有 ${remainingUploads} 張待處理`
-        : `✅ 已寫入 ${entries.length} 筆成交`,
-      3000
-    )
-
-    const processedUploadId = activeUpload.id
-    removeUpload(processedUploadId)
-    afterSubmit({
-      processedTrades: entries.length,
-      remainingUploads,
-      processedUploadId,
-    })
-  }, [
-    activeUpload,
-    afterSubmit,
-    applyTradeEntryToHoldings,
-    flashSaved,
-    holdings,
-    marketQuotes,
-    memoQuestions,
-    removeUpload,
-    setHoldings,
-    setTradeLog,
-    toSlashDate,
-    tradeEditorState.uploads.length,
-    tradeLog,
-    updateActiveUpload,
-    updateTargetPrice,
-    upsertTargetReport,
-  ])
+  const skipMemo = useCallback(() => {
+    if (!activeUpload?.parsed?.trades?.length) return
+    const emptyAnswers = memoQuestions.map(() => '')
+    finalizeTradeSubmit(emptyAnswers)
+  }, [activeUpload, finalizeTradeSubmit, memoQuestions])
 
   return useMemo(
     () => ({
@@ -405,6 +419,7 @@ export function useTradeCaptureRuntime({
       memoStep: activeUpload?.memoStep || 0,
       setMemoStep,
       submitMemo,
+      skipMemo,
       selectUpload,
       removeUpload,
       clearUploads,
@@ -451,6 +466,7 @@ export function useTradeCaptureRuntime({
       setMemoStep,
       setParsed,
       setTradeDate,
+      skipMemo,
       submitMemo,
       toSlashDate,
       tradeEditorState,

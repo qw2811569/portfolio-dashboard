@@ -67,8 +67,9 @@ describe('hooks/usePortfolioPersistence.js', () => {
 
     renderHook(() => usePortfolioPersistence(props))
 
+    // holdings 已在 setHoldings 時 normalize，persistence effect 直接存原值
     expect(props.savePortfolioData).toHaveBeenCalledWith('me', 'holdings-v2', [
-      { code: '2330', qty: 1, normalized: true },
+      { code: '2330', qty: 1 },
     ])
 
     await act(async () => {
@@ -81,7 +82,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'save-holdings',
-        data: [{ code: '2330', qty: 1, normalized: true }],
+        data: [{ code: '2330', qty: 1 }],
       }),
     })
     expect(props.writeSyncAt).toHaveBeenCalledWith('pf-cloud-sync-at', expect.any(Number))
@@ -180,7 +181,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     expect(props.savePortfolioData).toHaveBeenCalledWith('me', 'holdings-v2', [
-      { code: '2330', qty: 1, normalized: true },
+      { code: '2330', qty: 1 },
     ])
 
     await act(async () => {

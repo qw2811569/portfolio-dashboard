@@ -53,7 +53,7 @@ export function usePortfolioPersistence({
   notifySaved = null,
   cloudSyncStateRef,
   cloudSaveTimersRef,
-  normalizeHoldings,
+  normalizeHoldings: _normalizeHoldings,
   savePortfolioData,
   buildHoldingDossiers,
   applyMarketQuotesToHoldings,
@@ -104,18 +104,10 @@ export function usePortfolioPersistence({
 
   useEffect(() => {
     if (!canPersistPortfolioData || !holdings) return
-    const normalizedHoldings = normalizeHoldings(holdings, marketPriceCache?.prices)
-    savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.holdings, normalizedHoldings)
-    scheduleCloudSave('save-holdings', normalizedHoldings)
-  }, [
-    activePortfolioId,
-    canPersistPortfolioData,
-    holdings,
-    marketPriceCache,
-    normalizeHoldings,
-    savePortfolioData,
-    scheduleCloudSave,
-  ])
+    // holdings 已在 setHoldings 時 normalize 過，不再重複 normalize 避免無限迴圈
+    savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.holdings, holdings)
+    scheduleCloudSave('save-holdings', holdings)
+  }, [activePortfolioId, canPersistPortfolioData, holdings, savePortfolioData, scheduleCloudSave])
 
   useEffect(() => {
     if (canPersistPortfolioData && tradeLog)

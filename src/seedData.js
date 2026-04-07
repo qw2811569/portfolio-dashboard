@@ -516,7 +516,6 @@ export const INIT_HOLDINGS = [
     pnl: 357,
     pct: 18.13,
     type: '股票',
-    alert: '⚡出場區間到',
   },
   {
     code: '3013',
@@ -594,7 +593,6 @@ export const INIT_HOLDINGS = [
     pnl: -12,
     pct: -0.79,
     type: '股票',
-    alert: '法說',
   },
   {
     code: '6770',

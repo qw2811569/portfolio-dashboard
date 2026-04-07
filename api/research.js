@@ -45,7 +45,9 @@ function writeLocal(key, data) {
   try {
     if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true })
     writeFileSync(localPath(key), JSON.stringify(data, null, 2))
-  } catch {}
+  } catch (err) {
+    console.warn('[api/research] writeLocal failed:', err.message || err)
+  }
 }
 
 async function read(key) {
@@ -68,14 +70,18 @@ async function write(key, data) {
   try {
     try {
       await del(key, { token: TOKEN })
-    } catch {}
+    } catch {
+      /* best-effort cleanup before re-write — old blob may not exist */
+    }
     await put(key, JSON.stringify(data), {
       access: 'public',
       token: TOKEN,
       contentType: 'application/json',
       addRandomSuffix: false,
     })
-  } catch {}
+  } catch (err) {
+    console.warn('[api/research] blob write failed:', err.message || err)
+  }
 }
 
 async function callClaude(system, user, maxTokens = 4000) {
@@ -662,7 +668,9 @@ ${brainCtx}
               token: TOKEN,
               contentType: 'application/json',
             })
-          } catch {}
+          } catch (err) {
+            console.warn('[api/research] blob persist (single-fast) failed:', err.message || err)
+          }
         }
         results.push(report)
       } else {
@@ -744,7 +752,9 @@ ${dossierContext}
               token: TOKEN,
               contentType: 'application/json',
             })
-          } catch {}
+          } catch (err) {
+            console.warn('[api/research] blob persist (single-full) failed:', err.message || err)
+          }
         }
         results.push(report)
       }
@@ -1054,7 +1064,9 @@ JSON 結構：
             token: TOKEN,
             contentType: 'application/json',
           })
-        } catch {}
+        } catch (err) {
+          console.warn('[api/research] blob persist (portfolio) failed:', err.message || err)
+        }
       }
       results.push(report)
     }

@@ -1,4 +1,4 @@
-import { createElement as h, useState, useCallback } from 'react'
+import { createElement as h, useState, useCallback, useEffect, useRef } from 'react'
 import { C, alpha } from '../theme.js'
 
 // Toast context
@@ -16,21 +16,38 @@ export function removeToast(id) {
 
 export function useToast() {
   const [toasts, setToasts] = useState([])
+  const timersRef = useRef(new Map())
+
+  // Cleanup all pending timers on unmount
+  useEffect(
+    () => () => {
+      timersRef.current.forEach((timerId) => clearTimeout(timerId))
+      timersRef.current.clear()
+    },
+    []
+  )
 
   const add = useCallback((message, type = 'info', duration = 5000) => {
     const id = Date.now() + Math.random()
     setToasts((prev) => [...prev, { id, message, type, duration }])
 
     if (duration > 0) {
-      setTimeout(() => {
+      const timerId = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id))
+        timersRef.current.delete(id)
       }, duration)
+      timersRef.current.set(id, timerId)
     }
 
     return id
   }, [])
 
   const remove = useCallback((id) => {
+    const timerId = timersRef.current.get(id)
+    if (timerId) {
+      clearTimeout(timerId)
+      timersRef.current.delete(id)
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 

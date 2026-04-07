@@ -41,14 +41,18 @@ function writeLocal(key, data) {
   try {
     if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true })
     writeFileSync(localPath(key), JSON.stringify(data, null, 2))
-  } catch {}
+  } catch (err) {
+    console.warn('[api/brain] writeLocal failed:', err.message || err)
+  }
 }
 
 function deleteLocal(key) {
   try {
     const p = localPath(key)
     if (existsSync(p)) unlinkSync(p)
-  } catch {}
+  } catch (err) {
+    console.warn('[api/brain] deleteLocal failed:', err.message || err)
+  }
 }
 
 function buildHistoryKey(report) {
@@ -75,7 +79,9 @@ async function readPath(pathname, opts) {
 async function replaceSingleton(pathname, data, opts) {
   try {
     await del(pathname, opts)
-  } catch {}
+  } catch {
+    /* best-effort cleanup before re-write — old blob may not exist */
+  }
   if (data == null) return
   await put(pathname, JSON.stringify(data), {
     contentType: 'application/json',
@@ -99,7 +105,9 @@ async function write(key, data, opts) {
   writeLocal(key, data)
   try {
     await replaceSingleton(key, data, opts)
-  } catch {}
+  } catch (err) {
+    console.warn('[api/brain] blob write failed:', err.message || err)
+  }
 }
 
 function normalizeHistoryReports(reports) {
@@ -134,7 +142,9 @@ async function deleteHistoryReport(report, opts) {
   await write(HISTORY_INDEX_KEY, next, opts)
   try {
     await del(key, opts)
-  } catch {}
+  } catch (err) {
+    console.warn('[api/brain] blob delete (history report) failed:', err.message || err)
+  }
 }
 
 async function deleteHistoryReportsByDate(date, keepId, opts) {
@@ -146,7 +156,9 @@ async function deleteHistoryReportsByDate(date, keepId, opts) {
     deleteLocal(key)
     try {
       await del(key, opts)
-    } catch {}
+    } catch (err) {
+      console.warn('[api/brain] blob delete (history by date) failed:', err.message || err)
+    }
   }
 }
 
@@ -219,7 +231,9 @@ export default async function handler(req, res) {
             addRandomSuffix: false,
             ...opts,
           })
-        } catch {}
+        } catch (err) {
+          console.warn('[api/brain] blob persist (save-analysis) failed:', err.message || err)
+        }
         await updateHistoryIndex(data, opts)
         return res.status(200).json({ ok: true })
       }

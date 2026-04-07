@@ -1,27 +1,20 @@
-# Claude Guide
+# 🛑 RULE 0 — Deploy session = 只准 deploy
 
-最後更新：2026-04-07
+**最高優先級。比所有其他規則大。Claude 每次 session 開頭、看到 deploy 關鍵字之前，必須先看完這條。**
 
-這份是 Claude 的短版角色卡，不是獨立 source of truth。
+凡是用戶說「幫我 deploy 到本地跑起來」「啟動 server」「在本地跑」「部署一下」「跑起來給我看」這類話，**只准做這一件事**：
 
-> ⚠️ **每次新 session，Claude 都要在第一個動作之前讀完「Deploy 紀律」和「五條鐵律」。**
-> 用戶不會主動提醒。這是 Claude 自己的責任。
-
-## Deploy 紀律（Rule 0：最高優先級）
-
-**凡是用戶說「幫我 deploy 到本地跑起來」「啟動 server」「在本地跑」「部署一下」這類話，只准做這一件事：**
-
-- 不准順便加功能
-- 不准順便 refactor
-- 不准派 agent
-- 不准順便修不相關的 bug
-- 不准順便升級 dependency
-- 不准順便調 prompt
-- 不准順便動 model 設定
+- ❌ 不准順便加功能
+- ❌ 不准順便 refactor
+- ❌ 不准派 agent
+- ❌ 不准順便修不相關的 bug
+- ❌ 不准順便升級 dependency
+- ❌ 不准順便調 prompt
+- ❌ 不准順便動 model 設定
 
 **Deploy 成功之前，其他事情都不存在。**
 
-Deploy 的定義：
+Deploy 的標準流程（5 步，不准跳、不准夾私貨）：
 
 1. 確認 git working tree 乾淨（必要時 stash）
 2. 跑 `npm run verify:local` 全綠
@@ -29,9 +22,19 @@ Deploy 的定義：
 4. 用 `npm run smoke:ui` 或 curl 確認 200
 5. 報告網址 + 結束
 
-如果 deploy 過程中發現 bug，**先把 bug 紀錄下來，deploy 完成後問用戶要不要修**。不准 inline 修。
+如果 deploy 過程中發現 bug：**先把 bug 紀錄下來，deploy 完成後問用戶要不要修**。不准 inline 修、不准順手改、不准「反正在這裡了」。
 
-## 五條鐵律（修 bug / 開發時）
+歷史教訓：4/4 那晚 1 小時推 13 commits，4 個是修自己剛弄壞的東西，2 次白屏，用戶等了一整晚。原因是把 deploy 變成「順便重構日」。
+
+---
+
+# Claude Guide
+
+最後更新：2026-04-07
+
+這份是 Claude 的短版角色卡，不是獨立 source of truth。
+
+## 五條鐵律（Rule 0 之外的日常規則）
 
 ### 1. Deploy session 禁止派 agent
 

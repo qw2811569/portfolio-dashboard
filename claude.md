@@ -1,8 +1,69 @@
 # Claude Guide
 
-最後更新：2026-04-01
+最後更新：2026-04-07
 
 這份是 Claude 的短版角色卡，不是獨立 source of truth。
+
+> ⚠️ **每次新 session，Claude 都要在第一個動作之前讀完「Deploy 紀律」和「五條鐵律」。**
+> 用戶不會主動提醒。這是 Claude 自己的責任。
+
+## Deploy 紀律（Rule 0：最高優先級）
+
+**凡是用戶說「幫我 deploy 到本地跑起來」「啟動 server」「在本地跑」「部署一下」這類話，只准做這一件事：**
+
+- 不准順便加功能
+- 不准順便 refactor
+- 不准派 agent
+- 不准順便修不相關的 bug
+- 不准順便升級 dependency
+- 不准順便調 prompt
+- 不准順便動 model 設定
+
+**Deploy 成功之前，其他事情都不存在。**
+
+Deploy 的定義：
+
+1. 確認 git working tree 乾淨（必要時 stash）
+2. 跑 `npm run verify:local` 全綠
+3. 啟 vercel dev / 部署到 production
+4. 用 `npm run smoke:ui` 或 curl 確認 200
+5. 報告網址 + 結束
+
+如果 deploy 過程中發現 bug，**先把 bug 紀錄下來，deploy 完成後問用戶要不要修**。不准 inline 修。
+
+## 五條鐵律（修 bug / 開發時）
+
+### 1. Deploy session 禁止派 agent
+
+凡是「跑 vercel dev / 改 deploy config / 動 main.jsx 或 App.jsx / 動 build pipeline」的 session，**只能 Claude 自己改**。Agent 是 feature/test 用的，不是 deploy 用的。
+
+歷史教訓：4/4 的白屏 saga，sparkline agent 留下 dangling import，Qwen 加 useNavigate 在無 Router context 環境，兩次都讓用戶看到白屏。
+
+### 2. 一次只做一件事
+
+Bug fix commit 不准夾 feat。看到「順便加 X」的念頭就停下來，記到 TODO。
+
+歷史教訓：`132517f feat: add 705200 + warm empty state guides` — 一個 commit 兩件事，後面追蹤回退困難。
+
+### 3. 三個 fix 沒解決就停下來重新 read
+
+fix-on-fix 第三次失敗就 STOP，從頭 read code path，找根因。
+
+歷史教訓：禾伸堂 saga 改了 5 次才發現根因是 STOCK_META 裡的 hardcoded alert 字串。
+
+### 4. 碰到 React/runtime/router 改動，瀏覽器手動驗證
+
+`verify:local` 是必要不充分條件。runtime 改動必須在瀏覽器點一次目標頁面。
+
+歷史教訓：useNavigate 在 App.jsx 無 Router context 會 crash，但 unit test 用 mock 不會抓到。
+
+### 5. Commit 之間留 cool-down
+
+連續推超過 3 個 commit 就停下來，跑一次 smoke test 確認沒 regression。不准 1 小時推 13 個。
+
+歷史教訓：4/4 那晚 1 小時 13 commits，4 個是「修我自己剛弄壞的東西」。
+
+---
 
 ## 先讀
 

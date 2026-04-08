@@ -190,22 +190,46 @@ function buildChipFacts(dossierData = {}) {
 
 /**
  * Rule 0 enforcement: news_facts 為空且 source 有資料 → throw
+ * Qwen Phase 1 review fix: 加完整 debug metadata
  *
  * @param {Array} rawNews - 從 finmind fetchStockNews 拿到的原始陣列
  * @param {Array} newsFacts - 經 extractNewsFacts 處理後的結果
  * @param {string} stockId
- * @param {Object} factPackPartial - 已建好的部分 factPack (帶在 error 內方便 debug)
+ * @param {string} [stockName]
+ * @param {Object} factPackPartial - 已建好的部分 factPack
+ * @param {number} [lookbackDays]
  */
-export function preflightNewsCheck({ rawNews, newsFacts, stockId, factPackPartial }) {
+export function preflightNewsCheck({
+  rawNews,
+  newsFacts,
+  stockId,
+  stockName,
+  factPackPartial,
+  lookbackDays,
+}) {
   const newsFactsLen = Array.isArray(newsFacts) ? newsFacts.length : 0
   const rawNewsLen = Array.isArray(rawNews) ? rawNews.length : 0
 
   if (newsFactsLen === 0 && rawNewsLen > 0) {
+    // 取前 5 筆 raw news 作為 sample 給 mac mini debug
+    const samples = rawNews.slice(0, 5).map(n => ({
+      title: n.title || n.headline || '',
+      source: n.source || '',
+      date: n.date || n.published_at || '',
+    }))
+
     throw new FactPackError({
       code: 'NEWS_FACTS_EMPTY_BUT_SOURCE_HAS_DATA',
-      message: `${stockId}: news_facts 為空但 finmind 有 ${rawNewsLen} 筆 raw news (Rule 0 違反)`,
-      suggested_fix: '檢查 extractNewsFacts 為什麼產出空陣列, 可能 sentiment/scoring 有 bug',
+      message: `${stockId} (${stockName || ''}): news_facts 為空但 finmind 有 ${rawNewsLen} 筆 raw news (Rule 0 違反)`,
+      suggested_fix:
+        '檢查 extractNewsFacts 為什麼產出空陣列, 可能 sentiment/scoring 有 bug 或 keyword list 缺項',
       fact_pack_partial: factPackPartial,
+      stockId,
+      stockName,
+      rawNewsCount: rawNewsLen,
+      newsFactCount: newsFactsLen,
+      rawNewsSamples: samples,
+      lookbackDays,
     })
   }
 }

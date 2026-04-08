@@ -25,25 +25,41 @@ const STOP_WORDS = new Set([
   '長興', '1717', // 把 stock id/name 排除避免每篇都 match
 ])
 
+// Codex / Qwen Phase 1 review fix: 中文簡化 tokenizer 太粗
+// v2: 純 char bigram (不留 word chunks 避免 union 被拉大)
 function tokenize(text = '') {
   if (!text) return []
-  // 簡化: 切標點 + 空格, 保留 2 字以上 chunk
+  // 切標點 + 數字
   const cleaned = String(text)
-    .replace(/[【】「」『』,，。.!！?？;；:：「」"'（）()\[\]/\\]/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/[【】「」『』,，。.!！?？;；:：「」"'（）()\[\]/\\\d]/g, '')
+    .replace(/\s+/g, '')
     .trim()
-  return cleaned
-    .split(' ')
-    .filter(t => t.length >= 2 && !STOP_WORDS.has(t))
+
+  if (!cleaned) return []
+
+  // char bigram only
+  const bigrams = []
+  for (let i = 0; i < cleaned.length - 1; i++) {
+    const bg = cleaned.substring(i, i + 2)
+    if (STOP_WORDS.has(bg)) continue
+    if (STOP_WORDS.has(bg[0]) && STOP_WORDS.has(bg[1])) continue
+    bigrams.push(bg)
+  }
+
+  return [...new Set(bigrams)]
 }
 
+// v2: 改用 Overlap Coefficient 而非 Jaccard
+// Reason: 中文新聞同事件用詞差異大, jaccard 容易被 union 拉低
+// Overlap = |A ∩ B| / min(|A|, |B|)
+// 對小集合 / 子集合更敏感
 function jaccardSimilarity(a, b) {
   const setA = new Set(a)
   const setB = new Set(b)
-  if (setA.size === 0 && setB.size === 0) return 0
+  if (setA.size === 0 || setB.size === 0) return 0
   const intersection = [...setA].filter(x => setB.has(x))
-  const unionSize = setA.size + setB.size - intersection.length
-  return unionSize === 0 ? 0 : intersection.length / unionSize
+  const minSize = Math.min(setA.size, setB.size)
+  return minSize === 0 ? 0 : intersection.length / minSize
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -88,8 +104,12 @@ export function clusterNews(newsList, stockId = '') {
   }))
 
   // 3. 線性掃描分群
+  // v3: 中文 char-bigram 真實實測, 同事件 overlap 約 0.2-0.3
+  // 加 "強信號 fast path": 共享 ≥3 個 bigram 直接視為同一 cluster
+  // 因為共享 3 個獨立 bigram 機率低 (≈ 1/2000)
   const clusters = []
-  const SIM_THRESHOLD = 0.5
+  const SIM_THRESHOLD = 0.2
+  const STRONG_SIGNAL_INTERSECTION = 3 // 共享 3+ bigram 直接 cluster
   let clusterIdx = 0
 
   for (const news of enriched) {
@@ -106,6 +126,11 @@ export function clusterNews(newsList, stockId = '') {
       if (dayDiff > 7) continue
 
       const matchesAny = cluster.news.some(existing => {
+        // 強信號 fast path: 共享 ≥3 個 bigram 直接視為同 cluster
+        const setA = new Set(news._tokens)
+        const setB = new Set(existing._tokens)
+        const intersection = [...setA].filter(x => setB.has(x))
+        if (intersection.length >= STRONG_SIGNAL_INTERSECTION) return true
         return jaccardSimilarity(news._tokens, existing._tokens) >= SIM_THRESHOLD
       })
 

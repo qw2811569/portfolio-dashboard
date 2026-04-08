@@ -48,15 +48,67 @@ export function emptyFactPack(meta = {}) {
 
 // ─────────────────────────────────────────────────────────────
 // FactPackError class
+// Qwen Phase 1 review fix: 加 severity 分級 + 完整 debug metadata
 // ─────────────────────────────────────────────────────────────
 
+export const FactPackErrorSeverity = Object.freeze({
+  CRITICAL: 'critical', // 根本無法執行 (例: MISSING_STOCK_ID, INVALID_SHAPE)
+  HIGH: 'high', // pipeline 斷了 (例: NEWS_FACTS_EMPTY_BUT_SOURCE_HAS_DATA)
+  MEDIUM: 'medium', // partial degradation
+})
+
+const ERROR_CODE_TO_SEVERITY = {
+  MISSING_STOCK_ID: FactPackErrorSeverity.CRITICAL,
+  INVALID_SHAPE: FactPackErrorSeverity.CRITICAL,
+  NEWS_FACTS_EMPTY_BUT_SOURCE_HAS_DATA: FactPackErrorSeverity.HIGH,
+  NOT_OBJECT: FactPackErrorSeverity.CRITICAL,
+}
+
 export class FactPackError extends Error {
-  constructor({ code, message, suggested_fix, fact_pack_partial }) {
+  constructor({
+    code,
+    message,
+    suggested_fix,
+    fact_pack_partial,
+    // Qwen review 加的欄位
+    stockId,
+    stockName,
+    rawNewsCount,
+    newsFactCount,
+    rawNewsSamples, // [{title, source, date}, ...]
+    lookbackDays,
+    severity,
+  }) {
     super(message)
     this.name = 'FactPackError'
     this.code = code
+    this.severity = severity || ERROR_CODE_TO_SEVERITY[code] || FactPackErrorSeverity.HIGH
     this.suggested_fix = suggested_fix
     this.fact_pack_partial = fact_pack_partial
+    this.stockId = stockId
+    this.stockName = stockName
+    this.rawNewsCount = rawNewsCount
+    this.newsFactCount = newsFactCount
+    this.rawNewsSamples = rawNewsSamples
+    this.lookbackDays = lookbackDays
+    this.timestamp = new Date().toISOString()
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      code: this.code,
+      severity: this.severity,
+      message: this.message,
+      suggested_fix: this.suggested_fix,
+      stockId: this.stockId,
+      stockName: this.stockName,
+      rawNewsCount: this.rawNewsCount,
+      newsFactCount: this.newsFactCount,
+      rawNewsSamples: this.rawNewsSamples,
+      lookbackDays: this.lookbackDays,
+      timestamp: this.timestamp,
+    }
   }
 }
 

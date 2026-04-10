@@ -117,6 +117,8 @@ Wave 2 progress:
 - expanded `tests/components/AppPanels.contexts.test.jsx` to guard both coherence fixes
 - canonical `Header` now reuses the shared `operatingContext` as a navigation-only workflow cue, so the app shell itself tells the user what the next step is and which tab to open
 - `tests/components/Header.test.jsx` now proves the workflow cue only calls `setTab(...)` and does not trigger API work
+- `DailyReportPanel` now soft-routes the user back into `新聞追蹤 / 復盤` when live events are already due for review, while still keeping a manual `仍要分析` escape hatch
+- `tests/components/AppPanels.contexts.test.jsx` now proves the review guard navigates to the exact pending event instead of blindly burning a new daily-analysis call
 
 Wave 3 early findings:
 

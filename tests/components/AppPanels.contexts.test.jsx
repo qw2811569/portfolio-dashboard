@@ -383,6 +383,85 @@ describe('components/AppPanels context wiring', () => {
     expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
   })
 
+  it('soft-routes pending review items into the news review flow before daily analysis', async () => {
+    const setTab = vi.fn()
+    const setExpandedNews = vi.fn()
+    const runDailyAnalysis = vi.fn()
+
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: null,
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [
+              {
+                id: 'event-1',
+                title: '法說會結果待復盤',
+                date: '2026/04/10',
+                stocks: ['台積電 2330'],
+                status: 'tracking',
+              },
+            ],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis,
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab,
+            setExpandedNews,
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(await screen.findByText('待復盤事件 · 1件')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('先前往復盤'))
+    expect(setTab).toHaveBeenCalledWith('news')
+    expect(setExpandedNews).toHaveBeenCalledTimes(1)
+    expect([...setExpandedNews.mock.calls[0][0]]).toEqual(['event-1'])
+    expect(runDailyAnalysis).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('仍要分析'))
+    expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
+  })
+
   it('routes daily report follow-up CTA into the research flow without triggering new API work', async () => {
     const setTab = vi.fn()
     const runDailyAnalysis = vi.fn()
@@ -459,6 +538,94 @@ describe('components/AppPanels context wiring', () => {
     fireEvent.click(await screen.findByText('前往深度研究'))
     expect(setTab).toHaveBeenCalledWith('research')
     expect(runDailyAnalysis).not.toHaveBeenCalled()
+  })
+
+  it('keeps rerun analysis available but warns when review backlog is still open', async () => {
+    const setTab = vi.fn()
+    const setExpandedNews = vi.fn()
+    const runDailyAnalysis = vi.fn()
+
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-2',
+              date: '2026/04/11',
+              time: '14:05',
+              totalTodayPnl: 6,
+              changes: [],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [],
+              needsReview: [],
+            },
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [
+              {
+                id: 'event-2',
+                title: '營收公告待復盤',
+                date: '2026/04/11',
+                stocks: ['聯發科 2454'],
+                status: 'pending',
+              },
+            ],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis,
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab,
+            setExpandedNews,
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(await screen.findByText('待復盤事件 · 1件')).toBeInTheDocument()
+    expect(screen.getByText('仍要重新分析')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('先前往復盤'))
+    expect(setTab).toHaveBeenCalledWith('news')
+    expect([...setExpandedNews.mock.calls[0][0]]).toEqual(['event-2'])
+
+    fireEvent.click(screen.getByText('仍要重新分析'))
+    expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
   })
 
   it('routes events empty-state CTA into the daily analysis flow without auto-running API work', async () => {

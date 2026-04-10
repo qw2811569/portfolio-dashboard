@@ -139,6 +139,22 @@
       "sourcePlanRef": "Wave 5 / Step 3-4",
       "summary": "Major tasks now require explicit consensus reviews instead of a writable consensusState field, and downstream dispatch is blocked until required dependencies clear consensus.",
       "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Extend the soft verify gate into a minimal explicit consensus gate: add review capture, prevent generic PATCH from bypassing it, and surface consensus progress in the dashboard."
+    },
+    {
+      "id": "wave-2-review-backlog-guard",
+      "title": "Guard daily analysis behind live review backlog cues",
+      "lane": "coherence",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": ["wave-2-header-workflow-cue"],
+      "writeScope": [
+        "src/components/reports/DailyReportPanel.jsx",
+        "tests/components/AppPanels.contexts.test.jsx"
+      ],
+      "sourcePlanRef": "Wave 2 / Step 4-5",
+      "summary": "When events are already due for review, the daily-analysis entry point now warns first, routes back to the exact pending review, and only runs analysis through an explicit override.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Add the smallest daily-analysis guard that uses live review backlog state to steer the user back into event/news review before firing a new expensive analysis call. Keep a manual override and do not add new API work."
     }
   ]
 }

@@ -382,6 +382,48 @@ We needed the smallest patch that would turn `consensusState` from a writable la
 - verification passed:
   - `npm run compile` in `docs/vscode-agent-bridge`
 
+## Active Decision: Review Backlog Guard Before Daily Analysis
+
+We needed the next highest-leverage coherence fix after the header workflow cue, under these constraints:
+
+- avoid wasted API
+- make pages feel like one workflow instead of parallel screens
+- prefer canonical AppShell runtime over route-shell work
+
+Candidate directions were:
+
+- header-level workflow stepper
+- event/news review state feeding the daily-analysis entry point more explicitly
+- further route-shell isolation
+
+### Decision result
+
+- Claude:
+  - chose the event/news review -> daily-analysis guard
+  - reason: the most expensive mistake left was still firing daily analysis while old events remained unreviewed
+- Gemini:
+  - chose the same guard
+  - reason: it improves workflow continuity and avoids redundant API work more directly than a visual stepper
+- Qwen:
+  - no usable answer in time for this round
+  - proceeded with Claude + Gemini agreement because the patch stayed inside the canonical AppShell and had low blast radius
+
+### Applied result
+
+- `DailyReportPanel` now derives live `needsReview` candidates from the same `buildDailyEventCollections(...)` logic used by the daily-analysis workflow
+- when review backlog exists, the daily panel now:
+  - shows a `待復盤事件` warning card
+  - routes `先前往復盤` into the `新聞追蹤` tab and expands the exact pending event
+  - keeps a manual `仍要分析` / `仍要重新分析` escape hatch instead of hard-blocking the user
+- this makes the expensive workflow more honest:
+  - review first when context is stale
+  - analyze anyway only as an explicit override
+- verification passed:
+  - `bunx vitest run tests/components/AppPanels.contexts.test.jsx tests/lib/dailyAnalysisRuntime.test.js`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
+
 ## Proposed Wave A
 
 ## Active Decision: Route-Shell Parity Illusion

@@ -2,6 +2,8 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, Badge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
+import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
+import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
 
 const lbl = {
   fontSize: 10,
@@ -16,7 +18,13 @@ const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 /**
  * Empty state for daily analysis
  */
-export function DailyAnalysisEmpty({ onAnalyze, onStressTest, analyzing, stressTesting }) {
+export function DailyAnalysisEmpty({
+  onAnalyze,
+  onStressTest,
+  analyzing,
+  stressTesting,
+  analyzeLabel = '開始今日收盤分析',
+}) {
   return h(
     Card,
     {
@@ -52,7 +60,7 @@ export function DailyAnalysisEmpty({ onAnalyze, onStressTest, analyzing, stressT
             letterSpacing: '0.03em',
           },
         },
-        '開始今日收盤分析'
+        analyzeLabel
       ),
       h(
         Button,
@@ -73,6 +81,69 @@ export function DailyAnalysisEmpty({ onAnalyze, onStressTest, analyzing, stressT
           },
         },
         stressTesting ? '測試中...' : '⚠️ 風險壓力測試'
+      )
+    )
+  )
+}
+
+export function ReviewGateCard({
+  pendingReviewItems = [],
+  onNavigateReview = () => {},
+  actionLabel = '仍要分析',
+}) {
+  if (!Array.isArray(pendingReviewItems) || pendingReviewItems.length === 0) return null
+
+  const preview = pendingReviewItems
+    .slice(0, 2)
+    .map((item) => item?.title)
+    .filter(Boolean)
+    .join('、')
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.amber, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.amber } }, `待復盤事件 · ${pendingReviewItems.length}件`),
+    h(
+      'div',
+      { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } },
+      `目前還有 ${pendingReviewItems.length} 件事件已到復盤時間，先確認結果再跑收盤分析，避免 AI 仍把舊事件當成未結案訊號。`,
+      preview ? ` 例如：${preview}` : ''
+    ),
+    h(
+      'div',
+      { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+      h(
+        Button,
+        {
+          onClick: onNavigateReview,
+          style: {
+            padding: '8px 14px',
+            borderRadius: 8,
+            border: `1px solid ${alpha(C.olive, '2a')}`,
+            background: alpha(C.olive, '12'),
+            color: C.olive,
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: 'pointer',
+          },
+        },
+        '先前往復盤'
+      ),
+      h(
+        'span',
+        {
+          style: {
+            fontSize: 10,
+            color: C.textMute,
+            alignSelf: 'center',
+          },
+        },
+        `${actionLabel} 仍可手動執行，但建議先補完復盤再分析。`
       )
     )
   )
@@ -1047,6 +1118,21 @@ export function DailyReportPanel({
     }
   }
 
+  const liveNeedsReview = buildDailyEventCollections({
+    newsEvents,
+    isClosedEvent,
+    changes: [],
+    today: toSlashDate(),
+  }).needsReview
+  const hasPendingReview = Array.isArray(liveNeedsReview) && liveNeedsReview.length > 0
+  const navigateToNeedsReview = () => {
+    if (typeof setTab === 'function') setTab('news')
+    const firstId = liveNeedsReview[0]?.id
+    if (firstId && typeof setExpandedNews === 'function') {
+      setExpandedNews(new Set([firstId]))
+    }
+  }
+
   return h(
     'div',
     null,
@@ -1057,11 +1143,21 @@ export function DailyReportPanel({
     // Empty state
     !dailyReport &&
       !analyzing &&
+      hasPendingReview &&
+      h(ReviewGateCard, {
+        pendingReviewItems: liveNeedsReview,
+        onNavigateReview: navigateToNeedsReview,
+        actionLabel: '開始分析',
+      }),
+
+    !dailyReport &&
+      !analyzing &&
       h(DailyAnalysisEmpty, {
         onAnalyze: runDailyAnalysis,
         onStressTest: runStressTest,
         analyzing,
         stressTesting,
+        analyzeLabel: hasPendingReview ? '仍要分析' : '開始今日收盤分析',
       }),
 
     // Analyzing state
@@ -1075,6 +1171,13 @@ export function DailyReportPanel({
       h(
         'div',
         null,
+        hasPendingReview &&
+          h(ReviewGateCard, {
+            pendingReviewItems: liveNeedsReview,
+            onNavigateReview: navigateToNeedsReview,
+            actionLabel: '重新分析',
+          }),
+
         h(DailyReportSummary, {
           report: dailyReport,
           expanded: dailyExpanded,
@@ -1102,7 +1205,7 @@ export function DailyReportPanel({
               marginBottom: 8,
             },
           },
-          analyzing ? analyzeStep || '分析中...' : '重新分析今日收盤'
+          analyzing ? analyzeStep || '分析中...' : hasPendingReview ? '仍要重新分析' : '重新分析今日收盤'
         ),
         h(
           Button,

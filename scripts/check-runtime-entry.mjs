@@ -3,10 +3,16 @@ import { resolve } from 'node:path'
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname)
 const mainPath = resolve(repoRoot, 'src/main.jsx')
+const routeAppPath = resolve(repoRoot, 'src/App.routes.jsx')
+const routeLayoutPath = resolve(repoRoot, 'src/pages/PortfolioLayout.jsx')
 const quickStartPath = resolve(repoRoot, 'docs/QUICK_START.md')
+const architectureReportPath = resolve(repoRoot, 'docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md')
 
 const mainSource = readFileSync(mainPath, 'utf8')
+const routeAppSource = readFileSync(routeAppPath, 'utf8')
+const routeLayoutSource = readFileSync(routeLayoutPath, 'utf8')
 const quickStartSource = readFileSync(quickStartPath, 'utf8')
+const architectureReportSource = readFileSync(architectureReportPath, 'utf8')
 
 if (!/import\s+App\s+from\s+['"]\.\/App\.jsx['"]/.test(mainSource)) {
   console.error('[check-runtime-entry] src/main.jsx no longer imports ./App.jsx as the app entry.')
@@ -23,6 +29,33 @@ if (/App\.routes\.jsx|['"]\.\/App\.routes\.jsx['"]/.test(mainSource)) {
 if (!quickStartSource.includes('src/main.jsx -> src/App.jsx')) {
   console.error(
     '[check-runtime-entry] docs/QUICK_START.md drifted away from the canonical runtime entry.'
+  )
+  process.exit(1)
+}
+
+if (
+  !routeAppSource.includes('This file is not the current production runtime entry.') ||
+  !routeAppSource.includes('The stable runtime remains `src/main.jsx -> src/App.jsx`.')
+) {
+  console.error(
+    '[check-runtime-entry] src/App.routes.jsx lost its migration-only warning about the stable runtime.'
+  )
+  process.exit(1)
+}
+
+if (!/`src\/App\.routes\.jsx`\s+存在，但不是目前瀏覽器載入的主入口/.test(architectureReportSource)) {
+  console.error(
+    '[check-runtime-entry] architecture report drifted away from the current truth about App.routes.jsx.'
+  )
+  process.exit(1)
+}
+
+if (
+  !routeLayoutSource.includes("'data-route-shell': 'true'") ||
+  !routeLayoutSource.includes('路由頁面仍屬遷移殼層，正式 runtime 仍以主 AppShell 為準。')
+) {
+  console.error(
+    '[check-runtime-entry] route portfolio layout lost its migration-shell marker or warning.'
   )
   process.exit(1)
 }

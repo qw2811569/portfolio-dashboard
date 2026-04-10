@@ -218,6 +218,52 @@ Decision constraints:
 
 ## Proposed Wave A
 
+## Active Decision: Route-Shell Parity Illusion
+
+We need to decide whether the next smallest Wave 3 patch should make route pages look more like the main runtime, or make the migration boundary more explicit.
+
+Candidate fixes:
+
+- `A: isolate route shell more clearly`
+  - add machine-readable markers and a user-facing migration notice
+  - keep route shell visibly non-canonical while the data boundary is still separate
+- `B: reuse operating-context language inside route hooks`
+  - make route pages look more like the main runtime without adding API calls
+  - risk: route pages feel coherent while still using a different truth boundary
+
+Decision constraints:
+
+- do not widen route-shell product scope
+- do not make parity look more real than it is
+- prefer guardrails over cosmetic convergence when the runtime boundary is still split
+
+### Round 1
+
+- Claude:
+  - chose `A`
+  - reason: route hooks still read route-local truth, so making them look more like the main runtime would strengthen the illusion of parity before the boundary is real
+- Qwen:
+  - prior audit aligned with `A`
+  - reason: route tests currently prove local storage and route-local writes, not main-runtime propagation
+- Gemini:
+  - no usable vote this round
+  - blocked by `QUOTA_EXHAUSTED`
+
+### Applied result
+
+- selected `A: isolate route shell more clearly`
+- added a visible migration-shell notice in `src/pages/PortfolioLayout.jsx`
+- added `data-route-shell="true"` for browser tracing and machine checks
+- added a dev-only console warning so route-shell usage is explicit during local work
+- expanded `scripts/check-runtime-entry.mjs` so route-shell warning markers are part of the guardrail
+- added route-layout test coverage in `tests/routes/portfolioLayout.routes.test.jsx`
+- verification passed:
+  - `bunx vitest run tests/routes/portfolioLayout.routes.test.jsx`
+  - `bun run check:runtime-entry`
+  - `bun run lint`
+  - `bun run build`
+  - `APP_URL=http://127.0.0.1:3002 bun run smoke:ui`
+
 - align canonical local dev port/origin with `127.0.0.1:3002`
 - keep `src/main.jsx -> src/App.jsx` as machine-checked truth
 - clarify `App.routes.jsx` as migration-only in quick-start docs
@@ -236,6 +282,10 @@ Decision constraints:
   - choose the most deterministic Wave 1 propagation chain and minimum test shape
   - completed Wave 2 first fix by removing a misleading deep-research CTA from the data-refresh lane
   - completed the explicit daily -> research handoff with a navigation-only CTA
+  - route-shell gap audit result:
+    - `useRouteDailyPage` tests do not prove any propagation beyond route-local state and storage
+    - `useRouteNewsPage` tests only prove `updateEvent` callback usage, not shared event truth
+    - `useRouteResearchPage` tests only prove prop forwarding, not shared research/report truth
 
 ## Gemini Notes
 
@@ -262,3 +312,6 @@ Decision constraints:
   - completed Wave 2 first fix by making `ResearchPanel -> DataRefreshCenter` CTA intent honest
   - completed the smallest daily -> research handoff cue with a navigation-only CTA
   - next: continue CTA-language normalization or move to Wave 3 route-shell containment once page-level coherence feels stable enough
+  - local Wave 3 finding:
+    - route pages render the same panel components as the live AppShell, but route hooks do not provide the shared `operatingContext`
+    - this creates a high-risk illusion of parity because the UI looks similar while data truth is different

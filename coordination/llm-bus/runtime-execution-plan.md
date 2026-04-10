@@ -42,6 +42,23 @@ Make the project feel like one coherent operating system instead of disconnected
 
 ## Active Execution Waves
 
+## Active Delegation
+
+- Codex:
+  - owner: live runtime coherence and containment integration
+  - current task: expand from Wave 2 into Wave 3 by identifying the smallest route-shell containment guard that does not widen product scope
+- Claude:
+  - owner: route-shell architecture audit
+  - latest useful output: choose isolation over fake parity; add route-shell markers and warnings before doing any shared-language convergence
+  - status: temporarily occupied by user-driven work outside this lane; latest usable vote already captured
+- Qwen:
+  - owner: route-shell test gap audit
+  - current task: identify route tests that only validate route-local state / localStorage without proving any main-runtime propagation
+  - latest useful output: priority gap is `daily -> shared`, followed by `news review -> shared events`, then `research history / analyst reports -> shared runtime`
+- Gemini:
+  - owner: non-blocking user blind-spot lane
+  - status: blocked by quota exhaustion; not on the critical path for the current batch
+
 ### Wave 1: Cross-Page Propagation Guard
 
 Goal: prove that shared context reflects real shared state, not parallel local views.
@@ -98,18 +115,32 @@ Wave 2 progress:
 - added a navigation-only daily -> research handoff CTA so users do not have to infer the next step after daily analysis
 - expanded `tests/components/AppPanels.contexts.test.jsx` to guard both coherence fixes
 
+Wave 3 early findings:
+
+- route pages reuse the same panel components as the live AppShell, but the route hooks do not supply the shared `operatingContext` or the main `PortfolioPanelsProvider` data/action layer
+- route-page actions currently write through route-local context plus localStorage, so they can appear functional without proving any propagation back to the live AppShell runtime
+- existing route tests focus on local storage persistence and mocked callbacks, not cross-runtime truth
+
 ### Wave 3: Route-Shell Containment
 
 Goal: prevent migration code from masquerading as live runtime.
 
 1. List route-shell state and action paths that can diverge from the main AppShell runtime.
 2. Identify which route tests validate only local storage or local context, not real propagation.
-3. Add machine guards that prevent accidental promotion of `src/App.routes.jsx`.
-4. Downgrade or isolate route-only behavior until parity is real.
+   ~~3. Add machine guards that prevent accidental promotion of `src/App.routes.jsx`.~~
+3. Downgrade or isolate route-only behavior until parity is real.
 
 Definition of done:
 
 - Route migration code cannot be mistaken for the canonical runtime, either by docs, scripts, or code entrypoints.
+
+Wave 3 progress:
+
+- route portfolio layout now renders a visible migration-shell notice instead of silently masquerading as another finished runtime
+- route portfolio layout root now carries `data-route-shell="true"` for browser tracing and machine checks
+- local dev now emits a route-shell warning when that layout mounts, making accidental work in the wrong runtime easier to notice
+- `scripts/check-runtime-entry.mjs` now guards the route-shell warning markers in addition to the canonical entrypoint rules
+- `tests/routes/portfolioLayout.routes.test.jsx` now verifies the route-shell marker and warning behavior
 
 ### Wave 4: Operability and Perceived Stability
 

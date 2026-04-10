@@ -177,6 +177,33 @@ describe('routes/PortfolioLayout', () => {
   )
 
   it(
+    'marks the route shell as migration-only for developers and browser tracing',
+    async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      render(
+        <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/probe`]}>
+          <Routes>
+            <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
+              <Route path="probe" element={<RouteProbe />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      )
+
+      expect(screen.getByTestId('route-shell-root')).toHaveAttribute('data-route-shell', 'true')
+      expect(screen.getByTestId('route-shell-notice')).toHaveTextContent(
+        '路由頁面仍屬遷移殼層，正式 runtime 仍以主 AppShell 為準。'
+      )
+
+      await waitFor(() => {
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('migration-only runtime'))
+      })
+    },
+    ROUTE_LAYOUT_TIMEOUT
+  )
+
+  it(
     'navigates between holdings and watchlist routes through header tabs',
     async () => {
       render(

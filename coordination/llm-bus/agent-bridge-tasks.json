@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "generatedFrom": "coordination/llm-bus/runtime-execution-plan.md",
+  "tasks": [
+    {
+      "id": "wave-4-startup-trace",
+      "title": "Trace canonical startup loading path",
+      "lane": "operability",
+      "owner": "codex",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": [],
+      "writeScope": ["src/hooks/*", "src/components/*", "scripts/ui-smoke.cjs"],
+      "sourcePlanRef": "Wave 4 / Step 1-2",
+      "summary": "Measure and localize the long 載入中... phase on the canonical AppShell runtime.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Investigate the startup path behind the long 載入中... phase on the canonical AppShell runtime at http://127.0.0.1:3002. Do not widen scope. Return: findings, likely root cause, smallest safe next step, and verification."
+    },
+    {
+      "id": "wave-4-operability-consensus",
+      "title": "Choose smallest operability fix",
+      "lane": "consensus",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": ["wave-4-startup-trace"],
+      "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
+      "sourcePlanRef": "Wave 4 / Step 3",
+      "summary": "After startup tracing, decide whether to optimize runtime work, improve loading UX, or do a mixed fix.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Use the latest startup-trace evidence to choose the smallest safe Wave 4 fix: performance first, loading UX first, or mixed. Reply with: decision, why, and the smallest patch shape."
+    },
+    {
+      "id": "wave-3-route-gap-audit",
+      "title": "Audit remaining route-shell propagation gaps",
+      "lane": "verification",
+      "owner": "qwen",
+      "status": "pending",
+      "priority": "medium",
+      "dependsOn": [],
+      "writeScope": ["tests/routes/*", "tests/hooks/useRoute*"],
+      "sourcePlanRef": "Wave 3 / Step 1-2",
+      "summary": "Identify route-shell tests that still only prove local storage or route-local context.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Inspect route-shell tests and list the remaining cases that only validate route-local truth instead of main-runtime propagation. Return: priority-ordered gaps and the smallest next guard to add."
+    },
+    {
+      "id": "wave-4-user-blindspot-check",
+      "title": "Check user-facing startup blind spots",
+      "lane": "ux",
+      "owner": "gemini",
+      "status": "blocked",
+      "priority": "medium",
+      "dependsOn": ["wave-4-startup-trace"],
+      "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
+      "sourcePlanRef": "Wave 4 / user-feel lane",
+      "summary": "Validate whether the startup issue feels like slowness, emptiness, or wrong workflow cues.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Focus only on the user-facing blind spots in the startup path. Return: what feels broken first, and the smallest wording/loading cue fix if performance is not the whole issue."
+    },
+    {
+      "id": "wave-5-agent-bridge-task-model",
+      "title": "Bootstrap Agent Bridge task model",
+      "lane": "orchestration",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": [],
+      "writeScope": ["docs/vscode-agent-bridge/*", "coordination/llm-bus/agent-bridge-tasks.json"],
+      "sourcePlanRef": "Wave 5 / Step 1-4",
+      "summary": "Add a task layer above sessions so Agent Bridge can list, assign, and dispatch structured work.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Implement the smallest task/dispatch layer that can sit on top of existing sessions without breaking the current mobile terminal workflow. Return changed files and verification."
+    }
+  ]
+}

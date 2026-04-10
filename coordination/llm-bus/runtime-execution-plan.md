@@ -30,6 +30,7 @@ Make the project feel like one coherent operating system instead of disconnected
 - Route migration shell: `src/App.routes.jsx` and `src/pages/*`
 - Canonical local origin: `http://127.0.0.1:3002`
 - Canonical code truth: live repo, not handoff docs
+- Machine-readable task queue: `coordination/llm-bus/agent-bridge-tasks.json`
 
 ## Completed
 
@@ -165,14 +166,16 @@ Definition of done:
 
 Goal: turn Agent Bridge into a real orchestration layer for multi-LLM collaboration.
 
-1. Introduce a task model on top of sessions:
-   - `task_id`
-   - `owner`
-   - `write_scope`
-   - `depends_on`
-   - `status`
-   - `evidence`
-2. Make the shared execution brief part of the dispatch protocol.
+~~1. Introduce a task model on top of sessions:~~
+
+- `task_id`
+- `owner`
+- `write_scope`
+- `depends_on`
+- `status`
+- `evidence`
+  ~~2. Make the shared execution brief part of the dispatch protocol.~~
+
 3. Add a consensus gate before major runtime or architecture changes.
 4. Add a verify gate requiring:
    - changed files
@@ -184,6 +187,14 @@ Goal: turn Agent Bridge into a real orchestration layer for multi-LLM collaborat
 Definition of done:
 
 - Multi-LLM work is coordinated through explicit tasks, shared context, consensus checkpoints, and verification evidence.
+
+Wave 5 progress:
+
+- Agent Bridge now has a machine-readable task seed file at `coordination/llm-bus/agent-bridge-tasks.json`
+- the VS Code extension now tracks task state alongside session state
+- dashboard can now show a compact task board and dispatch a task to the recommended agent session
+- task data can be listed, updated, dispatched, and re-synced through `/api/tasks*`
+- the dispatcher still needs a stronger verify gate and consensus-state enforcement before Wave 5 is fully done
 
 ## Consensus Protocol
 
@@ -214,3 +225,4 @@ If browser-feel is part of the wave, also capture a direct browser check against
 - Do not let route-shell work expand until the main AppShell data flow is stable.
 - Prefer main-runtime coherence over adding new features.
 - If a new task does not clearly improve coherence, propagation, containment, operability, or orchestration, question whether it belongs in this lane.
+- Keep `runtime-execution-plan.md` human-readable and `agent-bridge-tasks.json` machine-readable; they should describe the same active batch from different angles.

@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>Agent Bridge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-0: #07070c;
+    --bg-1: #0e0e16;
+    --bg-2: #15151f;
+    --bg-3: #1c1c28;
+    --border: #2a2a3a;
+    --text-0: #e8e8f0;
+    --text-1: #a0a0b8;
+    --text-2: #68688a;
+    --accent: #7c6aef;
+    --claude: #E87B35;
+    --codex: #10A37F;
+    --qwen: #615EFF;
+    --gemini: #EA4335;
+    --copilot: #6E40C9;
+    --unknown: #888899;
+    --green: #34d058;
+    --red: #f85149;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--text-0);
+    font-family: 'Noto Sans TC', 'JetBrains Mono', monospace;
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  /* ─── Header ─────────────────────────── */
+  header {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #4a3adf);
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    box-shadow: 0 2px 12px rgba(124,106,239,0.3);
+  }
+
+  .logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.5px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  .status-badge.connected {
+    background: rgba(52,208,88,0.12);
+    color: var(--green);
+    border: 1px solid rgba(52,208,88,0.25);
+  }
+
+  .status-badge.disconnected {
+    background: rgba(248,81,73,0.12);
+    color: var(--red);
+    border: 1px solid rgba(248,81,73,0.25);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ─── Agent Tabs ─────────────────────── */
+  .agent-tabs {
+    flex-shrink: 0;
+    display: flex;
+    overflow-x: auto;
+    gap: 0;
+    padding: 0 12px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .agent-tabs::-webkit-scrollbar { display: none; }
+
+  .agent-tab {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .agent-tab:active { transform: scale(0.97); }
+
+  .agent-tab.active {
+    color: var(--text-0);
+    border-bottom-color: var(--agent-color, var(--accent));
+  }
+
+  .agent-tab .tab-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--agent-color, var(--text-2));
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .agent-tab.active .tab-dot { opacity: 1; box-shadow: 0 0 8px var(--agent-color, var(--accent)); }
+
+  .agent-tab .activity-indicator {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+    display: none;
+  }
+
+  .agent-tab.has-activity .activity-indicator { display: block; }
+
+  /* ─── Task Board ────────────────────── */
+  .task-board {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px 10px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .task-board.hidden { display: none; }
+
+  .task-board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .task-board-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-1);
+  }
+
+  .task-count {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    font-size: 10px;
+  }
+
+  .task-toggle {
+    border: 1px solid var(--border);
+    background: var(--bg-3);
+    color: var(--text-1);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .task-board-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .task-board-scroll::-webkit-scrollbar { display: none; }
+  .task-board-scroll.collapsed { display: none; }
+
+  .task-card {
+    min-width: 230px;
+    max-width: 250px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-card[data-status="in_progress"] {
+    border-color: rgba(124,106,239,0.45);
+    box-shadow: 0 0 0 1px rgba(124,106,239,0.15) inset;
+  }
+
+  .task-card[data-status="blocked"] {
+    border-color: rgba(248,81,73,0.45);
+  }
+
+  .task-card[data-status="completed"] {
+    opacity: 0.72;
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .task-status {
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border);
+    color: var(--text-0);
+    background: var(--bg-3);
+  }
+
+  .task-status.pending { color: #f3c96b; }
+  .task-status.in_progress { color: var(--accent); }
+  .task-status.blocked { color: var(--red); }
+  .task-status.completed { color: var(--green); }
+
+  .task-owner {
+    font-size: 10px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  .task-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-0);
+  }
+
+  .task-summary {
+    font-size: 11px;
+    color: var(--text-1);
+    line-height: 1.55;
+    min-height: 34px;
+  }
+
+  .task-ref {
+    font-size: 10px;
+    color: var(--text-2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .task-dispatch {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .task-dispatch:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .task-session {
+    font-size: 10px;
+    color: var(--text-2);
+    max-width: 88px;
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  /* ─── Main Content ───────────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ─── Terminal Output ────────────────── */
+  .terminal-viewport {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--text-1);
+    background: var(--bg-0);
+    scroll-behavior: smooth;
+  }
+
+  .terminal-viewport::-webkit-scrollbar { width: 3px; }
+  .terminal-viewport::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .terminal-line {
+    padding: 1px 0;
+    word-break: break-all;
+    animation: lineIn 0.15s ease-out;
+  }
+
+  @keyframes lineIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .terminal-line.prompt { color: var(--accent); font-weight: 500; }
+  .terminal-line.error  { color: var(--red); }
+  .terminal-line.system { color: var(--text-2); font-style: italic; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--text-2);
+    text-align: center;
+    padding: 40px 30px;
+  }
+
+  .empty-state .icon { font-size: 48px; opacity: 0.4; }
+  .empty-state p { font-size: 13px; line-height: 1.7; }
+
+  /* ─── Input Bar ──────────────────────── */
+  .input-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-1);
+    border-top: 1px solid var(--border);
+  }
+
+  .input-field {
+    flex: 1;
+    min-height: 40px;
+    max-height: 120px;
+    padding: 9px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-0);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    overflow-y: auto;
+  }
+
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text-2); }
+
+  .send-btn {
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: var(--accent);
+    border: none;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+  }
+
+  .send-btn:active { transform: scale(0.92); }
+  .send-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .send-btn svg {
+    width: 18px; height: 18px;
+    fill: white;
+  }
+
+  /* ─── Quick Actions ──────────────────── */
+  .quick-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--bg-1);
+  }
+  .quick-actions::-webkit-scrollbar { display: none; }
+
+  .quick-btn {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+  }
+
+  .quick-btn:active { transform: scale(0.95); background: var(--bg-2); }
+
+  /* ─── Overlay: No sessions ───────────── */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 10;
+    transition: opacity 0.3s;
+  }
+
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .overlay .radar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  .overlay .radar::after {
+    content: '';
+    position: absolute;
+    width: 50%; height: 50%;
+    background: conic-gradient(from 0deg, transparent, var(--accent));
+    border-radius: 50%;
+    animation: radarSweep 2s linear infinite;
+    transform-origin: bottom right;
+    top: 0; left: 0;
+    opacity: 0.6;
+  }
+
+  @keyframes radarSweep { to { transform: rotate(360deg); } }
+
+  .overlay h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-0);
+  }
+
+  .overlay p {
+    font-size: 13px;
+    color: var(--text-2);
+    text-align: center;
+    line-height: 1.7;
+    max-width: 260px;
+  }
+
+  /* ─── New Terminal FAB ───────────────── */
+  .fab {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--accent);
+    border: none;
+    box-shadow: 0 4px 20px rgba(124,106,239,0.4);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 5;
+    transition: transform 0.15s;
+  }
+
+  .fab:active { transform: scale(0.9); }
+  .fab svg { width: 22px; height: 22px; fill: white; }
+
+  /* ─── New Terminal Modal ─────────────── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: grid;
+    place-items: end center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-2);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px;
+    padding-bottom: calc(20px + var(--safe-bottom));
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .modal-backdrop.open .modal { transform: translateY(0); }
+
+  .modal h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-0);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .modal-option:active { transform: scale(0.98); background: var(--bg-1); }
+  .modal-option .opt-icon { font-size: 20px; }
+  .modal-option .opt-label { flex: 1; }
+  .modal-option .opt-sub { font-size: 11px; color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <span class="logo-text">Agent Bridge</span>
+  </div>
+  <div id="statusBadge" class="status-badge disconnected">
+    <span class="status-dot"></span>
+    <span id="statusText">連線中...</span>
+  </div>
+</header>
+
+<!-- Agent Tabs -->
+<div class="agent-tabs" id="agentTabs">
+  <!-- Dynamically populated -->
+</div>
+
+<!-- Task Board -->
+<div class="task-board hidden" id="taskBoard">
+  <div class="task-board-header">
+    <div class="task-board-title">
+      <span>🗂 任務佇列</span>
+      <span class="task-count" id="taskCount">0</span>
+    </div>
+    <button class="task-toggle" id="taskToggle">收合</button>
+  </div>
+  <div class="task-board-scroll" id="taskBoardScroll"></div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Scanning overlay -->
+  <div class="overlay" id="scanOverlay">
+    <div class="radar"></div>
+    <h2>掃描 Agent 中...</h2>
+    <p>在 VS Code 開啟 AI agent 的 terminal，<br>例如 claude、codex、qwen</p>
+  </div>
+
+  <!-- Terminal viewport -->
+  <div class="terminal-viewport" id="terminalOutput">
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="icon">📡</div>
+      <p>選擇一個 agent tab 查看輸出</p>
+    </div>
+  </div>
+
+  <!-- FAB: new terminal -->
+  <button class="fab" id="fabBtn" title="New terminal">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions" id="quickActions">
+  <button class="quick-btn" data-cmd="/status">📊 status</button>
+  <button class="quick-btn" data-cmd="/help">❓ help</button>
+  <button class="quick-btn" data-cmd="/compact">📦 compact</button>
+  <button class="quick-btn" data-cmd="clear">🧹 clear</button>
+  <button class="quick-btn" data-cmd="/cost">💰 cost</button>
+</div>
+
+<!-- Input Bar -->
+<div class="input-bar">
+  <textarea class="input-field" id="inputField" rows="1"
+    placeholder="輸入訊息給 Agent..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+  <button class="send-btn" id="sendBtn" disabled>
+    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+  </button>
+</div>
+
+<!-- New Terminal Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>🚀 啟動新 Agent</h3>
+    <div class="modal-options">
+      <div class="modal-option" data-agent="claude" data-cmd="claude">
+        <span class="opt-icon">🟠</span>
+        <div>
+          <div class="opt-label">Claude Code</div>
+          <div class="opt-sub">anthropic claude</div>
+        </div>
+      </div>
+      <div class="modal-option" data-agent="codex" data-cmd="codex">
+        <span class="opt-icon">🟢</span>
+        <div>
+          <div class="opt-label">Codex CLI</div>
+          <div class="opt-sub">openai codex</div>
+        </div>
+      </div>
+      <div class="modal-option" data-agent="qwen" data-cmd="qwen-coder">
+        <span class="opt-icon">🔵</span>
+        <div>
+          <div class="opt-label">Qwen Coder</div>
+          <div class="opt-sub">qwen-coder / tongyi</div>
+        </div>
+      </div>
+      <div class="modal-option" data-agent="gemini" data-cmd="gemini">
+        <span class="opt-icon">🔴</span>
+        <div>
+          <div class="opt-label">Gemini CLI</div>
+          <div class="opt-sub">google gemini</div>
+        </div>
+      </div>
+      <div class="modal-option" data-agent="custom" data-cmd="">
+        <span class="opt-icon">⬜</span>
+        <div>
+          <div class="opt-label">自訂 Terminal</div>
+          <div class="opt-sub">手動輸入指令</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────
+const state = {
+  ws: null,
+  sessions: new Map(),
+  tasks: new Map(),
+  activeSessionId: null,
+  connected: false,
+  reconnectTimer: null,
+  autoScroll: true,
+  taskBoardCollapsed: false,
+};
+
+const COLORS = {
+  claude: '#E87B35', codex: '#10A37F', qwen: '#615EFF',
+  gemini: '#EA4335', copilot: '#6E40C9', unknown: '#888899',
+};
+
+// ─── DOM ────────────────────────────────
+const $ = id => document.getElementById(id);
+const termOutput = $('terminalOutput');
+const inputField = $('inputField');
+const sendBtn = $('sendBtn');
+const agentTabs = $('agentTabs');
+const taskBoard = $('taskBoard');
+const taskBoardScroll = $('taskBoardScroll');
+const taskCount = $('taskCount');
+const taskToggle = $('taskToggle');
+const scanOverlay = $('scanOverlay');
+const emptyState = $('emptyState');
+const statusBadge = $('statusBadge');
+const statusText = $('statusText');
+const fabBtn = $('fabBtn');
+const modalBackdrop = $('modalBackdrop');
+
+// ─── WebSocket ──────────────────────────
+function connect() {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${location.host}`;
+
+  const ws = new WebSocket(wsUrl);
+  state.ws = ws;
+
+  ws.onopen = () => {
+    state.connected = true;
+    statusBadge.className = 'status-badge connected';
+    statusText.textContent = '已連線';
+    clearInterval(state.reconnectTimer);
+    // Heartbeat
+    setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      handleMessage(msg);
+    } catch(e) { console.error('WS parse error', e); }
+  };
+
+  ws.onclose = () => {
+    state.connected = false;
+    statusBadge.className = 'status-badge disconnected';
+    statusText.textContent = '已斷線';
+    // Auto reconnect
+    state.reconnectTimer = setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => {
+    ws.close();
+  };
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'snapshot':
+      state.sessions.clear();
+      msg.sessions.forEach(s => state.sessions.set(s.id, s));
+      renderTabs();
+      // Auto-select first active session
+      if (!state.activeSessionId && state.sessions.size > 0) {
+        const first = [...state.sessions.values()].find(s => s.isActive);
+        if (first) selectSession(first.id);
+      }
+      break;
+
+    case 'tasks:snapshot':
+      state.tasks.clear();
+      msg.tasks.forEach(task => state.tasks.set(task.id, task));
+      renderTaskBoard();
+      break;
+
+    case 'task:created':
+    case 'task:updated':
+    case 'task:dispatched':
+      state.tasks.set(msg.task.id, msg.task);
+      renderTaskBoard();
+      break;
+
+    case 'session:open': {
+      state.sessions.set(msg.session.id, msg.session);
+      renderTabs();
+      // Auto-select if none selected
+      if (!state.activeSessionId) selectSession(msg.session.id);
+      break;
+    }
+
+    case 'session:close': {
+      const s = state.sessions.get(msg.sessionId);
+      if (s) { s.isActive = false; renderTabs(); }
+      break;
+    }
+
+    case 'session:update': {
+      state.sessions.set(msg.session.id, msg.session);
+      renderTabs();
+      break;
+    }
+
+    case 'terminal:data': {
+      const session = state.sessions.get(msg.sessionId);
+      if (session) {
+        // Update local buffer
+        if (!session._localBuffer) session._localBuffer = [];
+        session._localBuffer.push(msg.data);
+        if (session._localBuffer.length > 500) session._localBuffer.shift();
+
+        // Mark activity
+        session.lastActivity = msg.timestamp;
+
+        // If this is the active session, render the line
+        if (msg.sessionId === state.activeSessionId) {
+          appendLine(msg.data);
+        } else {
+          // Show activity indicator on tab
+          const tab = document.querySelector(`[data-session="${msg.sessionId}"]`);
+          if (tab) tab.classList.add('has-activity');
+        }
+      }
+      break;
+    }
+
+    case 'session:history': {
+      if (msg.sessionId === state.activeSessionId) {
+        termOutput.innerHTML = '';
+        msg.lines.forEach(line => appendLine(line, false));
+        scrollToBottom();
+      }
+      break;
+    }
+
+    case 'send:ack':
+      if (!msg.ok) {
+        appendLine('[❌ 訊息發送失敗 — Agent 可能已關閉]', false, 'error');
+      }
+      break;
+  }
+}
+
+// ─── Rendering ──────────────────────────
+function renderTabs() {
+  const sessions = [...state.sessions.values()];
+  const hasSessions = sessions.length > 0;
+
+  scanOverlay.classList.toggle('hidden', hasSessions);
+
+  agentTabs.innerHTML = sessions.map(s => `
+    <div class="agent-tab ${s.id === state.activeSessionId ? 'active' : ''} ${s.isActive ? '' : 'inactive'}"
+         data-session="${s.id}"
+         style="--agent-color: ${COLORS[s.agent.id] || COLORS.unknown}">
+      <span class="tab-dot"></span>
+      <span>${s.agent.icon} ${s.agent.name}</span>
+      <span class="activity-indicator"></span>
+    </div>
+  `).join('');
+
+  // Tab click handlers
+  agentTabs.querySelectorAll('.agent-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const sid = tab.getAttribute('data-session');
+      selectSession(sid);
+    });
+  });
+}
+
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function taskStatusLabel(status) {
+  switch (status) {
+    case 'in_progress': return '進行中';
+    case 'blocked': return '阻塞';
+    case 'completed': return '完成';
+    default: return '待辦';
+  }
+}
+
+function taskDispatchLabel(task) {
+  if (task.status === 'completed') return '已完成';
+  if (task.status === 'blocked') return '待解阻';
+  if (task.recommendedSessionId || task.assignedSessionId) return '派工';
+  return '無可用 agent';
+}
+
+function renderTaskBoard() {
+  const tasks = [...state.tasks.values()].sort((a, b) => {
+    const statusRank = { in_progress: 0, pending: 1, blocked: 2, completed: 3 };
+    const priorityRank = { critical: 0, high: 1, medium: 2, low: 3 };
+    return (
+      (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) ||
+      (priorityRank[a.priority] ?? 99) - (priorityRank[b.priority] ?? 99) ||
+      (b.updatedAt || 0) - (a.updatedAt || 0)
+    );
+  });
+
+  if (tasks.length === 0) {
+    taskBoard.classList.add('hidden');
+    taskBoardScroll.innerHTML = '';
+    taskCount.textContent = '0';
+    return;
+  }
+
+  taskBoard.classList.remove('hidden');
+  taskCount.textContent = String(tasks.filter(task => task.status !== 'completed').length);
+  taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
+
+  taskBoardScroll.innerHTML = tasks.map(task => {
+    const dispatchable = Boolean(task.recommendedSessionId || task.assignedSessionId);
+    return `
+      <div class="task-card" data-task-id="${escapeHtml(task.id)}" data-status="${escapeHtml(task.status)}">
+        <div class="task-meta">
+          <span class="task-status ${escapeHtml(task.status)}">${taskStatusLabel(task.status)}</span>
+          <span class="task-owner">${escapeHtml(task.owner)}</span>
+        </div>
+        <div class="task-title">${escapeHtml(task.title)}</div>
+        <div class="task-summary">${escapeHtml(task.summary || '')}</div>
+        <div class="task-ref">${escapeHtml(task.sourcePlanRef || '')}</div>
+        <div class="task-actions">
+          <button class="task-dispatch" data-task-dispatch="${escapeHtml(task.id)}" ${dispatchable ? '' : 'disabled'}>
+            ${taskDispatchLabel(task)}
+          </button>
+          <div class="task-session">${escapeHtml(task.recommendedSessionName || task.assignedSessionId || '未指派')}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  taskBoardScroll.querySelectorAll('[data-task-dispatch]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-dispatch');
+      if (!taskId) return;
+      send({ type: 'task:dispatch', taskId });
+    });
+  });
+}
+
+function selectSession(sessionId) {
+  state.activeSessionId = sessionId;
+  const session = state.sessions.get(sessionId);
+
+  // Update tabs
+  agentTabs.querySelectorAll('.agent-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.getAttribute('data-session') === sessionId);
+    if (tab.getAttribute('data-session') === sessionId) {
+      tab.classList.remove('has-activity');
+    }
+  });
+
+  // Clear terminal and show history
+  termOutput.innerHTML = '';
+  emptyState.style.display = 'none';
+
+  if (session) {
+    // Show cached local buffer first
+    if (session._localBuffer && session._localBuffer.length > 0) {
+      session._localBuffer.forEach(line => appendLine(line, false));
+      scrollToBottom();
+    } else if (session.lastLines && session.lastLines.length > 0) {
+      session.lastLines.forEach(line => appendLine(line, false));
+      scrollToBottom();
+    }
+
+    // Request full history
+    send({ type: 'session:history', sessionId });
+
+    // Update input placeholder
+    inputField.placeholder = `輸入訊息給 ${session.agent.name}...`;
+    sendBtn.disabled = false;
+
+    // Update quick actions based on agent
+    updateQuickActions(session.agent.id);
+  }
+}
+
+function appendLine(text, animate = true, cls = '') {
+  if (!text || text.trim().length === 0) return;
+
+  const lines = text.split('\n');
+  lines.forEach(line => {
+    if (line.trim().length === 0) return;
+    const div = document.createElement('div');
+    div.className = `terminal-line ${cls}`;
+    if (!animate) div.style.animation = 'none';
+
+    // Detect prompt lines
+    if (/^[>❯$#→%]/.test(line.trim()) || /^(claude|codex|qwen|gemini)/i.test(line.trim())) {
+      div.classList.add('prompt');
+    }
+    if (/error|fail|exception/i.test(line)) {
+      div.classList.add('error');
+    }
+
+    div.textContent = line;
+    termOutput.appendChild(div);
+  });
+
+  // Auto-scroll
+  if (state.autoScroll) scrollToBottom();
+
+  // Keep DOM manageable
+  while (termOutput.children.length > 600) {
+    termOutput.removeChild(termOutput.firstChild);
+  }
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    termOutput.scrollTop = termOutput.scrollHeight;
+  });
+}
+
+function updateQuickActions(agentId) {
+  const actions = {
+    claude: [
+      { label: '📊 /status', cmd: '/status' },
+      { label: '📦 /compact', cmd: '/compact' },
+      { label: '💰 /cost', cmd: '/cost' },
+      { label: '❓ /help', cmd: '/help' },
+      { label: '🧹 /clear', cmd: '/clear' },
+      { label: '✅ yes', cmd: 'yes' },
+    ],
+    codex: [
+      { label: '📊 status', cmd: '/status' },
+      { label: '✅ yes', cmd: 'yes' },
+      { label: '❌ no', cmd: 'no' },
+      { label: '🔁 retry', cmd: '/retry' },
+    ],
+    qwen: [
+      { label: '❓ help', cmd: '/help' },
+      { label: '✅ yes', cmd: 'yes' },
+      { label: '🧹 clear', cmd: 'clear' },
+    ],
+    gemini: [
+      { label: '❓ /help', cmd: '/help' },
+      { label: '✅ yes', cmd: 'yes' },
+      { label: '📊 /stats', cmd: '/stats' },
+    ],
+  };
+
+  const btns = actions[agentId] || actions.claude;
+  const quickActions = $('quickActions');
+  quickActions.innerHTML = btns.map(b =>
+    `<button class="quick-btn" data-cmd="${b.cmd}">${b.label}</button>`
+  ).join('');
+
+  quickActions.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cmd = btn.getAttribute('data-cmd');
+      sendMessage(cmd);
+    });
+  });
+}
+
+// ─── Send Messages ──────────────────────
+function sendMessage(text) {
+  if (!text || !state.activeSessionId) return;
+
+  send({
+    type: 'send',
+    sessionId: state.activeSessionId,
+    text: text.trim(),
+  });
+
+  // Show in terminal as outgoing
+  appendLine(`→ ${text.trim()}`, true, 'prompt');
+}
+
+function send(data) {
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify(data));
+  }
+}
+
+// ─── Input Handling ─────────────────────
+inputField.addEventListener('input', () => {
+  // Auto-resize
+  inputField.style.height = 'auto';
+  inputField.style.height = Math.min(inputField.scrollHeight, 120) + 'px';
+  sendBtn.disabled = !inputField.value.trim() || !state.activeSessionId;
+});
+
+inputField.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (inputField.value.trim()) {
+      sendMessage(inputField.value);
+      inputField.value = '';
+      inputField.style.height = 'auto';
+      sendBtn.disabled = true;
+    }
+  }
+});
+
+sendBtn.addEventListener('click', () => {
+  if (inputField.value.trim()) {
+    sendMessage(inputField.value);
+    inputField.value = '';
+    inputField.style.height = 'auto';
+    sendBtn.disabled = true;
+  }
+});
+
+// Detect scroll position for auto-scroll
+termOutput.addEventListener('scroll', () => {
+  const { scrollTop, scrollHeight, clientHeight } = termOutput;
+  state.autoScroll = (scrollHeight - scrollTop - clientHeight) < 60;
+});
+
+// ─── FAB & Modal ────────────────────────
+fabBtn.addEventListener('click', () => {
+  modalBackdrop.classList.add('open');
+});
+
+modalBackdrop.addEventListener('click', (e) => {
+  if (e.target === modalBackdrop) {
+    modalBackdrop.classList.remove('open');
+  }
+});
+
+taskToggle.addEventListener('click', () => {
+  state.taskBoardCollapsed = !state.taskBoardCollapsed;
+  taskToggle.textContent = state.taskBoardCollapsed ? '展開' : '收合';
+  taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
+});
+
+document.querySelectorAll('.modal-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    const agent = opt.getAttribute('data-agent');
+    const cmd = opt.getAttribute('data-cmd');
+
+    if (agent === 'custom') {
+      const userCmd = prompt('輸入啟動指令：');
+      if (userCmd) {
+        send({
+          type: 'terminal:create',
+          name: userCmd.split(' ')[0],
+          command: userCmd,
+        });
+      }
+    } else {
+      send({
+        type: 'terminal:create',
+        name: cmd,
+        command: cmd,
+      });
+    }
+
+    modalBackdrop.classList.remove('open');
+  });
+});
+
+// ─── Init ───────────────────────────────
+connect();
+</script>
+</body>
+</html>

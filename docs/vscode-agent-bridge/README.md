@@ -8,6 +8,7 @@
 - task 層：讀 workspace 內的 machine-readable 任務檔，顯示目前該做什麼
 - dispatch 層：可以把 task 一鍵派給對應 agent，而不是只手動輸入訊息
 - verify 層：task 可以附上 completion evidence，避免一派工就被當成已完成
+- consensus 層：major task 可要求顯式多 agent review，未過共識的依賴任務不能往下 dispatch
 
 ## 支援 Agents
 
@@ -143,6 +144,15 @@ curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/complete \
     }
   }'
 
+# 寫入 major task 的 consensus review
+curl -X POST http://localhost:9527/api/tasks/wave-5-consensus-gate/consensus \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "agentId":"claude",
+    "decision":"approved",
+    "summary":"Minimal gate shape is sound; generic PATCH should not bypass consensus."
+  }'
+
 # 派工給對應 agent
 curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
   -H 'Content-Type: application/json' \
@@ -169,6 +179,11 @@ curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
 - `evidence.verificationRuns`
 - `evidence.risksNoted`
 - `evidence.nextStep`
+- `requiresConsensus`
+- `consensusReviews[].agentId`
+- `consensusReviews[].decision`
+- `consensusReviews[].summary`
+- `consensusReviews[].updatedAt`
 - `completedAt`
 - `consensusState`
 
@@ -178,6 +193,9 @@ v1 原則：
 - 不假裝 `sendText()` 等於任務完成
 - 不把 route shell / live runtime 的判斷藏在 prompt 裡，要寫回 task source file
 - `/complete` 走 soft verify gate：需要 evidence，但一般 `PATCH` 仍保留 draft / override 彈性
+- generic `PATCH` / `task:update` 不可直接改 `consensusState` 或 `consensusReviews`
+- major task 用 `/consensus` 收 review，再由 dashboard 顯示 `待共識 / 共識退回 / 已驗證`
+- 如果 dependency 任務仍在 `待共識`，下游 task 不可 dispatch
 
 ## 結合 Telegram（進階）
 

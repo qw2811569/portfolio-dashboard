@@ -65,12 +65,20 @@ interface AgentSession {
 type TaskStatus = 'pending' | 'in_progress' | 'blocked' | 'completed';
 type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 type TaskConsensusState = 'none' | 'pending' | 'approved' | 'rejected';
+type TaskConsensusDecision = 'approved' | 'rejected';
 
 interface TaskEvidence {
   changedFiles: string[];
   verificationRuns: string[];
   risksNoted: string[];
   nextStep: string;
+}
+
+interface TaskConsensusReview {
+  agentId: string;
+  decision: TaskConsensusDecision;
+  summary: string;
+  updatedAt: number;
 }
 
 interface BridgeTask {
@@ -89,6 +97,8 @@ interface BridgeTask {
   lastDispatchedAt: number | null;
   dispatchCount: number;
   evidence: TaskEvidence;
+  requiresConsensus: boolean;
+  consensusReviews: TaskConsensusReview[];
   completedAt: number | null;
   consensusState: TaskConsensusState;
   createdAt: number;
@@ -102,6 +112,7 @@ interface TaskSeedFile {
 }
 
 const MAX_BUFFER_LINES = 500;
+const CONSENSUS_APPROVAL_QUORUM = 2;
 const TASK_STORE_KEY = 'agentBridge.tasks.v1';
 const TASK_SEED_RELATIVE_PATH = path.join('coordination', 'llm-bus', 'agent-bridge-tasks.json');
 const sessions = new Map<string, AgentSession>();
@@ -369,6 +380,16 @@ function parseConsensusState(value: unknown): TaskConsensusState {
   }
 }
 
+function parseConsensusDecision(value: unknown): TaskConsensusDecision | null {
+  switch (value) {
+    case 'approved':
+    case 'rejected':
+      return value;
+    default:
+      return null;
+  }
+}
+
 function normalizeTaskEvidence(value: unknown, current?: TaskEvidence): TaskEvidence {
   const raw = value && typeof value === 'object' ? (value as Partial<TaskEvidence>) : {};
 
@@ -378,6 +399,56 @@ function normalizeTaskEvidence(value: unknown, current?: TaskEvidence): TaskEvid
     risksNoted: normalizeStringArray(raw.risksNoted ?? current?.risksNoted),
     nextStep: normalizeOptionalText(raw.nextStep ?? current?.nextStep),
   };
+}
+
+function normalizeTaskConsensusReviews(
+  value: unknown,
+  current: TaskConsensusReview[] = []
+): TaskConsensusReview[] {
+  const source = Array.isArray(value) ? value : current;
+  const reviews = new Map<string, TaskConsensusReview>();
+
+  for (const item of source) {
+    const raw = item && typeof item === 'object'
+      ? (item as Partial<TaskConsensusReview>)
+      : null;
+    const agentId = normalizeOptionalText(raw?.agentId);
+    const decision = parseConsensusDecision(raw?.decision);
+    if (!agentId || !decision) continue;
+
+    reviews.set(agentId, {
+      agentId,
+      decision,
+      summary: normalizeOptionalText(raw?.summary),
+      updatedAt: normalizeOptionalTimestamp(raw?.updatedAt) ?? Date.now(),
+    });
+  }
+
+  return Array.from(reviews.values()).sort((a, b) => a.agentId.localeCompare(b.agentId));
+}
+
+function deriveConsensusState(
+  requiresConsensus: boolean,
+  reviews: TaskConsensusReview[]
+): TaskConsensusState {
+  if (!requiresConsensus) return 'none';
+  if (reviews.some(review => review.decision === 'rejected')) return 'rejected';
+  return reviews.filter(review => review.decision === 'approved').length >= CONSENSUS_APPROVAL_QUORUM
+    ? 'approved'
+    : 'pending';
+}
+
+function hasTaskCompletionEvidence(task: BridgeTask): boolean {
+  return task.evidence.changedFiles.length > 0 && task.evidence.verificationRuns.length > 0;
+}
+
+function sanitizeTaskMutationPayload(
+  raw: Partial<BridgeTask> & { evidence?: unknown; consensusState?: unknown; consensusReviews?: unknown }
+) {
+  const next = { ...raw } as Partial<BridgeTask> & { consensusState?: unknown; consensusReviews?: unknown };
+  delete next.consensusState;
+  delete next.consensusReviews;
+  return next;
 }
 
 function normalizeTask(
@@ -391,6 +462,13 @@ function normalizeTask(
     normalizeOptionalText(raw.preferredAgentId) ||
     current?.owner ||
     'unknown';
+  const requiresConsensus = Boolean(
+    (raw as { requiresConsensus?: unknown }).requiresConsensus ?? current?.requiresConsensus
+  );
+  const consensusReviews = normalizeTaskConsensusReviews(
+    (raw as { consensusReviews?: unknown }).consensusReviews,
+    current?.consensusReviews
+  );
 
   return {
     id,
@@ -421,13 +499,13 @@ function normalizeTask(
         ? raw.dispatchCount
         : current?.dispatchCount ?? 0,
     evidence: normalizeTaskEvidence((raw as { evidence?: unknown }).evidence, current?.evidence),
+    requiresConsensus,
+    consensusReviews,
     completedAt:
       normalizeOptionalTimestamp((raw as { completedAt?: unknown }).completedAt) ??
       current?.completedAt ??
       null,
-    consensusState: parseConsensusState(
-      (raw as { consensusState?: unknown }).consensusState ?? current?.consensusState
-    ),
+    consensusState: deriveConsensusState(requiresConsensus, consensusReviews),
     createdAt:
       (typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : null) ??
       current?.createdAt ??
@@ -494,16 +572,21 @@ function findRecommendedSessionForTask(task: BridgeTask): AgentSession | null {
 
 function serializeTask(task: BridgeTask) {
   const recommendedSession = findRecommendedSessionForTask(task);
-  const hasEvidence =
-    task.evidence.changedFiles.length > 0 && task.evidence.verificationRuns.length > 0;
+  const hasEvidence = hasTaskCompletionEvidence(task);
+  const consensusApprovalCount = task.consensusReviews.filter(
+    review => review.decision === 'approved'
+  ).length;
+  const consensusRequiredCount = task.requiresConsensus ? CONSENSUS_APPROVAL_QUORUM : 0;
   const verificationState =
     task.status !== 'completed'
       ? 'open'
       : !hasEvidence
         ? 'draft'
-        : task.consensusState === 'approved'
-          ? 'verified'
-          : 'pending_consensus';
+        : task.consensusState === 'rejected'
+          ? 'rejected'
+          : task.requiresConsensus && task.consensusState !== 'approved'
+            ? 'pending_consensus'
+            : 'verified';
 
   return {
     id: task.id,
@@ -523,6 +606,10 @@ function serializeTask(task: BridgeTask) {
     dispatchCount: task.dispatchCount,
     lastDispatchedAt: task.lastDispatchedAt,
     evidence: task.evidence,
+    requiresConsensus: task.requiresConsensus,
+    consensusReviews: task.consensusReviews,
+    consensusApprovalCount,
+    consensusRequiredCount,
     completedAt: task.completedAt,
     consensusState: task.consensusState,
     verificationState,
@@ -571,6 +658,47 @@ function upsertTask(raw: Partial<BridgeTask> & { id?: unknown; preferredAgentId?
   return next;
 }
 
+function applyConsensusReview(
+  taskId: string,
+  raw: { agentId?: unknown; decision?: unknown; summary?: unknown }
+) {
+  const current = tasks.get(taskId);
+  if (!current) {
+    return { ok: false, error: 'Task not found' };
+  }
+  if (!current.requiresConsensus) {
+    return { ok: false, error: 'Task does not require consensus' };
+  }
+
+  const agentId = normalizeOptionalText(raw.agentId);
+  const decision = parseConsensusDecision(raw.decision);
+  if (!agentId || !decision) {
+    return { ok: false, error: 'Consensus review requires agentId and decision' };
+  }
+
+  const nextReviews = current.consensusReviews.filter(review => review.agentId !== agentId);
+  nextReviews.push({
+    agentId,
+    decision,
+    summary: normalizeOptionalText(raw.summary),
+    updatedAt: Date.now(),
+  });
+
+  const task = normalizeTask(
+    {
+      ...current,
+      id: taskId,
+      consensusReviews: nextReviews,
+    },
+    current
+  );
+
+  tasks.set(taskId, task);
+  persistTasks();
+  broadcast({ type: 'task:consensus', task: serializeTask(task) });
+  return { ok: true, task: serializeTask(task) };
+}
+
 function completeTask(
   taskId: string,
   raw: Partial<BridgeTask> & { evidence?: unknown; consensusState?: unknown }
@@ -588,16 +716,14 @@ function completeTask(
     };
   }
 
-  const requestedConsensus = parseConsensusState(raw.consensusState);
   const task = normalizeTask(
     {
       ...current,
-      ...raw,
+      ...sanitizeTaskMutationPayload(raw),
       id: taskId,
       status: 'completed',
       evidence,
       completedAt: Date.now(),
-      consensusState: requestedConsensus === 'none' ? 'pending' : requestedConsensus,
     },
     current
   );
@@ -612,6 +738,23 @@ function dispatchTask(taskId: string, requestedSessionId?: string) {
   const task = tasks.get(taskId);
   if (!task) {
     return { ok: false, error: 'Task not found' };
+  }
+
+  for (const dependencyId of task.dependsOn) {
+    const dependency = tasks.get(dependencyId);
+    if (!dependency) continue;
+    if (dependency.status !== 'completed') {
+      return {
+        ok: false,
+        error: `Dependency ${dependencyId} is not completed`,
+      };
+    }
+    if (dependency.requiresConsensus && dependency.consensusState !== 'approved') {
+      return {
+        ok: false,
+        error: `Dependency ${dependencyId} is waiting for consensus`,
+      };
+    }
   }
 
   const target =
@@ -754,7 +897,7 @@ function startServer(context: vscode.ExtensionContext) {
       req.on('data', chunk => { body += chunk; });
       req.on('end', () => {
         try {
-          const task = upsertTask(JSON.parse(body));
+          const task = upsertTask(sanitizeTaskMutationPayload(JSON.parse(body)));
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, task: serializeTask(task) }));
         } catch {
@@ -810,6 +953,24 @@ function startServer(context: vscode.ExtensionContext) {
       return;
     }
 
+    const consensusMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/consensus$/);
+    if (consensusMatch && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const parsed = body ? JSON.parse(body) : {};
+          const result = applyConsensusReview(decodeURIComponent(consensusMatch[1]), parsed);
+          res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }));
+        }
+      });
+      return;
+    }
+
     const taskMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
     if (taskMatch && (req.method === 'PATCH' || req.method === 'POST')) {
       let body = '';
@@ -817,7 +978,10 @@ function startServer(context: vscode.ExtensionContext) {
       req.on('end', () => {
         try {
           const parsed = body ? JSON.parse(body) : {};
-          const task = upsertTask({ ...parsed, id: decodeURIComponent(taskMatch[1]) });
+          const task = upsertTask({
+            ...sanitizeTaskMutationPayload(parsed),
+            id: decodeURIComponent(taskMatch[1]),
+          });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, task: serializeTask(task) }));
         } catch {
@@ -935,12 +1099,12 @@ function handleWsMessage(ws: WebSocket, msg: any) {
       }));
       break;
     case 'task:create': {
-      const task = upsertTask(msg.task ?? msg);
+      const task = upsertTask(sanitizeTaskMutationPayload(msg.task ?? msg));
       ws.send(JSON.stringify({ type: 'task:created:ack', task: serializeTask(task) }));
       break;
     }
     case 'task:update': {
-      const task = upsertTask(msg.task ?? msg);
+      const task = upsertTask(sanitizeTaskMutationPayload(msg.task ?? msg));
       ws.send(JSON.stringify({ type: 'task:updated:ack', task: serializeTask(task) }));
       break;
     }
@@ -952,6 +1116,11 @@ function handleWsMessage(ws: WebSocket, msg: any) {
     case 'task:complete': {
       const result = completeTask(msg.taskId, msg.task ?? msg);
       ws.send(JSON.stringify({ type: 'task:complete:ack', ...result }));
+      break;
+    }
+    case 'task:consensus': {
+      const result = applyConsensusReview(msg.taskId, msg.review ?? msg);
+      ws.send(JSON.stringify({ type: 'task:consensus:ack', ...result }));
       break;
     }
     case 'task:sync':

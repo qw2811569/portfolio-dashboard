@@ -326,6 +326,37 @@
   .task-verify.draft { color: #f3c96b; }
   .task-verify.pending_consensus { color: #7fd4ff; }
   .task-verify.verified { color: #6be4a1; }
+  .task-verify.rejected { color: var(--red); }
+
+  .task-consensus {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--text-2);
+  }
+
+  .task-consensus-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .task-review-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-3);
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .task-review-chip.approved { color: #6be4a1; }
+  .task-review-chip.rejected { color: var(--red); }
+  .task-review-chip.pending { color: var(--text-2); }
 
   .task-actions {
     display: flex;
@@ -964,6 +995,8 @@ function taskDispatchLabel(task) {
 
 function taskVerificationLabel(task) {
   switch (task.verificationState) {
+    case 'rejected':
+      return '共識退回';
     case 'verified':
       return '已驗證';
     case 'pending_consensus':
@@ -1013,6 +1046,21 @@ function renderTaskBoard() {
     if (Array.isArray(task.evidence?.risksNoted) && task.evidence.risksNoted.length > 0) {
       evidenceSummary.push(`風險 ${task.evidence.risksNoted.length}`);
     }
+    const consensusReviews = Array.isArray(task.consensusReviews) ? task.consensusReviews : [];
+    const consensusSummary = task.requiresConsensus
+      ? `共識 ${task.consensusApprovalCount || 0}/${task.consensusRequiredCount || 0}`
+      : '不需共識';
+    const consensusChips = task.requiresConsensus
+      ? (
+        consensusReviews.length > 0
+          ? consensusReviews.map(review => `
+              <span class="task-review-chip ${escapeHtml(review.decision)}">
+                ${escapeHtml(review.agentId)} ${review.decision === 'approved' ? '✓' : '✗'}
+              </span>
+            `).join('')
+          : '<span class="task-review-chip pending">待收集</span>'
+      )
+      : '';
     return `
       <div class="task-card" data-task-id="${escapeHtml(task.id)}" data-status="${escapeHtml(task.status)}">
         <div class="task-meta">
@@ -1026,6 +1074,12 @@ function renderTaskBoard() {
           <span>${taskVerificationLabel(task)}</span>
           <span>${escapeHtml(evidenceSummary.join(' · ') || '尚未附證據')}</span>
         </div>
+        ${task.requiresConsensus ? `
+          <div class="task-consensus">
+            <span>${escapeHtml(consensusSummary)}</span>
+            <div class="task-consensus-chips">${consensusChips}</div>
+          </div>
+        ` : ''}
         <div class="task-actions">
           <button class="task-dispatch" data-task-dispatch="${escapeHtml(task.id)}" ${dispatchable ? '' : 'disabled'}>
             ${taskDispatchLabel(task)}

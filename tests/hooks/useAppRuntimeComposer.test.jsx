@@ -299,6 +299,12 @@ describe('hooks/useAppRuntimeComposer.js', () => {
         portfolioTabs: [],
         tab: 'holdings',
         setTab: vi.fn(),
+        workflowCue: {
+          label: '先處理待驗證事件，再決定動作',
+          reason: '先看事件，再接收盤分析。',
+          targetTab: 'events',
+          actionLabel: '前往事件',
+        },
       },
       dialogs: { portfolioEditor: null, portfolioDeleteDialog: null },
       constants: {
@@ -337,6 +343,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
     expect(runtime.loadingState.title).toBe('ok')
     expect(runtime.panelsProps.tab).toBe('holdings')
     expect(runtime.confirmDialogProps.open).toBe(true)
+    expect(runtime.headerProps.workflowCue?.targetTab).toBe('events')
   })
 
   it('flattens grouped args for app runtime core/workflow invocation', () => {

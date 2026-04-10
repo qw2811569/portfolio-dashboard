@@ -550,6 +550,7 @@ export function composeAppRuntimeHeaderInput({
       researching: asyncState.researching,
       tab: tabs.tab,
       setTab: tabs.setTab,
+      workflowCue: tabs.workflowCue ?? null,
     },
     dialogs: {
       portfolioEditor: coreLifecycle.portfolioEditor,
@@ -672,6 +673,7 @@ export function composeAppHeaderProps({
     TABS: tabs.portfolioTabs,
     tab: tabs.tab,
     setTab: tabs.setTab,
+    workflowCue: tabs.workflowCue ?? null,
     portfolioEditor: dialogs.portfolioEditor,
     portfolioDeleteDialog: dialogs.portfolioDeleteDialog,
   }

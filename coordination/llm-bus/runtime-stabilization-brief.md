@@ -10,6 +10,7 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 - Canonical runtime entry: `src/main.jsx -> src/App.jsx`
 - Route migration shell: `src/App.routes.jsx` + `src/pages/*` + `src/hooks/useRoute*`
 - Do not treat handoff docs as runtime truth in this lane
+- The old `docs/mac-mini-handoff/` bundle has been removed from the workspace after extracting its useful design intent, so future sessions cannot drift back to it
 - Each LLM should read this file first, then answer only within its lane
 - Claude lane: architecture, browser tracing, runtime boundary decisions
 - Qwen lane: mechanical consistency, tests, local state / persistence gaps
@@ -317,6 +318,69 @@ Decision constraints:
   - `bun run lint`
   - `bun run build`
   - `APP_URL=http://127.0.0.1:3002 bun run smoke:ui`
+
+## Active Decision: Header Workflow Cue
+
+We needed the smallest next AppShell coherence patch after the daily/research handoff, under these constraints:
+
+- avoid wasted API
+- do not expand route-shell responsibility
+- prefer canonical AppShell coherence over new infrastructure
+
+### Decision result
+
+- Claude:
+  - chose a header-level workflow cue using existing derived state and navigation-only links
+  - explicitly rejected route read-through as too close to widening the route shell
+- Gemini:
+  - chose the same header-level workflow cue
+  - reason: smallest visible coherence win with no extra fetches
+- Explorer lane:
+  - confirmed the smallest safe path is to reuse `portfolioPanelsData.holdings.operatingContext` and thread a header-only `workflowCue` prop through the existing header composer path
+
+### Applied result
+
+- canonical `Header` now shows a slim workflow cue above the tab strip using the same shared `operatingContext` already visible in the panels
+- the cue is navigation-only:
+  - `前往補資料`
+  - `前往事件`
+  - `前往焦點標的`
+  - `前往收盤分析`
+  depending on the current shared runtime truth
+- no new API work, stores, or route-shell logic were added
+- verification passed:
+  - `bunx vitest run tests/components/Header.test.jsx tests/hooks/useAppRuntimeHeaderProps.test.js tests/hooks/useAppRuntimeComposer.test.jsx`
+
+## Active Decision: Agent Bridge Consensus Gate
+
+We needed the smallest patch that would turn `consensusState` from a writable label into an actual coordination gate for major tasks.
+
+### Decision result
+
+- Claude:
+  - wanted explicit multi-agent votes instead of a freely writable `consensusState`
+  - warned that next-wave work should not dispatch while an upstream major task is still waiting for consensus
+- Gemini:
+  - wanted an explicit major-task approval mechanism, but without adding heavy infrastructure
+- Explorer lane:
+  - converged on:
+    - `requiresConsensus`
+    - `consensusReviews[]`
+    - `POST /api/tasks/:id/consensus`
+    - no direct consensus edits through generic PATCH / update routes
+
+### Applied result
+
+- Agent Bridge tasks can now declare `requiresConsensus`
+- consensus is now derived from explicit `consensusReviews[]` instead of trusting caller-provided `consensusState`
+- added `POST /api/tasks/:id/consensus` and matching WebSocket `task:consensus`
+- dashboard now shows:
+  - `共識 0/2`, `共識 1/2`, etc.
+  - review chips like `claude ✓` or `qwen ✗`
+  - `共識退回` when a review rejects the task
+- downstream task dispatch now stops if a dependency is completed but still waiting for consensus
+- verification passed:
+  - `npm run compile` in `docs/vscode-agent-bridge`
 
 ## Proposed Wave A
 

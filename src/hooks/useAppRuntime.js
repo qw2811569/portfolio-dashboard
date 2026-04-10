@@ -93,6 +93,59 @@ const PORTFOLIO_DERIVED_CONSTANTS = {
 
 const pickHeaderPnlTone = (value) => pickPnlTone(value, C)
 
+function buildHeaderWorkflowCue(context) {
+  if (!context || typeof context !== 'object') return null
+
+  const label = typeof context.nextActionLabel === 'string' ? context.nextActionLabel.trim() : ''
+  if (!label) return null
+
+  const reason =
+    typeof context.nextActionReason === 'string' ? context.nextActionReason.trim() : ''
+
+  if ((context.refreshBacklogCount ?? 0) > 0) {
+    return {
+      label,
+      reason,
+      targetTab: 'research',
+      actionLabel: '前往補資料',
+    }
+  }
+
+  if ((context.pendingCount ?? 0) > 0 || (context.activeEventCount ?? 0) > 0) {
+    return {
+      label,
+      reason,
+      targetTab: 'events',
+      actionLabel: '前往事件',
+    }
+  }
+
+  if (context.focus) {
+    return {
+      label,
+      reason,
+      targetTab: 'watchlist',
+      actionLabel: '前往焦點標的',
+    }
+  }
+
+  if (context.latestInsightSummary) {
+    return {
+      label,
+      reason,
+      targetTab: 'daily',
+      actionLabel: '前往收盤分析',
+    }
+  }
+
+  return {
+    label,
+    reason,
+    targetTab: 'holdings',
+    actionLabel: '回到持倉',
+  }
+}
+
 export function useAppRuntime() {
   const {
     ready,
@@ -378,6 +431,8 @@ export function useAppRuntime() {
     portfolioPanelsActions,
   } = useAppRuntimeWorkflows(workflowArgs)
 
+  const workflowCue = buildHeaderWorkflowCue(portfolioPanelsData?.holdings?.operatingContext)
+
   const headerProps = useAppRuntimeHeaderProps(
     composeAppRuntimeHeaderInput({
       theme: {
@@ -432,6 +487,7 @@ export function useAppRuntime() {
       tabs: {
         tab,
         setTab,
+        workflowCue,
       },
       constants: {
         OWNER_PORTFOLIO_ID,

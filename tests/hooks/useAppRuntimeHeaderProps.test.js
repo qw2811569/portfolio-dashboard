@@ -44,6 +44,12 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
         researching: false,
         tab: 'holdings',
         setTab: vi.fn(),
+        workflowCue: {
+          label: '先補齊資料，再做深度研究',
+          reason: '公開報告與財報資料仍需刷新。',
+          targetTab: 'research',
+          actionLabel: '前往補資料',
+        },
       },
       dialogs: { portfolioEditor: null, portfolioDeleteDialog: null },
       constants: {
@@ -57,5 +63,6 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
     expect(headerProps.TABS.length).toBeGreaterThan(0)
     expect(headerProps.cloudSync).toBe(true)
     expect(headerProps.saved).toBe('ok')
+    expect(headerProps.workflowCue?.targetTab).toBe('research')
   })
 })

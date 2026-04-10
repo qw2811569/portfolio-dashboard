@@ -43,12 +43,20 @@ export default function Header(props) {
     TABS,
     tab,
     setTab,
+    workflowCue,
     portfolioEditor,
     portfolioDeleteDialog,
   } = props
   const tabs = Array.isArray(TABS) ? TABS : []
   const editor = portfolioEditor || null
   const deleteDialog = portfolioDeleteDialog || null
+  const navigateToTab = (nextTab) => {
+    if (!nextTab || typeof setTab !== 'function') return
+    setTab(nextTab)
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
   const ghostBtn = {
     borderRadius: 20,
@@ -590,6 +598,77 @@ export default function Header(props) {
         `今日 · ${todayAlertSummary}`
       ),
 
+    viewMode !== OVERVIEW_VIEW_MODE &&
+      workflowCue &&
+      h(
+        'div',
+        {
+          style: {
+            background: alpha(C.teal, A.faint),
+            border: `1px solid ${alpha(C.teal, A.line)}`,
+            borderLeft: `3px solid ${C.teal}`,
+            borderRadius: 8,
+            padding: '8px 10px',
+            marginBottom: 8,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          { style: { minWidth: 0, flex: 1 } },
+          h(
+            'div',
+            { style: { fontSize: 9, color: C.teal, fontWeight: 700, letterSpacing: '0.08em' } },
+            'WORKFLOW CUE'
+          ),
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 11,
+                color: C.text,
+                fontWeight: 600,
+                lineHeight: 1.6,
+                marginTop: 3,
+              },
+            },
+            workflowCue.label
+          ),
+          workflowCue.reason &&
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 10,
+                  color: C.textSec,
+                  lineHeight: 1.7,
+                  marginTop: 4,
+                },
+              },
+              workflowCue.reason
+            )
+        ),
+        workflowCue.targetTab &&
+          h(
+            'button',
+            {
+              className: 'ui-btn',
+              onClick: () => navigateToTab(workflowCue.targetTab),
+              style: {
+                background: alpha(C.teal, A.faint),
+                color: C.teal,
+                border: `1px solid ${alpha(C.teal, A.strongLine)}`,
+                ...ghostBtn,
+              },
+            },
+            workflowCue.actionLabel || '前往查看'
+          )
+      ),
+
     // Overview mode notice or tabs
     viewMode === OVERVIEW_VIEW_MODE
       ? h(
@@ -640,10 +719,7 @@ export default function Header(props) {
               {
                 className: 'ui-btn',
                 key: t.k,
-                onClick: () => {
-                  setTab(t.k)
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
-                },
+                onClick: () => navigateToTab(t.k),
                 style: {
                   background: tab === t.k ? alpha(C.text, '10') : 'transparent',
                   color: tab === t.k ? C.text : C.textMute,

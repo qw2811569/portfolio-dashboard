@@ -41,6 +41,7 @@ Make the project feel like one coherent operating system instead of disconnected
 - ~~Added a shared, read-only `operating context` so holdings, watchlist, events, news, daily analysis, and research now show the same top-level portfolio narrative.~~
 - ~~Wired Events and News empty-state CTA flows into the daily-analysis tab without auto-triggering new API work.~~
 - ~~Verified the current wave with targeted test coverage, lint, build, and UI smoke on the canonical local runtime.~~
+- ~~Removed the old `docs/mac-mini-handoff/` bundle from the live workspace once its design intent had been distilled into the plan and brief, so future sessions cannot read stale handoff files as runtime truth.~~
 
 ## Active Execution Waves
 
@@ -114,6 +115,8 @@ Wave 2 progress:
 - made `ResearchPanel -> DataRefreshCenter` CTA intent honest by removing a misleading deep-research action from the stale-data lane
 - added a navigation-only daily -> research handoff CTA so users do not have to infer the next step after daily analysis
 - expanded `tests/components/AppPanels.contexts.test.jsx` to guard both coherence fixes
+- canonical `Header` now reuses the shared `operatingContext` as a navigation-only workflow cue, so the app shell itself tells the user what the next step is and which tab to open
+- `tests/components/Header.test.jsx` now proves the workflow cue only calls `setTab(...)` and does not trigger API work
 
 Wave 3 early findings:
 
@@ -217,7 +220,9 @@ Wave 5 progress:
 - Agent Bridge now supports a soft verify gate through `POST /api/tasks/:id/complete`
 - completion evidence now carries changed files, verification runs, risks noted, and next step metadata
 - completed tasks now surface `draft / 待共識 / 已驗證` style states in the dashboard instead of looking equally done
-- the dispatcher still needs a stronger consensus approval workflow before Wave 5 is fully done
+- major tasks can now declare `requiresConsensus`, collect explicit reviews through `/api/tasks/:id/consensus`, and show review chips in the dashboard
+- generic `PATCH` / `task:update` can no longer bypass consensus fields directly
+- downstream tasks now refuse to dispatch when a dependency is still waiting for consensus
 
 ## Consensus Protocol
 

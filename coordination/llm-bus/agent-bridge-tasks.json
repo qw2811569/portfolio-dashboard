@@ -5,7 +5,8 @@
     "defaultLanes": ["codex", "claude", "qwen", "gemini"],
     "requireConsensusForMajorChanges": true,
     "geminiPolicy": "run-when-available-otherwise-mark-blocked",
-    "requireEvidenceForComplete": true
+    "requireEvidenceForComplete": true,
+    "consensusApprovalQuorum": 2
   },
   "tasks": [
     {
@@ -102,6 +103,42 @@
       "sourcePlanRef": "Wave 5 / Step 3-4",
       "summary": "Introduce completion evidence and a soft verify gate so task completion is backed by changed files, verification runs, and consensus state.",
       "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Add the smallest soft verify gate that introduces completion evidence without breaking existing task dispatch flows. Return: changed files, API/UI changes, and verification."
+    },
+    {
+      "id": "wave-2-header-workflow-cue",
+      "title": "Lift workflow cue into the AppShell header",
+      "lane": "coherence",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": [],
+      "writeScope": [
+        "src/hooks/useAppRuntime.js",
+        "src/hooks/useAppRuntimeComposer.js",
+        "src/components/Header.jsx",
+        "tests/components/Header.test.jsx"
+      ],
+      "sourcePlanRef": "Wave 2 / Step 3-5",
+      "summary": "Reuse the shared operating context in the canonical Header so the current next step is visible across tabs without triggering new API work.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Add a header-level workflow cue in the canonical AppShell using existing derived state only. It must be navigation-only and should not expand the route shell."
+    },
+    {
+      "id": "wave-5-consensus-gate",
+      "title": "Add explicit consensus gate to Agent Bridge",
+      "lane": "orchestration",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": ["wave-5-verify-gate"],
+      "writeScope": [
+        "docs/vscode-agent-bridge/src/extension.ts",
+        "docs/vscode-agent-bridge/dashboard/index.html",
+        "docs/vscode-agent-bridge/README.md",
+        "coordination/llm-bus/agent-bridge-tasks.json"
+      ],
+      "sourcePlanRef": "Wave 5 / Step 3-4",
+      "summary": "Major tasks now require explicit consensus reviews instead of a writable consensusState field, and downstream dispatch is blocked until required dependencies clear consensus.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Extend the soft verify gate into a minimal explicit consensus gate: add review capture, prevent generic PATCH from bypassing it, and surface consensus progress in the dashboard."
     }
   ]
 }

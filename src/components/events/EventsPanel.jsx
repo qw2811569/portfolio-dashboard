@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
-import { Card, Button } from '../common'
+import { Card, Button, OperatingContextCard } from '../common'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
 
 const TYPE_COLOR = {
@@ -547,10 +547,13 @@ export function EventsPanel({
   filteredEvents,
   catalystFilter,
   setCatalystFilter,
+  operatingContext = null,
+  onNavigateDaily = () => {},
 }) {
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     // Relay Plan
     showRelayPlan &&
       h(RelayPlanCard, {
@@ -603,9 +606,7 @@ export function EventsPanel({
         h(
           Button,
           {
-            onClick: () => {
-              /* navigate to daily tab handled by parent */
-            },
+            onClick: onNavigateDaily,
             style: {
               padding: '10px 24px',
               borderRadius: 8,
@@ -618,7 +619,7 @@ export function EventsPanel({
               boxShadow: C.shadow,
             },
           },
-          '🔍 開始收盤分析'
+          '🔍 前往收盤分析'
         )
       ),
 

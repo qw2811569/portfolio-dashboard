@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button } from '../common'
+import { Card, Button, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
 
 const lbl = {
@@ -135,7 +135,7 @@ export function StockResearchButtons({
 /**
  * Data Refresh Center
  */
-export function DataRefreshCenter({ dataRefreshRows, onResearch, researching, holdings }) {
+export function DataRefreshCenter({ dataRefreshRows }) {
   if (!dataRefreshRows || dataRefreshRows.length === 0) return null
 
   return h(
@@ -219,32 +219,21 @@ export function DataRefreshCenter({ dataRefreshRows, onResearch, researching, ho
               { style: { fontSize: 9, color: C.textMute, marginTop: 3 } },
               `目標價：${item.targetStatus} · 財報：${item.fundamentalStatus}`
             )
-          ),
-          h(
-            Button,
-            {
-              onClick: () =>
-                onResearch(
-                  'single',
-                  holdings.find((h) => h.code === item.code)
-                ),
-              disabled: researching || !holdings.find((h) => h.code === item.code),
-              style: {
-                padding: '7px 10px',
-                borderRadius: 7,
-                border: `1px solid ${alpha(C.teal, '2a')}`,
-                background: alpha(C.teal, '15'),
-                color: C.teal,
-                fontSize: 10,
-                fontWeight: 500,
-                cursor: researching ? 'not-allowed' : 'pointer',
-                whiteSpace: 'nowrap',
-              },
-            },
-            '先研究這檔'
           )
         )
       )
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 10,
+          color: C.textMute,
+          lineHeight: 1.7,
+          marginTop: 8,
+        },
+      },
+      '先用上方「刷新公開報告」補齊資料，再開始個股或全組合研究。'
     )
   )
 }
@@ -711,6 +700,7 @@ export function ResearchPanel({
   proposalActionType,
   STOCK_META,
   IND_COLOR,
+  operatingContext,
   onEvolve,
   onRefresh,
   onResearch,
@@ -722,6 +712,7 @@ export function ResearchPanel({
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     h(ResearchHeader, {
       onEvolve,
       onRefresh,
@@ -739,9 +730,6 @@ export function ResearchPanel({
     }),
     h(DataRefreshCenter, {
       dataRefreshRows,
-      onResearch,
-      researching,
-      holdings,
     }),
     h(ResearchProgress, {
       researching,

@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+const EMPTY_LIST = []
+
 export function usePortfolioPanelsContextComposer({
   activePortfolioId,
   overviewPortfolios,
@@ -91,19 +93,95 @@ export function usePortfolioPanelsContextComposer({
   cancelReview,
   createDefaultReviewForm,
 }) {
+  const safeOverviewPortfolios = Array.isArray(overviewPortfolios) ? overviewPortfolios : EMPTY_LIST
+  const safeOverviewDuplicateHoldings = Array.isArray(overviewDuplicateHoldings)
+    ? overviewDuplicateHoldings
+    : EMPTY_LIST
+  const safeOverviewPendingItems = Array.isArray(overviewPendingItems)
+    ? overviewPendingItems
+    : EMPTY_LIST
+  const safeHoldings = Array.isArray(holdings) ? holdings : EMPTY_LIST
+  const safeNewsEvents = Array.isArray(newsEvents) ? newsEvents : EMPTY_LIST
+  const safeDataRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : EMPTY_LIST
+  const latestInsight = dailyReport?.insight || dailyReport?.aiInsight || null
+
+  const operatingContext = useMemo(() => {
+    const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
+    const trackingEventCount = safeNewsEvents.filter((event) => event?.status === 'tracking').length
+
+    const refreshBacklogCount = safeDataRefreshRows.length
+    const focusItem = watchlistFocus?.item || null
+    const focusSummary = watchlistFocus?.summary || watchlistFocus?.action || ''
+    const hasInsight = Boolean(latestInsight)
+
+    let nextActionLabel = '先從持倉健檢與待處理事件開始'
+    let nextActionReason = '先看目前持股、觀察名單與事件清單是否指向同一條主線。'
+
+    if (refreshBacklogCount > 0) {
+      nextActionLabel = '先補齊資料，再做深度研究'
+      nextActionReason = `目前還有 ${refreshBacklogCount} 檔缺少最新目標價或財報資料，先補資料才能避免研究與事件判斷各說各話。`
+    } else if (pendingCount > 0 || pendingEventCount > 0) {
+      nextActionLabel = '先處理待驗證事件，再決定動作'
+      nextActionReason = `目前有 ${Math.max(pendingCount, pendingEventCount)} 件待驗證事件，應先確認催化是否落地，再決定加碼、續抱或停損。`
+    } else if (focusItem) {
+      nextActionLabel = `先聚焦 ${focusItem.name} 的催化驗證`
+      nextActionReason =
+        watchlistFocus?.action || focusSummary || '先看焦點標的與相關事件是否支持下一步操作。'
+    } else if (hasInsight) {
+      nextActionLabel = '先延續最近一次收盤分析的結論'
+      nextActionReason = latestInsight
+    }
+
+    return {
+      portfolioLabel: activePortfolioId === 'me' ? '主組合' : `組合 ${activePortfolioId}`,
+      holdingsCount: safeHoldings.length,
+      pendingCount,
+      attentionCount,
+      activeEventCount: pendingEventCount + trackingEventCount,
+      refreshBacklogCount,
+      lastAnalysisLabel: dailyReport?.date
+        ? [dailyReport.date, dailyReport.time].filter(Boolean).join(' ')
+        : '',
+      latestInsightSummary: latestInsight,
+      nextActionLabel,
+      nextActionReason,
+      focus: focusItem
+        ? {
+            code: focusItem.code,
+            name: focusItem.name,
+            summary: focusSummary,
+            upsideLabel:
+              typeof watchlistFocus?.upside === 'number'
+                ? `潛在 ${watchlistFocus.upside >= 0 ? '+' : ''}${watchlistFocus.upside.toFixed(1)}%`
+                : '',
+          }
+        : null,
+    }
+  }, [
+    activePortfolioId,
+    attentionCount,
+    safeDataRefreshRows,
+    dailyReport,
+    safeHoldings.length,
+    latestInsight,
+    safeNewsEvents,
+    pendingCount,
+    watchlistFocus,
+  ])
+
   const portfolioPanelsData = useMemo(
     () => ({
       overview: {
-        portfolioCount: overviewPortfolios.length,
+        portfolioCount: safeOverviewPortfolios.length,
         totalValue: overviewTotalValue,
         totalPnl: overviewTotalPnl,
-        portfolios: overviewPortfolios,
+        portfolios: safeOverviewPortfolios,
         activePortfolioId,
-        duplicateHoldings: overviewDuplicateHoldings,
-        pendingItems: overviewPendingItems,
+        duplicateHoldings: safeOverviewDuplicateHoldings,
+        pendingItems: safeOverviewPendingItems,
       },
       holdings: {
-        holdings,
+        holdings: safeHoldings,
         totalVal,
         totalCost,
         todayTotalPnl,
@@ -121,16 +199,18 @@ export function usePortfolioPanelsContextComposer({
         scanFilter,
         sortBy,
         expandedStock,
-        latestInsight: dailyReport?.insight || dailyReport?.aiInsight || null,
+        latestInsight,
+        operatingContext,
       },
       holdingsTable: {
-        holdings,
+        holdings: safeHoldings,
         expandedStock,
       },
       watchlist: {
         watchlistFocus,
         watchlistRows,
         expandedStock,
+        operatingContext,
       },
       events: {
         showRelayPlan,
@@ -138,6 +218,7 @@ export function usePortfolioPanelsContextComposer({
         filterType,
         filteredEvents,
         catalystFilter,
+        operatingContext,
       },
       daily: {
         morningNote,
@@ -147,17 +228,18 @@ export function usePortfolioPanelsContextComposer({
         stressResult,
         stressTesting,
         dailyExpanded,
-        newsEvents,
+        newsEvents: safeNewsEvents,
         expandedStock,
         strategyBrain,
+        operatingContext,
       },
       research: {
-        holdings,
+        holdings: safeHoldings,
         researching,
         researchTarget,
         reportRefreshing,
         reportRefreshStatus,
-        dataRefreshRows,
+        dataRefreshRows: safeDataRefreshRows,
         researchResults,
         researchHistory,
         enrichingResearchCode,
@@ -165,6 +247,7 @@ export function usePortfolioPanelsContextComposer({
         proposalActionType,
         STOCK_META: stockMeta,
         IND_COLOR: indColor,
+        operatingContext,
       },
       trade: {
         ...tradeCapture,
@@ -173,10 +256,11 @@ export function usePortfolioPanelsContextComposer({
         tradeLog,
       },
       news: {
-        newsEvents,
+        newsEvents: safeNewsEvents,
         reviewingEvent,
         reviewForm,
         expandedNews,
+        operatingContext,
       },
     }),
     [
@@ -187,21 +271,23 @@ export function usePortfolioPanelsContextComposer({
       catalystFilter,
       dailyExpanded,
       dailyReport,
-      dataRefreshRows,
+      safeDataRefreshRows,
       enrichingResearchCode,
       expandedNews,
       expandedStock,
       filterType,
       filteredEvents,
-      holdings,
+      safeHoldings,
       holdingsIntegrityIssues,
       indColor,
+      latestInsight,
       losers,
       morningNote,
-      newsEvents,
-      overviewDuplicateHoldings,
-      overviewPendingItems,
-      overviewPortfolios,
+      safeNewsEvents,
+      operatingContext,
+      safeOverviewDuplicateHoldings,
+      safeOverviewPendingItems,
+      safeOverviewPortfolios,
       overviewTotalPnl,
       overviewTotalValue,
       pendingCount,
@@ -269,6 +355,7 @@ export function usePortfolioPanelsContextComposer({
         setRelayPlanExpanded,
         setFilterType,
         setCatalystFilter,
+        onNavigateDaily: () => setTab('daily'),
       },
       daily: {
         setDailyExpanded,
@@ -317,6 +404,7 @@ export function usePortfolioPanelsContextComposer({
         setTab,
         setReviewingEvent,
         createDefaultReviewForm,
+        onNavigateDaily: () => setTab('daily'),
       },
     }),
     [

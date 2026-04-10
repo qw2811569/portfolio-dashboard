@@ -433,7 +433,16 @@ export function buildResearchHoldingDossierContext(dossier, { compact = false } 
   const fundamentals = dossier.fundamentals || {}
 
   if (compact) {
-    return `${dossier.name}(${dossier.code}) - 持股: ${position.qty}股, 成本: ${position.cost}, 現價: ${position.price}, 損益: ${position.pnl} (${position.pct.toFixed(2)}%)`
+    const compactKnowledge = buildCompactKnowledgeContext(dossier.stockMeta ?? {}, {
+      maxItems: 2,
+      maxCaseItems: 1,
+    })
+    return [
+      `${dossier.name}(${dossier.code}) - 持股: ${position.qty}股, 成本: ${position.cost}, 現價: ${position.price}, 損益: ${position.pnl} (${position.pct.toFixed(2)}%)`,
+      compactKnowledge,
+    ]
+      .filter(Boolean)
+      .join('\n')
   }
 
   return `

@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
-import { Card } from '../common'
+import { Card, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import Md from '../Md.jsx'
 
@@ -439,11 +439,13 @@ export function HoldingsPanel({
   setShowReversal: _setShowReversal = () => {},
   reversalConditions: _reversalConditions = {},
   latestInsight = null,
+  operatingContext = null,
   children,
 }) {
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     // Summary metrics
     h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl }),
 

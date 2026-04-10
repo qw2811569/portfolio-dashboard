@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { buildDailyHoldingDossierContext, buildHoldingDossiers } from '../../src/lib/dossierUtils.js'
+import {
+  buildDailyHoldingDossierContext,
+  buildHoldingDossiers,
+  buildResearchHoldingDossierContext,
+} from '../../src/lib/dossierUtils.js'
 
 describe('dossierUtils - buildHoldingDossiers', () => {
   const mockHoldings = [
@@ -8,7 +12,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
   ]
 
   const mockStockMeta = {
-    '2330': {
+    2330: {
       strategy: '成長股',
       industry: '半導體',
       leader: '龍頭',
@@ -16,7 +20,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       period: '中長',
       themes: ['AI 伺服器', '先進製程'],
     },
-    '2382': {
+    2382: {
       strategy: '成長股',
       industry: 'AI/伺服器',
       leader: '小龍頭',
@@ -38,7 +42,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
     it('should build dossiers with config object', () => {
       const dossiers = buildHoldingDossiers({
         holdings: mockHoldings,
-        targets: { '2330': { reports: [] } },
+        targets: { 2330: { reports: [] } },
       })
 
       expect(dossiers).toHaveLength(2)
@@ -63,7 +67,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         stockMeta: mockStockMeta,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
+      const tsmc = dossiers.find((d) => d.code === '2330')
       expect(tsmc.stockMeta).toBeDefined()
       expect(tsmc.stockMeta.strategy).toBe('成長股')
       expect(tsmc.stockMeta.industry).toBe('半導體')
@@ -75,7 +79,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         stockMeta: mockStockMeta,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
+      const tsmc = dossiers.find((d) => d.code === '2330')
       expect(tsmc.stockMeta.themes).toContain('AI 伺服器')
       expect(tsmc.stockMeta.themes).toContain('先進製程')
     })
@@ -86,13 +90,13 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         stockMeta: {},
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
+      const tsmc = dossiers.find((d) => d.code === '2330')
       expect(tsmc.stockMeta).toBeNull()
     })
 
     it('should handle partial stockMeta', () => {
       const partialMeta = {
-        '2330': mockStockMeta['2330'],
+        2330: mockStockMeta['2330'],
         // 2382 is missing
       }
 
@@ -101,8 +105,8 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         stockMeta: partialMeta,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
-      const quanta = dossiers.find(d => d.code === '2382')
+      const tsmc = dossiers.find((d) => d.code === '2330')
+      const quanta = dossiers.find((d) => d.code === '2382')
 
       expect(tsmc.stockMeta).toBeDefined()
       expect(quanta.stockMeta).toBeNull()
@@ -125,7 +129,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
   describe('other dossier fields', () => {
     it('should attach targets to dossiers', () => {
       const mockTargets = {
-        '2330': { reports: [{ firm: '高盛', target: 700 }] },
+        2330: { reports: [{ firm: '高盛', target: 700 }] },
       }
 
       const dossiers = buildHoldingDossiers({
@@ -133,13 +137,13 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         targets: mockTargets,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
+      const tsmc = dossiers.find((d) => d.code === '2330')
       expect(tsmc.targets).toHaveLength(1)
     })
 
     it('should attach fundamentals to dossiers', () => {
       const mockFundamentals = {
-        '2330': { revenueMonth: '2000 億', revenueYoY: 15 },
+        2330: { revenueMonth: '2000 億', revenueYoY: 15 },
       }
 
       const dossiers = buildHoldingDossiers({
@@ -147,22 +151,20 @@ describe('dossierUtils - buildHoldingDossiers', () => {
         fundamentals: mockFundamentals,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
+      const tsmc = dossiers.find((d) => d.code === '2330')
       expect(tsmc.fundamentals.revenueMonth).toBe('2000 億')
     })
 
     it('should filter events by stock code', () => {
-      const mockEvents = [
-        { id: 'evt-001', date: '2026-04-15', title: '法說會', stocks: ['2330'] },
-      ]
+      const mockEvents = [{ id: 'evt-001', date: '2026-04-15', title: '法說會', stocks: ['2330'] }]
 
       const dossiers = buildHoldingDossiers({
         holdings: mockHoldings,
         newsEvents: mockEvents,
       })
 
-      const tsmc = dossiers.find(d => d.code === '2330')
-      const quanta = dossiers.find(d => d.code === '2382')
+      const tsmc = dossiers.find((d) => d.code === '2330')
+      const quanta = dossiers.find((d) => d.code === '2382')
 
       expect(tsmc.events).toHaveLength(1)
       expect(quanta.events).toHaveLength(0)
@@ -202,10 +204,7 @@ describe('dossierUtils - buildHoldingDossiers', () => {
             },
           ],
           cashFlow: [{ operatingCF: 62000, investingCF: -18000, financingCF: -9000 }],
-          shareholding: [
-            { foreignShareRatio: 72.5 },
-            { foreignShareRatio: 71.8 },
-          ],
+          shareholding: [{ foreignShareRatio: 72.5 }, { foreignShareRatio: 71.8 }],
         },
         freshness: { fundamentals: 'fresh', targets: 'fresh', events: 'tracking' },
       }
@@ -229,6 +228,37 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       expect(compact).toContain('現金流')
       expect(compact).toContain('外資持股')
       expect(compact.length).toBeLessThan(verbose.length)
+    })
+  })
+
+  describe('event review compact context', () => {
+    it('injects compact knowledge when stockMeta exists', () => {
+      const dossier = {
+        code: '2330',
+        name: '台積電',
+        position: { qty: 1000, cost: 550, price: 952, pnl: 402000, pct: 73.09 },
+        stockMeta: mockStockMeta['2330'],
+      }
+
+      const compact = buildResearchHoldingDossierContext(dossier, { compact: true })
+
+      expect(compact).toContain('台積電(2330)')
+      expect(compact).toContain('知識:')
+    })
+
+    it('keeps compact event-review context stable when stockMeta is missing', () => {
+      const dossier = {
+        code: '2330',
+        name: '台積電',
+        position: { qty: 1000, cost: 550, price: 952, pnl: 402000, pct: 73.09 },
+        stockMeta: null,
+      }
+
+      const compact = buildResearchHoldingDossierContext(dossier, { compact: true })
+
+      expect(compact).toContain('台積電(2330)')
+      expect(typeof compact).toBe('string')
+      expect(compact.length).toBeGreaterThan(0)
     })
   })
 })

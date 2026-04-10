@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, Badge } from '../common'
+import { Card, Button, Badge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
 
 const lbl = {
@@ -1023,6 +1023,7 @@ export function DailyReportPanel({
   expandedStock: _expandedStock,
   setExpandedStock: _setExpandedStock,
   strategyBrain: _strategyBrain,
+  operatingContext = null,
 }) {
   // Feedback handler - stores to localStorage
   function handleFeedback(signal) {
@@ -1049,6 +1050,7 @@ export function DailyReportPanel({
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     // Morning note (always shown when available)
     h(MorningNoteSection, { morningNote }),
 
@@ -1101,6 +1103,28 @@ export function DailyReportPanel({
             },
           },
           analyzing ? analyzeStep || '分析中...' : '重新分析今日收盤'
+        ),
+        h(
+          Button,
+          {
+            onClick: (ev) => {
+              ev.stopPropagation()
+              setTab('research')
+            },
+            style: {
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: `1px solid ${alpha(C.teal, '2a')}`,
+              background: alpha(C.teal, '12'),
+              color: C.teal,
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: 8,
+            },
+          },
+          '前往深度研究'
         ),
 
         dailyExpanded &&

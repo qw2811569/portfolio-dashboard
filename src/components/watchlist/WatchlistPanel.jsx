@@ -1,6 +1,6 @@
 import { createElement as h, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, ConfirmDialog } from '../common'
+import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
 
 const bgTints = [C.card, C.cardBlue, C.cardAmber]
 const inputStyle = {
@@ -813,6 +813,7 @@ export function WatchlistPanel({
   onUpsertItem,
   handleWatchlistDelete,
   formatEventStockOutcomeLine: _formatEventStockOutcomeLine,
+  operatingContext = null,
 }) {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
@@ -851,6 +852,7 @@ export function WatchlistPanel({
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     h(ConfirmDialog, {
       open: Boolean(pendingDeleteItem),
       title: '刪除觀察股',

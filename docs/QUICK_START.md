@@ -20,11 +20,19 @@ npm run smoke:ui
 
 ---
 
+## Runtime 真相
+
+- 目前真正執行入口：`src/main.jsx -> src/App.jsx`
+- `src/App.jsx` 是薄 orchestrator，實際 wiring 在 `useAppRuntime.js` + `AppShellFrame.jsx`
+- `src/App.routes.jsx` 是 route migration shell，不是今天的 production runtime
+- canonical local origin：`http://127.0.0.1:3002`
+
 ## 檔案結構（快速版）
 
 ```
 src/
-├── App.jsx              # 主 orchestrator (~5,062 行)
+├── App.jsx              # production runtime 入口（薄 orchestrator）
+├── App.routes.jsx       # route migration shell（非主入口）
 ├── hooks/               # runtime / state lifecycle
 ├── components/          # UI 元件 (12 個群組)
 ├── lib/                 # 純邏輯與 brain runtime
@@ -33,10 +41,10 @@ src/
 
 目前最重要的 runtime hooks：
 
-- `usePortfolioManagement`
-- `usePortfolioDerivedData`
-- `usePortfolioBootstrap`
-- `usePortfolioPersistence`
+- `useAppRuntime`
+- `useAppRuntimeWorkflows`
+- `useAppRuntimeCoreLifecycle`
+- `useAppRuntimePortfolioDerivedData`
 
 ---
 
@@ -59,7 +67,8 @@ src/
 
 - 優先改 `lib/*`、`hooks/*`、`components/*`
 - 只有跨 tab orchestration、使用者流程接線、最終 panel 組裝才優先改 `App.jsx`
-- 完整本地模式只認 `vercel dev`
+- 完整本地模式優先 `vercel dev`
+- 若只跑 `npm run dev`，也應維持 `127.0.0.1:3002`，不要漂去其他 origin
 
 ```javascript
 // 優先在 lib/hooks 落邏輯

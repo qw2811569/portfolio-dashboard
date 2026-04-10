@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
-import { Card, Button } from '../common'
+import { Card, Button, OperatingContextCard } from '../common'
 
 const lbl = {
   fontSize: 10,
@@ -274,6 +274,8 @@ export function NewsAnalysisPanel({
   expandedNews,
   setReviewingEvent,
   createDefaultReviewForm,
+  operatingContext = null,
+  onNavigateDaily = () => {},
 }) {
   const NE = newsEvents || []
   const past = NE.filter((e) => e.status === 'closed' || e.status === 'past').sort(
@@ -287,6 +289,7 @@ export function NewsAnalysisPanel({
   return h(
     'div',
     null,
+    h(OperatingContextCard, { context: operatingContext }),
     // Empty state
     !hasAnyEvents &&
       h(
@@ -326,9 +329,7 @@ export function NewsAnalysisPanel({
         h(
           Button,
           {
-            onClick: () => {
-              /* navigate to daily tab handled by parent */
-            },
+            onClick: onNavigateDaily,
             style: {
               padding: '10px 24px',
               borderRadius: 8,
@@ -341,7 +342,7 @@ export function NewsAnalysisPanel({
               boxShadow: C.shadow,
             },
           },
-          '🔍 開始收盤分析'
+          '🔍 前往收盤分析'
         )
       ),
 

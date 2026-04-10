@@ -7,6 +7,7 @@
 - session 層：看得到每個 agent terminal 的即時輸出
 - task 層：讀 workspace 內的 machine-readable 任務檔，顯示目前該做什麼
 - dispatch 層：可以把 task 一鍵派給對應 agent，而不是只手動輸入訊息
+- verify 層：task 可以附上 completion evidence，避免一派工就被當成已完成
 
 ## 支援 Agents
 
@@ -130,6 +131,18 @@ curl -X PATCH http://localhost:9527/api/tasks/wave-4-startup-trace \
   -H 'Content-Type: application/json' \
   -d '{"status":"in_progress"}'
 
+# 以 verify gate 完成任務
+curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/complete \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "evidence": {
+      "changedFiles": ["src/hooks/usePortfolioBootstrap.js"],
+      "verificationRuns": ["bun run lint", "bun scripts/ui-smoke.cjs"],
+      "risksNoted": ["route shell parity still not complete"],
+      "nextStep": "finish Wave 3 route-gap audit"
+    }
+  }'
+
 # 派工給對應 agent
 curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
   -H 'Content-Type: application/json' \
@@ -152,12 +165,19 @@ curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
 - `assignedSessionId`
 - `lastDispatchedAt`
 - `dispatchCount`
+- `evidence.changedFiles`
+- `evidence.verificationRuns`
+- `evidence.risksNoted`
+- `evidence.nextStep`
+- `completedAt`
+- `consensusState`
 
 v1 原則：
 
 - 不把 terminal buffer 混進 task state
 - 不假裝 `sendText()` 等於任務完成
 - 不把 route shell / live runtime 的判斷藏在 prompt 裡，要寫回 task source file
+- `/complete` 走 soft verify gate：需要 evidence，但一般 `PATCH` 仍保留 draft / override 彈性
 
 ## 結合 Telegram（進階）
 

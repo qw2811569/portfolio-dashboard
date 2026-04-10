@@ -312,6 +312,21 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
+  .task-verify {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .task-verify.open { color: var(--text-2); }
+  .task-verify.draft { color: #f3c96b; }
+  .task-verify.pending_consensus { color: #7fd4ff; }
+  .task-verify.verified { color: #6be4a1; }
+
   .task-actions {
     display: flex;
     gap: 8px;
@@ -947,6 +962,19 @@ function taskDispatchLabel(task) {
   return '無可用 agent';
 }
 
+function taskVerificationLabel(task) {
+  switch (task.verificationState) {
+    case 'verified':
+      return '已驗證';
+    case 'pending_consensus':
+      return '待共識';
+    case 'draft':
+      return '草稿完成';
+    default:
+      return '未驗證';
+  }
+}
+
 function renderTaskBoard() {
   const tasks = [...state.tasks.values()].sort((a, b) => {
     const statusRank = { in_progress: 0, pending: 1, blocked: 2, completed: 3 };
@@ -970,7 +998,21 @@ function renderTaskBoard() {
   taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
 
   taskBoardScroll.innerHTML = tasks.map(task => {
-    const dispatchable = Boolean(task.recommendedSessionId || task.assignedSessionId);
+    const dispatchable =
+      task.status !== 'completed' && Boolean(task.recommendedSessionId || task.assignedSessionId);
+    const evidenceSummary = [];
+    if (Array.isArray(task.evidence?.changedFiles) && task.evidence.changedFiles.length > 0) {
+      evidenceSummary.push(`改檔 ${task.evidence.changedFiles.length}`);
+    }
+    if (
+      Array.isArray(task.evidence?.verificationRuns) &&
+      task.evidence.verificationRuns.length > 0
+    ) {
+      evidenceSummary.push(`驗證 ${task.evidence.verificationRuns.length}`);
+    }
+    if (Array.isArray(task.evidence?.risksNoted) && task.evidence.risksNoted.length > 0) {
+      evidenceSummary.push(`風險 ${task.evidence.risksNoted.length}`);
+    }
     return `
       <div class="task-card" data-task-id="${escapeHtml(task.id)}" data-status="${escapeHtml(task.status)}">
         <div class="task-meta">
@@ -980,6 +1022,10 @@ function renderTaskBoard() {
         <div class="task-title">${escapeHtml(task.title)}</div>
         <div class="task-summary">${escapeHtml(task.summary || '')}</div>
         <div class="task-ref">${escapeHtml(task.sourcePlanRef || '')}</div>
+        <div class="task-verify ${escapeHtml(task.verificationState || 'open')}">
+          <span>${taskVerificationLabel(task)}</span>
+          <span>${escapeHtml(evidenceSummary.join(' · ') || '尚未附證據')}</span>
+        </div>
         <div class="task-actions">
           <button class="task-dispatch" data-task-dispatch="${escapeHtml(task.id)}" ${dispatchable ? '' : 'disabled'}>
             ${taskDispatchLabel(task)}

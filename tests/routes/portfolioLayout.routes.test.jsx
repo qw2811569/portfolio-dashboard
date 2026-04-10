@@ -192,8 +192,12 @@ describe('routes/PortfolioLayout', () => {
       )
 
       expect(screen.getByTestId('route-shell-root')).toHaveAttribute('data-route-shell', 'true')
+      expect(screen.getByTestId('route-shell-root')).toHaveAttribute(
+        'data-route-shell-limited',
+        'true'
+      )
       expect(screen.getByTestId('route-shell-notice')).toHaveTextContent(
-        '路由頁面仍屬遷移殼層，正式 runtime 仍以主 AppShell 為準。'
+        '路由頁面仍屬遷移殼層，部分操作只會停留在 route-local 狀態，不會同步回主 AppShell。'
       )
 
       await waitFor(() => {

@@ -5,7 +5,8 @@ import { ConfirmDialog } from '../components/common/Dialogs.jsx'
 import { useAppConfirmationDialog } from '../hooks/useAppConfirmationDialog.js'
 import { useRoutePortfolioRuntime } from '../hooks/useRoutePortfolioRuntime.js'
 
-const ROUTE_SHELL_NOTICE = '路由頁面仍屬遷移殼層，正式 runtime 仍以主 AppShell 為準。'
+const ROUTE_SHELL_NOTICE =
+  '路由頁面仍屬遷移殼層，部分操作只會停留在 route-local 狀態，不會同步回主 AppShell。'
 
 export function PortfolioLayout() {
   const { headerProps, outletContext: baseOutletContext } = useRoutePortfolioRuntime()
@@ -31,6 +32,7 @@ export function PortfolioLayout() {
     {
       style: { minHeight: '100vh' },
       'data-route-shell': 'true',
+      'data-route-shell-limited': 'true',
       'data-testid': 'route-shell-root',
     },
     h(

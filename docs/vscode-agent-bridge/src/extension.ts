@@ -64,6 +64,14 @@ interface AgentSession {
 
 type TaskStatus = 'pending' | 'in_progress' | 'blocked' | 'completed';
 type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+type TaskConsensusState = 'none' | 'pending' | 'approved' | 'rejected';
+
+interface TaskEvidence {
+  changedFiles: string[];
+  verificationRuns: string[];
+  risksNoted: string[];
+  nextStep: string;
+}
 
 interface BridgeTask {
   id: string;
@@ -80,6 +88,9 @@ interface BridgeTask {
   assignedSessionId: string | null;
   lastDispatchedAt: number | null;
   dispatchCount: number;
+  evidence: TaskEvidence;
+  completedAt: number | null;
+  consensusState: TaskConsensusState;
   createdAt: number;
   updatedAt: number;
 }
@@ -347,6 +358,28 @@ function normalizeOptionalTimestamp(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+function parseConsensusState(value: unknown): TaskConsensusState {
+  switch (value) {
+    case 'pending':
+    case 'approved':
+    case 'rejected':
+      return value;
+    default:
+      return 'none';
+  }
+}
+
+function normalizeTaskEvidence(value: unknown, current?: TaskEvidence): TaskEvidence {
+  const raw = value && typeof value === 'object' ? (value as Partial<TaskEvidence>) : {};
+
+  return {
+    changedFiles: normalizeStringArray(raw.changedFiles ?? current?.changedFiles),
+    verificationRuns: normalizeStringArray(raw.verificationRuns ?? current?.verificationRuns),
+    risksNoted: normalizeStringArray(raw.risksNoted ?? current?.risksNoted),
+    nextStep: normalizeOptionalText(raw.nextStep ?? current?.nextStep),
+  };
+}
+
 function normalizeTask(
   raw: Partial<BridgeTask> & { id?: unknown; preferredAgentId?: unknown },
   current?: BridgeTask
@@ -387,6 +420,14 @@ function normalizeTask(
       typeof raw.dispatchCount === 'number' && Number.isFinite(raw.dispatchCount)
         ? raw.dispatchCount
         : current?.dispatchCount ?? 0,
+    evidence: normalizeTaskEvidence((raw as { evidence?: unknown }).evidence, current?.evidence),
+    completedAt:
+      normalizeOptionalTimestamp((raw as { completedAt?: unknown }).completedAt) ??
+      current?.completedAt ??
+      null,
+    consensusState: parseConsensusState(
+      (raw as { consensusState?: unknown }).consensusState ?? current?.consensusState
+    ),
     createdAt:
       (typeof raw.createdAt === 'number' && Number.isFinite(raw.createdAt) ? raw.createdAt : null) ??
       current?.createdAt ??
@@ -453,6 +494,16 @@ function findRecommendedSessionForTask(task: BridgeTask): AgentSession | null {
 
 function serializeTask(task: BridgeTask) {
   const recommendedSession = findRecommendedSessionForTask(task);
+  const hasEvidence =
+    task.evidence.changedFiles.length > 0 && task.evidence.verificationRuns.length > 0;
+  const verificationState =
+    task.status !== 'completed'
+      ? 'open'
+      : !hasEvidence
+        ? 'draft'
+        : task.consensusState === 'approved'
+          ? 'verified'
+          : 'pending_consensus';
 
   return {
     id: task.id,
@@ -471,6 +522,10 @@ function serializeTask(task: BridgeTask) {
     recommendedSessionName: recommendedSession?.terminalName ?? null,
     dispatchCount: task.dispatchCount,
     lastDispatchedAt: task.lastDispatchedAt,
+    evidence: task.evidence,
+    completedAt: task.completedAt,
+    consensusState: task.consensusState,
+    verificationState,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,
   };
@@ -514,6 +569,43 @@ function upsertTask(raw: Partial<BridgeTask> & { id?: unknown; preferredAgentId?
   persistTasks();
   broadcast({ type: current ? 'task:updated' : 'task:created', task: serializeTask(next) });
   return next;
+}
+
+function completeTask(
+  taskId: string,
+  raw: Partial<BridgeTask> & { evidence?: unknown; consensusState?: unknown }
+) {
+  const current = tasks.get(taskId);
+  if (!current) {
+    return { ok: false, error: 'Task not found' };
+  }
+
+  const evidence = normalizeTaskEvidence(raw.evidence, current.evidence);
+  if (evidence.changedFiles.length === 0 || evidence.verificationRuns.length === 0) {
+    return {
+      ok: false,
+      error: 'Completion evidence requires changedFiles and verificationRuns',
+    };
+  }
+
+  const requestedConsensus = parseConsensusState(raw.consensusState);
+  const task = normalizeTask(
+    {
+      ...current,
+      ...raw,
+      id: taskId,
+      status: 'completed',
+      evidence,
+      completedAt: Date.now(),
+      consensusState: requestedConsensus === 'none' ? 'pending' : requestedConsensus,
+    },
+    current
+  );
+
+  tasks.set(taskId, task);
+  persistTasks();
+  broadcast({ type: 'task:completed', task: serializeTask(task) });
+  return { ok: true, task: serializeTask(task) };
 }
 
 function dispatchTask(taskId: string, requestedSessionId?: string) {
@@ -700,6 +792,24 @@ function startServer(context: vscode.ExtensionContext) {
       return;
     }
 
+    const completeMatch = pathname.match(/^\/api\/tasks\/([^/]+)\/complete$/);
+    if (completeMatch && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const parsed = body ? JSON.parse(body) : {};
+          const result = completeTask(decodeURIComponent(completeMatch[1]), parsed);
+          res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }));
+        }
+      });
+      return;
+    }
+
     const taskMatch = pathname.match(/^\/api\/tasks\/([^/]+)$/);
     if (taskMatch && (req.method === 'PATCH' || req.method === 'POST')) {
       let body = '';
@@ -837,6 +947,11 @@ function handleWsMessage(ws: WebSocket, msg: any) {
     case 'task:dispatch': {
       const result = dispatchTask(msg.taskId, msg.sessionId);
       ws.send(JSON.stringify({ type: 'task:dispatch:ack', ...result }));
+      break;
+    }
+    case 'task:complete': {
+      const result = completeTask(msg.taskId, msg.task ?? msg);
+      ws.send(JSON.stringify({ type: 'task:complete:ack', ...result }));
       break;
     }
     case 'task:sync':

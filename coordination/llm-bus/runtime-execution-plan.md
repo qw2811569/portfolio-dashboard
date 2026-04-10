@@ -1,6 +1,6 @@
 # Runtime Execution Plan
 
-Last updated: 2026-04-10
+Last updated: 2026-04-11
 Status: active
 Owner: Codex main session
 
@@ -142,6 +142,8 @@ Wave 3 progress:
 - `scripts/check-runtime-entry.mjs` now guards the route-shell warning markers in addition to the canonical entrypoint rules
 - `tests/routes/portfolioLayout.routes.test.jsx` now verifies the route-shell marker and warning behavior
 - `tests/hooks/useRouteDailyPage.test.jsx` now contains a negative-parity guard proving route daily still does not expose the main-runtime `operatingContext`
+- route-shell notice now explicitly says some actions remain route-local and do not sync back to the main AppShell
+- `tests/routes/routePages.actions.test.jsx` now proves route research writes local history without touching the shared reports store, reducing the illusion that route-shell actions propagate into the canonical runtime
 
 ### Wave 4: Operability and Perceived Stability
 
@@ -212,7 +214,10 @@ Wave 5 progress:
 - the VS Code extension now tracks task state alongside session state
 - dashboard can now show a compact task board and dispatch a task to the recommended agent session
 - task data can be listed, updated, dispatched, and re-synced through `/api/tasks*`
-- the dispatcher still needs a stronger verify gate and consensus-state enforcement before Wave 5 is fully done
+- Agent Bridge now supports a soft verify gate through `POST /api/tasks/:id/complete`
+- completion evidence now carries changed files, verification runs, risks noted, and next step metadata
+- completed tasks now surface `draft / 待共識 / 已驗證` style states in the dashboard instead of looking equally done
+- the dispatcher still needs a stronger consensus approval workflow before Wave 5 is fully done
 
 ## Consensus Protocol
 

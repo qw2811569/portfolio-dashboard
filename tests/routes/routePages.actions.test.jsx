@@ -14,6 +14,7 @@ import {
   VIEW_MODE_KEY,
 } from '../../src/constants.js'
 import { useBrainStore } from '../../src/stores/brainStore.js'
+import { useReportsStore } from '../../src/stores/reportsStore.js'
 import { PortfolioLayout } from '../../src/pages/PortfolioLayout.jsx'
 import { HoldingsPage } from '../../src/pages/HoldingsPage.jsx'
 import { NewsPage } from '../../src/pages/NewsPage.jsx'
@@ -137,6 +138,7 @@ describe('routes/page actions', () => {
       configurable: true,
     })
     useBrainStore.getState().reset()
+    useReportsStore.getState().reset()
   })
 
   afterEach(() => {
@@ -403,6 +405,8 @@ describe('routes/page actions', () => {
           method: 'POST',
         })
       )
+      expect(useReportsStore.getState().researchResults).toBeNull()
+      expect(useReportsStore.getState().researchHistory).toEqual([])
       expect(screen.queryByText('研究中...')).not.toBeInTheDocument()
     },
     ROUTE_ACTION_TIMEOUT

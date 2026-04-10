@@ -1,6 +1,6 @@
 # Runtime Stabilization Brief
 
-Last updated: 2026-04-10
+Last updated: 2026-04-11
 Status: active
 Goal: make the project feel operable and coherent when the user opens the web app, instead of "loads but feels broken"
 
@@ -51,6 +51,54 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 - Qwen:
   - route pages rely on route-local context and local storage writes, so they can appear to work while not updating the main runtime
   - existing route tests mostly validate modal flow + localStorage writes, not cross-runtime propagation
+
+## Active Decision: Wave 3 Route-Shell Trust Cues
+
+We needed to decide whether the next route-shell patch should disable behavior or tighten the negative-parity evidence around route-local actions.
+
+### Decision result
+
+- Claude:
+  - chose stronger negative-parity guards over disabling behavior immediately
+  - highlighted the route research action test as the sharpest edge because it looks like a successful end-to-end integration while proving only local storage writes
+- Gemini:
+  - not reliable this round because of quota/capacity churn
+  - prior user-feel feedback still pointed at making limitations more visible, not more magical
+
+### Applied result
+
+- route-shell notice now explicitly warns that some actions stay route-local and do not sync back to the main AppShell
+- route shell root now also carries `data-route-shell-limited="true"` for clearer machine/browser tracing
+- `tests/routes/routePages.actions.test.jsx` now proves route research history stays route-local and does not touch the shared reports store
+- verification passed:
+  - `bunx vitest run tests/routes/portfolioLayout.routes.test.jsx tests/routes/routePages.actions.test.jsx`
+  - `bun run lint`
+  - `bun scripts/ui-smoke.cjs`
+
+## Active Decision: Wave 5 Soft Verify Gate
+
+We needed the smallest Agent Bridge patch that would make task completion less hand-wavy without breaking the current dispatcher flow.
+
+### Decision result
+
+- Qwen:
+  - chose a soft verify gate instead of hard global enforcement
+  - required completion evidence with changed files and verification runs, but recommended keeping generic `PATCH` available for draft / override paths
+
+### Applied result
+
+- Agent Bridge tasks now support:
+  - `evidence.changedFiles`
+  - `evidence.verificationRuns`
+  - `evidence.risksNoted`
+  - `evidence.nextStep`
+  - `completedAt`
+  - `consensusState`
+- added `POST /api/tasks/:id/complete` and matching WebSocket `task:complete`
+- dashboard now distinguishes open tasks from `草稿完成`, `待共識`, and `已驗證`
+- verification passed:
+  - `npm run compile` in `docs/vscode-agent-bridge`
+  - `coordination/llm-bus/agent-bridge-tasks.json` parse check
 
 ## Active Decision: Wave 4 Startup Stabilization
 

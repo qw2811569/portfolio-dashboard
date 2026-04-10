@@ -96,6 +96,7 @@ const pickHeaderPnlTone = (value) => pickPnlTone(value, C)
 export function useAppRuntime() {
   const {
     ready,
+    bootstrapState,
     holdings,
     targets,
     fundamentals,
@@ -444,6 +445,7 @@ export function useAppRuntime() {
   return composeAppShellFrameRuntime({
     ready,
     loadingMessage: APP_LOADING_MESSAGE,
+    loadingState: bootstrapState,
     headerBoundaryCopy: APP_ERROR_BOUNDARY_COPY.header,
     headerProps,
     panelsData: portfolioPanelsData,

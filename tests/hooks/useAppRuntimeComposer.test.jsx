@@ -311,6 +311,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
     const runtime = composeAppShellFrameRuntime({
       ready: true,
       loadingMessage: '載入中',
+      loadingState: { phase: 'ready', title: 'ok', detail: 'done' },
       headerBoundaryCopy: { title: 't', description: 'd' },
       headerProps,
       panelsData: { a: 1 },
@@ -333,6 +334,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
     })
 
     expect(runtime.headerProps).toBe(headerProps)
+    expect(runtime.loadingState.title).toBe('ok')
     expect(runtime.panelsProps.tab).toBe('holdings')
     expect(runtime.confirmDialogProps.open).toBe(true)
   })

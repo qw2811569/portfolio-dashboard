@@ -2,9 +2,11 @@ import { useRef, useState } from 'react'
 import { OWNER_PORTFOLIO_ID, PORTFOLIO_VIEW_MODE } from '../constants.js'
 import { createEmptyBrainValidationStore } from '../lib/brainRuntime.js'
 import { clonePortfolioNotes } from '../lib/portfolioUtils.js'
+import { APP_BOOTSTRAP_LOADING_STATE } from '../lib/appMessages.js'
 
 export function useAppRuntimeState() {
   const [ready, setReady] = useState(false)
+  const [bootstrapState, setBootstrapState] = useState(() => APP_BOOTSTRAP_LOADING_STATE)
 
   const [holdings, setHoldings] = useState(null)
   const [tradeLog, setTradeLog] = useState(null)
@@ -43,6 +45,7 @@ export function useAppRuntimeState() {
 
   const runtimeState = {
     ready,
+    bootstrapState,
     holdings,
     watchlist,
     newsEvents,
@@ -63,6 +66,7 @@ export function useAppRuntimeState() {
 
   const runtimeSetters = {
     setReady,
+    setBootstrapState,
     setCloudSync,
     setHoldings,
     setTradeLog,
@@ -96,6 +100,7 @@ export function useAppRuntimeState() {
 
   return {
     ready,
+    bootstrapState,
     holdings,
     tradeLog,
     targets,

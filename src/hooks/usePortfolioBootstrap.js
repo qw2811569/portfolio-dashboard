@@ -1,13 +1,77 @@
 import { useEffect } from 'react'
 import { CLOUD_SYNC_TTL, OWNER_PORTFOLIO_ID } from '../constants.js'
+import { APP_BOOTSTRAP_PHASE_COPY } from '../lib/appMessages.js'
+import { captureClientDiagnostic } from '../lib/runtimeLogger.js'
+
+const BOOTSTRAP_RUN_COUNTER_KEY = '__PORTFOLIO_BOOTSTRAP_RUN_COUNTER__'
 
 function ensureArray(value) {
   return Array.isArray(value) ? value : []
 }
 
+function getNow() {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now()
+  }
+  return Date.now()
+}
+
+function getBootstrapRunId() {
+  if (typeof window === 'undefined') return 1
+  const next = Number(window[BOOTSTRAP_RUN_COUNTER_KEY] || 0) + 1
+  window[BOOTSTRAP_RUN_COUNTER_KEY] = next
+  return next
+}
+
+function markPerformance(label) {
+  if (typeof performance === 'undefined' || typeof performance.mark !== 'function') return
+  performance.mark(label)
+}
+
+function measurePerformance(label, startMark, endMark) {
+  if (typeof performance === 'undefined' || typeof performance.measure !== 'function') return
+  try {
+    performance.measure(label, startMark, endMark)
+  } catch {
+    // best-effort diagnostics only
+  }
+}
+
+function updateBootstrapState(setBootstrapState, runId, phase, elapsedMs) {
+  const copy = APP_BOOTSTRAP_PHASE_COPY[phase] || APP_BOOTSTRAP_PHASE_COPY.starting
+  setBootstrapState({
+    phase,
+    runId,
+    elapsedMs: Math.round(elapsedMs),
+    ...copy,
+  })
+}
+
+function captureBootstrapPhase(runId, phase, startedAt, stepStartedAt, context = {}) {
+  const elapsedMs = Math.round(getNow() - startedAt)
+  const stepDurationMs = Math.round(getNow() - stepStartedAt)
+  captureClientDiagnostic(
+    'bootstrap-phase',
+    {
+      name: 'BootstrapPhase',
+      message: APP_BOOTSTRAP_PHASE_COPY[phase]?.title || phase,
+    },
+    {
+      runId,
+      phase,
+      elapsedMs,
+      stepDurationMs,
+      ...context,
+    },
+    { emitConsole: false, level: 'warn' }
+  )
+  return elapsedMs
+}
+
 export function usePortfolioBootstrap({
   bootRuntimeRef,
   setReady,
+  setBootstrapState = () => {},
   setCloudSync,
   cloudSyncStateRef,
   setHoldings,
@@ -56,20 +120,55 @@ export function usePortfolioBootstrap({
         toPid: activePortfolioId,
       }
 
-      await migrateLegacyPortfolioStorageIfNeeded()
-      await seedJinlianchengIfNeeded()
-      const registry = await ensurePortfolioRegistry()
-      await applyTradeBackfillPatchesIfNeeded()
+      const runId = getBootstrapRunId()
+      const startedAt = getNow()
+      let previousMark = `pf-bootstrap:${runId}:start`
+      markPerformance(previousMark)
+      updateBootstrapState(setBootstrapState, runId, 'starting', 0)
 
+      const runStep = async (phase, work, context = {}) => {
+        updateBootstrapState(setBootstrapState, runId, phase, getNow() - startedAt)
+        const stepStartedAt = getNow()
+        const stepMark = `pf-bootstrap:${runId}:${phase}`
+        markPerformance(stepMark)
+        const result = await work()
+        measurePerformance(`pf-bootstrap:${runId}:${phase}`, previousMark, stepMark)
+        previousMark = stepMark
+        captureBootstrapPhase(runId, phase, startedAt, stepStartedAt, context)
+        return result
+      }
+
+      await runStep('migrate-legacy', () => migrateLegacyPortfolioStorageIfNeeded())
+      await runStep('seed-portfolio', () => seedJinlianchengIfNeeded())
+      const registry = await runStep('ensure-registry', () => ensurePortfolioRegistry())
       const pid = registry.activePortfolioId
-      const snapshot = await loadPortfolioSnapshot(pid)
+      let snapshot = await runStep('load-snapshot', () => loadPortfolioSnapshot(pid), { pid })
       if (cancelled) return
 
+      updateBootstrapState(setBootstrapState, runId, 'hydrate-shell', getNow() - startedAt)
       setPortfolios(registry.portfolios)
       setActivePortfolioId(pid)
       setViewMode(registry.viewMode)
       applyPortfolioSnapshot(snapshot)
       setReady(true)
+      captureBootstrapPhase(runId, 'hydrate-shell', startedAt, startedAt, {
+        pid,
+        holdingsCount: Array.isArray(snapshot?.holdings) ? snapshot.holdings.length : 0,
+      })
+      updateBootstrapState(setBootstrapState, runId, 'ready', getNow() - startedAt)
+
+      const postReadyBackfillStartedAt = getNow()
+      const postReadyBackfillChanges = await applyTradeBackfillPatchesIfNeeded()
+      captureBootstrapPhase(runId, 'trade-backfill-post-ready', startedAt, postReadyBackfillStartedAt, {
+        pid,
+        changed: postReadyBackfillChanges,
+        postReady: true,
+      })
+
+      if (!cancelled && postReadyBackfillChanges > 0) {
+        snapshot = await loadPortfolioSnapshot(pid)
+        applyPortfolioSnapshot(snapshot)
+      }
 
       const lastCloudSyncAt = readSyncAt('pf-cloud-sync-at')
       const shouldSyncCloud =
@@ -262,6 +361,7 @@ export function usePortfolioBootstrap({
   }, [
     bootRuntimeRef,
     setReady,
+    setBootstrapState,
     setCloudSync,
     cloudSyncStateRef,
     setHoldings,

@@ -1,13 +1,18 @@
 {
   "version": 1,
   "generatedFrom": "coordination/llm-bus/runtime-execution-plan.md",
+  "dispatchPolicy": {
+    "defaultLanes": ["codex", "claude", "qwen", "gemini"],
+    "requireConsensusForMajorChanges": true,
+    "geminiPolicy": "run-when-available-otherwise-mark-blocked"
+  },
   "tasks": [
     {
       "id": "wave-4-startup-trace",
       "title": "Trace canonical startup loading path",
       "lane": "operability",
       "owner": "codex",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "dependsOn": [],
       "writeScope": ["src/hooks/*", "src/components/*", "scripts/ui-smoke.cjs"],
@@ -20,7 +25,7 @@
       "title": "Choose smallest operability fix",
       "lane": "consensus",
       "owner": "claude",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "dependsOn": ["wave-4-startup-trace"],
       "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
@@ -33,7 +38,7 @@
       "title": "Audit remaining route-shell propagation gaps",
       "lane": "verification",
       "owner": "qwen",
-      "status": "pending",
+      "status": "in_progress",
       "priority": "medium",
       "dependsOn": [],
       "writeScope": ["tests/routes/*", "tests/hooks/useRoute*"],
@@ -46,7 +51,7 @@
       "title": "Check user-facing startup blind spots",
       "lane": "ux",
       "owner": "gemini",
-      "status": "blocked",
+      "status": "completed",
       "priority": "medium",
       "dependsOn": ["wave-4-startup-trace"],
       "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
@@ -66,6 +71,19 @@
       "sourcePlanRef": "Wave 5 / Step 1-4",
       "summary": "Add a task layer above sessions so Agent Bridge can list, assign, and dispatch structured work.",
       "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Implement the smallest task/dispatch layer that can sit on top of existing sessions without breaking the current mobile terminal workflow. Return changed files and verification."
+    },
+    {
+      "id": "wave-4-post-ready-backfill",
+      "title": "Move trade backfill out of pre-ready gate",
+      "lane": "operability",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": ["wave-4-startup-trace", "wave-4-operability-consensus"],
+      "writeScope": ["src/hooks/usePortfolioBootstrap.js", "tests/hooks/usePortfolioBootstrap.test.jsx"],
+      "sourcePlanRef": "Wave 4 / Step 4",
+      "summary": "Keep the new boot shell, but move trade backfill into post-ready maintenance and refresh the live snapshot if the patch mutates persisted data.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Move applyTradeBackfillPatchesIfNeeded() out of the pre-ready gate, then refresh the live runtime snapshot before cloud holdings adoption if the patch reports changes. Return: changed files, regression coverage, and before/after ready timings."
     }
   ]
 }

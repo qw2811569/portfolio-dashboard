@@ -6,6 +6,7 @@ export function useAppRuntimeCoreArgs({ state, setters, ui, runtime, refs, helpe
     },
     setters: {
       setReady: setters.setReady,
+      setBootstrapState: setters.setBootstrapState,
       setCloudSync: setters.setCloudSync,
       setHoldings: setters.setHoldings,
       setTradeLog: setters.setTradeLog,

@@ -29,6 +29,12 @@ describe('components/AppShellFrame.jsx', () => {
       <AppShellFrame
         ready={false}
         loadingMessage="載入中..."
+        loadingState={{
+          phase: 'load-snapshot',
+          title: '正在載入本機投組',
+          detail: '讀取持倉、事件與分析快照',
+          elapsedMs: 2200,
+        }}
         headerBoundaryCopy={{ title: 'header', description: 'desc' }}
         headerProps={{}}
         panelsData={{}}
@@ -38,7 +44,9 @@ describe('components/AppShellFrame.jsx', () => {
       />
     )
 
-    expect(screen.getByText('載入中...')).toBeInTheDocument()
+    expect(screen.getByText('正在載入本機投組')).toBeInTheDocument()
+    expect(screen.getByText('讀取持倉、事件與分析快照')).toBeInTheDocument()
+    expect(screen.getByText('PORTFOLIO OS')).toBeInTheDocument()
   })
 
   it('renders header, panels and confirm dialog when ready', () => {
@@ -46,6 +54,7 @@ describe('components/AppShellFrame.jsx', () => {
       <AppShellFrame
         ready
         loadingMessage="載入中..."
+        loadingState={null}
         headerBoundaryCopy={{ title: 'header', description: 'desc' }}
         headerProps={{ tab: 'holdings' }}
         panelsData={{}}

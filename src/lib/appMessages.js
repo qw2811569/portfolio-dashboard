@@ -6,6 +6,51 @@ export const APP_CONFIRM_DEFAULTS = {
 
 export const APP_LOADING_MESSAGE = '載入中...'
 
+export const APP_BOOTSTRAP_LOADING_STATE = {
+  phase: 'starting',
+  title: '正在啟動投組工作台',
+  detail: '正在讀取本機投組與工作鏈，首次載入可能需要幾秒。',
+}
+
+export const APP_BOOTSTRAP_PHASE_COPY = {
+  starting: {
+    title: '正在啟動投組工作台',
+    detail: '先準備主畫面與本機資料來源，避免直接掉進空白狀態。',
+  },
+  'migrate-legacy': {
+    title: '正在整理舊版資料',
+    detail: '確認舊版 key 是否需要搬移到目前的投組儲存格式。',
+  },
+  'seed-portfolio': {
+    title: '正在確認預設投組',
+    detail: '檢查示範組合與必要初始資料是否已就位。',
+  },
+  'ensure-registry': {
+    title: '正在讀取投組索引',
+    detail: '建立目前可用的投組清單、作用中的帳戶與檢視模式。',
+  },
+  'trade-backfill': {
+    title: '正在校正交易回補',
+    detail: '把必要的交易補丁套回本機資料，避免後續持倉錯位。',
+  },
+  'trade-backfill-post-ready': {
+    title: '背景校正交易回補',
+    detail: '主畫面已先就緒，背景會補齊必要的交易修正與同步資料。',
+  },
+  'load-snapshot': {
+    title: '正在載入本機投組',
+    detail: '讀取持倉、事件、分析與研究快照，準備主畫面所需資料。',
+  },
+  'hydrate-shell': {
+    title: '正在啟動主畫面',
+    detail: '本機資料已就緒，正在把主畫面接回同一套 runtime。',
+  },
+  ready: {
+    title: '主畫面已就緒',
+    detail: '接下來才會補做雲端同步與背景更新，不再阻塞首屏。',
+  },
+}
+
 export const APP_ERROR_BOUNDARY_COPY = {
   header: {
     title: '頂部控制列',

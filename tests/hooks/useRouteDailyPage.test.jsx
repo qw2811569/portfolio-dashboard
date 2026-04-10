@@ -104,4 +104,12 @@ describe('hooks/useRouteDailyPage.js', () => {
     expect(result.current.expandedNews).toBeInstanceOf(Set)
     expect(result.current.expandedNews.size).toBe(0)
   })
+
+  it('does not expose main-runtime operating context parity props', () => {
+    setupDefaults()
+
+    const { result } = renderHook(() => useRouteDailyPage())
+
+    expect(result.current.operatingContext).toBeUndefined()
+  })
 })

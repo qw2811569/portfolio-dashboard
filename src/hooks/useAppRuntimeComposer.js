@@ -197,6 +197,7 @@ export function useAppLifecycleRuntimeComposer({
   applyPortfolioSnapshot,
   portfolioTransitionRef,
   setReady,
+  setBootstrapState,
   setCloudSync,
   setHoldings,
   setTargets,
@@ -262,6 +263,7 @@ export function useAppLifecycleRuntimeComposer({
     portfolioBootstrapArgs: {
       bootRuntimeRef,
       setReady,
+      setBootstrapState,
       setCloudSync,
       cloudSyncStateRef,
       setHoldings,
@@ -678,6 +680,7 @@ export function composeAppHeaderProps({
 export function composeAppShellFrameRuntime({
   ready,
   loadingMessage,
+  loadingState,
   headerBoundaryCopy,
   headerProps,
   panelsData,
@@ -689,6 +692,7 @@ export function composeAppShellFrameRuntime({
   return {
     ready,
     loadingMessage,
+    loadingState,
     headerBoundaryCopy,
     headerProps,
     panelsData,

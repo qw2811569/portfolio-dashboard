@@ -11,6 +11,7 @@ Owner: Codex main session
 - When a step is completed, convert it to strikethrough instead of deleting it.
 - When scope changes or new work appears, append it to the relevant section in this file.
 - Major architecture or workflow decisions must go through multi-LLM consensus before implementation.
+- Multi-LLM delegation is the default, not an optional reminder: each meaningful wave should open Codex + Claude + Qwen lanes, and Gemini too when quota is available.
 
 ## Mission
 
@@ -47,18 +48,16 @@ Make the project feel like one coherent operating system instead of disconnected
 
 - Codex:
   - owner: live runtime coherence and containment integration
-  - current task: expand from Wave 2 into Wave 3 by identifying the smallest route-shell containment guard that does not widen product scope
+  - current task: Wave 4 startup trace and integration
 - Claude:
-  - owner: route-shell architecture audit
-  - latest useful output: choose isolation over fake parity; add route-shell markers and warnings before doing any shared-language convergence
-  - status: temporarily occupied by user-driven work outside this lane; latest usable vote already captured
+  - owner: architecture / consensus lane
+  - default responsibility: every major wave must ask Claude for boundary/tradeoff review before landing the patch
 - Qwen:
-  - owner: route-shell test gap audit
-  - current task: identify route tests that only validate route-local state / localStorage without proving any main-runtime propagation
-  - latest useful output: priority gap is `daily -> shared`, followed by `news review -> shared events`, then `research history / analyst reports -> shared runtime`
+  - owner: verification / mechanical gap lane
+  - default responsibility: every major wave must ask Qwen for test gap / regression / local-state risk review
 - Gemini:
-  - owner: non-blocking user blind-spot lane
-  - status: blocked by quota exhaustion; not on the critical path for the current batch
+  - owner: user blind-spot / entry confusion lane
+  - default responsibility: every major wave should ask Gemini for user-feel blind spots when quota is available; if blocked, mark explicitly and continue
 
 ### Wave 1: Cross-Page Propagation Guard
 
@@ -142,25 +141,44 @@ Wave 3 progress:
 - local dev now emits a route-shell warning when that layout mounts, making accidental work in the wrong runtime easier to notice
 - `scripts/check-runtime-entry.mjs` now guards the route-shell warning markers in addition to the canonical entrypoint rules
 - `tests/routes/portfolioLayout.routes.test.jsx` now verifies the route-shell marker and warning behavior
+- `tests/hooks/useRouteDailyPage.test.jsx` now contains a negative-parity guard proving route daily still does not expose the main-runtime `operatingContext`
 
 ### Wave 4: Operability and Perceived Stability
 
 Goal: remove the “the page looks broken when it opens” feeling.
 
-1. Trace the current startup path responsible for the long `載入中...` phase.
-2. Distinguish between:
+~~1. Trace the current startup path responsible for the long `載入中...` phase.~~
+~~2. Distinguish between:~~
    - real runtime slowness
    - avoidable initialization work
    - weak loading UX
-3. Run a consensus round on the smallest safe fix:
+~~3. Run a consensus round on the smallest safe fix:~~
    - performance first
    - loading experience first
    - or a mixed approach
-4. Implement the smallest stabilization patch and re-measure.
+~~4. Implement the smallest stabilization patch and re-measure.~~
 
 Definition of done:
 
 - Opening the app no longer creates the immediate impression that it is stuck or half-broken.
+
+Wave 4 result:
+
+- added bootstrap-phase diagnostics in `usePortfolioBootstrap` so startup is measurable instead of anecdotal
+- replaced the naked full-screen `載入中...` gate with a staged boot shell in `AppShellFrame`
+- measured the real pre-ready bottleneck:
+  - initial probe: `ready` around `4457ms`
+  - culprit: `applyTradeBackfillPatchesIfNeeded()` blocking pre-ready for about `3093ms`
+- ran a second consensus round with Claude / Qwen / Gemini on whether that maintenance step should move post-ready
+- moved trade backfill out of the pre-ready gate and refreshed the live snapshot if it changed holdings or trade log
+- re-measured after the patch:
+  - `ready` dropped to about `2420ms`
+  - diagnostics now show `trade-backfill-post-ready` with `changed: 1`
+- verification passed:
+  - `bunx vitest run tests/hooks/usePortfolioBootstrap.test.jsx tests/components/AppShellFrame.test.jsx tests/hooks/useRouteDailyPage.test.jsx tests/hooks/useAppRuntimeComposer.test.jsx`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
 
 ### Wave 5: Agent Bridge Dispatcher Upgrade
 

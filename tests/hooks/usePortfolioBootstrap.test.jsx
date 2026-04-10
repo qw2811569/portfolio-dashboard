@@ -28,6 +28,7 @@ function createBootstrapProps(overrides = {}) {
     bootRuntimeRef,
     portfolioTransitionRef,
     setReady: vi.fn(),
+    setBootstrapState: vi.fn(),
     setCloudSync: vi.fn(),
     cloudSyncStateRef: { current: { enabled: false, syncedAt: 0 } },
     setHoldings: vi.fn(),
@@ -113,6 +114,16 @@ describe('hooks/usePortfolioBootstrap.js', () => {
       expect(props.setCloudSync).toHaveBeenCalledWith(false)
     })
 
+    const phases = props.setBootstrapState.mock.calls.map(([value]) => value.phase)
+    expect(phases).toEqual(
+      expect.arrayContaining([
+        'starting',
+        'migrate-legacy',
+        'ensure-registry',
+        'load-snapshot',
+        'ready',
+      ])
+    )
     expect(global.fetch).not.toHaveBeenCalled()
     expect(props.bootRuntimeRef.current.applyPortfolioSnapshot).toHaveBeenCalled()
     expect(props.cloudSyncStateRef.current).toEqual({ enabled: false, syncedAt: 0 })
@@ -121,6 +132,9 @@ describe('hooks/usePortfolioBootstrap.js', () => {
       fromPid: 'p-1',
       toPid: 'p-1',
     })
+    expect(props.setReady.mock.invocationCallOrder[0]).toBeLessThan(
+      props.applyTradeBackfillPatchesIfNeeded.mock.invocationCallOrder[0]
+    )
   })
 
   it('merges owner cloud payloads during full sync boot', async () => {
@@ -244,6 +258,76 @@ describe('hooks/usePortfolioBootstrap.js', () => {
     expect(props.setResearchHistory).not.toHaveBeenCalled()
     expect(props.writeSyncAt).not.toHaveBeenCalled()
     expect(props.cloudSyncStateRef.current).toEqual({ enabled: true, syncedAt: 1_000_000 })
+  })
+
+  it('reloads snapshot after post-ready trade backfill before cloud holdings adoption', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_000_000)
+
+    const applyPortfolioSnapshot = vi.fn()
+    const props = createBootstrapProps({
+      bootRuntimeRef: {
+        current: {
+          activePortfolioId: OWNER_PORTFOLIO_ID,
+          marketPriceQuotes: { 2330: { price: 950 } },
+          applyPortfolioSnapshot,
+          setPortfolios: vi.fn(),
+          setActivePortfolioId: vi.fn(),
+          setViewMode: vi.fn(),
+          portfolioTransitionRef: {
+            current: {
+              isHydrating: false,
+              fromPid: OWNER_PORTFOLIO_ID,
+              toPid: OWNER_PORTFOLIO_ID,
+            },
+          },
+        },
+      },
+      readSyncAt: vi.fn().mockReturnValue(1_000_000),
+      applyTradeBackfillPatchesIfNeeded: vi.fn().mockResolvedValue(1),
+      loadPortfolioSnapshot: vi
+        .fn()
+        .mockResolvedValueOnce({
+          holdings: [{ code: '2330', qty: 1 }],
+          tradeLog: [],
+          analysisHistory: [],
+          researchHistory: [],
+          newsEvents: [],
+          strategyBrain: null,
+          dailyReport: null,
+        })
+        .mockResolvedValueOnce({
+          holdings: [{ code: '2330', qty: 9 }],
+          tradeLog: [{ id: 'patched-trade' }],
+          analysisHistory: [],
+          researchHistory: [],
+          newsEvents: [],
+          strategyBrain: null,
+          dailyReport: null,
+        }),
+      shouldAdoptCloudHoldings: vi.fn().mockReturnValue(false),
+    })
+
+    global.fetch = vi.fn(async (input, init) => {
+      expect(String(input)).toBe('/api/brain')
+      expect(JSON.parse(init.body)).toEqual({ action: 'load-holdings' })
+      return { json: async () => ({ holdings: [{ code: '2330', qty: 5 }] }) }
+    })
+
+    renderHook(() => usePortfolioBootstrap(props))
+
+    await waitFor(() => {
+      expect(props.setCloudSync).toHaveBeenCalledWith(true)
+    })
+
+    expect(props.loadPortfolioSnapshot).toHaveBeenCalledTimes(2)
+    expect(applyPortfolioSnapshot).toHaveBeenCalledTimes(2)
+    expect(props.shouldAdoptCloudHoldings).toHaveBeenCalledWith(
+      [{ code: '2330', qty: 9 }],
+      [{ code: '2330', qty: 5 }]
+    )
+    expect(props.setReady.mock.invocationCallOrder[0]).toBeLessThan(
+      props.applyTradeBackfillPatchesIfNeeded.mock.invocationCallOrder[0]
+    )
   })
 
   it('ignores malformed cloud payloads during full sync boot', async () => {

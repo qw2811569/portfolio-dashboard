@@ -22,7 +22,8 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 
 - `vercel dev` can serve the app at `http://127.0.0.1:3002/`
 - `APP_URL=http://127.0.0.1:3002 bun run smoke:ui` passes
-- Real browser probe shows the homepage stays on `載入中...` for roughly 6 seconds before becoming interactive
+- earlier browser probe showed the homepage staying on `載入中...` for roughly 4.5-5.0 seconds before becoming interactive
+- latest browser probe after the Wave 4 patch shows `ready` around `2420ms`
 - After the main shell loads, primary tabs in the live AppShell runtime can switch:
   - `觀察股`
   - `事件`
@@ -50,6 +51,59 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 - Qwen:
   - route pages rely on route-local context and local storage writes, so they can appear to work while not updating the main runtime
   - existing route tests mostly validate modal flow + localStorage writes, not cross-runtime propagation
+
+## Active Decision: Wave 4 Startup Stabilization
+
+We needed to decide whether to stop at loading UX polish, or to move the measured blocking maintenance step out of the pre-ready gate.
+
+Measured facts:
+
+- first startup trace:
+  - `ready` around `4457ms`
+  - `trade-backfill` step duration around `3093ms`
+  - `load-snapshot` around `1ms`
+  - `ensure-registry` near `0ms`
+- this proved the bottleneck was `applyTradeBackfillPatchesIfNeeded()`, not snapshot loading
+
+### Round 1: smallest safe patch
+
+- Claude:
+  - approved instrumentation + staged boot shell + route daily negative-parity guard as the smallest safe first patch
+  - warned that maintenance work inside pre-ready must be measured explicitly, especially any network path
+- Qwen:
+  - approved the same patch
+  - asked for a readiness-vs-cloud-sync test so the app can be considered usable before background sync finishes
+- Gemini:
+  - confirmed the first user-facing failure is the almost blank `載入中...` gate
+  - supported a more explicit boot shell and said deeper perf surgery could wait for the next patch
+
+### Round 2: move trade backfill post-ready?
+
+- Claude:
+  - approved moving `applyTradeBackfillPatchesIfNeeded()` out of the pre-ready gate
+  - required a guard so cloud holdings adoption uses the refreshed snapshot after backfill, not stale pre-backfill holdings
+- Qwen:
+  - approved moving the maintenance step post-ready immediately
+  - required a regression test for the `changed > 0` path, proving the live runtime refreshes after the patch
+- Gemini:
+  - approved landing the change now
+  - noted the only user-facing risk is a brief moment of stale trade data before the background correction finishes
+
+### Applied result
+
+- added bootstrap diagnostics and a staged boot shell
+- moved `applyTradeBackfillPatchesIfNeeded()` out of the pre-ready gate
+- if the post-ready backfill changes persisted data, the live runtime now reloads the snapshot before cloud holdings adoption logic runs
+- added regression coverage for:
+  - staged boot shell rendering
+  - bootstrap phase emission
+  - route daily negative parity
+  - post-ready backfill refresh on `changed > 0`
+- verification passed:
+  - `bunx vitest run tests/hooks/usePortfolioBootstrap.test.jsx tests/components/AppShellFrame.test.jsx tests/hooks/useRouteDailyPage.test.jsx tests/hooks/useAppRuntimeComposer.test.jsx`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
 
 ## Active Questions
 

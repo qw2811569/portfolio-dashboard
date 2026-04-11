@@ -47,6 +47,7 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
+    "hard-gate:smoke": "node scripts/hard-gate-smoke.cjs",
     "watch": "tsc -watch -p ./",
     "package": "npx @vscode/vsce package --no-dependencies"
   },

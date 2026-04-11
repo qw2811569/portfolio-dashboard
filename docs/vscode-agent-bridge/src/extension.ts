@@ -115,6 +115,7 @@ const MAX_BUFFER_LINES = 500;
 const CONSENSUS_APPROVAL_QUORUM = 2;
 const TASK_STORE_KEY = 'agentBridge.tasks.v1';
 const TASK_SEED_RELATIVE_PATH = path.join('coordination', 'llm-bus', 'agent-bridge-tasks.json');
+const HARD_GATES_ENABLED = process.env.AGENT_BRIDGE_HARD_GATES === '1';
 const sessions = new Map<string, AgentSession>();
 const tasks = new Map<string, BridgeTask>();
 let wsClients: Set<WebSocket> = new Set();
@@ -442,6 +443,33 @@ function hasTaskCompletionEvidence(task: BridgeTask): boolean {
   return task.evidence.changedFiles.length > 0 && task.evidence.verificationRuns.length > 0;
 }
 
+export function requireCompletionEvidence(task: Pick<BridgeTask, 'evidence'>) {
+  const missing: string[] = [];
+
+  if (task.evidence.changedFiles.length === 0) {
+    missing.push('changedFiles');
+  }
+  if (task.evidence.verificationRuns.length === 0) {
+    missing.push('verificationRuns');
+  }
+  if (task.evidence.risksNoted.length === 0) {
+    missing.push('risksNoted');
+  }
+  if (!task.evidence.nextStep.trim()) {
+    missing.push('nextStep');
+  }
+
+  if (missing.length > 0) {
+    return {
+      ok: false as const,
+      error: 'hard-gate: missing completion evidence',
+      missing,
+    };
+  }
+
+  return { ok: true as const };
+}
+
 function sanitizeTaskMutationPayload(
   raw: Partial<BridgeTask> & { evidence?: unknown; consensusState?: unknown; consensusReviews?: unknown }
 ) {
@@ -708,25 +736,24 @@ function completeTask(
     return { ok: false, error: 'Task not found' };
   }
 
-  const evidence = normalizeTaskEvidence(raw.evidence, current.evidence);
-  if (evidence.changedFiles.length === 0 || evidence.verificationRuns.length === 0) {
-    return {
-      ok: false,
-      error: 'Completion evidence requires changedFiles and verificationRuns',
-    };
-  }
-
   const task = normalizeTask(
     {
       ...current,
       ...sanitizeTaskMutationPayload(raw),
       id: taskId,
       status: 'completed',
-      evidence,
+      evidence: normalizeTaskEvidence(raw.evidence, current.evidence),
       completedAt: Date.now(),
     },
     current
   );
+
+  if (HARD_GATES_ENABLED) {
+    const evidenceResult = requireCompletionEvidence(task);
+    if (!evidenceResult.ok) {
+      return evidenceResult;
+    }
+  }
 
   tasks.set(taskId, task);
   persistTasks();
@@ -842,6 +869,10 @@ function startServer(context: vscode.ExtensionContext) {
         tasks: tasks.size,
         clients: wsClients.size,
         workspace: vscode.workspace.name ?? 'unknown',
+        hardGates: {
+          enabled: HARD_GATES_ENABLED,
+          envVar: 'AGENT_BRIDGE_HARD_GATES',
+        },
       }));
       return;
     }
@@ -978,9 +1009,24 @@ function startServer(context: vscode.ExtensionContext) {
       req.on('end', () => {
         try {
           const parsed = body ? JSON.parse(body) : {};
+          const taskId = decodeURIComponent(taskMatch[1]);
+          const sanitized = sanitizeTaskMutationPayload(parsed);
+          if (HARD_GATES_ENABLED && parseTaskStatus(parsed.status) === 'completed') {
+            const current = tasks.get(taskId);
+            const next = normalizeTask({
+              ...sanitized,
+              id: taskId,
+            }, current);
+            const evidenceResult = requireCompletionEvidence(next);
+            if (!evidenceResult.ok) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(evidenceResult));
+              return;
+            }
+          }
           const task = upsertTask({
-            ...sanitizeTaskMutationPayload(parsed),
-            id: decodeURIComponent(taskMatch[1]),
+            ...sanitized,
+            id: taskId,
           });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, task: serializeTask(task) }));

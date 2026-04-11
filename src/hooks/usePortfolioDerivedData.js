@@ -121,6 +121,21 @@ export function usePortfolioDerivedData({
   // FinMind 數據充實：異步載入籌碼/估值/營收數據（best-effort，失敗不影響主流程）
   const [enrichedDossiers, setEnrichedDossiers] = useState(/** @type {typeof D | null} */ (null))
 
+  // Stable dependency for the enrichment effect. D itself rebuilds every time
+  // marketPriceCache ticks (price refresh), which caused the enrichment effect
+  // to cancel and restart repeatedly, never completing. Live diagnostic probe
+  // observed 7+ effect fires in 50 seconds with 0 resolutions. Keying the
+  // effect on the sorted joined code list makes it only re-fire when holdings
+  // are added or removed — not every render. Verified via playwright diag
+  // that with this dep the effect fires exactly once and resolves cleanly.
+  const codesToEnrichKey = useMemo(
+    () =>
+      D.map((d) => d.code)
+        .sort()
+        .join(','),
+    [D]
+  )
+
   useEffect(() => {
     let cancelled = false
     const codesToEnrich = D.filter((d) => !d.finmind).map((d) => d.code)
@@ -203,7 +218,8 @@ export function usePortfolioDerivedData({
     return () => {
       cancelled = true
     }
-  }, [D])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codesToEnrichKey])
 
   const dossiersToUse = enrichedDossiers ?? D
 

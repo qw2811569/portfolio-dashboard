@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react'
 import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
+import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
@@ -136,10 +137,32 @@ export function usePortfolioDerivedData({
     ).then((results) => {
       if (cancelled) return
       const fmMap = new Map(results.map((r) => [r.value.code, r.value.fm]))
-      const enriched = D.map((d) => ({
-        ...d,
-        finmind: fmMap.get(d.code) || d.finmind,
-      }))
+      const enriched = D.map((d) => {
+        const fm = fmMap.get(d.code) || d.finmind
+        const next = { ...d, finmind: fm }
+        if (!fm) return next
+        // Derive fundamentals + freshness from FinMind when available. Partial
+        // coverage (revenue only) maps to freshness='aging' which clears the
+        // missing/stale backlog without claiming fully fresh financials; full
+        // coverage maps to 'fresh'. The completeness grade is preserved in the
+        // entry note so downstream consumers can trace partial fills.
+        const mapped = mapFinMindToFundamentals(fm, { code: d.code })
+        if (!mapped) return next
+        const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
+        const derivedFundamentalFreshness = mapped.completeness === 'fresh' ? 'fresh' : 'aging'
+        const fundamentalsEntry = {
+          ...mapped.entry,
+          note: `finmind completeness=${mapped.completeness}`,
+        }
+        return {
+          ...next,
+          fundamentals: d.fundamentals || fundamentalsEntry,
+          freshness: {
+            ...existingFreshness,
+            fundamentals: existingFreshness.fundamentals || derivedFundamentalFreshness,
+          },
+        }
+      })
       setEnrichedDossiers(enriched)
     })
     return () => {

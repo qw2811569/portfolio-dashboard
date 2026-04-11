@@ -6,7 +6,6 @@ import { useWatchlistActions } from './useWatchlistActions.js'
 import {
   API_ENDPOINTS,
   buildPortfolioRoute,
-  ACTIVE_PORTFOLIO_KEY,
   MARKET_PRICE_CACHE_KEY,
   MARKET_PRICE_SYNC_KEY,
   OWNER_PORTFOLIO_ID,
@@ -14,7 +13,6 @@ import {
   PORTFOLIO_ALIAS_TO_SUFFIX,
   PORTFOLIOS_KEY,
   PORTFOLIO_VIEW_MODE,
-  VIEW_MODE_KEY,
 } from '../constants.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
 import {
@@ -651,8 +649,7 @@ export function useRoutePortfolioRuntime() {
   const switchPortfolio = useCallback(
     (nextPortfolioId) => {
       if (!nextPortfolioId) return
-      void save(ACTIVE_PORTFOLIO_KEY, nextPortfolioId)
-      void save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE)
+      warnBlockedRouteWrite('switchPortfolio:session-save')
       navigate(buildPortfolioRoute(nextPortfolioId))
     },
     [navigate]
@@ -669,12 +666,12 @@ export function useRoutePortfolioRuntime() {
   }, [])
 
   const openOverview = useCallback(() => {
-    void save(VIEW_MODE_KEY, OVERVIEW_VIEW_MODE)
+    warnBlockedRouteWrite('openOverview:view-mode-save')
     navigate('/overview')
   }, [navigate])
 
   const exitOverview = useCallback(() => {
-    void save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE)
+    warnBlockedRouteWrite('exitOverview:view-mode-save')
     navigate(buildPortfolioRoute(routePortfolioId))
   }, [navigate, routePortfolioId])
 

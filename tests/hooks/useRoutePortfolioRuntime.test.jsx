@@ -43,7 +43,7 @@ vi.mock('../../src/hooks/useWatchlistActions.js', () => ({
   }),
 }))
 
-import { PORTFOLIOS_KEY } from '../../src/constants.js'
+import { ACTIVE_PORTFOLIO_KEY, PORTFOLIOS_KEY, VIEW_MODE_KEY } from '../../src/constants.js'
 import { useRoutePortfolioRuntime } from '../../src/hooks/useRoutePortfolioRuntime.js'
 import { renderHook } from '@testing-library/react'
 
@@ -195,6 +195,92 @@ describe('hooks/useRoutePortfolioRuntime.js', () => {
       expect(result.current.headerProps.portfolioEditor.isOpen).toBe(true)
       expect(result.current.headerProps.portfolioEditor.submitting).toBe(false)
       expect(navigateMock).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Wave 3 Step 4 follow-up: navigation mutators are save-blocked, navigate kept', () => {
+    function installWriteSpies() {
+      const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      return { setItemSpy, warnSpy }
+    }
+
+    it('switchPortfolio does not write ACTIVE_PORTFOLIO_KEY/VIEW_MODE_KEY but still navigates', () => {
+      const { result } = renderHook(() => useRoutePortfolioRuntime())
+      const { setItemSpy, warnSpy } = installWriteSpies()
+      navigateMock.mockClear()
+      setItemSpy.mockClear()
+
+      act(() => {
+        result.current.headerProps.switchPortfolio('p-test')
+      })
+
+      const blockedKeys = setItemSpy.mock.calls
+        .map(([key]) => key)
+        .filter((key) => key === ACTIVE_PORTFOLIO_KEY || key === VIEW_MODE_KEY)
+      expect(blockedKeys).toEqual([])
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+      expect(navigateMock).toHaveBeenCalledWith(expect.stringContaining('p-test'))
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\[route-shell\] write blocked: switchPortfolio/)
+      )
+    })
+
+    it('switchPortfolio with empty portfolio id is a safe no-op', () => {
+      const { result } = renderHook(() => useRoutePortfolioRuntime())
+      const { setItemSpy, warnSpy } = installWriteSpies()
+      navigateMock.mockClear()
+      setItemSpy.mockClear()
+      warnSpy.mockClear()
+
+      act(() => {
+        result.current.headerProps.switchPortfolio('')
+      })
+
+      expect(setItemSpy).not.toHaveBeenCalled()
+      expect(navigateMock).not.toHaveBeenCalled()
+      expect(warnSpy).not.toHaveBeenCalled()
+    })
+
+    it('openOverview does not write VIEW_MODE_KEY but still navigates to /overview', () => {
+      const { result } = renderHook(() => useRoutePortfolioRuntime())
+      const { setItemSpy, warnSpy } = installWriteSpies()
+      navigateMock.mockClear()
+      setItemSpy.mockClear()
+
+      act(() => {
+        result.current.headerProps.openOverview()
+      })
+
+      const blockedKeys = setItemSpy.mock.calls
+        .map(([key]) => key)
+        .filter((key) => key === VIEW_MODE_KEY)
+      expect(blockedKeys).toEqual([])
+      expect(navigateMock).toHaveBeenCalledWith('/overview')
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\[route-shell\] write blocked: openOverview/)
+      )
+    })
+
+    it('exitOverview does not write VIEW_MODE_KEY but still navigates back to the portfolio route', () => {
+      const { result } = renderHook(() => useRoutePortfolioRuntime())
+      const { setItemSpy, warnSpy } = installWriteSpies()
+      navigateMock.mockClear()
+      setItemSpy.mockClear()
+
+      act(() => {
+        result.current.headerProps.exitOverview()
+      })
+
+      const blockedKeys = setItemSpy.mock.calls
+        .map(([key]) => key)
+        .filter((key) => key === VIEW_MODE_KEY)
+      expect(blockedKeys).toEqual([])
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+      expect(navigateMock).toHaveBeenCalledWith(expect.stringContaining('me'))
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\[route-shell\] write blocked: exitOverview/)
+      )
     })
   })
 })

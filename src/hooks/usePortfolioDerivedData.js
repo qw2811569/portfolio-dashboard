@@ -516,25 +516,26 @@ export function usePortfolioDerivedData({
 
   const dataRefreshRows = useMemo(
     () =>
-      D.map((dossier) => {
-        const targetStatus = dossier?.freshness?.targets || 'missing'
-        const fundamentalStatus = dossier?.freshness?.fundamentals || 'missing'
-        const severity =
-          (targetStatus === 'missing' ? 2 : targetStatus === 'stale' ? 1 : 0) +
-          (fundamentalStatus === 'missing' ? 2 : fundamentalStatus === 'stale' ? 1 : 0)
-        return {
-          code: dossier.code,
-          name: dossier.name,
-          targetStatus,
-          fundamentalStatus,
-          severity,
-          targetUpdatedAt: dossier.targets?.updatedAt || null,
-          fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
-        }
-      })
+      dossiersToUse
+        .map((dossier) => {
+          const targetStatus = dossier?.freshness?.targets || 'missing'
+          const fundamentalStatus = dossier?.freshness?.fundamentals || 'missing'
+          const severity =
+            (targetStatus === 'missing' ? 2 : targetStatus === 'stale' ? 1 : 0) +
+            (fundamentalStatus === 'missing' ? 2 : fundamentalStatus === 'stale' ? 1 : 0)
+          return {
+            code: dossier.code,
+            name: dossier.name,
+            targetStatus,
+            fundamentalStatus,
+            severity,
+            targetUpdatedAt: dossier.targets?.updatedAt || null,
+            fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
+          }
+        })
         .filter((item) => item.severity > 0)
         .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code))),
-    [D]
+    [dossiersToUse]
   )
 
   const todayRefreshKey = getTaipeiClock(new Date()).marketDate

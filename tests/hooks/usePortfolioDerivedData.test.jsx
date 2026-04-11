@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the two external module-level imports
@@ -12,6 +12,7 @@ vi.mock('../../src/lib/reportRefreshRuntime.js', () => ({
 
 import { usePortfolioDerivedData } from '../../src/hooks/usePortfolioDerivedData.js'
 import { buildReportRefreshCandidates } from '../../src/lib/reportRefreshRuntime.js'
+import { fetchStockDossierData } from '../../src/lib/dataAdapters/finmindAdapter.js'
 
 // ---------------------------------------------------------------------------
 // Shared helpers/constants stubs
@@ -319,6 +320,72 @@ describe('usePortfolioDerivedData', () => {
       expect(result.current.urgentCount).toBe(1)
       expect(result.current.todayAlertSummary).toContain('台積電')
       expect(result.current.todayAlertSummary).toContain('法說')
+    })
+  })
+
+  describe('FinMind enrichment flows into dataRefreshRows', () => {
+    it('clears fundamentals severity on a holding after FinMind enrichment resolves', async () => {
+      // Full FinMind fixture — revenue + financials + balance sheet all present.
+      // Mapper should classify this as 'fresh' and set freshness.fundamentals='fresh'.
+      // Use mockResolvedValue (not Once) so every enrichment effect re-run returns
+      // the fixture and state converges on enriched.
+      fetchStockDossierData.mockResolvedValue({
+        revenue: [
+          {
+            date: '2026-03-31',
+            revenueMonth: 3,
+            revenueYear: 2026,
+            revenue: 1000000,
+            revenueYoY: 12.5,
+            revenueMoM: -2.3,
+          },
+        ],
+        financials: [
+          {
+            date: '2025-12-31',
+            EPS: 8.25,
+            Revenue: 850000,
+            GrossProfit: 450000,
+            NetIncome: 200000,
+          },
+        ],
+        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+      })
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      // Initial render — both targets and fundamentals are 'missing' in the raw dossier,
+      // severity is 4, so the row is in the backlog.
+      const initialRow = result.current.dataRefreshRows.find((r) => r.code === '2330')
+      expect(initialRow).toBeDefined()
+      expect(initialRow.fundamentalStatus).toBe('missing')
+      expect(initialRow.severity).toBe(4)
+
+      // Wait for the async enrichment effect to resolve and for dataRefreshRows
+      // to reflect the enriched dossier. THIS IS THE REGRESSION GUARD: if
+      // dataRefreshRows reads from D instead of dossiersToUse, the
+      // fundamentalStatus will stay 'missing' forever even though the enrichment
+      // effect correctly wrote to enrichedDossiers.
+      await waitFor(
+        () => {
+          const row = result.current.dataRefreshRows.find((r) => r.code === '2330')
+          expect(row?.fundamentalStatus).toBe('fresh')
+        },
+        { timeout: 2000 }
+      )
+
+      // Targets are still missing (no RSS+AI refresh in this test), so severity
+      // should drop from 4 to 2 — fundamentals cleared, targets still contributing.
+      const enrichedRow = result.current.dataRefreshRows.find((r) => r.code === '2330')
+      expect(enrichedRow.fundamentalStatus).toBe('fresh')
+      expect(enrichedRow.severity).toBe(2)
     })
   })
 })

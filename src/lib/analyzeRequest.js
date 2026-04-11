@@ -1,3 +1,46 @@
+// @ts-check
+
+/**
+ * @typedef {{
+ *   detail?: string,
+ *   error?: string,
+ *   content?: Array<{ text?: string | null }>,
+ * }} AnalyzeJsonPayload
+ */
+
+/**
+ * @typedef {{
+ *   ok?: boolean,
+ *   status?: number,
+ *   body?: unknown,
+ *   headers?: { get?: ((name: string) => string | null | undefined) | undefined } | null,
+ *   clone?: (() => { text: () => Promise<string> }) | null,
+ *   text?: (() => Promise<string>) | null,
+ *   json: () => Promise<AnalyzeJsonPayload>,
+ * }} AnalyzeResponseLike
+ */
+
+/**
+ * @typedef {{
+ *   requestBody: unknown,
+ *   fetchImpl?: (input: string, init?: RequestInit) => Promise<AnalyzeResponseLike>,
+ *   streamUrl?: string,
+ *   fallbackUrl?: string,
+ *   timeoutMs?: number,
+ *   consumeStream: (
+ *     response: AnalyzeResponseLike,
+ *     handlers: {
+ *       onMeta: (meta: unknown) => void,
+ *       onDelta: (delta: unknown) => void,
+ *     }
+ *   ) => Promise<string>,
+ *   onMeta?: (meta: unknown) => void,
+ *   onDelta?: (delta: unknown) => void,
+ *   onFallback?: (error: unknown) => void,
+ *   localRuntime?: boolean,
+ * }} RequestAnalyzeWithFallbackOptions
+ */
+
 export const ANALYZE_REQUEST_TIMEOUT_MS = 55_000
 
 export function createAnalyzeTimeoutSignal(timeoutMs = ANALYZE_REQUEST_TIMEOUT_MS) {
@@ -19,6 +62,9 @@ function isTimeoutLikeText(text = '') {
     .includes('TIMEOUT')
 }
 
+/**
+ * @param {AnalyzeResponseLike | null | undefined} response
+ */
 export function isAnalyzeStreamResponse(response) {
   return Boolean(
     response?.ok &&
@@ -27,6 +73,9 @@ export function isAnalyzeStreamResponse(response) {
   )
 }
 
+/**
+ * @param {AnalyzeResponseLike | null | undefined} response
+ */
 async function readResponseText(response) {
   const clone = response?.clone?.()
   if (clone) {
@@ -35,8 +84,12 @@ async function readResponseText(response) {
   return response?.text?.().catch(() => '') || ''
 }
 
+/**
+ * @param {AnalyzeResponseLike} response
+ */
 export async function buildAnalyzeHttpError(response) {
   const responseTextPromise = readResponseText(response)
+  /** @type {AnalyzeJsonPayload | null} */
   let payload = null
 
   try {
@@ -55,6 +108,9 @@ export async function buildAnalyzeHttpError(response) {
   return new Error(text.slice(0, 120) || `AI 分析失敗 (${response?.status || 'unknown'})`)
 }
 
+/**
+ * @param {AnalyzeResponseLike} response
+ */
 export async function parseAnalyzeJsonResponse(response) {
   const responseTextPromise = readResponseText(response)
 
@@ -80,6 +136,9 @@ function isLocalDev() {
   }
 }
 
+/**
+ * @param {RequestAnalyzeWithFallbackOptions} options
+ */
 export async function requestAnalyzeWithFallback({
   requestBody,
   fetchImpl = globalThis.fetch,
@@ -99,6 +158,10 @@ export async function requestAnalyzeWithFallback({
     throw new Error('Analyze stream consumer unavailable')
   }
 
+  /**
+   * @param {AbortSignal} signal
+   * @returns {RequestInit}
+   */
   const requestInit = (signal) => ({
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -110,6 +173,7 @@ export async function requestAnalyzeWithFallback({
 
   // 本地開發跳過 streaming（vercel dev 不支援 SSE）
   if (!local) {
+    /** @type {unknown | null} */
     let streamError = null
     const streamAttempt = createAnalyzeTimeoutSignal(timeoutMs)
     try {

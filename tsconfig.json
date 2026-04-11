@@ -1,3 +1,10 @@
+// Main TypeScript lane: checks only src/**/*.ts and src/**/*.tsx (currently about one real source file).
+// It does not check the repo's src/**/*.js or src/**/*.jsx surface (currently about 184 files).
+// That blind spot is intentional here because a global JS flip would surface thousands of errors at once.
+// Incremental JS opt-in lives in tsconfig.checkjs.json.
+// To opt a JS file in: add // @ts-check and whitelist it in tsconfig.checkjs.json.
+// Keep the main lane narrow; grow the JS lane deliberately in small verified waves.
+// Execution plan reference: coordination/llm-bus/runtime-execution-plan.md.
 {
   "compilerOptions": {
     "target": "ES2022",

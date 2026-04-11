@@ -323,6 +323,42 @@ describe('usePortfolioDerivedData', () => {
     })
   })
 
+  describe('targets freshness from buildHoldingDossiers', () => {
+    it('clears targets severity at initial render when holding has a recent seed report', () => {
+      const now = new Date()
+      const recentDate = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, '/')
+      // Use the real buildHoldingDossiers (not the stub) by providing holdingDossiers
+      // with freshness already computed — this simulates what the real function
+      // produces when given seed target reports.
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+            helpers: {
+              ...stubHelpers(),
+              buildHoldingDossiers: vi.fn(({ holdings }) =>
+                holdings.map((item) => ({
+                  code: item.code,
+                  name: item.name,
+                  targets: [{ firm: '元大', target: 700, date: recentDate }],
+                  freshness: { targets: 'fresh', fundamentals: 'fresh' },
+                }))
+              ),
+            },
+          })
+        )
+      )
+
+      const row = result.current.dataRefreshRows.find((r) => r.code === '2330')
+      // Severity 0 means the row never made it into the backlog at all.
+      expect(row).toBeUndefined()
+    })
+  })
+
   describe('FinMind enrichment flows into dataRefreshRows', () => {
     it('clears fundamentals severity on a holding after FinMind enrichment resolves', async () => {
       // Full FinMind fixture — revenue + financials + balance sheet all present.

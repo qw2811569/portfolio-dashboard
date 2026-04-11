@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
+import { computeFreshnessGrade } from '../lib/dateUtils.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
@@ -149,17 +150,30 @@ export function usePortfolioDerivedData({
         const mapped = mapFinMindToFundamentals(fm, { code: d.code })
         if (!mapped) return next
         const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
-        const derivedFundamentalFreshness = mapped.completeness === 'fresh' ? 'fresh' : 'aging'
         const fundamentalsEntry = {
           ...mapped.entry,
           note: `finmind completeness=${mapped.completeness}`,
         }
+        const resolvedFundamentals = d.fundamentals || fundamentalsEntry
+        // Freshness comes from the entry's updatedAt timestamp via the shared
+        // date-based grade helper. This respects completeness implicitly:
+        // a partial entry that pulled fresh revenue data is still 'fresh'
+        // because it was computed just now. Stale local entries (manual RSS+AI
+        // path) age out naturally through the same grading thresholds.
+        const derivedFundamentalFreshness = computeFreshnessGrade(
+          [resolvedFundamentals?.updatedAt],
+          { now: new Date() }
+        )
+        const nextFreshness =
+          existingFreshness.fundamentals && existingFreshness.fundamentals !== 'missing'
+            ? existingFreshness.fundamentals
+            : derivedFundamentalFreshness
         return {
           ...next,
-          fundamentals: d.fundamentals || fundamentalsEntry,
+          fundamentals: resolvedFundamentals,
           freshness: {
             ...existingFreshness,
-            fundamentals: existingFreshness.fundamentals || derivedFundamentalFreshness,
+            fundamentals: nextFreshness,
           },
         }
       })

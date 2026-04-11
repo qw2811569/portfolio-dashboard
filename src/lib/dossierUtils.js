@@ -1,4 +1,5 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
+import { computeFreshnessGrade } from './dateUtils.js'
 import { getEventStockCodes } from './eventUtils.js'
 import {
   shouldDebugFinMindPromptCoverage,
@@ -411,18 +412,33 @@ export function buildHoldingDossiers(input, options = {}) {
   } = config
 
   const rows = Array.isArray(holdings) ? holdings : []
-  return rows.map((holding) => ({
-    code: holding.code,
-    name: holding.name,
-    position: holding,
-    targets: targets[holding.code]?.reports || [],
-    fundamentals: fundamentals[holding.code] || null,
-    analystReports: analystReports[holding.code]?.items || [],
-    events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
-    research: researchHistory.filter((r) => r.code === holding.code),
-    stockMeta: stockMeta[holding.code] || null,
-    finmind: null, // 由 usePortfolioDerivedData 異步充實
-  }))
+  const now = new Date()
+  return rows.map((holding) => {
+    const targetReports = targets[holding.code]?.reports || []
+    const fundamentalsEntry = fundamentals[holding.code] || null
+    const targetDates = targetReports.map((report) => report?.date)
+    const targetsFreshness = computeFreshnessGrade(targetDates, { now })
+    const fundamentalsFreshness = computeFreshnessGrade(
+      fundamentalsEntry ? [fundamentalsEntry.updatedAt] : [],
+      { now }
+    )
+    return {
+      code: holding.code,
+      name: holding.name,
+      position: holding,
+      targets: targetReports,
+      fundamentals: fundamentalsEntry,
+      analystReports: analystReports[holding.code]?.items || [],
+      events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
+      research: researchHistory.filter((r) => r.code === holding.code),
+      stockMeta: stockMeta[holding.code] || null,
+      finmind: null, // 由 usePortfolioDerivedData 異步充實
+      freshness: {
+        targets: targetsFreshness,
+        fundamentals: fundamentalsFreshness,
+      },
+    }
+  })
 }
 
 export function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {

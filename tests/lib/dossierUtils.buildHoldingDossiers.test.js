@@ -126,6 +126,119 @@ describe('dossierUtils - buildHoldingDossiers', () => {
     })
   })
 
+  describe('freshness derivation', () => {
+    function daysAgoSlashDate(days) {
+      const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      return `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`
+    }
+
+    it('sets freshness.targets = fresh when the latest report is within 30 days', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(10) }] } },
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+    })
+
+    it('sets freshness.targets = aging when the latest report is 31-90 days old', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(60) }] } },
+      })
+      expect(dossiers[0].freshness.targets).toBe('aging')
+    })
+
+    it('sets freshness.targets = stale when the latest report is 91-120 days old', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: {
+          2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(100) }] },
+        },
+      })
+      expect(dossiers[0].freshness.targets).toBe('stale')
+    })
+
+    it('classifies >120-day-old reports as stale (Codex tiebreaker: old-but-present stays stale)', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: {
+          2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(200) }] },
+        },
+      })
+      expect(dossiers[0].freshness.targets).toBe('stale')
+    })
+
+    it('sets freshness.targets = missing when the holding has no target reports', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('missing')
+    })
+
+    it('ignores malformed date strings when picking the latest report', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: {
+          2330: {
+            reports: [
+              { firm: '元大', target: 700, date: '2026/13/01' },
+              { firm: '富邦', target: 650, date: daysAgoSlashDate(5) },
+            ],
+          },
+        },
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+    })
+
+    it('picks the most recent report when multiple valid dates are present', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        targets: {
+          2330: {
+            reports: [
+              { firm: '元大', target: 700, date: daysAgoSlashDate(100) },
+              { firm: '富邦', target: 720, date: daysAgoSlashDate(5) },
+              { firm: '凱基', target: 680, date: daysAgoSlashDate(50) },
+            ],
+          },
+        },
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+    })
+
+    it('derives freshness.fundamentals from entry.updatedAt when present', () => {
+      const recentIso = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        fundamentals: {
+          2330: {
+            revenueMonth: '2026-03',
+            revenueYoY: 12.5,
+            updatedAt: recentIso,
+          },
+        },
+      })
+      expect(dossiers[0].freshness.fundamentals).toBe('fresh')
+    })
+
+    it('sets freshness.fundamentals = missing when entry is absent', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.fundamentals).toBe('missing')
+    })
+
+    it('sets freshness.fundamentals = missing when entry has no updatedAt', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [mockHoldings[0]],
+        fundamentals: { 2330: { revenueMonth: '2026-03', revenueYoY: 12.5 } },
+      })
+      expect(dossiers[0].freshness.fundamentals).toBe('missing')
+    })
+  })
+
   describe('other dossier fields', () => {
     it('should attach targets to dossiers', () => {
       const mockTargets = {

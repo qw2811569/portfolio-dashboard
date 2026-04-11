@@ -249,6 +249,7 @@ Wave 5 progress:
 - `GET /api/status` now includes `hardGates: { enabled, envVar }` so operators can see at a glance whether hardening is live
 - break-glass mechanism: unset the env var and restart the VS Code extension — no per-request bypass by design, so all overrides are auditable at the env layer
 - new smoke script `docs/vscode-agent-bridge/scripts/hard-gate-smoke.cjs` exercises the validator (empty evidence rejected, full evidence passed, consensus 'none' rejected, consensus 'approved' passed)
+- new end-to-end harness `docs/vscode-agent-bridge/scripts/hard-gate-e2e.cjs` boots the extension in a fake-vscode shim with `AGENT_BRIDGE_HARD_GATES=1`, starts the HTTP server on port 19527, and drives real HTTP requests through `/api/status`, `POST /api/tasks`, `POST /api/tasks/:id/complete`, `POST /api/tasks/:id/consensus` to assert end-to-end: `hardGates.enabled=true` surface, empty-evidence 400 with `missing[]`, full-evidence 200, consensus-required + not-approved 409 with `reason`, and approved + full-evidence 200 after the 2-reviewer quorum is met. Complements the unit-level `hard-gate-smoke.cjs` with integration coverage of the actual HTTP wiring.
 - extension's `README.md` now has a dedicated "Hard Gates（選用強制門檻）" section documenting the opt-in behavior, both error shapes, the `/api/status` surface, and the emergency escape hatch
 
 ## Consensus Protocol

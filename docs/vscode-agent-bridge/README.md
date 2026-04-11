@@ -187,10 +187,20 @@ curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
 ### Smoke check
 
 ```bash
+# Unit-level: exercises the pure validator functions
 node docs/vscode-agent-bridge/scripts/hard-gate-smoke.cjs
+
+# End-to-end: boots the extension in a fake-vscode harness,
+# starts the HTTP server on port 19527 with AGENT_BRIDGE_HARD_GATES=1,
+# and drives GET /api/status + POST /api/tasks/:id/complete + POST
+# /api/tasks/:id/consensus with real HTTP, asserting the 200/400/409
+# responses.
+node docs/vscode-agent-bridge/scripts/hard-gate-e2e.cjs
 ```
 
-驗證 validator 的 pass/fail 判斷：空 evidence 該擋、完整 evidence 該過、consensus 未 approved 該擋、approved 該過。
+`hard-gate-smoke.cjs` 驗證 validator 的 pass/fail 判斷：空 evidence 該擋、完整 evidence 該過、consensus 未 approved 該擋、approved 該過。
+
+`hard-gate-e2e.cjs` 真的啟動 bridge HTTP server（fake vscode + `AGENT_BRIDGE_HARD_GATES=1`），跑六個情境：`/api/status` 暴露 `hardGates.enabled=true`、seed task、empty evidence → 400、full evidence → 200、`requiresConsensus` 無共識 → 409、拿到兩份 approved review 後完成 → 200。
 
 ## 任務資料模型（v1）
 

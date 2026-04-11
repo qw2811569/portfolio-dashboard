@@ -13,7 +13,6 @@ import {
   OVERVIEW_VIEW_MODE,
   PORTFOLIO_ALIAS_TO_SUFFIX,
   PORTFOLIOS_KEY,
-  PORTFOLIO_STORAGE_FIELDS,
   PORTFOLIO_VIEW_MODE,
   VIEW_MODE_KEY,
 } from '../constants.js'
@@ -54,7 +53,6 @@ import {
   clonePortfolioNotes,
   collectPortfolioBackupStorage,
   downloadJson,
-  getPortfolioFallback,
   normalizeBackupStorage,
   normalizePortfolios,
   pfKey,
@@ -74,6 +72,14 @@ import {
   normalizeHoldingDossiers,
 } from '../lib/dossierUtils.js'
 import { C } from '../theme.js'
+
+function warnBlockedRouteWrite(actionName) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[route-shell] write blocked: ${actionName}. Use the canonical AppShell to mutate data.`
+    )
+  }
+}
 
 function normalizePortfolioNotes(value) {
   return value && typeof value === 'object'
@@ -637,34 +643,10 @@ export function useRoutePortfolioRuntime() {
     [flashSaved, reloadRuntime]
   )
 
-  const createPortfolio = useCallback(
-    async (rawName) => {
-      const name = String(rawName || '').trim()
-      if (!name) return false
-
-      const newPortfolio = {
-        id: `p-${Date.now().toString(36)}`,
-        name,
-        isOwner: false,
-        createdAt: new Date().toISOString().slice(0, 10),
-      }
-      const nextPortfolios = [...portfolios, newPortfolio]
-      setPortfolios(nextPortfolios)
-      await save(PORTFOLIOS_KEY, nextPortfolios)
-      await Promise.all(
-        PORTFOLIO_STORAGE_FIELDS.map((field) =>
-          save(
-            pfKey(newPortfolio.id, field.suffix),
-            getPortfolioFallback(newPortfolio.id, field.suffix)
-          )
-        )
-      )
-      flashSaved(`✅ 已新增組合「${name}」`)
-      navigate(buildPortfolioRoute(newPortfolio.id))
-      return true
-    },
-    [flashSaved, navigate, portfolios]
-  )
+  const createPortfolio = useCallback(async () => {
+    warnBlockedRouteWrite('createPortfolio')
+    return false
+  }, [])
 
   const switchPortfolio = useCallback(
     (nextPortfolioId) => {
@@ -676,44 +658,15 @@ export function useRoutePortfolioRuntime() {
     [navigate]
   )
 
-  const renamePortfolio = useCallback(
-    async (pid, rawName) => {
-      const current = portfolios.find((portfolio) => portfolio.id === pid)
-      if (!current) return false
-      const name = String(rawName || '').trim()
-      if (!name || name === current.name) return false
-      const nextPortfolios = portfolios.map((portfolio) =>
-        portfolio.id === pid ? { ...portfolio, name } : portfolio
-      )
-      setPortfolios(nextPortfolios)
-      await save(PORTFOLIOS_KEY, nextPortfolios)
-      flashSaved(`✅ 已更新組合名稱為「${name}」`)
-      return true
-    },
-    [flashSaved, portfolios]
-  )
+  const renamePortfolio = useCallback(async () => {
+    warnBlockedRouteWrite('renamePortfolio')
+    return false
+  }, [])
 
-  const deletePortfolio = useCallback(
-    async (pid) => {
-      const current = portfolios.find((portfolio) => portfolio.id === pid)
-      if (!current || pid === OWNER_PORTFOLIO_ID) return false
-
-      PORTFOLIO_STORAGE_FIELDS.forEach((field) => {
-        localStorage.removeItem(pfKey(pid, field.suffix))
-      })
-
-      const nextPortfolios = portfolios.filter((portfolio) => portfolio.id !== pid)
-      setPortfolios(nextPortfolios)
-      await save(PORTFOLIOS_KEY, nextPortfolios)
-      flashSaved(`✅ 已刪除組合「${current.name}」`)
-
-      if (routePortfolioId === pid) {
-        navigate(buildPortfolioRoute(OWNER_PORTFOLIO_ID))
-      }
-      return true
-    },
-    [flashSaved, navigate, portfolios, routePortfolioId]
-  )
+  const deletePortfolio = useCallback(async () => {
+    warnBlockedRouteWrite('deletePortfolio')
+    return false
+  }, [])
 
   const openOverview = useCallback(() => {
     void save(VIEW_MODE_KEY, OVERVIEW_VIEW_MODE)

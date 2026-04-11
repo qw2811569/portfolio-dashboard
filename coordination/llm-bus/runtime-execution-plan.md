@@ -161,7 +161,10 @@ Wave 3 progress:
 - `tests/routes/routePages.actions.test.jsx` now proves route research writes local history without touching the shared reports store, reducing the illusion that route-shell actions propagate into the canonical runtime
 - route-shell write mutators are now **behaviorally** isolated: 20 data-write actions across 6 `useRoute*Page` hooks (daily / holdings / news / research / trade / watchlist) are replaced with no-op wrappers that emit a dev-only `[route-shell] write blocked` warning instead of silently mutating localStorage or shared stores; view-state setters (expanded, filter, sort, review draft, trade upload staging) are kept route-local by design
 - per-hook tests now assert: no localStorage write, no shared-store mutation, and dev-warning emission for each blocked mutator (`tests/hooks/useRoute*Page.test.jsx` + `tests/routes/routePages.actions.test.jsx`)
-- known scope gap: `useRoutePortfolioRuntime` still exposes header-level portfolio create/rename/delete writes; deferred to a follow-up because it is not a `useRoute*Page.js` file
+- Wave 3 Step 4 closes the header-level portfolio mutator gap: `createPortfolio`, `renamePortfolio`, and `deletePortfolio` in `useRoutePortfolioRuntime.js` are now `warnBlockedRouteWrite + return false` no-ops
+- multi-LLM consensus (Codex + Qwen + Gemini) unanimous on blocking at mutator definition instead of at `submitPortfolioEditor/Delete` level, so no surface can bypass containment
+- regression tests: `tests/hooks/useRoutePortfolioRuntime.test.jsx` asserts no setItem / removeItem / navigate on each mutator + dev warning + graceful `submitPortfolioEditor` degrade; `tests/routes/routePages.actions.test.jsx` now asserts the header modal/dialog UI flow emits the block warning and leaves `PORTFOLIOS_KEY` + combobox unchanged
+- follow-up deferred: `switchPortfolio`, `openOverview`, `exitOverview` still write `ACTIVE_PORTFOLIO_KEY` / `VIEW_MODE_KEY` to global storage; Qwen and Gemini flagged them as the next containment gap, Codex classified them as navigation rather than data mutation. Strategy: block the `save(...)` calls while keeping `navigate(...)` so route-shell URL switching still works — out of scope for this step, tracked as the next Wave 3 substep
 
 ### Wave 4: Operability and Perceived Stability
 

@@ -193,9 +193,10 @@ describe('routes/page actions', () => {
   )
 
   it(
-    'creates a portfolio through header modal without prompt()',
+    'blocks route header modal from creating a portfolio',
     async () => {
       const promptSpy = vi.spyOn(window, 'prompt')
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       renderRoute(
         <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/holdings`]}>
@@ -208,6 +209,9 @@ describe('routes/page actions', () => {
         </MemoryRouter>
       )
 
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
+
       fireEvent.click(screen.getByRole('button', { name: /新組合/ }))
       expect(screen.getByRole('dialog', { name: '建立新組合' })).toBeInTheDocument()
 
@@ -219,23 +223,27 @@ describe('routes/page actions', () => {
       expect(promptSpy).not.toHaveBeenCalled()
 
       await waitFor(() => {
-        const portfolios = JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))
-        expect(portfolios).toEqual(
-          expect.arrayContaining([expect.objectContaining({ name: '測試新組合' })])
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          expect(warnSpy).toHaveBeenCalledWith(
+            '[route-shell] write blocked: createPortfolio. Use the canonical AppShell to mutate data.'
+          )
+        }
       })
 
-      await waitFor(() => {
-        expect(screen.getByRole('combobox')).toHaveTextContent('測試新組合')
-      })
+      expect(localStorage.setItem.mock.calls.filter(([key]) => key === PORTFOLIOS_KEY)).toEqual([])
+      expect(JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))).toEqual([
+        expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '我' }),
+      ])
+      expect(screen.getByRole('combobox')).not.toHaveTextContent('測試新組合')
     },
     ROUTE_ACTION_TIMEOUT
   )
 
   it(
-    'renames a portfolio through header modal without prompt()',
+    'blocks route header modal from renaming a portfolio',
     async () => {
       const promptSpy = vi.spyOn(window, 'prompt')
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       renderRoute(
         <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/holdings`]}>
@@ -246,6 +254,9 @@ describe('routes/page actions', () => {
           </Routes>
         </MemoryRouter>
       )
+
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
 
       fireEvent.click(screen.getByRole('button', { name: '管理組合' }))
       fireEvent.click(screen.getByRole('button', { name: '改名' }))
@@ -259,25 +270,27 @@ describe('routes/page actions', () => {
       expect(promptSpy).not.toHaveBeenCalled()
 
       await waitFor(() => {
-        const portfolios = JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))
-        expect(portfolios).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '主策略帳戶' }),
-          ])
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          expect(warnSpy).toHaveBeenCalledWith(
+            '[route-shell] write blocked: renamePortfolio. Use the canonical AppShell to mutate data.'
+          )
+        }
       })
 
-      await waitFor(() => {
-        expect(screen.getByRole('combobox')).toHaveTextContent('主策略帳戶')
-      })
+      expect(localStorage.setItem.mock.calls.filter(([key]) => key === PORTFOLIOS_KEY)).toEqual([])
+      expect(JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))).toEqual([
+        expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '我' }),
+      ])
+      expect(screen.getByRole('combobox')).toHaveTextContent('我')
     },
     ROUTE_ACTION_TIMEOUT
   )
 
   it(
-    'deletes a non-owner portfolio through header dialog without confirm()',
+    'blocks route header dialog from deleting a non-owner portfolio',
     async () => {
       const confirmSpy = vi.spyOn(window, 'confirm')
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       installStorage(
         createSeedStorage({
           portfolios: [
@@ -297,6 +310,10 @@ describe('routes/page actions', () => {
         </MemoryRouter>
       )
 
+      localStorage.setItem.mockClear()
+      localStorage.removeItem.mockClear()
+      warnSpy.mockClear()
+
       fireEvent.click(screen.getByRole('button', { name: '管理組合' }))
       fireEvent.click(screen.getAllByRole('button', { name: '刪除' })[0])
       expect(screen.getByRole('dialog', { name: '刪除組合' })).toBeInTheDocument()
@@ -305,15 +322,19 @@ describe('routes/page actions', () => {
       expect(confirmSpy).not.toHaveBeenCalled()
 
       await waitFor(() => {
-        const portfolios = JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))
-        expect(portfolios).toEqual([
-          expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '我' }),
-        ])
+        if (process.env.NODE_ENV !== 'production') {
+          expect(warnSpy).toHaveBeenCalledWith(
+            '[route-shell] write blocked: deletePortfolio. Use the canonical AppShell to mutate data.'
+          )
+        }
       })
 
-      await waitFor(() => {
-        expect(screen.getByRole('combobox')).not.toHaveTextContent('成長策略')
-      })
+      expect(localStorage.setItem.mock.calls.filter(([key]) => key === PORTFOLIOS_KEY)).toEqual([])
+      expect(localStorage.removeItem).not.toHaveBeenCalled()
+      expect(JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))).toEqual([
+        expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '我' }),
+        expect.objectContaining({ id: 'p-growth', name: '成長策略' }),
+      ])
     },
     ROUTE_ACTION_TIMEOUT
   )

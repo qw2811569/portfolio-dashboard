@@ -356,7 +356,7 @@ describe('hooks/useResearchWorkflow.js', () => {
       await result.current.runResearch('single', targetStock)
     })
 
-    expect(fetchStockDossierData).toHaveBeenCalledWith('2308')
+    expect(fetchStockDossierData).toHaveBeenCalledWith('2308', {})
     expect(runResearchRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         holdingDossiers: [

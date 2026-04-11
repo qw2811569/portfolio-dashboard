@@ -50,10 +50,14 @@ if (!/`src\/App\.routes\.jsx`\s+存在，但不是目前瀏覽器載入的主入
   process.exit(1)
 }
 
-if (
-  !routeLayoutSource.includes("'data-route-shell': 'true'") ||
-  !routeLayoutSource.includes('路由頁面仍屬遷移殼層，正式 runtime 仍以主 AppShell 為準。')
-) {
+const hasRouteShellMarker = routeLayoutSource.includes("'data-route-shell': 'true'")
+const hasRouteShellScopeMarker = routeLayoutSource.includes("'data-route-shell-limited': 'true'")
+const hasRouteShellWarning =
+  routeLayoutSource.includes('路由頁面仍屬遷移殼層') &&
+  (routeLayoutSource.includes('不會同步回主 AppShell') ||
+    routeLayoutSource.includes('正式 runtime 仍以主 AppShell 為準。'))
+
+if (!hasRouteShellMarker || !hasRouteShellScopeMarker || !hasRouteShellWarning) {
   console.error(
     '[check-runtime-entry] route portfolio layout lost its migration-shell marker or warning.'
   )

@@ -1,0 +1,4 @@
+CHOICE: A
+WHY: The mount-triggered probe fires only when the user is actively looking at the panel, so it stays inside the existing workflow context and avoids burning FinMind quota in the background. Data-presence gating for all pending datasets is the same principle already endorsed for staged daily review, so the logic stays consistent and testable.
+RISKS: cooldown state lost on tab remount could re-probe too soon, false-positive FinMind confirmation triggers rerun on partial data, race condition if user manually hits `跑資料確認版` between probe and auto-run, probe adds a FinMind network call on cold mount even when T1 already exists
+TESTS: mount with preliminary same-day report fires exactly one probe, cooldown gate blocks re-probe within the window, unconfirmed probe result does NOT auto-run, confirmed probe auto-runs and writes T1 without overwriting existing T1, no probe fires when report is already `t1-confirmed`

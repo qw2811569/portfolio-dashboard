@@ -44,6 +44,7 @@ Make the project feel like one coherent operating system instead of disconnected
 - ~~Removed the old `docs/mac-mini-handoff/` bundle from the live workspace once its design intent had been distilled into the plan and brief, so future sessions cannot read stale handoff files as runtime truth.~~
 - ~~Introduced staged daily-analysis labeling so same-day reports now distinguish `收盤快版` from `資料確認版`, and same-day confirmation reruns can bypass stale FinMind cache without overwriting history.~~
 - ~~Added an inline same-day diff card so the daily panel can compare current T1 output against the previous same-day version from `analysisHistory` without extra navigation or API work.~~
+- ~~Added a cooldown-gated automatic T1 probe so opening the daily panel can auto-check FinMind readiness and auto-rerun a same-day confirmed report only when the pending datasets are actually available.~~
 
 ## Active Execution Waves
 
@@ -125,7 +126,9 @@ Wave 2 progress:
 - same-day reruns now bypass the local FinMind cache when the previous report is not yet confirmed, and `analysisHistory` keeps both T0/T1 versions instead of collapsing them to one entry per date
 - `DailyReportPanel` now shows an inline same-day diff card when a confirmed report has a previous same-day version, so users can see exactly what changed between `收盤快版` and `資料確認版`
 - `src/lib/dailyReportDiff.js` now centralizes same-day version lookup plus whitespace-tolerant diff extraction, and the new tests prove the card appears only when a real same-day pair exists
-- next queued follow-up for this lane is no longer “should we show a diff?”; it is “what is the smallest safe automatic T1 trigger now that diff-first trust is visible?”
+- opening the daily panel with a same-day `收盤快版` now performs one cooldown-gated FinMind probe; if all pending daily datasets are available, the app auto-runs `資料確認版`
+- the automatic rerun stays inside the daily panel surface, keeps the same-day diff visible, and avoids background polling or blind quota burn
+- Wave 2 is now functionally closed for this stabilization lane: the page chain is coherent, same-day confirmation is explicit, and the T0/T1 upgrade path is both visible and automatic when data is ready
 
 Wave 3 early findings:
 

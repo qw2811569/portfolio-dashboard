@@ -911,6 +911,87 @@ describe('components/AppPanels context wiring', () => {
     expect(screen.queryByText('同日版本差異')).not.toBeInTheDocument()
   })
 
+  it('auto-probes a same-day preliminary report when the daily panel mounts', async () => {
+    const maybeAutoConfirmDailyReport = vi.fn(async () => ({ status: 'waiting' }))
+
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-preliminary',
+              date: '2026/04/11',
+              time: '14:20',
+              totalTodayPnl: 18,
+              changes: [{ code: '2330', name: '台積電' }],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [],
+              needsReview: [],
+              analysisStage: 't0-preliminary',
+              analysisStageLabel: '收盤快版',
+              analysisVersion: 1,
+              finmindConfirmation: {
+                expectedMarketDate: '2026-04-11',
+                status: 'preliminary',
+                pendingCodes: ['2330'],
+              },
+            },
+            analysisHistory: [],
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis: vi.fn(),
+            maybeAutoConfirmDailyReport,
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab: vi.fn(),
+            setExpandedNews: vi.fn(),
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    await waitFor(() => expect(maybeAutoConfirmDailyReport).toHaveBeenCalledTimes(1))
+    expect(screen.getByText('自動資料確認')).toBeInTheDocument()
+  })
+
   it('routes events empty-state CTA into the daily analysis flow without auto-running API work', async () => {
     const setTab = vi.fn()
 

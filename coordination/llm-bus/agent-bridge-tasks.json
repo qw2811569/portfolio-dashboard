@@ -275,7 +275,7 @@
       "title": "Choose smallest safe automatic T1 trigger",
       "lane": "coherence",
       "owner": "codex",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "dependsOn": ["wave-2-daily-diff-card"],
       "writeScope": [
@@ -287,7 +287,47 @@
       "sourcePlanRef": "Wave 2 / post-diff automation",
       "summary": "Now that users can see the T0/T1 delta, decide the smallest safe automatic confirmation trigger that does not silently overwrite trust.",
       "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Use the new diff-first trust layer as baseline, then choose the smallest safe automatic T1 trigger policy: passive ready cue, gated auto-rerun, or another lighter option. Return consensus, risks, and the smallest patch shape.",
-      "requiresConsensus": true
+      "requiresConsensus": true,
+      "consensusReviews": [
+        {
+          "agentId": "claude",
+          "decision": "approved",
+          "summary": "Use a mount-triggered cooldown-gated probe and only auto-rerun after all pending daily datasets are confirmed."
+        },
+        {
+          "agentId": "qwen",
+          "decision": "approved",
+          "summary": "Use the existing pendingCodes metadata as the probe target and avoid a background poller."
+        },
+        {
+          "agentId": "gemini",
+          "decision": "approved",
+          "summary": "Keep the automation local to the daily panel so it adds help without wasting API work in the background."
+        }
+      ],
+      "evidence": {
+        "changedFiles": [
+          "src/hooks/useDailyAnalysisWorkflow.js",
+          "src/components/reports/DailyReportPanel.jsx",
+          "src/hooks/useAppRuntimeWorkflows.js",
+          "src/hooks/useAppRuntimeComposer.js",
+          "src/hooks/usePortfolioPanelsContextComposer.js",
+          "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
+          "tests/components/AppPanels.contexts.test.jsx",
+          "coordination/llm-bus/runs/20260411-130006/consensus.md"
+        ],
+        "verificationRuns": [
+          "bunx vitest run tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx tests/hooks/useAppRuntimeComposer.test.jsx",
+          "bun run lint",
+          "bun run build",
+          "bun scripts/ui-smoke.cjs"
+        ],
+        "risksNoted": [
+          "Cooldown is currently session-local and resets on full reload",
+          "The auto-trigger is intentionally panel-local and does not run as a background poller"
+        ],
+        "nextStep": "Stabilization backlog is clear; open a new task only if real user runtime bugs surface."
+      }
     }
   ]
 }

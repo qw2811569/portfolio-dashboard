@@ -1,0 +1,4 @@
+CHOICE: A
+WHY: The T0 report already carries machine-readable `finmindConfirmation` with `pendingCodes`, and the `DailyReportPanel` mount is the natural observation point where same-day preliminary status is visible. A single cooldown-gated FinMind probe on mount is the smallest automatic step that respects the existing "no wasted API" constraint while closing the manual-click gap.
+RISKS: duplicate API calls if the user navigates away and back before cooldown expires, probe may still hit stale data if FinMind has not published yet, adds mount-time latency to panel render, cooldown window tuning is guesswork
+TESTS: `DailyReportPanel` mount with `t0-preliminary` triggers exactly one probe within cooldown, probe skips when all datasets are already confirmed, probe respects cooldown, confirmed rerun runs automatically when `pendingCodes` resolves to empty, no probe fires for `t1-confirmed` reports, cooldown state persists across tab switches

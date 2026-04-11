@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
 import { requestAnalyzeWithFallback } from '../lib/analyzeRequest.js'
@@ -99,6 +99,15 @@ function normalizeReportDateKey(value = '') {
   return String(value || '').trim().replace(/-/g, '/')
 }
 
+const AUTO_CONFIRM_PROBE_COOLDOWN_MS = 5 * 60 * 1000
+
+function buildAutoConfirmProbeKey(report = null) {
+  return `${normalizeReportDateKey(report?.date)}:v${Math.max(
+    1,
+    Number(report?.analysisVersion) || 1
+  )}`
+}
+
 export function useDailyAnalysisWorkflow({
   analyzing = false,
   setAnalyzing = () => {},
@@ -145,6 +154,8 @@ export function useDailyAnalysisWorkflow({
   notifySaved = null,
   refreshAnalystReportsRef = { current: async () => false },
 }) {
+  const autoConfirmProbeRef = useRef(new Map())
+
   const emitSaved = useCallback(
     (message, timeout) => {
       if (typeof notifySaved === 'function') {
@@ -159,7 +170,7 @@ export function useDailyAnalysisWorkflow({
     [notifySaved, setSaved]
   )
 
-  const runDailyAnalysis = useCallback(async () => {
+  const runDailyAnalysis = useCallback(async ({ triggerSource = 'manual' } = {}) => {
     if (analyzing) return
     setAnalyzing(true)
     setAnalyzeStep(APP_STATUS_MESSAGES.dailyLoadingMarketCache)
@@ -256,7 +267,9 @@ export function useDailyAnalysisWorkflow({
         rerunReason = !existingTodayReport
           ? null
           : isFinmindConfirmed && existingTodayReport.analysisStage === 't0-preliminary'
-            ? 'finmind-confirmed'
+            ? triggerSource === 'auto-confirm'
+              ? 'finmind-auto-confirmed'
+              : 'finmind-confirmed'
             : 'manual-rerun'
 
         // Calculate FinMind data count across all dossiers
@@ -882,5 +895,116 @@ ${losers
     emitSaved,
   ])
 
-  return { runDailyAnalysis }
+  const maybeAutoConfirmDailyReport = useCallback(
+    async (currentReport) => {
+      const normalizedReport = normalizeDailyReportEntry(currentReport)
+      const todayKey = normalizeReportDateKey(toSlashDate())
+      const reportDateKey = normalizeReportDateKey(normalizedReport?.date)
+      if (!normalizedReport || normalizedReport.analysisStage !== 't0-preliminary') {
+        return { status: 'skipped', reason: 'not-preliminary' }
+      }
+      if (reportDateKey !== todayKey) {
+        return { status: 'skipped', reason: 'not-today' }
+      }
+      if (analyzing) {
+        return { status: 'skipped', reason: 'analyzing' }
+      }
+
+      const hasConfirmedSameDay = (Array.isArray(analysisHistory) ? analysisHistory : []).some(
+        (entry) =>
+          normalizeReportDateKey(entry?.date) === reportDateKey &&
+          entry?.analysisStage === 't1-confirmed'
+      )
+      if (hasConfirmedSameDay) {
+        return { status: 'skipped', reason: 'already-confirmed' }
+      }
+
+      const probeKey = buildAutoConfirmProbeKey(normalizedReport)
+      const now = Date.now()
+      const lastProbeAt = autoConfirmProbeRef.current.get(probeKey) || 0
+      if (lastProbeAt && now - lastProbeAt < AUTO_CONFIRM_PROBE_COOLDOWN_MS) {
+        return {
+          status: 'cooldown',
+          reason: 'probe-cooldown',
+          nextProbeAt: lastProbeAt + AUTO_CONFIRM_PROBE_COOLDOWN_MS,
+        }
+      }
+      autoConfirmProbeRef.current.set(probeKey, now)
+
+      const reportChanges = Array.isArray(normalizedReport?.changes) ? normalizedReport.changes : []
+      const pendingCodes = Array.from(
+        new Set(
+          (
+            Array.isArray(normalizedReport?.finmindConfirmation?.pendingCodes)
+              ? normalizedReport.finmindConfirmation.pendingCodes
+              : reportChanges.map((change) => change?.code)
+          )
+            .map((code) => String(code || '').trim())
+            .filter(Boolean)
+        )
+      )
+
+      if (pendingCodes.length === 0) {
+        await runDailyAnalysis({ triggerSource: 'auto-confirm' })
+        return { status: 'triggered', reason: 'no-pending-codes' }
+      }
+
+      const freshResults = await Promise.allSettled(
+        pendingCodes.map(async (code) => ({
+          code,
+          finmind: await fetchStockDossierData(code, { forceFresh: true }),
+        }))
+      )
+
+      const freshByCode = new Map(
+        freshResults
+          .filter((result) => result.status === 'fulfilled')
+          .map((result) => [result.value.code, result.value.finmind || null])
+      )
+
+      const probeDossiers = pendingCodes.map((code) => {
+        const base = dossierByCode.get(code)
+        const fallbackChange = reportChanges.find((change) => change?.code === code)
+        return {
+          ...(base || {}),
+          code,
+          name: base?.name || fallbackChange?.name || code,
+          finmind: freshByCode.has(code) ? freshByCode.get(code) : base?.finmind || null,
+        }
+      })
+
+      const confirmation = summarizeFinMindDailyConfirmation(
+        probeDossiers,
+        normalizedReport?.finmindConfirmation?.expectedMarketDate || todayKey.replace(/\//g, '-')
+      )
+      const fullyConfirmed =
+        confirmation.totalDatasets > 0 &&
+        confirmation.confirmedDatasets === confirmation.totalDatasets
+
+      if (!fullyConfirmed) {
+        return {
+          status: 'waiting',
+          reason: 'datasets-not-ready',
+          confirmation,
+        }
+      }
+
+      await runDailyAnalysis({ triggerSource: 'auto-confirm' })
+      return {
+        status: 'triggered',
+        reason: 'confirmed-and-reran',
+        confirmation,
+      }
+    },
+    [
+      analysisHistory,
+      analyzing,
+      dossierByCode,
+      fetchStockDossierData,
+      runDailyAnalysis,
+      toSlashDate,
+    ]
+  )
+
+  return { runDailyAnalysis, maybeAutoConfirmDailyReport }
 }

@@ -256,6 +256,51 @@ Measured facts:
   - `bun run build`
   - `bun scripts/ui-smoke.cjs`
 
+## Active Decision: Automatic T1 Confirmation Trigger
+
+We needed to decide whether the first automatic `資料確認版` trigger should be a lightweight panel-local probe, a background poller, or no auto-run at all.
+
+Measured facts:
+
+- same-day staged review and inline diff are already visible
+- the trust gap is no longer "what changed?" but "why do I still have to press the button?"
+- the previous consensus already required data-presence gating instead of time-based reruns
+
+### Decision result
+
+- Claude:
+  - chose `A` mount-triggered cooldown-gated probe
+  - reason: it keeps the trigger inside the user's active workflow context and reuses the same data-presence principle as staged review
+- Qwen:
+  - chose `A` mount-triggered cooldown-gated probe
+  - reason: the current machine-readable `finmindConfirmation.pendingCodes` already provides a deterministic and testable probe target without introducing background polling
+- Gemini:
+  - chose `A` mount-triggered cooldown-gated probe
+  - reason: it adds automation with guardrails and avoids silently burning API work in the background
+
+### Applied result
+
+- raw lane outputs archived under:
+  - `coordination/llm-bus/runs/20260411-130006/question.md`
+  - `coordination/llm-bus/runs/20260411-130006/claude.md`
+  - `coordination/llm-bus/runs/20260411-130006/qwen.md`
+  - `coordination/llm-bus/runs/20260411-130006/gemini.md`
+  - `coordination/llm-bus/runs/20260411-130006/consensus.md`
+- `useDailyAnalysisWorkflow` now exposes `maybeAutoConfirmDailyReport(...)`
+  - same-day preliminary reports are eligible
+  - probe is cooldown-gated
+  - only pending codes are force-fetched
+  - full rerun happens only after all pending daily datasets are confirmed
+- `DailyReportPanel` now:
+  - auto-probes on mount when the visible report is same-day `收盤快版`
+  - shows `自動資料確認` status while checking / waiting / cooling down
+  - labels auto-rerun results with `finmind-auto-confirmed`
+- verification passed:
+  - `bunx vitest run tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx tests/hooks/useAppRuntimeComposer.test.jsx`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
+
 ## Active Decision: Wave 1 Propagation Chain
 
 We need to choose the first cross-page propagation chain to protect with tests and the smallest safe patch set.

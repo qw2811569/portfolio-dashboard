@@ -1,4 +1,4 @@
-import { createElement as h, useMemo, useState } from 'react'
+import { createElement as h, useEffect, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, Badge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
@@ -15,6 +15,24 @@ const lbl = {
 }
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
+
+function appendKnowledgeFeedback({
+  analysisId,
+  signal,
+  date,
+  injectedKnowledgeIds = [],
+}) {
+  const log = JSON.parse(localStorage.getItem('kb-feedback-log') || '[]')
+  log.push({
+    analysisId,
+    signal,
+    timestamp: Date.now(),
+    date,
+    injectedKnowledgeIds: Array.isArray(injectedKnowledgeIds) ? injectedKnowledgeIds : [],
+  })
+  if (log.length > 200) log.splice(0, log.length - 200)
+  localStorage.setItem('kb-feedback-log', JSON.stringify(log))
+}
 
 function buildDailyStageMeta(report = null) {
   const stage = String(report?.analysisStage || '').trim()
@@ -437,6 +455,12 @@ export function AnalysisStageCard({ report }) {
         'div',
         { style: { fontSize: 9, color: C.teal, marginTop: 6 } },
         '這份分析是由同日快版升級而來，已保留先前版本供追蹤。'
+      ),
+    report.rerunReason === 'finmind-auto-confirmed' &&
+      h(
+        'div',
+        { style: { fontSize: 9, color: C.teal, marginTop: 6 } },
+        '系統在偵測到 FinMind 日終資料齊全後，已自動補跑並保留同日快版供比對。'
       )
   )
 }
@@ -602,6 +626,62 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
               '目前這次資料確認主要是把快版正式標記成確認版，內容本身沒有出現新的可感知差異。'
             )
       )
+  )
+}
+
+function buildAutoConfirmUiState(state = null) {
+  switch (state?.status) {
+    case 'checking':
+      return {
+        tone: 'olive',
+        summary: '正在檢查 FinMind 日終資料，若今天資料已齊全，系統會自動補跑資料確認版。',
+      }
+    case 'waiting':
+      return {
+        tone: 'amber',
+        summary:
+          state?.confirmation?.pendingCodes?.length > 0
+            ? `剛檢查過，仍有 ${state.confirmation.pendingCodes.length} 檔待等 FinMind 日終資料；稍後回到這頁會再自動重試。`
+            : '剛檢查過，但日終資料仍未完全確認；稍後回到這頁會再自動重試。',
+      }
+    case 'cooldown':
+      return {
+        tone: 'default',
+        summary: '剛檢查過一次，為了避免重複打 API，這一版會先暫停自動重試。',
+      }
+    case 'error':
+      return {
+        tone: 'amber',
+        summary: '自動檢查 FinMind 日終資料時發生問題，稍後回到這頁會再重試。',
+      }
+    default:
+      return null
+  }
+}
+
+function AutoConfirmCard({ state = null }) {
+  const uiState = buildAutoConfirmUiState(state)
+  if (!uiState) return null
+
+  const toneColor =
+    uiState.tone === 'olive' ? C.olive : uiState.tone === 'amber' ? C.amber : C.textMute
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${
+          uiState.tone === 'olive'
+            ? alpha(C.olive, '40')
+            : uiState.tone === 'amber'
+              ? alpha(C.amber, '40')
+              : alpha(C.textMute, '35')
+        }`,
+      },
+    },
+    h('div', { style: { ...lbl, color: toneColor } }, '自動資料確認'),
+    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, uiState.summary)
   )
 }
 
@@ -1342,28 +1422,26 @@ export function DailyReportPanel({
   newsEvents,
   setTab,
   setExpandedNews,
+  maybeAutoConfirmDailyReport,
   expandedStock: _expandedStock,
   setExpandedStock: _setExpandedStock,
   strategyBrain: _strategyBrain,
   operatingContext = null,
 }) {
+  const [autoConfirmState, setAutoConfirmState] = useState(null)
+
   // Feedback handler - stores to localStorage
   function handleFeedback(signal) {
     try {
       if (!dailyReport?.id) return
-      const log = JSON.parse(localStorage.getItem('kb-feedback-log') || '[]')
-      log.push({
+      appendKnowledgeFeedback({
         analysisId: dailyReport.id,
-        signal, // 'helpful' or 'misleading'
-        timestamp: Date.now(),
+        signal,
         date: dailyReport.date,
         injectedKnowledgeIds: Array.isArray(dailyReport.injectedKnowledgeIds)
           ? dailyReport.injectedKnowledgeIds
           : [],
       })
-      // Keep last 200 entries
-      if (log.length > 200) log.splice(0, log.length - 200)
-      localStorage.setItem('kb-feedback-log', JSON.stringify(log))
     } catch {
       // silent fail
     }
@@ -1377,6 +1455,41 @@ export function DailyReportPanel({
   }).needsReview
   const hasPendingReview = Array.isArray(liveNeedsReview) && liveNeedsReview.length > 0
   const isPreliminaryReport = dailyReport?.analysisStage === 't0-preliminary'
+
+  useEffect(() => {
+    let active = true
+    if (
+      !dailyReport ||
+      dailyReport.analysisStage !== 't0-preliminary' ||
+      typeof maybeAutoConfirmDailyReport !== 'function'
+    ) {
+      return () => {
+        active = false
+      }
+    }
+
+    Promise.resolve()
+      .then(() => {
+        if (active) setAutoConfirmState({ status: 'checking' })
+        return maybeAutoConfirmDailyReport(dailyReport)
+      })
+      .then((result) => {
+        if (!active) return
+        if (!result || result.status === 'triggered' || result.status === 'skipped') {
+          setAutoConfirmState(null)
+          return
+        }
+        setAutoConfirmState(result)
+      })
+      .catch(() => {
+        if (active) setAutoConfirmState({ status: 'error' })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [dailyReport, maybeAutoConfirmDailyReport])
+
   const navigateToNeedsReview = () => {
     if (typeof setTab === 'function') setTab('news')
     const firstId = liveNeedsReview[0]?.id
@@ -1431,6 +1544,7 @@ export function DailyReportPanel({
           }),
 
         h(AnalysisStageCard, { report: dailyReport }),
+        isPreliminaryReport && !analyzing && h(AutoConfirmCard, { state: autoConfirmState }),
         h(SameDayDiffCard, { report: dailyReport, analysisHistory }),
 
         h(DailyReportSummary, {

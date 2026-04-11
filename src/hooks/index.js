@@ -5,7 +5,6 @@
 
 export { usePortfolioManagement } from './usePortfolioManagement.js'
 export { useAppConfirmationDialog } from './useAppConfirmationDialog.js'
-export { useCloudSync } from './useCloudSync.js'
 export { useMarketData } from './useMarketData.js'
 export { useStrategyBrain } from './useStrategyBrain.js'
 export { useEvents } from './useEvents.js'

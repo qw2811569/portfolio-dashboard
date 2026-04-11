@@ -88,6 +88,44 @@ async function callClaude(system, user, maxTokens = 4000) {
   return callAiText({ system, user, maxTokens })
 }
 
+/**
+ * Type-aware strategy framework — copied verbatim from
+ * src/lib/dailyAnalysisRuntime.js so research and daily analysis speak the
+ * same numeric thresholds. Injected into every per-holding system prompt in
+ * this file (Round 1 batch scan, Round 1 single-stock loop, and the
+ * single-mode deep research paths). Portfolio-level prompts (system
+ * diagnosis, brain evolution) deliberately do NOT include it — they reason
+ * across the whole portfolio, not per-holding.
+ *
+ * Per multi-LLM consensus round (.tmp/research-prompt-fix/), the frameworks
+ * are copied verbatim rather than condensed so numeric thresholds survive
+ * drift, and the `position.type` field is already exposed via
+ * buildResearchDossierContext (`持倉：權證 | ...`) so the LLM has everything
+ * it needs to route between frameworks.
+ */
+export const TYPE_AWARE_FRAMEWORK_GUIDE = `⚠️ 持股類型框架路由（必讀）：
+不同 position.type 用不同策略框架分析，禁止一套邏輯套用全部。
+dossier 第一行「持倉：<type> | ...」已標示型別，請依型別切換下方框架。
+
+【權證策略框架】（type='權證'，不談基本面）
+- Delta 最佳區間 0.4-0.7，低於 0.3 考慮換約至價平附近
+- 到期前 30 天 Theta 加速衰減 → 提前 40 天評估滾動換約
+- 隱含波動率(IV)偏高時不追買，等 IV 回落再進場
+- 出場紀律：到達目標價分批出 1/2 → 1/4，剩餘部位設追蹤停利
+- 標的股漲但權證沒跟 → 檢查造市商報價、IV crush
+- 禁止用 PEG / EPS / 營收 YoY 等基本面指標下判斷
+
+【ETF/指數策略框架】（type='ETF' 或 '指數'）
+- 總經面向：央行政策方向、PMI趨勢、匯率走勢
+- 槓桿 ETF 波動耗損：持有超過 2 週需計算實際追蹤偏差
+- RSI >70 超買減碼、RSI <30 超賣可佈局
+- 停損紀律：正2型 ETF 虧損 >15% 必須檢討是否該停損
+- 禁止用個股 EPS / 營收 YoY 等公司級指標下判斷
+
+【股票策略框架】（type='股票'）
+- 使用原本的 thesis / 財務體質 / 催化劑 / 事件驗證點流程
+- PEG、營收月增、法人連續買超、目標價 freshness 等皆適用`
+
 async function updateResearchIndex(report) {
   const current = readLocal(RESEARCH_INDEX_KEY) || []
   const next = [report, ...current.filter((item) => item.timestamp !== report.timestamp)]
@@ -627,7 +665,9 @@ export default async function handler(req, res) {
         const singlePass = await callClaude(
           `你是專業的台股研究分析師兼持倉策略顧問。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做一輪完整深度研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
-產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}`,
+產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           `${notesContext}
 
 持股 dossier：
@@ -677,7 +717,9 @@ ${brainCtx}
         const round1 = await callClaude(
           `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
-產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}`,
+產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           `${notesContext}
 
 持股 dossier：
@@ -700,7 +742,9 @@ ${dossierContext}
           `你是台股風險評估專家，你的工作是挑戰 Round 1 的結論。
 如果 Round 1 看多，你要找出看空的理由；如果 Round 1 看空，你要找出被低估的可能。
 你的價值在於找到分析師遺漏的風險，而不是附和前一輪的結論。
-禁止使用「短期震盪不改長期趨勢」「逢低布局」「持續觀察」等模糊用語。`,
+禁止使用「短期震盪不改長期趨勢」「逢低布局」「持續觀察」等模糊用語。
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           `${notesContext}
 持股 dossier：\n${dossierContext}\n\n前一輪分析結果：\n${round1}\n\n你的任務是反駁上面的分析，請：
 1. **挑戰 Round 1 結論**：Round 1 的判斷哪裡可能是錯的？有什麼被忽略的反面證據？
@@ -714,7 +758,9 @@ ${dossierContext}
 
         const brainCtx = brain ? buildResearchBrainContext(brain) : ''
         const round3 = await callClaude(
-          `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。`,
+          `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           `${notesContext}
 持股 dossier：\n${dossierContext}\n\n基本面分析：\n${round1}\n\n風險催化劑分析：\n${round2}\n\n${brainCtx}
 股票：${s.name}(${s.code}) | 策略定位：${m.strategy}/${m.period}期/${m.position}
@@ -815,7 +861,9 @@ ${dossierContext}
           ).text || '目前沒有持股摘要。'
 
         const stockScanText = await callClaude(
-          `你是台股組合研究員。請先讀完整個持股清單 dossier，再一次快掃所有持股。回傳純 JSON 陣列，不要 markdown。`,
+          `你是台股組合研究員。請先讀完整個持股清單 dossier，再一次快掃所有持股。回傳純 JSON 陣列，不要 markdown。
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           `${notesContext}
 
 持股清單 dossier：
@@ -851,7 +899,9 @@ ${portfolioScanContext}
           const dossier = dossierByCode.get(s.code) || null
           const dossierContext = buildResearchDossierContext(dossier, { compact: true })
           const summary = await callClaude(
-            `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。`,
+            `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。
+
+${TYPE_AWARE_FRAMEWORK_GUIDE}`,
             `${notesContext}
 ${dossierContext}
 

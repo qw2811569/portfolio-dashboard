@@ -151,4 +151,192 @@ describe('lib/dataAdapters/finmindAdapter', () => {
     expect(getDatasetFromCall(0)).toBe('shareholding')
     expect(getDatasetFromCall(1)).toBe('shareholding')
   })
+
+  describe('evictEmptyFinMindCache module-load cleanup', () => {
+    it('removes poisoned empty fm-cache-* entries and preserves non-empty entries', async () => {
+      // Seed localStorage with a mix of poisoned empty and valid entries
+      const storage = new Map()
+      storage.set('fm-cache-revenue-3006', JSON.stringify({ data: [], ts: Date.now() }))
+      storage.set('fm-cache-financials-3006', JSON.stringify({ data: [], ts: Date.now() }))
+      storage.set(
+        'fm-cache-revenue-2308',
+        JSON.stringify({ data: [{ date: '2026-03-01', revenue: 1000 }], ts: Date.now() })
+      )
+      storage.set('unrelated-key', 'should-be-ignored')
+
+      const removeItemSpy = vi.fn((key) => storage.delete(key))
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+        setItem: vi.fn((key, value) => storage.set(key, value)),
+        removeItem: removeItemSpy,
+        key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+        get length() {
+          return storage.size
+        },
+      })
+
+      // Re-import the adapter to trigger module-load eviction
+      vi.resetModules()
+      await import('../../src/lib/dataAdapters/finmindAdapter.js')
+
+      expect(storage.has('fm-cache-revenue-3006')).toBe(false)
+      expect(storage.has('fm-cache-financials-3006')).toBe(false)
+      expect(storage.has('fm-cache-revenue-2308')).toBe(true)
+      expect(storage.has('unrelated-key')).toBe(true)
+    })
+  })
+
+  describe('degraded response handling (rate-limit cache poisoning fix)', () => {
+    it('does NOT write cache when the backend response is degraded:true', async () => {
+      const storage = new Map()
+      const setItemSpy = vi.fn((key, value) => storage.set(key, value))
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+        setItem: setItemSpy,
+        removeItem: vi.fn((key) => storage.delete(key)),
+        key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+        get length() {
+          return storage.size
+        },
+      })
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          degraded: true,
+          reason: 'rate_limited',
+          data: [],
+        }),
+      })
+
+      const result = await fetchShareholdingHistory('2330', 60)
+
+      expect(result).toEqual([])
+      // The cache key was NOT written — no calls with the cache key
+      const cacheWrites = setItemSpy.mock.calls.filter(([key]) =>
+        String(key).startsWith('fm-cache-')
+      )
+      expect(cacheWrites).toEqual([])
+    })
+
+    it('still caches non-degraded empty responses (genuine "no data" case)', async () => {
+      const storage = new Map()
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+        setItem: vi.fn((key, value) => storage.set(key, value)),
+        removeItem: vi.fn((key) => storage.delete(key)),
+        key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+        get length() {
+          return storage.size
+        },
+      })
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: [] }),
+      })
+
+      await fetchShareholdingHistory('2330', 60)
+
+      // A genuine non-degraded empty response is cached normally so we don't
+      // re-fetch stocks that legitimately have no shareholding history.
+      // (This mirrors pre-fix behavior for the non-degraded path.)
+      const cacheKeys = Array.from(storage.keys()).filter((k) => k.startsWith('fm-cache-'))
+      expect(cacheKeys).toHaveLength(1)
+    })
+
+    it('caps concurrent FinMind fetches at 3 global in-flight requests', async () => {
+      // Override timers that may have been set up by other tests
+      vi.useRealTimers()
+
+      // No localStorage cache — force every call to go to fetch
+      const storage = new Map()
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+        setItem: vi.fn((key, value) => storage.set(key, value)),
+        removeItem: vi.fn((key) => storage.delete(key)),
+        key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+        get length() {
+          return storage.size
+        },
+      })
+
+      let concurrent = 0
+      let peak = 0
+      const pending = []
+
+      global.fetch = vi.fn(async () => {
+        concurrent += 1
+        peak = Math.max(peak, concurrent)
+        return new Promise((resolve) => {
+          pending.push(() => {
+            concurrent -= 1
+            resolve({
+              ok: true,
+              json: async () => ({ data: [{ ok: true }] }),
+            })
+          })
+        })
+      })
+
+      // Fire 10 concurrent requests for different codes (so cache never hits)
+      const fetches = Array.from({ length: 10 }, (_, i) =>
+        fetchShareholdingHistory(`stock${i}`, 60)
+      )
+
+      // Let microtasks run so the first 3 enter fetch()
+      await new Promise((r) => setTimeout(r, 10))
+
+      expect(peak).toBeLessThanOrEqual(3)
+      expect(concurrent).toBeLessThanOrEqual(3)
+
+      // Drain: resolve all pending responses, then confirm everything completes
+      while (pending.length > 0 || concurrent > 0) {
+        const next = pending.shift()
+        if (next) next()
+        await new Promise((r) => setTimeout(r, 5))
+      }
+      await Promise.all(fetches)
+
+      // Final peak should never have exceeded 3 even after all fires
+      expect(peak).toBeLessThanOrEqual(3)
+      expect(global.fetch).toHaveBeenCalledTimes(10)
+    })
+
+    it('degraded response on one dataset does not poison the cache (retry on next call)', async () => {
+      const storage = new Map()
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+        setItem: vi.fn((key, value) => storage.set(key, value)),
+        removeItem: vi.fn((key) => storage.delete(key)),
+        key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+        get length() {
+          return storage.size
+        },
+      })
+
+      let callCount = 0
+      global.fetch = vi.fn().mockImplementation(async () => {
+        callCount += 1
+        if (callCount === 1) {
+          return {
+            ok: true,
+            json: async () => ({ success: true, degraded: true, data: [] }),
+          }
+        }
+        return {
+          ok: true,
+          json: async () => ({ success: true, data: [{ dataset: 'shareholding', real: true }] }),
+        }
+      })
+
+      const first = await fetchShareholdingHistory('2330', 60)
+      expect(first).toEqual([])
+
+      const second = await fetchShareholdingHistory('2330', 60)
+      expect(second).toEqual([{ dataset: 'shareholding', real: true }])
+      expect(global.fetch).toHaveBeenCalledTimes(2)
+    })
+  })
 })

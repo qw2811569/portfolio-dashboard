@@ -19,9 +19,81 @@
 const CACHE_PREFIX = 'fm-cache-'
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000 // 4 小時
 
+// Global in-flight limiter: without this, a cold load fans out 11 datasets ×
+// N holdings in parallel and blows past FinMind's 600/hr paid rate limit,
+// which the backend then serves as `degraded: true` + empty data. Per
+// multi-LLM consensus, cap concurrent requests at 3 globally.
+const MAX_CONCURRENT_FINMIND = 3
+let finmindInFlight = 0
+const finmindPending = []
+
+function acquireFinMindSlot() {
+  return new Promise((resolve) => {
+    if (finmindInFlight < MAX_CONCURRENT_FINMIND) {
+      finmindInFlight += 1
+      resolve()
+      return
+    }
+    finmindPending.push(resolve)
+  })
+}
+
+function releaseFinMindSlot() {
+  const next = finmindPending.shift()
+  if (next) {
+    // Another waiter takes the slot without changing in-flight count.
+    next()
+    return
+  }
+  finmindInFlight = Math.max(0, finmindInFlight - 1)
+}
+
 function getCacheKey(dataset, code) {
   return `${CACHE_PREFIX}${dataset}-${code}`
 }
+
+// One-shot eviction on module load: any fm-cache-* entry whose stored data is
+// an empty array is considered poisoned (either written during a rate-limit
+// degrade or legitimately empty from a prior run). Deleting all of them forces
+// the adapter to retry FinMind on the next call. Cheap scan — localStorage
+// key count stays well under 500 even for heavy users.
+function evictEmptyFinMindCache() {
+  try {
+    if (typeof localStorage === 'undefined') return
+    const victims = []
+    const len = localStorage.length || 0
+    for (let i = 0; i < len; i += 1) {
+      const key = localStorage.key(i)
+      if (!key || !key.startsWith(CACHE_PREFIX)) continue
+      try {
+        const raw = localStorage.getItem(key)
+        if (!raw) continue
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed?.data) && parsed.data.length === 0) {
+          victims.push(key)
+        }
+      } catch {
+        victims.push(key) // malformed entries also evicted
+      }
+    }
+    for (const key of victims) {
+      try {
+        localStorage.removeItem(key)
+      } catch {
+        /* ignore */
+      }
+    }
+    if (victims.length > 0 && typeof console !== 'undefined') {
+      console.warn(`[finmindAdapter] evicted ${victims.length} empty cache entries`)
+    }
+  } catch {
+    /* ignore — eviction is best-effort */
+  }
+}
+
+// Run eviction at module load. Safe to run in tests because it no-ops when
+// localStorage is undefined or empty.
+evictEmptyFinMindCache()
 
 function readCache(dataset, code) {
   try {
@@ -54,21 +126,36 @@ async function fetchFinMind(dataset, code, startDate, { forceFresh = false } = {
   const params = new URLSearchParams({ dataset, code })
   if (startDate) params.set('start_date', startDate)
 
-  const res = await fetch(`/api/finmind?${params}`, {
-    signal: AbortSignal.timeout(10000),
-  })
+  await acquireFinMindSlot()
+  try {
+    const res = await fetch(`/api/finmind?${params}`, {
+      signal: AbortSignal.timeout(10000),
+    })
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || `FinMind ${dataset} failed (${res.status})`)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || `FinMind ${dataset} failed (${res.status})`)
+    }
+
+    const json = await res.json()
+    const data = json.data || []
+
+    // Skip cache when the backend reports a degraded (rate-limited) response.
+    // Caching an empty degraded response would poison the cache for the full
+    // TTL window and leave the user stuck with 'missing' freshness. Returning
+    // the empty array preserves the caller contract (mapper returns null,
+    // downstream falls back to 'missing'), but the next call will retry the
+    // real API instead of serving stale empty from cache.
+    if (json.degraded === true) {
+      return data
+    }
+
+    // 寫入快取
+    writeCache(dataset, code, data)
+    return data
+  } finally {
+    releaseFinMindSlot()
   }
-
-  const json = await res.json()
-  const data = json.data || []
-
-  // 寫入快取
-  writeCache(dataset, code, data)
-  return data
 }
 
 /**

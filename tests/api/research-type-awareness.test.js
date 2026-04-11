@@ -36,6 +36,17 @@ describe('api/research.js — type-aware per-holding prompts', () => {
       expect(researchSource).toMatch(/RSI/)
       expect(researchSource).toMatch(/槓桿/)
     })
+
+    it('preserves the specific numeric thresholds from daily analysis (regression guard)', () => {
+      // 權證: Delta range, IV rollover window, 出場 ratio
+      expect(researchSource).toMatch(/0\.4-0\.7/)
+      expect(researchSource).toMatch(/30 天/)
+      expect(researchSource).toMatch(/1\/2 → 1\/4/)
+      // ETF: RSI thresholds, 正2型 stop-loss
+      expect(researchSource).toMatch(/RSI >70/)
+      expect(researchSource).toMatch(/RSI <30/)
+      expect(researchSource).toMatch(/>15%/)
+    })
   })
 
   describe('per-holding prompts include the framework constant', () => {
@@ -59,6 +70,24 @@ describe('api/research.js — type-aware per-holding prompts', () => {
     it('api/research.js still has at least 9 callClaude call sites (preserves existing structure)', () => {
       const callSites = (researchSource.match(/await callClaude\(/g) || []).length
       expect(callSites).toBeGreaterThanOrEqual(9)
+    })
+
+    it('portfolio-level system prompts (diag, evolveAdvice, newBrainText) do NOT contain the framework', () => {
+      // Extract each portfolio-level system prompt as a region of source text
+      // and assert the framework constant is not interpolated inside them.
+      // If someone accidentally injects the framework into a system-diagnosis
+      // prompt, this catches it.
+      const diagMatch = researchSource.match(/const diag = await callClaude\(\s*`([^`]+)`/)
+      const evolveMatch = researchSource.match(
+        /const evolveAdvice = await callClaude\(\s*`([^`]+)`/
+      )
+      const brainMatch = researchSource.match(/const newBrainText = await callClaude\(\s*`([^`]+)`/)
+      expect(diagMatch?.[1]).toBeDefined()
+      expect(evolveMatch?.[1]).toBeDefined()
+      expect(brainMatch?.[1]).toBeDefined()
+      expect(diagMatch[1]).not.toContain('TYPE_AWARE_FRAMEWORK_GUIDE')
+      expect(evolveMatch[1]).not.toContain('TYPE_AWARE_FRAMEWORK_GUIDE')
+      expect(brainMatch[1]).not.toContain('TYPE_AWARE_FRAMEWORK_GUIDE')
     })
   })
 })

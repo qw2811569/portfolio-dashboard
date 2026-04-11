@@ -1,32 +1,30 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useRunDailyAnalysis, useRunStressTest } from './api/useAnalysis.js'
+import { useRunStressTest } from './api/useAnalysis.js'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+
+function warnBlockedRouteWrite(actionName) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[route-shell] write blocked: ${actionName}. Use the canonical AppShell to mutate data.`
+    )
+  }
+}
 
 export function useRouteDailyPage() {
   const navigate = useNavigate()
   const {
     portfolioId = 'me',
     dailyReport,
-    setDailyReport = () => {},
-    analysisHistory = [],
-    setAnalysisHistory = () => {},
     newsEvents = [],
     strategyBrain = null,
     analyzing: ctxAnalyzing,
-    setAnalyzing: ctxSetAnalyzing,
     analyzeStep: ctxAnalyzeStep,
-    setAnalyzeStep: ctxSetAnalyzeStep,
   } = usePortfolioRouteContext()
 
-  const [fallbackAnalyzing, setFallbackAnalyzing] = useState(false)
-  const [fallbackAnalyzeStep, setFallbackAnalyzeStep] = useState('')
-
-  const analyzing = ctxAnalyzing ?? fallbackAnalyzing
-  const setAnalyzing = ctxSetAnalyzing ?? setFallbackAnalyzing
-  const analyzeStep = ctxAnalyzeStep ?? fallbackAnalyzeStep
-  const setAnalyzeStep = ctxSetAnalyzeStep ?? setFallbackAnalyzeStep
+  const analyzing = ctxAnalyzing ?? false
+  const analyzeStep = ctxAnalyzeStep ?? ''
 
   const [dailyExpanded, setDailyExpanded] = useState(false)
   const [stressResult, setStressResult] = useState(null)
@@ -35,36 +33,11 @@ export function useRouteDailyPage() {
   const expandedStock = useBrainStore((state) => state.expandedStock)
   const setExpandedStock = useBrainStore((state) => state.setExpandedStock)
 
-  const runDailyAnalysisMutation = useRunDailyAnalysis()
   const runStressTestMutation = useRunStressTest()
 
   const runDailyAnalysis = useCallback(async () => {
-    setAnalyzing(true)
-    setAnalyzeStep('正在分析今日收盤數據...')
-    try {
-      const result = await runDailyAnalysisMutation.mutateAsync({
-        portfolioId,
-        data: {},
-      })
-      setDailyReport(result)
-      setAnalysisHistory((prev) =>
-        [result, ...(Array.isArray(prev) ? prev : analysisHistory)].slice(0, 30)
-      )
-    } catch (error) {
-      console.error('Daily analysis failed:', error)
-    } finally {
-      setAnalyzing(false)
-      setAnalyzeStep('')
-    }
-  }, [
-    analysisHistory,
-    portfolioId,
-    runDailyAnalysisMutation,
-    setAnalysisHistory,
-    setAnalyzeStep,
-    setAnalyzing,
-    setDailyReport,
-  ])
+    warnBlockedRouteWrite('runDailyAnalysis')
+  }, [])
 
   const runStressTest = useCallback(async () => {
     setStressTesting(true)

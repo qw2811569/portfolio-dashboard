@@ -2,12 +2,17 @@ import { useCallback, useMemo, useState } from 'react'
 import { createDefaultReviewForm as createDefaultReviewFormFallback } from '../lib/eventUtils.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 
+function warnBlockedRouteWrite(actionName) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[route-shell] write blocked: ${actionName}. Use the canonical AppShell to mutate data.`
+    )
+  }
+}
+
 export function useRouteNewsPage() {
-  const {
-    newsEvents = [],
-    updateEvent = () => {},
-    createDefaultReviewForm = createDefaultReviewFormFallback,
-  } = usePortfolioRouteContext()
+  const { newsEvents = [], createDefaultReviewForm = createDefaultReviewFormFallback } =
+    usePortfolioRouteContext()
 
   const [reviewingEvent, setReviewingEvent] = useState(null)
   const [reviewForm, setReviewForm] = useState(() => createDefaultReviewForm())
@@ -20,22 +25,8 @@ export function useRouteNewsPage() {
 
   const submitReview = useCallback(() => {
     if (!reviewingEvent) return
-    const reviewDate = reviewForm.exitDate || new Date().toISOString().slice(0, 10)
-
-    updateEvent(reviewingEvent.id, {
-      status: 'closed',
-      exitDate: reviewDate,
-      reviewDate,
-      actual: reviewForm.actual,
-      actualNote: reviewForm.actualNote,
-      lessons: reviewForm.lessons,
-      priceAtExit: reviewForm.priceAtExit
-        ? { [reviewingEvent.code]: reviewForm.priceAtExit }
-        : null,
-    })
-
-    resetReview()
-  }, [resetReview, reviewForm, reviewingEvent, updateEvent])
+    warnBlockedRouteWrite('updateEvent')
+  }, [reviewingEvent])
 
   const cancelReview = useCallback(() => {
     resetReview()

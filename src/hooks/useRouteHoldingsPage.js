@@ -2,20 +2,33 @@ import { useMemo } from 'react'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 
+function warnBlockedRouteWrite(actionName) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[route-shell] write blocked: ${actionName}. Use the canonical AppShell to mutate data.`
+    )
+  }
+}
+
 export function useRouteHoldingsPage() {
-  const {
-    holdings = [],
-    todayTotalPnl = 0,
-    reversalConditions = {},
-    updateTargetPrice = () => {},
-    updateAlert = () => {},
-    updateReversal = () => {},
-  } = usePortfolioRouteContext()
+  const { holdings = [], todayTotalPnl = 0, reversalConditions = {} } = usePortfolioRouteContext()
 
   const expandedStock = useBrainStore((state) => state.expandedStock)
   const setExpandedStock = useBrainStore((state) => state.setExpandedStock)
 
   return useMemo(() => {
+    const blockUpdateTargetPrice = (..._args) => {
+      warnBlockedRouteWrite('updateTargetPrice')
+      return false
+    }
+    const blockUpdateAlert = (..._args) => {
+      warnBlockedRouteWrite('updateAlert')
+      return false
+    }
+    const blockUpdateReversal = (..._args) => {
+      warnBlockedRouteWrite('updateReversal')
+      return false
+    }
     const totalVal = holdings.reduce((sum, item) => sum + (item.value || 0), 0)
     const totalCost = holdings.reduce(
       (sum, item) => sum + (Number(item.cost) || 0) * (Number(item.qty) || 0),
@@ -43,24 +56,15 @@ export function useRouteHoldingsPage() {
         showReversal: false,
         setShowReversal: () => {},
         reversalConditions,
-        updateReversal,
+        updateReversal: blockUpdateReversal,
       },
       tableProps: {
         holdings,
         expandedStock,
         setExpandedStock,
-        onUpdateTarget: updateTargetPrice,
-        onUpdateAlert: updateAlert,
+        onUpdateTarget: blockUpdateTargetPrice,
+        onUpdateAlert: blockUpdateAlert,
       },
     }
-  }, [
-    expandedStock,
-    holdings,
-    todayTotalPnl,
-    reversalConditions,
-    setExpandedStock,
-    updateAlert,
-    updateReversal,
-    updateTargetPrice,
-  ])
+  }, [expandedStock, holdings, todayTotalPnl, reversalConditions, setExpandedStock])
 }

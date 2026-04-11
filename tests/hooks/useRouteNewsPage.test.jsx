@@ -121,6 +121,16 @@ describe('hooks/useRouteNewsPage.js', () => {
 
   it('submitReview calls updateEvent and resets state', () => {
     const { updateEvent } = setupDefaults()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    })
 
     const { result } = renderHook(() => useRouteNewsPage())
 
@@ -140,21 +150,14 @@ describe('hooks/useRouteNewsPage.js', () => {
       result.current.submitReview()
     })
 
-    expect(updateEvent).toHaveBeenCalledWith(
-      'e1',
-      expect.objectContaining({
-        status: 'closed',
-        exitDate: '2026-04-04',
-        reviewDate: '2026-04-04',
-        actual: 'hit',
-        actualNote: 'As expected',
-        lessons: 'Trust the process',
-        priceAtExit: { 2330: '960' },
-      })
-    )
-
-    // After submit, state should be reset
-    expect(result.current.reviewingEvent).toBeNull()
+    expect(updateEvent).not.toHaveBeenCalled()
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
+    expect(result.current.reviewingEvent).toEqual({ id: 'e1', title: 'Earnings', code: '2330' })
+    if (process.env.NODE_ENV !== 'production') {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: updateEvent. Use the canonical AppShell to mutate data.'
+      )
+    }
   })
 
   it('submitReview does nothing when no reviewingEvent', () => {

@@ -63,11 +63,13 @@ describe('hooks/useRouteWatchlistPage.js', () => {
         watchlistFocus: fakeRows[0],
         expandedStock: '2330',
         setExpandedStock,
-        onUpsertItem: upsertWatchlist,
-        handleWatchlistDelete: removeWatchlist,
         formatEventStockOutcomeLine,
       })
     )
+    expect(typeof result.current.onUpsertItem).toBe('function')
+    expect(typeof result.current.handleWatchlistDelete).toBe('function')
+    expect(result.current.onUpsertItem).not.toBe(upsertWatchlist)
+    expect(result.current.handleWatchlistDelete).not.toBe(removeWatchlist)
   })
 
   it('sets watchlistFocus to null when watchlistRows is empty', () => {
@@ -116,5 +118,46 @@ describe('hooks/useRouteWatchlistPage.js', () => {
     })
     expect(typeof result.current.onUpsertItem).toBe('function')
     expect(typeof result.current.handleWatchlistDelete).toBe('function')
+  })
+
+  it('blocks watchlist writes while preserving read-only rows', () => {
+    const upsertWatchlist = vi.fn()
+    const removeWatchlist = vi.fn()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    })
+
+    usePortfolioRouteContext.mockReturnValue({
+      watchlist: [{ code: '2330', name: '台積電' }],
+      newsEvents: [],
+      upsertWatchlist,
+      removeWatchlist,
+    })
+    buildWatchlistRows.mockReturnValue([{ code: '2330', trackingCount: 1, pendingCount: 0 }])
+
+    const { result } = renderHook(() => useRouteWatchlistPage())
+
+    expect(result.current.onUpsertItem({ code: '2454' })).toBe(false)
+    expect(result.current.handleWatchlistDelete('2330')).toBe(false)
+
+    expect(upsertWatchlist).not.toHaveBeenCalled()
+    expect(removeWatchlist).not.toHaveBeenCalled()
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
+    if (process.env.NODE_ENV !== 'production') {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: upsertWatchlist. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: removeWatchlist. Use the canonical AppShell to mutate data.'
+      )
+    }
   })
 })

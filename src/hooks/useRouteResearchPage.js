@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   getHoldingMarketValue,
   getHoldingReturnPct,
@@ -13,6 +13,14 @@ import { IND_COLOR, STOCK_META } from '../seedData.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 import { useReportRefreshWorkflow } from './useReportRefreshWorkflow.js'
 import { useResearchWorkflow } from './useResearchWorkflow.js'
+
+function warnBlockedRouteWrite(actionName) {
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[route-shell] write blocked: ${actionName}. Use the canonical AppShell to mutate data.`
+    )
+  }
+}
 
 export function useRouteResearchPage() {
   const {
@@ -80,33 +88,22 @@ export function useRouteResearchPage() {
     [dossierByCode, holdings, newsEvents, reportRefreshMeta, todayRefreshKey]
   )
 
-  const {
-    reportRefreshing,
-    reportRefreshStatus,
-    enrichingResearchCode,
-    refreshAnalystReports,
-    enrichResearchToDossier,
-  } = useReportRefreshWorkflow({
-    holdings,
-    dossierByCode,
-    analystReports,
-    reportRefreshMeta,
-    reportRefreshCandidates,
-    todayRefreshKey,
-    upsertTargetReport,
-    upsertFundamentalsEntry,
-    setAnalystReports,
-    setReportRefreshMeta,
-    flashSaved,
-  })
+  const { reportRefreshing, reportRefreshStatus, enrichingResearchCode, enrichResearchToDossier } =
+    useReportRefreshWorkflow({
+      holdings,
+      dossierByCode,
+      analystReports,
+      reportRefreshMeta,
+      reportRefreshCandidates,
+      todayRefreshKey,
+      upsertTargetReport,
+      upsertFundamentalsEntry,
+      setAnalystReports,
+      setReportRefreshMeta,
+      flashSaved,
+    })
 
-  const {
-    runResearch,
-    applyBrainProposal,
-    discardBrainProposal,
-    proposalActionId,
-    proposalActionType,
-  } = useResearchWorkflow({
+  const { proposalActionId, proposalActionType } = useResearchWorkflow({
     researching,
     setResearching,
     setResearchTarget,
@@ -129,6 +126,27 @@ export function useRouteResearchPage() {
     enrichResearchToDossier,
   })
 
+  const blockRunResearch = useCallback(async (..._args) => {
+    warnBlockedRouteWrite('runResearch')
+    return null
+  }, [])
+  const blockRefreshAnalystReports = useCallback(async (..._args) => {
+    warnBlockedRouteWrite('refreshAnalystReports')
+    return false
+  }, [])
+  const blockEnrichResearchToDossier = useCallback(async (..._args) => {
+    warnBlockedRouteWrite('enrichResearchToDossier')
+    return false
+  }, [])
+  const blockApplyBrainProposal = useCallback(async (..._args) => {
+    warnBlockedRouteWrite('applyBrainProposal')
+    return false
+  }, [])
+  const blockDiscardBrainProposal = useCallback(async (..._args) => {
+    warnBlockedRouteWrite('discardBrainProposal')
+    return false
+  }, [])
+
   return useMemo(
     () => ({
       holdings,
@@ -144,22 +162,23 @@ export function useRouteResearchPage() {
       proposalActionType,
       STOCK_META,
       IND_COLOR,
-      onEvolve: () => runResearch('evolve'),
-      onRefresh: refreshAnalystReports,
-      onResearch: runResearch,
-      onEnrich: enrichResearchToDossier,
-      onApplyProposal: applyBrainProposal,
-      onDiscardProposal: discardBrainProposal,
+      onEvolve: () => blockRunResearch('evolve'),
+      onRefresh: blockRefreshAnalystReports,
+      onResearch: blockRunResearch,
+      onEnrich: blockEnrichResearchToDossier,
+      onApplyProposal: blockApplyBrainProposal,
+      onDiscardProposal: blockDiscardBrainProposal,
       onSelectHistory: setResearchResults,
     }),
     [
-      applyBrainProposal,
+      blockApplyBrainProposal,
+      blockDiscardBrainProposal,
+      blockEnrichResearchToDossier,
+      blockRefreshAnalystReports,
+      blockRunResearch,
       dataRefreshRows,
-      discardBrainProposal,
-      enrichResearchToDossier,
       enrichingResearchCode,
       holdings,
-      refreshAnalystReports,
       reportRefreshing,
       reportRefreshStatus,
       researchHistory,
@@ -168,7 +187,6 @@ export function useRouteResearchPage() {
       researching,
       proposalActionId,
       proposalActionType,
-      runResearch,
       setResearchResults,
     ]
   )

@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockUsePortfolioRouteContext = vi.fn()
@@ -108,8 +108,102 @@ describe('hooks/useRouteResearchPage.js', () => {
       })
     )
 
-    expect(result.current.onEnrich).toBe(enrichResearchToDossier)
-    expect(result.current.onRefresh).toBe(refreshAnalystReports)
-    expect(result.current.onResearch).toBe(runResearch)
+    expect(result.current.onEnrich).not.toBe(enrichResearchToDossier)
+    expect(result.current.onRefresh).not.toBe(refreshAnalystReports)
+    expect(result.current.onResearch).not.toBe(runResearch)
+  })
+
+  it('blocks route research write actions from mutating local or shared state', async () => {
+    const setAnalystReports = vi.fn()
+    const setResearchHistory = vi.fn()
+    const setStrategyBrain = vi.fn()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    })
+
+    mockUsePortfolioRouteContext.mockReturnValue({
+      holdings: [{ code: '2330', name: '台積電', qty: 1000, price: 950, cost: 900 }],
+      targets: {},
+      fundamentals: {},
+      analystReports: {},
+      holdingDossiers: [],
+      newsEvents: [],
+      analysisHistory: [],
+      strategyBrain: { rules: [] },
+      portfolioNotes: {},
+      researchHistory: [],
+      setResearchHistory,
+      setStrategyBrain,
+      setAnalystReports,
+      upsertTargetReport: vi.fn(),
+      upsertFundamentalsEntry: vi.fn(),
+      flashSaved: vi.fn(),
+    })
+
+    const enrichResearchToDossier = vi.fn()
+    const refreshAnalystReports = vi.fn()
+    const runResearch = vi.fn()
+    const applyBrainProposal = vi.fn()
+    const discardBrainProposal = vi.fn()
+
+    mockUseReportRefreshWorkflow.mockReturnValue({
+      reportRefreshing: false,
+      reportRefreshStatus: '',
+      enrichingResearchCode: null,
+      refreshAnalystReports,
+      enrichResearchToDossier,
+    })
+
+    mockUseResearchWorkflow.mockReturnValue({
+      runResearch,
+      applyBrainProposal,
+      discardBrainProposal,
+      proposalActionId: null,
+      proposalActionType: null,
+    })
+
+    const { result } = renderHook(() => useRouteResearchPage())
+
+    await act(async () => {
+      await result.current.onRefresh()
+      await result.current.onResearch('single', { code: '2330' })
+      await result.current.onEnrich({ code: '2330', mode: 'single' })
+      await result.current.onApplyProposal({ timestamp: 1 })
+      await result.current.onDiscardProposal({ timestamp: 1 })
+    })
+
+    expect(refreshAnalystReports).not.toHaveBeenCalled()
+    expect(runResearch).not.toHaveBeenCalled()
+    expect(enrichResearchToDossier).not.toHaveBeenCalled()
+    expect(applyBrainProposal).not.toHaveBeenCalled()
+    expect(discardBrainProposal).not.toHaveBeenCalled()
+    expect(setAnalystReports).not.toHaveBeenCalled()
+    expect(setResearchHistory).not.toHaveBeenCalled()
+    expect(setStrategyBrain).not.toHaveBeenCalled()
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
+    if (process.env.NODE_ENV !== 'production') {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: refreshAnalystReports. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: runResearch. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: enrichResearchToDossier. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: applyBrainProposal. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: discardBrainProposal. Use the canonical AppShell to mutate data.'
+      )
+    }
   })
 })

@@ -147,9 +147,10 @@ describe('routes/page actions', () => {
   })
 
   it(
-    'persists watchlist additions through modal flow without prompt()',
+    'blocks watchlist additions through modal flow without prompt()',
     async () => {
       const promptSpy = vi.spyOn(window, 'prompt')
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       renderRoute(
         <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/watchlist`]}>
@@ -161,6 +162,9 @@ describe('routes/page actions', () => {
         </MemoryRouter>
       )
 
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
+
       fireEvent.click(screen.getByRole('button', { name: /新增觀察股/ }))
       fireEvent.change(screen.getByLabelText('代碼'), { target: { value: '2303' } })
       fireEvent.change(screen.getByLabelText('名稱'), { target: { value: '聯電' } })
@@ -171,21 +175,19 @@ describe('routes/page actions', () => {
       fireEvent.click(screen.getByRole('button', { name: '加入觀察' }))
 
       expect(promptSpy).not.toHaveBeenCalled()
-      expect(await screen.findByText('聯電')).toBeInTheDocument()
-
-      await waitFor(() => {
-        const watchlist = JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-watchlist-v1`))
-        expect(watchlist).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              code: '2303',
-              name: '聯電',
-              status: '追蹤中',
-              note: '等待成熟製程報價回升',
-            }),
-          ])
+      expect(screen.queryByText('聯電')).not.toBeInTheDocument()
+      expect(localStorage.setItem).not.toHaveBeenCalled()
+      expect(JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-watchlist-v1`))).toEqual([
+        expect.objectContaining({
+          code: '2454',
+          name: '聯發科',
+        }),
+      ])
+      if (process.env.NODE_ENV !== 'production') {
+        expect(warnSpy).toHaveBeenCalledWith(
+          '[route-shell] write blocked: upsertWatchlist. Use the canonical AppShell to mutate data.'
         )
-      })
+      }
     },
     ROUTE_ACTION_TIMEOUT
   )
@@ -317,8 +319,10 @@ describe('routes/page actions', () => {
   )
 
   it(
-    'persists news review completion back into route runtime storage',
+    'blocks news review completion from writing route runtime storage',
     async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
       renderRoute(
         <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/news`]}>
           <Routes>
@@ -329,6 +333,9 @@ describe('routes/page actions', () => {
         </MemoryRouter>
       )
 
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
+
       fireEvent.click(screen.getByRole('button', { name: '復盤' }))
       fireEvent.change(screen.getByPlaceholderText('實際漲跌幅、關鍵原因...'), {
         target: { value: '法說後 AI ASIC 指引上修，市場反應正向' },
@@ -338,25 +345,24 @@ describe('routes/page actions', () => {
       })
       fireEvent.click(screen.getByRole('button', { name: '完成復盤' }))
 
-      await waitFor(() => {
-        const events = JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`))
-        expect(events).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              id: 'evt-1',
-              status: 'closed',
-              actualNote: '法說後 AI ASIC 指引上修，市場反應正向',
-              lessons: '事件前卡位有效，但仍要補券商共識更新',
-            }),
-          ])
+      expect(localStorage.setItem).not.toHaveBeenCalled()
+      expect(JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`))).toEqual([
+        expect.objectContaining({
+          id: 'evt-1',
+          status: 'pending',
+        }),
+      ])
+      if (process.env.NODE_ENV !== 'production') {
+        expect(warnSpy).toHaveBeenCalledWith(
+          '[route-shell] write blocked: updateEvent. Use the canonical AppShell to mutate data.'
         )
-      })
+      }
     },
     ROUTE_ACTION_TIMEOUT
   )
 
   it(
-    'reuses shared research workflow and persists route research history',
+    'blocks route research from persisting route-local history',
     async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
@@ -372,6 +378,7 @@ describe('routes/page actions', () => {
           ],
         }),
       })
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       renderRoute(
         <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/research`]}>
@@ -383,31 +390,24 @@ describe('routes/page actions', () => {
         </MemoryRouter>
       )
 
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
+
       fireEvent.click(screen.getByRole('button', { name: '台積電' }))
 
-      await waitFor(() => {
-        const history = JSON.parse(
-          localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-research-history-v1`)
-        )
-        expect(history).toEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              code: '2330',
-              title: '台積電研究',
-            }),
-          ])
-        )
-      })
-
-      expect(fetchSpy).toHaveBeenCalledWith(
-        '/api/research',
-        expect.objectContaining({
-          method: 'POST',
-        })
+      expect(fetchSpy).not.toHaveBeenCalled()
+      expect(localStorage.setItem).not.toHaveBeenCalled()
+      expect(JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-research-history-v1`))).toBe(
+        null
       )
       expect(useReportsStore.getState().researchResults).toBeNull()
       expect(useReportsStore.getState().researchHistory).toEqual([])
       expect(screen.queryByText('研究中...')).not.toBeInTheDocument()
+      if (process.env.NODE_ENV !== 'production') {
+        expect(warnSpy).toHaveBeenCalledWith(
+          '[route-shell] write blocked: runResearch. Use the canonical AppShell to mutate data.'
+        )
+      }
     },
     ROUTE_ACTION_TIMEOUT
   )

@@ -1,4 +1,5 @@
 import { renderHook } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockUsePortfolioRouteContext = vi.fn()
@@ -111,5 +112,49 @@ describe('hooks/useRouteDailyPage.js', () => {
     const { result } = renderHook(() => useRouteDailyPage())
 
     expect(result.current.operatingContext).toBeUndefined()
+  })
+
+  it('blocks runDailyAnalysis from mutating route-local state', async () => {
+    const setDailyReport = vi.fn()
+    const setAnalysisHistory = vi.fn()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    })
+
+    mockUsePortfolioRouteContext.mockReturnValue({
+      portfolioId: 'test-portfolio',
+      dailyReport: null,
+      setDailyReport,
+      analysisHistory: [],
+      setAnalysisHistory,
+      newsEvents: [],
+      strategyBrain: null,
+    })
+    mockUseBrainStore.mockImplementation((selector) =>
+      selector({ expandedStock: null, setExpandedStock: vi.fn() })
+    )
+
+    const { result } = renderHook(() => useRouteDailyPage())
+
+    await act(async () => {
+      await result.current.runDailyAnalysis()
+    })
+
+    expect(mockMutateAsyncDaily).not.toHaveBeenCalled()
+    expect(setDailyReport).not.toHaveBeenCalled()
+    expect(setAnalysisHistory).not.toHaveBeenCalled()
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
+    if (process.env.NODE_ENV !== 'production') {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: runDailyAnalysis. Use the canonical AppShell to mutate data.'
+      )
+    }
   })
 })

@@ -70,14 +70,17 @@ describe('hooks/useRouteHoldingsPage.js', () => {
     expect(panelProps.holdingsIntegrityIssues).toHaveLength(0)
     expect(panelProps).toHaveProperty('showReversal', false)
     expect(panelProps).toHaveProperty('reversalConditions')
-    expect(panelProps.updateReversal).toBe(updateReversal)
+    expect(typeof panelProps.updateReversal).toBe('function')
+    expect(panelProps.updateReversal).not.toBe(updateReversal)
 
     // tableProps fields
     expect(tableProps.holdings).toHaveLength(2)
     expect(tableProps.expandedStock).toBe('2330')
     expect(tableProps.setExpandedStock).toBe(setExpandedStock)
-    expect(tableProps.onUpdateTarget).toBe(updateTargetPrice)
-    expect(tableProps.onUpdateAlert).toBe(updateAlert)
+    expect(typeof tableProps.onUpdateTarget).toBe('function')
+    expect(typeof tableProps.onUpdateAlert).toBe('function')
+    expect(tableProps.onUpdateTarget).not.toBe(updateTargetPrice)
+    expect(tableProps.onUpdateAlert).not.toBe(updateAlert)
   })
 
   it('handles empty holdings gracefully', () => {
@@ -120,5 +123,56 @@ describe('hooks/useRouteHoldingsPage.js', () => {
 
     expect(result.current.panelProps.holdingsIntegrityIssues).toHaveLength(1)
     expect(result.current.panelProps.holdingsIntegrityIssues[0].code).toBe('2330')
+  })
+
+  it('blocks holdings data writes while keeping the table readable', () => {
+    const updateTargetPrice = vi.fn()
+    const updateAlert = vi.fn()
+    const updateReversal = vi.fn()
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+      writable: true,
+    })
+
+    mockUsePortfolioRouteContext.mockReturnValue({
+      holdings: [{ code: '2330', qty: 100, cost: 900, value: 95000, pct: 5 }],
+      reversalConditions: {},
+      updateTargetPrice,
+      updateAlert,
+      updateReversal,
+    })
+
+    mockUseBrainStore.mockImplementation((selector) =>
+      selector({ expandedStock: null, setExpandedStock: vi.fn() })
+    )
+
+    const { result } = renderHook(() => useRouteHoldingsPage())
+
+    expect(result.current.tableProps.onUpdateTarget('2330', 1000)).toBe(false)
+    expect(result.current.tableProps.onUpdateAlert('2330', '跌破月線')).toBe(false)
+    expect(result.current.panelProps.updateReversal('2330', { armed: true })).toBe(false)
+
+    expect(updateTargetPrice).not.toHaveBeenCalled()
+    expect(updateAlert).not.toHaveBeenCalled()
+    expect(updateReversal).not.toHaveBeenCalled()
+    expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
+    if (process.env.NODE_ENV !== 'production') {
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: updateTargetPrice. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: updateAlert. Use the canonical AppShell to mutate data.'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[route-shell] write blocked: updateReversal. Use the canonical AppShell to mutate data.'
+      )
+    }
   })
 })

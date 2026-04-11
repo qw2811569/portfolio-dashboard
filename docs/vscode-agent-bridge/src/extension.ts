@@ -470,6 +470,18 @@ export function requireCompletionEvidence(task: Pick<BridgeTask, 'evidence'>) {
   return { ok: true as const };
 }
 
+export function requireConsensusApproved(
+  task: Pick<BridgeTask, 'requiresConsensus' | 'consensusState'>
+) {
+  if (!task.requiresConsensus) return { ok: true as const };
+  if (task.consensusState === 'approved') return { ok: true as const };
+  return {
+    ok: false as const,
+    error: 'hard-gate: consensus not approved',
+    reason: task.consensusState || 'none',
+  };
+}
+
 function sanitizeTaskMutationPayload(
   raw: Partial<BridgeTask> & { evidence?: unknown; consensusState?: unknown; consensusReviews?: unknown }
 ) {
@@ -753,6 +765,10 @@ function completeTask(
     if (!evidenceResult.ok) {
       return evidenceResult;
     }
+    const consensusResult = requireConsensusApproved(task);
+    if (!consensusResult.ok) {
+      return consensusResult;
+    }
   }
 
   tasks.set(taskId, task);
@@ -974,7 +990,13 @@ function startServer(context: vscode.ExtensionContext) {
         try {
           const parsed = body ? JSON.parse(body) : {};
           const result = completeTask(decodeURIComponent(completeMatch[1]), parsed);
-          res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+          const statusCode =
+            result.ok
+              ? 200
+              : result.error === 'hard-gate: consensus not approved'
+                ? 409
+                : 400;
+          res.writeHead(statusCode, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
         } catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1021,6 +1043,12 @@ function startServer(context: vscode.ExtensionContext) {
             if (!evidenceResult.ok) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify(evidenceResult));
+              return;
+            }
+            const consensusResult = requireConsensusApproved(next);
+            if (!consensusResult.ok) {
+              res.writeHead(409, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify(consensusResult));
               return;
             }
           }

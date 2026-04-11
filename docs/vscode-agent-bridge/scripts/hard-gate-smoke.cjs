@@ -12,7 +12,7 @@ Module._load = function patchedLoad(request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 
-const { requireCompletionEvidence } = require('../out/extension.js');
+const { requireCompletionEvidence, requireConsensusApproved } = require('../out/extension.js');
 Module._load = originalLoad;
 
 function assert(condition, message) {
@@ -47,4 +47,27 @@ const fullResult = requireCompletionEvidence({
 });
 
 assert(fullResult.ok === true, 'full evidence should pass');
+
+const noConsensusResult = requireConsensusApproved({
+  requiresConsensus: true,
+  consensusState: 'none',
+});
+
+assert(noConsensusResult.ok === false, 'missing consensus approval should fail');
+assert(noConsensusResult.reason === 'none', `unexpected consensus reason: ${JSON.stringify(noConsensusResult)}`);
+
+const approvedConsensusResult = requireConsensusApproved({
+  requiresConsensus: true,
+  consensusState: 'approved',
+});
+
+assert(approvedConsensusResult.ok === true, 'approved consensus should pass');
+
+const notRequiredConsensusResult = requireConsensusApproved({
+  requiresConsensus: false,
+  consensusState: 'pending',
+});
+
+assert(notRequiredConsensusResult.ok === true, 'consensus gate should skip tasks that do not require consensus');
+
 console.log('hard-gate smoke: ok');

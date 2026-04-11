@@ -207,6 +207,55 @@ Measured facts:
   - `bun run build`
   - `bun scripts/ui-smoke.cjs`
 
+## Active Decision: T0/T1 Diff-First Trust Layer
+
+We needed the smallest next patch after staged daily review so users could tell whether a same-day `資料確認版` actually changed the thesis or merely re-labeled the report.
+
+Measured facts:
+
+- staged daily review already landed:
+  - `analysisStage`
+  - `analysisVersion`
+  - `finmindConfirmation`
+  - visible `AnalysisStageCard`
+- `analysisHistory` now retains same-day staged versions instead of collapsing them
+- without a visible delta, users still cannot tell whether `跑資料確認版` produced a meaningful update or a no-op rerun
+
+### Decision result
+
+- Claude:
+  - chose `A` inline diff card in `DailyReportPanel`
+  - reason: the trust gap is at the exact report surface the user is already reading, so adding another picker or deeper navigation would widen scope without solving the immediate question
+- Qwen:
+  - chose `A` inline diff card in `DailyReportPanel`
+  - reason: the existing staged metadata is already enough to derive a deterministic same-day comparison, and a local diff utility plus inline render is the smallest testable patch
+- Gemini:
+  - chose `A` inline diff card in `DailyReportPanel`
+  - reason: the user needs direct evidence of what changed, not another control surface; Gemini did hit a quota retry before returning, but still produced a usable vote
+
+### Applied result
+
+- raw lane outputs archived under:
+  - `coordination/llm-bus/runs/20260411-124030/question.md`
+  - `coordination/llm-bus/runs/20260411-124030/claude.md`
+  - `coordination/llm-bus/runs/20260411-124030/qwen.md`
+  - `coordination/llm-bus/runs/20260411-124030/gemini.md`
+  - `coordination/llm-bus/runs/20260411-124030/consensus.md`
+- added `src/lib/dailyReportDiff.js` to:
+  - find the previous same-day report version
+  - ignore whitespace-only `aiInsight` changes
+  - surface field-level differences without adding any new fetch path
+- `DailyReportPanel` now renders an inline `同日版本差異` card when the current report has a prior same-day version
+- `AppPanels.contexts` coverage now proves:
+  - the diff card shows up for a real `T0 -> T1` pair
+  - the card stays hidden when only one version exists
+  - the user can expand the diff inline without triggering any new API work
+- verification passed:
+  - `bunx vitest run tests/lib/dailyReportDiff.test.js tests/components/AppPanels.contexts.test.jsx`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
+
 ## Active Decision: Wave 1 Propagation Chain
 
 We need to choose the first cross-page propagation chain to protect with tests and the smallest safe patch set.

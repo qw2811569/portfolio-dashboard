@@ -210,6 +210,84 @@
         ],
         "nextStep": "Add an explicit same-day T1 trigger policy and a diff view so users can compare fast close vs confirmed rerun."
       }
+    },
+    {
+      "id": "wave-2-daily-diff-card",
+      "title": "Surface inline same-day T0/T1 diff in daily panel",
+      "lane": "coherence",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": ["wave-2-staged-daily-review"],
+      "writeScope": [
+        "src/components/reports/DailyReportPanel.jsx",
+        "src/lib/dailyReportDiff.js",
+        "src/hooks/usePortfolioPanelsContextComposer.js",
+        "tests/lib/dailyReportDiff.test.js",
+        "tests/components/AppPanels.contexts.test.jsx"
+      ],
+      "sourcePlanRef": "Wave 2 / diff-first trust layer",
+      "summary": "Daily analysis now exposes an inline same-day diff card so users can compare `收盤快版` vs `資料確認版` without leaving the panel or triggering new API work.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md, coordination/llm-bus/runtime-stabilization-brief.md, and coordination/llm-bus/runs/20260411-124030/*.md. Land the smallest diff-first patch that shows users what changed between same-day staged daily reports, but do not add background automation yet.",
+      "requiresConsensus": true,
+      "consensusReviews": [
+        {
+          "agentId": "claude",
+          "decision": "approved",
+          "summary": "Use an inline diff card at the report surface the user is already reading."
+        },
+        {
+          "agentId": "qwen",
+          "decision": "approved",
+          "summary": "Keep the patch deterministic with a local diff utility and no extra API work."
+        },
+        {
+          "agentId": "gemini",
+          "decision": "approved",
+          "summary": "Trust improves most when the user sees the delta directly instead of through another control or badge."
+        }
+      ],
+      "evidence": {
+        "changedFiles": [
+          "src/components/reports/DailyReportPanel.jsx",
+          "src/lib/dailyReportDiff.js",
+          "src/hooks/useAppRuntimeComposer.js",
+          "src/hooks/usePortfolioPanelsContextComposer.js",
+          "tests/lib/dailyReportDiff.test.js",
+          "tests/components/AppPanels.contexts.test.jsx",
+          "coordination/llm-bus/runs/20260411-124030/consensus.md"
+        ],
+        "verificationRuns": [
+          "bunx vitest run tests/lib/dailyReportDiff.test.js tests/components/AppPanels.contexts.test.jsx",
+          "bun run lint",
+          "bun run build",
+          "bun scripts/ui-smoke.cjs"
+        ],
+        "risksNoted": [
+          "The diff card is intentionally same-day only and does not yet compare across dates",
+          "Automatic T1 triggering has not landed yet; this patch only makes the existing rerun trustworthy"
+        ],
+        "nextStep": "Choose and implement the smallest safe automatic T1 trigger now that users can see the delta between fast close and confirmed reruns."
+      }
+    },
+    {
+      "id": "wave-2-t1-auto-trigger",
+      "title": "Choose smallest safe automatic T1 trigger",
+      "lane": "coherence",
+      "owner": "codex",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": ["wave-2-daily-diff-card"],
+      "writeScope": [
+        "src/hooks/useDailyAnalysisWorkflow.js",
+        "src/components/reports/DailyReportPanel.jsx",
+        "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
+        "tests/components/AppPanels.contexts.test.jsx"
+      ],
+      "sourcePlanRef": "Wave 2 / post-diff automation",
+      "summary": "Now that users can see the T0/T1 delta, decide the smallest safe automatic confirmation trigger that does not silently overwrite trust.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Use the new diff-first trust layer as baseline, then choose the smallest safe automatic T1 trigger policy: passive ready cue, gated auto-rerun, or another lighter option. Return consensus, risks, and the smallest patch shape.",
+      "requiresConsensus": true
     }
   ]
 }

@@ -36,6 +36,7 @@ export function usePortfolioPanelsContextComposer({
   catalystFilter,
   morningNote,
   dailyReport,
+  analysisHistory,
   analyzing,
   analyzeStep,
   stressResult,
@@ -223,6 +224,7 @@ export function usePortfolioPanelsContextComposer({
       daily: {
         morningNote,
         dailyReport,
+        analysisHistory: Array.isArray(analysisHistory) ? analysisHistory : EMPTY_LIST,
         analyzing,
         analyzeStep,
         stressResult,
@@ -271,6 +273,7 @@ export function usePortfolioPanelsContextComposer({
       catalystFilter,
       dailyExpanded,
       dailyReport,
+      analysisHistory,
       safeDataRefreshRows,
       enrichingResearchCode,
       expandedNews,

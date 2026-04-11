@@ -1085,6 +1085,7 @@ export function composePortfolioPanelsContextInput({
     catalystFilter: ui.catalystFilter,
     morningNote: data.morningNote,
     dailyReport: data.dailyReport,
+    analysisHistory: data.analysisHistory,
     analyzing: asyncState.analyzing,
     analyzeStep: asyncState.analyzeStep,
     stressResult: asyncState.stressResult,

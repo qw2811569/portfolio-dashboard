@@ -666,6 +666,7 @@ describe('components/AppPanels context wiring', () => {
                 pendingCodes: ['2330'],
               },
             },
+            analysisHistory: [],
             analyzing: false,
             analyzeStep: '',
             stressResult: null,
@@ -708,6 +709,206 @@ describe('components/AppPanels context wiring', () => {
 
     fireEvent.click(screen.getByText('跑資料確認版'))
     expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders same-day diff details only when both staged versions exist', async () => {
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-confirmed',
+              date: '2026/04/11',
+              time: '18:40',
+              totalTodayPnl: 28,
+              changes: [],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [{ id: 'event-1' }],
+              needsReview: [],
+              aiInsight: '事件已確認，今晚重點轉向明日延續性。',
+              analysisStage: 't1-confirmed',
+              analysisStageLabel: '資料確認版',
+              analysisVersion: 2,
+              finmindDataCount: 12,
+              finmindConfirmation: {
+                expectedMarketDate: '2026-04-11',
+                status: 'confirmed',
+                pendingCodes: [],
+              },
+            },
+            analysisHistory: [
+              {
+                id: 'daily-confirmed',
+                date: '2026/04/11',
+                time: '18:40',
+                totalTodayPnl: 28,
+                changes: [],
+                anomalies: [],
+                eventCorrelations: [],
+                eventAssessments: [{ id: 'event-1' }],
+                needsReview: [],
+                aiInsight: '事件已確認，今晚重點轉向明日延續性。',
+                analysisStage: 't1-confirmed',
+                analysisStageLabel: '資料確認版',
+                analysisVersion: 2,
+                finmindDataCount: 12,
+                finmindConfirmation: {
+                  expectedMarketDate: '2026-04-11',
+                  status: 'confirmed',
+                  pendingCodes: [],
+                },
+              },
+              {
+                id: 'daily-preliminary',
+                date: '2026/04/11',
+                time: '14:02',
+                totalTodayPnl: 18,
+                changes: [],
+                anomalies: [{ id: 'warn-1' }],
+                eventCorrelations: [],
+                eventAssessments: [],
+                needsReview: [],
+                aiInsight: '先看今天事件是否已經落地。',
+                analysisStage: 't0-preliminary',
+                analysisStageLabel: '收盤快版',
+                analysisVersion: 1,
+                finmindDataCount: 4,
+                finmindConfirmation: {
+                  expectedMarketDate: '2026-04-11',
+                  status: 'preliminary',
+                  pendingCodes: ['2330'],
+                },
+              },
+            ],
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis: vi.fn(),
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab: vi.fn(),
+            setExpandedNews: vi.fn(),
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(await screen.findByText('同日版本差異')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('展開差異'))
+    expect(screen.getByText('AI 總結')).toBeInTheDocument()
+    expect(screen.getAllByText('上一版').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('目前版本').length).toBeGreaterThan(0)
+    expect(screen.getByText('收合差異')).toBeInTheDocument()
+  })
+
+  it('hides the same-day diff card when only one report version exists', () => {
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-only',
+              date: '2026/04/11',
+              time: '18:40',
+              totalTodayPnl: 28,
+              changes: [],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [],
+              needsReview: [],
+              aiInsight: '單一版本。',
+              analysisStage: 't1-confirmed',
+              analysisStageLabel: '資料確認版',
+              analysisVersion: 1,
+            },
+            analysisHistory: [],
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis: vi.fn(),
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab: vi.fn(),
+            setExpandedNews: vi.fn(),
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(screen.queryByText('同日版本差異')).not.toBeInTheDocument()
   })
 
   it('routes events empty-state CTA into the daily analysis flow without auto-running API work', async () => {

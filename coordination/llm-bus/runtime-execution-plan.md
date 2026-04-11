@@ -43,6 +43,7 @@ Make the project feel like one coherent operating system instead of disconnected
 - ~~Verified the current wave with targeted test coverage, lint, build, and UI smoke on the canonical local runtime.~~
 - ~~Removed the old `docs/mac-mini-handoff/` bundle from the live workspace once its design intent had been distilled into the plan and brief, so future sessions cannot read stale handoff files as runtime truth.~~
 - ~~Introduced staged daily-analysis labeling so same-day reports now distinguish `收盤快版` from `資料確認版`, and same-day confirmation reruns can bypass stale FinMind cache without overwriting history.~~
+- ~~Added an inline same-day diff card so the daily panel can compare current T1 output against the previous same-day version from `analysisHistory` without extra navigation or API work.~~
 
 ## Active Execution Waves
 
@@ -122,6 +123,9 @@ Wave 2 progress:
 - `tests/components/AppPanels.contexts.test.jsx` now proves the review guard navigates to the exact pending event instead of blindly burning a new daily-analysis call
 - daily analysis now records `analysisStage / analysisVersion / finmindConfirmation`, so users can see whether they are reading a same-day fast close read or a confirmed FinMind-backed rerun
 - same-day reruns now bypass the local FinMind cache when the previous report is not yet confirmed, and `analysisHistory` keeps both T0/T1 versions instead of collapsing them to one entry per date
+- `DailyReportPanel` now shows an inline same-day diff card when a confirmed report has a previous same-day version, so users can see exactly what changed between `收盤快版` and `資料確認版`
+- `src/lib/dailyReportDiff.js` now centralizes same-day version lookup plus whitespace-tolerant diff extraction, and the new tests prove the card appears only when a real same-day pair exists
+- next queued follow-up for this lane is no longer “should we show a diff?”; it is “what is the smallest safe automatic T1 trigger now that diff-first trust is visible?”
 
 Wave 3 early findings:
 

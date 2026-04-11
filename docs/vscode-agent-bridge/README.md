@@ -159,6 +159,39 @@ curl -X POST http://localhost:9527/api/tasks/wave-4-startup-trace/dispatch \
   -d '{}'
 ```
 
+## Hard Gates（選用強制門檻）
+
+預設行為是 **soft gate**：`verificationState` 只是 UI 指示，`PATCH /api/tasks/:id` 跟 `POST /api/tasks/:id/complete` 都可以把 task 直接標為 `completed`，dashboard 只用 `draft / 待共識 / 已驗證` 的 chip 提示，沒有硬阻擋。
+
+設定環境變數 `AGENT_BRIDGE_HARD_GATES=1`（預設 `0`）後，兩條 gate 會變成**真正阻擋**完成轉換，完成路徑只剩下「evidence 齊全」且（如果 `requiresConsensus:true`）「consensus 已 approved」才會放行。
+
+| Gate          | 何時擋                                                                                                     | HTTP  | 回應 shape                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------- |
+| **Verify**    | `status="completed"` 轉換時 `evidence.{changedFiles, verificationRuns, risksNoted, nextStep}` 有任一個為空 | `400` | `{ok:false, error:"hard-gate: missing completion evidence", missing:[...]}`     |
+| **Consensus** | `requiresConsensus:true` 但 `consensusState !== 'approved'`                                                | `409` | `{ok:false, error:"hard-gate: consensus not approved", reason:<current state>}` |
+
+兩條 gate **共用同一個** env flag — opt-in 打開就兩條一起打開。PATCH 跟 `/complete` 兩條完成路徑都會跑同一個 validator，PATCH 不能繞過 `/complete`。
+
+啟用後 `GET /api/status` 會回報：
+
+```json
+{
+  "hardGates": { "enabled": true, "envVar": "AGENT_BRIDGE_HARD_GATES" }
+}
+```
+
+### 緊急脫困
+
+如果 hard gate 誤擋住 session 的正常流程，**關掉 env 變數後重啟 VS Code extension 即可**回到 soft gate 模式。沒有 per-request bypass 是**刻意**的設計：所有 override 都在 env 層級，操作有痕跡、不會偷偷解禁。
+
+### Smoke check
+
+```bash
+node docs/vscode-agent-bridge/scripts/hard-gate-smoke.cjs
+```
+
+驗證 validator 的 pass/fail 判斷：空 evidence 該擋、完整 evidence 該過、consensus 未 approved 該擋、approved 該過。
+
 ## 任務資料模型（v1）
 
 - `id`
@@ -193,6 +226,7 @@ v1 原則：
 - 不假裝 `sendText()` 等於任務完成
 - 不把 route shell / live runtime 的判斷藏在 prompt 裡，要寫回 task source file
 - `/complete` 走 soft verify gate：需要 evidence，但一般 `PATCH` 仍保留 draft / override 彈性
+- `AGENT_BRIDGE_HARD_GATES=1` 可把 verify gate + consensus gate 一起升級成 hard block（見上方「Hard Gates」章節）
 - generic `PATCH` / `task:update` 不可直接改 `consensusState` 或 `consensusReviews`
 - major task 用 `/consensus` 收 review，再由 dashboard 顯示 `待共識 / 共識退回 / 已驗證`
 - 如果 dependency 任務仍在 `待共識`，下游 task 不可 dispatch

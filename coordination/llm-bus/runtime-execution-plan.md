@@ -143,7 +143,7 @@ Goal: prevent migration code from masquerading as live runtime.
 1. List route-shell state and action paths that can diverge from the main AppShell runtime.
 2. Identify which route tests validate only local storage or local context, not real propagation.
    ~~3. Add machine guards that prevent accidental promotion of `src/App.routes.jsx`.~~
-3. Downgrade or isolate route-only behavior until parity is real.
+   ~~3. Downgrade or isolate route-only behavior until parity is real.~~
 
 Definition of done:
 
@@ -159,6 +159,9 @@ Wave 3 progress:
 - `tests/hooks/useRouteDailyPage.test.jsx` now contains a negative-parity guard proving route daily still does not expose the main-runtime `operatingContext`
 - route-shell notice now explicitly says some actions remain route-local and do not sync back to the main AppShell
 - `tests/routes/routePages.actions.test.jsx` now proves route research writes local history without touching the shared reports store, reducing the illusion that route-shell actions propagate into the canonical runtime
+- route-shell write mutators are now **behaviorally** isolated: 20 data-write actions across 6 `useRoute*Page` hooks (daily / holdings / news / research / trade / watchlist) are replaced with no-op wrappers that emit a dev-only `[route-shell] write blocked` warning instead of silently mutating localStorage or shared stores; view-state setters (expanded, filter, sort, review draft, trade upload staging) are kept route-local by design
+- per-hook tests now assert: no localStorage write, no shared-store mutation, and dev-warning emission for each blocked mutator (`tests/hooks/useRoute*Page.test.jsx` + `tests/routes/routePages.actions.test.jsx`)
+- known scope gap: `useRoutePortfolioRuntime` still exposes header-level portfolio create/rename/delete writes; deferred to a follow-up because it is not a `useRoute*Page.js` file
 
 ### Wave 4: Operability and Perceived Stability
 
@@ -166,14 +169,15 @@ Goal: remove the “the page looks broken when it opens” feeling.
 
 ~~1. Trace the current startup path responsible for the long `載入中...` phase.~~
 ~~2. Distinguish between:~~
-   - real runtime slowness
-   - avoidable initialization work
-   - weak loading UX
-~~3. Run a consensus round on the smallest safe fix:~~
-   - performance first
-   - loading experience first
-   - or a mixed approach
-~~4. Implement the smallest stabilization patch and re-measure.~~
+
+- real runtime slowness
+- avoidable initialization work
+- weak loading UX
+  ~~3. Run a consensus round on the smallest safe fix:~~
+- performance first
+- loading experience first
+- or a mixed approach
+  ~~4. Implement the smallest stabilization patch and re-measure.~~
 
 Definition of done:
 
@@ -211,13 +215,14 @@ Goal: turn Agent Bridge into a real orchestration layer for multi-LLM collaborat
 - `evidence`
   ~~2. Make the shared execution brief part of the dispatch protocol.~~
 
-3. Add a consensus gate before major runtime or architecture changes.
-4. Add a verify gate requiring:
-   - changed files
-   - risks
-   - verification run
-   - next step
-5. Update `docs/vscode-agent-bridge/README.md` and related docs to reflect the dispatcher model instead of terminal-only control.
+~~3. Add a consensus gate before major runtime or architecture changes.~~
+~~4. Add a verify gate requiring:~~
+
+- ~~changed files~~
+- ~~risks~~
+- ~~verification run~~
+- ~~next step~~
+  ~~5. Update `docs/vscode-agent-bridge/README.md` and related docs to reflect the dispatcher model instead of terminal-only control.~~
 
 Definition of done:
 
@@ -235,6 +240,13 @@ Wave 5 progress:
 - major tasks can now declare `requiresConsensus`, collect explicit reviews through `/api/tasks/:id/consensus`, and show review chips in the dashboard
 - generic `PATCH` / `task:update` can no longer bypass consensus fields directly
 - downstream tasks now refuse to dispatch when a dependency is still waiting for consensus
+- hard verify gate now enforces full completion evidence at **both** completion entry points (`PATCH /api/tasks/:id` and `POST /api/tasks/:id/complete`); returns HTTP 400 with `{ok:false, error, missing:[]}` when any of `changedFiles / verificationRuns / risksNoted / nextStep` is empty
+- hard consensus gate now blocks `status="completed"` transitions when `requiresConsensus:true` and `consensusState !== 'approved'`; returns HTTP 409 with `{ok:false, error, reason}`
+- both gates share the **`AGENT_BRIDGE_HARD_GATES`** env flag and **default OFF** — the existing soft `verificationState` chip derivation stays untouched; operator flips the env var to `1` to enable hardening after verifying nothing breaks
+- `GET /api/status` now includes `hardGates: { enabled, envVar }` so operators can see at a glance whether hardening is live
+- break-glass mechanism: unset the env var and restart the VS Code extension — no per-request bypass by design, so all overrides are auditable at the env layer
+- new smoke script `docs/vscode-agent-bridge/scripts/hard-gate-smoke.cjs` exercises the validator (empty evidence rejected, full evidence passed, consensus 'none' rejected, consensus 'approved' passed)
+- extension's `README.md` now has a dedicated "Hard Gates（選用強制門檻）" section documenting the opt-in behavior, both error shapes, the `/api/status` surface, and the emergency escape hatch
 
 ## Consensus Protocol
 

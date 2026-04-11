@@ -413,15 +413,24 @@ export function buildHoldingDossiers(input, options = {}) {
 
   const rows = Array.isArray(holdings) ? holdings : []
   const now = new Date()
+  // Non-company instrument types (ETF baskets, warrants, indices, bonds) do
+  // not have company-level analyst targets or financial statements, so their
+  // freshness severity contribution should be zero. Marking them 'fresh' is
+  // the sentinel for "no data refresh is applicable to this holding type".
+  const NON_COMPANY_TYPES = new Set(['ETF', '權證', '指數', '債券'])
   return rows.map((holding) => {
     const targetReports = targets[holding.code]?.reports || []
     const fundamentalsEntry = fundamentals[holding.code] || null
-    const targetDates = targetReports.map((report) => report?.date)
-    const targetsFreshness = computeFreshnessGrade(targetDates, { now })
-    const fundamentalsFreshness = computeFreshnessGrade(
-      fundamentalsEntry ? [fundamentalsEntry.updatedAt] : [],
-      { now }
-    )
+    const isNonCompany = NON_COMPANY_TYPES.has(String(holding?.type || '').trim())
+    const targetsFreshness = isNonCompany
+      ? 'fresh'
+      : computeFreshnessGrade(
+          targetReports.map((report) => report?.date),
+          { now }
+        )
+    const fundamentalsFreshness = isNonCompany
+      ? 'fresh'
+      : computeFreshnessGrade(fundamentalsEntry ? [fundamentalsEntry.updatedAt] : [], { now })
     return {
       code: holding.code,
       name: holding.name,

@@ -237,6 +237,57 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       })
       expect(dossiers[0].freshness.fundamentals).toBe('missing')
     })
+
+    it('marks ETF holdings as fresh targets + fresh fundamentals (no company-level data applicable)', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: '0056', name: '元大高股息', type: 'ETF' }],
+        targets: {},
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+      expect(dossiers[0].freshness.fundamentals).toBe('fresh')
+    })
+
+    it('marks 權證 (warrant) holdings as fresh targets + fresh fundamentals', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: '053848', name: '元大台積電購 01', type: '權證' }],
+        targets: {},
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+      expect(dossiers[0].freshness.fundamentals).toBe('fresh')
+    })
+
+    it('marks 指數 (index) holdings as fresh targets + fresh fundamentals', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: '^TWII', name: '台股加權指數', type: '指數' }],
+        targets: {},
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+      expect(dossiers[0].freshness.fundamentals).toBe('fresh')
+    })
+
+    it('still derives freshness from real data for 股票 type holdings', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: '2330', name: '台積電', type: '股票' }],
+        targets: {},
+        fundamentals: {},
+      })
+      // 股票 with no seed data → missing, NOT auto-marked fresh
+      expect(dossiers[0].freshness.targets).toBe('missing')
+      expect(dossiers[0].freshness.fundamentals).toBe('missing')
+    })
+
+    it('treats holdings with no type as 股票 (regular stock) for severity purposes', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: '2330', name: '台積電' }], // no type
+        targets: {},
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('missing')
+      expect(dossiers[0].freshness.fundamentals).toBe('missing')
+    })
   })
 
   describe('other dossier fields', () => {

@@ -4,7 +4,10 @@ import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
 import { requestAnalyzeWithFallback } from '../lib/analyzeRequest.js'
 import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { buildHoldingCoverageContext } from '../lib/dossierUtils.js'
-import { hydrateDossiersWithFinMind } from '../lib/finmindPromptRuntime.js'
+import {
+  hydrateDossiersWithFinMind,
+  summarizeFinMindDailyConfirmation,
+} from '../lib/finmindPromptRuntime.js'
 import { collectInjectedKnowledgeIdsFromDossiers } from '../lib/knowledgeBase.js'
 import {
   buildAnalysisDossiers,
@@ -90,6 +93,10 @@ function hasMeaningfulBrainUpdate(brainUpdate) {
     if (typeof value === 'string') return value.trim().length > 0
     return value != null
   })
+}
+
+function normalizeReportDateKey(value = '') {
+  return String(value || '').trim().replace(/-/g, '/')
 }
 
 export function useDailyAnalysisWorkflow({
@@ -180,6 +187,13 @@ export function useDailyAnalysisWorkflow({
       }
 
       const today = toSlashDate()
+      const todayMarketDate = String(today || '').replace(/\//g, '-')
+      const existingTodayReport = (Array.isArray(analysisHistory) ? analysisHistory : []).find(
+        (entry) => normalizeReportDateKey(entry?.date) === normalizeReportDateKey(today)
+      )
+      const shouldForceFreshFinMind = Boolean(
+        existingTodayReport && existingTodayReport.analysisStage !== 't1-confirmed'
+      )
       const { pendingEvents, eventCorrelations, anomalies, needsReview } =
         buildDailyEventCollections({
           newsEvents,
@@ -200,6 +214,11 @@ export function useDailyAnalysisWorkflow({
       let injectedKnowledgeIds = []
       let blindPredictions = []
       let finmindDataCount = 0
+      let finmindConfirmation = null
+      let analysisStage = 't0-preliminary'
+      let analysisStageLabel = '收盤快版'
+      const analysisVersion = existingTodayReport ? (existingTodayReport.analysisVersion || 1) + 1 : 1
+      let rerunReason = existingTodayReport ? 'manual-rerun' : null
 
       try {
         let promptDossierByCode = dossierByCode
@@ -211,6 +230,7 @@ export function useDailyAnalysisWorkflow({
               codes: promptCodes,
               dossierByCode,
               fetchStockDossierData,
+              fetchOptions: shouldForceFreshFinMind ? { forceFresh: true } : {},
               contextLabel: 'daily-analysis',
             })
             if (hydrated?.dossierByCode instanceof Map) {
@@ -227,6 +247,17 @@ export function useDailyAnalysisWorkflow({
         const dailyDossiers = buildAnalysisDossiers({ changes, dossierByCode: promptDossierByCode })
         analysisDossiers = dailyDossiers
         injectedKnowledgeIds = collectInjectedKnowledgeIdsFromDossiers(dailyDossiers)
+        finmindConfirmation = summarizeFinMindDailyConfirmation(dailyDossiers, todayMarketDate)
+        const isFinmindConfirmed =
+          finmindConfirmation.totalDatasets > 0 &&
+          finmindConfirmation.confirmedDatasets === finmindConfirmation.totalDatasets
+        analysisStage = isFinmindConfirmed ? 't1-confirmed' : 't0-preliminary'
+        analysisStageLabel = isFinmindConfirmed ? '資料確認版' : '收盤快版'
+        rerunReason = !existingTodayReport
+          ? null
+          : isFinmindConfirmed && existingTodayReport.analysisStage === 't0-preliminary'
+            ? 'finmind-confirmed'
+            : 'manual-rerun'
 
         // Calculate FinMind data count across all dossiers
         finmindDataCount = dailyDossiers.reduce((sum, dossier) => {
@@ -539,6 +570,11 @@ ${losers
           blindPredictions,
           injectedKnowledgeIds,
           finmindDataCount,
+          analysisStage,
+          analysisStageLabel,
+          analysisVersion,
+          rerunReason,
+          finmindConfirmation,
         }
         const taiwanMarketSignals = buildTaiwanMarketSignals({
           holdings,
@@ -684,6 +720,11 @@ ${losers
         brainAudit,
         injectedKnowledgeIds,
         finmindDataCount,
+        analysisStage,
+        analysisStageLabel,
+        analysisVersion,
+        rerunReason,
+        finmindConfirmation,
       })
 
       setDailyReport(normalizeDailyReportEntry(report))

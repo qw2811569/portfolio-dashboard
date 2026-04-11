@@ -46,9 +46,9 @@ function writeCache(dataset, code, data) {
   }
 }
 
-async function fetchFinMind(dataset, code, startDate) {
+async function fetchFinMind(dataset, code, startDate, { forceFresh = false } = {}) {
   // 先查快取
-  const cached = readCache(dataset, code)
+  const cached = forceFresh ? null : readCache(dataset, code)
   if (cached) return cached
 
   const params = new URLSearchParams({ dataset, code })
@@ -77,9 +77,9 @@ async function fetchFinMind(dataset, code, startDate) {
  * @param {number} days — 回看天數（預設 30）
  * @returns {Promise<Array<{date, foreign, investment, dealer}>>}
  */
-export async function fetchInstitutionalChip(code, days = 30) {
+export async function fetchInstitutionalChip(code, days = 30, options = {}) {
   const start = daysAgo(days)
-  return fetchFinMind('institutional', code, start)
+  return fetchFinMind('institutional', code, start, options)
 }
 
 /**
@@ -87,9 +87,9 @@ export async function fetchInstitutionalChip(code, days = 30) {
  * @param {string} code
  * @param {number} days
  */
-export async function fetchMarginTrading(code, days = 30) {
+export async function fetchMarginTrading(code, days = 30, options = {}) {
   const start = daysAgo(days)
-  return fetchFinMind('margin', code, start)
+  return fetchFinMind('margin', code, start, options)
 }
 
 /**
@@ -97,9 +97,9 @@ export async function fetchMarginTrading(code, days = 30) {
  * @param {string} code
  * @param {number} days — 預設 365（看一年）
  */
-export async function fetchValuationHistory(code, days = 365) {
+export async function fetchValuationHistory(code, days = 365, options = {}) {
   const start = daysAgo(days)
-  return fetchFinMind('valuation', code, start)
+  return fetchFinMind('valuation', code, start, options)
 }
 
 /**
@@ -107,9 +107,9 @@ export async function fetchValuationHistory(code, days = 365) {
  * @param {string} code
  * @param {string} startDate — 預設 2 年前
  */
-export async function fetchFinancialStatements(code, startDate) {
+export async function fetchFinancialStatements(code, startDate, options = {}) {
   const start = startDate || daysAgo(730)
-  return fetchFinMind('financials', code, start)
+  return fetchFinMind('financials', code, start, options)
 }
 
 /**
@@ -117,9 +117,9 @@ export async function fetchFinancialStatements(code, startDate) {
  * @param {string} code
  * @param {string} startDate
  */
-export async function fetchBalanceSheet(code, startDate) {
+export async function fetchBalanceSheet(code, startDate, options = {}) {
   const start = startDate || daysAgo(730)
-  return fetchFinMind('balanceSheet', code, start)
+  return fetchFinMind('balanceSheet', code, start, options)
 }
 
 /**
@@ -127,17 +127,17 @@ export async function fetchBalanceSheet(code, startDate) {
  * @param {string} code
  * @param {string} startDate
  */
-export async function fetchCashFlowStatements(code, startDate) {
+export async function fetchCashFlowStatements(code, startDate, options = {}) {
   const start = startDate || daysAgo(730)
-  return fetchFinMind('cashFlow', code, start)
+  return fetchFinMind('cashFlow', code, start, options)
 }
 
 /**
  * 取得個股股利歷史
  * @param {string} code
  */
-export async function fetchDividendHistory(code) {
-  return fetchFinMind('dividend', code, daysAgo(1825)) // 5 年
+export async function fetchDividendHistory(code, options = {}) {
+  return fetchFinMind('dividend', code, daysAgo(1825), options) // 5 年
 }
 
 /**
@@ -145,8 +145,8 @@ export async function fetchDividendHistory(code) {
  * @param {string} code
  * @param {number} days
  */
-export async function fetchDividendResults(code, days = 1825) {
-  return fetchFinMind('dividendResult', code, daysAgo(days))
+export async function fetchDividendResults(code, days = 1825, options = {}) {
+  return fetchFinMind('dividendResult', code, daysAgo(days), options)
 }
 
 /**
@@ -154,9 +154,9 @@ export async function fetchDividendResults(code, days = 1825) {
  * @param {string} code
  * @param {number} months — 回看月數（預設 12）
  */
-export async function fetchRevenueHistory(code, months = 12) {
+export async function fetchRevenueHistory(code, months = 12, options = {}) {
   const start = daysAgo(months * 31)
-  return fetchFinMind('revenue', code, start)
+  return fetchFinMind('revenue', code, start, options)
 }
 
 /**
@@ -164,8 +164,8 @@ export async function fetchRevenueHistory(code, months = 12) {
  * @param {string} code
  * @param {number} days
  */
-export async function fetchShareholdingHistory(code, days = 120) {
-  return fetchFinMind('shareholding', code, daysAgo(days))
+export async function fetchShareholdingHistory(code, days = 120, options = {}) {
+  return fetchFinMind('shareholding', code, daysAgo(days), options)
 }
 
 /**
@@ -173,8 +173,8 @@ export async function fetchShareholdingHistory(code, days = 120) {
  * @param {string} code
  * @param {number} days
  */
-export async function fetchStockNews(code, days = 21) {
-  return fetchFinMind('news', code, daysAgo(days))
+export async function fetchStockNews(code, days = 21, options = {}) {
+  return fetchFinMind('news', code, daysAgo(days), options)
 }
 
 /**
@@ -183,7 +183,7 @@ export async function fetchStockNews(code, days = 21) {
  * @param {string} code
  * @returns {Promise<{institutional, margin, valuation, financials, balanceSheet, cashFlow, dividend, dividendResult, revenue, shareholding, news}>}
  */
-export async function fetchStockDossierData(code) {
+export async function fetchStockDossierData(code, options = {}) {
   const [
     institutional,
     margin,
@@ -197,17 +197,17 @@ export async function fetchStockDossierData(code) {
     shareholding,
     news,
   ] = await Promise.allSettled([
-    fetchInstitutionalChip(code, 20),
-    fetchMarginTrading(code, 20),
-    fetchValuationHistory(code, 90),
-    fetchFinancialStatements(code),
-    fetchBalanceSheet(code),
-    fetchCashFlowStatements(code),
-    fetchDividendHistory(code),
-    fetchDividendResults(code, 1825),
-    fetchRevenueHistory(code, 6),
-    fetchShareholdingHistory(code, 90),
-    fetchStockNews(code, 14),
+    fetchInstitutionalChip(code, 20, options),
+    fetchMarginTrading(code, 20, options),
+    fetchValuationHistory(code, 90, options),
+    fetchFinancialStatements(code, undefined, options),
+    fetchBalanceSheet(code, undefined, options),
+    fetchCashFlowStatements(code, undefined, options),
+    fetchDividendHistory(code, options),
+    fetchDividendResults(code, 1825, options),
+    fetchRevenueHistory(code, 6, options),
+    fetchShareholdingHistory(code, 90, options),
+    fetchStockNews(code, 14, options),
   ])
 
   return {

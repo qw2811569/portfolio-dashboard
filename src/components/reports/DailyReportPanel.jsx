@@ -15,6 +15,39 @@ const lbl = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 
+function buildDailyStageMeta(report = null) {
+  const stage = String(report?.analysisStage || '').trim()
+  const confirmation = report?.finmindConfirmation
+  const pendingCount = Array.isArray(confirmation?.pendingCodes) ? confirmation.pendingCodes.length : 0
+  const expectedLabel = confirmation?.expectedMarketDate
+    ? confirmation.expectedMarketDate.replace(/-/g, '/')
+    : ''
+
+  if (stage === 't1-confirmed') {
+    return {
+      badgeColor: 'teal',
+      summary: expectedLabel
+        ? `已用 FinMind ${expectedLabel} 日終籌碼/估值確認`
+        : '已用 FinMind 日終資料確認',
+    }
+  }
+
+  if (stage === 't0-preliminary') {
+    return {
+      badgeColor: 'amber',
+      summary:
+        pendingCount > 0
+          ? `仍有 ${pendingCount} 檔待等 FinMind 日終籌碼/估值確認`
+          : 'FinMind 日終籌碼/估值尚待確認',
+    }
+  }
+
+  return {
+    badgeColor: 'default',
+    summary: '舊版分析，尚未標記資料確認階段',
+  }
+}
+
 /**
  * Empty state for daily analysis
  */
@@ -288,6 +321,7 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
   const eventCount = report.eventCorrelations?.length || 0
   const knowledgeCount = report.injectedKnowledgeIds?.length || 0
   const finmindCount = report.finmindDataCount || 0
+  const stageMeta = buildDailyStageMeta(report)
 
   return h(
     Card,
@@ -309,6 +343,8 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
         { style: { display: 'flex', alignItems: 'center', gap: 6 } },
         h('div', { style: { ...lbl, marginBottom: 0 } }, `${report.date} 收盤分析`),
         h('span', { style: { fontSize: 9, color: C.textMute } }, report.time),
+        report.analysisStageLabel &&
+          h(Badge, { color: stageMeta.badgeColor }, report.analysisStageLabel),
         !expanded &&
           report.anomalies?.length > 0 &&
           h(Badge, { color: 'amber' }, `異常 ${report.anomalies.length}`),
@@ -350,7 +386,56 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
         },
         h('div', { style: { fontSize: 9, color: C.textSec } }, `引用 ${eventCount} 個事件`),
         h('div', { style: { fontSize: 9, color: C.textSec } }, `${knowledgeCount} 條知識庫規則`),
-        h('div', { style: { fontSize: 9, color: C.textSec } }, `${finmindCount} 筆 FinMind 數據`)
+        h('div', { style: { fontSize: 9, color: C.textSec } }, `${finmindCount} 筆 FinMind 數據`),
+        h('div', { style: { fontSize: 9, color: C.textSec } }, stageMeta.summary)
+      )
+  )
+}
+
+export function AnalysisStageCard({ report }) {
+  if (!report) return null
+
+  const stageMeta = buildDailyStageMeta(report)
+  const confirmation = report.finmindConfirmation
+  const pendingCodes = Array.isArray(confirmation?.pendingCodes) ? confirmation.pendingCodes : []
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${
+          stageMeta.badgeColor === 'teal' ? alpha(C.teal, '40') : alpha(C.amber, '40')
+        }`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 6,
+        },
+      },
+      h('div', { style: { ...lbl, color: stageMeta.badgeColor === 'teal' ? C.teal : C.amber } }, '資料確認階段'),
+      h(Badge, { color: stageMeta.badgeColor }, report.analysisStageLabel || '既有版本')
+    ),
+    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, stageMeta.summary),
+    pendingCodes.length > 0 &&
+      h(
+        'div',
+        { style: { fontSize: 9, color: C.textMute, marginTop: 6, lineHeight: 1.7 } },
+        `待確認標的：${pendingCodes.slice(0, 5).join('、')}${pendingCodes.length > 5 ? '…' : ''}`
+      ),
+    report.rerunReason === 'finmind-confirmed' &&
+      h(
+        'div',
+        { style: { fontSize: 9, color: C.teal, marginTop: 6 } },
+        '這份分析是由同日快版升級而來，已保留先前版本供追蹤。'
       )
   )
 }
@@ -1125,6 +1210,7 @@ export function DailyReportPanel({
     today: toSlashDate(),
   }).needsReview
   const hasPendingReview = Array.isArray(liveNeedsReview) && liveNeedsReview.length > 0
+  const isPreliminaryReport = dailyReport?.analysisStage === 't0-preliminary'
   const navigateToNeedsReview = () => {
     if (typeof setTab === 'function') setTab('news')
     const firstId = liveNeedsReview[0]?.id
@@ -1178,6 +1264,8 @@ export function DailyReportPanel({
             actionLabel: '重新分析',
           }),
 
+        h(AnalysisStageCard, { report: dailyReport }),
+
         h(DailyReportSummary, {
           report: dailyReport,
           expanded: dailyExpanded,
@@ -1205,7 +1293,13 @@ export function DailyReportPanel({
               marginBottom: 8,
             },
           },
-          analyzing ? analyzeStep || '分析中...' : hasPendingReview ? '仍要重新分析' : '重新分析今日收盤'
+          analyzing
+            ? analyzeStep || '分析中...'
+            : hasPendingReview
+              ? '仍要重新分析'
+              : isPreliminaryReport
+                ? '跑資料確認版'
+                : '重新分析今日收盤'
         ),
         h(
           Button,

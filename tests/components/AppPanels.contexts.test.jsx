@@ -628,6 +628,88 @@ describe('components/AppPanels context wiring', () => {
     expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
   })
 
+  it('labels preliminary daily analysis as a fast close version and exposes a confirm rerun CTA', async () => {
+    const runDailyAnalysis = vi.fn()
+
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-3',
+              date: '2026/04/11',
+              time: '14:20',
+              totalTodayPnl: 18,
+              changes: [],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [],
+              needsReview: [],
+              analysisStage: 't0-preliminary',
+              analysisStageLabel: '收盤快版',
+              analysisVersion: 1,
+              finmindConfirmation: {
+                expectedMarketDate: '2026-04-11',
+                status: 'preliminary',
+                pendingCodes: ['2330'],
+              },
+            },
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis,
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab: vi.fn(),
+            setExpandedNews: vi.fn(),
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(await screen.findAllByText('收盤快版')).toHaveLength(2)
+    expect(screen.getByText('仍有 1 檔待等 FinMind 日終籌碼/估值確認')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('跑資料確認版'))
+    expect(runDailyAnalysis).toHaveBeenCalledTimes(1)
+  })
+
   it('routes events empty-state CTA into the daily analysis flow without auto-running API work', async () => {
     const setTab = vi.fn()
 

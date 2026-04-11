@@ -11,6 +11,9 @@ function toSlashDate(date = new Date()) {
 
 export function normalizeDailyReportEntry(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return value
+  const analysisStage = ['t0-preliminary', 't1-confirmed', 'legacy'].includes(value.analysisStage)
+    ? value.analysisStage
+    : 'legacy'
   return {
     ...value,
     eventAssessments: Array.isArray(value.eventAssessments) ? value.eventAssessments : [],
@@ -19,6 +22,20 @@ export function normalizeDailyReportEntry(value) {
       ? Array.from(new Set(value.injectedKnowledgeIds.filter(Boolean)))
       : [],
     finmindDataCount: Number(value.finmindDataCount) || 0,
+    analysisStage,
+    analysisStageLabel:
+      String(value.analysisStageLabel || '').trim() ||
+      (analysisStage === 't1-confirmed'
+        ? '資料確認版'
+        : analysisStage === 't0-preliminary'
+          ? '收盤快版'
+          : '既有版本'),
+    analysisVersion: Math.max(1, Number(value.analysisVersion) || 1),
+    rerunReason: String(value.rerunReason || '').trim() || null,
+    finmindConfirmation:
+      value.finmindConfirmation && typeof value.finmindConfirmation === 'object'
+        ? value.finmindConfirmation
+        : null,
   }
 }
 
@@ -28,7 +45,14 @@ export function normalizeAnalysisHistoryEntries(entries) {
   entries.forEach((entry) => {
     if (!entry || typeof entry !== 'object') return
     const normalizedEntry = normalizeDailyReportEntry(entry)
-    const key = entry.date ? `date:${entry.date}` : `id:${entry.id ?? Math.random()}`
+    const hasVersionedStage = ['t0-preliminary', 't1-confirmed'].includes(
+      normalizedEntry?.analysisStage
+    )
+    const key = entry.date
+      ? hasVersionedStage
+        ? `date:${entry.date}:v${normalizedEntry.analysisVersion || 1}`
+        : `date:${entry.date}`
+      : `id:${entry.id ?? Math.random()}`
     const prev = byKey.get(key)
     const entryId = Number(normalizedEntry?.id) || 0
     const prevId = Number(prev?.id) || 0

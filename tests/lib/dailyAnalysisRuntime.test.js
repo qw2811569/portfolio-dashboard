@@ -195,6 +195,15 @@ describe('lib/dailyAnalysisRuntime', () => {
       eventCorrelations: [],
       needsReview: [],
       injectedKnowledgeIds: ['fa-001', 'rm-001', 'fa-001'],
+      analysisStage: 't1-confirmed',
+      analysisStageLabel: '資料確認版',
+      analysisVersion: 2,
+      rerunReason: 'finmind-confirmed',
+      finmindConfirmation: {
+        expectedMarketDate: '2026-03-28',
+        status: 'confirmed',
+        pendingCodes: [],
+      },
     })
 
     expect(request.systemPrompt).toContain('這是盲測')
@@ -225,6 +234,14 @@ describe('lib/dailyAnalysisRuntime', () => {
       date: '2026/03/28',
       totalTodayPnl: 1234,
       injectedKnowledgeIds: ['fa-001', 'rm-001'],
+      analysisStage: 't1-confirmed',
+      analysisStageLabel: '資料確認版',
+      analysisVersion: 2,
+      rerunReason: 'finmind-confirmed',
+      finmindConfirmation: expect.objectContaining({
+        expectedMarketDate: '2026-03-28',
+        status: 'confirmed',
+      }),
     })
   })
 

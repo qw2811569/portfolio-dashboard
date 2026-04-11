@@ -42,6 +42,7 @@ Make the project feel like one coherent operating system instead of disconnected
 - ~~Wired Events and News empty-state CTA flows into the daily-analysis tab without auto-triggering new API work.~~
 - ~~Verified the current wave with targeted test coverage, lint, build, and UI smoke on the canonical local runtime.~~
 - ~~Removed the old `docs/mac-mini-handoff/` bundle from the live workspace once its design intent had been distilled into the plan and brief, so future sessions cannot read stale handoff files as runtime truth.~~
+- ~~Introduced staged daily-analysis labeling so same-day reports now distinguish `收盤快版` from `資料確認版`, and same-day confirmation reruns can bypass stale FinMind cache without overwriting history.~~
 
 ## Active Execution Waves
 
@@ -119,6 +120,8 @@ Wave 2 progress:
 - `tests/components/Header.test.jsx` now proves the workflow cue only calls `setTab(...)` and does not trigger API work
 - `DailyReportPanel` now soft-routes the user back into `新聞追蹤 / 復盤` when live events are already due for review, while still keeping a manual `仍要分析` escape hatch
 - `tests/components/AppPanels.contexts.test.jsx` now proves the review guard navigates to the exact pending event instead of blindly burning a new daily-analysis call
+- daily analysis now records `analysisStage / analysisVersion / finmindConfirmation`, so users can see whether they are reading a same-day fast close read or a confirmed FinMind-backed rerun
+- same-day reruns now bypass the local FinMind cache when the previous report is not yet confirmed, and `analysisHistory` keeps both T0/T1 versions instead of collapsing them to one entry per date
 
 Wave 3 early findings:
 

@@ -161,6 +161,52 @@ Measured facts:
 3. What guard should prevent accidental promotion of the route shell before parity is real?
 4. What is the smallest coherence wave that makes pages feel like one product without adding more API usage?
 
+## Active Decision: FinMind Staged Daily Review
+
+We needed to decide whether the daily-analysis lane should stay single-pass, or split into a same-day fast close read plus a later confirmed rerun once FinMind daily datasets are actually available.
+
+Measured facts:
+
+- the current daily-analysis runtime already combines:
+  - immediate price-change math from cached / synced close quotes
+  - best-effort FinMind hydration for `institutional / valuation / margin / shareholding / revenue / balanceSheet / cashFlow`
+- this means a same-day rerun can legitimately change the thesis even when price action is identical, because the end-of-day FinMind signals may arrive later
+- the local FinMind adapter also keeps a 4-hour browser cache, so any confirmed rerun must explicitly bypass stale cache or it risks becoming a fake rerun
+
+### Decision result
+
+- Claude:
+  - chose `yes` on staged T0/T1 review
+  - required data-presence gating instead of a fixed timer, visible preliminary labeling, and retention of the T0 record
+- Qwen:
+  - chose `yes` on staged T0/T1 review
+  - emphasized machine-readable staging and idempotent reruns rather than silent overwrite behavior
+- Gemini:
+  - no usable vote this round
+  - the short prompt was interpreted as a role-boundary question instead of a product decision
+
+### Applied result
+
+- raw lane outputs archived under:
+  - `coordination/llm-bus/runs/20260411-122012/question.md`
+  - `coordination/llm-bus/runs/20260411-122012/claude.md`
+  - `coordination/llm-bus/runs/20260411-122012/qwen.md`
+  - `coordination/llm-bus/runs/20260411-122012/gemini.md`
+  - `coordination/llm-bus/runs/20260411-122012/consensus.md`
+- daily reports now distinguish:
+  - `收盤快版` (`t0-preliminary`)
+  - `資料確認版` (`t1-confirmed`)
+- `useDailyAnalysisWorkflow` now:
+  - records `analysisStage`, `analysisVersion`, `rerunReason`, and `finmindConfirmation`
+  - forces a fresh FinMind fetch on same-day reruns when the earlier report is not already confirmed
+- `DailyReportPanel` now shows the confirmation phase explicitly and renames the rerun CTA to `跑資料確認版` when the current report is still preliminary
+- `analysisHistory` now retains same-day staged versions instead of collapsing everything to one entry per date
+- verification passed:
+  - `bunx vitest run tests/lib/finmindPromptRuntime.test.js tests/lib/finmindAdapter.test.js tests/lib/dailyAnalysisRuntime.test.js tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx`
+  - `bun run lint`
+  - `bun run build`
+  - `bun scripts/ui-smoke.cjs`
+
 ## Active Decision: Wave 1 Propagation Chain
 
 We need to choose the first cross-page propagation chain to protect with tests and the smallest safe patch set.

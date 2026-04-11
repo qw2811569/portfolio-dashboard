@@ -128,4 +128,27 @@ describe('lib/dataAdapters/finmindAdapter', () => {
       news: [],
     })
   })
+
+  it('can bypass cached FinMind responses when forceFresh is requested', async () => {
+    const storage = new Map()
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+      setItem: vi.fn((key, value) => storage.set(key, value)),
+      removeItem: vi.fn((key) => storage.delete(key)),
+    })
+
+    const response = {
+      ok: true,
+      json: async () => ({ data: [{ dataset: 'shareholding', refreshed: true }] }),
+    }
+    global.fetch = vi.fn().mockResolvedValue(response)
+
+    await fetchShareholdingHistory('2330', 60)
+    await fetchShareholdingHistory('2330', 60)
+    await fetchShareholdingHistory('2330', 60, { forceFresh: true })
+
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+    expect(getDatasetFromCall(0)).toBe('shareholding')
+    expect(getDatasetFromCall(1)).toBe('shareholding')
+  })
 })

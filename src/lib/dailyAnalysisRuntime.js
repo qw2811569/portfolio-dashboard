@@ -646,6 +646,11 @@ export function buildDailyReport({
   brainAudit = null,
   injectedKnowledgeIds = [],
   finmindDataCount = 0,
+  analysisStage = 't0-preliminary',
+  analysisStageLabel = '收盤快版',
+  analysisVersion = 1,
+  rerunReason = null,
+  finmindConfirmation = null,
 }) {
   return {
     id: Date.now(),
@@ -666,6 +671,12 @@ export function buildDailyReport({
       ? Array.from(new Set(injectedKnowledgeIds.filter(Boolean)))
       : [],
     finmindDataCount,
+    analysisStage,
+    analysisStageLabel,
+    analysisVersion: Number(analysisVersion) || 1,
+    rerunReason: rerunReason || null,
+    finmindConfirmation:
+      finmindConfirmation && typeof finmindConfirmation === 'object' ? finmindConfirmation : null,
   }
 }
 

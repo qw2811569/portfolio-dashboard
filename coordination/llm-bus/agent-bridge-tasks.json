@@ -155,6 +155,61 @@
       "sourcePlanRef": "Wave 2 / Step 4-5",
       "summary": "When events are already due for review, the daily-analysis entry point now warns first, routes back to the exact pending review, and only runs analysis through an explicit override.",
       "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Add the smallest daily-analysis guard that uses live review backlog state to steer the user back into event/news review before firing a new expensive analysis call. Keep a manual override and do not add new API work."
+    },
+    {
+      "id": "wave-2-staged-daily-review",
+      "title": "Introduce staged FinMind-backed daily review",
+      "lane": "coherence",
+      "owner": "codex",
+      "status": "completed",
+      "priority": "high",
+      "dependsOn": ["wave-2-review-backlog-guard"],
+      "writeScope": [
+        "src/hooks/useDailyAnalysisWorkflow.js",
+        "src/components/reports/DailyReportPanel.jsx",
+        "src/lib/finmindPromptRuntime.js",
+        "src/lib/dataAdapters/finmindAdapter.js",
+        "src/lib/reportUtils.js",
+        "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
+        "tests/components/AppPanels.contexts.test.jsx"
+      ],
+      "sourcePlanRef": "Wave 2 / staged-daily-review",
+      "summary": "Daily analysis now distinguishes same-day `收盤快版` vs `資料確認版`, bypasses stale FinMind cache on confirmation reruns, and keeps both same-day versions in history.",
+      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md, coordination/llm-bus/runtime-stabilization-brief.md, and coordination/llm-bus/runs/20260411-122012/*.md. Land the smallest staged daily-review patch that makes FinMind confirmation explicit without adding background scheduling.",
+      "requiresConsensus": true,
+      "consensusReviews": [
+        {
+          "agentId": "claude",
+          "decision": "approved",
+          "summary": "Adopt T0/T1 staging with visible preliminary labeling and data-presence gating."
+        },
+        {
+          "agentId": "qwen",
+          "decision": "approved",
+          "summary": "Keep the staged rerun machine-readable and idempotent instead of silently overwriting same-day reports."
+        }
+      ],
+      "evidence": {
+        "changedFiles": [
+          "src/hooks/useDailyAnalysisWorkflow.js",
+          "src/components/reports/DailyReportPanel.jsx",
+          "src/lib/finmindPromptRuntime.js",
+          "src/lib/dataAdapters/finmindAdapter.js",
+          "src/lib/reportUtils.js",
+          "coordination/llm-bus/runs/20260411-122012/consensus.md"
+        ],
+        "verificationRuns": [
+          "bunx vitest run tests/lib/finmindPromptRuntime.test.js tests/lib/finmindAdapter.test.js tests/lib/dailyAnalysisRuntime.test.js tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx",
+          "bun run lint",
+          "bun run build",
+          "bun scripts/ui-smoke.cjs"
+        ],
+        "risksNoted": [
+          "T1 is still manual-trigger only; background scheduling has not landed yet",
+          "Gemini did not provide a usable vote in this run and was treated as non-blocking"
+        ],
+        "nextStep": "Add an explicit same-day T1 trigger policy and a diff view so users can compare fast close vs confirmed rerun."
+      }
     }
   ]
 }

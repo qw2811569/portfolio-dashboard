@@ -268,6 +268,16 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       expect(dossiers[0].freshness.fundamentals).toBe('fresh')
     })
 
+    it('marks 債券 (bond) holdings as fresh targets + fresh fundamentals', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: [{ code: 'B-123', name: '台灣政府債', type: '債券' }],
+        targets: {},
+        fundamentals: {},
+      })
+      expect(dossiers[0].freshness.targets).toBe('fresh')
+      expect(dossiers[0].freshness.fundamentals).toBe('fresh')
+    })
+
     it('still derives freshness from real data for 股票 type holdings', () => {
       const dossiers = buildHoldingDossiers({
         holdings: [{ code: '2330', name: '台積電', type: '股票' }],

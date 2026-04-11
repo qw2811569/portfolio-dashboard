@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
+import { mapFinMindToPerBandTargets } from '../lib/dataAdapters/finmindTargetsMapper.js'
 import { computeFreshnessGrade } from '../lib/dateUtils.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
@@ -168,12 +169,32 @@ export function usePortfolioDerivedData({
           existingFreshness.fundamentals && existingFreshness.fundamentals !== 'missing'
             ? existingFreshness.fundamentals
             : derivedFundamentalFreshness
+
+        // PER-band derived targets: only populate when the holding has no
+        // existing seed/manual target reports. Seeded reports always win —
+        // derived bands are a fallback, not a replacement.
+        const hasExistingTargets = Array.isArray(d.targets) && d.targets.length > 0
+        let nextTargets = d.targets
+        let nextTargetsFreshness = existingFreshness.targets
+        if (!hasExistingTargets) {
+          const perBand = mapFinMindToPerBandTargets(fm, { code: d.code })
+          if (perBand && perBand.reports.length > 0) {
+            nextTargets = perBand.reports
+            nextTargetsFreshness = computeFreshnessGrade(
+              perBand.reports.map((report) => report.date),
+              { now: new Date() }
+            )
+          }
+        }
+
         return {
           ...next,
           fundamentals: resolvedFundamentals,
+          targets: nextTargets,
           freshness: {
             ...existingFreshness,
             fundamentals: nextFreshness,
+            targets: nextTargetsFreshness || existingFreshness.targets,
           },
         }
       })

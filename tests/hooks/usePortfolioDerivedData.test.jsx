@@ -360,6 +360,62 @@ describe('usePortfolioDerivedData', () => {
   })
 
   describe('FinMind enrichment flows into dataRefreshRows', () => {
+    it('adds a PER-band derived target to a holding without seed targets after enrichment', async () => {
+      fetchStockDossierData.mockResolvedValue({
+        revenue: [
+          {
+            date: '2026-03-31',
+            revenueMonth: 3,
+            revenueYear: 2026,
+            revenue: 1000000,
+            revenueYoY: 12.5,
+            revenueMoM: -2.3,
+          },
+        ],
+        financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+        valuation: [
+          { date: '2026-03-01', per: 15 },
+          { date: '2026-02-01', per: 18 },
+          { date: '2026-01-01', per: 20 },
+          { date: '2025-12-01', per: 22 },
+          { date: '2025-11-01', per: 25 },
+        ],
+      })
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      // Initial render — no seeded targets for 2330, so freshness.targets is missing
+      // and severity is 4 (targets 2 + fundamentals 2)
+      const initialRow = result.current.dataRefreshRows.find((r) => r.code === '2330')
+      expect(initialRow).toBeDefined()
+      expect(initialRow.targetStatus).toBe('missing')
+
+      // After enrichment, the PER-band mapper should populate dossier.targets
+      // and freshness.targets should be fresh (synthesized today). Combined
+      // with the fundamentals fix, severity drops to 0 and the row exits
+      // the backlog entirely.
+      await waitFor(
+        () => {
+          const row = result.current.dataRefreshRows.find((r) => r.code === '2330')
+          expect(row).toBeUndefined()
+        },
+        { timeout: 2000 }
+      )
+
+      const enrichedDossier = result.current.dossierByCode.get('2330')
+      expect(enrichedDossier.targets.length).toBeGreaterThan(0)
+      expect(enrichedDossier.targets[0].firm).toMatch(/歷史PE/)
+      expect(enrichedDossier.freshness.targets).toBe('fresh')
+    })
+
     it('clears fundamentals severity on a holding after FinMind enrichment resolves', async () => {
       // Full FinMind fixture — revenue + financials + balance sheet all present.
       // Mapper should classify this as 'fresh' and set freshness.fundamentals='fresh'.

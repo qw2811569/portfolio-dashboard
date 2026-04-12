@@ -1,8 +1,9 @@
 import { useMemo, useEffect, useState } from 'react'
 import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
+import { fetchCronTargets, isCronTargetUsable } from '../lib/dataAdapters/cronTargetsAdapter.js'
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
 import { mapFinMindToPerBandTargets } from '../lib/dataAdapters/finmindTargetsMapper.js'
-import { computeFreshnessGrade } from '../lib/dateUtils.js'
+import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/dateUtils.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
@@ -142,21 +143,50 @@ export function usePortfolioDerivedData({
     if (codesToEnrich.length === 0) {
       return
     }
+    // Build a lookup for warrant → underlying stock so we can fetch data for
+    // the underlying when the warrant itself has no FinMind coverage.
+    const underlyingByCode = new Map()
+    for (const d of D) {
+      const meta = STOCK_META[d.code]
+      if (meta?.underlyingCode) {
+        underlyingByCode.set(d.code, { code: meta.underlyingCode, name: meta.underlying || '' })
+      }
+    }
     Promise.allSettled(
       codesToEnrich.map(async (code) => {
         try {
-          const fm = await fetchStockDossierData(code)
-          return { code, fm }
+          const underlying = underlyingByCode.get(code)
+          const fetchCode = underlying ? underlying.code : code
+          const [fm, cronSnapshot] = await Promise.all([
+            fetchStockDossierData(fetchCode),
+            fetchCronTargets(fetchCode).catch(() => null),
+          ])
+          return { code, fm, cronSnapshot, underlying: underlying || null }
         } catch {
-          return { code, fm: null }
+          return {
+            code,
+            fm: null,
+            cronSnapshot: null,
+            underlying: underlyingByCode.get(code) || null,
+          }
         }
       })
     ).then((results) => {
       if (cancelled) return
       const fmMap = new Map(results.map((r) => [r.value.code, r.value.fm]))
+      const cronMap = new Map(results.map((r) => [r.value.code, r.value.cronSnapshot]))
+      const underlyingMap = new Map(results.map((r) => [r.value.code, r.value.underlying]))
       const enriched = D.map((d) => {
         const fm = fmMap.get(d.code) || d.finmind
-        const next = { ...d, finmind: fm }
+        const cronSnapshot = cronMap.get(d.code) || null
+        const underlying = underlyingMap.get(d.code) || null
+        const next = {
+          ...d,
+          finmind: fm,
+          ...(underlying
+            ? { underlyingCode: underlying.code, underlyingName: underlying.name }
+            : {}),
+        }
         if (!fm) return next
         // Derive fundamentals + freshness from FinMind when available. Partial
         // coverage (revenue only) maps to freshness='aging' which clears the
@@ -191,18 +221,28 @@ export function usePortfolioDerivedData({
         const hasExistingTargets = Array.isArray(d.targets) && d.targets.length > 0
         let nextTargets = d.targets
         let nextTargetsFreshness = existingFreshness.targets
+        let nextTargetSource = hasExistingTargets ? 'seed' : null
         if (!hasExistingTargets) {
-          // Integration stub for the daily target-price cron pipeline:
-          // 1. read `target-prices/{code}.json` from Blob here
-          // 2. prefer fresh cron-collected analyst targets when available
-          // 3. keep PER-band as the stale/unsupported fallback for ETF/指數/債券 paths
-          const perBand = mapFinMindToPerBandTargets(fm, { code: d.code })
-          if (perBand && perBand.reports.length > 0) {
-            nextTargets = perBand.reports
+          // Daily target-price cron pipeline: prefer fresh analyst targets
+          // collected by api/cron/collect-target-prices.js over PER-band.
+          // PER-band is the fallback for unsupported instruments or stale cron data.
+          if (cronSnapshot && isCronTargetUsable(cronSnapshot)) {
+            nextTargets = cronSnapshot.targets.reports
+            nextTargetSource = 'analyst'
             nextTargetsFreshness = computeFreshnessGrade(
-              perBand.reports.map((report) => report.date),
-              { now: new Date() }
+              cronSnapshot.targets.reports.map((report) => report.date),
+              { now: new Date(), thresholds: TARGETS_FRESHNESS_THRESHOLDS }
             )
+          } else {
+            const perBand = mapFinMindToPerBandTargets(fm, { code: d.code })
+            if (perBand && perBand.reports.length > 0) {
+              nextTargets = perBand.reports
+              nextTargetSource = 'per-band'
+              nextTargetsFreshness = computeFreshnessGrade(
+                perBand.reports.map((report) => report.date),
+                { now: new Date(), thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+              )
+            }
           }
         }
 
@@ -210,6 +250,7 @@ export function usePortfolioDerivedData({
           ...next,
           fundamentals: resolvedFundamentals,
           targets: nextTargets,
+          targetSource: nextTargetSource,
           freshness: {
             ...existingFreshness,
             fundamentals: nextFreshness,
@@ -578,12 +619,29 @@ export function usePortfolioDerivedData({
           const severity =
             (targetStatus === 'missing' ? 2 : targetStatus === 'stale' ? 1 : 0) +
             (fundamentalStatus === 'missing' ? 2 : fundamentalStatus === 'stale' ? 1 : 0)
+          // Target source label for UI distinction (Task 7):
+          // 'analyst' = cron-collected broker report, 'per-band' = PER-band estimate,
+          // 'seed' = manually seeded, null = no targets yet
+          const targetSource = dossier.targetSource || null
+          const topTarget =
+            Array.isArray(dossier.targets) && dossier.targets.length > 0 ? dossier.targets[0] : null
+          let targetLabel = null
+          if (topTarget) {
+            const isPerBand = targetSource === 'per-band' || /歷史PE/.test(topTarget.firm || '')
+            if (isPerBand) {
+              targetLabel = `系統推估 ${topTarget.target?.toLocaleString() || ''}元`
+            } else {
+              targetLabel = `${topTarget.firm} 目標 ${topTarget.target?.toLocaleString() || ''}（${topTarget.date || ''}）`
+            }
+          }
           return {
             code: dossier.code,
             name: dossier.name,
             targetStatus,
             fundamentalStatus,
             severity,
+            targetSource,
+            targetLabel,
             targetUpdatedAt: dossier.targets?.updatedAt || null,
             fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
           }

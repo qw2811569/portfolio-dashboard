@@ -1,5 +1,5 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
-import { computeFreshnessGrade } from './dateUtils.js'
+import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from './dateUtils.js'
 import { getEventStockCodes } from './eventUtils.js'
 import {
   shouldDebugFinMindPromptCoverage,
@@ -426,7 +426,7 @@ export function buildHoldingDossiers(input, options = {}) {
       ? 'fresh'
       : computeFreshnessGrade(
           targetReports.map((report) => report?.date),
-          { now }
+          { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
         )
     const fundamentalsFreshness = isNonCompany
       ? 'fresh'

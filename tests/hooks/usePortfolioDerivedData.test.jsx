@@ -1,9 +1,14 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock the two external module-level imports
+// Mock the external module-level imports
 vi.mock('../../src/lib/dataAdapters/finmindAdapter.js', () => ({
   fetchStockDossierData: vi.fn(async () => null),
+}))
+
+vi.mock('../../src/lib/dataAdapters/cronTargetsAdapter.js', () => ({
+  fetchCronTargets: vi.fn(async () => null),
+  isCronTargetUsable: vi.fn(() => false),
 }))
 
 vi.mock('../../src/lib/reportRefreshRuntime.js', () => ({
@@ -13,6 +18,10 @@ vi.mock('../../src/lib/reportRefreshRuntime.js', () => ({
 import { usePortfolioDerivedData } from '../../src/hooks/usePortfolioDerivedData.js'
 import { buildReportRefreshCandidates } from '../../src/lib/reportRefreshRuntime.js'
 import { fetchStockDossierData } from '../../src/lib/dataAdapters/finmindAdapter.js'
+import {
+  fetchCronTargets,
+  isCronTargetUsable,
+} from '../../src/lib/dataAdapters/cronTargetsAdapter.js'
 
 // ---------------------------------------------------------------------------
 // Shared helpers/constants stubs
@@ -478,6 +487,201 @@ describe('usePortfolioDerivedData', () => {
       const enrichedRow = result.current.dataRefreshRows.find((r) => r.code === '2330')
       expect(enrichedRow.fundamentalStatus).toBe('fresh')
       expect(enrichedRow.severity).toBe(2)
+    })
+  })
+
+  describe('cron target-price pipeline integration', () => {
+    const finmindFixture = {
+      revenue: [
+        {
+          date: '2026-03-31',
+          revenueMonth: 3,
+          revenueYear: 2026,
+          revenue: 1000000,
+          revenueYoY: 12.5,
+          revenueMoM: -2.3,
+        },
+      ],
+      financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+      balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+      valuation: [
+        { date: '2026-03-01', per: 15 },
+        { date: '2026-02-01', per: 18 },
+        { date: '2026-01-01', per: 20 },
+        { date: '2025-12-01', per: 22 },
+        { date: '2025-11-01', per: 25 },
+      ],
+    }
+
+    it('prefers fresh cron analyst targets over PER-band when both are available', async () => {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      const cronSnapshot = {
+        code: '2330',
+        name: '台積電',
+        collectedAt: twoDaysAgo.toISOString(),
+        targets: {
+          reports: [{ firm: '元大', target: 1200, date: '2026/04/10' }],
+          updatedAt: twoDaysAgo.toISOString(),
+          source: 'analyst-reports',
+        },
+      }
+
+      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchCronTargets.mockResolvedValue(cronSnapshot)
+      isCronTargetUsable.mockReturnValue(true)
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('2330')
+          expect(dossier.targets).toBeDefined()
+          expect(dossier.targets.length).toBeGreaterThan(0)
+          // Cron analyst target should win, not PER-band
+          expect(dossier.targets[0].firm).toBe('元大')
+        },
+        { timeout: 2000 }
+      )
+    })
+
+    it('falls back to PER-band when cron targets are stale (>30 days)', async () => {
+      const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
+      const staleCronSnapshot = {
+        code: '2330',
+        name: '台積電',
+        collectedAt: fortyDaysAgo.toISOString(),
+        targets: {
+          reports: [{ firm: '元大', target: 1200, date: '2026/03/03' }],
+          updatedAt: fortyDaysAgo.toISOString(),
+          source: 'analyst-reports',
+        },
+      }
+
+      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchCronTargets.mockResolvedValue(staleCronSnapshot)
+      isCronTargetUsable.mockReturnValue(false)
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('2330')
+          expect(dossier.targets).toBeDefined()
+          expect(dossier.targets.length).toBeGreaterThan(0)
+          // Should be PER-band, not cron
+          expect(dossier.targets[0].firm).toMatch(/歷史PE/)
+        },
+        { timeout: 2000 }
+      )
+    })
+
+    it('falls back to PER-band when cron targets fetch returns null', async () => {
+      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchCronTargets.mockResolvedValue(null)
+      isCronTargetUsable.mockReturnValue(false)
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('2330')
+          expect(dossier.targets).toBeDefined()
+          expect(dossier.targets.length).toBeGreaterThan(0)
+          expect(dossier.targets[0].firm).toMatch(/歷史PE/)
+        },
+        { timeout: 2000 }
+      )
+    })
+  })
+
+  describe('warrant → underlying stock target mapping', () => {
+    it('uses underlying stock PER-band targets for a warrant holding', async () => {
+      // FinMind returns null for the warrant code but valid data for underlyingCode
+      fetchStockDossierData.mockImplementation(async (code) => {
+        if (code === '6139') {
+          return {
+            revenue: [
+              {
+                date: '2026-03-31',
+                revenueMonth: 3,
+                revenueYear: 2026,
+                revenue: 500000,
+                revenueYoY: 8,
+                revenueMoM: 1,
+              },
+            ],
+            financials: [{ date: '2025-12-31', EPS: 12, Revenue: 500000, GrossProfit: 200000 }],
+            balanceSheet: [{ date: '2025-12-31', Equity: 800000 }],
+            valuation: [
+              { date: '2026-03-01', per: 10 },
+              { date: '2026-02-01', per: 12 },
+              { date: '2026-01-01', per: 14 },
+              { date: '2025-12-01', per: 16 },
+            ],
+          }
+        }
+        return null
+      })
+      fetchCronTargets.mockResolvedValue(null)
+      isCronTargetUsable.mockReturnValue(false)
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [
+              {
+                code: '053848',
+                name: '亞翔凱基5B購',
+                qty: 8000,
+                cost: 1.81,
+                price: 2.23,
+                type: '權證',
+              },
+            ],
+            watchlist: [],
+            constants: {
+              ...stubConstants(),
+              STOCK_META: {
+                '053848': { strategy: '權證', underlying: '亞翔', underlyingCode: '6139' },
+              },
+            },
+          })
+        )
+      )
+
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('053848')
+          expect(dossier.targets).toBeDefined()
+          expect(dossier.targets.length).toBeGreaterThan(0)
+          // Should have PER-band targets derived from the underlying stock
+          expect(dossier.targets[0].firm).toMatch(/歷史PE/)
+          expect(dossier.underlyingCode).toBe('6139')
+          expect(dossier.underlyingName).toBe('亞翔')
+        },
+        { timeout: 2000 }
+      )
     })
   })
 })

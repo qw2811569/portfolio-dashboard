@@ -136,6 +136,7 @@ export const STOCK_META = {
     position: '戰術',
     leader: 'N/A',
     underlying: '禾伸堂',
+    underlyingCode: '3115',
   },
   '053848': {
     industry: '半導體設備',
@@ -144,6 +145,7 @@ export const STOCK_META = {
     position: '戰術',
     leader: 'N/A',
     underlying: '亞翔',
+    underlyingCode: '6139',
   },
   702157: {
     industry: '光通訊',
@@ -152,6 +154,7 @@ export const STOCK_META = {
     position: '戰術',
     leader: 'N/A',
     underlying: '華星光',
+    underlyingCode: '4979',
   },
   705200: {
     industry: '製鞋/紡織',
@@ -160,6 +163,7 @@ export const STOCK_META = {
     position: '戰術',
     leader: 'N/A',
     underlying: '加百裕',
+    underlyingCode: '3323',
   },
   1503: {
     industry: '重電',

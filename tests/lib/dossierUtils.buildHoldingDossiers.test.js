@@ -132,33 +132,33 @@ describe('dossierUtils - buildHoldingDossiers', () => {
       return `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`
     }
 
-    it('sets freshness.targets = fresh when the latest report is within 30 days', () => {
+    it('sets freshness.targets = fresh when the latest report is within 7 days', () => {
       const dossiers = buildHoldingDossiers({
         holdings: [mockHoldings[0]],
-        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(10) }] } },
+        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(5) }] } },
       })
       expect(dossiers[0].freshness.targets).toBe('fresh')
     })
 
-    it('sets freshness.targets = aging when the latest report is 31-90 days old', () => {
+    it('sets freshness.targets = aging when the latest report is 8-30 days old', () => {
       const dossiers = buildHoldingDossiers({
         holdings: [mockHoldings[0]],
-        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(60) }] } },
+        targets: { 2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(15) }] } },
       })
       expect(dossiers[0].freshness.targets).toBe('aging')
     })
 
-    it('sets freshness.targets = stale when the latest report is 91-120 days old', () => {
+    it('sets freshness.targets = stale when the latest report is >30 days old', () => {
       const dossiers = buildHoldingDossiers({
         holdings: [mockHoldings[0]],
         targets: {
-          2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(100) }] },
+          2330: { reports: [{ firm: '元大', target: 700, date: daysAgoSlashDate(35) }] },
         },
       })
       expect(dossiers[0].freshness.targets).toBe('stale')
     })
 
-    it('classifies >120-day-old reports as stale (Codex tiebreaker: old-but-present stays stale)', () => {
+    it('classifies very old reports as stale', () => {
       const dossiers = buildHoldingDossiers({
         holdings: [mockHoldings[0]],
         targets: {

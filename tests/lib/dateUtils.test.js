@@ -146,5 +146,28 @@ describe('lib/dateUtils', () => {
         'fresh'
       )
     })
+
+    it('uses custom thresholds for targets: 7-day fresh, 30-day aging', () => {
+      const targetThresholds = { fresh: 7, aging: 30 }
+      // 5 days old → fresh
+      expect(
+        computeFreshnessGrade(['2026/04/07'], { now: NOW, thresholds: targetThresholds })
+      ).toBe('fresh')
+      // 10 days old → aging (>7, <=30)
+      expect(
+        computeFreshnessGrade(['2026/04/02'], { now: NOW, thresholds: targetThresholds })
+      ).toBe('aging')
+      // 35 days old → stale (>30)
+      expect(
+        computeFreshnessGrade(['2026/03/08'], { now: NOW, thresholds: targetThresholds })
+      ).toBe('stale')
+    })
+
+    it('default thresholds unchanged when thresholds not provided', () => {
+      // 25 days → fresh (default 30)
+      expect(computeFreshnessGrade(['2026/03/18'], { now: NOW })).toBe('fresh')
+      // 60 days → aging (default 30-90)
+      expect(computeFreshnessGrade(['2026/02/11'], { now: NOW })).toBe('aging')
+    })
   })
 })

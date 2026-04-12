@@ -84,7 +84,9 @@ export function daysBetween(a, b) {
  *   >120 days → 'stale' (Codex tiebreaker: old but present stays stale)
  *   none parseable → 'missing'
  */
-export function computeFreshnessGrade(dates, { now = new Date() } = {}) {
+export const TARGETS_FRESHNESS_THRESHOLDS = { fresh: 7, aging: 30 }
+
+export function computeFreshnessGrade(dates, { now = new Date(), thresholds } = {}) {
   const source = Array.isArray(dates) ? dates : []
   let mostRecent = null
   for (const candidate of source) {
@@ -97,7 +99,9 @@ export function computeFreshnessGrade(dates, { now = new Date() } = {}) {
   if (!mostRecent) return 'missing'
   const ageDays = daysBetween(now, mostRecent)
   if (ageDays == null) return 'missing'
-  if (ageDays <= 30) return 'fresh'
-  if (ageDays <= 90) return 'aging'
+  const freshDays = thresholds?.fresh ?? 30
+  const agingDays = thresholds?.aging ?? 90
+  if (ageDays <= freshDays) return 'fresh'
+  if (ageDays <= agingDays) return 'aging'
   return 'stale'
 }

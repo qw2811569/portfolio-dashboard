@@ -214,11 +214,27 @@ export function DataRefreshCenter({ dataRefreshRows }) {
               { style: { fontSize: 11, color: C.text, fontWeight: 500 } },
               `${item.name} (${item.code})`
             ),
-            h(
-              'div',
-              { style: { fontSize: 9, color: C.textMute, marginTop: 3 } },
-              `目標價：${item.targetStatus} · 財報：${item.fundamentalStatus}`
-            )
+            item.targetLabel
+              ? h(
+                  'div',
+                  {
+                    style: {
+                      fontSize: 9,
+                      marginTop: 3,
+                      color: item.targetSource === 'per-band' ? C.textMute : C.textSec,
+                      fontStyle: item.targetSource === 'per-band' ? 'italic' : 'normal',
+                    },
+                  },
+                  item.targetLabel,
+                  item.targetStatus === 'aging'
+                    ? h('span', { style: { color: C.amber, marginLeft: 4 } }, '\u26A0 報告偏舊')
+                    : null
+                )
+              : h(
+                  'div',
+                  { style: { fontSize: 9, color: C.textMute, marginTop: 3 } },
+                  `目標價：${item.targetStatus} · 財報：${item.fundamentalStatus}`
+                )
           )
         )
       )

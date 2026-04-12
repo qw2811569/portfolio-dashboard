@@ -1,0 +1,43 @@
+import { list } from '@vercel/blob'
+
+const TOKEN_KEY = 'PUB_BLOB_READ_WRITE_TOKEN'
+const TARGET_PRICE_PREFIX = 'target-prices'
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300')
+
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+  const code = String(req.query?.code || '').trim()
+  if (!code) return res.status(400).json({ error: 'code query param is required' })
+
+  const token = String(process.env[TOKEN_KEY] || '').trim()
+  if (!token) return res.status(500).json({ error: 'blob token not configured' })
+
+  try {
+    const { blobs } = await list({
+      prefix: `${TARGET_PRICE_PREFIX}/${code}.json`,
+      limit: 1,
+      token,
+    })
+
+    if (!blobs.length) {
+      return res.status(404).json({ error: `no target-price snapshot for ${code}` })
+    }
+
+    const response = await fetch(blobs[0].url)
+    if (!response.ok) {
+      return res.status(502).json({ error: `blob read failed (${response.status})` })
+    }
+
+    const snapshot = await response.json()
+    return res.status(200).json(snapshot)
+  } catch (error) {
+    console.error(`[target-prices] failed for ${code}:`, error)
+    return res.status(500).json({ error: error?.message || 'internal error' })
+  }
+}

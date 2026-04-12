@@ -63,13 +63,10 @@ describe('autoReviewEvent', () => {
     expect(result).toBeNull()
   })
 
-  it('still auto-reviews when stock codes differ (averagePriceRecord is code-agnostic)', () => {
-    // inferEventActual uses averagePriceRecord which averages all values
-    // regardless of code matching, so mismatched codes still produce a result
+  it('returns null when entry and exit stock codes have no overlap', () => {
+    // P0 fix: mismatched codes would produce meaningless direction
     const result = autoReviewEvent(baseEvent, { 9999: 100 }, { today: '2026/04/12' })
-    expect(result).not.toBeNull()
-    expect(result.status).toBe('closed')
-    expect(result.actual).toBe('down') // 100 vs 580
+    expect(result).toBeNull()
   })
 
   it('returns null when event has no pred', () => {

@@ -163,6 +163,14 @@ export function autoReviewEvent(event, priceAtExit, { today } = {}) {
   if (!event.priceAtEvent || Object.keys(event.priceAtEvent).length === 0) return null
   if (!priceAtExit || Object.keys(priceAtExit).length === 0) return null
 
+  // Require at least one overlapping stock code between entry and exit prices.
+  // Without overlap, inferEventActual would average unrelated stocks and produce
+  // a meaningless direction — flagged as P0 by multi-LLM review.
+  const entryCodes = Object.keys(event.priceAtEvent)
+  const exitCodes = Object.keys(priceAtExit)
+  const hasOverlap = entryCodes.some((code) => exitCodes.includes(code))
+  if (!hasOverlap) return null
+
   const actual = inferEventActual(event.priceAtEvent, priceAtExit)
   if (!actual) return null
 

@@ -4,6 +4,7 @@ import { fetchCronTargets, isCronTargetUsable } from '../lib/dataAdapters/cronTa
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
 import { mapFinMindToPerBandTargets } from '../lib/dataAdapters/finmindTargetsMapper.js'
 import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/dateUtils.js'
+import { classifyStock, mergeClassification } from '../lib/stockClassifier.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
 export function usePortfolioDerivedData({
@@ -258,7 +259,30 @@ export function usePortfolioDerivedData({
           },
         }
       })
-      setEnrichedDossiers(enriched)
+      // Auto-classify stocks that have no/incomplete STOCK_META.
+      // Runs after enrichment so FinMind data is available for inference.
+      // Position is portfolio-relative (ranked by market value).
+      const totalHoldings = enriched.length
+      const ranked = [...enriched]
+        .map((d) => ({ code: d.code, val: (d.position?.price || 0) * (d.position?.qty || 0) }))
+        .sort((a, b) => b.val - a.val)
+      const rankMap = new Map(ranked.map((r, i) => [r.code, i + 1]))
+
+      const classified = enriched.map((d) => {
+        const classification = classifyStock(d.code, {
+          stockMeta: d.stockMeta || STOCK_META[d.code] || null,
+          finmind: d.finmind || null,
+          holding: d.position || null,
+          holdingRank: rankMap.get(d.code) || totalHoldings,
+          totalHoldings,
+        })
+        const enrichedMeta = mergeClassification(
+          d.stockMeta || STOCK_META[d.code] || {},
+          classification
+        )
+        return { ...d, stockMeta: enrichedMeta, classification }
+      })
+      setEnrichedDossiers(classified)
     })
     return () => {
       cancelled = true

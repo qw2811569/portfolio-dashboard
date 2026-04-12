@@ -234,7 +234,13 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                   'div',
                   { style: { fontSize: 9, color: C.textMute, marginTop: 3 } },
                   `目標價：${item.targetStatus} · 財報：${item.fundamentalStatus}`
-                )
+                ),
+            item.classificationNote &&
+              h(
+                'div',
+                { style: { fontSize: 8, color: C.amber, marginTop: 2, fontStyle: 'italic' } },
+                item.classificationNote
+              )
           )
         )
       )

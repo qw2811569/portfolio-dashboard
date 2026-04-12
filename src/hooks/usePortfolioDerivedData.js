@@ -663,6 +663,14 @@ export function usePortfolioDerivedData({
               targetLabel = `${topTarget.firm} 目標 ${topTarget.target?.toLocaleString() || ''}（${topTarget.date || ''}）`
             }
           }
+          // Classification confidence — surface 待分類/待確認 for stocks
+          // outside the knowledge base coverage (P1 from multi-LLM review)
+          const cls = dossier.classification || {}
+          const lowConfidenceFields = ['industry', 'strategy'].filter(
+            (f) => !cls[f]?.value || cls[f]?.value === '待分類'
+          )
+          const classificationNote =
+            lowConfidenceFields.length > 0 ? `待確認：${lowConfidenceFields.join('、')}` : null
           return {
             code: dossier.code,
             name: dossier.name,
@@ -671,11 +679,12 @@ export function usePortfolioDerivedData({
             severity,
             targetSource,
             targetLabel,
+            classificationNote,
             targetUpdatedAt: dossier.targets?.updatedAt || null,
             fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
           }
         })
-        .filter((item) => item.severity > 0)
+        .filter((item) => item.severity > 0 || item.classificationNote)
         .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code))),
     [dossiersToUse]
   )

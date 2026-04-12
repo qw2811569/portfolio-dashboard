@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/collect-target-prices",
       "schedule": "30 9 * * 1-5"
+    },
+    {
+      "path": "/api/cron/collect-news",
+      "schedule": "0 10 * * 1-5"
     }
   ],
   "rewrites": [
@@ -39,6 +43,9 @@
     },
     "api/parse.js": {
       "maxDuration": 30
+    },
+    "api/cron/collect-news.js": {
+      "maxDuration": 60
     },
     "api/*.js": {
       "maxDuration": 10

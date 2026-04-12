@@ -192,6 +192,10 @@ export function usePortfolioDerivedData({
         let nextTargets = d.targets
         let nextTargetsFreshness = existingFreshness.targets
         if (!hasExistingTargets) {
+          // Integration stub for the daily target-price cron pipeline:
+          // 1. read `target-prices/{code}.json` from Blob here
+          // 2. prefer fresh cron-collected analyst targets when available
+          // 3. keep PER-band as the stale/unsupported fallback for ETF/指數/債券 paths
           const perBand = mapFinMindToPerBandTargets(fm, { code: d.code })
           if (perBand && perBand.reports.length > 0) {
             nextTargets = perBand.reports

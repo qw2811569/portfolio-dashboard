@@ -31,7 +31,7 @@ describe('components/NewsAnalysisPanel', () => {
   it('shows the empty-state welcome card when newsEvents is empty', () => {
     render(<NewsAnalysisPanel {...buildProps()} />)
 
-    expect(screen.getByText('歡迎來到新聞事件追蹤')).toBeInTheDocument()
+    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
     expect(screen.getByText('🔍 前往收盤分析')).toBeInTheDocument()
   })
 
@@ -47,12 +47,12 @@ describe('components/NewsAnalysisPanel', () => {
     const events = [{ id: 1, title: '台積電調漲資本支出', status: 'tracking' }]
     render(<NewsAnalysisPanel {...buildProps({ newsEvents: events })} />)
 
-    expect(screen.queryByText('歡迎來到新聞事件追蹤')).not.toBeInTheDocument()
+    expect(screen.queryByText('情報脈絡')).not.toBeInTheDocument()
   })
 
   it('treats missing newsEvents (undefined) as empty and still shows welcome', () => {
     render(<NewsAnalysisPanel {...buildProps({ newsEvents: undefined })} />)
 
-    expect(screen.getByText('歡迎來到新聞事件追蹤')).toBeInTheDocument()
+    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
   })
 })

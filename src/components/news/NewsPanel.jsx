@@ -311,7 +311,7 @@ export function NewsAnalysisPanel({
               marginBottom: 8,
             },
           },
-          '歡迎來到新聞事件追蹤'
+          '情報脈絡'
         ),
         h(
           'div',
@@ -324,7 +324,7 @@ export function NewsAnalysisPanel({
               margin: '0 auto 16px',
             },
           },
-          '這裡會顯示與持股相關的新聞事件，AI 會自動判斷利多或利空。'
+          '這裡顯示與持股相關的市場脈絡和背景資訊，幫助你理解大環境。'
         ),
         h(
           Button,

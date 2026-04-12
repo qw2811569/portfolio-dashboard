@@ -6,8 +6,8 @@ export function buildPortfolioTabs({
   return [
     { k: 'holdings', label: '持倉' },
     { k: 'watchlist', label: '觀察股' },
-    { k: 'events', label: `事件${urgentCount > 0 ? ' ·' : ''}` },
-    { k: 'news', label: '新聞追蹤' },
+    { k: 'events', label: `催化驗證${urgentCount > 0 ? ' ·' : ''}` },
+    { k: 'news', label: '情報脈絡' },
     { k: 'daily', label: analyzing ? '分析中...' : '收盤分析' },
     { k: 'research', label: researching ? '研究中...' : '深度研究' },
     { k: 'trade', label: '上傳成交' },
@@ -42,8 +42,8 @@ export function buildGroupedPortfolioTabs({
       sub: [
         { k: 'daily', label: analyzing ? '分析中...' : '收盤分析' },
         { k: 'research', label: researching ? '研究中...' : '深度研究' },
-        { k: 'events', label: `事件${urgentCount > 0 ? ' ·' : ''}` },
-        { k: 'news', label: '新聞追蹤' },
+        { k: 'events', label: `催化驗證${urgentCount > 0 ? ' ·' : ''}` },
+        { k: 'news', label: '情報脈絡' },
       ],
     },
     {

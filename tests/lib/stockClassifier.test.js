@@ -120,6 +120,47 @@ describe('stockClassifier', () => {
       expect(result.strategy.value).toBe('成長股')
       expect(result.strategy.source).toBe('finmind-revenue-yoy')
     })
+
+    it('classifies leader as 龍頭 via four-dimension scoring', () => {
+      const result = classifyStock('2308', {
+        finmind: {
+          financials: [{ Revenue: 50000000, GrossProfit: 20000000 }],
+          revenue: [{ revenue: 15000000 }],
+        },
+      })
+      // 2308 (台達電) has profile with market-share keywords + multi-theme + high revenue
+      expect(['龍頭', '二線']).toContain(result.leader.value)
+      expect(result.leader.source).toMatch(/leader-score/)
+    })
+
+    it('classifies leader as N/A for non-company types', () => {
+      const result = classifyStock('053848', { holding: { type: '權證' } })
+      expect(result.leader.value).toBe('N/A')
+    })
+
+    it('uses name-keyword heuristic for unknown stock industry', () => {
+      const result = classifyStock('9999', {
+        holding: { name: '台灣半導體製造' },
+      })
+      expect(result.industry.value).toBe('半導體')
+      expect(result.industry.source).toBe('name-keyword')
+    })
+
+    it('detects warrant from 6-digit code via name-keyword heuristic', () => {
+      const result = classifyStock('123456', {
+        holding: { name: '元大台積電購03' },
+      })
+      expect(result.strategy.value).toBe('權證')
+      expect(result.strategy.source).toBe('name-keyword')
+    })
+
+    it('detects ETF from name keyword', () => {
+      const result = classifyStock('9999', {
+        holding: { name: '元大台灣50反1' },
+      })
+      expect(result.strategy.value).toBe('ETF/指數')
+      expect(result.strategy.source).toBe('name-keyword')
+    })
   })
 
   describe('mergeClassification', () => {

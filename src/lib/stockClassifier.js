@@ -21,7 +21,7 @@ import themes from '../data/themes.json'
 
 // ── Industry classification ─────────────────────────────────────
 
-function classifyIndustry(code, { stockMeta } = {}) {
+function classifyIndustry(code, { stockMeta, holding } = {}) {
   // Priority 1: existing STOCK_META
   if (stockMeta?.industry) {
     return { value: stockMeta.industry, confidence: 'high', source: 'stock-meta' }
@@ -59,6 +59,25 @@ function classifyIndustry(code, { stockMeta } = {}) {
         }
       }
     }
+  }
+
+  // Priority 5: Name-keyword heuristic for unknown stocks
+  const name = String(holding?.name || '').trim()
+  if (name) {
+    if (/半導體|晶圓|IC|封測/.test(name))
+      return { value: '半導體', confidence: 'low', source: 'name-keyword' }
+    if (/光[通電]|光纖/.test(name))
+      return { value: '光通訊', confidence: 'low', source: 'name-keyword' }
+    if (/伺服器|雲端|資料中心/.test(name))
+      return { value: 'AI/伺服器', confidence: 'low', source: 'name-keyword' }
+    if (/鋼鐵|鋼/.test(name)) return { value: '鋼鐵', confidence: 'low', source: 'name-keyword' }
+    if (/營建|建設/.test(name)) return { value: '營建', confidence: 'low', source: 'name-keyword' }
+    if (/航運|船/.test(name)) return { value: '航運', confidence: 'low', source: 'name-keyword' }
+    if (/金融|銀行|證券|壽險/.test(name))
+      return { value: '金融', confidence: 'low', source: 'name-keyword' }
+    if (/食品|飲料/.test(name)) return { value: '食品', confidence: 'low', source: 'name-keyword' }
+    if (/紡織|製鞋/.test(name)) return { value: '紡織', confidence: 'low', source: 'name-keyword' }
+    if (/電子|科技/.test(name)) return { value: '電子', confidence: 'low', source: 'name-keyword' }
   }
 
   return { value: null, confidence: 'low', source: 'unresolved' }
@@ -141,6 +160,18 @@ function classifyStrategy(code, { stockMeta, finmind, holding, industryValue } =
     }
   }
 
+  // Name-keyword heuristic for unknown stocks
+  const name = String(holding?.name || '').trim()
+  if (name) {
+    // 6-digit code or name contains 購/售/認 = warrant
+    if (/^\d{6}$/.test(String(code)) || /[購售認][0-9]/.test(name)) {
+      return { value: '權證', confidence: 'low', source: 'name-keyword' }
+    }
+    if (/ETF|指數|反[1一]|正[2二]|槓桿/.test(name)) {
+      return { value: 'ETF/指數', confidence: 'low', source: 'name-keyword' }
+    }
+  }
+
   return { value: '待分類', confidence: 'low', source: 'unresolved' }
 }
 
@@ -188,6 +219,65 @@ function classifyPosition(code, { stockMeta, holdingRank, totalHoldings } = {}) 
 }
 
 // ── Leader classification ────────────────────────────────────────
+// Four dimensions per user decision (2026-04-12):
+//   1. 市佔率 (market share) — from profile description keywords
+//   2. 高盈利 (high profitability) — from FinMind gross margin
+//   3. 高營收 (high revenue) — from FinMind revenue scale
+//   4. 技術護城河 (tech moat) — from profile description + theme depth
+
+const LEADER_KEYWORDS = /龍頭|領導|最大|第一|領先|獨占|寡占|壟斷|市佔.*第一|全球.*最大/
+const MOAT_KEYWORDS = /護城河|專利|獨家|技術門檻|不可替代|壁壘|獨佔|關鍵供應|唯���/
+
+function scoreLeaderDimensions(code, { finmind, holding } = {}) {
+  let score = 0
+  const reasons = []
+
+  // Dimension 1: 市佔率 — profile description hints
+  const profile = companyProfiles[code]
+  if (profile?.description) {
+    if (LEADER_KEYWORDS.test(profile.description)) {
+      score += 2
+      reasons.push('market-share-hint')
+    }
+  }
+
+  // Dimension 2: 高盈利 — FinMind gross margin > 30%
+  if (finmind?.financials?.length > 0) {
+    const latest = finmind.financials[0]
+    const revenue = Number(latest.Revenue) || 0
+    const grossProfit = Number(latest.GrossProfit) || 0
+    if (revenue > 0 && grossProfit / revenue > 0.3) {
+      score += 1
+      reasons.push('high-margin')
+    }
+  }
+
+  // Dimension 3: 高營收 — FinMind revenue > 10B NTD (quarterly, units in thousands)
+  if (finmind?.revenue?.length > 0) {
+    const latestRevenue = Number(finmind.revenue[0]?.revenue) || 0
+    // FinMind revenue unit is NTD thousands → 10B = 10,000,000 thousands
+    if (latestRevenue > 10000000) {
+      score += 2
+      reasons.push('high-revenue')
+    } else if (latestRevenue > 1000000) {
+      score += 1
+      reasons.push('mid-revenue')
+    }
+  }
+
+  // Dimension 4: 技術護城河 — profile description + theme depth
+  if (profile?.description && MOAT_KEYWORDS.test(profile.description)) {
+    score += 2
+    reasons.push('tech-moat')
+  }
+  const tc = themeClassification[code]
+  if (tc?.themes?.length >= 3) {
+    score += 1
+    reasons.push('multi-theme')
+  }
+
+  return { score, reasons }
+}
 
 function classifyLeader(code, { stockMeta, finmind, holding } = {}) {
   if (stockMeta?.leader) {
@@ -199,21 +289,18 @@ function classifyLeader(code, { stockMeta, finmind, holding } = {}) {
     return { value: 'N/A', confidence: 'high', source: 'non-company-type' }
   }
 
-  // FinMind: estimate from market cap (price * equity proxy)
-  if (finmind?.balanceSheet?.length > 0 && holding?.price > 0) {
-    const equity = finmind.balanceSheet[0]?.Equity || 0
-    if (equity > 5000000) return { value: '大型', confidence: 'medium', source: 'finmind-equity' }
-    if (equity > 1000000) return { value: '龍頭', confidence: 'low', source: 'finmind-equity' }
-  }
+  const { score, reasons } = scoreLeaderDimensions(code, { finmind, holding })
 
-  // Profile hint
-  const profile = companyProfiles[code]
-  if (profile?.description) {
-    if (/龍頭|領導|最大|第一/.test(profile.description)) {
-      return { value: '龍頭', confidence: 'medium', source: 'profile-hint' }
-    }
+  // Score thresholds: ≥5 龍頭, ≥3 二線, ≥1 小型, 0 待分類
+  if (score >= 5) {
+    return { value: '龍頭', confidence: 'medium', source: `leader-score(${reasons.join(',')})` }
   }
-
+  if (score >= 3) {
+    return { value: '二線', confidence: 'medium', source: `leader-score(${reasons.join(',')})` }
+  }
+  if (score >= 1) {
+    return { value: '小型', confidence: 'low', source: `leader-score(${reasons.join(',')})` }
+  }
   return { value: '小型', confidence: 'low', source: 'default' }
 }
 
@@ -223,7 +310,7 @@ export function classifyStock(
   code,
   { stockMeta, finmind, holding, holdingRank, totalHoldings } = {}
 ) {
-  const industry = classifyIndustry(code, { stockMeta, finmind })
+  const industry = classifyIndustry(code, { stockMeta, holding })
   const strategy = classifyStrategy(code, {
     stockMeta,
     finmind,

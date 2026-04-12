@@ -135,7 +135,7 @@ export function usePortfolioPanelsContextComposer({
     } else if (pendingCount > 0 || pendingEventCount > 0 || trackingEventCount > 0) {
       const remaining = Math.max(pendingCount, pendingEventCount) + trackingEventCount
       nextActionLabel = `還有 ${remaining} 件事件等待自動復盤`
-      nextActionReason = '事件將在取得收盤價���自動驗證，��需手動操作。'
+      nextActionReason = '事件將在取得收盤價後自動驗證，不需手動操作。'
     } else if (focusItem) {
       nextActionLabel = `先聚焦 ${focusItem.name} 的催化驗證`
       nextActionReason =

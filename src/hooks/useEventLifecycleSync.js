@@ -21,13 +21,16 @@ export function useEventLifecycleSync({
   const eventLifecycleSyncRef = useRef(false)
 
   useEffect(() => {
+    // Run lifecycle sync regardless of which tab is active. Previously gated
+    // to specific tabs, which meant events could miss auto-review if the user
+    // never opened holdings/events/news/daily. Flagged as P0 by multi-LLM
+    // review (Codex+Qwen R2 consensus).
     const shouldSyncLifecycle =
       ready &&
       viewMode === PORTFOLIO_VIEW_MODE &&
       !portfolioTransitionRef.current.isHydrating &&
       Array.isArray(newsEvents) &&
-      newsEvents.length > 0 &&
-      ['holdings', 'events', 'news', 'daily'].includes(tab)
+      newsEvents.length > 0
 
     if (!shouldSyncLifecycle || eventLifecycleSyncRef.current) return
 
@@ -193,7 +196,6 @@ export function useEventLifecycleSync({
     portfolioTransitionRef,
     ready,
     setNewsEvents,
-    tab,
     toSlashDate,
     viewMode,
   ])

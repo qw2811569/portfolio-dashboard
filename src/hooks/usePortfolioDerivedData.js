@@ -259,30 +259,7 @@ export function usePortfolioDerivedData({
           },
         }
       })
-      // Auto-classify stocks that have no/incomplete STOCK_META.
-      // Runs after enrichment so FinMind data is available for inference.
-      // Position is portfolio-relative (ranked by market value).
-      const totalHoldings = enriched.length
-      const ranked = [...enriched]
-        .map((d) => ({ code: d.code, val: (d.position?.price || 0) * (d.position?.qty || 0) }))
-        .sort((a, b) => b.val - a.val)
-      const rankMap = new Map(ranked.map((r, i) => [r.code, i + 1]))
-
-      const classified = enriched.map((d) => {
-        const classification = classifyStock(d.code, {
-          stockMeta: d.stockMeta || STOCK_META[d.code] || null,
-          finmind: d.finmind || null,
-          holding: d.position || null,
-          holdingRank: rankMap.get(d.code) || totalHoldings,
-          totalHoldings,
-        })
-        const enrichedMeta = mergeClassification(
-          d.stockMeta || STOCK_META[d.code] || {},
-          classification
-        )
-        return { ...d, stockMeta: enrichedMeta, classification }
-      })
-      setEnrichedDossiers(classified)
+      setEnrichedDossiers(enriched)
     })
     return () => {
       cancelled = true
@@ -290,7 +267,35 @@ export function usePortfolioDerivedData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codesToEnrichKey])
 
-  const dossiersToUse = enrichedDossiers ?? D
+  const enrichedBase = enrichedDossiers ?? D
+
+  // Auto-classify stocks separately from FinMind enrichment so that
+  // portfolio-relative fields (position rank) update when market prices
+  // change — not only when holdings are added/removed. Previously this
+  // ran inside the enrichment effect and was keyed on codesToEnrichKey,
+  // causing stale position classifications. (P0 fix from R2 consensus)
+  const dossiersToUse = useMemo(() => {
+    const totalHoldings = enrichedBase.length
+    if (totalHoldings === 0) return enrichedBase
+    const ranked = [...enrichedBase]
+      .map((d) => ({ code: d.code, val: getHoldingMarketValue(d.position || {}) }))
+      .sort((a, b) => b.val - a.val)
+    const rankMap = new Map(ranked.map((r, i) => [r.code, i + 1]))
+    return enrichedBase.map((d) => {
+      const classification = classifyStock(d.code, {
+        stockMeta: d.stockMeta || STOCK_META[d.code] || null,
+        finmind: d.finmind || null,
+        holding: d.position || null,
+        holdingRank: rankMap.get(d.code) || totalHoldings,
+        totalHoldings,
+      })
+      const enrichedMeta = mergeClassification(
+        d.stockMeta || STOCK_META[d.code] || {},
+        classification
+      )
+      return { ...d, stockMeta: enrichedMeta, classification }
+    })
+  }, [enrichedBase, STOCK_META, getHoldingMarketValue])
 
   const dossierByCode = useMemo(
     () => new Map(dossiersToUse.map((item) => [item.code, item])),

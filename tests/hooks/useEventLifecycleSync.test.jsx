@@ -139,6 +139,36 @@ describe('useEventLifecycleSync', () => {
     expect(updatedEvents[0].autoReviewed).toBeUndefined()
   })
 
+  it('does not auto-review events within the 3-day observation window', async () => {
+    // Event started tracking yesterday — too soon to auto-review
+    const event = makeTrackingEvent({ trackingStart: '2026/04/11' })
+    const setNewsEvents = vi.fn()
+
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    await waitFor(
+      () => {
+        expect(setNewsEvents).toHaveBeenCalled()
+      },
+      { timeout: 2000 }
+    )
+
+    const updatedEvents = setNewsEvents.mock.calls[0][0]
+    // Should still be tracking, NOT auto-reviewed (only 1 day old)
+    expect(updatedEvents[0].status).toBe('tracking')
+    expect(updatedEvents[0].autoReviewed).toBeUndefined()
+  })
+
   it('does not call setNewsEvents when nothing changed', async () => {
     const setNewsEvents = vi.fn()
 

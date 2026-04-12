@@ -97,18 +97,25 @@ export function useEventLifecycleSync({
       }
 
       // Auto-review: tracking events with valid priceAtEvent get automatic
-      // correctness evaluation (pred vs actual price direction). The 90-day
-      // auto-close is subsumed by this — events auto-review as soon as
-      // market prices are available, so the 90-day fallback only fires if
-      // auto-review cannot determine a direction (missing priceAtEvent/pred).
+      // correctness evaluation (pred vs actual price direction) AFTER a
+      // minimum observation window. Stock market events need time to digest —
+      // a 3-day observation period lets the market fully react before we
+      // judge whether the prediction was correct.
+      const AUTO_REVIEW_MIN_TRACKING_DAYS = 3
       let result = normalizedEvents.map((event) => {
         if (event.status !== 'tracking') return event
         const latestPrices = buildEventPriceRecord(event, priceMap)
         if (!latestPrices) return event
 
-        // Try auto-review with correctness determination
-        const reviewed = autoReviewEvent(event, latestPrices, { today })
-        if (reviewed) return reviewed
+        // Enforce minimum observation window before auto-review
+        const trackingStart = parseSlashDate(event.trackingStart)
+        const trackingDays = trackingStart
+          ? Math.floor((todayDate - trackingStart) / (1000 * 60 * 60 * 24))
+          : 0
+        if (trackingDays >= AUTO_REVIEW_MIN_TRACKING_DAYS) {
+          const reviewed = autoReviewEvent(event, latestPrices, { today })
+          if (reviewed) return reviewed
+        }
 
         // Fallback: 90-day auto-close without correctness (no pred or no priceAtEvent)
         if (autoCloseCandidates.some((item) => item.id === event.id)) {

@@ -110,6 +110,9 @@ export function usePortfolioPanelsContextComposer({
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
     const trackingEventCount = safeNewsEvents.filter((event) => event?.status === 'tracking').length
+    const autoReviewedEvents = safeNewsEvents.filter((event) => event?.autoReviewed === true)
+    const autoReviewedCorrect = autoReviewedEvents.filter((event) => event?.correct === true).length
+    const autoReviewedWrong = autoReviewedEvents.filter((event) => event?.correct === false).length
 
     const refreshBacklogCount = safeDataRefreshRows.length
     const focusItem = watchlistFocus?.item || null
@@ -122,9 +125,17 @@ export function usePortfolioPanelsContextComposer({
     if (refreshBacklogCount > 0) {
       nextActionLabel = '先補齊資料，再做深度研究'
       nextActionReason = `目前還有 ${refreshBacklogCount} 檔缺少最新目標價或財報資料，先補資料才能避免研究與事件判斷各說各話。`
-    } else if (pendingCount > 0 || pendingEventCount > 0) {
-      nextActionLabel = '先處理待驗證事件，再決定動作'
-      nextActionReason = `目前有 ${Math.max(pendingCount, pendingEventCount)} 件待驗證事件，應先確認催化是否落地，再決定加碼、續抱或停損。`
+    } else if (
+      autoReviewedEvents.length > 0 &&
+      pendingEventCount === 0 &&
+      trackingEventCount === 0
+    ) {
+      nextActionLabel = `事件自動復盤完成：${autoReviewedCorrect} 件正確、${autoReviewedWrong} 件錯誤`
+      nextActionReason = `共 ${autoReviewedEvents.length} 件事件已自動驗證預測方向與實際走勢，可直接查看結果。`
+    } else if (pendingCount > 0 || pendingEventCount > 0 || trackingEventCount > 0) {
+      const remaining = Math.max(pendingCount, pendingEventCount) + trackingEventCount
+      nextActionLabel = `還有 ${remaining} 件事件等待自動復盤`
+      nextActionReason = '事件將在取得收盤價���自動驗證，��需手動操作。'
     } else if (focusItem) {
       nextActionLabel = `先聚焦 ${focusItem.name} 的催化驗證`
       nextActionReason =
@@ -140,6 +151,9 @@ export function usePortfolioPanelsContextComposer({
       pendingCount,
       attentionCount,
       activeEventCount: pendingEventCount + trackingEventCount,
+      autoReviewedCount: autoReviewedEvents.length,
+      autoReviewedCorrect,
+      autoReviewedWrong,
       refreshBacklogCount,
       lastAnalysisLabel: dailyReport?.date
         ? [dailyReport.date, dailyReport.time].filter(Boolean).join(' ')

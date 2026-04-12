@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { PORTFOLIO_VIEW_MODE } from '../constants.js'
 import { APP_LABELS } from '../lib/appMessages.js'
+import { autoReviewEvent } from '../lib/eventUtils.js'
 
 export function useEventLifecycleSync({
   activePortfolioId = '',
@@ -94,10 +95,22 @@ export function useEventLifecycleSync({
         return normalizedEvents
       }
 
+      // Auto-review: tracking events with valid priceAtEvent get automatic
+      // correctness evaluation (pred vs actual price direction). The 90-day
+      // auto-close is subsumed by this — events auto-review as soon as
+      // market prices are available, so the 90-day fallback only fires if
+      // auto-review cannot determine a direction (missing priceAtEvent/pred).
       let result = normalizedEvents.map((event) => {
+        if (event.status !== 'tracking') return event
+        const latestPrices = buildEventPriceRecord(event, priceMap)
+        if (!latestPrices) return event
+
+        // Try auto-review with correctness determination
+        const reviewed = autoReviewEvent(event, latestPrices, { today })
+        if (reviewed) return reviewed
+
+        // Fallback: 90-day auto-close without correctness (no pred or no priceAtEvent)
         if (autoCloseCandidates.some((item) => item.id === event.id)) {
-          const latestPrices = buildEventPriceRecord(event, priceMap)
-          if (!latestPrices) return event
           return {
             ...event,
             status: 'closed',
@@ -107,6 +120,7 @@ export function useEventLifecycleSync({
             autoClosedReason: APP_LABELS.eventAutoClosedAfter90Days,
           }
         }
+
         return event
       })
 

@@ -157,6 +157,26 @@ export function inferEventActual(priceAtEvent, priceAtExit, weights = null) {
   return pct > 0 ? 'up' : 'down'
 }
 
+export function autoReviewEvent(event, priceAtExit, { today } = {}) {
+  if (!event || event.status !== 'tracking') return null
+  if (!event.pred) return null
+  if (!event.priceAtEvent || Object.keys(event.priceAtEvent).length === 0) return null
+  if (!priceAtExit || Object.keys(priceAtExit).length === 0) return null
+
+  const actual = inferEventActual(event.priceAtEvent, priceAtExit)
+  if (!actual) return null
+
+  return {
+    ...event,
+    status: 'closed',
+    exitDate: today || toSlashDate(),
+    priceAtExit,
+    actual,
+    correct: event.pred === actual,
+    autoReviewed: true,
+  }
+}
+
 export function appendPriceHistory(history, date, prices) {
   const next = Array.isArray(history) ? [...history] : []
   const idx = next.findIndex((item) => item?.date === date)
@@ -339,8 +359,14 @@ export function normalizeEventRecord(event) {
   const catalystType = event.catalystType || inferCatalystType(event)
   const impact = event.impact || inferImpact({ catalystType })
 
+  // Discriminator: items with pred (directional hypothesis) are 'event',
+  // pure informational items are 'news'. Explicit event.type takes precedence.
+  const itemType =
+    event.type === 'news' || event.type === 'event' ? event.type : event.pred ? 'event' : 'news'
+
   return {
     ...event,
+    type: itemType,
     label: String(event.label || event.title || '').trim(),
     sub: String(event.sub || event.detail || '').trim(),
     status,

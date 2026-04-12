@@ -57,6 +57,7 @@ export function useEventLifecycleSync({
 
       const today = toSlashDate()
       const todayDate = parseSlashDate(today)
+      if (!todayDate) return normalizedEvents
 
       const autoCloseCandidates = normalizedEvents.filter((event) => {
         if (event.status !== 'tracking') return false

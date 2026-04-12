@@ -360,13 +360,19 @@ export function normalizeEventRecord(event) {
   const impact = event.impact || inferImpact({ catalystType })
 
   // Discriminator: items with pred (directional hypothesis) are 'event',
-  // pure informational items are 'news'. Explicit event.type takes precedence.
-  const itemType =
-    event.type === 'news' || event.type === 'event' ? event.type : event.pred ? 'event' : 'news'
+  // pure informational items are 'news'. Uses `recordType` (not `type`) because
+  // `event.type` is already used for catalyst classification (法說/財報/營收/etc.)
+  // and overwriting it would break EventCard color mapping + filter buttons.
+  const recordType =
+    event.recordType === 'news' || event.recordType === 'event'
+      ? event.recordType
+      : event.pred
+        ? 'event'
+        : 'news'
 
   return {
     ...event,
-    type: itemType,
+    recordType,
     label: String(event.label || event.title || '').trim(),
     sub: String(event.sub || event.detail || '').trim(),
     status,

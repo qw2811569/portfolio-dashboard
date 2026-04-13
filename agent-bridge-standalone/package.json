@@ -1,0 +1,14 @@
+{
+  "name": "agent-bridge-standalone",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Agent Bridge — standalone server for GCP VM",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

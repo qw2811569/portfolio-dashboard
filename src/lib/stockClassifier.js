@@ -220,10 +220,16 @@ function classifyPosition(code, { stockMeta, holdingRank, totalHoldings } = {}) 
 
 // ── Leader classification ────────────────────────────────────────
 // Four dimensions per user decision (2026-04-12):
-//   1. 市佔率 (market share) — from profile description keywords
-//   2. 高盈利 (high profitability) — from FinMind gross margin
-//   3. 高營收 (high revenue) — from FinMind revenue scale
-//   4. 技術護城河 (tech moat) — from profile description + theme depth
+//   1. 市佔率 (market share) — profile description keywords → +2
+//   2. 高盈利 (profitability) — FinMind gross margin > 30% → +1
+//   3. 高營收 (revenue scale) — >10B NTD → +2, >1B → +1
+//   4. 技術護城河 (tech moat) — description moat keywords → +2, ≥3 themes → +1
+//
+// Score thresholds (max 8):
+//   ≥5 → 龍頭 (industry leader)
+//   ≥3 → 二線 (second tier)
+//   ≥1 → 小型 (small cap)
+//    0 → 小型 (default fallback)
 
 const LEADER_KEYWORDS = /龍頭|領導|最大|第一|領先|獨占|寡占|壟斷|市佔.*第一|全球.*最大/
 const MOAT_KEYWORDS = /護城河|專利|獨家|技術門檻|不可替代|壁壘|獨佔|關鍵供應|唯���/

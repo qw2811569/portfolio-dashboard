@@ -219,12 +219,32 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                   'div',
                   {
                     style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      flexWrap: 'wrap',
                       fontSize: 9,
                       marginTop: 3,
                       color: item.targetSource === 'per-band' ? C.textMute : C.textSec,
-                      fontStyle: item.targetSource === 'per-band' ? 'italic' : 'normal',
                     },
                   },
+                  h(
+                    'span',
+                    {
+                      style: {
+                        fontSize: 8,
+                        padding: '1px 4px',
+                        borderRadius: 3,
+                        fontWeight: 600,
+                        background:
+                          item.targetSource === 'per-band'
+                            ? alpha(C.textMute, '14')
+                            : alpha(C.teal, '14'),
+                        color: item.targetSource === 'per-band' ? C.textMute : C.teal,
+                      },
+                    },
+                    item.targetSource === 'per-band' ? '系統推估' : '券商觀點'
+                  ),
                   item.targetLabel,
                   item.targetStatus === 'aging'
                     ? h('span', { style: { color: C.amber, marginLeft: 4 } }, '\u26A0 報告偏舊')

@@ -27,6 +27,9 @@ export function OperatingContextCard({ context }) {
     pendingCount = 0,
     attentionCount = 0,
     activeEventCount = 0,
+    autoReviewedCount = 0,
+    autoReviewedCorrect = 0,
+    autoReviewedWrong = 0,
     refreshBacklogCount = 0,
     lastAnalysisLabel = '',
     latestInsightSummary = '',
@@ -115,7 +118,9 @@ export function OperatingContextCard({ context }) {
         pendingCount > 0 && h(Badge, { color: 'amber' }, `待處理 ${pendingCount}`),
         attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
         refreshBacklogCount > 0 &&
-          h(Badge, { color: 'lavender' }, `待補資料 ${refreshBacklogCount}`)
+          h(Badge, { color: 'lavender' }, `待補資料 ${refreshBacklogCount}`),
+        autoReviewedCount > 0 &&
+          h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
       )
     ),
     focus &&

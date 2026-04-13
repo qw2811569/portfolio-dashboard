@@ -1,0 +1,56 @@
+{
+  "project": "Portfolio Dashboard — 持倉分析系統",
+  "updated": "2026-04-13",
+  "architecture": {
+    "frontend": {
+      "stack": "Vite + React 18 + Zustand + React Query",
+      "deploy": "Vercel CDN (auto-deploy on push)",
+      "entry": "src/main.jsx → src/App.jsx → AppShellFrame",
+      "panels": ["holdings", "events", "news", "daily", "research", "trade", "log"]
+    },
+    "backend": {
+      "stack": "Vercel Serverless Functions (Node.js 20)",
+      "endpoints": 18,
+      "crons": 3,
+      "ai": "Claude Sonnet 4.6 via Anthropic API",
+      "storage": "Vercel Blob (JSON documents)"
+    },
+    "vm": {
+      "host": "GCP e2-standard-4 (asia-east1-b)",
+      "ip": "35.236.155.62",
+      "services": ["Agent Bridge (port 9527)", "Knowledge API (planned)"],
+      "purpose": "LLM orchestration + runtime knowledge base"
+    },
+    "knowledgeBase": {
+      "status": "STATIC (build-time) → migrating to RUNTIME (VM API)",
+      "files": {
+        "src/data/companyProfiles.json": "35 stocks — company profiles",
+        "src/data/themeClassification.json": "30 stocks — theme/supply-chain mapping",
+        "src/data/themes.json": "industry themes + upstream/midstream/downstream",
+        "src/data/supplyChain.json": "supply chain relationships",
+        "src/lib/knowledge-base/*.json": "7 analysis frameworks (chip/tech/fundamental/risk/strategy/news/industry)"
+      },
+      "importPoints": 11,
+      "migration": "infra-01 + infra-04"
+    },
+    "dataFlow": {
+      "FinMind API": "台股財報/營收/籌碼/估值 (1600 req/hr)",
+      "Google News RSS": "每日盤後自動蒐集 → Blob → /api/news-feed",
+      "Anthropic Claude": "收盤分析 + 深度研究 (server-side)",
+      "Vercel Blob": "news-feed, target-prices, brain-state, research artifacts",
+      "localStorage": "持股/事件/研究歷史 (client-side, 無 DB)"
+    },
+    "agents": {
+      "Claude": "決策 + 架構 + 高風險修復",
+      "Codex": "live runtime + containment + brain logic",
+      "Qwen": "驗證 + 機械 gap + QA",
+      "Gemini": "user blind-spot + 公開資料蒐集"
+    }
+  },
+  "health": {
+    "tests": "688 passed / 104 files",
+    "lint": "0 errors, 2 pre-existing warnings",
+    "build": "clean (654KB bundle)",
+    "taskBacklog": { "critical": 6, "high": 4, "medium": 8, "total": 18 }
+  }
+}

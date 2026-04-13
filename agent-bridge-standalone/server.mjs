@@ -463,6 +463,14 @@ const server = http.createServer(async (req, res) => {
       hardGates: { enabled: HARD_GATES_ENABLED, envVar: 'AGENT_BRIDGE_HARD_GATES' },
     })); return
   }
+  if (p === '/api/project' && req.method === 'GET') {
+    const statusPath = path.join(__dirname, 'project-status.json')
+    try {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(fs.readFileSync(statusPath, 'utf-8'))
+    } catch { res.writeHead(404); res.end('{}') }
+    return
+  }
   if (p === '/api/tasks' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(Array.from(tasks.values()).map(serializeTask))); return

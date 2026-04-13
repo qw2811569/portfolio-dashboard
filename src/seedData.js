@@ -269,12 +269,12 @@ export const STOCK_META = {
     themes: ['HBM', '矽晶圓'],
   },
   6862: {
-    industry: '連接器',
+    industry: '被動元件/電感',
     strategy: '成長股',
     period: '中',
     position: '衛星',
-    leader: '小型',
-    themes: ['AI伺服器', 'NVIDIA'],
+    leader: '小龍頭',
+    themes: ['AI伺服器', 'NVIDIA', '被動元件'],
   },
   8227: {
     industry: '光通訊',
@@ -392,6 +392,7 @@ export const IND_COLOR = {
   'PCB/材料': C.amber,
   'IC/記憶體': C.lavender,
   被動元件: C.orange,
+  '被動元件/電感': C.orange,
   重電: C.up,
   營建: C.olive,
   精密機械: C.stone,

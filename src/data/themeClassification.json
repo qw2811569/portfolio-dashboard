@@ -182,6 +182,10 @@
       {
         "theme": "NVIDIA",
         "position": "下游"
+      },
+      {
+        "theme": "被動元件",
+        "position": "下游"
       }
     ]
   },

@@ -38,7 +38,8 @@ describe('api/finmind', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 402,
-      text: async () => '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
+      text: async () =>
+        '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
     })
 
     vi.resetModules()
@@ -68,7 +69,8 @@ describe('api/finmind', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 402,
-      text: async () => '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
+      text: async () =>
+        '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
     })
 
     vi.resetModules()
@@ -122,6 +124,50 @@ describe('api/finmind', () => {
     expect(res.payload).toMatchObject({
       error: 'FinMind TaiwanStockPER failed (500): server exploded',
       source: 'finmind',
+    })
+  })
+
+  it('aggregates English institutional participant labels into foreign/investment/dealer buckets', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 200,
+        msg: 'success',
+        data: [
+          { date: '2026-04-10', name: 'Foreign_Investor', buy: 50000, sell: 19515 },
+          { date: '2026-04-10', name: 'Foreign_Dealer_Self', buy: 3200, sell: 1200 },
+          { date: '2026-04-10', name: 'Investment_Trust', buy: 1000, sell: 7000 },
+          { date: '2026-04-10', name: 'Dealer_self', buy: 1000, sell: 2000 },
+          { date: '2026-04-10', name: 'Dealer_Hedging', buy: 40000, sell: 6535 },
+        ],
+      }),
+    })
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'institutional', code: '6862', start_date: '2026-04-10' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toMatchObject({
+      success: true,
+      dataset: 'institutional',
+      code: '6862',
+      count: 1,
+      data: [
+        {
+          date: '2026-04-10',
+          foreign: 32485,
+          investment: -6000,
+          dealer: 32465,
+        },
+      ],
     })
   })
 })

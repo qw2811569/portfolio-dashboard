@@ -350,7 +350,6 @@ export function useAppLifecycleRuntimeComposer({
       activePortfolioId,
       ready,
       viewMode,
-      tab,
       newsEvents,
       setNewsEvents,
       portfolioTransitionRef,

@@ -684,4 +684,226 @@ describe('usePortfolioDerivedData', () => {
       )
     })
   })
+
+  describe('stale enrichment invalidation — dossiersToUse updates when D changes', () => {
+    it('updates dossiersToUse when holdings data changes after enrichment resolves', async () => {
+      // Setup: FinMind enrichment returns data so enrichedDossiers gets populated
+      fetchStockDossierData.mockResolvedValue({
+        revenue: [
+          {
+            date: '2026-03-31',
+            revenueMonth: 3,
+            revenueYear: 2026,
+            revenue: 1000000,
+            revenueYoY: 12.5,
+            revenueMoM: -2.3,
+          },
+        ],
+        financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+        valuation: [
+          { date: '2026-03-01', per: 15 },
+          { date: '2026-02-01', per: 18 },
+          { date: '2026-01-01', per: 20 },
+          { date: '2025-12-01', per: 22 },
+          { date: '2025-11-01', per: 25 },
+        ],
+      })
+
+      const helpers = stubHelpers()
+      // buildHoldingDossiers propagates position data from holdings so we can
+      // detect when dossiersToUse reflects fresh vs stale position values.
+      helpers.buildHoldingDossiers = vi.fn(({ holdings }) =>
+        (holdings || []).map((item) => ({
+          code: item.code,
+          name: item.name,
+          position: { qty: item.qty, cost: item.cost, price: item.price },
+          freshness: {},
+        }))
+      )
+      // getHoldingMarketValue uses position.price * position.qty
+      helpers.getHoldingMarketValue = vi.fn(
+        (pos) => (Number(pos?.price) || 0) * (Number(pos?.qty) || 0)
+      )
+
+      const initialHoldings = [
+        { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 600 },
+        { code: '2382', name: '廣達', qty: 500, cost: 1400, price: 1500 },
+      ]
+
+      const props = defaultProps({
+        holdings: initialHoldings,
+        watchlist: [],
+        helpers,
+      })
+
+      const { result, rerender } = renderHook(
+        (currentProps) => usePortfolioDerivedData(currentProps),
+        { initialProps: props }
+      )
+
+      // Wait for enrichment to complete — enrichedDossiers gets populated
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('2330')
+          expect(dossier.finmind).toBeTruthy()
+        },
+        { timeout: 2000 }
+      )
+
+      // Record the position data from dossiersToUse at this point
+      const dossierBefore = result.current.dossierByCode.get('2330')
+      expect(dossierBefore.position.price).toBe(600)
+
+      // Now simulate a market price change: 2330 price goes from 600 to 700.
+      // The codes stay the same, so codesToEnrichKey does NOT change, and the
+      // enrichment effect does NOT re-fire. The bug was that enrichedBase would
+      // still hold the stale enrichedDossiers (with price=600) instead of
+      // reflecting the fresh D (with price=700).
+      const updatedHoldings = [
+        { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 700 },
+        { code: '2382', name: '廣達', qty: 500, cost: 1400, price: 1600 },
+      ]
+
+      rerender({
+        ...props,
+        holdings: updatedHoldings,
+      })
+
+      // dossiersToUse should reflect the new price from D, merged with the
+      // cached finmind enrichment data
+      const dossierAfter = result.current.dossierByCode.get('2330')
+      expect(dossierAfter.position.price).toBe(700)
+      // Enrichment should still be intact
+      expect(dossierAfter.finmind).toBeTruthy()
+
+      // Also verify the other holding updated
+      const dossier2382 = result.current.dossierByCode.get('2382')
+      expect(dossier2382.position.price).toBe(1600)
+    })
+
+    it('updates classification ranking when market values change', async () => {
+      fetchStockDossierData.mockResolvedValue(null)
+
+      const helpers = stubHelpers()
+      helpers.buildHoldingDossiers = vi.fn(({ holdings }) =>
+        (holdings || []).map((item) => ({
+          code: item.code,
+          name: item.name,
+          position: { qty: item.qty, cost: item.cost, price: item.price },
+          freshness: {},
+        }))
+      )
+      helpers.getHoldingMarketValue = vi.fn(
+        (pos) => (Number(pos?.price) || 0) * (Number(pos?.qty) || 0)
+      )
+
+      // With 2 holdings, rank 1 = pct 0.5 → 衛星, rank 2 = pct 1.0 → 戰術.
+      // Initially 2330 is rank 1 (higher value), 2382 is rank 2.
+      const initialHoldings = [
+        { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 600 },
+        { code: '2382', name: '廣達', qty: 500, cost: 100, price: 100 },
+      ]
+
+      const props = defaultProps({
+        holdings: initialHoldings,
+        watchlist: [],
+        helpers,
+      })
+
+      const { result, rerender } = renderHook(
+        (currentProps) => usePortfolioDerivedData(currentProps),
+        { initialProps: props }
+      )
+
+      // 2330 is rank 1 (value=600k) → 衛星, 2382 is rank 2 (value=50k) → 戰術
+      expect(result.current.dossierByCode.get('2330').classification.position.value).toBe('衛星')
+      expect(result.current.dossierByCode.get('2382').classification.position.value).toBe('戰術')
+
+      // Swap rankings: make 2382 the highest value holding
+      const swappedHoldings = [
+        { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 10 },
+        { code: '2382', name: '廣達', qty: 500, cost: 100, price: 10000 },
+      ]
+
+      rerender({
+        ...props,
+        holdings: swappedHoldings,
+      })
+
+      // After swap: 2382 becomes rank 1 → 衛星, 2330 becomes rank 2 → 戰術
+      expect(result.current.dossierByCode.get('2382').classification.position.value).toBe('衛星')
+      expect(result.current.dossierByCode.get('2330').classification.position.value).toBe('戰術')
+    })
+
+    it('preserves finmind enrichment while base dossier fields update', async () => {
+      const finmindData = {
+        revenue: [
+          {
+            date: '2026-03-31',
+            revenueMonth: 3,
+            revenueYear: 2026,
+            revenue: 1000000,
+            revenueYoY: 12.5,
+            revenueMoM: -2.3,
+          },
+        ],
+        financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+      }
+      fetchStockDossierData.mockResolvedValue(finmindData)
+
+      const helpers = stubHelpers()
+      helpers.buildHoldingDossiers = vi.fn(({ holdings }) =>
+        (holdings || []).map((item) => ({
+          code: item.code,
+          name: item.name,
+          position: { qty: item.qty, cost: item.cost, price: item.price },
+          freshness: {},
+          customField: item.customField || 'initial',
+        }))
+      )
+      helpers.getHoldingMarketValue = vi.fn(
+        (pos) => (Number(pos?.price) || 0) * (Number(pos?.qty) || 0)
+      )
+
+      const props = defaultProps({
+        holdings: [
+          { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 600, customField: 'v1' },
+        ],
+        watchlist: [],
+        helpers,
+      })
+
+      const { result, rerender } = renderHook(
+        (currentProps) => usePortfolioDerivedData(currentProps),
+        { initialProps: props }
+      )
+
+      // Wait for enrichment
+      await waitFor(
+        () => {
+          expect(result.current.dossierByCode.get('2330').finmind).toBeTruthy()
+        },
+        { timeout: 2000 }
+      )
+
+      // Re-render with changed base data
+      rerender({
+        ...props,
+        holdings: [
+          { code: '2330', name: '台積電', qty: 1000, cost: 550, price: 800, customField: 'v2' },
+        ],
+      })
+
+      const dossier = result.current.dossierByCode.get('2330')
+      // Base fields from D should be fresh
+      expect(dossier.position.price).toBe(800)
+      expect(dossier.customField).toBe('v2')
+      // Enrichment data should still be present
+      expect(dossier.finmind).toBeTruthy()
+      expect(dossier.finmind.revenue).toBeDefined()
+      expect(dossier.fundamentals).toBeDefined()
+    })
+  })
 })

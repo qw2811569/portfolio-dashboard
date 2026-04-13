@@ -7,7 +7,6 @@ export function useEventLifecycleSync({
   activePortfolioId = '',
   ready = false,
   viewMode = PORTFOLIO_VIEW_MODE,
-  tab = 'holdings',
   newsEvents = [],
   setNewsEvents = () => {},
   portfolioTransitionRef = { current: { isHydrating: false } },
@@ -58,7 +57,13 @@ export function useEventLifecycleSync({
       const normalizedEvents = normalizeNewsEvents(events)
       if (normalizedEvents.length === 0) return normalizedEvents
 
-      const today = toSlashDate()
+      let today
+      try {
+        today = toSlashDate()
+      } catch {
+        return normalizedEvents
+      }
+      if (!today) return normalizedEvents
       const todayDate = parseSlashDate(today)
       if (!todayDate) return normalizedEvents
 
@@ -177,6 +182,10 @@ export function useEventLifecycleSync({
         if (currentJson !== nextJson) {
           setNewsEvents(nextEvents)
         }
+      } catch {
+        // Swallow — prevent unhandled promise rejection from crashing React
+        // render cycle. Lifecycle sync is best-effort; a failure here should
+        // not take down the entire events panel.
       } finally {
         eventLifecycleSyncRef.current = false
       }

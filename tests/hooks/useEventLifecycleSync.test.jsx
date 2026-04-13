@@ -20,7 +20,6 @@ const baseProps = (overrides = {}) => ({
   activePortfolioId: 'me',
   ready: true,
   viewMode: 'portfolio',
-  tab: 'holdings',
   newsEvents: [],
   setNewsEvents: vi.fn(),
   portfolioTransitionRef: { current: { isHydrating: false } },
@@ -184,5 +183,128 @@ describe('useEventLifecycleSync', () => {
     // Give it time to process
     await new Promise((r) => setTimeout(r, 200))
     expect(setNewsEvents).not.toHaveBeenCalled()
+  })
+
+  // ── P0-04: null date guard ────────────────────────────────────────
+  it('gracefully no-ops when parseSlashDate always returns null', async () => {
+    const event = makeTrackingEvent()
+    const setNewsEvents = vi.fn()
+
+    // Force parseSlashDate to always return null — simulates a broken
+    // locale or misconfigured toSlashDate producing an unparseable string.
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          parseSlashDate: () => null,
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    // Give it time to process
+    await new Promise((r) => setTimeout(r, 300))
+    // Should NOT crash and should NOT call setNewsEvents (no-op)
+    expect(setNewsEvents).not.toHaveBeenCalled()
+  })
+
+  it('gracefully no-ops when toSlashDate returns null', async () => {
+    const event = makeTrackingEvent()
+    const setNewsEvents = vi.fn()
+
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          toSlashDate: () => null,
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    await new Promise((r) => setTimeout(r, 300))
+    expect(setNewsEvents).not.toHaveBeenCalled()
+  })
+
+  it('gracefully no-ops when toSlashDate throws', async () => {
+    const event = makeTrackingEvent()
+    const setNewsEvents = vi.fn()
+
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          toSlashDate: () => {
+            throw new Error('locale crash')
+          },
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    await new Promise((r) => setTimeout(r, 300))
+    expect(setNewsEvents).not.toHaveBeenCalled()
+  })
+
+  it('gracefully no-ops when toSlashDate returns non-date string', async () => {
+    const event = makeTrackingEvent()
+    const setNewsEvents = vi.fn()
+
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          toSlashDate: () => 'not-a-date',
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    await new Promise((r) => setTimeout(r, 300))
+    expect(setNewsEvents).not.toHaveBeenCalled()
+  })
+
+  it('runs lifecycle sync regardless of active tab (no tab-gating)', async () => {
+    // Previously the hook gated sync on specific tabs like 'events' or 'news'.
+    // This test proves sync fires for an arbitrary tab value like 'settings'.
+    const event = makeTrackingEvent()
+    const setNewsEvents = vi.fn()
+
+    renderHook(() =>
+      useEventLifecycleSync(
+        baseProps({
+          newsEvents: [event],
+          setNewsEvents,
+          getMarketQuotesForCodes: vi.fn(async () => ({
+            2330: { price: 620 },
+          })),
+        })
+      )
+    )
+
+    await waitFor(
+      () => {
+        expect(setNewsEvents).toHaveBeenCalled()
+      },
+      { timeout: 2000 }
+    )
+
+    const updatedEvents = setNewsEvents.mock.calls[0][0]
+    expect(updatedEvents).toHaveLength(1)
+    // Sync ran and auto-reviewed the event — proof that no tab-gating blocks it
+    expect(updatedEvents[0].status).toBe('closed')
+    expect(updatedEvents[0].autoReviewed).toBe(true)
   })
 })

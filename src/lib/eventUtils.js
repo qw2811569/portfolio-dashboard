@@ -378,8 +378,18 @@ export function normalizeEventRecord(event) {
         ? 'event'
         : 'news'
 
+  // Preserve legacy categorical `type` (法說/財報/營收/etc.) used by EventCard
+  // color mapping and EventsFilter buttons. If the incoming event carries
+  // type='event' or type='news' (recordType discriminator values that leaked into
+  // the wrong field), strip it so filter buttons don't break.  We delete
+  // the collision rather than overwrite with null, so event.type is simply
+  // absent — matching the same shape as seed events that omit the field.
+  const RECORD_TYPE_COLLISION = new Set(['event', 'news'])
+  const sanitizedType = RECORD_TYPE_COLLISION.has(event.type) ? undefined : event.type
+
   return {
     ...event,
+    type: sanitizedType,
     recordType,
     label: String(event.label || event.title || '').trim(),
     sub: String(event.sub || event.detail || '').trim(),

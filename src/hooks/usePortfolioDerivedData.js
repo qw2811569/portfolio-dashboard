@@ -267,7 +267,35 @@ export function usePortfolioDerivedData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codesToEnrichKey])
 
-  const enrichedBase = enrichedDossiers ?? D
+  // Merge enrichment data onto the always-fresh D. enrichedDossiers captures a
+  // snapshot of D at enrichment time, so when D changes (market price tick,
+  // fundamentals update, etc.) but codes stay the same, enrichedDossiers holds
+  // stale base fields. By re-merging only the finmind-specific overlay fields
+  // from the enrichment onto the current D, downstream consumers always see
+  // fresh base data + cached enrichment data.
+  const enrichedBase = useMemo(() => {
+    if (!enrichedDossiers) return D
+    const enrichmentByCode = new Map(enrichedDossiers.map((d) => [d.code, d]))
+    return D.map((d) => {
+      const enriched = enrichmentByCode.get(d.code)
+      if (!enriched) return d
+      // Overlay only the fields that the enrichment effect adds/modifies.
+      // Everything else (position, price, base freshness) comes from D.
+      return {
+        ...d,
+        finmind: enriched.finmind ?? d.finmind,
+        fundamentals: enriched.fundamentals ?? d.fundamentals,
+        targets: enriched.targets ?? d.targets,
+        targetSource: enriched.targetSource ?? d.targetSource,
+        freshness: enriched.freshness
+          ? { ...(d.freshness || {}), ...enriched.freshness }
+          : d.freshness,
+        ...(enriched.underlyingCode
+          ? { underlyingCode: enriched.underlyingCode, underlyingName: enriched.underlyingName }
+          : {}),
+      }
+    })
+  }, [D, enrichedDossiers])
 
   // Auto-classify stocks separately from FinMind enrichment so that
   // portfolio-relative fields (position rank) update when market prices

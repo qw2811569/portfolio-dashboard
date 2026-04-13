@@ -194,7 +194,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
 
     expect(lifecycle.result.current.canUseCloud).toBe(true)
     expect(lifecycle.result.current.portfolioPersistenceArgs.activePortfolioId).toBe('me')
-    expect(lifecycle.result.current.eventLifecycleArgs.tab).toBe('holdings')
+    expect(lifecycle.result.current.eventLifecycleArgs.tab).toBeUndefined()
   })
 
   it('builds helper/runtime view composers for app shell wiring', () => {

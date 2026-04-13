@@ -2,4 +2,4 @@
  * News components exports
  */
 
-export { NewsAnalysisPanel, NewsEventCard } from "./NewsPanel.jsx";
+export { NewsAnalysisPanel, NewsEventCard, NewsFeedSection } from './NewsPanel.jsx'

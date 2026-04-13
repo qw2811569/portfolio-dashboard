@@ -279,6 +279,7 @@ export function usePortfolioPanelsContextComposer({
         reviewForm,
         expandedNews,
         operatingContext,
+        holdingCodes: safeHoldings.map((h) => h.code).filter(Boolean),
       },
     }),
     [

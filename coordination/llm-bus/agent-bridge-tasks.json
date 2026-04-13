@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "generatedFrom": "coordination/llm-bus/runtime-execution-plan.md",
+  "version": 3,
+  "generatedFrom": "gap-analysis-2026-04-13",
   "dispatchPolicy": {
     "defaultLanes": ["codex", "claude", "qwen", "gemini"],
     "requireConsensusForMajorChanges": true,
@@ -10,324 +10,191 @@
   },
   "tasks": [
     {
-      "id": "wave-4-startup-trace",
-      "title": "Trace canonical startup loading path",
-      "lane": "operability",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": [],
-      "writeScope": ["src/hooks/*", "src/components/*", "scripts/ui-smoke.cjs"],
-      "sourcePlanRef": "Wave 4 / Step 1-2",
-      "summary": "Measure and localize the long 載入中... phase on the canonical AppShell runtime.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Investigate the startup path behind the long 載入中... phase on the canonical AppShell runtime at http://127.0.0.1:3002. Do not widen scope. Return: findings, likely root cause, smallest safe next step, and verification."
-    },
-    {
-      "id": "wave-4-operability-consensus",
-      "title": "Choose smallest operability fix",
-      "lane": "consensus",
+      "id": "infra-01",
+      "title": "VM: Knowledge API — runtime 讀 JSON 取代 build-time 打包",
+      "lane": "infrastructure",
       "owner": "claude",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-4-startup-trace"],
-      "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
-      "sourcePlanRef": "Wave 4 / Step 3",
-      "summary": "After startup tracing, decide whether to optimize runtime work, improve loading UX, or do a mixed fix.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Use the latest startup-trace evidence to choose the smallest safe Wave 4 fix: performance first, loading UX first, or mixed. Reply with: decision, why, and the smallest patch shape."
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": [],
+      "summary": "在 VM 上建 Knowledge API (GET /api/knowledge/*) runtime 讀 JSON，前端改打 VM。改 JSON 立刻生效不用 redeploy。涉及 11 個 import 點。",
+      "dispatchPrompt": "Build Knowledge API on VM agent-bridge-standalone/server.mjs. Add routes: GET /api/knowledge/profiles, /themes, /supply-chain, /stock-meta, /analysis-frameworks. Runtime read JSON files from ~/app/src/data/ and ~/app/src/lib/knowledge-base/."
     },
     {
-      "id": "wave-3-route-gap-audit",
-      "title": "Audit remaining route-shell propagation gaps",
-      "lane": "verification",
+      "id": "infra-02",
+      "title": "VM: HTTPS + Auth token",
+      "lane": "infrastructure",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": [],
+      "summary": "VM HTTP only + 無 auth。需要 Nginx 反向代理 + Let's Encrypt SSL + BRIDGE_AUTH_TOKEN。",
+      "dispatchPrompt": "Set up HTTPS and auth on GCP VM. Nginx reverse proxy + Let's Encrypt + BRIDGE_AUTH_TOKEN."
+    },
+    {
+      "id": "infra-03",
+      "title": "VM: 安裝 LLM CLIs (Codex/Qwen/Gemini)",
+      "lane": "infrastructure",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": ["infra-02"],
+      "summary": "VM 上裝 Codex CLI, Qwen CLI, Gemini CLI + API keys。讓 Agent Bridge 可以 dispatch。",
+      "dispatchPrompt": "Install Codex CLI, Qwen CLI, Gemini CLI on GCP VM. Configure API keys. Verify Agent Bridge can spawn each."
+    },
+    {
+      "id": "infra-04",
+      "title": "前端 11 個 static import 改打 VM Knowledge API",
+      "lane": "infrastructure",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": ["infra-01"],
+      "summary": "stockClassifier.js(3), coverageAdapter.js(3), knowledgeBase.js(7), knowledgeEvolutionRuntime.js, brainRuntime.js 共 11 個 static JSON import 改成 fetch VM API。",
+      "dispatchPrompt": "Refactor 11 static JSON imports to fetch from VM Knowledge API. Files: stockClassifier.js, coverageAdapter.js, knowledgeBase.js, knowledgeEvolutionRuntime.js, brainRuntime.js."
+    },
+    {
+      "id": "p0-01",
+      "title": "P0: 修 stale enrichment invalidation",
+      "lane": "bugfix",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": [],
+      "summary": "usePortfolioDerivedData enriched dossiers 可能 stale → UI 顯示錯誤。加 invalidation + regression test。",
+      "dispatchPrompt": "Fix stale enrichment invalidation in usePortfolioDerivedData.js. Add invalidation mechanism + regression test."
+    },
+    {
+      "id": "p0-02",
+      "title": "P0: 移除 lifecycle sync 的 tab-gating",
+      "lane": "bugfix",
+      "owner": "codex",
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": [],
+      "summary": "useEventLifecycleSync 不該受 tab 影響。lifecycle sync 應在 portfolio-ready 就跑。",
+      "dispatchPrompt": "Remove tab-based gating from useEventLifecycleSync.js. Sync should run when portfolio-ready regardless of active tab."
+    },
+    {
+      "id": "p0-03",
+      "title": "P0: Events filter type regression test",
+      "lane": "bugfix",
       "owner": "qwen",
-      "status": "completed",
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": [],
+      "summary": "normalizeEventRecord 新增 type discriminator 可能 break EventsPanel filter。需 e2e regression test。",
+      "dispatchPrompt": "Write e2e regression test: normalizeEventRecord → EventsPanel filter → filterEventsByType() with legacy filter buckets."
+    },
+    {
+      "id": "p0-04",
+      "title": "P0: null date guard in useEventLifecycleSync",
+      "lane": "bugfix",
+      "owner": "qwen",
+      "status": "pending",
+      "priority": "critical",
+      "dependsOn": [],
+      "summary": "parseSlashDate 可能回傳 null 導致 crash。加 null guard + unit test。",
+      "dispatchPrompt": "Add null-date guard to useEventLifecycleSync. Unit test forcing null return + verify graceful no-op."
+    },
+    {
+      "id": "feat-01",
+      "title": "接通 cron target-price 到前端 (7/30 天規則)",
+      "lane": "feature",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": [],
+      "summary": "usePortfolioDerivedData ~L195 有 stub。fetch /api/target-prices，<7天優先，7-30天預警，>30天 fallback PER-band。",
+      "dispatchPrompt": "Implement target-price cron integration in usePortfolioDerivedData.js L195 stub. Fetch, prefer <7d, warn 7-30d, fallback >30d."
+    },
+    {
+      "id": "feat-02",
+      "title": "News vs Events UI 完全分離",
+      "lane": "feature",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "high",
+      "dependsOn": [],
+      "summary": "加 type discriminator，渲染 split by type。news = 純資訊，event = 預測+復盤。改 NewsPanel + EventsPanel。",
+      "dispatchPrompt": "Implement news vs events UI separation. type:'news'|'event' discriminator, split rendering, news=info style, event=prediction+review."
+    },
+    {
+      "id": "feat-03",
+      "title": "權證→標的股 UI + 目標價連動",
+      "lane": "feature",
+      "owner": "codex",
+      "status": "pending",
       "priority": "medium",
       "dependsOn": [],
-      "writeScope": ["tests/routes/*", "tests/hooks/useRoute*"],
-      "sourcePlanRef": "Wave 3 / Step 1-2",
-      "summary": "Identify route-shell tests that still only prove local storage or route-local context.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Inspect route-shell tests and list the remaining cases that only validate route-local truth instead of main-runtime propagation. Return: priority-ordered gaps and the smallest next guard to add."
+      "summary": "UI 顯示（標的：台積電），用 targets[underlyingCode] 的報告。加負測試。",
+      "dispatchPrompt": "Implement warrant→underlying UI. Show underlying name, use underlying targets. Add negative-path tests."
     },
     {
-      "id": "wave-4-user-blindspot-check",
-      "title": "Check user-facing startup blind spots",
-      "lane": "ux",
-      "owner": "gemini",
-      "status": "completed",
+      "id": "feat-04",
+      "title": "Target freshness 7/30 天 + noise 評估",
+      "lane": "feature",
+      "owner": "qwen",
+      "status": "pending",
       "priority": "medium",
-      "dependsOn": ["wave-4-startup-trace"],
-      "writeScope": ["coordination/llm-bus/runtime-stabilization-brief.md"],
-      "sourcePlanRef": "Wave 4 / user-feel lane",
-      "summary": "Validate whether the startup issue feels like slowness, emptiness, or wrong workflow cues.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Focus only on the user-facing blind spots in the startup path. Return: what feels broken first, and the smallest wording/loading cue fix if performance is not the whole issue."
-    },
-    {
-      "id": "wave-5-agent-bridge-task-model",
-      "title": "Bootstrap Agent Bridge task model",
-      "lane": "orchestration",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
       "dependsOn": [],
-      "writeScope": ["docs/vscode-agent-bridge/*", "coordination/llm-bus/agent-bridge-tasks.json"],
-      "sourcePlanRef": "Wave 5 / Step 1-4",
-      "summary": "Add a task layer above sessions so Agent Bridge can list, assign, and dispatch structured work.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Implement the smallest task/dispatch layer that can sit on top of existing sessions without breaking the current mobile terminal workflow. Return changed files and verification."
+      "summary": "computeFreshnessGrade 30/90/120 → 7/30。先 snapshot 再改，避免 UI 爆量警告。",
+      "dispatchPrompt": "Change target freshness thresholds 30/90/120 → 7/30 in dateUtils.js. Snapshot before/after to assess UI noise."
     },
     {
-      "id": "wave-4-post-ready-backfill",
-      "title": "Move trade backfill out of pre-ready gate",
-      "lane": "operability",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-4-startup-trace", "wave-4-operability-consensus"],
-      "writeScope": ["src/hooks/usePortfolioBootstrap.js", "tests/hooks/usePortfolioBootstrap.test.jsx"],
-      "sourcePlanRef": "Wave 4 / Step 4",
-      "summary": "Keep the new boot shell, but move trade backfill into post-ready maintenance and refresh the live snapshot if the patch mutates persisted data.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Move applyTradeBackfillPatchesIfNeeded() out of the pre-ready gate, then refresh the live runtime snapshot before cloud holdings adoption if the patch reports changes. Return: changed files, regression coverage, and before/after ready timings."
-    },
-    {
-      "id": "wave-5-verify-gate",
-      "title": "Add soft verify gate to Agent Bridge",
-      "lane": "orchestration",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-5-agent-bridge-task-model"],
-      "writeScope": [
-        "docs/vscode-agent-bridge/src/extension.ts",
-        "docs/vscode-agent-bridge/dashboard/index.html",
-        "docs/vscode-agent-bridge/README.md"
-      ],
-      "sourcePlanRef": "Wave 5 / Step 3-4",
-      "summary": "Introduce completion evidence and a soft verify gate so task completion is backed by changed files, verification runs, and consensus state.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Add the smallest soft verify gate that introduces completion evidence without breaking existing task dispatch flows. Return: changed files, API/UI changes, and verification."
-    },
-    {
-      "id": "wave-2-header-workflow-cue",
-      "title": "Lift workflow cue into the AppShell header",
-      "lane": "coherence",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
+      "id": "feat-05",
+      "title": "全組合研究行為驗證 — 權證策略框架",
+      "lane": "verification",
+      "owner": "claude",
+      "status": "pending",
+      "priority": "medium",
       "dependsOn": [],
-      "writeScope": [
-        "src/hooks/useAppRuntime.js",
-        "src/hooks/useAppRuntimeComposer.js",
-        "src/components/Header.jsx",
-        "tests/components/Header.test.jsx"
-      ],
-      "sourcePlanRef": "Wave 2 / Step 3-5",
-      "summary": "Reuse the shared operating context in the canonical Header so the current next step is visible across tabs without triggering new API work.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Add a header-level workflow cue in the canonical AppShell using existing derived state only. It must be navigation-only and should not expand the route shell."
+      "summary": "跑一次 /api/research portfolio mode，確認權證真的用 Delta/Theta/IV。",
+      "dispatchPrompt": "Trigger full portfolio research. Verify warrant sections use Delta/Theta/IV framework."
     },
     {
-      "id": "wave-5-consensus-gate",
-      "title": "Add explicit consensus gate to Agent Bridge",
-      "lane": "orchestration",
+      "id": "feat-06",
+      "title": "Auto-classifier 增量重分類 + 低信心 badge",
+      "lane": "feature",
       "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-5-verify-gate"],
-      "writeScope": [
-        "docs/vscode-agent-bridge/src/extension.ts",
-        "docs/vscode-agent-bridge/dashboard/index.html",
-        "docs/vscode-agent-bridge/README.md",
-        "coordination/llm-bus/agent-bridge-tasks.json"
-      ],
-      "sourcePlanRef": "Wave 5 / Step 3-4",
-      "summary": "Major tasks now require explicit consensus reviews instead of a writable consensusState field, and downstream dispatch is blocked until required dependencies clear consensus.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and docs/vscode-agent-bridge/README.md. Extend the soft verify gate into a minimal explicit consensus gate: add review capture, prevent generic PATCH from bypassing it, and surface consensus progress in the dashboard."
+      "status": "pending",
+      "priority": "medium",
+      "dependsOn": ["infra-01"],
+      "summary": "classifier 改 incremental（只重算 stale/unknown）。低信心用 badge 標示。配合 Knowledge API。",
+      "dispatchPrompt": "Implement incremental reclassification in stockClassifier.js. Add UI badges for low-confidence labels."
     },
     {
-      "id": "wave-2-review-backlog-guard",
-      "title": "Guard daily analysis behind live review backlog cues",
-      "lane": "coherence",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-2-header-workflow-cue"],
-      "writeScope": [
-        "src/components/reports/DailyReportPanel.jsx",
-        "tests/components/AppPanels.contexts.test.jsx"
-      ],
-      "sourcePlanRef": "Wave 2 / Step 4-5",
-      "summary": "When events are already due for review, the daily-analysis entry point now warns first, routes back to the exact pending review, and only runs analysis through an explicit override.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Add the smallest daily-analysis guard that uses live review backlog state to steer the user back into event/news review before firing a new expensive analysis call. Keep a manual override and do not add new API work."
+      "id": "test-01",
+      "title": "補齊權證 enrichment 負測試",
+      "lane": "testing",
+      "owner": "qwen",
+      "status": "pending",
+      "priority": "medium",
+      "dependsOn": [],
+      "summary": "dossierUtils.js 缺：missing underlyingCode、cron fetch fail、fallback。",
+      "dispatchPrompt": "Write negative-path tests for warrant enrichment in dossierUtils.js."
     },
     {
-      "id": "wave-2-staged-daily-review",
-      "title": "Introduce staged FinMind-backed daily review",
-      "lane": "coherence",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-2-review-backlog-guard"],
-      "writeScope": [
-        "src/hooks/useDailyAnalysisWorkflow.js",
-        "src/components/reports/DailyReportPanel.jsx",
-        "src/lib/finmindPromptRuntime.js",
-        "src/lib/dataAdapters/finmindAdapter.js",
-        "src/lib/reportUtils.js",
-        "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
-        "tests/components/AppPanels.contexts.test.jsx"
-      ],
-      "sourcePlanRef": "Wave 2 / staged-daily-review",
-      "summary": "Daily analysis now distinguishes same-day `收盤快版` vs `資料確認版`, bypasses stale FinMind cache on confirmation reruns, and keeps both same-day versions in history.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md, coordination/llm-bus/runtime-stabilization-brief.md, and coordination/llm-bus/runs/20260411-122012/*.md. Land the smallest staged daily-review patch that makes FinMind confirmation explicit without adding background scheduling.",
-      "requiresConsensus": true,
-      "consensusReviews": [
-        {
-          "agentId": "claude",
-          "decision": "approved",
-          "summary": "Adopt T0/T1 staging with visible preliminary labeling and data-presence gating."
-        },
-        {
-          "agentId": "qwen",
-          "decision": "approved",
-          "summary": "Keep the staged rerun machine-readable and idempotent instead of silently overwriting same-day reports."
-        }
-      ],
-      "evidence": {
-        "changedFiles": [
-          "src/hooks/useDailyAnalysisWorkflow.js",
-          "src/components/reports/DailyReportPanel.jsx",
-          "src/lib/finmindPromptRuntime.js",
-          "src/lib/dataAdapters/finmindAdapter.js",
-          "src/lib/reportUtils.js",
-          "coordination/llm-bus/runs/20260411-122012/consensus.md"
-        ],
-        "verificationRuns": [
-          "bunx vitest run tests/lib/finmindPromptRuntime.test.js tests/lib/finmindAdapter.test.js tests/lib/dailyAnalysisRuntime.test.js tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx",
-          "bun run lint",
-          "bun run build",
-          "bun scripts/ui-smoke.cjs"
-        ],
-        "risksNoted": [
-          "T1 is still manual-trigger only; background scheduling has not landed yet",
-          "Gemini did not provide a usable vote in this run and was treated as non-blocking"
-        ],
-        "nextStep": "Add an explicit same-day T1 trigger policy and a diff view so users can compare fast close vs confirmed rerun."
-      }
+      "id": "test-02",
+      "title": "補齊 freshness 邊界測試 (7/30 天)",
+      "lane": "testing",
+      "owner": "qwen",
+      "status": "pending",
+      "priority": "medium",
+      "dependsOn": ["feat-04"],
+      "summary": "computeFreshnessGrade boundary: 6d=fresh, 7d=aging, 29d=aging, 30d=stale。",
+      "dispatchPrompt": "Write boundary tests for computeFreshnessGrade at 7/30 day thresholds."
     },
     {
-      "id": "wave-2-daily-diff-card",
-      "title": "Surface inline same-day T0/T1 diff in daily panel",
-      "lane": "coherence",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-2-staged-daily-review"],
-      "writeScope": [
-        "src/components/reports/DailyReportPanel.jsx",
-        "src/lib/dailyReportDiff.js",
-        "src/hooks/usePortfolioPanelsContextComposer.js",
-        "tests/lib/dailyReportDiff.test.js",
-        "tests/components/AppPanels.contexts.test.jsx"
-      ],
-      "sourcePlanRef": "Wave 2 / diff-first trust layer",
-      "summary": "Daily analysis now exposes an inline same-day diff card so users can compare `收盤快版` vs `資料確認版` without leaving the panel or triggering new API work.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md, coordination/llm-bus/runtime-stabilization-brief.md, and coordination/llm-bus/runs/20260411-124030/*.md. Land the smallest diff-first patch that shows users what changed between same-day staged daily reports, but do not add background automation yet.",
-      "requiresConsensus": true,
-      "consensusReviews": [
-        {
-          "agentId": "claude",
-          "decision": "approved",
-          "summary": "Use an inline diff card at the report surface the user is already reading."
-        },
-        {
-          "agentId": "qwen",
-          "decision": "approved",
-          "summary": "Keep the patch deterministic with a local diff utility and no extra API work."
-        },
-        {
-          "agentId": "gemini",
-          "decision": "approved",
-          "summary": "Trust improves most when the user sees the delta directly instead of through another control or badge."
-        }
-      ],
-      "evidence": {
-        "changedFiles": [
-          "src/components/reports/DailyReportPanel.jsx",
-          "src/lib/dailyReportDiff.js",
-          "src/hooks/useAppRuntimeComposer.js",
-          "src/hooks/usePortfolioPanelsContextComposer.js",
-          "tests/lib/dailyReportDiff.test.js",
-          "tests/components/AppPanels.contexts.test.jsx",
-          "coordination/llm-bus/runs/20260411-124030/consensus.md"
-        ],
-        "verificationRuns": [
-          "bunx vitest run tests/lib/dailyReportDiff.test.js tests/components/AppPanels.contexts.test.jsx",
-          "bun run lint",
-          "bun run build",
-          "bun scripts/ui-smoke.cjs"
-        ],
-        "risksNoted": [
-          "The diff card is intentionally same-day only and does not yet compare across dates",
-          "Automatic T1 triggering has not landed yet; this patch only makes the existing rerun trustworthy"
-        ],
-        "nextStep": "Choose and implement the smallest safe automatic T1 trigger now that users can see the delta between fast close and confirmed reruns."
-      }
-    },
-    {
-      "id": "wave-2-t1-auto-trigger",
-      "title": "Choose smallest safe automatic T1 trigger",
-      "lane": "coherence",
-      "owner": "codex",
-      "status": "completed",
-      "priority": "high",
-      "dependsOn": ["wave-2-daily-diff-card"],
-      "writeScope": [
-        "src/hooks/useDailyAnalysisWorkflow.js",
-        "src/components/reports/DailyReportPanel.jsx",
-        "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
-        "tests/components/AppPanels.contexts.test.jsx"
-      ],
-      "sourcePlanRef": "Wave 2 / post-diff automation",
-      "summary": "Now that users can see the T0/T1 delta, decide the smallest safe automatic confirmation trigger that does not silently overwrite trust.",
-      "dispatchPrompt": "Read coordination/llm-bus/runtime-execution-plan.md and coordination/llm-bus/runtime-stabilization-brief.md. Use the new diff-first trust layer as baseline, then choose the smallest safe automatic T1 trigger policy: passive ready cue, gated auto-rerun, or another lighter option. Return consensus, risks, and the smallest patch shape.",
-      "requiresConsensus": true,
-      "consensusReviews": [
-        {
-          "agentId": "claude",
-          "decision": "approved",
-          "summary": "Use a mount-triggered cooldown-gated probe and only auto-rerun after all pending daily datasets are confirmed."
-        },
-        {
-          "agentId": "qwen",
-          "decision": "approved",
-          "summary": "Use the existing pendingCodes metadata as the probe target and avoid a background poller."
-        },
-        {
-          "agentId": "gemini",
-          "decision": "approved",
-          "summary": "Keep the automation local to the daily panel so it adds help without wasting API work in the background."
-        }
-      ],
-      "evidence": {
-        "changedFiles": [
-          "src/hooks/useDailyAnalysisWorkflow.js",
-          "src/components/reports/DailyReportPanel.jsx",
-          "src/hooks/useAppRuntimeWorkflows.js",
-          "src/hooks/useAppRuntimeComposer.js",
-          "src/hooks/usePortfolioPanelsContextComposer.js",
-          "tests/hooks/useDailyAnalysisWorkflow.test.jsx",
-          "tests/components/AppPanels.contexts.test.jsx",
-          "coordination/llm-bus/runs/20260411-130006/consensus.md"
-        ],
-        "verificationRuns": [
-          "bunx vitest run tests/hooks/useDailyAnalysisWorkflow.test.jsx tests/components/AppPanels.contexts.test.jsx tests/hooks/useAppRuntimeComposer.test.jsx",
-          "bun run lint",
-          "bun run build",
-          "bun scripts/ui-smoke.cjs"
-        ],
-        "risksNoted": [
-          "Cooldown is currently session-local and resets on full reload",
-          "The auto-trigger is intentionally panel-local and does not run as a background poller"
-        ],
-        "nextStep": "Stabilization backlog is clear; open a new task only if real user runtime bugs surface."
-      }
+      "id": "test-03",
+      "title": "補齊 multi-stock event inference 測試",
+      "lane": "testing",
+      "owner": "qwen",
+      "status": "pending",
+      "priority": "medium",
+      "dependsOn": [],
+      "summary": "autoReviewEvent 沒驗 entry/exit code overlap。加 basket event tests。",
+      "dispatchPrompt": "Write tests for autoReviewEvent basket events. Validate entry/exit code overlap."
     }
   ]
 }

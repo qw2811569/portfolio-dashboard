@@ -193,5 +193,138 @@
         "position": null
       }
     ]
+  },
+  "2543": {
+    "name": "皇昌",
+    "themes": [
+      {
+        "theme": "都更危老",
+        "position": null
+      }
+    ]
+  },
+  "3006": {
+    "name": "晶豪科",
+    "themes": [
+      {
+        "theme": "車用電子",
+        "position": "下游"
+      },
+      {
+        "theme": "AIoT",
+        "position": null
+      }
+    ]
+  },
+  "4583": {
+    "name": "台灣精銳",
+    "themes": [
+      {
+        "theme": "機器人",
+        "position": "中游"
+      },
+      {
+        "theme": "自動化",
+        "position": "中游"
+      }
+    ]
+  },
+  "1799": {
+    "name": "易威",
+    "themes": [
+      {
+        "theme": "新藥開發",
+        "position": null
+      }
+    ]
+  },
+  "1815": {
+    "name": "富喬",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": "上游"
+      }
+    ]
+  },
+  "2489": {
+    "name": "瑞軒",
+    "themes": [
+      {
+        "theme": "車載顯示",
+        "position": "下游"
+      }
+    ]
+  },
+  "3167": {
+    "name": "大量",
+    "themes": [
+      {
+        "theme": "半導體設備",
+        "position": "下游"
+      },
+      {
+        "theme": "自動化",
+        "position": "中游"
+      }
+    ]
+  },
+  "4562": {
+    "name": "穎漢",
+    "themes": [
+      {
+        "theme": "自動化",
+        "position": "中游"
+      }
+    ]
+  },
+  "6446": {
+    "name": "藥華藥",
+    "themes": [
+      {
+        "theme": "新藥開發",
+        "position": null
+      }
+    ]
+  },
+  "7799": {
+    "name": "禾榮科",
+    "themes": [
+      {
+        "theme": "細胞治療",
+        "position": null
+      }
+    ]
+  },
+  "7865": {
+    "name": "金聯成",
+    "themes": [
+      {
+        "theme": "循環經濟",
+        "position": null
+      }
+    ]
+  },
+  "8074": {
+    "name": "鉅橡",
+    "themes": [
+      {
+        "theme": "AI_伺服器",
+        "position": "上游"
+      },
+      {
+        "theme": "CoWoS",
+        "position": "上游"
+      }
+    ]
+  },
+  "8096": {
+    "name": "擎亞",
+    "themes": [
+      {
+        "theme": "電子通路",
+        "position": null
+      }
+    ]
   }
 }

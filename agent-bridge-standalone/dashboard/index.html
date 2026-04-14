@@ -389,6 +389,241 @@
     line-height: 1.4;
   }
 
+  /* ─── Project Panel (Improvements + Work Division + Roadmap) ─── */
+  .project-panel {
+    flex-shrink: 0;
+    padding: 8px 12px 10px;
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .project-panel.hidden { display: none; }
+
+  .project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .project-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-1);
+  }
+
+  .project-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .project-body.collapsed { display: none; }
+
+  .project-section-title {
+    font-size: 10px;
+    color: var(--text-2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* Work Division grid */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .agent-card {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .agent-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .agent-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .agent-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-0);
+    flex: 1;
+  }
+
+  .agent-load {
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .agent-load.high { background: rgba(234, 67, 53, 0.18); color: #ff8a7a; }
+  .agent-load.medium { background: rgba(243, 201, 107, 0.18); color: #f3c96b; }
+  .agent-load.low { background: rgba(107, 228, 161, 0.18); color: #6be4a1; }
+  .agent-load.idle { background: var(--bg-3); color: var(--text-2); }
+
+  .agent-focus {
+    font-size: 10px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+
+  .agent-active {
+    font-size: 10px;
+    color: var(--text-1);
+  }
+
+  .agent-note {
+    font-size: 9px;
+    color: var(--text-2);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* Improvements list */
+  .imp-category {
+    margin-bottom: 10px;
+  }
+
+  .imp-category-head {
+    font-size: 11px;
+    color: var(--text-1);
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .imp-category-count {
+    font-size: 9px;
+    background: var(--bg-3);
+    padding: 1px 6px;
+    border-radius: 999px;
+    color: var(--text-2);
+  }
+
+  .imp-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--bg-2);
+    margin-bottom: 4px;
+    align-items: start;
+    font-size: 11px;
+  }
+
+  .priority-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .priority-P0 { background: rgba(234, 67, 53, 0.22); color: #ff8a7a; }
+  .priority-P1 { background: rgba(243, 201, 107, 0.22); color: #f3c96b; }
+  .priority-P2 { background: rgba(127, 212, 255, 0.18); color: #7fd4ff; }
+  .priority-P3-future { background: var(--bg-3); color: var(--text-2); }
+
+  .imp-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .imp-title {
+    color: var(--text-0);
+    font-weight: 600;
+  }
+
+  .imp-why {
+    color: var(--text-2);
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .imp-owner {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--bg-3);
+    color: var(--text-1);
+    flex-shrink: 0;
+  }
+
+  /* Roadmap columns */
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  @media (max-width: 720px) {
+    .roadmap-grid { grid-template-columns: 1fr; }
+  }
+
+  .roadmap-col {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+  }
+
+  .roadmap-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-0);
+    margin-bottom: 4px;
+  }
+
+  .roadmap-rationale {
+    font-size: 10px;
+    color: var(--text-2);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+
+  .roadmap-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .roadmap-chip {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    background: var(--bg-3);
+    color: var(--text-1);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
   /* ─── Main Content ───────────────────── */
   .main {
     flex: 1;
@@ -695,6 +930,31 @@
   <div class="task-board-scroll" id="taskBoardScroll"></div>
 </div>
 
+<!-- Project Panel: Improvements + Work Division + Roadmap -->
+<div class="project-panel hidden" id="projectPanel">
+  <div class="project-header">
+    <div class="project-title">
+      <span>🗺 改善路線圖 + 分工</span>
+      <span class="task-count" id="projectCount">-</span>
+    </div>
+    <button class="task-toggle" id="projectToggle">收合</button>
+  </div>
+  <div class="project-body" id="projectBody">
+    <div>
+      <div class="project-section-title">Work Division</div>
+      <div class="agent-grid" id="agentGrid"></div>
+    </div>
+    <div>
+      <div class="project-section-title">Improvements Needed</div>
+      <div id="improvementsList"></div>
+    </div>
+    <div>
+      <div class="project-section-title">Roadmap</div>
+      <div class="roadmap-grid" id="roadmapGrid"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Main -->
 <div class="main">
   <!-- Scanning overlay -->
@@ -791,6 +1051,7 @@ const state = {
   reconnectTimer: null,
   autoScroll: true,
   taskBoardCollapsed: false,
+  projectCollapsed: false,
 };
 
 const COLORS = {
@@ -806,6 +1067,13 @@ const sendBtn = $('sendBtn');
 const agentTabs = $('agentTabs');
 const taskBoard = $('taskBoard');
 const taskBoardScroll = $('taskBoardScroll');
+const projectPanel = $('projectPanel');
+const projectBody = $('projectBody');
+const projectToggle = $('projectToggle');
+const projectCount = $('projectCount');
+const agentGrid = $('agentGrid');
+const improvementsList = $('improvementsList');
+const roadmapGrid = $('roadmapGrid');
 const taskCount = $('taskCount');
 const taskToggle = $('taskToggle');
 const scanOverlay = $('scanOverlay');
@@ -1287,6 +1555,109 @@ taskToggle.addEventListener('click', () => {
   taskToggle.textContent = state.taskBoardCollapsed ? '展開' : '收合';
   taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
 });
+
+projectToggle.addEventListener('click', () => {
+  state.projectCollapsed = !state.projectCollapsed;
+  projectToggle.textContent = state.projectCollapsed ? '展開' : '收合';
+  projectBody.classList.toggle('collapsed', state.projectCollapsed);
+});
+
+// ─── Project Panel Rendering ────────────
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function renderWorkDivision(workDivision) {
+  if (!workDivision) { agentGrid.innerHTML = ''; return; }
+  agentGrid.innerHTML = Object.entries(workDivision).map(([name, agent]) => {
+    const activeCount = (agent.activeTaskIds || []).length;
+    const activeList = (agent.activeTaskIds || []).slice(0, 5).map(id => escapeHtml(id)).join(', ');
+    const note = agent.note ? `<div class="agent-note">${escapeHtml(agent.note)}</div>` : '';
+    return `
+      <div class="agent-card">
+        <div class="agent-card-head">
+          <span class="agent-dot" style="background:${escapeHtml(agent.color || '#888')}"></span>
+          <span class="agent-name">${escapeHtml(name)}</span>
+          <span class="agent-load ${escapeHtml(agent.load || 'idle')}">${escapeHtml(agent.load || 'idle')}</span>
+        </div>
+        <div class="agent-focus">${escapeHtml(agent.focus || '')}</div>
+        <div class="agent-active">${activeCount} active${activeCount > 0 ? ': ' + activeList : ''}</div>
+        ${note}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderImprovements(items) {
+  if (!Array.isArray(items)) { improvementsList.innerHTML = ''; return; }
+  const byCategory = {};
+  for (const it of items) {
+    const cat = it.category || 'other';
+    (byCategory[cat] ||= []).push(it);
+  }
+  const catOrder = ['infrastructure', 'features', 'verification', 'testing', 'architecture'];
+  const sortedCats = [...new Set([...catOrder, ...Object.keys(byCategory)])].filter(c => byCategory[c]);
+  improvementsList.innerHTML = sortedCats.map(cat => {
+    const list = byCategory[cat];
+    const rows = list.map(it => `
+      <div class="imp-item">
+        <span class="priority-badge priority-${escapeHtml(it.priority || 'P2')}">${escapeHtml(it.priority || 'P2')}</span>
+        <div class="imp-content">
+          <span class="imp-title">${escapeHtml(it.title || '')}</span>
+          <span class="imp-why">${escapeHtml(it.why || '')}</span>
+        </div>
+        <span class="imp-owner">${escapeHtml(it.owner || '-')}</span>
+      </div>
+    `).join('');
+    return `
+      <div class="imp-category">
+        <div class="imp-category-head">
+          <span>${escapeHtml(cat)}</span>
+          <span class="imp-category-count">${list.length}</span>
+        </div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRoadmap(roadmap) {
+  if (!roadmap) { roadmapGrid.innerHTML = ''; return; }
+  const phases = ['now', 'next', 'later'];
+  roadmapGrid.innerHTML = phases.map(phase => {
+    const p = roadmap[phase];
+    if (!p) return '';
+    const chips = (p.taskIds || []).map(id => `<span class="roadmap-chip">${escapeHtml(id)}</span>`).join('');
+    return `
+      <div class="roadmap-col">
+        <div class="roadmap-label">${escapeHtml(p.label || phase)}</div>
+        <div class="roadmap-rationale">${escapeHtml(p.rationale || '')}</div>
+        <div class="roadmap-chips">${chips}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchProject() {
+  try {
+    const res = await fetch('/api/project');
+    if (!res.ok) return;
+    const data = await res.json();
+    projectPanel.classList.remove('hidden');
+    renderWorkDivision(data.workDivision);
+    renderImprovements(data.improvements);
+    renderRoadmap(data.roadmap);
+    const total = (data.improvements || []).length;
+    projectCount.textContent = `${total} items`;
+  } catch (e) {
+    console.warn('fetchProject failed:', e);
+  }
+}
+
+fetchProject();
+setInterval(fetchProject, 60000);
 
 document.querySelectorAll('.modal-option').forEach(opt => {
   opt.addEventListener('click', () => {

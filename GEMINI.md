@@ -1,13 +1,16 @@
 # Gemini Guide
 
-最後更新：2026-04-01
+最後更新：2026-04-14
 
-這份是 Gemini 的短版角色卡，不是獨立 source of truth。**完整 AI 分工與任務路由規則看 `docs/AI_COLLABORATION_GUIDE.md`**。
+這份是 Gemini 的短版角色卡。**行為規則與派工架構看 `claude.md`**。
 
-## 先讀
+## 每次開工先讀
 
-1. `docs/AI_COLLABORATION_GUIDE.md`
-2. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
+1. **`agent-bridge-standalone/project-status.json`** — 整體狀況 + 9 個 portfolio tab + 分工
+2. **`coordination/llm-bus/agent-bridge-tasks.json`** — 當前 task 佇列
+3. **`claude.md`** — 主規則檔
+
+Dashboard 視覺版：`http://35.236.155.62:9527`
 
 ## Gemini 的角色：公開資料蒐集員
 

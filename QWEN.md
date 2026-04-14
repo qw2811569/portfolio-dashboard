@@ -1,6 +1,14 @@
 # Qwen Guide
 
-最後更新：2026-04-03
+最後更新：2026-04-14
+
+## 每次開工先讀
+
+1. **`agent-bridge-standalone/project-status.json`** — 整體狀況 + 已知缺口 + 分工 + roadmap
+2. **`coordination/llm-bus/agent-bridge-tasks.json`** — 當前 task 佇列
+3. **`claude.md`** — 主規則檔（派工邊界、canonical launchers）
+
+Dashboard 視覺版：`http://35.236.155.62:9527`
 
 ## Qwen 的角色：QA 測試員 / Evaluator
 

@@ -1,15 +1,17 @@
 # Codex Guide
 
-最後更新：2026-04-01
+最後更新：2026-04-14
 
-這份是 Codex 的短版角色卡，不是獨立 source of truth。**完整 AI 分工與任務路由規則看 `docs/AI_COLLABORATION_GUIDE.md`**。
+這份是 Codex 的短版角色卡。**行為規則與派工架構看 `claude.md`（主規則檔）**。
 
-## 先讀
+## 每次開工先讀（順序不變）
 
-1. `docs/AI_COLLABORATION_GUIDE.md`（尤其 §7 知識庫+事件行事曆架構）
-2. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
-3. `docs/status/current-work.md`
-4. `docs/superpowers/specs/2026-03-31-kb-evolution-design.md`（知識庫演化方案）
+1. **`agent-bridge-standalone/project-status.json`** — 整體狀況：9 個 portfolio tab、16 個 improvements、roadmap、已完成清單、分工
+2. **`coordination/llm-bus/agent-bridge-tasks.json`** — 當前 task 佇列
+3. **`claude.md`** — Claude 主規則，含派工邊界、canonical launchers、角色責任
+4. `docs/status/current-work.md` — 接手進行中工作時才讀
+
+想看視覺版直接打 `http://35.236.155.62:9527` (Dashboard)。
 
 ## Codex 的角色
 

@@ -213,6 +213,26 @@
       "owner": "TBD"
     }
   ],
+  "completed": [
+    { "id": "p0-01", "title": "P0: stale enrichment invalidation 修復", "date": "2026-04-13" },
+    { "id": "p0-02", "title": "P0: lifecycle sync 移除 tab-gating", "date": "2026-04-13" },
+    { "id": "p0-03", "title": "P0: Events filter type regression test", "date": "2026-04-13" },
+    { "id": "p0-04", "title": "P0: useEventLifecycleSync null date guard", "date": "2026-04-13" },
+    { "id": "vm-bootstrap", "title": "VM Agent Bridge 獨立 server 上線", "date": "2026-04-13" },
+    {
+      "id": "dashboard-v1",
+      "title": "Dashboard 加 Work Division + Improvements + Roadmap",
+      "date": "2026-04-14"
+    },
+    { "id": "feat-07", "title": "Dashboard 視覺改《去他的世界末日》", "date": "2026-04-14" },
+    { "id": "llm-dispatch", "title": "LLM 派工架構整合 (launch-codex.sh)", "date": "2026-04-14" },
+    { "id": "status-bridge", "title": "Mac ↔ VM Status 雙軌互通", "date": "2026-04-14" },
+    {
+      "id": "role-cards-verify",
+      "title": "驗證 CODEX/QWEN/GEMINI.md 被 CLI 讀取",
+      "date": "2026-04-14"
+    }
+  ],
   "roadmap": {
     "now": {
       "label": "本週 — 解鎖生產力",
@@ -220,23 +240,14 @@
       "rationale": "知識庫 runtime 化是最大 leverage — 其他功能都等這個解鎖"
     },
     "next": {
-      "label": "下一階段 — 穩定化 + 視覺",
-      "taskIds": [
-        "infra-02",
-        "infra-03",
-        "feat-03",
-        "feat-04",
-        "feat-07",
-        "test-01",
-        "test-02",
-        "test-03"
-      ],
-      "rationale": "VM production 安全 + 測試補齊 + 視覺重做，讓系統可信賴也好看"
+      "label": "下一階段 — 穩定化 + 測試",
+      "taskIds": ["infra-02", "infra-03", "feat-03", "feat-04", "test-01", "test-02", "test-03"],
+      "rationale": "VM production 安全 + 測試補齊，讓系統可信賴"
     },
     "later": {
       "label": "未來 — 產品深化",
-      "taskIds": ["feat-05", "feat-06", "struct-01", "struct-02"],
-      "rationale": "有 DB 和 VM 長任務後才能做的事"
+      "taskIds": ["feat-05", "feat-06", "struct-01", "struct-02", "D-chat-ui"],
+      "rationale": "有 DB 和 VM 長任務後才能做的事 (含手機聊天 UI)"
     }
   }
 }

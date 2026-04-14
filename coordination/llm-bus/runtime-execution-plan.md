@@ -282,3 +282,37 @@ If browser-feel is part of the wave, also capture a direct browser check against
 - Prefer main-runtime coherence over adding new features.
 - If a new task does not clearly improve coherence, propagation, containment, operability, or orchestration, question whether it belongs in this lane.
 - Keep `runtime-execution-plan.md` human-readable and `agent-bridge-tasks.json` machine-readable; they should describe the same active batch from different angles.
+
+## Scope Changes
+
+- 2026-04-13: ad hoc validation lane for `docs/podcast-6862-三集瑞-KY-深度分析.md`
+  - goal: cross-check FinMind-verifiable claims (price, monthly revenue, quarterly statement figures, institutional flow, margin) before reusing the report as podcast/script source material
+  - notable finding: `/api/finmind?dataset=institutional` had partial English-label support but still missed `Foreign_Dealer_Self` and had no regression test, so future scripts could undercount foreign flow when that bucket was non-zero
+- 2026-04-13: ad hoc Yahoo intraday validation for 6862 `2026-04-13`
+  - goal: verify a Qwen-produced "today limit-up replay" against live Yahoo Taiwan quote-page embedded chart data before reusing the narration in podcast / script copy
+  - notable finding: the Yahoo page snapshot was fetched at `2026-04-13 11:52 CST`, while Taiwan cash equities close at `2026-04-13 13:30 CST`, so any phrasing like `收盤 198.5` / `全天成交量 1,431 張` was premature and should be treated as an intraday snapshot rather than end-of-day fact
+
+## Scope Change Log
+
+- 2026-04-14: Agent Bridge standalone dashboard visual redesign wave requested. Constraint: only edit `agent-bridge-standalone/dashboard/index.html` `<style>` block. Direction: move away from muted cream/paper palette toward a higher-contrast \*The End of the F*\*\*ing World* reading with stronger red/blue/night-road tension and less polite UI chrome.
+- 2026-04-14: Agent Bridge dashboard needs a portfolio-product feature map inside the Project Panel, plus Project Panel compression / hierarchy cleanup for `390x844` portrait.
+  - goal: make the admin bridge visually explain the actual portfolio dashboard product surface (`Overview / Holdings / Watchlist / Events / Daily / Research / Trade / Log / News`) without turning the panel into a long text dump
+  - constraints: do not edit `server.mjs`, WebSocket flow, or existing HTML class/id hooks; prefer data embedded in `dashboard/index.html` because the standalone server does not currently expose arbitrary static JSON assets
+  - planned shape: add a new product-map section with nine tab cards, shared `OperatingContextCard` visualization, compact dependency badges/legend, and stronger empty/hover/active states while keeping the existing `Work Division / Improvements / Roadmap` sections readable on mobile
+
+### Wave 6: Agent Bridge Dashboard Product Map + Mobile Compression
+
+Goal: make the dashboard explain the portfolio product at a glance while reducing scroll fatigue and improving hierarchy on phone screens.
+
+1. Add a dedicated product-map surface to the Project Panel for the live portfolio dashboard tabs.
+2. Compress Work Division / Improvements / Roadmap so the panel reads as a dense briefing instead of a long backlog dump.
+3. Rebalance typography, spacing, empty states, and interactive feedback around the darker `TEOTFW` mood.
+4. Verify the dashboard on desktop plus `390x844` portrait before handing off.
+
+Definition of done:
+
+- The Project Panel can answer three questions at a glance:
+  - what the portfolio product contains
+  - which parts are live / partial / planned
+  - what data sources and shared context tie the tabs together
+- Mobile portrait no longer feels like an endless stack of equally weighted cards.

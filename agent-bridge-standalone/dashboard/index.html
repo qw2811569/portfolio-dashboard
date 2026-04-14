@@ -183,6 +183,12 @@
   button,
   .agent-tab,
   .task-card,
+  .overview-card,
+  .agent-card,
+  .imp-item,
+  .roadmap-col,
+  .timeline-item,
+  .arch-node,
   .task-toggle,
   .task-dispatch,
   .send-btn,
@@ -375,7 +381,10 @@
     gap: 10px;
   }
 
-  .project-header { margin-bottom: 10px; }
+  .project-header {
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
 
   .task-board-title,
   .project-title {
@@ -384,6 +393,14 @@
     gap: 8px;
     font-size: 12px;
     color: var(--text-1);
+  }
+
+  .project-subtitle {
+    margin-top: 6px;
+    max-width: 720px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--text-2);
   }
 
   .task-count,
@@ -521,7 +538,13 @@
     line-height: 1.78;
   }
 
-  .task-summary { min-height: 42px; }
+  .task-summary {
+    min-height: 42px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
 
   .task-verify {
     display: flex;
@@ -594,9 +617,11 @@
 
   .task-dispatch:disabled,
   .send-btn:disabled {
-    opacity: 0.34;
+    opacity: 0.42;
     cursor: default;
-    box-shadow: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    background: linear-gradient(180deg, rgba(32, 38, 44, 0.92), rgba(18, 23, 29, 0.96));
+    color: var(--text-2);
   }
 
   .project-panel {
@@ -608,13 +633,559 @@
   .project-body {
     display: flex;
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .project-top-grid,
+  .project-overview,
+  .roadmap-overview {
+    display: grid;
+    gap: 12px;
+  }
+
+  .project-top-grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  .project-overview { grid-template-columns: 1fr; }
+
+  .product-map-board {
+    position: relative;
+    overflow: hidden;
+    padding: 16px;
+    border-radius: 20px;
+    background:
+      radial-gradient(circle at top right, rgba(110, 161, 155, 0.12), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(224, 68, 49, 0.14), transparent 34%),
+      linear-gradient(180deg, rgba(18, 24, 31, 0.98), rgba(9, 14, 19, 0.98));
+    border: 1px solid rgba(255, 244, 221, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
+    display: flex;
+    flex-direction: column;
     gap: 14px;
+  }
+
+  .product-map-board::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent 49.7%, rgba(255, 244, 221, 0.035) 49.7%, rgba(255, 244, 221, 0.035) 50.3%, transparent 50.3%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%);
+    opacity: 0.72;
+  }
+
+  .product-map-board > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .product-map-lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .product-map-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .product-map-kicker,
+  .product-lane-id,
+  .product-context-label,
+  .product-data-label {
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .product-map-title,
+  .product-context-title,
+  .product-data-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.32;
+    color: var(--text-0);
+  }
+
+  .product-map-copy p,
+  .product-context-copy,
+  .product-data-copy {
+    font-size: 12px;
+    line-height: 1.74;
+    color: var(--text-1);
+  }
+
+  .product-map-stats,
+  .product-tab-sources,
+  .product-context-tags,
+  .product-context-links,
+  .product-data-targets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .product-stat,
+  .product-tab-action,
+  .product-gap-pill,
+  .product-source-badge,
+  .product-context-tag,
+  .product-context-link,
+  .product-data-target {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 244, 221, 0.1);
+    background: rgba(255, 244, 221, 0.04);
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 10px;
+    line-height: 1.2;
+    color: var(--text-1);
+  }
+
+  .product-stat strong { color: var(--text-0); }
+
+  .product-stat.live {
+    color: #d7ebba;
+    border-color: rgba(141, 157, 114, 0.26);
+    background: rgba(141, 157, 114, 0.12);
+  }
+
+  .product-stat.watch {
+    color: #f3cb89;
+    border-color: rgba(207, 151, 71, 0.24);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .product-stat.shared {
+    color: #d2ece8;
+    border-color: rgba(110, 161, 155, 0.24);
+    background: rgba(110, 161, 155, 0.12);
+  }
+
+  .product-stat.data {
+    color: #d1e9f6;
+    border-color: rgba(124, 167, 186, 0.24);
+    background: rgba(124, 167, 186, 0.12);
+  }
+
+  .product-map-note {
+    border-left: 3px solid rgba(255, 125, 88, 0.54);
+    padding: 10px 0 10px 12px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(124, 23, 17, 0.28), transparent 75%);
+    font-size: 11px;
+    line-height: 1.72;
+    color: var(--text-1);
+  }
+
+  .product-map-note strong { color: var(--accent-bone); }
+
+  .product-map-lanes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .product-lane {
+    position: relative;
+    overflow: hidden;
+    padding: 13px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    background: linear-gradient(180deg, rgba(20, 27, 34, 0.96), rgba(10, 15, 20, 0.98));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .product-lane::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--lane-accent, rgba(255, 125, 88, 0.9));
+    box-shadow: 0 0 18px var(--lane-accent, rgba(255, 125, 88, 0.28));
+  }
+
+  .product-lane-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .product-lane-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-0);
+  }
+
+  .product-lane-copy {
+    font-size: 11px;
+    line-height: 1.64;
+    color: var(--text-2);
+  }
+
+  .product-lane-tabs {
+    display: grid;
+    gap: 9px;
+  }
+
+  .product-tab {
+    padding: 11px 11px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    background: linear-gradient(180deg, rgba(17, 23, 30, 0.98), rgba(11, 16, 22, 0.98));
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 154px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .product-tab::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 244, 221, 0.12), transparent);
+  }
+
+  .product-tab[data-health="watch"] {
+    border-color: rgba(207, 151, 71, 0.22);
+    box-shadow: 0 0 0 1px rgba(207, 151, 71, 0.06);
+  }
+
+  .product-tab-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: start;
+  }
+
+  .product-tab-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    background: rgba(255, 244, 221, 0.06);
+    border: 1px solid rgba(255, 244, 221, 0.1);
+  }
+
+  .product-tab-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .product-tab-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-0);
+  }
+
+  .product-tab-copy {
+    font-size: 11px;
+    line-height: 1.58;
+    color: var(--text-1);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .product-tab-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 244, 221, 0.1);
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .product-tab-status::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 4px rgba(255, 244, 221, 0.05);
+  }
+
+  .product-tab-status.live {
+    color: #d7ebba;
+    border-color: rgba(141, 157, 114, 0.24);
+    background: rgba(141, 157, 114, 0.12);
+  }
+
+  .product-tab-status.watch {
+    color: #f3cb89;
+    border-color: rgba(207, 151, 71, 0.24);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .product-tab-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .product-tab-action {
+    color: var(--accent-bone);
+    border-color: rgba(255, 125, 88, 0.22);
+    background: linear-gradient(135deg, rgba(255, 125, 88, 0.16), rgba(124, 23, 17, 0.16));
+  }
+
+  .product-source-badge[data-source="finmind"] {
+    color: #d7ebba;
+    border-color: rgba(141, 157, 114, 0.24);
+    background: rgba(141, 157, 114, 0.12);
+  }
+
+  .product-source-badge[data-source="anthropic"] {
+    color: #ffcdb8;
+    border-color: rgba(255, 125, 88, 0.22);
+    background: rgba(255, 125, 88, 0.12);
+  }
+
+  .product-source-badge[data-source="google"] {
+    color: #d1e9f6;
+    border-color: rgba(124, 167, 186, 0.24);
+    background: rgba(124, 167, 186, 0.12);
+  }
+
+  .product-source-badge[data-source="local"] {
+    color: #e7e0d0;
+    border-color: rgba(255, 244, 221, 0.14);
+    background: rgba(255, 244, 221, 0.06);
+  }
+
+  .product-gap-pill {
+    width: fit-content;
+    color: #f3cb89;
+    border-color: rgba(207, 151, 71, 0.22);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .product-context-card {
+    position: relative;
+    overflow: hidden;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(110, 161, 155, 0.24);
+    background:
+      radial-gradient(circle at 100% 0%, rgba(110, 161, 155, 0.16), transparent 28%),
+      linear-gradient(180deg, rgba(13, 20, 24, 0.98), rgba(11, 16, 22, 0.98));
+    display: grid;
+    gap: 11px;
+  }
+
+  .product-context-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .product-context-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: #d2ece8;
+    background: rgba(110, 161, 155, 0.16);
+    border: 1px solid rgba(110, 161, 155, 0.24);
+    box-shadow: 0 0 20px rgba(110, 161, 155, 0.16);
+  }
+
+  .product-context-link {
+    color: #d7f0ea;
+    border-color: rgba(110, 161, 155, 0.22);
+    background: rgba(110, 161, 155, 0.12);
+  }
+
+  .product-context-link::before {
+    content: '↳';
+    color: var(--accent-bone);
+  }
+
+  .product-data-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .product-data-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .product-data-card {
+    min-height: 132px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    background: linear-gradient(180deg, rgba(18, 25, 31, 0.94), rgba(10, 15, 20, 0.98));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .product-data-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .product-data-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    background: rgba(255, 244, 221, 0.06);
+    border: 1px solid rgba(255, 244, 221, 0.1);
+  }
+
+  .product-data-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-0);
+  }
+
+  .product-data-count {
+    margin-left: auto;
+    padding: 3px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 244, 221, 0.1);
+    background: rgba(255, 244, 221, 0.04);
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    color: var(--text-2);
+  }
+
+  .improvements-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .project-section {
+    position: relative;
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(18, 24, 31, 0.96), rgba(11, 16, 22, 0.96));
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .project-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at top left, rgba(224, 68, 49, 0.08), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(124, 167, 186, 0.1), transparent 36%);
+    opacity: 0.8;
+  }
+
+  .project-section > * { position: relative; z-index: 1; }
+
+  .project-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .project-section-head .project-section-title { margin-bottom: 0; }
+
+  .overview-card {
+    min-height: 108px;
+    padding: 14px 14px 12px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(27, 36, 45, 0.92), rgba(14, 20, 27, 0.92));
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .overview-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255, 125, 88, 0.9), rgba(255, 244, 221, 0.42) 48%, rgba(124, 167, 186, 0.78));
+  }
+
+  .overview-kicker,
+  .roadmap-metrics,
+  .timeline-date,
+  .architecture-kicker,
+  .architecture-chip-label,
+  .task-board-empty-label {
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .overview-value {
+    font-family: 'Courier Prime', 'Space Mono', monospace;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--text-0);
+  }
+
+  .overview-note {
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--text-1);
   }
 
   .project-section-title {
     font-size: 10px;
     color: var(--text-2);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     position: relative;
     padding-left: 11px;
   }
@@ -634,18 +1205,28 @@
   .agent-grid,
   .roadmap-grid {
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .agent-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-  .roadmap-grid { grid-template-columns: repeat(3, 1fr); }
+  .agent-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .roadmap-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
   .agent-card {
-    padding: 15px 14px 13px;
-    border-radius: 14px;
+    padding: 16px 15px 15px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 9px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, var(--agent-accent, rgba(255, 125, 88, 0.8)), rgba(255, 244, 221, 0.28), transparent);
   }
 
   .agent-dot {
@@ -703,6 +1284,30 @@
     font-size: 10px;
     color: var(--text-2);
     line-height: 1.6;
+  }
+
+  .agent-task-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .agent-task-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    color: var(--text-1);
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .agent-task-chip.more {
+    color: var(--text-2);
+    background: rgba(255, 244, 221, 0.02);
   }
 
   .agent-note {
@@ -803,7 +1408,7 @@
   .imp-content {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
   }
 
@@ -818,11 +1423,151 @@
     flex-shrink: 0;
   }
 
+  .roadmap-overview {
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+    margin-bottom: 12px;
+  }
+
+  .roadmap-summary-card,
+  .timeline-summary-card,
+  .architecture-detail-card {
+    padding: 15px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(22, 31, 40, 0.92), rgba(13, 18, 24, 0.96));
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+  }
+
+  .roadmap-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .timeline-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .roadmap-summary-chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 10px;
+    color: var(--text-1);
+    border: 1px solid rgba(255, 244, 221, 0.12);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .roadmap-summary-title,
+  .timeline-summary-title,
+  .architecture-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-0);
+    line-height: 1.45;
+  }
+
+  .roadmap-summary-sub,
+  .timeline-summary-sub,
+  .architecture-summary,
+  .timeline-item-title {
+    font-size: 11px;
+    line-height: 1.72;
+    color: var(--text-1);
+  }
+
+  .roadmap-track {
+    display: flex;
+    width: 100%;
+    height: 12px;
+    padding: 2px;
+    gap: 2px;
+    border-radius: 999px;
+    background: rgba(255, 244, 221, 0.05);
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    overflow: hidden;
+  }
+
+  .roadmap-segment {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    min-width: 0;
+  }
+
+  .roadmap-segment.completed {
+    background: linear-gradient(90deg, rgba(141, 157, 114, 0.9), rgba(195, 214, 142, 0.78));
+  }
+
+  .roadmap-segment.in_progress {
+    background: linear-gradient(90deg, rgba(224, 68, 49, 0.94), rgba(255, 125, 88, 0.82));
+    box-shadow: 0 0 18px rgba(224, 68, 49, 0.2);
+  }
+
+  .roadmap-segment.blocked {
+    background: linear-gradient(90deg, rgba(207, 151, 71, 0.92), rgba(255, 190, 123, 0.82));
+  }
+
+  .roadmap-segment.pending {
+    background: rgba(255, 244, 221, 0.12);
+  }
+
+  .roadmap-breakdown,
+  .timeline-summary-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .roadmap-stat,
+  .architecture-chip,
+  .timeline-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    color: var(--text-1);
+    border: 1px solid rgba(255, 244, 221, 0.1);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .roadmap-stat.completed,
+  .architecture-chip.completed,
+  .timeline-stat.completed {
+    color: #dce8c4;
+    border-color: rgba(141, 157, 114, 0.24);
+    background: rgba(141, 157, 114, 0.14);
+  }
+
+  .roadmap-stat.in_progress {
+    color: #ffcabd;
+    border-color: rgba(224, 68, 49, 0.3);
+    background: rgba(224, 68, 49, 0.12);
+  }
+
+  .roadmap-stat.blocked {
+    color: #ffd7a6;
+    border-color: rgba(207, 151, 71, 0.3);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .roadmap-stat.pending {
+    color: var(--text-2);
+    background: rgba(255, 244, 221, 0.03);
+  }
+
   .roadmap-col {
-    padding: 14px;
-    border-radius: 14px;
+    padding: 16px;
+    border-radius: 16px;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .roadmap-col::before {
@@ -835,40 +1580,356 @@
     background: rgba(255, 244, 221, 0.12);
   }
 
-  .roadmap-col:nth-of-type(1) {
+  .roadmap-col.phase-now {
     border-color: rgba(224, 68, 49, 0.38);
     box-shadow: 0 0 0 1px rgba(224, 68, 49, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
   }
 
-  .roadmap-col:nth-of-type(1)::before { background: var(--red); }
-  .roadmap-col:nth-of-type(1) .roadmap-label { color: var(--red); }
+  .roadmap-col.phase-now::before { background: var(--red); }
+  .roadmap-col.phase-now .roadmap-label { color: #ffae9a; }
 
-  .roadmap-col:nth-of-type(2) { border-color: rgba(207, 151, 71, 0.34); }
-  .roadmap-col:nth-of-type(2)::before { background: var(--accent-gold); }
+  .roadmap-col.phase-next { border-color: rgba(207, 151, 71, 0.34); }
+  .roadmap-col.phase-next::before { background: var(--accent-gold); }
 
-  .roadmap-col:nth-of-type(3) { border-color: rgba(124, 167, 186, 0.32); }
-  .roadmap-col:nth-of-type(3)::before { background: var(--accent-blue); }
-  .roadmap-col:nth-of-type(3) .roadmap-label { color: var(--accent-blue); }
-
-  .roadmap-col:nth-of-type(1) .roadmap-chip {
-    color: #ffc7bc;
-    border-color: rgba(224, 68, 49, 0.22);
-    background: rgba(124, 23, 17, 0.34);
-  }
+  .roadmap-col.phase-later { border-color: rgba(124, 167, 186, 0.32); }
+  .roadmap-col.phase-later::before { background: var(--accent-blue); }
+  .roadmap-col.phase-later .roadmap-label { color: var(--accent-blue); }
 
   .roadmap-label {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-0);
-    margin-bottom: 6px;
+    line-height: 1.4;
+    margin-bottom: 4px;
   }
 
-  .roadmap-rationale { margin-bottom: 8px; }
+  .roadmap-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .roadmap-state {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 244, 221, 0.12);
+    color: var(--text-1);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .roadmap-state.active {
+    color: #ffcabd;
+    border-color: rgba(224, 68, 49, 0.28);
+    background: rgba(224, 68, 49, 0.12);
+  }
+
+  .roadmap-state.complete {
+    color: #dce8c4;
+    border-color: rgba(141, 157, 114, 0.26);
+    background: rgba(141, 157, 114, 0.14);
+  }
+
+  .roadmap-state.risk {
+    color: #ffd7a6;
+    border-color: rgba(207, 151, 71, 0.28);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .roadmap-rationale {
+    margin-bottom: 0;
+    min-height: 0;
+  }
 
   .roadmap-chip {
-    padding: 3px 7px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
     border-radius: 999px;
     font-size: 9px;
+    color: var(--text-1);
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    background: rgba(255, 244, 221, 0.03);
+  }
+
+  .roadmap-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.9;
+  }
+
+  .roadmap-chip.status-completed {
+    color: #dce8c4;
+    border-color: rgba(141, 157, 114, 0.28);
+    background: rgba(141, 157, 114, 0.14);
+  }
+
+  .roadmap-chip.status-in_progress {
+    color: #ffcabd;
+    border-color: rgba(224, 68, 49, 0.3);
+    background: rgba(224, 68, 49, 0.12);
+  }
+
+  .roadmap-chip.status-blocked {
+    color: #ffd7a6;
+    border-color: rgba(207, 151, 71, 0.3);
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .roadmap-chip.status-pending {
+    color: #d8d1c0;
+    border-color: rgba(255, 244, 221, 0.09);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .completed-section-title {
+    margin-top: 16px;
+    margin-bottom: 12px;
+  }
+
+  .completed-timeline {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .completed-timeline::-webkit-scrollbar { display: none; }
+
+  .timeline-item {
+    position: relative;
+    min-width: 210px;
+    max-width: 240px;
+    padding: 14px 14px 13px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(22, 30, 38, 0.92), rgba(13, 18, 24, 0.96));
+    border: 1px solid rgba(141, 157, 114, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(141, 157, 114, 0.94), rgba(110, 161, 155, 0.72));
+    box-shadow: 0 0 18px rgba(141, 157, 114, 0.2);
+  }
+
+  .timeline-item-id {
+    display: inline-flex;
+    margin-top: 8px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    color: #dce8c4;
+    border: 1px solid rgba(141, 157, 114, 0.22);
+    background: rgba(141, 157, 114, 0.12);
+  }
+
+  .architecture-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .architecture-map {
+    position: relative;
+    padding: 14px;
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at 18% 10%, rgba(224, 68, 49, 0.14), transparent 28%),
+      radial-gradient(circle at 82% 12%, rgba(124, 167, 186, 0.16), transparent 28%),
+      linear-gradient(180deg, rgba(8, 12, 16, 0.94), rgba(10, 15, 20, 0.98));
+    border: 1px solid rgba(255, 244, 221, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+  }
+
+  .architecture-canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 11;
+  }
+
+  .architecture-links {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .architecture-links path {
+    fill: none;
+    stroke: rgba(255, 244, 221, 0.22);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .architecture-links path.planned {
+    stroke-dasharray: 7 7;
+    stroke: rgba(124, 167, 186, 0.34);
+  }
+
+  .arch-flow-label {
+    position: absolute;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-family: 'Space Mono', 'Courier Prime', monospace;
+    font-size: 9px;
+    color: var(--text-2);
+    border: 1px solid rgba(255, 244, 221, 0.07);
+    background: rgba(7, 10, 13, 0.78);
+    backdrop-filter: blur(10px);
+  }
+
+  .arch-flow-label.http { left: 31%; top: 14%; }
+  .arch-flow-label.deploy { left: 69%; top: 14%; }
+  .arch-flow-label.runtime { left: 33%; top: 49%; }
+  .arch-flow-label.api { left: 69%; top: 42%; }
+  .arch-flow-label.ai { left: 55%; top: 70%; }
+  .arch-flow-label.bridge { left: 11%; top: 70%; }
+
+  .arch-node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 11px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 244, 221, 0.1);
+    background: linear-gradient(180deg, rgba(23, 32, 40, 0.96), rgba(14, 20, 27, 0.96));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
+    text-align: left;
+    color: var(--text-0);
+    cursor: pointer;
+    min-height: 76px;
+  }
+
+  .arch-node::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(90deg, var(--node-accent, rgba(255, 125, 88, 0.9)), rgba(255, 244, 221, 0.32), transparent);
+  }
+
+  .arch-node.active {
+    border-color: var(--node-accent, rgba(255, 125, 88, 0.28));
+    box-shadow:
+      0 0 0 1px rgba(255, 244, 221, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 28px rgba(255, 125, 88, 0.14);
+    transform: translateY(-1px);
+  }
+
+  .arch-node.client { left: 2%; top: 5%; width: 26%; --node-accent: #ff7d58; }
+  .arch-node.github { right: 2%; top: 5%; width: 20%; --node-accent: #7ca7ba; }
+  .arch-node.frontend { right: 2%; top: 30%; width: 24%; --node-accent: #d63c2f; }
+  .arch-node.backend { right: 2%; top: 58%; width: 24%; --node-accent: #cf9747; }
+  .arch-node.ai { left: 42%; top: 72%; width: 24%; --node-accent: #ff8a63; }
+  .arch-node.vm { left: 3%; top: 40%; width: 32%; --node-accent: #7ca7ba; }
+  .arch-node.knowledge { left: 8%; top: 72%; width: 24%; --node-accent: #8d9d72; }
+
+  .arch-node-title {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .arch-node-meta {
+    display: block;
+    font-size: 10px;
+    line-height: 1.45;
+    color: var(--text-1);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .architecture-detail-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .architecture-detail-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .architecture-detail-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .architecture-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .architecture-meta.collapsed { display: none; }
+
+  .architecture-meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .architecture-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .architecture-chip.agent-Claude { border-color: rgba(232, 123, 53, 0.3); color: #ffbfaa; }
+  .architecture-chip.agent-Codex { border-color: rgba(16, 163, 127, 0.3); color: #c6efd8; }
+  .architecture-chip.agent-Qwen { border-color: rgba(97, 94, 255, 0.3); color: #d8d7ff; }
+  .architecture-chip.agent-Gemini { border-color: rgba(234, 67, 53, 0.3); color: #ffc2b8; }
+
+  .task-board-empty {
+    min-width: min(100%, 340px);
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1px dashed rgba(255, 244, 221, 0.14);
+    background: linear-gradient(180deg, rgba(18, 24, 31, 0.9), rgba(10, 15, 20, 0.92));
+    color: var(--text-1);
+  }
+
+  .task-board-empty-title {
+    font-size: 15px;
+    color: var(--text-0);
+    margin: 6px 0;
+  }
+
+  .task-board-empty-copy {
+    font-size: 11px;
+    line-height: 1.8;
     color: var(--text-1);
   }
 
@@ -1306,12 +2367,27 @@
     color: var(--text-2);
   }
 
+  .task-toggle:focus-visible,
+  .task-dispatch:focus-visible,
+  .send-btn:focus-visible,
+  .quick-btn:focus-visible,
+  .agent-tab:focus-visible,
+  .modal-option:focus-visible,
+  .fab:focus-visible,
+  .arch-node:focus-visible {
+    outline: none;
+    border-color: rgba(255, 125, 88, 0.42);
+    box-shadow: 0 0 0 3px rgba(255, 125, 88, 0.14);
+  }
+
   @media (hover: hover) {
     .task-toggle:hover,
     .quick-btn:hover,
-    .modal-option:hover {
+    .modal-option:hover,
+    .architecture-toggle:hover {
       border-color: rgba(255, 244, 221, 0.16);
       color: var(--text-0);
+      background: rgba(255, 244, 221, 0.06);
     }
 
     .agent-tab:hover {
@@ -1319,11 +2395,48 @@
       background: rgba(255, 255, 255, 0.03);
     }
 
+    .project-section:hover {
+      border-color: rgba(255, 244, 221, 0.1);
+    }
+
+    .overview-card:hover,
+    .agent-card:hover,
+    .imp-item:hover,
+    .roadmap-col:hover,
+    .timeline-item:hover,
+    .product-lane:hover,
+    .product-tab:hover,
+    .product-data-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 244, 221, 0.14);
+    }
+
     .task-dispatch:not(:disabled):hover,
     .send-btn:not(:disabled):hover,
     .fab:hover {
       transform: translateY(-1px);
       box-shadow: 0 22px 38px rgba(92, 10, 5, 0.44);
+    }
+
+    .arch-node:hover {
+      border-color: var(--node-accent, rgba(255, 125, 88, 0.28));
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (max-width: 980px) {
+    .project-top-grid,
+    .roadmap-overview,
+    .product-map-lead,
+    .product-map-lanes {
+      grid-template-columns: 1fr;
+    }
+
+    .improvements-grid,
+    .product-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .architecture-canvas {
+      aspect-ratio: 15 / 11;
     }
   }
 
@@ -1343,6 +2456,66 @@
       max-height: 360px;
     }
 
+    .project-section {
+      padding: 14px;
+      border-radius: 16px;
+    }
+
+    .project-subtitle {
+      max-width: none;
+      font-size: 10px;
+    }
+
+    .product-map-board {
+      padding: 14px;
+      border-radius: 18px;
+    }
+
+    .improvements-grid,
+    .product-data-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .overview-card {
+      min-height: 96px;
+      padding: 13px 13px 12px;
+    }
+
+    .agent-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .architecture-map {
+      padding: 12px;
+    }
+
+    .architecture-canvas {
+      aspect-ratio: 5 / 6;
+    }
+
+    .arch-node {
+      padding: 8px 9px;
+      min-height: 58px;
+    }
+
+    .arch-node-title { font-size: 11px; }
+    .arch-node-meta,
+    .architecture-summary,
+    .timeline-item-title,
+    .roadmap-summary-sub { font-size: 10px; }
+
+    .arch-flow-label { display: none; }
+
+    .completed-timeline {
+      flex-direction: column;
+      overflow: visible;
+    }
+
+    .timeline-item {
+      min-width: 0;
+      max-width: none;
+    }
+
     .overlay {
       min-height: 168px;
       max-height: 176px;
@@ -1359,6 +2532,21 @@
     .terminal-viewport { padding: 18px 16px 22px; }
     .task-card { min-width: 220px; }
     .fab { right: 14px; bottom: 14px; }
+  }
+
+  @media (max-width: 480px) {
+    .roadmap-head,
+    .architecture-detail-head,
+    .project-section-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .roadmap-summary-chip {
+      align-self: stretch;
+      text-align: center;
+    }
+
   }
 </style>
 </head>
@@ -1402,24 +2590,47 @@
 <!-- Project Panel: Improvements + Work Division + Roadmap -->
 <div class="project-panel hidden" id="projectPanel">
   <div class="project-header">
-    <div class="project-title">
-      <span>🗺 改善路線圖 + 分工</span>
-      <span class="task-count" id="projectCount">-</span>
+    <div>
+      <div class="project-title">
+        <span>🗺 Portfolio 地圖 + 改善進度</span>
+        <span class="task-count" id="projectCount">-</span>
+      </div>
+      <div class="project-subtitle">先回答「portfolio dashboard 產品本體長什麼樣」，再看 bridge runtime、分工與 backlog。</div>
     </div>
     <button class="task-toggle" id="projectToggle">收合</button>
   </div>
   <div class="project-body" id="projectBody">
-    <div>
-      <div class="project-section-title">Work Division</div>
-      <div class="agent-grid" id="agentGrid"></div>
+    <div class="project-overview" id="projectOverview"></div>
+    <div class="project-top-grid">
+      <div class="project-section">
+        <div class="project-section-title">Work Division</div>
+        <div class="agent-grid" id="agentGrid"></div>
+      </div>
+      <div class="project-section architecture-section">
+        <div class="project-section-head">
+          <div class="project-section-title">Agent Bridge Runtime Context</div>
+          <button class="task-toggle architecture-toggle" id="architectureToggle">展開細節</button>
+        </div>
+        <div class="architecture-shell" id="architectureShell">
+          <div class="architecture-map" id="architectureMap"></div>
+          <div class="architecture-detail-card" id="architectureDetail"></div>
+          <div class="architecture-meta collapsed" id="architectureMeta"></div>
+        </div>
+      </div>
     </div>
-    <div>
+    <div class="project-section">
       <div class="project-section-title">Improvements Needed</div>
       <div id="improvementsList"></div>
     </div>
-    <div>
-      <div class="project-section-title">Roadmap</div>
+    <div class="project-section roadmap-section">
+      <div class="project-section-head">
+        <div class="project-section-title">Roadmap Progress</div>
+        <div class="roadmap-summary-chip" id="roadmapSummaryChip">-</div>
+      </div>
+      <div class="roadmap-overview" id="roadmapOverview"></div>
       <div class="roadmap-grid" id="roadmapGrid"></div>
+      <div class="project-section-title completed-section-title">Completed Ledger</div>
+      <div class="completed-timeline" id="completedTimeline"></div>
     </div>
   </div>
 </div>
@@ -1437,7 +2648,7 @@
   <div class="terminal-viewport" id="terminalOutput">
     <div class="empty-state" id="emptyState" style="display:none">
       <div class="icon">📡</div>
-      <p>選擇一個 agent tab 查看輸出</p>
+      <p>沒有正在監看的 session。<br>啟動一個 agent，或切到上方 tab 查看輸出。</p>
     </div>
   </div>
 
@@ -1515,17 +2726,178 @@ const state = {
   ws: null,
   sessions: new Map(),
   tasks: new Map(),
+  projectData: null,
   activeSessionId: null,
   connected: false,
   reconnectTimer: null,
   autoScroll: true,
   taskBoardCollapsed: false,
   projectCollapsed: false,
+  architectureExpanded: false,
+  architectureFocus: 'frontend',
 };
 
 const COLORS = {
   claude: '#E87B35', codex: '#10A37F', qwen: '#615EFF',
   gemini: '#EA4335', copilot: '#6E40C9', unknown: '#888899',
+};
+
+const PRODUCT_MAP = {
+  intro: '這張圖畫的是 portfolio dashboard 本體，不是 Agent Bridge admin 介面。',
+  note: '產品 tab 清單以 `App.jsx / AppPanels.jsx / current-work` 為準；`/api/project` 目前比較像工程摘要，不足以單獨當 tab source of truth。',
+  lanes: [
+    {
+      id: 'surface',
+      label: '持倉表面',
+      copy: '先回答「我手上有什麼、盯著什麼」。',
+      accent: '#8d9d72',
+      tabs: [
+        {
+          name: 'Overview',
+          icon: '🧭',
+          status: 'live',
+          health: 'live',
+          description: '跨組合檔數、市值、損益與重複持倉標示。',
+          action: '切回 portfolio 視圖',
+          sources: ['local'],
+        },
+        {
+          name: 'Holdings',
+          icon: '🗂',
+          status: 'live',
+          health: 'watch',
+          description: '持倉表 + FinMind 基本面、法人籌碼、融資融券。',
+          action: '改目標價 / 看指標',
+          sources: ['finmind', 'local'],
+          gap: 'ETF / 權證基本面覆蓋不齊',
+        },
+        {
+          name: 'Watchlist',
+          icon: '👁',
+          status: 'live',
+          health: 'live',
+          description: '追蹤但未持有標的與焦點觀察卡片。',
+          action: '增刪改 / 切焦點',
+          sources: ['local'],
+        },
+      ],
+    },
+    {
+      id: 'sense',
+      label: '市場感知',
+      copy: '事件、盤後、新聞集中在同一條日內判讀鏈。',
+      accent: '#7ca7ba',
+      tabs: [
+        {
+          name: 'Events',
+          icon: '🛰',
+          status: 'live',
+          health: 'watch',
+          description: '法說 / 財報 / 宏觀事件分色，附接力 plan。',
+          action: '按狀態篩選',
+          sources: ['anthropic', 'local'],
+          gap: 'Type filter 尚待補齊',
+        },
+        {
+          name: 'Daily',
+          icon: '🌙',
+          status: 'live',
+          health: 'live',
+          description: '盤後價變、異常、策略建議與 FinMind 確認階段。',
+          action: '觸發分析 / 壓測',
+          sources: ['finmind', 'anthropic', 'local'],
+        },
+        {
+          name: 'News',
+          icon: '📰',
+          status: 'live',
+          health: 'live',
+          description: 'FinMind 新聞、產業線索與影響標記。',
+          action: '篩選 / 事後標註',
+          sources: ['finmind', 'google', 'local'],
+        },
+      ],
+    },
+    {
+      id: 'decision',
+      label: '決策迴路',
+      copy: '研究、執行、回看，最後收斂成決策品質。',
+      accent: '#ff7d58',
+      tabs: [
+        {
+          name: 'Research',
+          icon: '🧠',
+          status: 'live',
+          health: 'live',
+          description: 'AI 組合檢討、盲點檢查與資料補齊中心。',
+          action: '全組合 / 單股研究',
+          sources: ['finmind', 'anthropic', 'local'],
+        },
+        {
+          name: 'Trade',
+          icon: '✂️',
+          status: 'live',
+          health: 'live',
+          description: '截圖 OCR 進單與每筆交易決策 Q&A。',
+          action: '上傳截圖 / 編輯註記',
+          sources: ['anthropic', 'local'],
+        },
+        {
+          name: 'Log',
+          icon: '📓',
+          status: 'live',
+          health: 'live',
+          description: '交易歷史、買賣紀錄與反思，唯讀查詢。',
+          action: '查歷史',
+          sources: ['local'],
+        },
+      ],
+    },
+  ],
+  sharedComponent: {
+    label: 'Shared component',
+    name: 'OperatingContextCard',
+    copy: '跨 Holdings / Events / Watchlist / Research / News 共用，專門回答「現在待辦什麼、下一步去哪個 tab」。',
+    tags: ['目前待辦', '下一步建議', '跨 panel 共識'],
+    panels: ['Holdings', 'Events', 'Watchlist', 'Research', 'News'],
+  },
+  sources: [
+    {
+      id: 'finmind',
+      icon: '📈',
+      name: 'FinMind',
+      copy: '台股基本面、籌碼、營收、新聞。',
+      targets: ['Holdings', 'Daily', 'News', 'Research'],
+    },
+    {
+      id: 'anthropic',
+      icon: '🧪',
+      name: 'Anthropic',
+      copy: '盤後分析、研究回顧、事件解讀、OCR 輔助。',
+      targets: ['Events', 'Daily', 'Research', 'Trade'],
+    },
+    {
+      id: 'google',
+      icon: '🌐',
+      name: 'Google News',
+      copy: 'RSS 入口，補產業與盤後外部訊號。',
+      targets: ['News'],
+    },
+    {
+      id: 'local',
+      icon: '💾',
+      name: 'localStorage',
+      copy: '持股、交易、watchlist、事件與 UI 歷史狀態。',
+      targets: ['全部 9 個 tab'],
+    },
+  ],
+};
+
+const PRODUCT_SOURCE_LABELS = {
+  finmind: 'FinMind',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  local: 'local',
 };
 
 // ─── DOM ────────────────────────────────
@@ -1540,9 +2912,17 @@ const projectPanel = $('projectPanel');
 const projectBody = $('projectBody');
 const projectToggle = $('projectToggle');
 const projectCount = $('projectCount');
+const projectOverview = $('projectOverview');
 const agentGrid = $('agentGrid');
 const improvementsList = $('improvementsList');
+const architectureToggle = $('architectureToggle');
+const architectureMap = $('architectureMap');
+const architectureDetail = $('architectureDetail');
+const architectureMeta = $('architectureMeta');
+const roadmapOverview = $('roadmapOverview');
 const roadmapGrid = $('roadmapGrid');
+const roadmapSummaryChip = $('roadmapSummaryChip');
+const completedTimeline = $('completedTimeline');
 const taskCount = $('taskCount');
 const taskToggle = $('taskToggle');
 const scanOverlay = $('scanOverlay');
@@ -1612,6 +2992,7 @@ function handleMessage(msg) {
       state.tasks.clear();
       msg.tasks.forEach(task => state.tasks.set(task.id, task));
       renderTaskBoard();
+      if (state.projectData) renderRoadmap(state.projectData);
       break;
 
     case 'task:created':
@@ -1619,6 +3000,7 @@ function handleMessage(msg) {
     case 'task:dispatched':
       state.tasks.set(msg.task.id, msg.task);
       renderTaskBoard();
+      if (state.projectData) renderRoadmap(state.projectData);
       break;
 
     case 'session:open': {
@@ -1759,8 +3141,14 @@ function renderTaskBoard() {
   });
 
   if (tasks.length === 0) {
-    taskBoard.classList.add('hidden');
-    taskBoardScroll.innerHTML = '';
+    taskBoard.classList.remove('hidden');
+    taskBoardScroll.innerHTML = `
+      <div class="task-board-empty">
+        <div class="task-board-empty-label">Live Queue</div>
+        <div class="task-board-empty-title">目前沒有待派工 task</div>
+        <div class="task-board-empty-copy">Task board 會在新的 runtime wave 進來後自動長出卡片；現在先把版面留給系統進度與架構圖。</div>
+      </div>
+    `;
     taskCount.textContent = '0';
     return;
   }
@@ -2033,6 +3421,35 @@ projectToggle.addEventListener('click', () => {
   projectBody.classList.toggle('collapsed', state.projectCollapsed);
 });
 
+architectureToggle.addEventListener('click', () => {
+  state.architectureExpanded = !state.architectureExpanded;
+  architectureMeta.classList.toggle('collapsed', !state.architectureExpanded);
+  architectureToggle.textContent = state.architectureExpanded ? '收起細節' : '展開細節';
+});
+
+architectureMap.addEventListener('click', (event) => {
+  const node = event.target.closest('[data-arch-node]');
+  if (!node || !state.projectData) return;
+  state.architectureFocus = node.getAttribute('data-arch-node') || 'frontend';
+  renderArchitecture(state.projectData);
+});
+
+architectureMap.addEventListener('mouseover', (event) => {
+  const node = event.target.closest('[data-arch-node]');
+  if (!node || !state.projectData) return;
+  const nextFocus = node.getAttribute('data-arch-node') || 'frontend';
+  if (nextFocus === state.architectureFocus) return;
+  state.architectureFocus = nextFocus;
+  renderArchitecture(state.projectData);
+});
+
+architectureMap.addEventListener('focusin', (event) => {
+  const node = event.target.closest('[data-arch-node]');
+  if (!node || !state.projectData) return;
+  state.architectureFocus = node.getAttribute('data-arch-node') || 'frontend';
+  renderArchitecture(state.projectData);
+});
+
 // ─── Project Panel Rendering ────────────
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -2040,21 +3457,376 @@ function escapeHtml(s) {
   }[c]));
 }
 
+function hexToRgba(hex, alpha = 1) {
+  const raw = String(hex || '').trim().replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(raw)) return `rgba(255,255,255,${alpha})`;
+  const value = parseInt(raw, 16);
+  const r = (value >> 16) & 255;
+  const g = (value >> 8) & 255;
+  const b = value & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function ownerColor(owner) {
+  const key = String(owner || '').trim().toLowerCase();
+  if (key === 'claude') return '#E87B35';
+  if (key === 'codex') return '#10A37F';
+  if (key === 'qwen') return '#615EFF';
+  if (key === 'gemini') return '#EA4335';
+  return '#7d8784';
+}
+
+function formatShortDate(value) {
+  if (!value) return '未知';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  return new Intl.DateTimeFormat('zh-TW', { month: 'numeric', day: 'numeric' }).format(date);
+}
+
+function buildProjectLookups(data) {
+  const improvements = Array.isArray(data?.improvements) ? data.improvements : [];
+  const completed = Array.isArray(data?.completed) ? data.completed : [];
+  const workDivision = data?.workDivision && typeof data.workDivision === 'object' ? data.workDivision : {};
+  const activeSet = new Set();
+  Object.values(workDivision).forEach(agent => {
+    (agent?.activeTaskIds || []).forEach(id => activeSet.add(id));
+  });
+  return {
+    improvementsMap: new Map(improvements.map(item => [item.id, item])),
+    completedMap: new Map(completed.map(item => [item.id, item])),
+    activeSet,
+  };
+}
+
+function resolveProjectTaskMeta(taskId, lookups) {
+  const liveTask = state.tasks.get(taskId);
+  const improvement = lookups.improvementsMap.get(taskId);
+  const completedItem = lookups.completedMap.get(taskId);
+  const status = liveTask?.status || (completedItem ? 'completed' : lookups.activeSet.has(taskId) ? 'in_progress' : 'pending');
+  const title =
+    improvement?.title ||
+    completedItem?.title ||
+    liveTask?.title ||
+    taskId;
+  const owner =
+    improvement?.owner ||
+    liveTask?.owner ||
+    completedItem?.owner ||
+    '-';
+  return {
+    id: taskId,
+    status,
+    title,
+    owner,
+  };
+}
+
+function buildStatusCounts(items) {
+  return items.reduce((acc, item) => {
+    const key = ['completed', 'in_progress', 'blocked', 'pending'].includes(item.status) ? item.status : 'pending';
+    acc[key] += 1;
+    return acc;
+  }, { completed: 0, in_progress: 0, blocked: 0, pending: 0 });
+}
+
+function phaseState(counts, total) {
+  if (total > 0 && counts.completed === total) return { cls: 'complete', label: '完成' };
+  if (counts.blocked > 0) return { cls: 'risk', label: '需排雷' };
+  if (counts.in_progress > 0) return { cls: 'active', label: '推進中' };
+  return { cls: 'queued', label: '待排程' };
+}
+
+function renderStatusTrack(counts, total) {
+  const segments = [
+    ['completed', counts.completed],
+    ['in_progress', counts.in_progress],
+    ['blocked', counts.blocked],
+    ['pending', counts.pending],
+  ].filter(([, count]) => count > 0);
+  if (total === 0) {
+    return `<div class="roadmap-track"><span class="roadmap-segment pending" style="width:100%"></span></div>`;
+  }
+  return `
+    <div class="roadmap-track">
+      ${segments.map(([status, count]) => `
+        <span class="roadmap-segment ${status}" style="width:${Math.max((count / total) * 100, 3)}%"></span>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderProjectOverview(data) {
+  if (!data) { projectOverview.innerHTML = ''; return; }
+  const tabs = PRODUCT_MAP.lanes.flatMap(lane => lane.tabs);
+  const liveCount = tabs.filter(tab => tab.status === 'live').length;
+  const gapCount = tabs.filter(tab => tab.health === 'watch').length;
+  const sharedCount = PRODUCT_MAP.sharedComponent.panels.length;
+
+  projectOverview.innerHTML = `
+    <section class="product-map-board">
+      <div class="product-map-lead">
+        <div class="product-map-copy">
+          <span class="product-map-kicker">portfolio dashboard feature map</span>
+          <div class="product-map-title">${escapeHtml(PRODUCT_MAP.intro)}</div>
+          <p>這裡先讓人看懂「用戶真正在操作的 9 個 tab」，再往下看 bridge runtime、分工、缺口與交付節奏。產品視角和 admin 視角刻意拆開，避免一進來就把人丟進 architecture / backlog。</p>
+        </div>
+        <div class="product-map-stats">
+          <span class="product-stat live"><strong>${liveCount}</strong> tabs live</span>
+          <span class="product-stat watch"><strong>${gapCount}</strong> known gaps</span>
+          <span class="product-stat shared"><strong>${sharedCount}</strong> tabs share context</span>
+          <span class="product-stat data"><strong>${PRODUCT_MAP.sources.length}</strong> data channels</span>
+        </div>
+      </div>
+
+      <div class="product-map-lanes">
+        ${PRODUCT_MAP.lanes.map(lane => `
+          <article class="product-lane" style="--lane-accent:${escapeHtml(lane.accent)}">
+            <div class="product-lane-head">
+              <span class="product-lane-id">${escapeHtml(lane.id)}</span>
+              <div class="product-lane-title">${escapeHtml(lane.label)}</div>
+              <div class="product-lane-copy">${escapeHtml(lane.copy)}</div>
+            </div>
+            <div class="product-lane-tabs">
+              ${lane.tabs.map(tab => `
+                <div class="product-tab" data-health="${escapeHtml(tab.health || tab.status)}">
+                  <div class="product-tab-head">
+                    <span class="product-tab-icon">${escapeHtml(tab.icon)}</span>
+                    <div class="product-tab-meta">
+                      <span class="product-tab-name">${escapeHtml(tab.name)}</span>
+                      <span class="product-tab-copy">${escapeHtml(tab.description)}</span>
+                    </div>
+                    <span class="product-tab-status ${escapeHtml(tab.health || tab.status)}">${escapeHtml(tab.status)}</span>
+                  </div>
+                  <div class="product-tab-row">
+                    <span class="product-tab-action">${escapeHtml(tab.action)}</span>
+                    <div class="product-tab-sources">
+                      ${tab.sources.map(source => `
+                        <span class="product-source-badge" data-source="${escapeHtml(source)}">${escapeHtml(PRODUCT_SOURCE_LABELS[source] || source)}</span>
+                      `).join('')}
+                    </div>
+                  </div>
+                  ${tab.gap ? `<span class="product-gap-pill">${escapeHtml(tab.gap)}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        `).join('')}
+      </div>
+
+      <section class="product-context-card">
+        <div class="product-context-head">
+          <span class="product-context-mark">⤴</span>
+          <div>
+            <div class="product-context-label">${escapeHtml(PRODUCT_MAP.sharedComponent.label)}</div>
+            <div class="product-context-title">${escapeHtml(PRODUCT_MAP.sharedComponent.name)}</div>
+            <div class="product-context-copy">${escapeHtml(PRODUCT_MAP.sharedComponent.copy)}</div>
+          </div>
+        </div>
+        <div class="product-context-tags">
+          ${PRODUCT_MAP.sharedComponent.tags.map(tag => `<span class="product-context-tag">${escapeHtml(tag)}</span>`).join('')}
+        </div>
+        <div class="product-context-links">
+          ${PRODUCT_MAP.sharedComponent.panels.map(panel => `<span class="product-context-link">${escapeHtml(panel)}</span>`).join('')}
+        </div>
+      </section>
+
+      <section class="product-data-section">
+        <div class="product-data-head">
+          <div>
+            <div class="product-data-label">data spine</div>
+            <div class="product-data-title">哪些資料源在餵這個產品</div>
+          </div>
+          <div class="product-data-copy">我刻意不畫來源蜘蛛網。badge + target chips 在手機上更快讀，也更不會把功能地圖畫成一張裝飾圖。</div>
+        </div>
+        <div class="product-data-grid">
+          ${PRODUCT_MAP.sources.map(source => `
+            <article class="product-data-card">
+              <div class="product-data-card-head">
+                <span class="product-data-icon">${escapeHtml(source.icon)}</span>
+                <span class="product-data-name">${escapeHtml(source.name)}</span>
+                <span class="product-data-count">${escapeHtml(`${source.targets.length} links`)}</span>
+              </div>
+              <div class="product-data-copy">${escapeHtml(source.copy)}</div>
+              <div class="product-data-targets">
+                ${source.targets.map(target => `<span class="product-data-target">${escapeHtml(target)}</span>`).join('')}
+              </div>
+            </article>
+          `).join('')}
+        </div>
+      </section>
+
+      <div class="product-map-note"><strong>Reality check:</strong> ${escapeHtml(PRODUCT_MAP.note)}</div>
+    </section>
+  `;
+}
+
+function buildArchitectureNodes(data) {
+  const architecture = data?.architecture || {};
+  const frontend = architecture.frontend || {};
+  const backend = architecture.backend || {};
+  const vm = architecture.vm || {};
+  const knowledge = architecture.knowledgeBase || {};
+  return {
+    client: {
+      kicker: 'User Surface',
+      title: '手機 Dashboard',
+      summary: 'HTTPS / portrait-first',
+      description: '使用者主要感知的是一個手機優先的 dashboard，而不是底下拆成多少段 runtime。',
+      details: ['即時狀態', 'Task board', 'Project panel'],
+    },
+    github: {
+      kicker: 'Repo',
+      title: 'GitHub',
+      summary: 'push -> auto deploy',
+      description: 'repo 是部署觸發點，也是整個架構圖最重要的變更入口。',
+      details: ['auto-deploy', 'source of truth'],
+    },
+    frontend: {
+      kicker: 'Edge',
+      title: 'Vercel SPA',
+      summary: `${(frontend.panels || []).length || 0} panels · ${backend.endpoints || 0} API`,
+      description: frontend.entry || frontend.stack || 'Vercel edge delivery',
+      details: [frontend.stack, frontend.deploy, frontend.entry].filter(Boolean),
+    },
+    backend: {
+      kicker: 'Serverless',
+      title: `${backend.endpoints || 0} API + ${backend.crons || 0} crons`,
+      summary: backend.stack || 'Node.js runtime',
+      description: '分析、cron、Blob storage、以及 server-side AI call 都從這個層進出。',
+      details: [backend.ai, backend.storage, `${backend.crons || 0} scheduled jobs`].filter(Boolean),
+    },
+    ai: {
+      kicker: 'LLM',
+      title: backend.ai || 'Claude',
+      summary: '分析 / 研究生成',
+      description: '研究與收盤分析仍是 server-side AI flow，避免把 prompt / key 暴露到 client。',
+      details: ['research lane', 'daily analysis', 'Anthropic API'],
+    },
+    vm: {
+      kicker: 'Orchestration',
+      title: 'GCP VM Agent Bridge',
+      summary: vm.host || 'asia-east1-b',
+      description: vm.purpose || 'LLM orchestration',
+      details: [...(vm.services || []), 'localActivity map', 'port 9527'],
+    },
+    knowledge: {
+      kicker: 'Knowledge',
+      title: 'Runtime Knowledge Base',
+      summary: knowledge.status || 'static -> runtime',
+      description: '這塊不是單純資料倉，而是前端 knowledge fetch 的下一個遷移目標。',
+      details: [
+        `${knowledge.importPoints || 0} import points`,
+        knowledge.migration,
+        `${Object.keys(knowledge.files || {}).length} data files`,
+      ].filter(Boolean),
+    },
+  };
+}
+
+function renderArchitecture(data) {
+  if (!data?.architecture) {
+    architectureMap.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Architecture</div><div class="task-board-empty-title">尚未提供系統架構資料</div><div class="task-board-empty-copy">/api/project 回來後才會畫圖。</div></div>';
+    architectureDetail.innerHTML = '';
+    architectureMeta.innerHTML = '';
+    return;
+  }
+  const nodes = buildArchitectureNodes(data);
+  const activeNode = nodes[state.architectureFocus] || nodes.frontend;
+  architectureToggle.textContent = state.architectureExpanded ? '收起細節' : '展開細節';
+  architectureMeta.classList.toggle('collapsed', !state.architectureExpanded);
+  architectureMap.innerHTML = `
+    <div class="architecture-canvas">
+      <svg class="architecture-links" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M280 120 C 405 120, 570 150, 744 190"></path>
+        <path d="M840 122 L 840 186"></path>
+        <path d="M842 280 L 842 360"></path>
+        <path d="M748 450 C 690 474, 640 508, 566 534"></path>
+        <path d="M352 318 C 490 250, 598 220, 744 220"></path>
+        <path d="M242 520 C 254 456, 258 392, 250 332"></path>
+        <path class="planned" d="M252 518 C 448 520, 612 438, 744 262"></path>
+      </svg>
+      <span class="arch-flow-label http">https</span>
+      <span class="arch-flow-label deploy">deploy</span>
+      <span class="arch-flow-label api">18 api</span>
+      <span class="arch-flow-label ai">anthropic</span>
+      <span class="arch-flow-label runtime">runtime kb</span>
+      <span class="arch-flow-label bridge">bridge push</span>
+      ${Object.entries(nodes).map(([key, node]) => `
+        <button type="button" class="arch-node ${escapeHtml(key)} ${state.architectureFocus === key ? 'active' : ''}" data-arch-node="${escapeHtml(key)}">
+          <span class="architecture-kicker">${escapeHtml(node.kicker)}</span>
+          <span class="arch-node-title">${escapeHtml(node.title)}</span>
+          <span class="arch-node-meta">${escapeHtml(node.summary)}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  architectureDetail.innerHTML = `
+    <div class="architecture-detail-head">
+      <div>
+        <div class="architecture-kicker">${escapeHtml(activeNode.kicker)}</div>
+        <div class="architecture-title">${escapeHtml(activeNode.title)}</div>
+      </div>
+      <div class="roadmap-summary-chip">${escapeHtml(activeNode.summary)}</div>
+    </div>
+    <div class="architecture-summary">${escapeHtml(activeNode.description)}</div>
+    <div class="architecture-detail-list">
+      ${(activeNode.details || []).map(item => `<span class="architecture-chip">${escapeHtml(item)}</span>`).join('')}
+    </div>
+  `;
+
+  const architecture = data.architecture || {};
+  const flowEntries = Object.keys(architecture.dataFlow || {});
+  const laneEntries = Object.entries(data.workDivision || {});
+  architectureMeta.innerHTML = `
+    <div class="architecture-meta-group">
+      <div class="architecture-chip-label">External Flow</div>
+      <div class="architecture-meta-row">
+        ${flowEntries.map(key => `<span class="architecture-chip">${escapeHtml(key)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="architecture-meta-group">
+      <div class="architecture-chip-label">Agent Lanes</div>
+      <div class="architecture-meta-row">
+        ${laneEntries.map(([name, agent]) => `
+          <span class="architecture-chip agent-${escapeHtml(name)}">
+            ${escapeHtml(name)} ${(agent.activeTaskIds || []).length} active
+          </span>
+        `).join('')}
+      </div>
+    </div>
+    <div class="architecture-meta-group">
+      <div class="architecture-chip-label">Migration Pressure</div>
+      <div class="architecture-meta-row">
+        <span class="architecture-chip">${escapeHtml(architecture.knowledgeBase?.status || 'static -> runtime')}</span>
+        <span class="architecture-chip">${escapeHtml(architecture.knowledgeBase?.migration || 'pending')}</span>
+        <span class="architecture-chip">${escapeHtml((architecture.vm?.services || []).join(' • ') || 'no vm services')}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderWorkDivision(workDivision) {
-  if (!workDivision) { agentGrid.innerHTML = ''; return; }
+  if (!workDivision) {
+    agentGrid.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Work Division</div><div class="task-board-empty-title">目前沒有 agent 分工資料</div><div class="task-board-empty-copy">Project panel 仍可顯示 roadmap，但會失去誰在做什麼的畫面感。</div></div>';
+    return;
+  }
   agentGrid.innerHTML = Object.entries(workDivision).map(([name, agent]) => {
-    const activeCount = (agent.activeTaskIds || []).length;
-    const activeList = (agent.activeTaskIds || []).slice(0, 5).map(id => escapeHtml(id)).join(', ');
+    const activeIds = agent.activeTaskIds || [];
+    const activeCount = activeIds.length;
+    const chips = activeIds.slice(0, 4).map(id => `<span class="agent-task-chip">${escapeHtml(id)}</span>`).join('');
+    const overflow = activeIds.length > 4 ? `<span class="agent-task-chip more">+${activeIds.length - 4}</span>` : '';
     const note = agent.note ? `<div class="agent-note">${escapeHtml(agent.note)}</div>` : '';
     return `
-      <div class="agent-card">
+      <div class="agent-card" style="--agent-accent:${escapeHtml(agent.color || '#888')}">
         <div class="agent-card-head">
           <span class="agent-dot" style="background:${escapeHtml(agent.color || '#888')}"></span>
           <span class="agent-name">${escapeHtml(name)}</span>
           <span class="agent-load ${escapeHtml(agent.load || 'idle')}">${escapeHtml(agent.load || 'idle')}</span>
         </div>
         <div class="agent-focus">${escapeHtml(agent.focus || '')}</div>
-        <div class="agent-active">${activeCount} active${activeCount > 0 ? ': ' + activeList : ''}</div>
+        <div class="agent-active">${activeCount > 0 ? `${activeCount} active lane${activeCount > 1 ? 's' : ''}` : '目前沒有 live task'}</div>
+        <div class="agent-task-chips">${chips || '<span class="agent-task-chip more">idle</span>'}${overflow}</div>
         ${note}
       </div>
     `;
@@ -2062,7 +3834,10 @@ function renderWorkDivision(workDivision) {
 }
 
 function renderImprovements(items) {
-  if (!Array.isArray(items)) { improvementsList.innerHTML = ''; return; }
+  if (!Array.isArray(items) || items.length === 0) {
+    improvementsList.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Backlog</div><div class="task-board-empty-title">暫時沒有待改善項</div><div class="task-board-empty-copy">這通常代表 `/api/project` 還沒回來，或 backlog 被清空了。</div></div>';
+    return;
+  }
   const byCategory = {};
   for (const it of items) {
     const cat = it.category || 'other';
@@ -2070,7 +3845,7 @@ function renderImprovements(items) {
   }
   const catOrder = ['infrastructure', 'features', 'verification', 'testing', 'architecture'];
   const sortedCats = [...new Set([...catOrder, ...Object.keys(byCategory)])].filter(c => byCategory[c]);
-  improvementsList.innerHTML = sortedCats.map(cat => {
+  const cards = sortedCats.map(cat => {
     const list = byCategory[cat];
     const rows = list.map(it => `
       <div class="imp-item">
@@ -2079,7 +3854,7 @@ function renderImprovements(items) {
           <span class="imp-title">${escapeHtml(it.title || '')}</span>
           <span class="imp-why">${escapeHtml(it.why || '')}</span>
         </div>
-        <span class="imp-owner">${escapeHtml(it.owner || '-')}</span>
+        <span class="imp-owner" style="color:${hexToRgba(ownerColor(it.owner), 1)}; border-color:${hexToRgba(ownerColor(it.owner), 0.22)}; background:${hexToRgba(ownerColor(it.owner), 0.12)}">${escapeHtml(it.owner || '-')}</span>
       </div>
     `).join('');
     return `
@@ -2092,23 +3867,123 @@ function renderImprovements(items) {
       </div>
     `;
   }).join('');
+  improvementsList.innerHTML = `<div class="improvements-grid">${cards}</div>`;
 }
 
-function renderRoadmap(roadmap) {
-  if (!roadmap) { roadmapGrid.innerHTML = ''; return; }
+function renderCompletedTimeline(completed) {
+  if (!Array.isArray(completed) || completed.length === 0) {
+    completedTimeline.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Completed</div><div class="task-board-empty-title">還沒有已完成紀錄</div><div class="task-board-empty-copy">完成項會在這裡形成時間軸，而不是再次混進待辦 backlog。</div></div>';
+    return;
+  }
+  const ordered = [...completed].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  completedTimeline.innerHTML = ordered.map(item => `
+    <article class="timeline-item">
+      <div class="timeline-date">${escapeHtml(formatShortDate(item.date))}</div>
+      <div class="timeline-item-title">${escapeHtml(item.title || item.id || '')}</div>
+      <div class="timeline-item-id">${escapeHtml(item.id || '-')}</div>
+    </article>
+  `).join('');
+}
+
+function renderRoadmap(data) {
+  const roadmap = data?.roadmap;
+  if (!roadmap) {
+    roadmapOverview.innerHTML = '';
+    roadmapGrid.innerHTML = '';
+    completedTimeline.innerHTML = '';
+    roadmapSummaryChip.textContent = '無 roadmap';
+    return;
+  }
+  const lookups = buildProjectLookups(data);
   const phases = ['now', 'next', 'later'];
-  roadmapGrid.innerHTML = phases.map(phase => {
+  const phaseMeta = {
+    now: '本週火線',
+    next: '下一段',
+    later: '長線',
+  };
+  const phaseCards = phases.map(phase => {
     const p = roadmap[phase];
-    if (!p) return '';
-    const chips = (p.taskIds || []).map(id => `<span class="roadmap-chip">${escapeHtml(id)}</span>`).join('');
+    const taskIds = p?.taskIds || [];
+    const taskItems = taskIds.map(id => resolveProjectTaskMeta(id, lookups));
+    const counts = buildStatusCounts(taskItems);
+    const total = taskItems.length;
+    const donePct = total > 0 ? Math.round((counts.completed / total) * 100) : 0;
+    const status = phaseState(counts, total);
+    const chips = taskItems.map(item => `
+      <span class="roadmap-chip status-${escapeHtml(item.status)}" title="${escapeHtml(item.title)}">
+        <span class="roadmap-chip-dot"></span>${escapeHtml(item.id)}
+      </span>
+    `).join('');
+    const breakdown = [
+      ['completed', counts.completed, '完成'],
+      ['in_progress', counts.in_progress, '進行中'],
+      ['blocked', counts.blocked, '阻塞'],
+      ['pending', counts.pending, '待辦'],
+    ].filter(([, count]) => count > 0).map(([cls, count, label]) => `
+      <span class="roadmap-stat ${cls}">${escapeHtml(label)} ${count}</span>
+    `).join('');
     return `
-      <div class="roadmap-col">
-        <div class="roadmap-label">${escapeHtml(p.label || phase)}</div>
+      <div class="roadmap-col phase-${escapeHtml(phase)}">
+        <div class="roadmap-head">
+          <div>
+            <div class="roadmap-metrics">${escapeHtml(phaseMeta[phase] || phase)}</div>
+            <div class="roadmap-label">${escapeHtml(p.label || phase)}</div>
+            <div class="roadmap-metrics">${counts.completed}/${total} 完成 · ${donePct}%</div>
+          </div>
+          <span class="roadmap-state ${escapeHtml(status.cls)}">${escapeHtml(status.label)}</span>
+        </div>
+        ${renderStatusTrack(counts, total)}
+        <div class="roadmap-breakdown">${breakdown || '<span class="roadmap-stat pending">尚無 task</span>'}</div>
         <div class="roadmap-rationale">${escapeHtml(p.rationale || '')}</div>
         <div class="roadmap-chips">${chips}</div>
       </div>
     `;
   }).join('');
+
+  const allTrackedIds = [...new Set(phases.flatMap(phase => roadmap[phase]?.taskIds || []))];
+  const allTrackedItems = allTrackedIds.map(id => resolveProjectTaskMeta(id, lookups));
+  const totalCounts = buildStatusCounts(allTrackedItems);
+  const trackedTotal = allTrackedItems.length;
+  const shippedCount = Array.isArray(data.completed) ? data.completed.length : 0;
+  const latestCompleted = Array.isArray(data.completed) && data.completed.length > 0
+    ? [...data.completed].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))[0]
+    : null;
+
+  roadmapOverview.innerHTML = `
+    <div class="roadmap-summary-card">
+      <div class="roadmap-metrics">Roadmap signal</div>
+      <div class="roadmap-summary-title">${trackedTotal} 個 phase task，完成 / 進行 / 待辦 一眼看完</div>
+      <div class="roadmap-summary-sub">綠色代表真正已完成；血紅代表正在燃燒中的 lane；灰白代表還沒啟動。Completed Ledger 另列已交付，不再混進 backlog。</div>
+      ${renderStatusTrack(totalCounts, trackedTotal)}
+      <div class="roadmap-breakdown">
+        <span class="roadmap-stat completed">完成 ${totalCounts.completed}</span>
+        <span class="roadmap-stat in_progress">進行中 ${totalCounts.in_progress}</span>
+        ${totalCounts.blocked > 0 ? `<span class="roadmap-stat blocked">阻塞 ${totalCounts.blocked}</span>` : ''}
+        <span class="roadmap-stat pending">待辦 ${totalCounts.pending}</span>
+      </div>
+    </div>
+    <div class="timeline-summary-card">
+      <div class="roadmap-metrics">Completed ledger</div>
+      <div class="timeline-summary-title">${shippedCount} 項已交付，保留時間感而不是埋在清單裡</div>
+      <div class="timeline-summary-sub">${latestCompleted ? `最新一筆 ${formatShortDate(latestCompleted.date)}：${latestCompleted.title}` : '尚未有交付紀錄'}</div>
+      <div class="timeline-summary-stats">
+        <span class="timeline-stat completed">已完成 ${shippedCount}</span>
+        <span class="timeline-stat">${escapeHtml(latestCompleted ? formatShortDate(latestCompleted.date) : 'no date')}</span>
+      </div>
+    </div>
+  `;
+  roadmapGrid.innerHTML = phaseCards;
+  roadmapSummaryChip.textContent = `${totalCounts.completed}/${trackedTotal} 完成 · ${shippedCount} shipped`;
+  renderCompletedTimeline(data.completed);
+}
+
+function renderProjectPanelData(data) {
+  state.projectData = data;
+  renderProjectOverview(data);
+  renderWorkDivision(data.workDivision);
+  renderArchitecture(data);
+  renderImprovements(data.improvements);
+  renderRoadmap(data);
 }
 
 function renderMacActivity(entries) {
@@ -2148,11 +4023,10 @@ async function fetchProject() {
     if (!res.ok) return;
     const data = await res.json();
     projectPanel.classList.remove('hidden');
-    renderWorkDivision(data.workDivision);
-    renderImprovements(data.improvements);
-    renderRoadmap(data.roadmap);
-    const total = (data.improvements || []).length;
-    projectCount.textContent = `${total} items`;
+    renderProjectPanelData(data);
+    const backlog = (data.improvements || []).length;
+    const shipped = (data.completed || []).length;
+    projectCount.textContent = `${backlog} backlog · ${shipped} shipped`;
   } catch (e) {
     console.warn('fetchProject failed:', e);
   }

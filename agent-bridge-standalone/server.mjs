@@ -438,10 +438,17 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://127.0.0.1`)
   const p = url.pathname
 
-  // Dashboard — no auth
+  // Dashboard — no auth, no-cache, hot-reload from disk
   if (p === '/' || p === '/index.html') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-    res.end(dashboardHtml); return
+    let html = dashboardHtml
+    try {
+      if (fs.existsSync(dashboardPath)) html = fs.readFileSync(dashboardPath, 'utf-8')
+    } catch {}
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    })
+    res.end(html); return
   }
 
   // API auth check

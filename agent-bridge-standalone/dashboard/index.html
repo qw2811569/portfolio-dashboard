@@ -1205,6 +1205,107 @@
     line-height: 1.5;
   }
 
+  /* ─── Mac Local Activity ─── */
+  .mac-activity {
+    flex-shrink: 0;
+    padding: 10px 18px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mac-activity.hidden { display: none; }
+
+  .mac-activity-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mac-activity-grid {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .mac-activity-grid::-webkit-scrollbar { display: none; }
+
+  .mac-activity-card {
+    flex-shrink: 0;
+    min-width: 140px;
+    max-width: 180px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(25, 33, 41, 0.8), rgba(15, 20, 26, 0.8));
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mac-activity-card .mac-agent-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-0);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .mac-activity-card .mac-agent-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .mac-activity-card .mac-agent-status.start {
+    color: #ffb5a5;
+    background: rgba(224, 68, 49, 0.14);
+  }
+
+  .mac-activity-card .mac-agent-status.progress {
+    color: #f0ca88;
+    background: rgba(207, 151, 71, 0.12);
+  }
+
+  .mac-activity-card .mac-agent-status.done {
+    color: #dce8c4;
+    background: rgba(141, 157, 114, 0.12);
+  }
+
+  .mac-activity-card .mac-agent-status.idle {
+    color: var(--text-2);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .mac-activity-card .mac-agent-status.unknown {
+    color: var(--text-2);
+    background: rgba(255, 244, 221, 0.04);
+  }
+
+  .mac-activity-card .mac-agent-msg {
+    font-size: 9px;
+    color: var(--text-2);
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mac-activity-card .mac-agent-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    color: var(--text-2);
+  }
+
   @media (hover: hover) {
     .task-toggle:hover,
     .quick-btn:hover,
@@ -1278,6 +1379,12 @@
 <!-- Agent Tabs -->
 <div class="agent-tabs" id="agentTabs">
   <!-- Dynamically populated -->
+</div>
+
+<!-- Mac Local Activity -->
+<div class="mac-activity hidden" id="macActivity">
+  <div class="mac-activity-title">💻 Mac 本地活動</div>
+  <div class="mac-activity-grid" id="macActivityGrid"></div>
 </div>
 
 <!-- Task Board -->
@@ -1444,6 +1551,8 @@ const statusBadge = $('statusBadge');
 const statusText = $('statusText');
 const fabBtn = $('fabBtn');
 const modalBackdrop = $('modalBackdrop');
+const macActivity = $('macActivity');
+const macActivityGrid = $('macActivityGrid');
 
 // ─── WebSocket ──────────────────────────
 function connect() {
@@ -2002,6 +2111,37 @@ function renderRoadmap(roadmap) {
   }).join('');
 }
 
+function renderMacActivity(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    macActivity.classList.add('hidden');
+    macActivityGrid.innerHTML = '';
+    return;
+  }
+  macActivity.classList.remove('hidden');
+  macActivityGrid.innerHTML = entries.map(e => {
+    const ago = relativeTime(e.timestamp);
+    const statusCls = ['start', 'progress', 'done', 'idle'].includes(e.status) ? e.status : 'unknown';
+    return `
+      <div class="mac-activity-card">
+        <span class="mac-agent-name">${escapeHtml(e.agent)}</span>
+        <span class="mac-agent-status ${statusCls}">${escapeHtml(e.status)}</span>
+        <span class="mac-agent-msg">${escapeHtml(e.message || '')}</span>
+        <span class="mac-agent-time">${ago}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function relativeTime(ts) {
+  const diff = Date.now() - ts;
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec}s 前`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m 前`;
+  const hr = Math.floor(min / 60);
+  return `${hr}h 前`;
+}
+
 async function fetchProject() {
   try {
     const res = await fetch('/api/project');
@@ -2015,6 +2155,19 @@ async function fetchProject() {
     projectCount.textContent = `${total} items`;
   } catch (e) {
     console.warn('fetchProject failed:', e);
+  }
+  // Also fetch /api/status for localActivity
+  fetchLocalActivity();
+}
+
+async function fetchLocalActivity() {
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    renderMacActivity(data.localActivity || []);
+  } catch (e) {
+    // silent — VM may not have localActivity field yet
   }
 }
 

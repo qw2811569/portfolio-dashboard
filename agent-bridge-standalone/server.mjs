@@ -47,6 +47,7 @@ const sessions = new Map()   // id -> AgentSession
 const tasks = new Map()      // id -> BridgeTask
 const processes = new Map()  // sessionId -> ChildProcess
 const wsClients = new Set()
+const localActivity = new Map() // agent name -> {agent, status, message, timestamp, host}
 
 // ─── Logging ──────────────────────────────────────────────────────
 function log(msg) {
@@ -463,11 +464,17 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(Array.from(sessions.values()).map(serializeSession))); return
   }
   if (p === '/api/status' && req.method === 'GET') {
+    const THIRTY_MIN = 30 * 60 * 1000
+    const now = Date.now()
+    const localEntries = [...localActivity.values()]
+      .filter(e => now - e.timestamp < THIRTY_MIN)
+      .sort((a, b) => b.timestamp - a.timestamp)
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({
       uptime: process.uptime(), sessions: sessions.size, tasks: tasks.size,
       clients: wsClients.size, workspace: path.basename(WORKSPACE_ROOT),
       hardGates: { enabled: HARD_GATES_ENABLED, envVar: 'AGENT_BRIDGE_HARD_GATES' },
+      localActivity: localEntries,
     })); return
   }
   if (p === '/api/project' && req.method === 'GET') {
@@ -501,6 +508,24 @@ const server = http.createServer(async (req, res) => {
     const t = upsertTask(sanitize(body))
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ ok: true, task: serializeTask(t) })); return
+  }
+  if (p === '/api/local-status' && req.method === 'POST') {
+    const body = await readBody(req)
+    const { agent, status, message, timestamp, host } = body
+    if (!agent) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Missing agent field' })); return
+    }
+    localActivity.set(agent, {
+      agent,
+      status: status || 'unknown',
+      message: message || '',
+      timestamp: timestamp || Date.now(),
+      host: host || 'unknown',
+    })
+    log(`Local status update: ${agent} → ${status}`)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, agent })); return
   }
   if (p === '/api/tasks/sync' && req.method === 'POST') {
     loadTasks(); reconcileTaskAssignments(); broadcastTasksSnapshot()

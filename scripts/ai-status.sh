@@ -39,6 +39,22 @@ run_update() {
 
     python3 "$ROOT_DIR/scripts/report-ai-progress.py" "$action" "$AI_NAME" "$message"
     bash "$ROOT_DIR/scripts/sync-state.sh"
+
+    # Push status to VM Dashboard (silent fail — network issues shouldn't break local flow)
+    if [[ -n "${VM_STATUS_URL:-}" ]]; then
+        local auth_args=()
+        if [[ -n "${VM_STATUS_TOKEN:-}" ]]; then
+            auth_args=(-H "Authorization: Bearer $VM_STATUS_TOKEN")
+        fi
+        (
+            curl -s -X POST "$VM_STATUS_URL" \
+                -H "Content-Type: application/json" \
+                "${auth_args[@]}" \
+                -d "{\"agent\":\"$AI_NAME\",\"status\":\"$action\",\"message\":$(printf '%s' "$message" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))'),\"timestamp\":$(date +%s000),\"host\":\"$(hostname)\"}" \
+                --connect-timeout 3 --max-time 5 \
+                >/dev/null 2>&1 || true
+        ) &
+    fi
 }
 
 if [[ $# -lt 1 ]]; then

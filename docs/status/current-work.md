@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-03 17:32
+Last updated: 2026-04-12 04:25
 
 ## Management preferences
 
@@ -82,6 +82,7 @@ Last updated: 2026-04-03 17:32
 
 ## Latest checkpoint
 
+- `2026-04-12 04:25` Qwen：QA Round 3: FAIL — 待補資料 18 (ETFs/warrants have no FinMind fundamentals, backlog gate needs type filter). Code audit: 0 bugs in A1/A2 logic.
 - `2026-04-03 17:32` Qwen：任務 G：零波動修復 + 事件計數修復，build ✅ vitest 369/369 ✅ lint ✅
 - `2026-04-03 17:32` Qwen：任務 G 完成：G1 零波動修復（changePct null 處理 + UI 顯示 —）+ G2 事件計數修復（移除 >1% 嚴格過濾），build ✅ vitest 369/369 ✅ lint ✅
 - `2026-04-03 17:18` Qwen：交接：任務 F 完成，請 Claude 指派新任務

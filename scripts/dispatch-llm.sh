@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# OpenClaw 系統操作腳本
+# 調度中心腳本 — 唯一入口（status / restart / push / evolve / loop / analyze）
 # AI 調度改用 scripts/launch-codex.sh|launch-qwen.sh|launch-gemini.sh
-# 這個腳本以系統維運指令為主
 #
 # 用法：bash scripts/dispatch-llm.sh <command> [args]
 

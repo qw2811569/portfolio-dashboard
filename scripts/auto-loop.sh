@@ -201,9 +201,11 @@ run_qa() {
   fi
 
   # ═══ Level 3：Qwen 深度驗證（本地頁面 + 功能檢查）═══
-  log "QA Level 3: Qwen 深度驗證..."
-  QWEN_REPORT=$(openclaw agent --agent qwen \
-    --message "你是 QA 測試員。讀 QWEN.md 了解你的角色。
+  log "QA Level 3: 本地深度驗證..."
+
+  # 寫 Qwen 任務檔
+  cat > /tmp/auto-loop-qwen-task.md <<'QWENTASK'
+你是 QA 測試員。讀 QWEN.md 了解你的角色。
 
 本地伺服器在 http://127.0.0.1:3002，請逐一檢查以下頁面和功能：
 
@@ -227,8 +229,10 @@ run_qa() {
 用以下格式回報，第一行必須是 PASS 或 FAIL：
 PASS/FAIL
 - 項目1: OK/FAIL 原因
-- 項目2: OK/FAIL 原因" \
-    --timeout 120 2>&1) || true
+- 項目2: OK/FAIL 原因
+QWENTASK
+
+  QWEN_REPORT=$(bash scripts/launch-qwen.sh -y -p "$(cat /tmp/auto-loop-qwen-task.md)" --output-format text 2>&1) || true
 
   log "  Qwen: $(echo "$QWEN_REPORT" | head -1)"
   if echo "$QWEN_REPORT" | head -1 | grep -qi "FAIL"; then
@@ -274,9 +278,7 @@ $(printf "%b" "$details" | sed 's/^/- /')
 不要做額外的事，只修上面列的問題。
 TASKEOF
 
-  CODEX_RESULT=$(openclaw agent --agent codex \
-    --message "讀 docs/status/auto-evolve-tasks.md，修復裡面列的所有問題。每修一項跑 build/lint/test 驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" \
-    --timeout 300 2>&1) || true
+  CODEX_RESULT=$(bash scripts/launch-codex.sh "讀 docs/status/auto-evolve-tasks.md，修復裡面列的所有問題。每修一項跑 build/lint/test 驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" 2>&1) || true
 
   log "Codex 回覆：$(echo "$CODEX_RESULT" | head -3)"
   echo "$CODEX_RESULT" > /tmp/auto-loop-codex-result
@@ -287,8 +289,7 @@ TASKEOF
 run_claude_review() {
   log "請 Claude 做最終審查..."
 
-  CLAUDE_RESULT=$(openclaw agent --agent claude \
-    --message "你是這個專案的技術架構師。自動閉環已跑到第 $ROUND 輪。
+  CLAUDE_RESULT=$(AI_NAME=Claude bash scripts/launch-qwen.sh -y -p "你是這個專案的技術架構師。自動閉環已跑到第 $ROUND 輪。
 
 先讀 docs/status/loop-conversation.md 了解完整歷程（包括 QA 的詳細結果），再做以下檢查：
 1. git log --oneline -10
@@ -305,8 +306,7 @@ run_claude_review() {
 
 回答第一個詞必須是 STABLE 或 UNSTABLE，然後用 50 字以內說明。
 如果 UNSTABLE，列出 1-3 個具體的 Codex 可修的問題（附檔名）。
-回覆中不要用反引號或特殊符號。" \
-    --timeout 120 2>&1) || true
+回覆中不要用反引號或特殊符號。" --output-format text 2>&1) || true
 
   log "Claude 回覆完成"
   echo "${CLAUDE_RESULT:-empty}" > /tmp/auto-loop-claude-result
@@ -358,14 +358,12 @@ $(cat /tmp/auto-loop-claude-result)
 - test: ✅
 RESULTEOF
 
-        AI_NAME=OpenClaw bash scripts/ai-status.sh done "自動閉環完成：$ROUND 輪後穩定" >/dev/null 2>&1 || true
+        AI_NAME=System bash scripts/ai-status.sh done "自動閉環完成：$ROUND 輪後穩定" >/dev/null 2>&1 || true
         exit 0
       else
         log "Claude 認為還不穩定，派 Codex 處理..."
         CLAUDE_FILE="/tmp/auto-loop-claude-result"
-        openclaw agent --agent codex \
-          --message "讀 /tmp/auto-loop-claude-result 檔案，裡面是 Claude 的審查結果。請針對 Claude 指出的問題進行修復。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" \
-          --timeout 300 2>&1 | head -5 || true
+        bash scripts/launch-codex.sh "讀 /tmp/auto-loop-claude-result 檔案，裡面是 Claude 的審查結果。請針對 Claude 指出的問題進行修復。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。" 2>&1 | head -5 || true
         CONSECUTIVE_PASS=0
       fi
     else
@@ -414,5 +412,5 @@ $(printf "%b" "$QA_DETAILS" | sed 's/^/- /')
 請人工介入處理剩餘問題，或增加 MAX_ROUNDS 後重跑。
 RESULTEOF
 
-AI_NAME=OpenClaw bash scripts/ai-status.sh blocker "自動閉環 $MAX_ROUNDS 輪後仍有問題" >/dev/null 2>&1 || true
+AI_NAME=System bash scripts/ai-status.sh blocker "自動閉環 $MAX_ROUNDS 輪後仍有問題" >/dev/null 2>&1 || true
 exit 1

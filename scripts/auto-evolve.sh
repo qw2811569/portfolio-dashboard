@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-# OpenClaw 自動進化循環
+# 自動健檢循環
 # 用法：bash scripts/auto-evolve.sh
 #
-# 這個腳本做四件事：
+# 這個腳本做三件事：
 # 1. 健康檢查（測試、build、lint、前台）
 # 2. 把問題寫到 docs/status/auto-evolve-tasks.md
-# 3. 後端/邏輯問題 → 派 Codex 修復
-# 4. 前台/UI 問題 → 派 Qwen 修復
-#
-# OpenClaw 只需要定期跑這個腳本，不需要人盯。
+# 3. 用 dispatch-llm.sh evolve 後續派工
 
 set -euo pipefail
 
@@ -155,7 +152,7 @@ $(if [[ ${#WARNINGS[@]} -gt 0 ]]; then
 fi)
 TASKEOF
 
-  AI_NAME=OpenClaw bash scripts/ai-status.sh done "auto-evolve 檢查完成，全部通過" >/dev/null 2>&1 || true
+  AI_NAME=System bash scripts/ai-status.sh done "auto-evolve 檢查完成，全部通過" >/dev/null 2>&1 || true
   echo ""
   echo "結果已寫入 $TASK_FILE"
   exit 0
@@ -225,23 +222,7 @@ fi)
 TASKEOF
 
 echo "任務已寫入 $TASK_FILE"
-
-# ─── Step 7: 輸出可執行的派工建議 ───
-# 這裡只輸出建議指令，讓人類或外層調度器直接執行
-
-if [[ ${#CODEX_TASKS[@]} -gt 0 ]]; then
-  echo ""
-  echo "[suggest] 後端問題建議派 Codex："
-  echo "  bash scripts/launch-codex.sh \"讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區，逐一修復 build/test/lint 失敗項，每修一項跑驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。\""
-  AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 待修：${#CODEX_TASKS[@]} 個後端問題" >/dev/null 2>&1 || true
-fi
-
-if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
-  echo ""
-  echo "[suggest] 前台問題建議派 Qwen 做 QA 驗證："
-  echo "  bash scripts/launch-qwen.sh -p \"讀 QWEN.md 的 QA 檢查清單，跑 Level 1 + Level 2 檢查，回報 QA Report。發現的問題不要自己修，寫清楚回報讓 Codex 修。\" --output-format text --yolo"
-  AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 待驗證：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
-fi
-
+echo ""
+echo "✅ 後續派工：bash scripts/dispatch-llm.sh evolve（或手動 dispatch-llm.sh loop）"
 echo ""
 echo "=== auto-evolve 結束 ==="

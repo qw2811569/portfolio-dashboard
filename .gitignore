@@ -12,3 +12,12 @@ blob-backup/
 .blameprompt/
 .gstack/
 data/finmind-cache/
+
+# docs-site derived state (synced from docs/status/ via sync-state.sh)
+docs-site/state.json
+docs-site/ai-activity.json
+docs-site/ai-activity-log.json
+docs-site/current-work.md
+
+# .tmp is transient LLM dispatch artifacts (per claude.md)
+.tmp/

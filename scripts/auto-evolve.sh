@@ -226,21 +226,20 @@ TASKEOF
 
 echo "任務已寫入 $TASK_FILE"
 
-# ─── Step 7: 透過 ACP 自動派工 ───
-# OpenClaw 的 main agent 會讀 auto-evolve-tasks.md 自行決定派工
-# 這裡只輸出建議指令供 OpenClaw 執行
+# ─── Step 7: 輸出可執行的派工建議 ───
+# 這裡只輸出建議指令，讓人類或外層調度器直接執行
 
 if [[ ${#CODEX_TASKS[@]} -gt 0 ]]; then
   echo ""
   echo "[suggest] 後端問題建議派 Codex："
-  echo "  /acp spawn codex \"讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區，逐一修復 build/test/lint 失敗項，每修一項跑驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。\""
+  echo "  bash scripts/launch-codex.sh \"讀 docs/status/auto-evolve-tasks.md 的 Codex 任務區，逐一修復 build/test/lint 失敗項，每修一項跑驗證。完成後用 AI_NAME=Codex bash scripts/ai-status.sh done 回報。\""
   AI_NAME=Codex bash scripts/ai-status.sh start "auto-evolve 待修：${#CODEX_TASKS[@]} 個後端問題" >/dev/null 2>&1 || true
 fi
 
 if [[ ${#QWEN_TASKS[@]} -gt 0 ]]; then
   echo ""
   echo "[suggest] 前台問題建議派 Qwen 做 QA 驗證："
-  echo "  /acp spawn qwen \"讀 QWEN.md 的 QA 檢查清單，跑 Level 1 + Level 2 檢查，回報 QA Report。發現的問題不要自己修，寫清楚回報讓 Codex 修。\""
+  echo "  bash scripts/launch-qwen.sh -p \"讀 QWEN.md 的 QA 檢查清單，跑 Level 1 + Level 2 檢查，回報 QA Report。發現的問題不要自己修，寫清楚回報讓 Codex 修。\" --output-format text --yolo"
   AI_NAME=Qwen bash scripts/ai-status.sh start "auto-evolve 待驗證：${#QWEN_TASKS[@]} 個前台問題" >/dev/null 2>&1 || true
 fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # OpenClaw 系統操作腳本
-# AI 調度已遷移到 ACP（/acp spawn codex|claude|qwen）
-# 這個腳本只保留系統維運指令
+# AI 調度改用 scripts/launch-codex.sh|launch-qwen.sh|launch-gemini.sh
+# 這個腳本以系統維運指令為主
 #
 # 用法：bash scripts/dispatch-llm.sh <command> [args]
 
@@ -96,9 +96,10 @@ case "$CMD" in
     echo "  loop     — 自動閉環（QA→修→驗→審，直到零 bug）"
     echo "  report   — 進度彙報"
     echo ""
-    echo "AI 調度（已遷移到 ACP）："
-    echo "  /acp spawn codex \"任務描述\"  — 派 Codex"
-    echo "  /acp spawn claude \"任務描述\" — 派 Claude"
-    echo "  /acp spawn qwen \"任務描述\"   — 派 Qwen"
+    echo "AI 調度："
+    echo "  bash scripts/launch-codex.sh \"任務描述\"                       — 派 Codex"
+    echo "  bash scripts/launch-codex.sh docs/status/auto-evolve-tasks.md — 派 Codex 讀 brief"
+    echo "  bash scripts/launch-qwen.sh -p \"任務描述\" --output-format text --yolo"
+    echo "  bash scripts/launch-gemini.sh \"任務描述\"                    — 派 Gemini"
     ;;
 esac

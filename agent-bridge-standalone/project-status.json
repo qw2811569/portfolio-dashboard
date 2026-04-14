@@ -45,33 +45,34 @@
     "tests": "706 passed / 105 files",
     "lint": "0 errors, 1 pre-existing warning",
     "build": "clean",
-    "taskBacklog": { "P0": 2, "P1": 4, "P2": 7, "P3-future": 2, "total": 15 }
+    "taskBacklog": { "P0": 2, "P1": 4, "P2": 8, "P3-future": 2, "total": 16 }
   },
   "workDivision": {
     "Claude": {
-      "focus": "決策 + 架構 + 高風險修復",
+      "focus": "架構決策 + review（不寫 code，只設計）",
+      "activeTaskIds": ["infra-01"],
+      "load": "low",
+      "color": "#E87B35",
+      "note": "只負責架構設計、多方共識、review — 所有實作交給 Codex"
+    },
+    "Codex": {
+      "focus": "所有程式碼實作 — UI、runtime、重構",
       "activeTaskIds": [
-        "infra-01",
         "infra-02",
-        "infra-03",
         "infra-04",
         "feat-01",
         "feat-02",
-        "feat-05"
+        "feat-03",
+        "feat-06",
+        "feat-07"
       ],
       "load": "high",
-      "color": "#E87B35"
-    },
-    "Codex": {
-      "focus": "live runtime + brain logic + containment",
-      "activeTaskIds": ["feat-03", "feat-06"],
-      "load": "medium",
       "color": "#10A37F"
     },
     "Qwen": {
-      "focus": "驗證 + 機械 gap + 測試補齊",
-      "activeTaskIds": ["feat-04", "test-01", "test-02", "test-03"],
-      "load": "medium",
+      "focus": "驗證 + 機械 gap + 測試補齊 + CLI 安裝",
+      "activeTaskIds": ["infra-03", "feat-04", "feat-05", "test-01", "test-02", "test-03"],
+      "load": "high",
       "color": "#615EFF"
     },
     "Gemini": {
@@ -97,7 +98,7 @@
       "priority": "P0",
       "title": "前端 11 個 static import 改 fetch VM API",
       "why": "stockClassifier(3) + coverageAdapter(3) + knowledgeBase(7) 等 11 個 import 改成 runtime fetch",
-      "owner": "Claude"
+      "owner": "Codex"
     },
     {
       "id": "infra-02",
@@ -105,7 +106,7 @@
       "priority": "P1",
       "title": "VM 加 HTTPS + Auth token",
       "why": "目前 HTTP 裸奔 + 無 auth — 任何人打 API 都能動 task。Nginx + Let's Encrypt + BRIDGE_AUTH_TOKEN",
-      "owner": "Claude"
+      "owner": "Codex"
     },
     {
       "id": "infra-03",
@@ -113,7 +114,7 @@
       "priority": "P1",
       "title": "VM 裝 Codex/Qwen/Gemini CLI + API keys",
       "why": "Agent Bridge dispatch 需要 CLI 跑在 VM。現在沒裝，沒法真的派工",
-      "owner": "Claude"
+      "owner": "Qwen"
     },
     {
       "id": "feat-01",
@@ -121,7 +122,7 @@
       "priority": "P1",
       "title": "接通 cron target-price 到前端 (7/30 天規則)",
       "why": "cron 已收券商目標價到 Blob，但前端 stub 還沒讀 — 目前仍用 PER-band 合成",
-      "owner": "Claude"
+      "owner": "Codex"
     },
     {
       "id": "feat-02",
@@ -129,7 +130,7 @@
       "priority": "P1",
       "title": "News vs Events UI 完全分離",
       "why": "consensus: news=純資訊無方向，event=預測+復盤。目前卡片長一樣用戶會搞混",
-      "owner": "Claude"
+      "owner": "Codex"
     },
     {
       "id": "feat-03",
@@ -153,7 +154,7 @@
       "priority": "P2",
       "title": "全組合研究權證策略行為驗證",
       "why": "commit 6f98f0c 加了 Delta/Theta/IV 框架但沒跑真的 research 驗 AI 是否遵守",
-      "owner": "Claude"
+      "owner": "Qwen"
     },
     {
       "id": "feat-06",
@@ -161,6 +162,14 @@
       "priority": "P2",
       "title": "Auto-classifier 增量重分類 + 低信心 badge",
       "why": "現在每次 full recompute；低信心標示還是純文字 — 應改 badge + 只重算 stale",
+      "owner": "Codex"
+    },
+    {
+      "id": "feat-07",
+      "category": "features",
+      "priority": "P2",
+      "title": "Dashboard 視覺改《去他的世界末日》風格",
+      "why": "目前深色 tech 風跟產品氣氛不合 — 改成 1970s 英式公路片調性（奶油底、鼠尾草綠、赤陶紅、打字機字型）",
       "owner": "Codex"
     },
     {
@@ -211,9 +220,18 @@
       "rationale": "知識庫 runtime 化是最大 leverage — 其他功能都等這個解鎖"
     },
     "next": {
-      "label": "下一階段 — 穩定化",
-      "taskIds": ["infra-02", "infra-03", "feat-03", "feat-04", "test-01", "test-02", "test-03"],
-      "rationale": "VM production 安全 + 測試補齊，讓系統可信賴"
+      "label": "下一階段 — 穩定化 + 視覺",
+      "taskIds": [
+        "infra-02",
+        "infra-03",
+        "feat-03",
+        "feat-04",
+        "feat-07",
+        "test-01",
+        "test-02",
+        "test-03"
+      ],
+      "rationale": "VM production 安全 + 測試補齊 + 視覺重做，讓系統可信賴也好看"
     },
     "later": {
       "label": "未來 — 產品深化",

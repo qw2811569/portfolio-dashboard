@@ -29,6 +29,8 @@
     --accent-sage: #8B9A7B;
     --accent-gold: #D4A65C;
     --accent-teal: #7A9B9D;
+    --accent-indigo: #615EFF;
+    --accent-maroon: #7A2D33;
     --claude: #C97B63;
     --codex: #8B9A7B;
     --qwen: #7A9B9D;
@@ -47,8 +49,10 @@
     background: linear-gradient(180deg, var(--bg-0) 0%, #EFE5D8 48%, #EAE0D0 100%);
     color: var(--text-0);
     font-family: 'IBM Plex Serif', 'Noto Serif TC', 'Songti TC', serif;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
   }
@@ -56,6 +60,8 @@
   body {
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding-top: var(--safe-top);
     padding-bottom: var(--safe-bottom);
     position: relative;
@@ -169,11 +175,25 @@
   /* ─── Header ─────────────────────────── */
   header {
     flex-shrink: 0;
-    padding: 16px 20px 14px;
+    padding: 16px 20px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 0;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--red) 0 34%, var(--accent-gold) 34% 67%, var(--accent-teal) 67% 100%);
+    opacity: 0.92;
   }
 
   .logo {
@@ -275,19 +295,22 @@
   .agent-tab.active {
     color: var(--text-0);
     border-bottom-color: var(--agent-color, var(--accent));
+    background: linear-gradient(180deg, rgba(255, 248, 241, 0.82), rgba(236, 226, 212, 0.92));
+    box-shadow: inset 0 -2px 0 var(--agent-color, var(--accent));
   }
 
   .agent-tab .tab-dot {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--agent-color, var(--text-2));
     opacity: 0.72;
+    box-shadow: 0 0 0 1px rgba(59, 46, 42, 0.14);
   }
 
   .agent-tab.active .tab-dot {
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 0 1px rgba(59, 46, 42, 0.2), 0 0 0 4px rgba(255, 255, 255, 0.45);
   }
 
   .agent-tab .activity-indicator {
@@ -548,6 +571,20 @@
     font-size: 10px;
     color: var(--text-2);
     margin-bottom: 8px;
+    position: relative;
+    padding-left: 10px;
+  }
+
+  .project-section-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--red), var(--accent-gold));
+    opacity: 0.78;
   }
 
   /* Work Division grid */
@@ -573,11 +610,12 @@
   }
 
   .agent-dot {
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     flex-shrink: 0;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(59, 46, 42, 0.42);
+    box-shadow: 0 0 0 1px rgba(59, 46, 42, 0.12), 0 0 0 4px rgba(255, 255, 255, 0.5);
   }
 
   .agent-name {
@@ -642,11 +680,27 @@
   /* Improvements list */
   .imp-category {
     margin-bottom: 12px;
+    --category-accent: var(--accent);
+  }
+
+  .imp-category:nth-of-type(1) { --category-accent: #C97B63; }
+  .imp-category:nth-of-type(2) { --category-accent: #7A9B9D; }
+  .imp-category:nth-of-type(3) { --category-accent: #D4A65C; }
+  .imp-category:nth-of-type(4) { --category-accent: #8B9A7B; }
+  .imp-category:nth-of-type(5) { --category-accent: #615EFF; }
+
+  .imp-category-head {
+    color: var(--category-accent);
+  }
+
+  .imp-category-head > span:first-child {
+    color: var(--category-accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .imp-category-head {
     font-size: 11px;
-    color: var(--text-1);
     font-weight: 700;
     margin-bottom: 6px;
     display: flex;
@@ -658,46 +712,64 @@
     font-size: 9px;
     padding: 2px 7px;
     border-radius: 999px;
-    color: var(--text-2);
+    color: var(--category-accent);
   }
 
   .imp-item {
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 10px 12px 10px 16px;
     border-radius: 9px;
     margin-bottom: 6px;
     align-items: start;
     font-size: 11px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .imp-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--category-accent);
   }
 
   .priority-badge {
-    padding: 3px 7px;
+    padding: 4px 8px;
     border-radius: 999px;
     font-size: 9px;
     font-weight: 700;
     flex-shrink: 0;
+    border: 1px solid transparent;
+    letter-spacing: 0.16em;
   }
 
   .priority-P0 {
-    background: rgba(232, 167, 152, 0.18);
+    background: rgba(184, 82, 47, 0.12);
     color: var(--red);
+    border-color: rgba(184, 82, 47, 0.34);
   }
 
   .priority-P1 {
-    background: rgba(212, 166, 92, 0.18);
-    color: #967236;
+    background: rgba(212, 166, 92, 0.2);
+    color: #8A6424;
+    border-color: rgba(212, 166, 92, 0.34);
   }
 
   .priority-P2 {
-    background: rgba(122, 155, 157, 0.16);
-    color: #5B7779;
+    background: rgba(122, 155, 157, 0.18);
+    color: #4E6F72;
+    border-color: rgba(122, 155, 157, 0.32);
   }
 
   .priority-P3-future {
     background: rgba(230, 217, 200, 0.75);
     color: var(--text-2);
+    border-color: rgba(161, 143, 129, 0.24);
   }
 
   .imp-content {
@@ -738,6 +810,46 @@
   .roadmap-col {
     padding: 14px;
     border-radius: 9px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .roadmap-col::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: rgba(59, 46, 42, 0.12);
+  }
+
+  .roadmap-col:nth-of-type(1) {
+    border-color: rgba(184, 82, 47, 0.4);
+    box-shadow: 0 0 0 1px rgba(184, 82, 47, 0.12), var(--paper-shadow);
+  }
+
+  .roadmap-col:nth-of-type(1)::before { background: var(--red); }
+  .roadmap-col:nth-of-type(1) .roadmap-label { color: var(--red); }
+
+  .roadmap-col:nth-of-type(2) {
+    border-color: rgba(212, 166, 92, 0.34);
+  }
+
+  .roadmap-col:nth-of-type(2)::before { background: var(--accent-gold); }
+
+  .roadmap-col:nth-of-type(3) {
+    border-color: rgba(122, 155, 157, 0.32);
+  }
+
+  .roadmap-col:nth-of-type(3)::before { background: var(--accent-teal); }
+
+  .roadmap-col:nth-of-type(3) .roadmap-label { color: var(--accent-maroon); }
+
+  .roadmap-col:nth-of-type(1) .roadmap-chip {
+    color: var(--red);
+    border-color: rgba(184, 82, 47, 0.22);
+    background: rgba(251, 239, 233, 0.92);
   }
 
   .roadmap-label {
@@ -765,21 +877,26 @@
     border-radius: 999px;
     font-size: 9px;
     color: var(--text-1);
+    border-color: rgba(59, 46, 42, 0.1);
+    background: rgba(255, 250, 243, 0.86);
   }
 
   /* ─── Main Content ───────────────────── */
   .main {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    min-height: clamp(280px, 42vh, 520px);
+    max-height: clamp(320px, 54vh, 640px);
     background: linear-gradient(180deg, rgba(255, 251, 245, 0.28), rgba(234, 224, 208, 0.5));
   }
 
   /* ─── Terminal Output ────────────────── */
   .terminal-viewport {
-    flex: 1;
+    flex: 1 1 140px;
+    min-height: 120px;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 22px 24px 26px;
@@ -922,30 +1039,46 @@
 
   /* ─── Overlay: No sessions ───────────── */
   .overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(244, 238, 229, 0.96), rgba(234, 224, 208, 0.96));
+    position: relative;
+    inset: auto;
+    flex: 0 0 auto;
+    min-height: 188px;
+    max-height: 204px;
+    padding: 24px 18px 22px;
+    background:
+      linear-gradient(135deg, rgba(184, 82, 47, 0.08), transparent 56%),
+      linear-gradient(180deg, rgba(244, 238, 229, 0.96), rgba(234, 224, 208, 0.94));
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    z-index: 10;
-    transition: opacity 0.3s;
+    gap: 16px;
+    z-index: 2;
+    border-bottom: 1px solid rgba(184, 82, 47, 0.18);
+    overflow: hidden;
+    transition: opacity 0.3s ease, max-height 0.3s ease, min-height 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
   }
 
-  .overlay.hidden { opacity: 0; pointer-events: none; }
+  .overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    min-height: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-color: transparent;
+  }
 
   .overlay .radar {
-    width: 84px;
-    height: 84px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    border: 1px solid var(--border-strong);
+    border: 1px solid rgba(184, 82, 47, 0.24);
     position: relative;
     display: grid;
     place-items: center;
     background: radial-gradient(circle at center, rgba(255, 255, 255, 0.44), transparent 60%);
-    box-shadow: var(--paper-shadow-lg);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55), var(--paper-shadow-lg);
   }
 
   .overlay .radar::after {
@@ -965,24 +1098,25 @@
   @keyframes radarSweep { to { transform: rotate(360deg); } }
 
   .overlay h2 {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-0);
     text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   .overlay p {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-1);
     text-align: center;
     line-height: 1.8;
-    max-width: 280px;
+    max-width: 320px;
   }
 
   /* ─── New Terminal FAB ───────────────── */
   .fab {
     position: absolute;
-    bottom: 80px;
+    bottom: 16px;
     right: 16px;
     width: 48px;
     height: 48px;
@@ -1074,14 +1208,34 @@
   @media (max-width: 720px) {
     .roadmap-grid { grid-template-columns: 1fr; }
 
-    header { padding: 14px 16px 12px; }
+    header { padding: 14px 16px 16px; }
+    header::after { left: 14px; right: 14px; }
     .task-board,
     .project-panel,
     .quick-actions,
     .input-bar { padding-left: 14px; padding-right: 14px; }
 
+    .main {
+      min-height: 248px;
+      max-height: 360px;
+    }
+
+    .overlay {
+      min-height: 168px;
+      max-height: 176px;
+      padding: 20px 14px 18px;
+    }
+
+    .overlay.hidden {
+      min-height: 0;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
     .terminal-viewport { padding: 18px 16px 22px; }
     .task-card { min-width: 220px; }
+    .fab { right: 14px; bottom: 14px; }
   }
 </style>
 </head>

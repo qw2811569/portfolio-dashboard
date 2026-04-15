@@ -4,6 +4,7 @@ const callAiRaw = vi.fn()
 const callGeminiGrounded = vi.fn()
 const ensureAiConfigured = vi.fn()
 const extractGeminiText = vi.fn()
+const collectCmoneyNotes = vi.fn()
 
 vi.mock('../../api/_lib/ai-provider.js', async () => {
   const actual = await import('../../api/_lib/ai-provider.js')
@@ -13,6 +14,14 @@ vi.mock('../../api/_lib/ai-provider.js', async () => {
     callGeminiGrounded,
     ensureAiConfigured,
     extractGeminiText,
+  }
+})
+
+vi.mock('../../api/cmoney-notes.js', async () => {
+  const actual = await import('../../api/cmoney-notes.js')
+  return {
+    ...actual,
+    collectCmoneyNotes,
   }
 })
 
@@ -45,12 +54,15 @@ describe('api/analyst-reports handler', () => {
     global.fetch = vi.fn()
     ensureAiConfigured.mockReturnValue({ provider: 'anthropic' })
     extractGeminiText.mockReturnValue('')
+    collectCmoneyNotes.mockResolvedValue({ reports: [], aggregate: null, source: 'cmoney' })
     delete process.env.USE_GEMINI_GROUNDING
+    delete process.env.USE_CMONEY_NOTES
   })
 
   afterEach(() => {
     global.fetch = originalFetch
     delete process.env.USE_GEMINI_GROUNDING
+    delete process.env.USE_CMONEY_NOTES
   })
 
   it('uses grounded Gemini results when valid target rows exist', async () => {
@@ -128,6 +140,68 @@ describe('api/analyst-reports handler', () => {
           target: 980,
           targetType: 'price-target',
           url: 'https://example.com/rss-1',
+        }),
+      ],
+    })
+  })
+
+  it('falls back to CMoney notes when Gemini and RSS both return no target rows', async () => {
+    process.env.USE_CMONEY_NOTES = '1'
+    extractGeminiText.mockReturnValue('{"reports":[]}')
+    callAiRaw.mockResolvedValue({
+      content: [
+        {
+          type: 'text',
+          text: '{"items":[{"id":"rss-1","summary":"沒有明確目標價","target":null,"targetType":"none","targetEvidence":"","firm":"","stance":"unknown","tags":["投顧"],"confidence":0.2}]}',
+        },
+      ],
+    })
+    global.fetch.mockResolvedValue({
+      ok: true,
+      text: async () =>
+        `<?xml version="1.0" encoding="UTF-8"?><rss><channel>
+          <item>
+            <title>3491 昇達科 法說重點</title>
+            <link>https://example.com/rss-1</link>
+            <pubDate>Wed, 15 Apr 2026 01:00:00 GMT</pubDate>
+            <description>只有法說摘要，沒有明確目標價</description>
+            <source>經濟日報</source>
+          </item>
+        </channel></rss>`,
+    })
+    collectCmoneyNotes.mockResolvedValue({
+      reports: [
+        {
+          firm: '元大投顧',
+          target: 980,
+          stance: 'buy',
+          date: '2026-04-15',
+          source_url: 'https://www.cmoney.tw/notes/note-detail.aspx?nid=1',
+          evidence: '昇達科(3491)今日僅元大投顧發布績效評等報告，評價為看多，目標價為980元。',
+        },
+      ],
+      aggregate: null,
+      source: 'cmoney',
+    })
+
+    const { default: handler } = await import('../../api/analyst-reports.js')
+    const req = { method: 'POST', body: { code: '3491', name: '昇達科' } }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(collectCmoneyNotes).toHaveBeenCalledTimes(1)
+    expect(res.headers['x-target-price-source']).toBe('cmoney')
+    expect(res.headers['x-target-price-count']).toBe('1')
+    expect(res.payload).toMatchObject({
+      targetPriceSource: 'cmoney',
+      targetPriceCount: 1,
+      items: [
+        expect.objectContaining({
+          firm: '元大投顧',
+          target: 980,
+          targetType: 'price-target',
+          url: 'https://www.cmoney.tw/notes/note-detail.aspx?nid=1',
         }),
       ],
     })

@@ -62,3 +62,11 @@
 - **覆蓋率仍 4/11**（2489 瑞軒從 false-positive 42.9 掉到 0，3167 大量補回真 target 319）
 - **根因確認**：7/11 小型股 RSS 新聞**本身沒有明確 target price 文字**，prompt tuning 天花板到此
 - 要 ≥8/11 必須進 **Phase 3**：換更強 grounding 的 provider（Gemini 2.5 Flash）或擴大資料源（Yahoo 股市 / CMoney 頁面），不能再調 prompt
+
+## 2026-04-16 Phase 3 status
+
+- ✅ 新增 `api/cmoney-notes.js`
+- ✅ `analyst-reports` fallback 擴成 `Gemini → RSS → CMoney → per-band`
+- ✅ 同 firm 衝突改成保留最新 date
+- ✅ 補 parser / handler tests
+- ⏸️ 尚未加 cron / 尚未 prod ship

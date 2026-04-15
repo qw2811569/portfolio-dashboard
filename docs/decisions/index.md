@@ -10,6 +10,7 @@
 | [2026-03-25-targets-freshness](./2026-03-25-targets-freshness.md)                       | 2026-03-25 | ✅ 決議         | 目標價 freshness 7/30 天、fundamentals 用 entry.updatedAt、shared date parser 支援 YYYY/MM + ISO                                              |
 | [2026-04-15-target-price-pipeline-fix](./2026-04-15-target-price-pipeline-fix.md)       | 2026-04-15 | ✅ phase 1 完工 | 修 cron timeout (maxDuration=60) + RSS 3 條 query + backfill CLI；Phase 2 weekly + observability；Phase 3 AB test Gemini/Perplexity/Anthropic |
 | [2026-04-16-target-price-scraping-source](./2026-04-16-target-price-scraping-source.md) | 2026-04-16 | 🚫 blocked      | Goodinfo 路徑失效、Yahoo 對 AI bot 明文禁止、cnyes 只公開 aggregate consensus，無法達成 per-firm target 明細抓取                              |
+| [2026-04-16-cmoney-notes-as-phase3](./2026-04-16-cmoney-notes-as-phase3.md)             | 2026-04-16 | ✅ 實作完成     | CMoney `notes/?tag=78570` 進 target-price Phase 3：單券商抽 firm-level， 多券商保留 aggregate fallback                                        |
 | [2026-04-15-no-gemini-data-scraping](./2026-04-15-no-gemini-data-scraping.md)           | 2026-04-15 | ✅ 決議         | Gemini 不做資料蒐集，只做用戶盲點審查 + multi-LLM 反駁；GEMINI.md slim 到 90 行對齊                                                           |
 
 ## 架構

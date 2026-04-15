@@ -5,6 +5,11 @@ import {
   ensureAiConfigured,
   extractGeminiText,
 } from './_lib/ai-provider.js'
+import {
+  buildCmoneyAggregateItem,
+  buildCmoneyInsightItem,
+  collectCmoneyNotes,
+} from './cmoney-notes.js'
 
 function decodeHtml(value) {
   return String(value || '')
@@ -74,6 +79,10 @@ function parseBoolean(value) {
   )
 }
 
+export function isCmoneyNotesEnabled() {
+  return parseBoolean(process.env.USE_CMONEY_NOTES)
+}
+
 export function isGeminiGroundingEnabled() {
   return parseBoolean(process.env.USE_GEMINI_GROUNDING)
 }
@@ -125,6 +134,27 @@ function normalizeSourceUrl(value) {
   }
 }
 
+export function normalizeReportDate(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+
+  const normalized = raw.replace(/[/.]/g, '-')
+  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (match) {
+    const [, year, month, day] = match
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  const year = parsed.getUTCFullYear()
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function dedupeLatestGeminiReports(reports = []) {
   const latestByFirm = new Map()
 
@@ -147,6 +177,80 @@ export function dedupeLatestGeminiReports(reports = []) {
     const previous = latestByFirm.get(firm)
     if (!previous || previous.date < normalized.date) {
       latestByFirm.set(firm, normalized)
+    }
+  }
+
+  return [...latestByFirm.values()].sort((a, b) => b.date.localeCompare(a.date))
+}
+
+function buildReportId(stock, report) {
+  return createHash('sha1')
+    .update([stock.code, report.firm, report.target, report.date, report.source_url].join('|'))
+    .digest('hex')
+    .slice(0, 16)
+}
+
+function normalizeUnifiedStance(value) {
+  const raw = String(value || '').trim()
+  if (['buy', 'hold', 'sell', 'outperform', 'neutral', 'underperform', 'unknown'].includes(raw)) {
+    return raw
+  }
+  if (raw === 'bullish') return 'buy'
+  if (raw === 'neutral') return 'neutral'
+  if (raw === 'bearish') return 'sell'
+  return 'unknown'
+}
+
+function normalizeReportFirm(value) {
+  return String(value || '')
+    .replace(/\s+/g, '')
+    .trim()
+}
+
+function normalizeStructuredReport(report, source) {
+  const firm = normalizeReportFirm(report?.firm)
+  const target = Number(report?.target)
+  const date = normalizeReportDate(report?.date || report?.publishedAt)
+  const sourceUrl = normalizeSourceUrl(report?.source_url || report?.url)
+  if (!firm || !date || !Number.isFinite(target) || target <= 0 || !sourceUrl) return null
+
+  return {
+    firm,
+    target,
+    date,
+    stance: normalizeUnifiedStance(report?.stance),
+    source_url: sourceUrl,
+    evidence: String(
+      report?.evidence || report?.targetEvidence || report?.summary || report?.snippet || ''
+    ).trim(),
+    source,
+  }
+}
+
+export function mergeLatestReportsByFirm(sourceEntries = []) {
+  const priority = { gemini: 3, rss: 2, cmoney: 1 }
+  const latestByFirm = new Map()
+
+  for (const entry of Array.isArray(sourceEntries) ? sourceEntries : []) {
+    const normalized = normalizeStructuredReport(entry, entry?.source)
+    if (!normalized) continue
+
+    const previous = latestByFirm.get(normalized.firm)
+    if (!previous) {
+      latestByFirm.set(normalized.firm, normalized)
+      continue
+    }
+
+    if (previous.date < normalized.date) {
+      latestByFirm.set(normalized.firm, normalized)
+      continue
+    }
+
+    if (
+      previous.date === normalized.date &&
+      (priority[normalized.source] || 0) > (priority[previous.source] || 0)
+    ) {
+      latestByFirm.set(normalized.firm, normalized)
     }
   }
 
@@ -380,6 +484,27 @@ async function collectRssReports(stock, knownHashes, maxItems, maxExtract) {
   }
 }
 
+async function collectCmoneyReports(stock) {
+  const payload = await collectCmoneyNotes({ code: stock.code, name: stock.name })
+  const items = payload.reports.map((report, index) => buildCmoneyInsightItem(stock, report, index))
+
+  if (payload.aggregate) {
+    items.push(buildCmoneyAggregateItem(stock, payload.aggregate))
+  }
+
+  return {
+    query: { code: stock.code, name: stock.name, mode: 'cmoney' },
+    fetchedAt: new Date().toISOString(),
+    totalFound: items.length,
+    newCount: items.length,
+    items,
+    reports: payload.reports,
+    aggregate: payload.aggregate,
+    targetPriceSource: items.length > 0 ? 'cmoney' : 'per-band',
+    targetPriceCount: payload.reports.length,
+  }
+}
+
 async function extractInsights(stock, items) {
   if (!Array.isArray(items) || items.length === 0) return new Map()
   try {
@@ -492,18 +617,119 @@ export default async function handler(req, res) {
     }
 
     const stock = { code, name }
-    let payload = null
+    let geminiPayload = null
+    let rssPayload = null
+    let cmoneyPayload = null
 
     if (isGeminiGroundingEnabled()) {
       try {
-        payload = await collectGeminiGroundedReports(stock)
+        geminiPayload = await collectGeminiGroundedReports(stock)
       } catch {
-        payload = null
+        geminiPayload = null
       }
     }
 
-    if (!payload || payload.targetPriceCount === 0) {
-      payload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
+    if (!geminiPayload || geminiPayload.targetPriceCount === 0) {
+      try {
+        rssPayload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
+      } catch {
+        rssPayload = {
+          query: { code: stock.code, name: stock.name, mode: 'rss' },
+          fetchedAt: new Date().toISOString(),
+          totalFound: 0,
+          newCount: 0,
+          items: [],
+          targetPriceSource: 'per-band',
+          targetPriceCount: 0,
+        }
+      }
+    }
+
+    if (
+      isCmoneyNotesEnabled() &&
+      (!geminiPayload || geminiPayload.targetPriceCount === 0) &&
+      (!rssPayload || rssPayload.targetPriceCount === 0)
+    ) {
+      try {
+        cmoneyPayload = await collectCmoneyReports(stock)
+      } catch {
+        cmoneyPayload = null
+      }
+    }
+
+    const mergedReports = mergeLatestReportsByFirm([
+      ...(geminiPayload?.reports || geminiPayload?.items || []).map((item) => ({
+        ...item,
+        source: 'gemini',
+      })),
+      ...(rssPayload?.items || [])
+        .filter((item) => Number.isFinite(Number(item?.target)) && Number(item.target) > 0)
+        .map((item) => ({ ...item, source: 'rss' })),
+      ...(cmoneyPayload?.reports || cmoneyPayload?.items || []).map((item) => ({
+        ...item,
+        source: 'cmoney',
+      })),
+    ])
+
+    let payload = null
+    if (mergedReports.length > 0) {
+      const primarySource = mergedReports[0]?.source || 'rss'
+      const items = mergedReports.map((report, index) => ({
+        id: buildReportId(stock, report),
+        hash: buildReportId(stock, report),
+        title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
+        url: report.source_url,
+        source: report.firm,
+        publishedAt: report.date,
+        snippet: report.evidence,
+        summary: report.evidence,
+        target: report.target,
+        targetType: 'price-target',
+        targetEvidence: report.evidence,
+        firm: report.firm,
+        stance: report.stance,
+        tags: [`${report.source}-merged`],
+        confidence: null,
+        extractedAt: new Date().toISOString(),
+        rank: index + 1,
+      }))
+
+      payload = {
+        query: {
+          code: stock.code,
+          name: stock.name,
+          mode: 'merged',
+        },
+        fetchedAt:
+          geminiPayload?.fetchedAt ||
+          rssPayload?.fetchedAt ||
+          cmoneyPayload?.fetchedAt ||
+          new Date().toISOString(),
+        totalFound: items.length,
+        newCount: items.length,
+        items,
+        aggregate: cmoneyPayload?.aggregate || null,
+        targetPriceSource: primarySource,
+        targetPriceCount: items.length,
+      }
+    } else if (cmoneyPayload?.aggregate) {
+      payload = {
+        ...cmoneyPayload,
+        targetPriceSource: 'cmoney',
+        targetPriceCount: 0,
+      }
+    } else if (rssPayload) {
+      payload = rssPayload
+    } else {
+      payload = {
+        query: { code: stock.code, name: stock.name, mode: 'per-band' },
+        fetchedAt: new Date().toISOString(),
+        totalFound: 0,
+        newCount: 0,
+        items: [],
+        targetPriceSource: 'per-band',
+        targetPriceCount: 0,
+      }
     }
 
     res.setHeader('x-target-price-source', payload.targetPriceSource)

@@ -6,7 +6,9 @@ import {
   dedupeLatestGeminiReports,
   buildRssUrls,
   extractExplicitTarget,
+  mergeLatestReportsByFirm,
   normalizeRssItems,
+  normalizeReportDate,
   parseGeminiGroundedReports,
   rankRssItemsForExtraction,
 } from '../../api/analyst-reports.js'
@@ -172,5 +174,57 @@ describe('api/analyst-reports helpers', () => {
     expect(prompt).toContain('近30天，3491 昇達科')
     expect(prompt).toContain('只輸出 JSON')
     expect(prompt).toContain('不要輸出 markdown')
+  })
+
+  it('normalizes report dates from mixed source formats', () => {
+    expect(normalizeReportDate('2026/4/15')).toBe('2026-04-15')
+    expect(normalizeReportDate('Wed, 15 Apr 2026 01:00:00 GMT')).toBe('2026-04-15')
+  })
+
+  it('keeps the latest target per firm across mixed sources', () => {
+    expect(
+      mergeLatestReportsByFirm([
+        {
+          firm: '元大投顧',
+          target: 950,
+          date: '2026-04-10',
+          source_url: 'https://example.com/rss-old',
+          source: 'rss',
+        },
+        {
+          firm: '元大投顧',
+          target: 980,
+          date: '2026-04-15',
+          source_url: 'https://example.com/cmoney-new',
+          source: 'cmoney',
+        },
+        {
+          firm: '凱基投顧',
+          target: 1020,
+          date: '2026-04-12',
+          source_url: 'https://example.com/gemini-kgi',
+          source: 'gemini',
+        },
+      ])
+    ).toEqual([
+      {
+        firm: '元大投顧',
+        target: 980,
+        date: '2026-04-15',
+        stance: 'unknown',
+        source_url: 'https://example.com/cmoney-new',
+        evidence: '',
+        source: 'cmoney',
+      },
+      {
+        firm: '凱基投顧',
+        target: 1020,
+        date: '2026-04-12',
+        stance: 'unknown',
+        source_url: 'https://example.com/gemini-kgi',
+        evidence: '',
+        source: 'gemini',
+      },
+    ])
   })
 })

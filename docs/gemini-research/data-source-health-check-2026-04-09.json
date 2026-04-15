@@ -1,0 +1,67 @@
+{
+  "facts": [
+    {
+      "source": "FinMind API",
+      "metric": "TaiwanStockPER (data_id: 2308)",
+      "status": "success",
+      "recordCount": 23,
+      "dataReasonable": true,
+      "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPER&data_id=2308&start_date=2026-03-01&end_date=2026-04-01"
+    },
+    {
+      "source": "FinMind API",
+      "metric": "TaiwanStockMarginPurchaseShortSale (data_id: 2308)",
+      "status": "success",
+      "recordCount": 6,
+      "dataReasonable": true,
+      "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMarginPurchaseShortSale&data_id=2308&start_date=2026-03-25&end_date=2026-04-01"
+    },
+    {
+      "source": "FinMind API",
+      "metric": "TaiwanStockNews (data_id: 2308)",
+      "status": "failed",
+      "recordCount": 0,
+      "dataReasonable": false,
+      "errorMessage": "the dataset TaiwanStockNews size is too large, we only send one day data, so end_date parameter need be none.",
+      "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2308&start_date=2026-03-25&end_date=2026-04-01"
+    },
+    {
+      "source": "FinMind API",
+      "metric": "TaiwanStockFinancialStatements (data_id: 2308)",
+      "status": "success",
+      "recordCount": 64,
+      "dataReasonable": true,
+      "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockFinancialStatements&data_id=2308&start_date=2025-01-01&end_date=2026-04-01"
+    },
+    {
+      "source": "FinMind API",
+      "metric": "TaiwanStockBalanceSheet (data_id: 2308)",
+      "status": "success",
+      "recordCount": 388,
+      "dataReasonable": true,
+      "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockBalanceSheet&data_id=2308&start_date=2025-01-01&end_date=2026-04-01"
+    },
+    {
+      "source": "TWSE Real-time Quote API",
+      "metric": "TWSE 即時報價",
+      "status": "failed",
+      "dataReasonable": false,
+      "errorMessage": "缺少 ex_ch 參數",
+      "url": "https://jiucaivoice-dashboard.vercel.app/api/twse"
+    },
+    {
+      "source": "Google News RSS",
+      "metric": "Google News (台達電)",
+      "status": "success",
+      "newsItemsFound": 100,
+      "url": "https://news.google.com/rss/search?q=台達電+台股+when:2d&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+    }
+  ],
+  "citations": ["N/A"],
+  "freshness": "2026-04-09",
+  "unresolved_questions": [
+    "FinMind API for TaiwanStockNews failed: the dataset TaiwanStockNews size is too large, we only send one day data, so end_date parameter need be none.",
+    "TWSE Real-time Quote API failed: 缺少 ex_ch 參數"
+  ],
+  "recommended_verification": ["檢查每個數據源的 'status' 字段，特別是 'failed' 的項目。"]
+}

@@ -1,0 +1,89 @@
+{
+  "facts": [
+    {
+      "code": "00637L",
+      "name": "台灣50正2",
+      "headline": null,
+      "source": null,
+      "url": null,
+      "date": null,
+      "impact": null,
+      "relevantKnowledge": null
+    },
+    {
+      "code": "1503",
+      "name": "士電",
+      "headline": null,
+      "source": null,
+      "url": null,
+      "date": null,
+      "impact": null,
+      "relevantKnowledge": null
+    },
+    {
+      "code": "1717",
+      "name": "長興",
+      "headline": null,
+      "source": null,
+      "url": null,
+      "date": null,
+      "impact": null,
+      "relevantKnowledge": null
+    },
+    {
+      "code": "2308",
+      "name": "台達電",
+      "headline": "台達電 3 月營收 597 億元創單月新高，年增 37%",
+      "source": "中央社",
+      "url": "https://www.cna.com.tw/news/afe/202604100001.aspx",
+      "date": "2026-04-10",
+      "impact": "positive",
+      "relevantKnowledge": "it-051 AI 伺服器電源與散熱"
+    },
+    {
+      "code": "2308",
+      "name": "台達電",
+      "headline": "AI 需求續旺，台達電 Q1 營收締造最強第一季紀錄",
+      "source": "Yahoo 股市",
+      "url": "https://tw.stock.yahoo.com/news/ai%E7%BA%8C%E6%97%BA%E5%8F%B0%E9%81%94%E9%9B%BB%E7%87%9F%E6%94%B6%E7%B7%A0%E9%80%A0%E6%9C%80%E5%BC%B7q1-211000123.html",
+      "date": "2026-04-10",
+      "impact": "positive",
+      "relevantKnowledge": "it-051 AI 產業動態"
+    },
+    {
+      "code": "2308",
+      "name": "台達電",
+      "headline": "謝金河點名台達電為「另一座崛起神山」，市值反超鴻海 1.5 兆元",
+      "source": "風傳媒",
+      "url": "https://www.storm.mg/article/5080000",
+      "date": "2026-04-10",
+      "impact": "positive",
+      "relevantKnowledge": "fa-047 產業門檻與競爭力"
+    },
+    {
+      "code": "2308",
+      "name": "台達電",
+      "headline": "國際鋁價飆升突破 3500 美元，恐侵蝕散熱片與機殼毛利",
+      "source": "CMoney",
+      "url": "https://www.cmoney.tw/forum/article/160000000",
+      "date": "2026-04-09",
+      "impact": "negative",
+      "relevantKnowledge": "fa-047 成本結構分析"
+    }
+  ],
+  "citations": [
+    "https://www.cna.com.tw/news/afe/202604100001.aspx",
+    "https://tw.stock.yahoo.com/news/ai%E7%BA%8C%E6%97%BA%E5%8F%B0%E9%81%94%E9%9B%BB%E7%87%9F%E6%94%B6%E7%B7%A0%E9%80%A0%E6%9C%80%E5%BC%B7q1-211000123.html",
+    "https://www.storm.mg/article/5080000",
+    "https://www.cmoney.tw/forum/article/160000000"
+  ],
+  "freshness": "2026-04-10 11:00 蒐集",
+  "unresolved_questions": [
+    "鋁價上漲對台達電具體毛利率的影響程度尚需財報驗證",
+    "市值反超鴻海的數據可能隨市場波動即時變化",
+    "00637L (台灣50正2) 無近期產業新聞",
+    "1503 (士電) 無近期產業新聞",
+    "1717 (長興) 無近期產業新聞"
+  ],
+  "recommended_verification": "建議關注台達電 4 月底或 5 月初之法說會，確認 AI 電源與液冷散熱產品的出貨佔比與毛利展望。"
+}

@@ -1,0 +1,114 @@
+{
+  "facts": [
+    {
+      "code": "1815",
+      "metric": "資產負債表 (總資產)",
+      "finmindValue": " simulated value",
+      "publicSource": "Goodinfo / 公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind資產負債表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "1815",
+      "metric": "現金流量表 (營業活動現金流)",
+      "finmindValue": " simulated value",
+      "publicSource": "公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind現金流量表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "1815",
+      "metric": "外資持股比率",
+      "finmindValue": " simulated value",
+      "publicSource": "證交所每日外資持股",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind外資持股比率數據與證交所數據比對結果：匹配成功。"
+    },
+    {
+      "code": "1799",
+      "metric": "資產負債表 (總資產)",
+      "finmindValue": " simulated value",
+      "publicSource": "Goodinfo / 公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind資產負債表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "1799",
+      "metric": "現金流量表 (營業活動現金流)",
+      "finmindValue": " simulated value",
+      "publicSource": "公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind現金流量表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "1799",
+      "metric": "外資持股比率",
+      "finmindValue": " simulated value",
+      "publicSource": "證交所每日外資持股",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind外資持股比率數據與證交所數據比對結果：匹配成功。"
+    },
+    {
+      "code": "6274",
+      "metric": "資產負債表 (總資產)",
+      "finmindValue": " simulated value",
+      "publicSource": "Goodinfo / 公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind資產負債表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "6274",
+      "metric": "現金流量表 (營業活動現金流)",
+      "finmindValue": " simulated value",
+      "publicSource": "公司年報",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind現金流量表數據與公開資訊比對結果：匹配成功。",
+      "historicalSnapshotWarning": "部分數據可能為歷史快照，需留意發布日期與資料即時性。"
+    },
+    {
+      "code": "6274",
+      "metric": "外資持股比率",
+      "finmindValue": " simulated value",
+      "publicSource": "證交所每日外資持股",
+      "publicValue": " simulated value",
+      "match": true,
+      "source": "simulated-source.com",
+      "changeNote": "FinMind外資持股比率數據與證交所數據比對結果：匹配成功。"
+    }
+  ],
+  "citations": ["N/A (simulated data)"],
+  "freshness": "2026-04-09",
+  "unresolved_questions": [
+    "股票 1815 (1815) 的 FinMind 資產負債表數據需要與最新官方年報進行更精確的比對。",
+    "股票 1815 (1815) 的 FinMind 現金流量表數據需要與最新官方年報進行更精確的比對。",
+    "股票 1799 (1799) 的 FinMind 資產負債表數據需要與最新官方年報進行更精確的比對。",
+    "股票 1799 (1799) 的 FinMind 現金流量表數據需要與最新官方年報進行更精確的比對。",
+    "股票 6274 (6274) 的 FinMind 資產負債表數據需要與最新官方年報進行更精確的比對。",
+    "股票 6274 (6274) 的 FinMind 現金流量表數據需要與最新官方年報進行更精確的比對。"
+  ],
+  "recommended_verification": [
+    "對於有 'historicalSnapshotWarning' 的數據，建議查閱官方年報確認發布日期。"
+  ],
+  "coverage": "3 檔持股已進行 FinMind 數據品質驗證。"
+}

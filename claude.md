@@ -6,6 +6,19 @@
 
 ---
 
+## 🚀 Session 開頭先讀這 3 個（必做）
+
+1. `agent-bridge-standalone/project-status.json` — 9 個 tab、已完成清單、roadmap、分工 load
+2. `coordination/llm-bus/agent-bridge-tasks.json` — 當前 task 佇列
+3. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
+
+讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼。
+視覺版：http://35.236.155.62:9527（VM Dashboard）
+
+**不要先讀 AGENTS.md / SOUL.md / IDENTITY.md / HEARTBEAT.md**（跟本專案無關）。
+
+---
+
 ## 🛑 RULE 0 — Claude 不碰實作
 
 **我是建築師，不是工人。**

@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a0a0f">
 <title>Agent Bridge</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Serif:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Courier+Prime:wght@400;700&family=IBM+Plex+Serif:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600&family=Permanent+Marker&family=Space+Mono:wght@400;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   button, input, textarea {
@@ -42,6 +42,14 @@
     --accent-indigo: #5d72d6;
     --accent-bone: #fff4dd;
     --accent-maroon: #7c1711;
+    --drive-neon-pink: #D63A7C;
+    --drive-electric-blue: #2D8CFF;
+    --drive-sunset-purple: #4b2a70;
+    --drive-sunset-magenta: #a63075;
+    --drive-sunset-orange: #f08b4c;
+    --drive-vhs-line: rgba(255, 255, 255, 0.035);
+    --drive-vhs-glow: rgba(214, 58, 124, 0.24);
+    --drive-script: 'Permanent Marker', 'Caveat', cursive;
     --claude: #ff8a63;
     --codex: #96a77b;
     --qwen: #79b2bf;
@@ -103,6 +111,14 @@
   }
 
   body > * { position: relative; z-index: 1; }
+
+  .drive-script-number {
+    font-family: var(--drive-script);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+    text-transform: none;
+  }
 
   header,
   .agent-tabs,
@@ -214,8 +230,9 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(90deg, rgba(224, 68, 49, 0.18), transparent 38%),
-      linear-gradient(270deg, rgba(124, 167, 186, 0.14), transparent 32%);
+      linear-gradient(120deg, rgba(75, 42, 112, 0.72), rgba(166, 48, 117, 0.52) 46%, rgba(240, 139, 76, 0.28) 100%),
+      radial-gradient(circle at 12% 18%, rgba(214, 58, 124, 0.24), transparent 24%),
+      linear-gradient(270deg, rgba(45, 140, 255, 0.14), transparent 34%);
     pointer-events: none;
   }
 
@@ -227,8 +244,8 @@
     bottom: 0;
     height: 4px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent-soft) 0 28%, var(--accent-bone) 28% 37%, var(--accent-gold) 37% 58%, var(--accent-blue) 58% 100%);
-    box-shadow: 0 0 20px rgba(224, 68, 49, 0.28);
+    background: linear-gradient(90deg, var(--drive-sunset-purple) 0 18%, var(--drive-neon-pink) 18% 54%, var(--drive-sunset-orange) 54% 84%, var(--drive-electric-blue) 84% 100%);
+    box-shadow: 0 0 20px var(--drive-vhs-glow);
   }
 
   .logo {
@@ -241,7 +258,7 @@
     width: 36px;
     height: 36px;
     border-radius: 11px;
-    background: linear-gradient(145deg, var(--accent-soft), var(--accent-maroon));
+    background: linear-gradient(145deg, var(--drive-neon-pink), var(--drive-sunset-purple) 60%, var(--drive-electric-blue));
     border: 1px solid rgba(255, 244, 221, 0.18);
     color: var(--accent-bone);
     display: grid;
@@ -413,6 +430,10 @@
   .task-count {
     padding: 4px 9px;
     font-weight: 700;
+    font-family: var(--drive-script);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    line-height: 1;
   }
 
   .task-toggle {
@@ -448,16 +469,16 @@
     position: absolute;
     inset: 0 0 auto;
     height: 3px;
-    background: linear-gradient(90deg, rgba(255, 125, 88, 0.84), rgba(207, 151, 71, 0.58) 44%, rgba(124, 167, 186, 0.44) 100%);
+    background: linear-gradient(90deg, rgba(75, 42, 112, 0.84), rgba(214, 58, 124, 0.82) 42%, rgba(240, 139, 76, 0.62) 74%, rgba(45, 140, 255, 0.5) 100%);
     pointer-events: none;
   }
 
   .task-card[data-status="in_progress"] {
-    border-color: rgba(224, 68, 49, 0.42);
-    box-shadow: 0 0 0 1px rgba(224, 68, 49, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
+    border-color: rgba(214, 58, 124, 0.42);
+    box-shadow: 0 0 0 1px rgba(214, 58, 124, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
   }
 
-  .task-card[data-status="blocked"] { border-color: rgba(255, 125, 88, 0.42); }
+  .task-card[data-status="blocked"] { border-color: rgba(240, 139, 76, 0.42); }
   .task-card[data-status="completed"] {
     border-color: rgba(141, 157, 114, 0.34);
     opacity: 0.84;
@@ -493,9 +514,9 @@
   }
 
   .task-status.in_progress {
-    color: #ffb5a5;
-    border-color: rgba(224, 68, 49, 0.34);
-    background: rgba(224, 68, 49, 0.14);
+    color: #ffb7d8;
+    border-color: rgba(214, 58, 124, 0.34);
+    background: rgba(214, 58, 124, 0.14);
   }
 
   .task-status.blocked {
@@ -607,12 +628,12 @@
     border: 1px solid rgba(255, 244, 221, 0.16);
     border-radius: 11px;
     padding: 9px 10px;
-    background: linear-gradient(135deg, var(--accent-soft), var(--accent) 54%, var(--accent-maroon));
+    background: linear-gradient(135deg, var(--drive-sunset-purple), var(--drive-neon-pink) 56%, var(--drive-electric-blue));
     color: var(--accent-bone);
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 18px 32px rgba(92, 10, 5, 0.36);
+    box-shadow: 0 18px 32px rgba(48, 15, 88, 0.38);
   }
 
   .task-dispatch:disabled,
@@ -655,8 +676,8 @@
     padding: 16px;
     border-radius: 20px;
     background:
-      radial-gradient(circle at top right, rgba(110, 161, 155, 0.12), transparent 30%),
-      radial-gradient(circle at bottom left, rgba(224, 68, 49, 0.14), transparent 34%),
+      radial-gradient(circle at top right, rgba(45, 140, 255, 0.14), transparent 30%),
+      radial-gradient(circle at bottom left, rgba(214, 58, 124, 0.16), transparent 34%),
       linear-gradient(180deg, rgba(18, 24, 31, 0.98), rgba(9, 14, 19, 0.98));
     border: 1px solid rgba(255, 244, 221, 0.09);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
@@ -673,7 +694,31 @@
     background:
       linear-gradient(90deg, transparent 49.7%, rgba(255, 244, 221, 0.035) 49.7%, rgba(255, 244, 221, 0.035) 50.3%, transparent 50.3%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%);
-    opacity: 0.72;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+
+  .product-map-board:hover::after,
+  .project-section:hover::before,
+  .overview-card:hover::after,
+  .roadmap-col:hover::after,
+  .task-card:hover::after {
+    opacity: 1;
+  }
+
+  .project-section::before,
+  .overview-card::after,
+  .roadmap-col::after,
+  .task-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 2px, var(--drive-vhs-line) 2px 3px, transparent 3px 6px),
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.05), transparent 28%);
+    opacity: 0;
+    transition: opacity 0.18s ease;
   }
 
   .product-map-board > * {
@@ -753,7 +798,13 @@
     color: var(--text-1);
   }
 
-  .product-stat strong { color: var(--text-0); }
+  .product-stat strong {
+    color: var(--text-0);
+    font-family: var(--drive-script);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 0.95;
+  }
 
   .product-stat.live {
     color: #d7ebba;
@@ -1170,8 +1221,8 @@
   }
 
   .overview-value {
-    font-family: 'Courier Prime', 'Space Mono', monospace;
-    font-size: 24px;
+    font-family: var(--drive-script);
+    font-size: 28px;
     line-height: 1;
     color: var(--text-0);
   }
@@ -1198,8 +1249,8 @@
     bottom: 2px;
     width: 3px;
     border-radius: 999px;
-    background: linear-gradient(180deg, var(--accent-soft), var(--accent-gold));
-    box-shadow: 0 0 14px rgba(255, 125, 88, 0.22);
+    background: linear-gradient(180deg, var(--drive-neon-pink), var(--drive-electric-blue));
+    box-shadow: 0 0 14px var(--drive-vhs-glow);
   }
 
   .agent-grid,
@@ -1256,9 +1307,9 @@
   }
 
   .agent-load.high {
-    background: rgba(224, 68, 49, 0.14);
-    color: #ffc3b6;
-    border-color: rgba(224, 68, 49, 0.26);
+    background: rgba(214, 58, 124, 0.14);
+    color: #ffc5de;
+    border-color: rgba(214, 58, 124, 0.26);
   }
 
   .agent-load.medium {
@@ -1453,11 +1504,12 @@
   .roadmap-summary-chip {
     padding: 4px 10px;
     border-radius: 999px;
-    font-family: 'Space Mono', 'Courier Prime', monospace;
-    font-size: 10px;
+    font-family: var(--drive-script);
+    font-size: 16px;
     color: var(--text-1);
     border: 1px solid rgba(255, 244, 221, 0.12);
     background: rgba(255, 244, 221, 0.04);
+    line-height: 1;
   }
 
   .roadmap-summary-title,
@@ -1501,8 +1553,8 @@
   }
 
   .roadmap-segment.in_progress {
-    background: linear-gradient(90deg, rgba(224, 68, 49, 0.94), rgba(255, 125, 88, 0.82));
-    box-shadow: 0 0 18px rgba(224, 68, 49, 0.2);
+    background: linear-gradient(90deg, rgba(214, 58, 124, 0.94), rgba(45, 140, 255, 0.82));
+    box-shadow: 0 0 18px rgba(214, 58, 124, 0.24);
   }
 
   .roadmap-segment.blocked {
@@ -1535,6 +1587,12 @@
     background: rgba(255, 244, 221, 0.04);
   }
 
+  .timeline-stat {
+    font-family: var(--drive-script);
+    font-size: 14px;
+    line-height: 1;
+  }
+
   .roadmap-stat.completed,
   .architecture-chip.completed,
   .timeline-stat.completed {
@@ -1544,9 +1602,9 @@
   }
 
   .roadmap-stat.in_progress {
-    color: #ffcabd;
-    border-color: rgba(224, 68, 49, 0.3);
-    background: rgba(224, 68, 49, 0.12);
+    color: #ffc5de;
+    border-color: rgba(214, 58, 124, 0.3);
+    background: rgba(214, 58, 124, 0.12);
   }
 
   .roadmap-stat.blocked {
@@ -1581,19 +1639,19 @@
   }
 
   .roadmap-col.phase-now {
-    border-color: rgba(224, 68, 49, 0.38);
-    box-shadow: 0 0 0 1px rgba(224, 68, 49, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
+    border-color: rgba(214, 58, 124, 0.38);
+    box-shadow: 0 0 0 1px rgba(214, 58, 124, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
   }
 
-  .roadmap-col.phase-now::before { background: var(--red); }
-  .roadmap-col.phase-now .roadmap-label { color: #ffae9a; }
+  .roadmap-col.phase-now::before { background: var(--drive-neon-pink); }
+  .roadmap-col.phase-now .roadmap-label { color: #ffc5de; }
 
   .roadmap-col.phase-next { border-color: rgba(207, 151, 71, 0.34); }
   .roadmap-col.phase-next::before { background: var(--accent-gold); }
 
   .roadmap-col.phase-later { border-color: rgba(124, 167, 186, 0.32); }
-  .roadmap-col.phase-later::before { background: var(--accent-blue); }
-  .roadmap-col.phase-later .roadmap-label { color: var(--accent-blue); }
+  .roadmap-col.phase-later::before { background: var(--drive-electric-blue); }
+  .roadmap-col.phase-later .roadmap-label { color: var(--drive-electric-blue); }
 
   .roadmap-label {
     font-size: 13px;
@@ -1624,9 +1682,9 @@
   }
 
   .roadmap-state.active {
-    color: #ffcabd;
-    border-color: rgba(224, 68, 49, 0.28);
-    background: rgba(224, 68, 49, 0.12);
+    color: #ffc5de;
+    border-color: rgba(214, 58, 124, 0.28);
+    background: rgba(214, 58, 124, 0.12);
   }
 
   .roadmap-state.complete {
@@ -1673,9 +1731,9 @@
   }
 
   .roadmap-chip.status-in_progress {
-    color: #ffcabd;
-    border-color: rgba(224, 68, 49, 0.3);
-    background: rgba(224, 68, 49, 0.12);
+    color: #ffc5de;
+    border-color: rgba(214, 58, 124, 0.3);
+    background: rgba(214, 58, 124, 0.12);
   }
 
   .roadmap-chip.status-blocked {
@@ -1751,8 +1809,8 @@
     padding: 14px;
     border-radius: 16px;
     background:
-      radial-gradient(circle at 18% 10%, rgba(224, 68, 49, 0.14), transparent 28%),
-      radial-gradient(circle at 82% 12%, rgba(124, 167, 186, 0.16), transparent 28%),
+      radial-gradient(circle at 18% 10%, rgba(214, 58, 124, 0.16), transparent 28%),
+      radial-gradient(circle at 82% 12%, rgba(45, 140, 255, 0.18), transparent 28%),
       linear-gradient(180deg, rgba(8, 12, 16, 0.94), rgba(10, 15, 20, 0.98));
     border: 1px solid rgba(255, 244, 221, 0.08);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm);
@@ -1832,7 +1890,7 @@
     box-shadow:
       0 0 0 1px rgba(255, 244, 221, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.04),
-      0 0 28px rgba(255, 125, 88, 0.14);
+      0 0 28px rgba(214, 58, 124, 0.16);
     transform: translateY(-1px);
   }
 
@@ -1984,12 +2042,12 @@
   }
 
   .terminal-line.prompt {
-    color: #ff8d6e;
+    color: #ff8fc3;
     font-weight: 700;
-    text-shadow: 0 0 16px rgba(255, 125, 88, 0.14);
+    text-shadow: 0 0 16px rgba(214, 58, 124, 0.18);
   }
 
-  .terminal-line.error { color: #ff9e8d; }
+  .terminal-line.error { color: #ff9cc9; }
   .terminal-line.system {
     color: #8ea4aa;
     font-style: italic;
@@ -2043,17 +2101,17 @@
   }
 
   .input-field:focus {
-    border-color: rgba(255, 125, 88, 0.46);
-    box-shadow: 0 0 0 3px rgba(255, 125, 88, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
+    border-color: rgba(214, 58, 124, 0.46);
+    box-shadow: 0 0 0 3px rgba(214, 58, 124, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-md);
   }
 
   .input-field::placeholder { color: var(--text-2); }
 
   .send-btn,
   .fab {
-    background: linear-gradient(135deg, var(--accent-soft), var(--accent) 56%, var(--accent-maroon));
+    background: linear-gradient(135deg, var(--drive-sunset-purple), var(--drive-neon-pink) 56%, var(--drive-electric-blue));
     border: 1px solid rgba(255, 244, 221, 0.16);
-    box-shadow: 0 18px 32px rgba(92, 10, 5, 0.36);
+    box-shadow: 0 18px 32px rgba(48, 15, 88, 0.38);
   }
 
   .send-btn {
@@ -2102,7 +2160,7 @@
 
   .quick-btn:active {
     transform: scale(0.97);
-    background: rgba(224, 68, 49, 0.16);
+    background: rgba(214, 58, 124, 0.16);
   }
 
   .overlay {
@@ -2362,9 +2420,10 @@
   }
 
   .mac-activity-card .mac-agent-time {
-    font-family: 'Space Mono', monospace;
-    font-size: 8px;
+    font-family: var(--drive-script);
+    font-size: 13px;
     color: var(--text-2);
+    line-height: 1;
   }
 
   .task-toggle:focus-visible,
@@ -2415,7 +2474,7 @@
     .send-btn:not(:disabled):hover,
     .fab:hover {
       transform: translateY(-1px);
-      box-shadow: 0 22px 38px rgba(92, 10, 5, 0.44);
+      box-shadow: 0 22px 38px rgba(48, 15, 88, 0.44);
     }
 
     .arch-node:hover {
@@ -2595,7 +2654,7 @@
         <span>🗺 Portfolio 地圖 + 改善進度</span>
         <span class="task-count" id="projectCount">-</span>
       </div>
-      <div class="project-subtitle">先回答「portfolio dashboard 產品本體長什麼樣」，再看 bridge runtime、分工與 backlog。</div>
+      <div class="project-subtitle">先回答「portfolio dashboard 本體長什麼樣」，再往下看這塊協作面板現在誰在做事、卡在哪、下一步排到哪。</div>
     </div>
     <button class="task-toggle" id="projectToggle">收合</button>
   </div>
@@ -2603,12 +2662,12 @@
     <div class="project-overview" id="projectOverview"></div>
     <div class="project-top-grid">
       <div class="project-section">
-        <div class="project-section-title">Work Division</div>
+        <div class="project-section-title">誰負責什麼</div>
         <div class="agent-grid" id="agentGrid"></div>
       </div>
       <div class="project-section architecture-section">
         <div class="project-section-head">
-          <div class="project-section-title">Agent Bridge Runtime Context</div>
+          <div class="project-section-title">這塊面板怎麼接到整個產品</div>
           <button class="task-toggle architecture-toggle" id="architectureToggle">展開細節</button>
         </div>
         <div class="architecture-shell" id="architectureShell">
@@ -2619,17 +2678,17 @@
       </div>
     </div>
     <div class="project-section">
-      <div class="project-section-title">Improvements Needed</div>
+      <div class="project-section-title">接下來要補的地方</div>
       <div id="improvementsList"></div>
     </div>
     <div class="project-section roadmap-section">
       <div class="project-section-head">
-        <div class="project-section-title">Roadmap Progress</div>
+        <div class="project-section-title">進度總覽</div>
         <div class="roadmap-summary-chip" id="roadmapSummaryChip">-</div>
       </div>
       <div class="roadmap-overview" id="roadmapOverview"></div>
       <div class="roadmap-grid" id="roadmapGrid"></div>
-      <div class="project-section-title completed-section-title">Completed Ledger</div>
+      <div class="project-section-title completed-section-title">已交付紀錄</div>
       <div class="completed-timeline" id="completedTimeline"></div>
     </div>
   </div>
@@ -2640,7 +2699,7 @@
   <!-- Scanning overlay -->
   <div class="overlay" id="scanOverlay">
     <div class="radar"></div>
-    <h2>掃描 Agent 中...</h2>
+    <h2>正在找可接手的 AI...</h2>
     <p>在 VS Code 開啟 AI agent 的 terminal，<br>例如 claude、codex、qwen</p>
   </div>
 
@@ -2648,23 +2707,23 @@
   <div class="terminal-viewport" id="terminalOutput">
     <div class="empty-state" id="emptyState" style="display:none">
       <div class="icon">📡</div>
-      <p>沒有正在監看的 session。<br>啟動一個 agent，或切到上方 tab 查看輸出。</p>
+      <p>現在沒有正在看的對話視窗。<br>開一個 agent，或切到上方分頁看最新輸出。</p>
     </div>
   </div>
 
   <!-- FAB: new terminal -->
-  <button class="fab" id="fabBtn" title="New terminal">
+  <button class="fab" id="fabBtn" title="開新視窗">
     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
   </button>
 </div>
 
 <!-- Quick Actions -->
 <div class="quick-actions" id="quickActions">
-  <button class="quick-btn" data-cmd="/status">📊 status</button>
-  <button class="quick-btn" data-cmd="/help">❓ help</button>
-  <button class="quick-btn" data-cmd="/compact">📦 compact</button>
-  <button class="quick-btn" data-cmd="clear">🧹 clear</button>
-  <button class="quick-btn" data-cmd="/cost">💰 cost</button>
+  <button class="quick-btn" data-cmd="/status">📊 狀態</button>
+  <button class="quick-btn" data-cmd="/help">❓ 幫助</button>
+  <button class="quick-btn" data-cmd="/compact">📦 精簡</button>
+  <button class="quick-btn" data-cmd="clear">🧹 清空</button>
+  <button class="quick-btn" data-cmd="/cost">💰 成本</button>
 </div>
 
 <!-- Input Bar -->
@@ -2679,7 +2738,7 @@
 <!-- New Terminal Modal -->
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
-    <h3>🚀 啟動新 Agent</h3>
+    <h3>🚀 開新的 AI 視窗</h3>
     <div class="modal-options">
       <div class="modal-option" data-agent="claude" data-cmd="claude">
         <span class="opt-icon">🟠</span>
@@ -2743,8 +2802,8 @@ const COLORS = {
 };
 
 const PRODUCT_MAP = {
-  intro: '這張圖畫的是 portfolio dashboard 本體，不是 Agent Bridge admin 介面。',
-  note: '產品 tab 清單以 `App.jsx / AppPanels.jsx / current-work` 為準；`/api/project` 目前比較像工程摘要，不足以單獨當 tab source of truth。',
+  intro: '這張圖畫的是 portfolio dashboard 本體，不是 Agent Bridge 後台面板。',
+  note: '產品 tab 清單以 `App.jsx / AppPanels.jsx / current-work` 為準；`/api/project` 現在比較像工程摘要，還不能單獨拿來當產品全貌。',
   lanes: [
     {
       id: 'surface',
@@ -2793,7 +2852,7 @@ const PRODUCT_MAP = {
           icon: '🛰',
           status: 'live',
           health: 'watch',
-          description: '法說 / 財報 / 宏觀事件分色，附接力 plan。',
+          description: '法說 / 財報 / 宏觀事件分色，附後續應對提醒。',
           action: '按狀態篩選',
           sources: ['anthropic', 'local'],
           gap: 'Type filter 尚待補齊',
@@ -2829,7 +2888,7 @@ const PRODUCT_MAP = {
           icon: '🧠',
           status: 'live',
           health: 'live',
-          description: 'AI 組合檢討、盲點檢查與資料補齊中心。',
+          description: 'AI 幫你做組合檢討、找盲點、補資料的地方。',
           action: '全組合 / 單股研究',
           sources: ['finmind', 'anthropic', 'local'],
         },
@@ -2838,7 +2897,7 @@ const PRODUCT_MAP = {
           icon: '✂️',
           status: 'live',
           health: 'live',
-          description: '截圖 OCR 進單與每筆交易決策 Q&A。',
+          description: '用截圖辨識帶你建單，並記下每筆交易為什麼做。',
           action: '上傳截圖 / 編輯註記',
           sources: ['anthropic', 'local'],
         },
@@ -2855,9 +2914,9 @@ const PRODUCT_MAP = {
     },
   ],
   sharedComponent: {
-    label: 'Shared component',
+    label: '共用提醒卡',
     name: 'OperatingContextCard',
-    copy: '跨 Holdings / Events / Watchlist / Research / News 共用，專門回答「現在待辦什麼、下一步去哪個 tab」。',
+    copy: '跨 Holdings / Events / Watchlist / Research / News 共用，專門回答「現在先做什麼、下一步去哪個 tab」。',
     tags: ['目前待辦', '下一步建議', '跨 panel 共識'],
     panels: ['Holdings', 'Events', 'Watchlist', 'Research', 'News'],
   },
@@ -2886,8 +2945,8 @@ const PRODUCT_MAP = {
     {
       id: 'local',
       icon: '💾',
-      name: 'localStorage',
-      copy: '持股、交易、watchlist、事件與 UI 歷史狀態。',
+      name: '本機暫存',
+      copy: '持股、交易、watchlist、事件與畫面上的歷史狀態。',
       targets: ['全部 9 個 tab'],
     },
   ],
@@ -2897,7 +2956,7 @@ const PRODUCT_SOURCE_LABELS = {
   finmind: 'FinMind',
   anthropic: 'Anthropic',
   google: 'Google',
-  local: 'local',
+  local: '本機',
 };
 
 // ─── DOM ────────────────────────────────
@@ -3098,34 +3157,103 @@ function escapeHtml(text) {
     .replaceAll("'", '&#39;');
 }
 
+function scriptNumber(value) {
+  return `<span class="drive-script-number">${escapeHtml(value)}</span>`;
+}
+
+function statusLabelWithEnglish(status) {
+  switch (status) {
+    case 'running':
+      return 'running 運作中';
+    case 'idle':
+      return 'idle 暫時沒動';
+    case 'error':
+      return 'error 出錯';
+    case 'start':
+      return 'start 剛啟動';
+    case 'progress':
+      return 'progress 推進中';
+    case 'done':
+      return 'done 已完成';
+    default:
+      return status ? `${escapeHtml(status)} 狀態` : 'unknown 未知';
+  }
+}
+
+function productHealthLabel(status) {
+  switch (status) {
+    case 'live':
+      return 'live 上線中';
+    case 'watch':
+      return 'watch 需要盯';
+    default:
+      return escapeHtml(status || 'unknown');
+  }
+}
+
+function categoryLabel(category) {
+  switch (category) {
+    case 'infrastructure':
+      return '底層工程';
+    case 'features':
+      return '功能';
+    case 'verification':
+      return '交叉確認';
+    case 'testing':
+      return '測試';
+    case 'architecture':
+      return '架構';
+    default:
+      return category || '其他';
+  }
+}
+
+function plainTechLabel(text) {
+  const raw = String(text ?? '');
+  const dictionary = [
+    ['static -> runtime', '從打包寫死改成即時讀取'],
+    ['pending', '待啟動'],
+    ['auto-deploy', '自動更新'],
+    ['source of truth', '主要版本來源'],
+    ['Task board', '工作面板'],
+    ['Project panel', '專案面板'],
+    ['localActivity map', '本機活動摘要'],
+    ['research lane', '研究線'],
+    ['daily analysis', '日常分析'],
+    ['scheduled jobs', '定時工作'],
+    ['Node.js runtime', 'Node.js 背景流程'],
+  ];
+  return dictionary.reduce((acc, [from, to]) => acc.replaceAll(from, to), raw);
+}
+
 function taskStatusLabel(status) {
   switch (status) {
-    case 'in_progress': return '進行中';
-    case 'blocked': return '阻塞';
-    case 'completed': return '完成';
-    default: return '待辦';
+    case 'in_progress': return '正在處理';
+    case 'blocked': return '卡住';
+    case 'completed': return '已交付';
+    default: return '等排程';
   }
 }
 
 function taskDispatchLabel(task) {
   if (task.status === 'completed') return '已完成';
-  if (task.status === 'blocked') return '待解阻';
-  if (task.recommendedSessionId || task.assignedSessionId) return '派工';
-  return '無可用 agent';
+  if (task.status === 'blocked') return '先排除卡點';
+  if (task.recommendedSessionId || task.assignedSessionId) return '交給 AI';
+  return '目前沒人可接';
 }
 
 function taskVerificationLabel(task) {
   switch (task.verificationState) {
     case 'rejected':
-      return '共識退回';
+      return '多人看過後退回';
     case 'verified':
-      return '已驗證';
+      return '已確認';
     case 'pending_consensus':
-      return '待共識';
+      return '等大家表態';
     case 'draft':
-      return '草稿完成';
+      return '草稿已出';
     default:
-      return '未驗證';
+      return '還沒確認';
   }
 }
 
@@ -3143,10 +3271,10 @@ function renderTaskBoard() {
   if (tasks.length === 0) {
     taskBoard.classList.remove('hidden');
     taskBoardScroll.innerHTML = `
-      <div class="task-board-empty">
-        <div class="task-board-empty-label">Live Queue</div>
-        <div class="task-board-empty-title">目前沒有待派工 task</div>
-        <div class="task-board-empty-copy">Task board 會在新的 runtime wave 進來後自動長出卡片；現在先把版面留給系統進度與架構圖。</div>
+        <div class="task-board-empty">
+        <div class="task-board-empty-label">即時排程</div>
+        <div class="task-board-empty-title">目前沒有待分派工作</div>
+        <div class="task-board-empty-copy">新的工作進來後，這裡會自動長出卡片；現在先把版面留給進度和整體地圖。</div>
       </div>
     `;
     taskCount.textContent = '0';
@@ -3175,8 +3303,8 @@ function renderTaskBoard() {
     }
     const consensusReviews = Array.isArray(task.consensusReviews) ? task.consensusReviews : [];
     const consensusSummary = task.requiresConsensus
-      ? `共識 ${task.consensusApprovalCount || 0}/${task.consensusRequiredCount || 0}`
-      : '不需共識';
+      ? `多人點頭 ${task.consensusApprovalCount || 0}/${task.consensusRequiredCount || 0}`
+      : '不用等大家表態';
     const consensusChips = task.requiresConsensus
       ? (
         consensusReviews.length > 0
@@ -3185,7 +3313,7 @@ function renderTaskBoard() {
                 ${escapeHtml(review.agentId)} ${review.decision === 'approved' ? '✓' : '✗'}
               </span>
             `).join('')
-          : '<span class="task-review-chip pending">待收集</span>'
+          : '<span class="task-review-chip pending">還在等</span>'
       )
       : '';
     return `
@@ -3199,7 +3327,7 @@ function renderTaskBoard() {
         <div class="task-ref">${escapeHtml(task.sourcePlanRef || '')}</div>
         <div class="task-verify ${escapeHtml(task.verificationState || 'open')}">
           <span>${taskVerificationLabel(task)}</span>
-          <span>${escapeHtml(evidenceSummary.join(' · ') || '尚未附證據')}</span>
+          <span>${escapeHtml(evidenceSummary.join(' · ') || '還沒附上佐證')}</span>
         </div>
         ${task.requiresConsensus ? `
           <div class="task-consensus">
@@ -3211,7 +3339,7 @@ function renderTaskBoard() {
           <button class="task-dispatch" data-task-dispatch="${escapeHtml(task.id)}" ${dispatchable ? '' : 'disabled'}>
             ${taskDispatchLabel(task)}
           </button>
-          <div class="task-session">${escapeHtml(task.recommendedSessionName || task.assignedSessionId || '未指派')}</div>
+          <div class="task-session">${escapeHtml(task.recommendedSessionName || task.assignedSessionId || '還沒指定')}</div>
         </div>
       </div>
     `;
@@ -3256,7 +3384,7 @@ function selectSession(sessionId) {
     send({ type: 'session:history', sessionId });
 
     // Update input placeholder
-    inputField.placeholder = `輸入訊息給 ${session.agent.name}...`;
+    inputField.placeholder = `輸入要告訴 ${session.agent.name} 的話...`;
     sendBtn.disabled = false;
 
     // Update quick actions based on agent
@@ -3304,28 +3432,28 @@ function scrollToBottom() {
 function updateQuickActions(agentId) {
   const actions = {
     claude: [
-      { label: '📊 /status', cmd: '/status' },
-      { label: '📦 /compact', cmd: '/compact' },
-      { label: '💰 /cost', cmd: '/cost' },
-      { label: '❓ /help', cmd: '/help' },
-      { label: '🧹 /clear', cmd: '/clear' },
+      { label: '📊 /status 狀態', cmd: '/status' },
+      { label: '📦 /compact 精簡', cmd: '/compact' },
+      { label: '💰 /cost 成本', cmd: '/cost' },
+      { label: '❓ /help 幫助', cmd: '/help' },
+      { label: '🧹 /clear 清空', cmd: '/clear' },
       { label: '✅ yes', cmd: 'yes' },
     ],
     codex: [
-      { label: '📊 status', cmd: '/status' },
+      { label: '📊 /status 狀態', cmd: '/status' },
       { label: '✅ yes', cmd: 'yes' },
       { label: '❌ no', cmd: 'no' },
-      { label: '🔁 retry', cmd: '/retry' },
+      { label: '🔁 /retry 重試', cmd: '/retry' },
     ],
     qwen: [
-      { label: '❓ help', cmd: '/help' },
+      { label: '❓ /help 幫助', cmd: '/help' },
       { label: '✅ yes', cmd: 'yes' },
-      { label: '🧹 clear', cmd: 'clear' },
+      { label: '🧹 clear 清空', cmd: 'clear' },
     ],
     gemini: [
-      { label: '❓ /help', cmd: '/help' },
+      { label: '❓ /help 幫助', cmd: '/help' },
       { label: '✅ yes', cmd: 'yes' },
-      { label: '📊 /stats', cmd: '/stats' },
+      { label: '📊 /stats 統計', cmd: '/stats' },
     ],
   };
 
@@ -3568,13 +3696,13 @@ function renderProjectOverview(data) {
         <div class="product-map-copy">
           <span class="product-map-kicker">portfolio dashboard feature map</span>
           <div class="product-map-title">${escapeHtml(PRODUCT_MAP.intro)}</div>
-          <p>這裡先讓人看懂「用戶真正在操作的 9 個 tab」，再往下看 bridge runtime、分工、缺口與交付節奏。產品視角和 admin 視角刻意拆開，避免一進來就把人丟進 architecture / backlog。</p>
+          <p>這裡先讓人看懂「用戶真正在操作的 9 個 tab」，再往下看這塊協作面板目前誰在做事、哪裡有缺口、交付節奏跑到哪。產品視角和後台視角刻意拆開，避免一進來就掉進工程清單。</p>
         </div>
         <div class="product-map-stats">
-          <span class="product-stat live"><strong>${liveCount}</strong> tabs live</span>
-          <span class="product-stat watch"><strong>${gapCount}</strong> known gaps</span>
-          <span class="product-stat shared"><strong>${sharedCount}</strong> tabs share context</span>
-          <span class="product-stat data"><strong>${PRODUCT_MAP.sources.length}</strong> data channels</span>
+          <span class="product-stat live"><strong>${liveCount}</strong> 個畫面已上線</span>
+          <span class="product-stat watch"><strong>${gapCount}</strong> 個已知缺口</span>
+          <span class="product-stat shared"><strong>${sharedCount}</strong> 個畫面共用提醒</span>
+          <span class="product-stat data"><strong>${PRODUCT_MAP.sources.length}</strong> 條資料來源</span>
         </div>
       </div>
 
@@ -3595,7 +3723,7 @@ function renderProjectOverview(data) {
                       <span class="product-tab-name">${escapeHtml(tab.name)}</span>
                       <span class="product-tab-copy">${escapeHtml(tab.description)}</span>
                     </div>
-                    <span class="product-tab-status ${escapeHtml(tab.health || tab.status)}">${escapeHtml(tab.status)}</span>
+                    <span class="product-tab-status ${escapeHtml(tab.health || tab.status)}">${productHealthLabel(tab.health || tab.status)}</span>
                   </div>
                   <div class="product-tab-row">
                     <span class="product-tab-action">${escapeHtml(tab.action)}</span>
@@ -3633,10 +3761,10 @@ function renderProjectOverview(data) {
       <section class="product-data-section">
         <div class="product-data-head">
           <div>
-            <div class="product-data-label">data spine</div>
-            <div class="product-data-title">哪些資料源在餵這個產品</div>
+            <div class="product-data-label">資料主幹</div>
+            <div class="product-data-title">哪些來源在餵這個產品</div>
           </div>
-          <div class="product-data-copy">我刻意不畫來源蜘蛛網。badge + target chips 在手機上更快讀，也更不會把功能地圖畫成一張裝飾圖。</div>
+          <div class="product-data-copy">我刻意不畫來源蜘蛛網。用 badge 和 target chips 在手機上更快讀，也不會把功能地圖畫成裝飾品。</div>
         </div>
         <div class="product-data-grid">
           ${PRODUCT_MAP.sources.map(source => `
@@ -3644,7 +3772,7 @@ function renderProjectOverview(data) {
               <div class="product-data-card-head">
                 <span class="product-data-icon">${escapeHtml(source.icon)}</span>
                 <span class="product-data-name">${escapeHtml(source.name)}</span>
-                <span class="product-data-count">${escapeHtml(`${source.targets.length} links`)}</span>
+                <span class="product-data-count">${escapeHtml(`${source.targets.length} 個連到的畫面`)}</span>
               </div>
               <div class="product-data-copy">${escapeHtml(source.copy)}</div>
               <div class="product-data-targets">
@@ -3655,7 +3783,7 @@ function renderProjectOverview(data) {
         </div>
       </section>
 
-      <div class="product-map-note"><strong>Reality check:</strong> ${escapeHtml(PRODUCT_MAP.note)}</div>
+      <div class="product-map-note"><strong>現況提醒：</strong> ${escapeHtml(PRODUCT_MAP.note)}</div>
     </section>
   `;
 }
@@ -3668,56 +3796,56 @@ function buildArchitectureNodes(data) {
   const knowledge = architecture.knowledgeBase || {};
   return {
     client: {
-      kicker: 'User Surface',
+      kicker: '使用者看到的畫面',
       title: '手機 Dashboard',
-      summary: 'HTTPS / portrait-first',
-      description: '使用者主要感知的是一個手機優先的 dashboard，而不是底下拆成多少段 runtime。',
-      details: ['即時狀態', 'Task board', 'Project panel'],
+      summary: 'HTTPS / 手機直式優先',
+      description: '使用者看到的是一個手機優先的 dashboard，不需要先理解底下拆了多少背景流程。',
+      details: ['即時狀態', '工作面板', '專案面板'],
     },
     github: {
-      kicker: 'Repo',
+      kicker: '程式碼主倉',
       title: 'GitHub',
-      summary: 'push -> auto deploy',
-      description: 'repo 是部署觸發點，也是整個架構圖最重要的變更入口。',
-      details: ['auto-deploy', 'source of truth'],
+      summary: 'push 後自動更新',
+      description: 'GitHub 是更新起點，也是整個架構圖最重要的變更入口。',
+      details: ['自動更新', '主要版本來源'],
     },
     frontend: {
-      kicker: 'Edge',
-      title: 'Vercel SPA',
+      kicker: '前台入口',
+      title: 'Vercel 網頁前台',
       summary: `${(frontend.panels || []).length || 0} panels · ${backend.endpoints || 0} API`,
-      description: frontend.entry || frontend.stack || 'Vercel edge delivery',
+      description: frontend.entry || frontend.stack || 'Vercel 前台交付',
       details: [frontend.stack, frontend.deploy, frontend.entry].filter(Boolean),
     },
     backend: {
-      kicker: 'Serverless',
-      title: `${backend.endpoints || 0} API + ${backend.crons || 0} crons`,
-      summary: backend.stack || 'Node.js runtime',
-      description: '分析、cron、Blob storage、以及 server-side AI call 都從這個層進出。',
-      details: [backend.ai, backend.storage, `${backend.crons || 0} scheduled jobs`].filter(Boolean),
+      kicker: '後端自動處理',
+      title: `${backend.endpoints || 0} 個 API + ${backend.crons || 0} 個定時工作`,
+      summary: backend.stack || 'Node.js 背景流程',
+      description: '分析、定時整理、資料存放，還有 AI 呼叫都從這層進出。',
+      details: [backend.ai, backend.storage, `${backend.crons || 0} 個定時工作`].filter(Boolean),
     },
     ai: {
       kicker: 'LLM',
       title: backend.ai || 'Claude',
       summary: '分析 / 研究生成',
-      description: '研究與收盤分析仍是 server-side AI flow，避免把 prompt / key 暴露到 client。',
-      details: ['research lane', 'daily analysis', 'Anthropic API'],
+      description: '研究和收盤分析都放在伺服器端處理，避免把提示詞和金鑰暴露到前端。',
+      details: ['研究線', '日常分析', 'Anthropic API'],
     },
     vm: {
-      kicker: 'Orchestration',
+      kicker: '協作中樞',
       title: 'GCP VM Agent Bridge',
       summary: vm.host || 'asia-east1-b',
-      description: vm.purpose || 'LLM orchestration',
-      details: [...(vm.services || []), 'localActivity map', 'port 9527'],
+      description: vm.purpose || 'LLM 協作中樞',
+      details: [...(vm.services || []), '本機活動摘要', 'port 9527'],
     },
     knowledge: {
-      kicker: 'Knowledge',
-      title: 'Runtime Knowledge Base',
+      kicker: '知識資料層',
+      title: '可即時讀取的知識庫',
       summary: knowledge.status || 'static -> runtime',
-      description: '這塊不是單純資料倉，而是前端 knowledge fetch 的下一個遷移目標。',
+      description: '這塊不是單純資料倉，而是前端改成即時抓資料的下一個遷移目標。',
       details: [
-        `${knowledge.importPoints || 0} import points`,
+        `${knowledge.importPoints || 0} 個讀取入口`,
         knowledge.migration,
-        `${Object.keys(knowledge.files || {}).length} data files`,
+        `${Object.keys(knowledge.files || {}).length} 份資料檔`,
       ].filter(Boolean),
     },
   };
@@ -3725,7 +3853,7 @@ function buildArchitectureNodes(data) {
 
 function renderArchitecture(data) {
   if (!data?.architecture) {
-    architectureMap.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Architecture</div><div class="task-board-empty-title">尚未提供系統架構資料</div><div class="task-board-empty-copy">/api/project 回來後才會畫圖。</div></div>';
+    architectureMap.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">整體接法</div><div class="task-board-empty-title">還沒有系統接法資料</div><div class="task-board-empty-copy">等 `/api/project` 回來後，這裡才會把整張圖畫出來。</div></div>';
     architectureDetail.innerHTML = '';
     architectureMeta.innerHTML = '';
     return;
@@ -3749,8 +3877,8 @@ function renderArchitecture(data) {
       <span class="arch-flow-label deploy">deploy</span>
       <span class="arch-flow-label api">18 api</span>
       <span class="arch-flow-label ai">anthropic</span>
-      <span class="arch-flow-label runtime">runtime kb</span>
-      <span class="arch-flow-label bridge">bridge push</span>
+      <span class="arch-flow-label runtime">即時知識庫</span>
+      <span class="arch-flow-label bridge">bridge 更新</span>
       ${Object.entries(nodes).map(([key, node]) => `
         <button type="button" class="arch-node ${escapeHtml(key)} ${state.architectureFocus === key ? 'active' : ''}" data-arch-node="${escapeHtml(key)}">
           <span class="architecture-kicker">${escapeHtml(node.kicker)}</span>
@@ -3771,7 +3899,7 @@ function renderArchitecture(data) {
     </div>
     <div class="architecture-summary">${escapeHtml(activeNode.description)}</div>
     <div class="architecture-detail-list">
-      ${(activeNode.details || []).map(item => `<span class="architecture-chip">${escapeHtml(item)}</span>`).join('')}
+      ${(activeNode.details || []).map(item => `<span class="architecture-chip">${escapeHtml(plainTechLabel(item))}</span>`).join('')}
     </div>
   `;
 
@@ -3780,27 +3908,27 @@ function renderArchitecture(data) {
   const laneEntries = Object.entries(data.workDivision || {});
   architectureMeta.innerHTML = `
     <div class="architecture-meta-group">
-      <div class="architecture-chip-label">External Flow</div>
+      <div class="architecture-chip-label">外部資料流</div>
       <div class="architecture-meta-row">
-        ${flowEntries.map(key => `<span class="architecture-chip">${escapeHtml(key)}</span>`).join('')}
+        ${flowEntries.map(key => `<span class="architecture-chip">${escapeHtml(plainTechLabel(key))}</span>`).join('')}
       </div>
     </div>
     <div class="architecture-meta-group">
-      <div class="architecture-chip-label">Agent Lanes</div>
+      <div class="architecture-chip-label">AI 分工線</div>
       <div class="architecture-meta-row">
         ${laneEntries.map(([name, agent]) => `
           <span class="architecture-chip agent-${escapeHtml(name)}">
-            ${escapeHtml(name)} ${(agent.activeTaskIds || []).length} active
+            ${escapeHtml(name)} ${statusLabelWithEnglish((agent.activeTaskIds || []).length > 0 ? 'running' : 'idle')}
           </span>
         `).join('')}
       </div>
     </div>
     <div class="architecture-meta-group">
-      <div class="architecture-chip-label">Migration Pressure</div>
+      <div class="architecture-chip-label">接下來要搬的重點</div>
       <div class="architecture-meta-row">
-        <span class="architecture-chip">${escapeHtml(architecture.knowledgeBase?.status || 'static -> runtime')}</span>
-        <span class="architecture-chip">${escapeHtml(architecture.knowledgeBase?.migration || 'pending')}</span>
-        <span class="architecture-chip">${escapeHtml((architecture.vm?.services || []).join(' • ') || 'no vm services')}</span>
+        <span class="architecture-chip">${escapeHtml(plainTechLabel(architecture.knowledgeBase?.status || 'static -> runtime'))}</span>
+        <span class="architecture-chip">${escapeHtml(plainTechLabel(architecture.knowledgeBase?.migration || 'pending'))}</span>
+        <span class="architecture-chip">${escapeHtml(plainTechLabel((architecture.vm?.services || []).join(' • ') || 'VM 服務尚未列出'))}</span>
       </div>
     </div>
   `;
@@ -3808,7 +3936,7 @@ function renderArchitecture(data) {
 
 function renderWorkDivision(workDivision) {
   if (!workDivision) {
-    agentGrid.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Work Division</div><div class="task-board-empty-title">目前沒有 agent 分工資料</div><div class="task-board-empty-copy">Project panel 仍可顯示 roadmap，但會失去誰在做什麼的畫面感。</div></div>';
+    agentGrid.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">分工</div><div class="task-board-empty-title">目前沒有 AI 分工資料</div><div class="task-board-empty-copy">Project panel 還是能顯示進度，但會少掉誰在處理什麼的視角。</div></div>';
     return;
   }
   agentGrid.innerHTML = Object.entries(workDivision).map(([name, agent]) => {
@@ -3822,11 +3950,11 @@ function renderWorkDivision(workDivision) {
         <div class="agent-card-head">
           <span class="agent-dot" style="background:${escapeHtml(agent.color || '#888')}"></span>
           <span class="agent-name">${escapeHtml(name)}</span>
-          <span class="agent-load ${escapeHtml(agent.load || 'idle')}">${escapeHtml(agent.load || 'idle')}</span>
+          <span class="agent-load ${escapeHtml(agent.load || 'idle')}">${statusLabelWithEnglish(agent.load || 'idle')}</span>
         </div>
         <div class="agent-focus">${escapeHtml(agent.focus || '')}</div>
-        <div class="agent-active">${activeCount > 0 ? `${activeCount} active lane${activeCount > 1 ? 's' : ''}` : '目前沒有 live task'}</div>
-        <div class="agent-task-chips">${chips || '<span class="agent-task-chip more">idle</span>'}${overflow}</div>
+        <div class="agent-active">${activeCount > 0 ? `${scriptNumber(activeCount)} 條工作線正在跑` : '目前沒有正在跑的工作'}</div>
+        <div class="agent-task-chips">${chips || '<span class="agent-task-chip more">idle 暫時沒動</span>'}${overflow}</div>
         ${note}
       </div>
     `;
@@ -3835,7 +3963,7 @@ function renderWorkDivision(workDivision) {
 
 function renderImprovements(items) {
   if (!Array.isArray(items) || items.length === 0) {
-    improvementsList.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Backlog</div><div class="task-board-empty-title">暫時沒有待改善項</div><div class="task-board-empty-copy">這通常代表 `/api/project` 還沒回來，或 backlog 被清空了。</div></div>';
+    improvementsList.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">待補清單</div><div class="task-board-empty-title">暫時沒有待改善項</div><div class="task-board-empty-copy">這通常代表 `/api/project` 還沒回來，或待補清單被清空了。</div></div>';
     return;
   }
   const byCategory = {};
@@ -3860,7 +3988,7 @@ function renderImprovements(items) {
     return `
       <div class="imp-category">
         <div class="imp-category-head">
-          <span>${escapeHtml(cat)}</span>
+          <span>${escapeHtml(categoryLabel(cat))}</span>
           <span class="imp-category-count">${list.length}</span>
         </div>
         ${rows}
@@ -3872,7 +4000,7 @@ function renderImprovements(items) {
 
 function renderCompletedTimeline(completed) {
   if (!Array.isArray(completed) || completed.length === 0) {
-    completedTimeline.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">Completed</div><div class="task-board-empty-title">還沒有已完成紀錄</div><div class="task-board-empty-copy">完成項會在這裡形成時間軸，而不是再次混進待辦 backlog。</div></div>';
+    completedTimeline.innerHTML = '<div class="task-board-empty"><div class="task-board-empty-label">已交付</div><div class="task-board-empty-title">還沒有已完成紀錄</div><div class="task-board-empty-copy">完成項會在這裡形成時間軸，而不是再混進待補清單。</div></div>';
     return;
   }
   const ordered = [...completed].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
@@ -3897,9 +4025,9 @@ function renderRoadmap(data) {
   const lookups = buildProjectLookups(data);
   const phases = ['now', 'next', 'later'];
   const phaseMeta = {
-    now: '本週火線',
-    next: '下一段',
-    later: '長線',
+    now: '現在先救這些',
+    next: '下一段接著做',
+    later: '之後再拉',
   };
   const phaseCards = phases.map(phase => {
     const p = roadmap[phase];
@@ -3918,7 +4046,7 @@ function renderRoadmap(data) {
       ['completed', counts.completed, '完成'],
       ['in_progress', counts.in_progress, '進行中'],
       ['blocked', counts.blocked, '阻塞'],
-      ['pending', counts.pending, '待辦'],
+      ['pending', counts.pending, '待排'],
     ].filter(([, count]) => count > 0).map(([cls, count, label]) => `
       <span class="roadmap-stat ${cls}">${escapeHtml(label)} ${count}</span>
     `).join('');
@@ -3928,12 +4056,12 @@ function renderRoadmap(data) {
           <div>
             <div class="roadmap-metrics">${escapeHtml(phaseMeta[phase] || phase)}</div>
             <div class="roadmap-label">${escapeHtml(p.label || phase)}</div>
-            <div class="roadmap-metrics">${counts.completed}/${total} 完成 · ${donePct}%</div>
+            <div class="roadmap-metrics">${counts.completed}/${total} 已完成 · ${donePct}%</div>
           </div>
           <span class="roadmap-state ${escapeHtml(status.cls)}">${escapeHtml(status.label)}</span>
         </div>
         ${renderStatusTrack(counts, total)}
-        <div class="roadmap-breakdown">${breakdown || '<span class="roadmap-stat pending">尚無 task</span>'}</div>
+        <div class="roadmap-breakdown">${breakdown || '<span class="roadmap-stat pending">尚無工作</span>'}</div>
         <div class="roadmap-rationale">${escapeHtml(p.rationale || '')}</div>
         <div class="roadmap-chips">${chips}</div>
       </div>
@@ -3951,29 +4079,29 @@ function renderRoadmap(data) {
 
   roadmapOverview.innerHTML = `
     <div class="roadmap-summary-card">
-      <div class="roadmap-metrics">Roadmap signal</div>
-      <div class="roadmap-summary-title">${trackedTotal} 個 phase task，完成 / 進行 / 待辦 一眼看完</div>
-      <div class="roadmap-summary-sub">綠色代表真正已完成；血紅代表正在燃燒中的 lane；灰白代表還沒啟動。Completed Ledger 另列已交付，不再混進 backlog。</div>
+      <div class="roadmap-metrics">進度訊號</div>
+      <div class="roadmap-summary-title">${scriptNumber(trackedTotal)} 個階段工作，完成 / 進行 / 待排 一眼看完</div>
+      <div class="roadmap-summary-sub">綠色代表真正已完成；桃紅代表正在燒的工作線；灰白代表還沒啟動。已交付會另外列出，不再混進待補清單。</div>
       ${renderStatusTrack(totalCounts, trackedTotal)}
       <div class="roadmap-breakdown">
         <span class="roadmap-stat completed">完成 ${totalCounts.completed}</span>
         <span class="roadmap-stat in_progress">進行中 ${totalCounts.in_progress}</span>
         ${totalCounts.blocked > 0 ? `<span class="roadmap-stat blocked">阻塞 ${totalCounts.blocked}</span>` : ''}
-        <span class="roadmap-stat pending">待辦 ${totalCounts.pending}</span>
+        <span class="roadmap-stat pending">待排 ${totalCounts.pending}</span>
       </div>
     </div>
     <div class="timeline-summary-card">
-      <div class="roadmap-metrics">Completed ledger</div>
-      <div class="timeline-summary-title">${shippedCount} 項已交付，保留時間感而不是埋在清單裡</div>
+      <div class="roadmap-metrics">已交付紀錄</div>
+      <div class="timeline-summary-title">${scriptNumber(shippedCount)} 項已交付，時間感保留下來，不埋在清單裡</div>
       <div class="timeline-summary-sub">${latestCompleted ? `最新一筆 ${formatShortDate(latestCompleted.date)}：${latestCompleted.title}` : '尚未有交付紀錄'}</div>
       <div class="timeline-summary-stats">
         <span class="timeline-stat completed">已完成 ${shippedCount}</span>
-        <span class="timeline-stat">${escapeHtml(latestCompleted ? formatShortDate(latestCompleted.date) : 'no date')}</span>
+        <span class="timeline-stat">${escapeHtml(latestCompleted ? formatShortDate(latestCompleted.date) : '尚無日期')}</span>
       </div>
     </div>
   `;
   roadmapGrid.innerHTML = phaseCards;
-  roadmapSummaryChip.textContent = `${totalCounts.completed}/${trackedTotal} 完成 · ${shippedCount} shipped`;
+  roadmapSummaryChip.innerHTML = `${scriptNumber(`${totalCounts.completed}/${trackedTotal}`)} 已完成 · ${scriptNumber(shippedCount)} 已交付`;
   renderCompletedTimeline(data.completed);
 }
 
@@ -3999,9 +4127,9 @@ function renderMacActivity(entries) {
     return `
       <div class="mac-activity-card">
         <span class="mac-agent-name">${escapeHtml(e.agent)}</span>
-        <span class="mac-agent-status ${statusCls}">${escapeHtml(e.status)}</span>
+        <span class="mac-agent-status ${statusCls}">${statusLabelWithEnglish(e.status)}</span>
         <span class="mac-agent-msg">${escapeHtml(e.message || '')}</span>
-        <span class="mac-agent-time">${ago}</span>
+        <span class="mac-agent-time">${scriptNumber(ago)}</span>
       </div>
     `;
   }).join('');
@@ -4026,7 +4154,7 @@ async function fetchProject() {
     renderProjectPanelData(data);
     const backlog = (data.improvements || []).length;
     const shipped = (data.completed || []).length;
-    projectCount.textContent = `${backlog} backlog · ${shipped} shipped`;
+    projectCount.innerHTML = `${scriptNumber(backlog)} 待補 · ${scriptNumber(shipped)} 已交付`;
   } catch (e) {
     console.warn('fetchProject failed:', e);
   }

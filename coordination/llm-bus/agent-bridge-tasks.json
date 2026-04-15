@@ -1,6 +1,7 @@
 {
-  "version": 3,
-  "generatedFrom": "gap-analysis-2026-04-13",
+  "version": 4,
+  "generatedFrom": "sync-with-project-status-2026-04-15",
+  "notes": "owner 欄對齊 project-status.json；p0-01~p0-04 已於 2026-04-13 完成 (見 project-status.json.completed)，此處移除避免重複派工。",
   "dispatchPolicy": {
     "defaultLanes": ["codex", "claude", "qwen", "gemini"],
     "requireConsensusForMajorChanges": true,
@@ -14,110 +15,71 @@
       "title": "VM: Knowledge API — runtime 讀 JSON 取代 build-time 打包",
       "lane": "infrastructure",
       "owner": "claude",
-      "status": "pending",
+      "ownerRole": "architect",
+      "implementer": "codex",
+      "status": "in-design",
       "priority": "critical",
       "dependsOn": [],
-      "summary": "在 VM 上建 Knowledge API (GET /api/knowledge/*) runtime 讀 JSON，前端改打 VM。改 JSON 立刻生效不用 redeploy。涉及 11 個 import 點。",
-      "dispatchPrompt": "Build Knowledge API on VM agent-bridge-standalone/server.mjs. Add routes: GET /api/knowledge/profiles, /themes, /supply-chain, /stock-meta, /analysis-frameworks. Runtime read JSON files from ~/app/src/data/ and ~/app/src/lib/knowledge-base/."
+      "summary": "Claude 設計架構 → Codex 實作。在 VM agent-bridge-standalone/server.mjs 加 Knowledge API (GET /api/knowledge/*) runtime 讀 JSON，前端改打 VM。改 JSON 立刻生效不用 redeploy。涉及 11 個 import 點。",
+      "dispatchPrompt": "[AFTER claude architecture brief approved] Build Knowledge API on VM agent-bridge-standalone/server.mjs. Add routes: GET /api/knowledge/profiles, /themes, /supply-chain, /stock-meta, /analysis-frameworks. Runtime read JSON files from ~/app/src/data/ and ~/app/src/lib/knowledge-base/."
     },
     {
       "id": "infra-02",
       "title": "VM: HTTPS + Auth token",
       "lane": "infrastructure",
-      "owner": "claude",
+      "owner": "codex",
       "status": "pending",
       "priority": "high",
       "dependsOn": [],
       "summary": "VM HTTP only + 無 auth。需要 Nginx 反向代理 + Let's Encrypt SSL + BRIDGE_AUTH_TOKEN。",
-      "dispatchPrompt": "Set up HTTPS and auth on GCP VM. Nginx reverse proxy + Let's Encrypt + BRIDGE_AUTH_TOKEN."
+      "dispatchPrompt": "Set up HTTPS and auth on GCP VM (35.236.155.62). Nginx reverse proxy + Let's Encrypt + BRIDGE_AUTH_TOKEN. Block unauthenticated writes to Agent Bridge."
     },
     {
       "id": "infra-03",
       "title": "VM: 安裝 LLM CLIs (Codex/Qwen/Gemini)",
       "lane": "infrastructure",
-      "owner": "claude",
+      "owner": "qwen",
       "status": "pending",
       "priority": "high",
       "dependsOn": ["infra-02"],
       "summary": "VM 上裝 Codex CLI, Qwen CLI, Gemini CLI + API keys。讓 Agent Bridge 可以 dispatch。",
-      "dispatchPrompt": "Install Codex CLI, Qwen CLI, Gemini CLI on GCP VM. Configure API keys. Verify Agent Bridge can spawn each."
+      "dispatchPrompt": "Install Codex CLI, Qwen CLI, Gemini CLI on GCP VM (35.236.155.62). Configure API keys in secure env vars. Verify Agent Bridge can spawn each CLI end-to-end."
     },
     {
       "id": "infra-04",
       "title": "前端 11 個 static import 改打 VM Knowledge API",
       "lane": "infrastructure",
-      "owner": "claude",
-      "status": "pending",
+      "owner": "codex",
+      "status": "blocked",
+      "blockedBy": "infra-01",
       "priority": "critical",
       "dependsOn": ["infra-01"],
       "summary": "stockClassifier.js(3), coverageAdapter.js(3), knowledgeBase.js(7), knowledgeEvolutionRuntime.js, brainRuntime.js 共 11 個 static JSON import 改成 fetch VM API。",
-      "dispatchPrompt": "Refactor 11 static JSON imports to fetch from VM Knowledge API. Files: stockClassifier.js, coverageAdapter.js, knowledgeBase.js, knowledgeEvolutionRuntime.js, brainRuntime.js."
-    },
-    {
-      "id": "p0-01",
-      "title": "P0: 修 stale enrichment invalidation",
-      "lane": "bugfix",
-      "owner": "claude",
-      "status": "pending",
-      "priority": "critical",
-      "dependsOn": [],
-      "summary": "usePortfolioDerivedData enriched dossiers 可能 stale → UI 顯示錯誤。加 invalidation + regression test。",
-      "dispatchPrompt": "Fix stale enrichment invalidation in usePortfolioDerivedData.js. Add invalidation mechanism + regression test."
-    },
-    {
-      "id": "p0-02",
-      "title": "P0: 移除 lifecycle sync 的 tab-gating",
-      "lane": "bugfix",
-      "owner": "codex",
-      "status": "pending",
-      "priority": "critical",
-      "dependsOn": [],
-      "summary": "useEventLifecycleSync 不該受 tab 影響。lifecycle sync 應在 portfolio-ready 就跑。",
-      "dispatchPrompt": "Remove tab-based gating from useEventLifecycleSync.js. Sync should run when portfolio-ready regardless of active tab."
-    },
-    {
-      "id": "p0-03",
-      "title": "P0: Events filter type regression test",
-      "lane": "bugfix",
-      "owner": "qwen",
-      "status": "pending",
-      "priority": "critical",
-      "dependsOn": [],
-      "summary": "normalizeEventRecord 新增 type discriminator 可能 break EventsPanel filter。需 e2e regression test。",
-      "dispatchPrompt": "Write e2e regression test: normalizeEventRecord → EventsPanel filter → filterEventsByType() with legacy filter buckets."
-    },
-    {
-      "id": "p0-04",
-      "title": "P0: null date guard in useEventLifecycleSync",
-      "lane": "bugfix",
-      "owner": "qwen",
-      "status": "pending",
-      "priority": "critical",
-      "dependsOn": [],
-      "summary": "parseSlashDate 可能回傳 null 導致 crash。加 null guard + unit test。",
-      "dispatchPrompt": "Add null-date guard to useEventLifecycleSync. Unit test forcing null return + verify graceful no-op."
+      "dispatchPrompt": "Refactor 11 static JSON imports to fetch from VM Knowledge API. Files: stockClassifier.js, coverageAdapter.js, knowledgeBase.js, knowledgeEvolutionRuntime.js, brainRuntime.js. Add error fallback to local snapshot."
     },
     {
       "id": "feat-01",
       "title": "接通 cron target-price 到前端 (7/30 天規則)",
       "lane": "feature",
-      "owner": "claude",
-      "status": "pending",
+      "owner": "codex",
+      "status": "completed",
+      "completedDate": "2026-04-15",
+      "completedBy": "qwen-verification",
       "priority": "high",
       "dependsOn": [],
-      "summary": "usePortfolioDerivedData ~L195 有 stub。fetch /api/target-prices，<7天優先，7-30天預警，>30天 fallback PER-band。",
-      "dispatchPrompt": "Implement target-price cron integration in usePortfolioDerivedData.js L195 stub. Fetch, prefer <7d, warn 7-30d, fallback >30d."
+      "summary": "2026-04-15 Qwen 驗證 complete — cron + fetch + 7/30 freshness + UI badge + aging warn 均到位。見 .tmp/dispatch-logs/feat-01-qwen.log。",
+      "dispatchPrompt": "[DONE — verification only. See .tmp/feat-01-target-price/brief.md]"
     },
     {
       "id": "feat-02",
       "title": "News vs Events UI 完全分離",
       "lane": "feature",
-      "owner": "claude",
+      "owner": "codex",
       "status": "pending",
       "priority": "high",
       "dependsOn": [],
       "summary": "加 type discriminator，渲染 split by type。news = 純資訊，event = 預測+復盤。改 NewsPanel + EventsPanel。",
-      "dispatchPrompt": "Implement news vs events UI separation. type:'news'|'event' discriminator, split rendering, news=info style, event=prediction+review."
+      "dispatchPrompt": "Implement news vs events UI separation. type:'news'|'event' discriminator, split rendering, news=info style, event=prediction+review. Update NewsPanel + EventsPanel."
     },
     {
       "id": "feat-03",
@@ -145,7 +107,7 @@
       "id": "feat-05",
       "title": "全組合研究行為驗證 — 權證策略框架",
       "lane": "verification",
-      "owner": "claude",
+      "owner": "qwen",
       "status": "pending",
       "priority": "medium",
       "dependsOn": [],
@@ -157,11 +119,23 @@
       "title": "Auto-classifier 增量重分類 + 低信心 badge",
       "lane": "feature",
       "owner": "codex",
-      "status": "pending",
+      "status": "blocked",
+      "blockedBy": "infra-01",
       "priority": "medium",
       "dependsOn": ["infra-01"],
       "summary": "classifier 改 incremental（只重算 stale/unknown）。低信心用 badge 標示。配合 Knowledge API。",
       "dispatchPrompt": "Implement incremental reclassification in stockClassifier.js. Add UI badges for low-confidence labels."
+    },
+    {
+      "id": "feat-07",
+      "title": "Dashboard 視覺改《去他的世界末日》風格",
+      "lane": "feature",
+      "owner": "codex",
+      "status": "completed",
+      "completedDate": "2026-04-14",
+      "priority": "medium",
+      "dependsOn": [],
+      "summary": "已完成 (見 project-status.json.completed)。commit 326311d/5518b9d/8d6b567。"
     },
     {
       "id": "test-01",
@@ -179,7 +153,8 @@
       "title": "補齊 freshness 邊界測試 (7/30 天)",
       "lane": "testing",
       "owner": "qwen",
-      "status": "pending",
+      "status": "blocked",
+      "blockedBy": "feat-04",
       "priority": "medium",
       "dependsOn": ["feat-04"],
       "summary": "computeFreshnessGrade boundary: 6d=fresh, 7d=aging, 29d=aging, 30d=stale。",

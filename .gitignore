@@ -21,3 +21,6 @@ docs-site/current-work.md
 
 # .tmp is transient LLM dispatch artifacts (per claude.md)
 .tmp/
+
+# Claude auto-memory (per-user, not tracked)
+memory/

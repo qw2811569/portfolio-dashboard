@@ -705,7 +705,7 @@ describe('components/AppPanels context wiring', () => {
     )
 
     expect(await screen.findAllByText('收盤快版')).toHaveLength(2)
-    expect(screen.getByText('仍有 1 檔待等 FinMind 日終籌碼/估值確認')).toBeInTheDocument()
+    expect(screen.getByText('仍有 1 檔還在等 FinMind 收盤後資料')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('跑資料確認版'))
     expect(runDailyAnalysis).toHaveBeenCalledTimes(1)

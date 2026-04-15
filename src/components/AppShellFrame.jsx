@@ -126,7 +126,7 @@ export default function AppShellFrame({
             </div>
 
             <div style={{ fontSize: 11, color: C.textMute, lineHeight: 1.7 }}>
-              首次載入會先整理本機投組，再把主畫面與跨頁資料流接回同一套 runtime。
+              首次載入會先整理本機投組，再把各頁資料接回同一套主畫面。
             </div>
           </div>
         </div>

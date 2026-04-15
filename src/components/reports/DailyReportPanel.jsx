@@ -16,12 +16,15 @@ const lbl = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 
-function appendKnowledgeFeedback({
-  analysisId,
-  signal,
-  date,
-  injectedKnowledgeIds = [],
-}) {
+function describeRuleFreshness(status) {
+  if (status === 'fresh') return '資料還算新'
+  if (status === 'aging') return '資料有點舊'
+  if (status === 'stale') return '資料太久沒更新'
+  if (status === 'missing') return '資料還不夠'
+  return status || ''
+}
+
+function appendKnowledgeFeedback({ analysisId, signal, date, injectedKnowledgeIds = [] }) {
   const log = JSON.parse(localStorage.getItem('kb-feedback-log') || '[]')
   log.push({
     analysisId,
@@ -37,7 +40,9 @@ function appendKnowledgeFeedback({
 function buildDailyStageMeta(report = null) {
   const stage = String(report?.analysisStage || '').trim()
   const confirmation = report?.finmindConfirmation
-  const pendingCount = Array.isArray(confirmation?.pendingCodes) ? confirmation.pendingCodes.length : 0
+  const pendingCount = Array.isArray(confirmation?.pendingCodes)
+    ? confirmation.pendingCodes.length
+    : 0
   const expectedLabel = confirmation?.expectedMarketDate
     ? confirmation.expectedMarketDate.replace(/-/g, '/')
     : ''
@@ -46,8 +51,8 @@ function buildDailyStageMeta(report = null) {
     return {
       badgeColor: 'teal',
       summary: expectedLabel
-        ? `已用 FinMind ${expectedLabel} 日終籌碼/估值確認`
-        : '已用 FinMind 日終資料確認',
+        ? `已用 FinMind ${expectedLabel} 的收盤後資料確認`
+        : '已用 FinMind 的收盤後資料確認',
     }
   }
 
@@ -56,14 +61,14 @@ function buildDailyStageMeta(report = null) {
       badgeColor: 'amber',
       summary:
         pendingCount > 0
-          ? `仍有 ${pendingCount} 檔待等 FinMind 日終籌碼/估值確認`
-          : 'FinMind 日終籌碼/估值尚待確認',
+          ? `仍有 ${pendingCount} 檔還在等 FinMind 收盤後資料`
+          : 'FinMind 的收盤後資料還沒到齊',
     }
   }
 
   return {
     badgeColor: 'default',
-    summary: '舊版分析，尚未標記資料確認階段',
+    summary: '這是較早版本的分析，當時還沒有補做資料確認',
   }
 }
 
@@ -195,7 +200,7 @@ export function ReviewGateCard({
             alignSelf: 'center',
           },
         },
-        `${actionLabel} 仍可手動執行，但建議先補完復盤再分析。`
+        `${actionLabel} 還是可以手動執行，但建議先把復盤補完再分析。`
       )
     )
   )
@@ -284,7 +289,7 @@ export function AnalyzingState({ step }) {
           marginTop: 10,
         },
       },
-      'AI 正在分析持股、事件與市場訊號，請稍候...'
+      'AI 正在分析持股、事件與市場變化，請稍候...'
     )
   )
 }
@@ -440,7 +445,11 @@ export function AnalysisStageCard({ report }) {
           marginBottom: 6,
         },
       },
-      h('div', { style: { ...lbl, color: stageMeta.badgeColor === 'teal' ? C.teal : C.amber } }, '資料確認階段'),
+      h(
+        'div',
+        { style: { ...lbl, color: stageMeta.badgeColor === 'teal' ? C.teal : C.amber } },
+        '資料確認階段'
+      ),
       h(Badge, { color: stageMeta.badgeColor }, report.analysisStageLabel || '既有版本')
     ),
     h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, stageMeta.summary),
@@ -527,15 +536,31 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
           marginBottom: 6,
         },
       },
-      h('div', { style: { ...lbl, color: diff.changeCount > 0 ? C.blue : C.teal } }, '同日版本差異'),
+      h(
+        'div',
+        { style: { ...lbl, color: diff.changeCount > 0 ? C.blue : C.teal } },
+        '同日版本差異'
+      ),
       h(
         'div',
         { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
-        h(Badge, { color: diff.changeCount > 0 ? 'olive' : 'teal' }, diff.changeCount > 0 ? '有更新' : '無差異'),
-        h(Badge, { color: 'default' }, `${diff.previousReport.analysisStageLabel || '既有版本'} -> ${diff.currentReport.analysisStageLabel || '既有版本'}`)
+        h(
+          Badge,
+          { color: diff.changeCount > 0 ? 'olive' : 'teal' },
+          diff.changeCount > 0 ? '有更新' : '無差異'
+        ),
+        h(
+          Badge,
+          { color: 'default' },
+          `${diff.previousReport.analysisStageLabel || '既有版本'} -> ${diff.currentReport.analysisStageLabel || '既有版本'}`
+        )
       )
     ),
-    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } }, diff.summary),
+    h(
+      'div',
+      { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } },
+      diff.summary
+    ),
     h(
       Button,
       {
@@ -623,7 +648,7 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
                   lineHeight: 1.7,
                 },
               },
-              '目前這次資料確認主要是把快版正式標記成確認版，內容本身沒有出現新的可感知差異。'
+              '這次主要是把快版補成正式版，內容本身沒有明顯變動。'
             )
       )
   )
@@ -634,15 +659,15 @@ function buildAutoConfirmUiState(state = null) {
     case 'checking':
       return {
         tone: 'olive',
-        summary: '正在檢查 FinMind 日終資料，若今天資料已齊全，系統會自動補跑資料確認版。',
+        summary: '正在檢查 FinMind 收盤後資料，若今天資料已齊全，系統會自動補跑資料確認版。',
       }
     case 'waiting':
       return {
         tone: 'amber',
         summary:
           state?.confirmation?.pendingCodes?.length > 0
-            ? `剛檢查過，仍有 ${state.confirmation.pendingCodes.length} 檔待等 FinMind 日終資料；稍後回到這頁會再自動重試。`
-            : '剛檢查過，但日終資料仍未完全確認；稍後回到這頁會再自動重試。',
+            ? `剛檢查過，仍有 ${state.confirmation.pendingCodes.length} 檔還在等 FinMind 收盤後資料；稍後回到這頁會再自動重試。`
+            : '剛檢查過，但收盤後資料仍未完全到齊；稍後回到這頁會再自動重試。',
       }
     case 'cooldown':
       return {
@@ -979,7 +1004,7 @@ export function EventAssessments({
 export function BrainAuditSection({ brainAudit }) {
   const sections = [
     { key: 'validatedRules', label: '今天仍成立', color: C.up },
-    { key: 'staleRules', label: '待更新 / 證據不足', color: C.amber },
+    { key: 'staleRules', label: '需要重看 / 證據還不夠', color: C.amber },
     { key: 'invalidatedRules', label: '今天被證偽', color: C.down },
   ]
 
@@ -991,7 +1016,7 @@ export function BrainAuditSection({ brainAudit }) {
     {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.lavender, '40')}` },
     },
-    h('div', { style: lbl }, 'AI 規則驗證'),
+    h('div', { style: lbl }, 'AI 幫你回頭檢查'),
     sections.map((section) => {
       const rows = brainAudit?.[section.key] || []
       if (rows.length === 0) return null
@@ -1040,10 +1065,14 @@ export function BrainAuditSection({ brainAudit }) {
                 h(
                   'span',
                   { style: { fontSize: 9, color: C.textMute } },
-                  `最近驗證 ${item.lastValidatedAt}`
+                  `上次確認 ${item.lastValidatedAt}`
                 ),
               item.staleness &&
-                h('span', { style: { fontSize: 9, color: C.textMute } }, `狀態 ${item.staleness}`),
+                h(
+                  'span',
+                  { style: { fontSize: 9, color: C.textMute } },
+                  `目前情況 ${describeRuleFreshness(item.staleness)}`
+                ),
               item.nextStatus &&
                 h(
                   'span',
@@ -1314,7 +1343,7 @@ export function MorningNoteSection({ morningNote }) {
               ),
             h('span', null, e.title),
             e.relatedPillars?.length > 0 &&
-              h('span', { style: { fontSize: 9, color: C.teal } }, 'thesis驗證點')
+              h('span', { style: { fontSize: 9, color: C.teal } }, '投資主軸觀察點')
           )
         )
       ),

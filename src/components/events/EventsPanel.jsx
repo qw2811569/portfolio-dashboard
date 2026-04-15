@@ -79,7 +79,7 @@ function getReviewMeta(event) {
   if (event?.status === 'tracking') {
     return { label: '追蹤中', color: C.teal, bg: alpha(C.teal, '16') }
   }
-  return { label: '待處理', color: C.amber, bg: alpha(C.amber, '16') }
+  return { label: '待觀察', color: C.amber, bg: alpha(C.amber, '16') }
 }
 
 /**
@@ -692,7 +692,7 @@ export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
             cursor: 'pointer',
           },
         },
-        t === '全部' ? '全部分類' : CATALYST_LABELS[t]
+        t === '全部' ? '全部主題' : CATALYST_LABELS[t]
       )
     )
   )

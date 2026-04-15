@@ -1065,7 +1065,7 @@ export function ManualUpdateForms({
       h(
         'div',
         { style: { fontSize: 11, color: C.textMute, marginBottom: 10, lineHeight: 1.6 } },
-        '法說、月營收或財報出來後，把關鍵數字補進來，dossier 就會跟著變新。'
+        '法說、月營收或財報出來後，把關鍵數字補進來，持股筆記就會一起更新。'
       ),
       h(
         'div',

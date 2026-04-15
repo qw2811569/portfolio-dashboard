@@ -197,7 +197,7 @@ describe('routes/PortfolioLayout', () => {
         'true'
       )
       expect(screen.getByTestId('route-shell-notice')).toHaveTextContent(
-        '路由頁面仍屬遷移殼層，部分操作只會停留在 route-local 狀態，不會同步回主 AppShell。'
+        '這頁還在搬家中，部分操作只會先留在這一頁，不會立刻帶回主畫面。'
       )
 
       await waitFor(() => {

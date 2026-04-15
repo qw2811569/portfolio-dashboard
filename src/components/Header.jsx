@@ -137,7 +137,7 @@ export default function Header(props) {
               cursor: refreshing ? 'not-allowed' : 'pointer',
             },
           },
-          refreshing ? '同步中...' : '⟳ 收盤價'
+          refreshing ? '股價更新中...' : '⟳ 收盤價'
         ),
         h(
           'button',
@@ -403,7 +403,7 @@ export default function Header(props) {
                   h(
                     'div',
                     { style: { fontSize: 10, color: C.textMute, marginTop: 3 } },
-                    `${portfolio.holdingCount} 檔 · 待處理事件 ${portfolio.pendingEvents?.length || 0} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
+                    `${portfolio.holdingCount} 檔 · 近期事件 ${portfolio.pendingEvents?.length || 0} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
                   )
                 ),
                 h(

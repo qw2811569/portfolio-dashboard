@@ -16,13 +16,13 @@ function describeStatus(kind, status) {
     if (status === 'fresh') return '目標價還算新'
     if (status === 'aging') return '目標價有點舊了'
     if (status === 'stale') return '目標價太久沒更新'
-    return '目標價還沒抓到'
+    return '還沒有目標價資料'
   }
 
   if (status === 'fresh') return '財報資料還算新'
   if (status === 'aging') return '財報資料有點舊了'
   if (status === 'stale') return '財報資料太久沒更新'
-  return '財報資料還沒抓到'
+  return '還沒有財報資料'
 }
 
 /**
@@ -88,7 +88,7 @@ export function ResearchHeader({
             whiteSpace: 'nowrap',
           },
         },
-        reportRefreshing ? '補資料中...' : '補最新報告'
+        reportRefreshing ? '整理資料中...' : '補最新報告'
       )
     ),
     reportRefreshStatus &&
@@ -253,7 +253,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                         color: item.targetSource === 'per-band' ? C.textMute : C.teal,
                       },
                     },
-                    item.targetSource === 'per-band' ? '系統推估' : '券商報告'
+                    item.targetSource === 'per-band' ? '區間估算' : '券商報告'
                   ),
                   item.targetLabel,
                   item.targetStatus === 'aging'
@@ -641,7 +641,7 @@ export function ResearchResults({
                 cursor: enriching === results.code ? 'not-allowed' : 'pointer',
               },
             },
-            enriching === results.code ? '同步中...' : '存到持股筆記'
+            enriching === results.code ? '寫入筆記中...' : '存到持股筆記'
           )
       )
     ),

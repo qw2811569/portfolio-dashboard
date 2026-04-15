@@ -115,10 +115,10 @@ export function OperatingContextCard({ context }) {
         portfolioLabel && h(Badge, { color: 'teal' }, portfolioLabel),
         holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
-        pendingCount > 0 && h(Badge, { color: 'amber' }, `待處理 ${pendingCount}`),
+        pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
         attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
         refreshBacklogCount > 0 &&
-          h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔沒補完`),
+          h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&
           h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
       )

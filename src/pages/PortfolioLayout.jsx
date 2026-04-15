@@ -5,8 +5,7 @@ import { ConfirmDialog } from '../components/common/Dialogs.jsx'
 import { useAppConfirmationDialog } from '../hooks/useAppConfirmationDialog.js'
 import { useRoutePortfolioRuntime } from '../hooks/useRoutePortfolioRuntime.js'
 
-const ROUTE_SHELL_NOTICE =
-  '路由頁面仍屬遷移殼層，部分操作只會停留在 route-local 狀態，不會同步回主 AppShell。'
+const ROUTE_SHELL_NOTICE = '這頁還在搬家中，部分操作只會先留在這一頁，不會立刻帶回主畫面。'
 
 export function PortfolioLayout() {
   const { headerProps, outletContext: baseOutletContext } = useRoutePortfolioRuntime()

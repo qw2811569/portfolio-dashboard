@@ -167,7 +167,7 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/新聞載入失敗/)).toBeInTheDocument()
+      expect(screen.getByText(/新聞暫時打不開/)).toBeInTheDocument()
     })
   })
 

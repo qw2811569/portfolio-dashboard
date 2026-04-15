@@ -173,7 +173,7 @@ export function NewsFeedSection({ holdingCodes = [] }) {
     return h(
       Card,
       { style: { padding: '12px 14px' } },
-      h('div', { style: { fontSize: 11, color: C.textMute } }, `新聞載入失敗：${error}`)
+      h('div', { style: { fontSize: 11, color: C.textMute } }, `新聞暫時打不開：${error}`)
     )
   }
 

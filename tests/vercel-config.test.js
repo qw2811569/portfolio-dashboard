@@ -24,14 +24,9 @@ describe('vercel.json', () => {
     })
   })
 
-  it('uses VERCEL_GIT_PREVIOUS_SHA for ignoreCommand and falls back to build', () => {
+  it('points ignoreCommand at the wrapper script', () => {
     const vercelConfig = JSON.parse(readFileSync(join(process.cwd(), 'vercel.json'), 'utf-8'))
-    const cmd = vercelConfig.ignoreCommand
 
-    expect(cmd).toContain('if [ -z "$VERCEL_GIT_PREVIOUS_SHA" ]; then exit 1; fi')
-    expect(cmd).toContain('git fetch --depth=1 origin "$VERCEL_GIT_PREVIOUS_SHA"')
-    expect(cmd).toContain(
-      'git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- src/ api/ index.html vite.config.js vercel.json package.json'
-    )
+    expect(vercelConfig.ignoreCommand).toBe('bash scripts/vercel-ignore.sh')
   })
 })

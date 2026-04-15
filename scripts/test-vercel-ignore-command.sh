@@ -21,9 +21,12 @@ git config user.name "Codex Test"
 git config user.email "codex@example.com"
 
 mkdir -p src
+mkdir -p scripts
 printf 'console.log("v1")\n' > src/app.js
 printf '# test repo\n' > README.md
-git add src/app.js README.md
+cp "$ROOT_DIR/scripts/vercel-ignore.sh" scripts/vercel-ignore.sh
+chmod +x scripts/vercel-ignore.sh
+git add src/app.js README.md scripts/vercel-ignore.sh
 git commit -m "initial watched commit" >/dev/null
 git push origin HEAD >/dev/null 2>&1
 BASE_SHA="$(git rev-parse HEAD)"
@@ -58,3 +61,15 @@ if VERCEL_GIT_PREVIOUS_SHA="$UNRELATED_HEAD_SHA" sh -c "$IGNORE_COMMAND"; then
 fi
 
 printf 'PASS trigger-build when watched files changed\n'
+
+MISSING_SHA='deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
+set +e
+VERCEL_GIT_PREVIOUS_SHA="$MISSING_SHA" sh -c "$IGNORE_COMMAND"
+STATUS=$?
+set -e
+if [ "$STATUS" -ne 1 ]; then
+  printf 'FAIL missing previous SHA should have exited 1, got %s\n' "$STATUS" >&2
+  exit 1
+fi
+
+printf 'PASS normalize fetch failure to build exit code 1\n'

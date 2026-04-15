@@ -1,5 +1,6 @@
 import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
 import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from './dateUtils.js'
+import { isSkippedTargetPriceInstrumentType } from './instrumentTypes.js'
 import { getEventStockCodes } from './eventUtils.js'
 import {
   shouldDebugFinMindPromptCoverage,
@@ -413,15 +414,12 @@ export function buildHoldingDossiers(input, options = {}) {
 
   const rows = Array.isArray(holdings) ? holdings : []
   const now = new Date()
-  // Non-company instrument types (ETF baskets, warrants, indices, bonds) do
-  // not have company-level analyst targets or financial statements, so their
-  // freshness severity contribution should be zero. Marking them 'fresh' is
-  // the sentinel for "no data refresh is applicable to this holding type".
-  const NON_COMPANY_TYPES = new Set(['ETF', '權證', '指數', '債券'])
   return rows.map((holding) => {
     const targetReports = targets[holding.code]?.reports || []
     const fundamentalsEntry = fundamentals[holding.code] || null
-    const isNonCompany = NON_COMPANY_TYPES.has(String(holding?.type || '').trim())
+    // Non-company instrument types do not have company-level analyst targets
+    // or financial statements, so "fresh" here means "refresh not applicable".
+    const isNonCompany = isSkippedTargetPriceInstrumentType(holding)
     const targetsFreshness = isNonCompany
       ? 'fresh'
       : computeFreshnessGrade(

@@ -47,6 +47,9 @@
     "api/cron/collect-news.js": {
       "maxDuration": 60
     },
+    "api/cron/collect-target-prices.js": {
+      "maxDuration": 60
+    },
     "api/*.js": {
       "maxDuration": 10
     }

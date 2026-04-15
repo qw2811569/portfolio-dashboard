@@ -46,6 +46,29 @@ function buildItemHash(item) {
     .slice(0, 16)
 }
 
+export function buildGoogleNewsQueries(code, name) {
+  const normalizedCode = String(code || '').trim()
+  const normalizedName = String(name || '').trim()
+  return [
+    `${normalizedCode} ${normalizedName} 目標價 when:30d`,
+    `${normalizedCode} ${normalizedName} 投顧 when:30d`,
+    `${normalizedCode} ${normalizedName} 研究報告 when:30d`,
+  ]
+}
+
+export function buildRssUrls(code, name) {
+  const googleNewsUrls = buildGoogleNewsQueries(code, name).map(
+    (query) =>
+      `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`
+  )
+
+  return [
+    ...googleNewsUrls,
+    'https://news.cnyes.com/rss/cat/tw_stock',
+    'https://money.udn.com/rssfeed/news/1001/5710',
+  ]
+}
+
 function looksRelevant(item, code, name) {
   const haystack = `${item.title} ${item.description}`.toLowerCase()
   return (
@@ -75,10 +98,43 @@ async function fetchTextWithTimeout(url, timeoutMs = 8000) {
 
 async function fetchMultipleRss(urls, timeoutMs = 8000) {
   const results = await Promise.allSettled(urls.map((url) => fetchTextWithTimeout(url, timeoutMs)))
-  return results
-    .filter((r) => r.status === 'fulfilled')
-    .map((r) => r.value)
-    .join('\n')
+  return results.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+}
+
+export function normalizeRssItems(xmlPayloads, { code, name }) {
+  const parsedItems = (Array.isArray(xmlPayloads) ? xmlPayloads : [])
+    .flatMap((xml) => parseRssItems(xml))
+    .filter((item) => item.title && item.link)
+    .filter((item) => looksRelevant(item, code, name))
+    .map((item) => ({
+      ...item,
+      publishedAt: formatPublishedAt(item.pubDate),
+      snippet: item.description,
+    }))
+
+  const deduped = []
+  const seenUrls = new Set()
+  const seenHashes = new Set()
+
+  for (const item of parsedItems) {
+    const normalizedUrl = String(item.link || '').trim()
+    const id = buildItemHash(item)
+    if (!normalizedUrl || seenUrls.has(normalizedUrl) || seenHashes.has(id)) continue
+
+    seenUrls.add(normalizedUrl)
+    seenHashes.add(id)
+    deduped.push({
+      id,
+      hash: id,
+      title: item.title,
+      url: normalizedUrl,
+      source: item.source || '',
+      publishedAt: item.publishedAt,
+      snippet: item.snippet || '',
+    })
+  }
+
+  return deduped
 }
 
 async function extractInsights(stock, items) {
@@ -142,38 +198,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '缺少 code 或 name' })
     }
 
-    // 多個 RSS 來源：Google News + 鉅亨網 + 經濟日報
-    const rssUrls = [
-      `https://news.google.com/rss/search?q=${encodeURIComponent(`${code} ${name} 台股 目標價 投顧 研究報告 法說 財報 when:30d`)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant`,
-      `https://news.cnyes.com/rss/cat/tw_stock`,
-      `https://money.udn.com/rssfeed/news/1001/5710`,
-    ]
-    const xml = await fetchMultipleRss(rssUrls)
-    const parsedItems = parseRssItems(xml)
-      .filter((item) => item.title && item.link)
-      .filter((item) => looksRelevant(item, code, name))
-      .map((item) => ({
-        ...item,
-        publishedAt: formatPublishedAt(item.pubDate),
-        snippet: item.description,
-      }))
-
-    const deduped = []
-    const seen = new Set()
-    for (const item of parsedItems) {
-      const id = buildItemHash(item)
-      if (seen.has(id)) continue
-      seen.add(id)
-      deduped.push({
-        id,
-        hash: id,
-        title: item.title,
-        url: item.link,
-        source: item.source || '',
-        publishedAt: item.publishedAt,
-        snippet: item.snippet || '',
-      })
-    }
+    const rssUrls = buildRssUrls(code, name)
+    const xmlPayloads = await fetchMultipleRss(rssUrls)
+    const deduped = normalizeRssItems(xmlPayloads, { code, name })
 
     const known = new Set((Array.isArray(knownHashes) ? knownHashes : []).filter(Boolean))
     const newItems = deduped
@@ -203,7 +230,7 @@ export default async function handler(req, res) {
     })
 
     return res.status(200).json({
-      query: { code, name },
+      query: { code, name, rssUrls },
       fetchedAt: new Date().toISOString(),
       totalFound: deduped.length,
       newCount: items.length,

@@ -135,7 +135,7 @@ describe('api/cron/collect-target-prices', () => {
     })
     expect(getAnalystCalls()).toHaveLength(1)
 
-    await vi.advanceTimersByTimeAsync(2500)
+    await vi.advanceTimersByTimeAsync(250)
     await vi.waitFor(() => {
       expect(getAnalystCalls()).toHaveLength(2)
     })

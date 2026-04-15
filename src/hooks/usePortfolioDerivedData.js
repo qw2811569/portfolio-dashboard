@@ -4,6 +4,7 @@ import { fetchCronTargets, isCronTargetUsable } from '../lib/dataAdapters/cronTa
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
 import { mapFinMindToPerBandTargets } from '../lib/dataAdapters/finmindTargetsMapper.js'
 import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/dateUtils.js'
+import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import { classifyStock, mergeClassification } from '../lib/stockClassifier.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
@@ -670,6 +671,7 @@ export function usePortfolioDerivedData({
   const dataRefreshRows = useMemo(
     () =>
       dossiersToUse
+        .filter((dossier) => !isSkippedTargetPriceInstrumentType(dossier))
         .map((dossier) => {
           const targetStatus = dossier?.freshness?.targets || 'missing'
           const fundamentalStatus = dossier?.freshness?.fundamentals || 'missing'

@@ -366,6 +366,53 @@ describe('usePortfolioDerivedData', () => {
       // Severity 0 means the row never made it into the backlog at all.
       expect(row).toBeUndefined()
     })
+
+    it('skips ETF and warrant dossiers from dataRefreshRows even when freshness is missing', () => {
+      const holdingDossiers = [
+        {
+          code: '0050',
+          name: '元大台灣50',
+          position: { code: '0050', name: '元大台灣50', type: 'ETF' },
+          freshness: { targets: 'missing', fundamentals: 'missing' },
+        },
+        {
+          code: '053848',
+          name: '亞翔凱基5B購',
+          position: { code: '053848', name: '亞翔凱基5B購', type: '權證' },
+          freshness: { targets: 'stale', fundamentals: 'missing' },
+        },
+        {
+          code: '2330',
+          name: '台積電',
+          position: { code: '2330', name: '台積電', type: '股票' },
+          freshness: { targets: 'missing', fundamentals: 'stale' },
+        },
+      ]
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [
+              { code: '0050', name: '元大台灣50', type: 'ETF', qty: 1000, cost: 100, price: 105 },
+              {
+                code: '053848',
+                name: '亞翔凱基5B購',
+                type: '權證',
+                qty: 8000,
+                cost: 1.8,
+                price: 2.2,
+              },
+              { code: '2330', name: '台積電', type: '股票', qty: 100, cost: 900, price: 950 },
+            ],
+            watchlist: [],
+            holdingDossiers,
+          })
+        )
+      )
+
+      expect(result.current.dataRefreshRows).toHaveLength(1)
+      expect(result.current.dataRefreshRows.map((row) => row.code)).toEqual(['2330'])
+    })
   })
 
   describe('FinMind enrichment flows into dataRefreshRows', () => {

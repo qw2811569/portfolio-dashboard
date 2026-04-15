@@ -1,10 +1,10 @@
 import { list, put } from '@vercel/blob'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../../src/seedData.js'
+import { isSkippedTargetPriceInstrumentType } from '../../src/lib/instrumentTypes.js'
 
 const TRACKED_STOCKS_BLOB_KEYS = ['tracked-stocks/latest.json', 'tracked-stocks.json']
 const TARGET_PRICE_PREFIX = 'target-prices'
-const PROCESSING_PAUSE_MS = 2500
-const SKIPPED_INSTRUMENT_TYPES = new Set(['權證', 'ETF', '指數', '債券'])
+const PROCESSING_PAUSE_MS = 250
 
 function getCronSecret() {
   return String(process.env.CRON_SECRET || '').trim()
@@ -21,7 +21,7 @@ export function sleep(ms) {
 }
 
 export function isSkippedInstrumentType(type) {
-  return SKIPPED_INSTRUMENT_TYPES.has(String(type || '').trim())
+  return isSkippedTargetPriceInstrumentType(type)
 }
 
 export function normalizeTrackedStock(value) {
@@ -204,7 +204,7 @@ async function fetchAnalystReports(stock, { origin, fetchImpl = fetch } = {}) {
   return payload || {}
 }
 
-async function putTargetPriceSnapshot(code, snapshot, { token = getBlobToken() } = {}) {
+export async function putTargetPriceSnapshot(code, snapshot, { token = getBlobToken() } = {}) {
   if (!token) {
     throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for target-price writes')
   }

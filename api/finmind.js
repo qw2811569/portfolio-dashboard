@@ -40,6 +40,22 @@ function sortByDateDesc(rows = []) {
   return [...rows].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
 }
 
+function getInstitutionalBucket(name = '') {
+  if (
+    name.includes('外資') ||
+    name.includes('陸資') ||
+    name === 'Foreign_Investor' ||
+    name === 'Foreign_Dealer_Self'
+  ) {
+    return 'foreign'
+  }
+  if (name.includes('投信') || name === 'Investment_Trust') return 'investment'
+  if (name.includes('自營') || name === 'Dealer_self' || name === 'Dealer_Hedging') {
+    return 'dealer'
+  }
+  return null
+}
+
 async function queryFinMind(dataset, params = {}) {
   if (Date.now() < finmindRateLimitedUntil) {
     throw new FinMindApiError('FinMind requests temporarily rate limited', {
@@ -112,9 +128,9 @@ function transformInstitutional(rows = []) {
       byDate[row.date] = { date: row.date, foreign: 0, investment: 0, dealer: 0 }
     }
     const net = toNumber(row.buy) - toNumber(row.sell)
-    if (String(row.name || '').includes('外資')) byDate[row.date].foreign += net
-    else if (String(row.name || '').includes('投信')) byDate[row.date].investment += net
-    else if (String(row.name || '').includes('自營')) byDate[row.date].dealer += net
+    const name = String(row.name || '')
+    const bucket = getInstitutionalBucket(name)
+    if (bucket) byDate[row.date][bucket] += net
   }
   return sortByDateDesc(Object.values(byDate))
 }

@@ -148,6 +148,7 @@ export function buildTargetPriceSnapshot({ stock, analystPayload, now = new Date
   const collectedAt = now.toISOString()
   const items = Array.isArray(analystPayload?.items) ? analystPayload.items : []
   const reports = buildSnapshotTargetReports(items, toSlashDate(now))
+  const targetSource = String(analystPayload?.targetPriceSource || '').trim() || 'rss'
 
   return {
     code: stock.code,
@@ -160,7 +161,7 @@ export function buildTargetPriceSnapshot({ stock, analystPayload, now = new Date
     targets: {
       reports,
       updatedAt: collectedAt,
-      source: 'analyst-reports',
+      source: targetSource,
     },
     analystReports: {
       items,

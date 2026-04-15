@@ -8,10 +8,14 @@
 // - AI_ENABLE_EXTENDED_THINKING
 // - AI_THINKING_BUDGET_TOKENS
 
+import { loadLocalEnvIfPresent } from './local-env.js'
+
 const DEFAULT_ENDPOINT = 'https://api.anthropic.com/v1/messages'
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const DEFAULT_VERSION = '2023-06-01'
 const MIN_THINKING_BUDGET = 1024
+const GEMINI_ENDPOINT =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 function parseBoolean(value) {
   return ['1', 'true', 'yes', 'on'].includes(
@@ -22,6 +26,7 @@ function parseBoolean(value) {
 }
 
 export function getAiConfig() {
+  loadLocalEnvIfPresent()
   const provider = process.env.AI_PROVIDER || 'anthropic'
   const anthropicKey = process.env.ANTHROPIC_API_KEY || ''
   const genericKey = process.env.AI_API_KEY || ''
@@ -44,6 +49,25 @@ export function ensureAiConfigured() {
   const config = getAiConfig()
   if (!config.apiKey) {
     throw new Error('未設定 AI_API_KEY')
+  }
+  return config
+}
+
+export function getGeminiConfig() {
+  loadLocalEnvIfPresent()
+  const apiKey = String(process.env.GEMINI_API_KEY || '').trim()
+
+  return {
+    apiKey,
+    endpoint: process.env.GEMINI_API_ENDPOINT || GEMINI_ENDPOINT,
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  }
+}
+
+export function ensureGeminiConfigured() {
+  const config = getGeminiConfig()
+  if (!config.apiKey) {
+    throw new Error('未設定 GEMINI_API_KEY')
   }
   return config
 }
@@ -94,6 +118,17 @@ async function parseAiErrorResponse(response) {
   } catch {
     return text || `AI request failed (${response.status})`
   }
+}
+
+export function extractGeminiText(data) {
+  const candidates = Array.isArray(data?.candidates) ? data.candidates : []
+  return candidates
+    .flatMap((candidate) =>
+      Array.isArray(candidate?.content?.parts) ? candidate.content.parts : []
+    )
+    .filter((part) => typeof part?.text === 'string')
+    .map((part) => part.text)
+    .join('\n\n')
 }
 
 async function* iterateSseEvents(stream) {
@@ -192,6 +227,45 @@ export async function callAiRaw({ system, messages, maxTokens = 3000, allowThink
     throw new Error(detail)
   }
   return data
+}
+
+export async function callGeminiGrounded({ prompt }) {
+  const config = ensureGeminiConfigured()
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 55_000)
+
+  try {
+    const response = await fetch(config.endpoint, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': config.apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: String(prompt || '') }],
+          },
+        ],
+        tools: [{ google_search: {} }],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(await parseAiErrorResponse(response))
+    }
+
+    return await response.json()
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('Gemini API 逾時（55秒），請稍後再試')
+    }
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export async function callAiRawStream({

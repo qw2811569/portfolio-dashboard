@@ -201,6 +201,7 @@ describe('api/cron/collect-target-prices', () => {
       code: '2330',
       name: '台積電',
       targets: {
+        source: 'rss',
         reports: [{ firm: '元大投顧', target: 1200, date: '2026/04/12' }],
       },
     })
@@ -243,5 +244,30 @@ describe('api/cron/collect-target-prices', () => {
     expect(snapshot.targets.reports).toEqual([
       { firm: '豐雲學堂', target: 1700, date: '2026/04/15' },
     ])
+  })
+
+  it('preserves gemini target source in snapshots', async () => {
+    const { buildTargetPriceSnapshot } = await import('../../api/cron/collect-target-prices.js')
+
+    const snapshot = buildTargetPriceSnapshot({
+      stock: { code: '3491', name: '昇達科', type: '股票' },
+      analystPayload: {
+        targetPriceSource: 'gemini',
+        items: [
+          {
+            id: 'g1',
+            firm: '凱基投顧',
+            target: 1680,
+            targetType: 'price-target',
+            publishedAt: '2026-04-15',
+          },
+        ],
+      },
+    })
+
+    expect(snapshot.targets).toMatchObject({
+      source: 'gemini',
+      reports: [{ firm: '凱基投顧', target: 1680, date: '2026-04-15' }],
+    })
   })
 })

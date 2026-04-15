@@ -3,6 +3,16 @@ import { list } from '@vercel/blob'
 const TOKEN_KEY = 'PUB_BLOB_READ_WRITE_TOKEN'
 const TARGET_PRICE_PREFIX = 'target-prices'
 
+function normalizeTargetSource(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+  if (normalized === 'gemini') return 'gemini'
+  if (normalized === 'rss') return 'rss'
+  if (normalized === 'per-band' || normalized === 'finmind-per-band') return 'per-band'
+  return 'rss'
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -35,6 +45,11 @@ export default async function handler(req, res) {
     }
 
     const snapshot = await response.json()
+    const reportCount = Array.isArray(snapshot?.targets?.reports)
+      ? snapshot.targets.reports.length
+      : 0
+    res.setHeader('x-target-price-source', normalizeTargetSource(snapshot?.targets?.source))
+    res.setHeader('x-target-price-count', String(reportCount))
     return res.status(200).json(snapshot)
   } catch (error) {
     console.error(`[target-prices] failed for ${code}:`, error)

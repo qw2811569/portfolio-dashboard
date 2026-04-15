@@ -5,6 +5,7 @@ import {
   putTargetPriceSnapshot,
   sleep,
 } from '../api/cron/collect-target-prices.js'
+import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:3002'
 const DEFAULT_PAUSE_MS = 250
@@ -86,6 +87,7 @@ async function fetchAnalystReports(baseUrl, stock) {
 }
 
 async function main() {
+  loadLocalEnvIfPresent()
   const cliOptions = parseCliArgs()
   if (cliOptions.help) {
     printHelp()

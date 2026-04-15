@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildGoogleNewsQueries,
+  buildGeminiGroundingPrompt,
+  dedupeLatestGeminiReports,
   buildRssUrls,
   extractExplicitTarget,
   normalizeRssItems,
+  parseGeminiGroundedReports,
   rankRssItemsForExtraction,
 } from '../../api/analyst-reports.js'
 
@@ -102,5 +105,72 @@ describe('api/analyst-reports helpers', () => {
 
     expect(extracted).toEqual([1700, null, null])
     expect(extracted.filter((value) => value !== null)).toHaveLength(1)
+  })
+
+  it('keeps only the latest valid grounded report per firm', () => {
+    expect(
+      dedupeLatestGeminiReports([
+        {
+          firm: '元大投顧',
+          target: 1280,
+          stance: 'buy',
+          date: '2026-04-10',
+          source_url: 'https://example.com/report-a',
+          evidence: '元大投顧調高目標價至 1280 元',
+        },
+        {
+          firm: '元大投顧',
+          target: 1300,
+          stance: 'buy',
+          date: '2026-04-12',
+          source_url: 'https://example.com/report-b',
+          evidence: '元大投顧最新目標價 1300 元',
+        },
+        {
+          firm: '',
+          target: 1180,
+          stance: 'buy',
+          date: '2026-04-11',
+          source_url: 'https://example.com/invalid',
+          evidence: '缺 firm',
+        },
+      ])
+    ).toEqual([
+      {
+        firm: '元大投顧',
+        target: 1300,
+        stance: 'buy',
+        date: '2026-04-12',
+        source_url: 'https://example.com/report-b',
+        evidence: '元大投顧最新目標價 1300 元',
+      },
+    ])
+  })
+
+  it('parses grounded gemini json and filters invalid rows', () => {
+    const payload = `\`\`\`json
+{"reports":[
+  {"firm":"凱基投顧","target":980,"stance":"outperform","date":"2026-04-14","source_url":"https://example.com/kgi","evidence":"凱基投顧給 980 元"},
+  {"firm":"市場共識","target":"1000","stance":"buy","date":"2026/04/14","source_url":"not-a-url","evidence":"無效"}
+]}
+\`\`\``
+
+    expect(parseGeminiGroundedReports(payload)).toEqual([
+      {
+        firm: '凱基投顧',
+        target: 980,
+        stance: 'outperform',
+        date: '2026-04-14',
+        source_url: 'https://example.com/kgi',
+        evidence: '凱基投顧給 980 元',
+      },
+    ])
+  })
+
+  it('builds the refined Gemini grounding prompt', () => {
+    const prompt = buildGeminiGroundingPrompt('3491', '昇達科')
+    expect(prompt).toContain('近30天，3491 昇達科')
+    expect(prompt).toContain('只輸出 JSON')
+    expect(prompt).toContain('不要輸出 markdown')
   })
 })

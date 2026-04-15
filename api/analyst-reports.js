@@ -1,5 +1,10 @@
 import { createHash } from 'crypto'
-import { callAiRaw, ensureAiConfigured } from './_lib/ai-provider.js'
+import {
+  callAiRaw,
+  callGeminiGrounded,
+  ensureAiConfigured,
+  extractGeminiText,
+} from './_lib/ai-provider.js'
 
 function decodeHtml(value) {
   return String(value || '')
@@ -59,6 +64,102 @@ const SOCIAL_NOISE_REGEX = /(股市爆料同學會|盤中快報|千張大戶|處
 
 function getItemText(item) {
   return `${item?.title || ''} ${item?.snippet || ''}`
+}
+
+function parseBoolean(value) {
+  return ['1', 'true', 'yes', 'on'].includes(
+    String(value || '')
+      .trim()
+      .toLowerCase()
+  )
+}
+
+export function isGeminiGroundingEnabled() {
+  return parseBoolean(process.env.USE_GEMINI_GROUNDING)
+}
+
+export function buildGeminiGroundingPrompt(code, name) {
+  return `你是台股券商目標價蒐集器。
+任務：找出「近30天，${String(code || '').trim()} ${String(name || '').trim()}」公開可驗證的券商/投顧目標價。
+只接受同時滿足：
+1. 有明確機構名稱 (firm)
+2. 有明確 target price 數字
+3. 有可追溯日期 (YYYY-MM-DD)
+4. 有公開 source_url
+
+只輸出 JSON：
+{"reports":[{"firm":"", "target":0, "stance":"buy|hold|sell|outperform|neutral|underperform|unknown", "date":"YYYY-MM-DD", "source_url":"https://...", "evidence":""}]}
+
+規則：
+- 同一 firm 重複只保留最新一筆
+- 若只有區間/共識均值/媒體轉述且無 firm，丟棄
+- 若無法確認，不要猜
+- 不要輸出 markdown`
+}
+
+function normalizeGeminiJsonText(text) {
+  return String(text || '')
+    .replace(/```json|```/g, '')
+    .trim()
+}
+
+function normalizeGeminiStance(value) {
+  return ['buy', 'hold', 'sell', 'outperform', 'neutral', 'underperform', 'unknown'].includes(value)
+    ? value
+    : 'unknown'
+}
+
+function normalizeGeminiDate(value) {
+  const normalized = String(value || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null
+  const timestamp = Date.parse(`${normalized}T00:00:00Z`)
+  return Number.isNaN(timestamp) ? null : normalized
+}
+
+function normalizeSourceUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim())
+    return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export function dedupeLatestGeminiReports(reports = []) {
+  const latestByFirm = new Map()
+
+  for (const report of Array.isArray(reports) ? reports : []) {
+    const firm = String(report?.firm || '').trim()
+    const date = normalizeGeminiDate(report?.date)
+    const target = Number(report?.target)
+    const sourceUrl = normalizeSourceUrl(report?.source_url)
+
+    if (!firm || !date || !Number.isFinite(target) || target <= 0 || !sourceUrl) continue
+
+    const normalized = {
+      firm,
+      target,
+      stance: normalizeGeminiStance(String(report?.stance || '').trim()),
+      date,
+      source_url: sourceUrl,
+      evidence: String(report?.evidence || '').trim(),
+    }
+    const previous = latestByFirm.get(firm)
+    if (!previous || previous.date < normalized.date) {
+      latestByFirm.set(firm, normalized)
+    }
+  }
+
+  return [...latestByFirm.values()].sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function parseGeminiGroundedReports(payload) {
+  try {
+    const parsed = JSON.parse(normalizeGeminiJsonText(payload))
+    return dedupeLatestGeminiReports(parsed?.reports)
+  } catch {
+    return []
+  }
 }
 
 export function extractExplicitTarget(value) {
@@ -186,6 +287,99 @@ export function normalizeRssItems(xmlPayloads, { code, name }) {
   return deduped
 }
 
+function buildGeminiInsightItem(stock, report, index) {
+  const id = createHash('sha1')
+    .update([stock.code, report.firm, report.target, report.date, report.source_url].join('|'))
+    .digest('hex')
+    .slice(0, 16)
+
+  return {
+    id,
+    hash: id,
+    title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
+    url: report.source_url,
+    source: report.firm,
+    publishedAt: report.date,
+    snippet: report.evidence,
+    summary: report.evidence,
+    target: report.target,
+    targetType: 'price-target',
+    targetEvidence: report.evidence,
+    firm: report.firm,
+    stance: report.stance,
+    tags: ['gemini-grounding'],
+    confidence: null,
+    extractedAt: new Date().toISOString(),
+    rank: index + 1,
+  }
+}
+
+async function collectGeminiGroundedReports(stock) {
+  const prompt = buildGeminiGroundingPrompt(stock.code, stock.name)
+  const response = await callGeminiGrounded({ prompt })
+  const reports = parseGeminiGroundedReports(extractGeminiText(response))
+  const items = reports.map((report, index) => buildGeminiInsightItem(stock, report, index))
+
+  return {
+    query: { code: stock.code, name: stock.name, mode: 'gemini-grounding' },
+    fetchedAt: new Date().toISOString(),
+    totalFound: items.length,
+    newCount: items.length,
+    items,
+    targetPriceSource: items.length > 0 ? 'gemini' : 'rss',
+    targetPriceCount: items.length,
+  }
+}
+
+async function collectRssReports(stock, knownHashes, maxItems, maxExtract) {
+  const rssUrls = buildRssUrls(stock.code, stock.name)
+  const xmlPayloads = await fetchMultipleRss(rssUrls)
+  const deduped = normalizeRssItems(xmlPayloads, { code: stock.code, name: stock.name })
+
+  const known = new Set((Array.isArray(knownHashes) ? knownHashes : []).filter(Boolean))
+  const unseenItems = deduped.filter((item) => !known.has(item.id))
+  const newItems = rankRssItemsForExtraction(unseenItems).slice(
+    0,
+    Math.max(1, Number(maxItems) || 6)
+  )
+  const itemsForExtraction = newItems.slice(0, Math.max(1, Number(maxExtract) || 4))
+  const insights = await extractInsights(stock, itemsForExtraction)
+
+  const items = newItems.map((item) => {
+    const insight = insights.get(item.id)
+    const targetDetails = normalizeTargetDetails(item, insight)
+    const confidence = Number(insight?.confidence)
+    return {
+      ...item,
+      summary: typeof insight?.summary === 'string' ? insight.summary.trim() : '',
+      target: targetDetails.target,
+      targetType: targetDetails.targetType,
+      targetEvidence: targetDetails.targetEvidence,
+      firm: typeof insight?.firm === 'string' ? insight.firm.trim() : '',
+      stance: ['bullish', 'neutral', 'bearish', 'unknown'].includes(insight?.stance)
+        ? insight.stance
+        : 'unknown',
+      tags: Array.isArray(insight?.tags) ? insight.tags.filter(Boolean).slice(0, 4) : [],
+      confidence: Number.isFinite(confidence) ? confidence : null,
+      extractedAt: new Date().toISOString(),
+    }
+  })
+
+  const targetPriceCount = items.filter(
+    (item) => Number.isFinite(Number(item?.target)) && Number(item.target) > 0
+  ).length
+
+  return {
+    query: { code: stock.code, name: stock.name, rssUrls, mode: 'rss' },
+    fetchedAt: new Date().toISOString(),
+    totalFound: deduped.length,
+    newCount: items.length,
+    items,
+    targetPriceSource: targetPriceCount > 0 ? 'rss' : 'per-band',
+    targetPriceCount,
+  }
+}
+
 async function extractInsights(stock, items) {
   if (!Array.isArray(items) || items.length === 0) return new Map()
   try {
@@ -297,46 +491,24 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '缺少 code 或 name' })
     }
 
-    const rssUrls = buildRssUrls(code, name)
-    const xmlPayloads = await fetchMultipleRss(rssUrls)
-    const deduped = normalizeRssItems(xmlPayloads, { code, name })
+    const stock = { code, name }
+    let payload = null
 
-    const known = new Set((Array.isArray(knownHashes) ? knownHashes : []).filter(Boolean))
-    const unseenItems = deduped.filter((item) => !known.has(item.id))
-    const newItems = rankRssItemsForExtraction(unseenItems).slice(
-      0,
-      Math.max(1, Number(maxItems) || 6)
-    )
-    const itemsForExtraction = newItems.slice(0, Math.max(1, Number(maxExtract) || 4))
-    const insights = await extractInsights({ code, name }, itemsForExtraction)
-
-    const items = newItems.map((item) => {
-      const insight = insights.get(item.id)
-      const targetDetails = normalizeTargetDetails(item, insight)
-      const confidence = Number(insight?.confidence)
-      return {
-        ...item,
-        summary: typeof insight?.summary === 'string' ? insight.summary.trim() : '',
-        target: targetDetails.target,
-        targetType: targetDetails.targetType,
-        targetEvidence: targetDetails.targetEvidence,
-        firm: typeof insight?.firm === 'string' ? insight.firm.trim() : '',
-        stance: ['bullish', 'neutral', 'bearish', 'unknown'].includes(insight?.stance)
-          ? insight.stance
-          : 'unknown',
-        tags: Array.isArray(insight?.tags) ? insight.tags.filter(Boolean).slice(0, 4) : [],
-        confidence: Number.isFinite(confidence) ? confidence : null,
-        extractedAt: new Date().toISOString(),
+    if (isGeminiGroundingEnabled()) {
+      try {
+        payload = await collectGeminiGroundedReports(stock)
+      } catch {
+        payload = null
       }
-    })
+    }
 
-    return res.status(200).json({
-      query: { code, name, rssUrls },
-      fetchedAt: new Date().toISOString(),
-      totalFound: deduped.length,
-      newCount: items.length,
-      items,
-    })
+    if (!payload || payload.targetPriceCount === 0) {
+      payload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
+    }
+
+    res.setHeader('x-target-price-source', payload.targetPriceSource)
+    res.setHeader('x-target-price-count', String(payload.targetPriceCount))
+    return res.status(200).json(payload)
   } catch (err) {
     return res.status(500).json({ error: '公開報告索引抓取失敗', detail: err.message })
   }

@@ -2,7 +2,7 @@
   "framework": "vite",
   "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "ignoreCommand": "if [ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then exit 1; fi && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- src/ api/ index.html vite.config.js vercel.json package.json",
+  "ignoreCommand": "if [ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then exit 1; fi && git fetch --depth=1 origin \"$VERCEL_GIT_PREVIOUS_SHA\" 2>/dev/null && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- src/ api/ index.html vite.config.js vercel.json package.json",
   "crons": [
     {
       "path": "/api/cron/collect-daily-events",

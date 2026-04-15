@@ -74,7 +74,7 @@ export function OperatingContextCard({ context }) {
       h(
         'div',
         { style: { flex: 1, minWidth: 220 } },
-        h('div', { style: { ...lbl, color: C.teal, marginBottom: 4 } }, '本輪操作脈絡'),
+        h('div', { style: { ...lbl, color: C.teal, marginBottom: 4 } }, '現在先看這裡'),
         nextActionLabel &&
           h(
             'div',
@@ -118,7 +118,7 @@ export function OperatingContextCard({ context }) {
         pendingCount > 0 && h(Badge, { color: 'amber' }, `待處理 ${pendingCount}`),
         attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
         refreshBacklogCount > 0 &&
-          h(Badge, { color: 'lavender' }, `待補資料 ${refreshBacklogCount}`),
+          h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔沒補完`),
         autoReviewedCount > 0 &&
           h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
       )
@@ -149,7 +149,7 @@ export function OperatingContextCard({ context }) {
           h(
             'div',
             { style: { fontSize: 11, color: C.text, fontWeight: 600 } },
-            `焦點標的：${focus.name} (${focus.code})`
+            `先盯這檔：${focus.name} (${focus.code})`
           ),
           focus.upsideLabel &&
             h(
@@ -181,7 +181,7 @@ export function OperatingContextCard({ context }) {
             lineHeight: 1.7,
           },
         },
-        h('span', { style: { color: C.textMute } }, '最近收盤結論'),
+        h('span', { style: { color: C.textMute } }, '上次收盤怎麼看'),
         ' · ',
         truncate(latestInsightSummary, 140),
         lastAnalysisLabel ? ` (${lastAnalysisLabel})` : ''

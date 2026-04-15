@@ -11,6 +11,20 @@ const lbl = {
   marginBottom: 5,
 }
 
+function describeStatus(kind, status) {
+  if (kind === 'target') {
+    if (status === 'fresh') return '目標價還算新'
+    if (status === 'aging') return '目標價有點舊了'
+    if (status === 'stale') return '目標價太久沒更新'
+    return '目標價還沒抓到'
+  }
+
+  if (status === 'fresh') return '財報資料還算新'
+  if (status === 'aging') return '財報資料有點舊了'
+  if (status === 'stale') return '財報資料太久沒更新'
+  return '財報資料還沒抓到'
+}
+
 /**
  * Research Panel Header
  */
@@ -30,8 +44,8 @@ export function ResearchHeader({
     h(
       'div',
       { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
-      'AI 自動分析：不只研究個股，更能審視你的整個投資系統 — ',
-      '決策品質、認知盲點、情緒模式、策略一致性 — 並產出 AI 策略建議。'
+      '不只看單一股票，還會順手幫你檢查整個投資節奏。',
+      '哪裡決策卡住、哪裡資料不夠、哪裡該先補強，這裡會直接講白。'
     ),
     h(
       'div',
@@ -74,7 +88,7 @@ export function ResearchHeader({
             whiteSpace: 'nowrap',
           },
         },
-        reportRefreshing ? '刷新中...' : '刷新公開報告'
+        reportRefreshing ? '補資料中...' : '補最新報告'
       )
     ),
     reportRefreshStatus &&
@@ -96,11 +110,7 @@ export function StockResearchButtons({
   return h(
     'div',
     null,
-    h(
-      'div',
-      { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
-      '個股研究選擇（3 輪迭代）：'
-    ),
+    h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '想先深挖哪一檔：'),
     h(
       'div',
       { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
@@ -158,11 +168,11 @@ export function DataRefreshCenter({ dataRefreshRows }) {
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, marginBottom: 4, color: C.amber } }, '資料更新中心'),
+        h('div', { style: { ...lbl, marginBottom: 4, color: C.amber } }, '先補資料'),
         h(
           'div',
           { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7 } },
-          '先補齊過期 / 缺少的財報與目標價，AI 之後的分析會更扎實。'
+          '有些股票資料還不齊。先把舊報告和缺的財報補一補，後面的研究會準很多。'
         )
       ),
       h(
@@ -182,7 +192,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                 color: C.amber,
               },
             },
-            `${item.name} 需更新`
+            `${item.name} 要補`
           )
         )
       )
@@ -243,17 +253,17 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                         color: item.targetSource === 'per-band' ? C.textMute : C.teal,
                       },
                     },
-                    item.targetSource === 'per-band' ? '系統推估' : '券商觀點'
+                    item.targetSource === 'per-band' ? '系統推估' : '券商報告'
                   ),
                   item.targetLabel,
                   item.targetStatus === 'aging'
-                    ? h('span', { style: { color: C.amber, marginLeft: 4 } }, '\u26A0 報告偏舊')
+                    ? h('span', { style: { color: C.amber, marginLeft: 4 } }, '\u26A0 報告有點舊了')
                     : null
                 )
               : h(
                   'div',
                   { style: { fontSize: 9, color: C.textMute, marginTop: 3 } },
-                  `目標價：${item.targetStatus} · 財報：${item.fundamentalStatus}`
+                  `${describeStatus('target', item.targetStatus)} · ${describeStatus('fundamental', item.fundamentalStatus)}`
                 ),
             item.classificationNote &&
               h(
@@ -275,7 +285,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
           marginTop: 8,
         },
       },
-      '先用上方「刷新公開報告」補齊資料，再開始個股或全組合研究。'
+      '先按上方「補最新報告」，資料齊一點再開始研究會比較準。'
     )
   )
 }

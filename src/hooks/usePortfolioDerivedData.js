@@ -700,7 +700,9 @@ export function usePortfolioDerivedData({
             (f) => !cls[f]?.value || cls[f]?.value === '待分類'
           )
           const classificationNote =
-            lowConfidenceFields.length > 0 ? `待確認：${lowConfidenceFields.join('、')}` : null
+            lowConfidenceFields.length > 0
+              ? `這檔還在補標籤：${lowConfidenceFields.join('、')}`
+              : null
           return {
             code: dossier.code,
             name: dossier.name,

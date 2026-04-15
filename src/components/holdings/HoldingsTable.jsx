@@ -232,7 +232,7 @@ export function HoldingRow({
                 borderTop: `1px solid ${C.border}`,
               },
             },
-            h('div', { style: { ...lbl, marginBottom: 6 } }, 'FinMind 數據'),
+            h('div', { style: { ...lbl, marginBottom: 6 } }, '最近抓到的補充資料'),
             (() => {
               const finmindText = buildFinMindChipContext(holding.finmind)
               return finmindText
@@ -248,7 +248,11 @@ export function HoldingRow({
                     },
                     finmindText
                   )
-                : h('div', { style: { fontSize: 9, color: C.textMute } }, '暫無 FinMind 數據')
+                : h(
+                    'div',
+                    { style: { fontSize: 9, color: C.textMute } },
+                    '這檔目前還沒抓到補充資料'
+                  )
             })()
           ),
 

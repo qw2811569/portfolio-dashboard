@@ -86,13 +86,13 @@ export function HoldingsIntegrityWarning({ issues }) {
         lineHeight: 1.7,
       },
     },
-    `偵測到 ${issues.length} 檔持股缺少可用價格，市值可能暫時不完整： `,
+    `有 ${issues.length} 檔現在抓不到價格，市值會先少一塊： `,
     issues
       .slice(0, 5)
       .map((item) => `${item.name || item.code}(${item.code})`)
       .join('、'),
     issues.length > 5 ? '…' : '',
-    '。請先按一次「收盤價」同步，若仍存在代表這些資料需要手動修補。'
+    '。先按一次「收盤價」重抓；如果還在，就表示這幾檔要手動補資料。'
   )
 }
 

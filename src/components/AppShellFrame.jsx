@@ -32,7 +32,7 @@ export default function AppShellFrame({
           alignItems: 'center',
           justifyContent: 'center',
           color: C.text,
-          fontFamily: "'Special Elite','Noto Sans TC',monospace",
+          fontFamily: "'Inter','Noto Sans TC',system-ui,sans-serif",
           padding: '24px 18px',
         }}
       >
@@ -140,46 +140,13 @@ export default function AppShellFrame({
         background: C.bg,
         minHeight: '100vh',
         color: C.text,
-        fontFamily: "'Special Elite','Noto Sans TC',monospace",
-        backgroundImage: [
-          `radial-gradient(circle at top left, ${C.neonGlow} 0, transparent 28%)`,
-          `radial-gradient(circle at top right, ${C.blueBg} 0, transparent 24%)`,
-          'repeating-linear-gradient(0deg, transparent 0 3px, rgba(44,30,26,0.015) 3px 4px)',
-        ].join(', '),
+        fontFamily: "'Inter','Noto Sans TC',system-ui,sans-serif",
         paddingBottom: 40,
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@600;700&display=swap');
-        body {
-          background: ${C.bg};
-        }
-        .ui-btn {
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-        }
-        .ui-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 0 0 1px rgba(214,58,124,0.08), 0 10px 20px rgba(45,140,255,0.08);
-        }
-        .ui-card {
-          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-        }
-        .ui-card:hover {
-          transform: translateY(-1px);
-          box-shadow: ${C.insetLine}, ${C.shadow}, 0 0 0 1px rgba(214,58,124,0.08), 0 0 18px rgba(45,140,255,0.08);
-        }
-        .drive-number {
-          font-family: 'Caveat', cursive;
-          letter-spacing: 0.01em;
-        }
-        .drive-gradient {
-          background-image: linear-gradient(120deg, ${C.sunsetStart}, ${C.sunsetMid} 52%, ${C.sunsetEnd});
-        }
-        .drive-divider {
-          background-image: linear-gradient(90deg, transparent, ${C.neonPink}, ${C.neonBlue}, transparent);
-          height: 1px;
-          opacity: 0.45;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        /* Global styles moved to a separate CSS file or a dedicated style component if needed */
       `}</style>
 
       <ErrorBoundary

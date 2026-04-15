@@ -46,6 +46,55 @@ function buildItemHash(item) {
     .slice(0, 16)
 }
 
+const TARGET_CUE_REGEX =
+  /(目標價|合理價|評價上修|評價下修|預估目標價|調升目標價|調降目標價|維持目標價)/
+const TARGET_VALUE_REGEXES = [
+  /目標價(?:[^0-9]{0,12})?([1-9]\d{1,3}(?:\.\d+)?)(?=\s*元)/,
+  /合理價(?:[^0-9]{0,12})?([1-9]\d{1,3}(?:\.\d+)?)(?=\s*元)/,
+  /預估目標價為\s*([1-9]\d{1,3}(?:\.\d+)?)(?=\s*元)/,
+  /目標價上看\s*([1-9]\d{1,3}(?:\.\d+)?)(?=\s*元)/,
+]
+const RESEARCH_CUE_REGEX = /(投顧|研究報告|券商|評等|Factset|法說|理財周刊|豐雲學堂)/
+const SOCIAL_NOISE_REGEX = /(股市爆料同學會|盤中快報|千張大戶|處置股|注意股|主力|漲停|鎖漲停)/
+
+function getItemText(item) {
+  return `${item?.title || ''} ${item?.snippet || ''}`
+}
+
+export function extractExplicitTarget(value) {
+  const text = String(value || '')
+  if (!TARGET_CUE_REGEX.test(text)) return null
+
+  for (const regex of TARGET_VALUE_REGEXES) {
+    const match = text.match(regex)
+    const target = Number(match?.[1])
+    if (Number.isFinite(target) && target > 0) return target
+  }
+
+  return null
+}
+
+export function rankRssItemsForExtraction(items = []) {
+  return [...(Array.isArray(items) ? items : [])]
+    .map((item, index) => {
+      const text = getItemText(item)
+      let score = 0
+
+      if (extractExplicitTarget(text) !== null) score += 10
+      else if (TARGET_CUE_REGEX.test(text)) score += 6
+
+      if (RESEARCH_CUE_REGEX.test(text)) score += 4
+      if (SOCIAL_NOISE_REGEX.test(text)) score -= 3
+
+      return { item, index, score }
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.index - b.index
+    })
+    .map(({ item }) => item)
+}
+
 export function buildGoogleNewsQueries(code, name) {
   const normalizedCode = String(code || '').trim()
   const normalizedName = String(name || '').trim()
@@ -150,11 +199,13 @@ async function extractInsights(stock, items) {
       system: `你是台股公開報告索引整理器。你會從新聞標題與摘要中，抽出對持股 dossier 最有價值的結構化資訊。
 只根據提供的標題與摘要判斷，不可編造全文內容。
 回傳純 JSON，不要 markdown。格式：
-{"items":[{"id":"原樣回傳","summary":"一句話摘要","target":數字或null,"firm":"券商/來源或空字串","stance":"bullish/neutral/bearish/unknown","tags":["標籤1","標籤2"],"confidence":0到1}]}
+{"items":[{"id":"原樣回傳","summary":"一句話摘要","target":數字或null,"targetType":"price-target/range/narrative/none","targetEvidence":"原文中的目標價短語或空字串","firm":"券商/來源或空字串","stance":"bullish/neutral/bearish/unknown","tags":["標籤1","標籤2"],"confidence":0到1}]}
 
 規則：
-- 若明確提到目標價就填 target
-- 若只是偏多/偏空但沒有數字，target 填 null
+- 只有原文明確提到「目標價 / 合理價 / 預估目標價」才可填 target
+- 「漲停至 42.9 元 / 股價來到 61.2 元 / EPS 1.68 元 / 營收 7.73 億」都不是 target，target 必須填 null
+- 若提到目標區間但不是單一數字，target 填 null，targetType = "range"，targetEvidence 保留原句
+- 若只是偏多/偏空但沒有目標價數字，targetType = "narrative" 或 "none"
 - firm 優先抽券商/研究機構，抓不到就留空
 - summary 必須短，聚焦這份報告/新聞對投資判斷的意義`,
       allowThinking: false,
@@ -185,6 +236,54 @@ ${items.map((item) => `- [${item.id}] ${item.title}\n  來源：${item.source ||
   }
 }
 
+function normalizeTargetDetails(item, insight) {
+  const itemText = getItemText(item)
+  const targetFromText = extractExplicitTarget(itemText)
+  const targetFromInsight = Number(insight?.target)
+  const targetType = ['price-target', 'range', 'narrative', 'none'].includes(insight?.targetType)
+    ? insight.targetType
+    : targetFromText !== null
+      ? 'price-target'
+      : TARGET_CUE_REGEX.test(itemText)
+        ? 'narrative'
+        : 'none'
+
+  if (Number.isFinite(targetFromText) && targetFromText > 0) {
+    return {
+      target: targetFromText,
+      targetType: 'price-target',
+      targetEvidence:
+        typeof insight?.targetEvidence === 'string' && insight.targetEvidence.trim()
+          ? insight.targetEvidence.trim()
+          : item.title,
+    }
+  }
+
+  if (
+    Number.isFinite(targetFromInsight) &&
+    targetFromInsight > 0 &&
+    (targetType === 'price-target' || TARGET_CUE_REGEX.test(itemText))
+  ) {
+    return {
+      target: targetFromInsight,
+      targetType: 'price-target',
+      targetEvidence:
+        typeof insight?.targetEvidence === 'string' && insight.targetEvidence.trim()
+          ? insight.targetEvidence.trim()
+          : item.title,
+    }
+  }
+
+  return {
+    target: null,
+    targetType,
+    targetEvidence:
+      typeof insight?.targetEvidence === 'string' && insight.targetEvidence.trim()
+        ? insight.targetEvidence.trim()
+        : '',
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -193,7 +292,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { code, name, knownHashes = [], maxItems = 6, maxExtract = 2 } = req.body || {}
+    const { code, name, knownHashes = [], maxItems = 6, maxExtract = 4 } = req.body || {}
     if (!code || !name) {
       return res.status(400).json({ error: '缺少 code 或 name' })
     }
@@ -203,22 +302,24 @@ export default async function handler(req, res) {
     const deduped = normalizeRssItems(xmlPayloads, { code, name })
 
     const known = new Set((Array.isArray(knownHashes) ? knownHashes : []).filter(Boolean))
-    const newItems = deduped
-      .filter((item) => !known.has(item.id))
-      .slice(0, Math.max(1, Number(maxItems) || 6))
-    const insights = await extractInsights(
-      { code, name },
-      newItems.slice(0, Math.max(1, Number(maxExtract) || 2))
+    const unseenItems = deduped.filter((item) => !known.has(item.id))
+    const newItems = rankRssItemsForExtraction(unseenItems).slice(
+      0,
+      Math.max(1, Number(maxItems) || 6)
     )
+    const itemsForExtraction = newItems.slice(0, Math.max(1, Number(maxExtract) || 4))
+    const insights = await extractInsights({ code, name }, itemsForExtraction)
 
     const items = newItems.map((item) => {
       const insight = insights.get(item.id)
-      const target = Number(insight?.target)
+      const targetDetails = normalizeTargetDetails(item, insight)
       const confidence = Number(insight?.confidence)
       return {
         ...item,
         summary: typeof insight?.summary === 'string' ? insight.summary.trim() : '',
-        target: Number.isFinite(target) && target > 0 ? target : null,
+        target: targetDetails.target,
+        targetType: targetDetails.targetType,
+        targetEvidence: targetDetails.targetEvidence,
         firm: typeof insight?.firm === 'string' ? insight.firm.trim() : '',
         stance: ['bullish', 'neutral', 'bearish', 'unknown'].includes(insight?.stance)
           ? insight.stance

@@ -127,8 +127,10 @@ function buildSnapshotTargetReports(items, fallbackDate) {
   const seen = new Set()
 
   for (const item of Array.isArray(items) ? items : []) {
+    const targetType = String(item?.targetType || '').trim()
     const target = Number(item?.target)
     if (!Number.isFinite(target) || target <= 0) continue
+    if (targetType && targetType !== 'price-target') continue
 
     const firm = String(item?.firm || item?.source || '公開來源').trim() || '公開來源'
     const date = String(item?.publishedAt || fallbackDate).trim() || fallbackDate

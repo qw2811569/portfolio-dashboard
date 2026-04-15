@@ -212,4 +212,36 @@ describe('api/cron/collect-target-prices', () => {
       },
     })
   })
+
+  it('ignores non-target numeric headlines when building snapshot reports', async () => {
+    const { buildTargetPriceSnapshot } = await import('../../api/cron/collect-target-prices.js')
+
+    const snapshot = buildTargetPriceSnapshot({
+      stock: { code: '2489', name: '瑞軒', type: '股票' },
+      analystPayload: {
+        items: [
+          {
+            id: 'false-positive',
+            title: '瑞軒攻上漲停42.9元',
+            firm: 'CMoney',
+            target: null,
+            targetType: 'none',
+            publishedAt: '2026/04/15',
+          },
+          {
+            id: 'real-target',
+            title: '昇達科預估目標價為1700元',
+            firm: '豐雲學堂',
+            target: 1700,
+            targetType: 'price-target',
+            publishedAt: '2026/04/15',
+          },
+        ],
+      },
+    })
+
+    expect(snapshot.targets.reports).toEqual([
+      { firm: '豐雲學堂', target: 1700, date: '2026/04/15' },
+    ])
+  })
 })

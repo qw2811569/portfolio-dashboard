@@ -71,4 +71,29 @@ describe('components/EventsPanel', () => {
     expect(screen.queryByText('歡迎來到事件行事曆')).not.toBeInTheDocument()
     expect(screen.getByText('台積電法說會')).toBeInTheDocument()
   })
+
+  it('filters out leaked news records so events tab does not render news cards', () => {
+    const mixedRecords = [
+      {
+        id: 'event-1',
+        title: '台積電法說會',
+        date: '2026-04-15',
+        type: '法說',
+        impact: 'high',
+        pred: 'up',
+        recordType: 'event',
+      },
+      {
+        id: 'news-1',
+        title: 'Google News headline',
+        date: '2026-04-15',
+        recordType: 'news',
+      },
+    ]
+
+    render(<EventsPanel {...buildProps({ filteredEvents: mixedRecords })} />)
+
+    expect(screen.getByText('台積電法說會')).toBeInTheDocument()
+    expect(screen.queryByText('Google News headline')).not.toBeInTheDocument()
+  })
 })

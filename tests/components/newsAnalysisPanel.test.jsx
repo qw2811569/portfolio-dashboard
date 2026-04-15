@@ -61,11 +61,11 @@ describe('components/NewsAnalysisPanel', () => {
     expect(onNavigateDaily).toHaveBeenCalledTimes(1)
   })
 
-  it('hides the welcome card when there are any news events across buckets', () => {
-    const events = [{ id: 1, title: '台積電調漲資本支出', status: 'tracking' }]
+  it('keeps the welcome card when only event records exist but no holdingCodes are provided', () => {
+    const events = [{ id: 1, title: '台積電調漲資本支出', status: 'tracking', recordType: 'event' }]
     render(<NewsAnalysisPanel {...buildProps({ newsEvents: events })} />)
 
-    expect(screen.queryByText('情報脈絡')).not.toBeInTheDocument()
+    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
   })
 
   it('treats missing newsEvents (undefined) as empty and still shows welcome when no holdingCodes', () => {

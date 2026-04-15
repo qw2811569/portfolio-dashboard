@@ -30,10 +30,56 @@ const CATALYST_COLOR = {
   technical: C.amber,
 }
 
-const IMPACT_COLOR = {
-  high: C.up,
-  medium: C.amber,
-  low: C.textMute,
+const IMPACT_META = {
+  positive: { label: '🔴 利多', color: C.up, bg: C.upBg },
+  negative: { label: '🟢 利空', color: C.down, bg: C.downBg },
+  neutral: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
+  high: { label: '🔴 利多', color: C.up, bg: C.upBg },
+  medium: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
+  low: { label: '⚪ 低影響', color: C.textMute, bg: alpha(C.textMute, '14') },
+}
+
+function formatEventSource(source) {
+  if (!source) return '手動'
+  if (source === 'auto-calendar') return '行事曆'
+  if (source === 'finmind-news') return 'FinMind'
+  return '手動'
+}
+
+function buildEventKey(event, index) {
+  const base =
+    event?.id ||
+    [event?.date, event?.type, event?.title || event?.label, (event?.stocks || []).join(',')]
+      .filter(Boolean)
+      .join('|') ||
+    'event'
+
+  const titleSuffix = String(event?.title || event?.label || '')
+    .trim()
+    .slice(0, 40)
+    .replace(/\s+/g, '_')
+
+  return `${base}::${titleSuffix}::${index}`
+}
+
+function getPredictionMeta(event) {
+  if (event?.pred === 'up') return { label: '預測看漲', color: C.up, bg: C.upBg }
+  if (event?.pred === 'down') return { label: '預測看跌', color: C.down, bg: C.downBg }
+  if (event?.pred === 'neutral') return { label: '預測中性', color: C.blue, bg: C.blueBg }
+  return null
+}
+
+function getReviewMeta(event) {
+  if (event?.status === 'closed' || event?.status === 'past') {
+    if (event?.correct === true)
+      return { label: '復盤命中', color: C.teal, bg: alpha(C.teal, '16') }
+    if (event?.correct === false) return { label: '復盤失準', color: C.down, bg: C.downBg }
+    return { label: '已復盤', color: C.textMute, bg: alpha(C.textMute, '12') }
+  }
+  if (event?.status === 'tracking') {
+    return { label: '追蹤中', color: C.teal, bg: alpha(C.teal, '16') }
+  }
+  return { label: '待處理', color: C.amber, bg: alpha(C.amber, '16') }
 }
 
 /**
@@ -388,21 +434,24 @@ export function RelayPlanCard({ expanded, onToggle }) {
   )
 }
 
-/**
- * Event Card
- */
-export function EventCard({ event }) {
-  const tc = TYPE_COLOR[event.type] || C.textMute
+export function NewsEventCard({ event, onReview, onToggle }) {
+  const typeColor = TYPE_COLOR[event.type] || C.textMute
+  const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
+  const predictionMeta = getPredictionMeta(event)
+  const reviewMeta = getReviewMeta(event)
   const title = event.label || event.title || '未命名事件'
   const subtitle = event.sub || event.detail || ''
+  const reviewSummary = [event.actualNote, event.lessons].filter(Boolean).join('｜')
 
   return h(
     Card,
     {
       style: {
         marginBottom: 7,
-        borderLeft: `2px solid ${event.urgent ? C.up : alpha(tc, '40')}`,
+        borderLeft: `2px solid ${event.urgent ? C.up : alpha(impactMeta.color || typeColor, '40')}`,
+        cursor: onToggle ? 'pointer' : 'default',
       },
+      onClick: onToggle,
     },
     h(
       'div',
@@ -416,8 +465,8 @@ export function EventCard({ event }) {
           'div',
           {
             style: {
-              background: event.urgent ? C.upBg : alpha(tc, '15'),
-              color: event.urgent ? C.up : tc,
+              background: event.urgent ? C.upBg : alpha(typeColor, '15'),
+              color: event.urgent ? C.up : typeColor,
               fontSize: 9,
               fontWeight: 600,
               padding: '2px 5px',
@@ -428,22 +477,6 @@ export function EventCard({ event }) {
           },
           event.type
         ),
-        event.impact &&
-          h(
-            'div',
-            {
-              style: {
-                fontSize: 8,
-                fontWeight: 600,
-                padding: '1px 4px',
-                borderRadius: 3,
-                background: alpha(IMPACT_COLOR[event.impact] || C.textMute, '15'),
-                color: IMPACT_COLOR[event.impact] || C.textMute,
-                textAlign: 'center',
-              },
-            },
-            event.impact.toUpperCase()
-          ),
         h(
           'div',
           { style: { fontSize: 9, color: C.textMute, textAlign: 'center', lineHeight: 1.4 } },
@@ -464,11 +497,141 @@ export function EventCard({ event }) {
               { style: { fontSize: 10, color: C.textMute, marginTop: 3, lineHeight: 1.6 } },
               subtitle
             )
-          : null
+          : null,
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              gap: 6,
+              flexWrap: 'wrap',
+              marginTop: 6,
+              alignItems: 'center',
+            },
+          },
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 999,
+                background: impactMeta.bg,
+                color: impactMeta.color,
+                fontWeight: 600,
+              },
+            },
+            impactMeta.label
+          ),
+          predictionMeta &&
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 9,
+                  padding: '2px 6px',
+                  borderRadius: 999,
+                  background: predictionMeta.bg,
+                  color: predictionMeta.color,
+                  fontWeight: 600,
+                },
+              },
+              predictionMeta.label
+            ),
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 999,
+                background: reviewMeta.bg,
+                color: reviewMeta.color,
+                fontWeight: 600,
+              },
+            },
+            reviewMeta.label
+          ),
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                padding: '2px 6px',
+                borderRadius: 999,
+                background: alpha(C.textMute, '12'),
+                color: C.textMute,
+                fontWeight: 600,
+              },
+            },
+            formatEventSource(event.source)
+          )
+        ),
+        predictionMeta &&
+          h(
+            'div',
+            {
+              style: {
+                marginTop: 8,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: alpha(predictionMeta.color, '08'),
+                border: `1px solid ${alpha(predictionMeta.color, '18')}`,
+                fontSize: 10,
+                color: C.textSec,
+                lineHeight: 1.6,
+              },
+            },
+            `預測：${predictionMeta.label.replace('預測', '')}`,
+            event.predReason ? `｜${event.predReason}` : ''
+          ),
+        reviewSummary &&
+          h(
+            'div',
+            {
+              style: {
+                marginTop: 8,
+                padding: '8px 10px',
+                borderRadius: 8,
+                background: C.subtle,
+                border: `1px solid ${C.borderSub}`,
+                fontSize: 10,
+                color: C.textSec,
+                lineHeight: 1.6,
+              },
+            },
+            `復盤：${reviewSummary}`
+          ),
+        onReview &&
+          h(
+            Button,
+            {
+              onClick: (e) => {
+                e.stopPropagation()
+                onReview(event)
+              },
+              style: {
+                marginTop: 6,
+                padding: '4px 10px',
+                borderRadius: 5,
+                border: `1px solid ${alpha(C.olive, '2a')}`,
+                background: 'transparent',
+                color: C.olive,
+                fontSize: 10,
+                cursor: 'pointer',
+              },
+            },
+            '復盤'
+          )
       )
     )
   )
 }
+
+/**
+ * Backward-compatible export name for existing tests/imports.
+ */
+export const EventCard = NewsEventCard
 
 /**
  * Events Filter Buttons
@@ -550,6 +713,10 @@ export function EventsPanel({
   operatingContext = null,
   onNavigateDaily = () => {},
 }) {
+  const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
+    (event) => event?.recordType !== 'news'
+  )
+
   return h(
     'div',
     null,
@@ -568,7 +735,7 @@ export function EventsPanel({
     setCatalystFilter && h(CatalystFilter, { catalystFilter, setCatalystFilter }),
 
     // Events list — empty state
-    (!filteredEvents || filteredEvents.length === 0) &&
+    eventCards.length === 0 &&
       h(
         Card,
         {
@@ -624,6 +791,11 @@ export function EventsPanel({
       ),
 
     // Events list
-    filteredEvents.map((e, i) => h(EventCard, { key: i, event: e }))
+    eventCards.map((event, index) =>
+      h(EventCard, {
+        key: buildEventKey(event, index),
+        event,
+      })
+    )
   )
 }

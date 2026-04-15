@@ -340,7 +340,7 @@ describe('routes/page actions', () => {
   )
 
   it(
-    'blocks news review completion from writing route runtime storage',
+    'news route no longer exposes review actions or writes route runtime storage',
     async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
@@ -357,14 +357,8 @@ describe('routes/page actions', () => {
       localStorage.setItem.mockClear()
       warnSpy.mockClear()
 
-      fireEvent.click(screen.getByRole('button', { name: '復盤' }))
-      fireEvent.change(screen.getByPlaceholderText('實際漲跌幅、關鍵原因...'), {
-        target: { value: '法說後 AI ASIC 指引上修，市場反應正向' },
-      })
-      fireEvent.change(screen.getByPlaceholderText('這筆事件教會了我們什麼？'), {
-        target: { value: '事件前卡位有效，但仍要補券商共識更新' },
-      })
-      fireEvent.click(screen.getByRole('button', { name: '完成復盤' }))
+      expect(screen.queryByRole('button', { name: '復盤' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: '完成復盤' })).not.toBeInTheDocument()
 
       expect(localStorage.setItem).not.toHaveBeenCalled()
       expect(JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`))).toEqual([
@@ -373,11 +367,7 @@ describe('routes/page actions', () => {
           status: 'pending',
         }),
       ])
-      if (process.env.NODE_ENV !== 'production') {
-        expect(warnSpy).toHaveBeenCalledWith(
-          '[route-shell] write blocked: updateEvent. Use the canonical AppShell to mutate data.'
-        )
-      }
+      expect(warnSpy).not.toHaveBeenCalled()
     },
     ROUTE_ACTION_TIMEOUT
   )

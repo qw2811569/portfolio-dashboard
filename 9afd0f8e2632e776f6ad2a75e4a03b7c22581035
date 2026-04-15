@@ -1,0 +1,477 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "e45970f4-ec57-4ec8-a318-7bede37b2cc9",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bptarcpsj</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "派了（`bb82dsyyn`）。Codex 會：\n1. SSH VM 看 worktree 髒的內容是否有 VM-only hotfix\n2. 都是漂移 → stash + pull + pm2 restart\n3. 有真 hotfix → pull 後 stash pop 合併\n4. 驗證 https://35.236.155.62.sslip.io/ 不再紫色、看到 tp-7-clay 奶油底 + 赤陶\n\n---\n\n## 你還欠我一個回答：**持倉看板 bb388b1 深夜底 + 粉藍 neon 怎麼處理**\n\n| | 選項 | 時間 |\n|---|---|---|\n| **A** | Revert bb388b1 → 之後再派 Codex 用 tp-7-clay（跟 Agent Bridge 同組） | 5 分鐘 revert + 後續 |\n| **B** | 不 revert，派 Codex 直接用 tp-7-clay 覆蓋 | 1-2 小時 |\n| **C** | 保留深色基底，只換掉粉藍 neon | 半小時 |\n\n回 A/B/C 就動。我仍推 **A**（跟 Agent Bridge 色系統一）。",
+      "prompt_hash": "sha256:265f72b67ca28ed7ffbf005ee4805a0ef23dde444049df535e3c7ce79d543e4a",
+      "message_count": 1164,
+      "cost_usd": 0.4385170000000001,
+      "input_tokens": 1,
+      "output_tokens": 1700,
+      "cache_read_tokens": 768924,
+      "cache_creation_tokens": 1848,
+      "timestamp": "2026-04-15T20:33:41.322Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-15T20:34:29.857Z",
+      "session_duration_secs": 56591,
+      "ai_response_time_secs": 11.2243299389002,
+      "prompt_submitted_at": "2026-04-15T20:33:41.406966Z",
+      "prompt_duration_secs": 63,
+      "accepted_lines": 926,
+      "overridden_lines": 537,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".qwen/settings.json",
+      "line_range": [
+        8,
+        10
+      ],
+      "files_changed": [
+        {
+          "path": ".qwen/settings.json",
+          "line_range": [
+            8,
+            10
+          ],
+          "blob_hash": "3ef9b0df04bebaba980aefd86a96028cee381466",
+          "additions": 3,
+          "deletions": 1
+        },
+        {
+          "path": ".tmp/vercel-dev.log",
+          "line_range": [
+            1,
+            33
+          ],
+          "blob_hash": "6c0defe415d5c52c707b4d411f3120424006d757",
+          "additions": 33
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            1,
+            514
+          ],
+          "blob_hash": "63a0cd8bd419129c2e2a9457cea1f3381ffbfda3",
+          "additions": 514,
+          "deletions": 1
+        },
+        {
+          "path": "claude.md",
+          "line_range": [
+            17,
+            20
+          ],
+          "blob_hash": "4b3929ccb40d6d3936dd7de032345b74e0685f17",
+          "additions": 4,
+          "deletions": 2
+        },
+        {
+          "path": "coordination/llm-bus/board.md",
+          "line_range": [
+            3,
+            54
+          ],
+          "blob_hash": "8dd179ba923c64720ede4dd9342914553257425a",
+          "additions": 16,
+          "deletions": 2
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "fd31f097d6fad547c1e7b33093d0f93db6d001cf",
+          "additions": 156,
+          "deletions": 156
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            34
+          ],
+          "blob_hash": "3a454bfea4d139c3a66da63c9dffa7a05dd560e0",
+          "additions": 9,
+          "deletions": 9
+        },
+        {
+          "path": "docs/status/current-work.md",
+          "line_range": [
+            3,
+            86
+          ],
+          "blob_hash": "90e720c80d149cf2f2b9f8f9e79560b0d5465d76",
+          "additions": 3,
+          "deletions": 1
+        }
+      ],
+      "prompt_number": 89,
+      "total_additions": 738,
+      "total_deletions": 172,
+      "tools_used": [
+        "Bash",
+        "TodoWrite"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bptarcpsj</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch Codex ship v2 mockup to VM prod\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "TodoWrite()",
+          "tool_name": "TodoWrite"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"tail -60 [REDACTED_HOME]/app/test/.tmp/dispatch-logs/ship-vm-dashboard-codex....\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 3,
+          "role": "assistant",
+          "content": "Agent Bridge code 改完 + push（`5faaae7`），但 **VM deploy 被卡**：\n\n```\nVM 上 worktree 髒：\n  behind 29 commits\n  modified: README.md / server.mjs / tasks.json\n  staged: dashboard/index.html (衝到我們要覆蓋的)\n  untracked: .env.example / package-lock.json\n\nCodex 保守沒直接 stash，等你點頭\n```\n\n派 Codex 繼續處理 VM 解鎖 + deploy："
+        },
+        {
+          "turn": 4,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/vm-dashboard-swiss-warm/vm-unstuck-deploy...\")",
+          "tool_name": "Bash"
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    },
+    {
+      "id": "bbbe80b8-eca4-4aaa-8959-99171323949a",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bb82dsyyn</task-id>\n<tool-use-id>toolu_01Xhb73nkGoK2UGQzUfGymXp</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "Codex 卡在安全規則：SSH / git pull / pm2 restart 都是跨機器操作，**需要你明確授權**才動手。\n\n兩件都要你回一句就動：\n\n1. **授權 Codex SSH VM 完成 deploy** → 讓他 stash 髒檔 + pull + pm2 restart，你就能看到不紫色的 Agent Bridge\n2. **持倉看板 bb388b1 深夜粉藍 → 選 A / B / C**（我推 A：revert 再上 tp-7-clay 跟 Agent Bridge 一致）\n\n都回我就平行派：\n- A 句：「同意 SSH 到 VM 並完成 deploy」\n- B 句：「A」or「B」or「C」",
+      "prompt_hash": "sha256:7b0cf54d6215ee1ea0fd638cbddffe9abf38b1b35c598e82cb6b47898a1edcf4",
+      "message_count": 1168,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-15T20:34:47.241Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-15T20:34:54.364Z",
+      "session_duration_secs": 56616,
+      "ai_response_time_secs": 11.222095334685596,
+      "prompt_submitted_at": "2026-04-15T20:34:47.328669Z",
+      "prompt_duration_secs": 19,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "parent_receipt_id": "e45970f4-ec57-4ec8-a318-7bede37b2cc9",
+      "prompt_number": 90,
+      "tools_used": [
+        "Bash"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bb82dsyyn</task-id>\n<tool-use-id>toolu_01Xhb73nkGoK2UGQzUfGymXp</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch Codex VM unstuck + deploy\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -60 [REDACTED_HOME]/app/test/.tmp/dispatch-logs/vm-unstuck-codex.log | t...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "Codex 卡在安全規則：SSH / git pull / pm2 restart 都是跨機器操作，**需要你明確授權**才動手。\n\n兩件都要你回一句就動：\n\n1. **授權 Codex SSH VM 完成 deploy** → 讓他 stash 髒檔 + pull + pm2 restart，你就能看到不紫色的 Agent Bridge\n2. **持倉看板 bb388b1 深夜粉藍 → 選 A / B / C**（我推 A：revert 再上 tp-7-clay 跟 Agent Bridge 一致）\n\n都回我就平行派：\n- A 句：「同意 SSH 到 VM 並完成 deploy」\n- B 句：「A」or「B」or「C」"
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    },
+    {
+      "id": "8a334cb7-a520-4175-be1b-a3da74b7d164",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "持倉看板我喜歡這樣的ui，改成這樣吧，你跟codex要談好ui怎麼佈局，達到共識後動工。我現在要睡覺五小時，你盡所有分派工作跟執行原先的計劃\n授權 Codex SSH VM 完成 deploy \n我現在看agent bridge還是紫色喔",
+      "response_summary": "收到，派了 Agent Bridge 優化專項（`br7x7bmhp`）：\n\n## 核心解你回報的 3 件\n\n| 問題 | Codex 要做 |\n|---|---|\n| **派工沒同步** | Mac `launch-*.sh` 改打 Agent Bridge `/api/sessions/mac-dispatch` 註冊 → dashboard 新 Mac Dispatch 區塊即時顯示 |\n| **術語不懂** | 10-15 個關鍵字加 `<span class=\"def\" data-tip>`，hover 白話解釋（dispatch → 派 AI 做事、P0 → 最緊急、Sparkline → 看最近變化的小線） |\n| **Agent Bridge 優化** | Codex 自 audit 出 Top 5 ROI 建議，ship 前 2 個 |\n\n## 現在 4 個 Codex 並跑\n\n| Task | ID |\n|---|---|\n| CMoney Phase 3 實作 | `bnf9hdb01` |\n| MOPS/TWSE feasibility spec | `b08hm8dx3` |\n| Styleguide Round 3 持倉看板 mockup | `b86jt1pfp` |\n| Agent Bridge 優化（同步+tooltip） | `br7x7bmhp` |\n\n睡你的，我值夜班。早上你會看到：\n- Agent Bridge 能看到所有 LLM 派工狀態\n- 術語 hover 白話\n- 持倉看板 sage+bone 3 張 mockup 等你挑\n- CMoney target-price fallback chain 可用\n- MOPS/TWSE 接入 spec\n- Morning brief 在 `.tmp/morning-brief/2026-04-16-overnight.md`",
+      "prompt_hash": "sha256:ec38acf4c2347869dae33f3bfb37ef6cccece2119bb7011c7c847c180207fbff",
+      "message_count": 1195,
+      "cost_usd": 1.4420525,
+      "input_tokens": 8,
+      "output_tokens": 9175,
+      "cache_read_tokens": 2349475,
+      "cache_creation_tokens": 6064,
+      "timestamp": "2026-04-15T20:38:00.435Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-15T20:45:05.345Z",
+      "session_duration_secs": 57227,
+      "ai_response_time_secs": 11.570099009900987,
+      "prompt_submitted_at": "2026-04-15T20:38:00.487193Z",
+      "prompt_duration_secs": 432,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "parent_receipt_id": "bbbe80b8-eca4-4aaa-8959-99171323949a",
+      "prompt_number": 91,
+      "tools_used": [
+        "Bash",
+        "TodoWrite"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "持倉看板我喜歡這樣的ui，改成這樣吧，你跟codex要談好ui怎麼佈局，達到共識後動工。我現在要睡覺五小時，你盡所有分派工作跟執行原先的計劃\n授權 Codex SSH VM 完成 deploy \n我現在看agent bridge還是紫色喔"
+        },
+        {
+          "turn": 1,
+          "role": "assistant",
+          "content": "收到，你睡覺我值班。三件開始派："
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/vm-dashboard-swiss-warm/vm-unstuck-author...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Bash(command: \"mkdir -p [REDACTED_HOME]/app/test/.tmp/portfolio-styleguide-v2 && cat > /User...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 4,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/portfolio-styleguide-v2/round1-brief.md <...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 5,
+          "role": "tool",
+          "content": "TodoWrite()",
+          "tool_name": "TodoWrite"
+        },
+        {
+          "turn": 6,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/cmoney-notes-feasibility/phase3-impl-brie...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 7,
+          "role": "assistant",
+          "content": "好，現在 **3 個 background job** 平行跑：\n\n| Task | ID | 預估時間 |\n|---|---|---|\n| **VM deploy**（解紫色）| `bckv7qyvm` | 10-15 分鐘 |\n| **持倉看板 Styleguide Round 1 討論** | `bx65r22ba` | 20-30 分鐘 |\n| **CMoney Phase 3 實作**（目標價 fallback chain） | `bnf9hdb01` | 1-1.5 小時 |\n\n等 Round 1 回，我會繼續 Round 2 / 3（整合 spec + static mockup），早上就能看 mockup。\n\n繼續派下一波："
+        },
+        {
+          "turn": 8,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/mops-twse-integration/brief.md <<'BRIEF'\n...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 9,
+          "role": "tool",
+          "content": "Bash(command: \"mkdir -p [REDACTED_HOME]/app/test/.tmp/vm-analyst-reports-worker && cat > /Us...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 10,
+          "role": "tool",
+          "content": "Bash(command: \"mkdir -p [REDACTED_HOME]/app/test/.tmp/morning-brief && cat > [REDACTED_HOME]\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 11,
+          "role": "tool",
+          "content": "Bash(command: \"echo \"=== VM deploy result ===\" && tail -40 [REDACTED_HOME]/app/test/.tmp/dis...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 12,
+          "role": "assistant",
+          "content": "兩個好消息：\n\n## ✅ 1. Agent Bridge 現在應該不紫了\nCodex 確認 deploy 成功：\n- `bg: #F2EADF` 奶油底\n- `accent: #B85C38` 赤陶\n- WebSocket 連上\n- VM server.mjs hotfix 沒衝突保留\n- 截圖 `.tmp/screenshots/vm-live-post-deploy.png`\n\n**你早上開 https://35.236.155.62.sslip.io/ 應該是 tp-7-clay 奶油色**。\n\n## ✅ 2. Styleguide Round 1 Codex 回的超精準\n\n直接定 Round 2 整合 spec + 派 Round 3 實作 static mockup："
+        },
+        {
+          "turn": 13,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/portfolio-styleguide-v2/round2-spec.md <<...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 14,
+          "role": "tool",
+          "content": "Bash(command: \"cat > [REDACTED_HOME]/app/test/.tmp/agent-bridge-optimization/brief.md <<'BRI...\")",
+          "tool_name": "Bash"
+        }
+      ],
+      "prompt_quality": {
+        "score": 43,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    },
+    {
+      "id": "78f6752f-fc3f-4200-bb38-f3caef620e59",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "活用vm看能不能讓你們正在派工與完成的進度都使用vm讓你們省去token成本，使其自動化",
+      "response_summary": "infra-03 brief 寫好了在 [.tmp/infra-03-vm-orchestrator/brief.md](.tmp/infra-03-vm-orchestrator/brief.md)。**先排隊**（等 Agent Bridge 優化 `br7x7bmhp` ship 完，避免 server.mjs race），然後派。\n\n## Token 成本變化試算\n\n| 階段 | Claude 讀進 context | 相對 token |\n|---|---|---|\n| **現況 Mac-centric** | 每個 dispatch 回合讀 500-3000 行 log | 100% |\n| **VM orchestrator** | 每回合讀 250 字 summary + 5 欄位 | **~5%** |\n\n## 這版架構誰做什麼\n\n```\n┌─ Claude(Mac) ─────┐   HTTPS POST   ┌─ VM orchestrator ─┐\n│ 寫 brief 檔        │ ───────────► │  spawn Codex/Qwen  │\n│ 發 taskId          │                │  收 log, 寫 Blob   │\n│ 等 summary 回傳    │ ◄─ callback ─ │  WebSocket push    │\n└─ 讀 250 字 & 5 欄 ─┘                └── Agent Bridge live ┘\n                                              │\n                                       用戶看即時進度\n```\n\n## 前提（重要）\n\nVM 裝 Codex / Qwen CLI 需**你本人 OAuth 登入**（安全性不能讓 Codex 代登）。早上醒來如果 infra-03 ship 到「需 OAuth」步驟，Codex 會 flag 你手動跑：\n```bash\nssh vm\ncodex login      # 你瀏覽器授權一次\nqwen /auth       # 同上\n```\nGemini 沒這問題（API key 已有）。\n\n---\n\n## 現在 background 狀態\n\n4 個 Codex 並跑：\n1. **CMoney Phase 3 實作**（`bnf9hdb01`）\n2. **MOPS/TWSE feasibility spec**（`b08hm8dx3`）\n3. **持倉看板 mockup Round 3**（`b86jt1pfp`）\n4. **Agent Bridge 優化**（`br7x7bmhp`）→ 完後派 infra-03\n\n睡你的。早上統一 morning brief 給你。",
+      "prompt_hash": "sha256:ef19a4f3008b52580820b12c581669c84cd33157fc3f866a55bc493922528958",
+      "message_count": 1202,
+      "cost_usd": 0.53065325,
+      "input_tokens": 6,
+      "output_tokens": 4820,
+      "cache_read_tokens": 801634,
+      "cache_creation_tokens": 1489,
+      "timestamp": "2026-04-15T20:45:12.667Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-15T20:46:37.856Z",
+      "session_duration_secs": 57319,
+      "ai_response_time_secs": 11.67679921259842,
+      "prompt_submitted_at": "2026-04-15T20:45:12.725064Z",
+      "prompt_duration_secs": 102,
+      "accepted_lines": 128,
+      "overridden_lines": 0,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "api/analyst-reports.js",
+      "line_range": [
+        8,
+        723
+      ],
+      "files_changed": [
+        {
+          "path": "api/analyst-reports.js",
+          "line_range": [
+            8,
+            723
+          ],
+          "blob_hash": "e25639cccb6287e7b21edcf3b631b65868603a2c",
+          "additions": 222,
+          "deletions": 5
+        },
+        {
+          "path": "tests/api/analyst-reports.handler.test.js",
+          "line_range": [
+            7,
+            208
+          ],
+          "blob_hash": "2ff7dd484783d45c53e903b042a1b9737d06702f",
+          "additions": 74
+        },
+        {
+          "path": "tests/api/analyst-reports.test.js",
+          "line_range": [
+            9,
+            229
+          ],
+          "blob_hash": "b7a590d2d62645fd77648c840c8e5c4d4b46697e",
+          "additions": 54
+        }
+      ],
+      "parent_receipt_id": "8a334cb7-a520-4175-be1b-a3da74b7d164",
+      "prompt_number": 92,
+      "total_additions": 350,
+      "total_deletions": 5,
+      "tools_used": [
+        "Bash",
+        "TodoWrite"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "活用vm看能不能讓你們正在派工與完成的進度都使用vm讓你們省去token成本，使其自動化"
+        },
+        {
+          "turn": 1,
+          "role": "assistant",
+          "content": "收到，這是 infra-03 終局 — **VM 自己當 orchestrator，Mac 只發 brief**，Claude token 成本大降。"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "TodoWrite()",
+          "tool_name": "TodoWrite"
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Bash(command: \"mkdir -p [REDACTED_HOME]/app/test/.tmp/infra-03-vm-orchestrator && cat > /Use...\")",
+          "tool_name": "Bash"
+        }
+      ],
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    },
+    {
+      "id": "970d938a-94c3-402e-9dff-57887181f589",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "你也從產品經理跟資深設計師的角度去看agent bridge有哪些改善的空間",
+      "prompt_hash": "sha256:c970d544652c1ee0fcdc86c63c7936758246c0b5b357e66d0878fae0fb9f538d",
+      "message_count": 1203,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-15T20:46:55.332299Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "prompt_submitted_at": "2026-04-15T20:46:55.332299Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "parent_receipt_id": "78f6752f-fc3f-4200-bb38-f3caef620e59",
+      "prompt_number": 93,
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

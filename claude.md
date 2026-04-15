@@ -2,20 +2,28 @@
 
 **本檔是這個專案的唯一行為規則來源。** 其他 `.md` (SOUL/IDENTITY/USER/AGENTS/TOOLS/HEARTBEAT) 是別的工具的 scaffolding，**不適用於本專案**。
 
-最後更新：2026-04-14
+最後更新：2026-04-15
 
 ---
 
-## 🚀 Session 開頭先讀這 3 個（必做）
+## 🚀 Session 開頭先讀這 4 個（必做）
 
 1. `agent-bridge-standalone/project-status.json` — 9 個 tab、已完成清單、roadmap、分工 load
 2. `coordination/llm-bus/agent-bridge-tasks.json` — 當前 task 佇列
-3. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
+3. **`docs/decisions/index.md` — 已決議事項索引（開新討論前必讀，防止重開舊題）**
+4. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
 
-讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼。
-視覺版：http://35.236.155.62:9527（VM Dashboard）
+讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼、**哪些題目已經有 decision 不准重討論**。
+視覺版：https://35.236.155.62.sslip.io/（VM Dashboard，HTTPS）
+持倉看板：https://jiucaivoice-dashboard.vercel.app/
 
 **不要先讀 AGENTS.md / SOUL.md / IDENTITY.md / HEARTBEAT.md**（跟本專案無關）。
+
+## ⚠️ 開新討論前必做
+
+1. 先 grep `docs/decisions/index.md`：主題有沒有已存在 decision？
+2. 有 → 讀那份 decision，**遵循它**。不遵循 = 要新寫「推翻 decision」文件並說明為何
+3. 沒有 → 可以開新討論，結束後**回寫 decision 到 `docs/decisions/YYYY-MM-DD-<topic>.md`** 並更新 index
 
 ---
 

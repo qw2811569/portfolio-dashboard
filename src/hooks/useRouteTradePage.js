@@ -14,6 +14,11 @@ export function useRouteTradePage() {
   const {
     holdings = [],
     tradeLog = [],
+    setHoldings: routeSetHoldings,
+    setTradeLog: routeSetTradeLog,
+    upsertTargetReport: routeUpsertTargetReport,
+    updateTargetPrice: routeUpdateTargetPrice,
+    upsertFundamentalsEntry: routeUpsertFundamentalsEntry,
     applyTradeEntryToHoldings = (rows) => rows,
     createDefaultFundamentalDraft = () => ({}),
     toSlashDate = () => new Date().toISOString().slice(0, 10),
@@ -39,34 +44,25 @@ export function useRouteTradePage() {
     return false
   }, [])
 
+  const setHoldings = routeSetHoldings || blockedSetHoldings
+  const setTradeLog = routeSetTradeLog || blockedSetTradeLog
+  const upsertTargetReport = routeUpsertTargetReport || blockedUpsertTargetReport
+  const updateTargetPrice = routeUpdateTargetPrice || blockedUpdateTargetPrice
+  const upsertFundamentalsEntry = routeUpsertFundamentalsEntry || blockedUpsertFundamentalsEntry
+
   const tradeRuntime = useTradeCaptureRuntime({
     holdings,
     tradeLog,
-    setHoldings: blockedSetHoldings,
-    setTradeLog: blockedSetTradeLog,
-    upsertTargetReport: blockedUpsertTargetReport,
-    updateTargetPrice: blockedUpdateTargetPrice,
-    upsertFundamentalsEntry: blockedUpsertFundamentalsEntry,
+    setHoldings,
+    setTradeLog,
+    upsertTargetReport,
+    updateTargetPrice,
+    upsertFundamentalsEntry,
     applyTradeEntryToHoldings,
     createDefaultFundamentalDraft,
     toSlashDate,
     flashSaved,
   })
 
-  return useMemo(
-    () => ({
-      ...tradeRuntime,
-      submitMemo: (..._args) => {
-        warnBlockedRouteWrite('submitTradeMemo')
-        return false
-      },
-      skipMemo: (..._args) => {
-        warnBlockedRouteWrite('skipTradeMemo')
-        return false
-      },
-      upsertTargetReport: blockedUpsertTargetReport,
-      upsertFundamentalsEntry: blockedUpsertFundamentalsEntry,
-    }),
-    [blockedUpsertFundamentalsEntry, blockedUpsertTargetReport, tradeRuntime]
-  )
+  return useMemo(() => tradeRuntime, [tradeRuntime])
 }

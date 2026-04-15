@@ -19,6 +19,7 @@ import { PortfolioLayout } from '../../src/pages/PortfolioLayout.jsx'
 import { HoldingsPage } from '../../src/pages/HoldingsPage.jsx'
 import { NewsPage } from '../../src/pages/NewsPage.jsx'
 import { ResearchPage } from '../../src/pages/ResearchPage.jsx'
+import { TradePage } from '../../src/pages/TradePage.jsx'
 import { WatchlistPage } from '../../src/pages/WatchlistPage.jsx'
 
 const ROUTE_ACTION_TIMEOUT = 20000
@@ -145,6 +146,88 @@ describe('routes/page actions', () => {
     cleanup()
     vi.restoreAllMocks()
   })
+
+  it(
+    'persists manual trade additions from trade route into holdings and trade log',
+    async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      renderRoute(
+        <MemoryRouter initialEntries={[`/portfolio/${OWNER_PORTFOLIO_ID}/trade`]}>
+          <Routes>
+            <Route path="/portfolio/:portfolioId" element={<PortfolioLayout />}>
+              <Route path="trade" element={<TradePage />} />
+              <Route path="holdings" element={<HoldingsPage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      )
+
+      localStorage.setItem.mockClear()
+      warnSpy.mockClear()
+
+      const uploadInput = document.getElementById('fi')
+      const imageFile = new File(['fake-image'], 'trade.png', { type: 'image/png' })
+      fireEvent.change(uploadInput, { target: { files: [imageFile] } })
+
+      await waitFor(() => {
+        expect(screen.getByText('待處理截圖佇列')).toBeInTheDocument()
+      })
+
+      const codeInputs = screen.getAllByPlaceholderText('股票代碼')
+      const nameInputs = screen.getAllByPlaceholderText('名稱（選填）')
+      const qtyInputs = screen.getAllByPlaceholderText('股數')
+      const priceInputs = screen.getAllByPlaceholderText('價格')
+      const selects = screen.getAllByRole('combobox')
+
+      fireEvent.change(codeInputs[0], { target: { value: '2454' } })
+      fireEvent.change(nameInputs[0], { target: { value: '聯發科' } })
+      fireEvent.change(selects[1], { target: { value: '買進' } })
+      fireEvent.change(qtyInputs[0], { target: { value: '2' } })
+      fireEvent.change(priceInputs[0], { target: { value: '1250' } })
+      fireEvent.click(screen.getByRole('button', { name: '新增' }))
+
+      expect(screen.getByRole('button', { name: '跳過備忘，直接寫入' })).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: '跳過備忘，直接寫入' }))
+
+      await waitFor(() => {
+        const persistedHoldings = JSON.parse(
+          localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-holdings-v2`)
+        )
+        const persistedTradeLog = JSON.parse(
+          localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-log-v2`)
+        )
+
+        expect(persistedHoldings).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              code: '2454',
+              name: '聯發科',
+              qty: 2,
+            }),
+          ])
+        )
+        expect(persistedTradeLog).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              code: '2454',
+              name: '聯發科',
+              action: '買進',
+              qty: 2,
+              price: 1250,
+            }),
+          ])
+        )
+      })
+
+      expect(localStorage.setItem).toHaveBeenCalled()
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('[route-shell] write blocked')
+      )
+    },
+    ROUTE_ACTION_TIMEOUT
+  )
 
   it(
     'blocks watchlist additions through modal flow without prompt()',

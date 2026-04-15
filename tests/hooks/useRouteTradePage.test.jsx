@@ -81,21 +81,17 @@ describe('hooks/useRouteTradePage.js', () => {
     expect(typeof callArgs.upsertTargetReport).toBe('function')
     expect(typeof callArgs.updateTargetPrice).toBe('function')
     expect(typeof callArgs.upsertFundamentalsEntry).toBe('function')
-    expect(callArgs.setHoldings).not.toBe(setHoldings)
-    expect(callArgs.setTradeLog).not.toBe(setTradeLog)
-    expect(callArgs.upsertTargetReport).not.toBe(upsertTargetReport)
-    expect(callArgs.updateTargetPrice).not.toBe(updateTargetPrice)
-    expect(callArgs.upsertFundamentalsEntry).not.toBe(upsertFundamentalsEntry)
+    expect(callArgs.setHoldings).toBe(setHoldings)
+    expect(callArgs.setTradeLog).toBe(setTradeLog)
+    expect(callArgs.upsertTargetReport).toBe(upsertTargetReport)
+    expect(callArgs.updateTargetPrice).toBe(updateTargetPrice)
+    expect(callArgs.upsertFundamentalsEntry).toBe(upsertFundamentalsEntry)
 
     expect(result.current).toEqual(
       expect.objectContaining({
         ...fakeTradeRuntime,
       })
     )
-    expect(typeof result.current.submitMemo).toBe('function')
-    expect(typeof result.current.skipMemo).toBe('function')
-    expect(typeof result.current.upsertTargetReport).toBe('function')
-    expect(typeof result.current.upsertFundamentalsEntry).toBe('function')
   })
 
   it('uses default values when context provides empty data', () => {
@@ -126,18 +122,9 @@ describe('hooks/useRouteTradePage.js', () => {
         parsing: false,
       })
     )
-    expect(typeof result.current.submitMemo).toBe('function')
-    expect(typeof result.current.skipMemo).toBe('function')
-    expect(typeof result.current.upsertTargetReport).toBe('function')
-    expect(typeof result.current.upsertFundamentalsEntry).toBe('function')
   })
 
-  it('blocks trade write handlers from mutating route-local state', () => {
-    const setHoldings = vi.fn()
-    const setTradeLog = vi.fn()
-    const upsertTargetReport = vi.fn()
-    const updateTargetPrice = vi.fn()
-    const upsertFundamentalsEntry = vi.fn()
+  it('uses blocked fallbacks when route context does not expose trade mutators', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     Object.defineProperty(globalThis, 'localStorage', {
@@ -153,11 +140,6 @@ describe('hooks/useRouteTradePage.js', () => {
     mockUsePortfolioRouteContext.mockReturnValue({
       holdings: [{ code: '2330' }],
       tradeLog: [{ id: 't1' }],
-      setHoldings,
-      setTradeLog,
-      upsertTargetReport,
-      updateTargetPrice,
-      upsertFundamentalsEntry,
       applyTradeEntryToHoldings: vi.fn(),
       createDefaultFundamentalDraft: vi.fn(),
       toSlashDate: vi.fn(),
@@ -168,19 +150,14 @@ describe('hooks/useRouteTradePage.js', () => {
 
     const { result } = renderHook(() => useRouteTradePage())
 
-    result.current.setHoldings([{ code: '2454' }])
-    result.current.setTradeLog([{ id: 't2' }])
-    expect(result.current.upsertTargetReport({ code: '2330', targetPrice: 1000 })).toBe(false)
-    expect(result.current.updateTargetPrice('2330', 1000)).toBe(false)
-    expect(result.current.upsertFundamentalsEntry('2330', { moat: 'strong' })).toBe(false)
-    expect(result.current.submitMemo()).toBe(false)
-    expect(result.current.skipMemo()).toBe(false)
+    const callArgs = mockUseTradeCaptureRuntime.mock.calls[0][0]
 
-    expect(setHoldings).not.toHaveBeenCalled()
-    expect(setTradeLog).not.toHaveBeenCalled()
-    expect(upsertTargetReport).not.toHaveBeenCalled()
-    expect(updateTargetPrice).not.toHaveBeenCalled()
-    expect(upsertFundamentalsEntry).not.toHaveBeenCalled()
+    callArgs.setHoldings([{ code: '2454' }])
+    callArgs.setTradeLog([{ id: 't2' }])
+    expect(callArgs.upsertTargetReport({ code: '2330', targetPrice: 1000 })).toBe(false)
+    expect(callArgs.updateTargetPrice('2330', 1000)).toBe(false)
+    expect(callArgs.upsertFundamentalsEntry('2330', { moat: 'strong' })).toBe(false)
+
     expect(globalThis.localStorage.setItem).not.toHaveBeenCalled()
     if (process.env.NODE_ENV !== 'production') {
       expect(warnSpy).toHaveBeenCalledWith(
@@ -197,12 +174,6 @@ describe('hooks/useRouteTradePage.js', () => {
       )
       expect(warnSpy).toHaveBeenCalledWith(
         '[route-shell] write blocked: upsertFundamentalsEntry. Use the canonical AppShell to mutate data.'
-      )
-      expect(warnSpy).toHaveBeenCalledWith(
-        '[route-shell] write blocked: submitTradeMemo. Use the canonical AppShell to mutate data.'
-      )
-      expect(warnSpy).toHaveBeenCalledWith(
-        '[route-shell] write blocked: skipTradeMemo. Use the canonical AppShell to mutate data.'
       )
     }
   })

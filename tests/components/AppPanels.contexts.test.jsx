@@ -316,9 +316,9 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
-    expect(await screen.findByText('本輪操作脈絡')).toBeInTheDocument()
+    expect(await screen.findByText('現在先看這裡')).toBeInTheDocument()
     expect(await screen.findByText('先補齊資料，再做深度研究')).toBeInTheDocument()
-    expect(await screen.findByText('焦點標的：台燿 (6274)')).toBeInTheDocument()
+    expect(await screen.findByText('先盯這檔：台燿 (6274)')).toBeInTheDocument()
   })
 
   it('wires daily actions from portfolio panel actions context', async () => {
@@ -1161,10 +1161,10 @@ describe('components/AppPanels context wiring', () => {
 
     expect(screen.queryByText('先研究這檔')).not.toBeInTheDocument()
     expect(
-      screen.getByText('先用上方「刷新公開報告」補齊資料，再開始個股或全組合研究。')
+      screen.getByText('先按上方「補最新報告」，資料齊一點再開始研究會比較準。')
     ).toBeInTheDocument()
 
-    fireEvent.click(await screen.findByText('刷新公開報告'))
+    fireEvent.click(await screen.findByText('補最新報告'))
     expect(onRefresh).toHaveBeenCalledTimes(1)
     expect(onResearch).not.toHaveBeenCalled()
   })

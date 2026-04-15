@@ -59,8 +59,8 @@ export default function Header(props) {
   }
 
   const ghostBtn = {
-    borderRadius: 20,
-    padding: '4px 11px',
+    borderRadius: 999,
+    padding: '5px 12px',
     fontSize: 9,
     fontWeight: 500,
     cursor: 'pointer',
@@ -68,17 +68,17 @@ export default function Header(props) {
     transition: 'all 0.18s ease',
   }
   const card = {
-    background: C.card,
+    background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.subtle, 'f4')})`,
     border: `1px solid ${C.border}`,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: '12px 14px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
   }
   const lbl = {
     fontSize: 10,
     color: C.textMute,
-    letterSpacing: '0.06em',
-    fontWeight: 600,
+    letterSpacing: '0.08em',
+    fontWeight: 500,
     marginBottom: 5,
   }
 
@@ -87,7 +87,7 @@ export default function Header(props) {
     {
       className: 'app-shell',
       style: {
-        background: `${C.shell}f0`,
+        background: `linear-gradient(180deg, rgba(35,42,47,0.94) 0%, rgba(35,42,47,0.86) 100%)`,
         borderBottom: `1px solid ${C.borderSoft}`,
         padding: '10px 14px 0',
         position: 'sticky',
@@ -114,15 +114,22 @@ export default function Header(props) {
         { style: { display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 } },
         h(
           'span',
-          { style: { color: cloudSync ? C.olive : C.textMute, fontSize: 9 } },
+          { style: { color: cloudSync ? C.blue : C.textMute, fontSize: 9 } },
           cloudSync ? '☁' : '⚡'
         ),
         h(
           'span',
-          { style: { fontSize: 19, fontWeight: 600, color: C.text, letterSpacing: '-0.01em' } },
+          {
+            style: {
+              fontSize: 20,
+              fontWeight: 700,
+              color: C.text,
+              letterSpacing: '0.01em',
+            },
+          },
           '持倉看板'
         ),
-        saved && h('span', { style: { color: C.olive, fontSize: 9, fontWeight: 600 } }, saved),
+        saved && h('span', { style: { color: C.olive, fontSize: 9, fontWeight: 500 } }, saved),
         h(
           'button',
           {
@@ -130,7 +137,7 @@ export default function Header(props) {
             onClick: refreshPrices,
             disabled: refreshing,
             style: {
-              background: refreshing ? C.subtle : alpha(C.blue, A.faint),
+              background: refreshing ? C.subtle : alpha(C.blue, '10'),
               color: refreshing ? C.textMute : C.blue,
               border: `1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
               ...ghostBtn,
@@ -145,7 +152,7 @@ export default function Header(props) {
             className: 'ui-btn',
             onClick: copyWeeklyReport,
             style: {
-              background: C.lavBg,
+              background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.blue, '10')})`,
               color: C.lavender,
               border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
               ...ghostBtn,
@@ -159,7 +166,7 @@ export default function Header(props) {
             className: 'ui-btn',
             onClick: exportLocalBackup,
             style: {
-              background: C.oliveBg,
+              background: alpha(C.olive, '12'),
               color: C.olive,
               border: `1px solid ${alpha(C.olive, A.strongLine)}`,
               ...ghostBtn,
@@ -250,7 +257,7 @@ export default function Header(props) {
             background: C.subtle,
             color: C.text,
             border: `1px solid ${C.border}`,
-            borderRadius: 8,
+            borderRadius: 10,
             padding: '7px 10px',
             fontSize: 11,
             outline: 'none',
@@ -272,7 +279,7 @@ export default function Header(props) {
           onClick: editor?.openCreate || createPortfolio,
           disabled: !ready || portfolioSwitching,
           style: {
-            background: C.cardBlue,
+            background: `linear-gradient(90deg, ${alpha(C.blue, '12')}, ${alpha(C.teal, '08')})`,
             color: C.blue,
             border: `1px solid ${alpha(C.blue, A.strongLine)}`,
             ...ghostBtn,
@@ -288,9 +295,12 @@ export default function Header(props) {
           onClick: viewMode === OVERVIEW_VIEW_MODE ? exitOverview : openOverview,
           disabled: !ready || portfolioSwitching,
           style: {
-            background: viewMode === OVERVIEW_VIEW_MODE ? C.cardAmber : C.cardRose,
+            background:
+              viewMode === OVERVIEW_VIEW_MODE
+                ? `linear-gradient(90deg, ${alpha(C.amber, '12')}, ${alpha(C.choco, '10')})`
+                : `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.rose, '10')})`,
             color: viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.text,
-            border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : C.border}`,
+            border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : alpha(C.lavender, '20')}`,
             ...ghostBtn,
             cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
           },
@@ -325,7 +335,14 @@ export default function Header(props) {
     showPortfolioManager &&
       h(
         'div',
-        { style: { ...card, marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, A.glow)}` } },
+        {
+          style: {
+            ...card,
+            marginBottom: 8,
+            borderLeft: `3px solid ${C.lavender}`,
+            boxShadow: `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(C.lavender, '10')}`,
+          },
+        },
         h(
           'div',
           {
@@ -341,7 +358,7 @@ export default function Header(props) {
           h(
             'div',
             null,
-            h('div', { style: { ...lbl, color: C.teal, marginBottom: 3 } }, '組合管理'),
+            h('div', { style: { ...lbl, color: C.lavender, marginBottom: 3 } }, '組合管理'),
             h(
               'div',
               { style: { fontSize: 11, color: C.textSec } },
@@ -363,7 +380,10 @@ export default function Header(props) {
               {
                 key: portfolio.id,
                 style: {
-                  background: portfolio.id === activePortfolioId ? C.subtleElev : C.subtle,
+                  background:
+                    portfolio.id === activePortfolioId
+                      ? `linear-gradient(90deg, ${alpha(C.lavender, '08')}, ${alpha(C.blue, '08')})`
+                      : C.subtle,
                   border: `1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
                   borderRadius: 8,
                   padding: '10px 12px',
@@ -394,7 +414,11 @@ export default function Header(props) {
                         'owner'
                       ),
                     portfolio.id === activePortfolioId &&
-                      h('span', { style: { fontSize: 9, color: C.teal, marginLeft: 6 } }, '目前')
+                      h(
+                        'span',
+                        { style: { fontSize: 9, color: C.lavender, marginLeft: 6 } },
+                        '目前'
+                      )
                   ),
                   h(
                     'div',
@@ -412,7 +436,7 @@ export default function Header(props) {
                         className: 'ui-btn',
                         onClick: () => switchPortfolio(portfolio.id),
                         style: {
-                          background: C.cardBlue,
+                          background: alpha(C.blue, '10'),
                           color: C.blue,
                           border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                           ...ghostBtn,
@@ -429,7 +453,7 @@ export default function Header(props) {
                           ? editor.openRename(portfolio)
                           : renamePortfolio(portfolio.id),
                       style: {
-                        background: C.cardAmber,
+                        background: alpha(C.amber, '10'),
                         color: C.amber,
                         border: `1px solid ${alpha(C.amber, A.strongLine)}`,
                         ...ghostBtn,
@@ -583,7 +607,7 @@ export default function Header(props) {
         'div',
         {
           style: {
-            background: C.upBg,
+            background: `linear-gradient(90deg, ${C.upBg}, ${alpha(C.amber, '12')})`,
             border: `1px solid ${alpha(C.up, A.line)}`,
             borderLeft: `3px solid ${C.up}`,
             borderRadius: 6,
@@ -604,9 +628,9 @@ export default function Header(props) {
         'div',
         {
           style: {
-            background: alpha(C.teal, A.faint),
-            border: `1px solid ${alpha(C.teal, A.line)}`,
-            borderLeft: `3px solid ${C.teal}`,
+            background: `linear-gradient(90deg, ${alpha(C.blue, '10')}, ${alpha(C.lavender, '10')})`,
+            border: `1px solid ${alpha(C.blue, A.line)}`,
+            borderLeft: `3px solid ${C.blue}`,
             borderRadius: 8,
             padding: '8px 10px',
             marginBottom: 8,
@@ -622,7 +646,7 @@ export default function Header(props) {
           { style: { minWidth: 0, flex: 1 } },
           h(
             'div',
-            { style: { fontSize: 9, color: C.teal, fontWeight: 700, letterSpacing: '0.08em' } },
+            { style: { fontSize: 9, color: C.blue, fontWeight: 700, letterSpacing: '0.08em' } },
             'WORKFLOW CUE'
           ),
           h(
@@ -659,9 +683,9 @@ export default function Header(props) {
               className: 'ui-btn',
               onClick: () => navigateToTab(workflowCue.targetTab),
               style: {
-                background: alpha(C.teal, A.faint),
-                color: C.teal,
-                border: `1px solid ${alpha(C.teal, A.strongLine)}`,
+                background: alpha(C.blue, '10'),
+                color: C.blue,
+                border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                 ...ghostBtn,
               },
             },
@@ -677,7 +701,7 @@ export default function Header(props) {
             style: {
               background: C.subtle,
               border: `1px solid ${C.border}`,
-              borderRadius: 8,
+              borderRadius: 10,
               padding: '8px 10px',
               marginBottom: 6,
               display: 'flex',
@@ -698,7 +722,7 @@ export default function Header(props) {
               className: 'ui-btn',
               onClick: exitOverview,
               style: {
-                background: C.cardBlue,
+                background: alpha(C.blue, '10'),
                 color: C.blue,
                 border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                 ...ghostBtn,
@@ -721,14 +745,17 @@ export default function Header(props) {
                 key: t.k,
                 onClick: () => navigateToTab(t.k),
                 style: {
-                  background: tab === t.k ? alpha(C.text, '10') : 'transparent',
+                  background:
+                    tab === t.k
+                      ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.blue, '10')})`
+                      : 'transparent',
                   color: tab === t.k ? C.text : C.textMute,
-                  border: `1px solid ${tab === t.k ? C.borderStrong : 'transparent'}`,
-                  boxShadow: tab === t.k ? C.insetLine : 'none',
+                  border: `1px solid ${tab === t.k ? alpha(C.lavender, '26') : 'transparent'}`,
+                  boxShadow: tab === t.k ? `0 0 0 1px ${alpha(C.blue, '10')}` : 'none',
                   borderRadius: 999,
                   padding: '7px 13px',
                   fontSize: 11,
-                  fontWeight: tab === t.k ? 600 : 500,
+                  fontWeight: tab === t.k ? 700 : 500,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                 },

@@ -6,15 +6,15 @@ import Md from '../Md.jsx'
 const lbl = {
   fontSize: 10,
   color: C.textMute,
-  letterSpacing: '0.06em',
-  fontWeight: 600,
+  letterSpacing: '0.08em',
+  fontWeight: 500,
   marginBottom: 5,
 }
 
 const metricCard = {
-  background: C.card,
+  background: `linear-gradient(180deg, ${alpha(C.card, 'f0')}, ${alpha(C.subtle, 'f6')})`,
   border: `1px solid ${C.border}`,
-  borderRadius: 8,
+  borderRadius: 12,
   padding: '8px 11px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
@@ -34,7 +34,7 @@ function TodayPnlHero({ todayTotalPnl = 0 }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(color, '40')}`,
-        background: bgTint,
+        background: `linear-gradient(135deg, ${bgTint}, ${alpha(C.card, 'ea')})`,
       },
     },
     h('div', { style: { ...lbl, marginBottom: 6 } }, '今日損益'),
@@ -67,13 +67,13 @@ function AiQuickSummary({ latestInsight }) {
 
   return h(
     Card,
-    { style: { marginBottom: 8, borderLeft: `3px solid ${C.accent || C.teal}` } },
+    { style: { marginBottom: 8, borderLeft: `3px solid ${C.lavender}` } },
     h(
       'div',
       {
         style: {
           ...lbl,
-          color: C.teal,
+          color: C.lavender,
           marginBottom: 4,
         },
       },
@@ -107,7 +107,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
     {
       style: {
         marginBottom: 8,
-        borderLeft: urgentCount > 0 ? `3px solid ${alpha(C.amber, '40')}` : undefined,
+        borderLeft: urgentCount > 0 ? `3px solid ${alpha(C.amber, '60')}` : undefined,
       },
     },
     h(
@@ -168,7 +168,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
               style: {
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
-                borderRadius: 6,
+                borderRadius: 10,
                 padding: '6px 10px',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -207,6 +207,9 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
                   fontSize: 9,
                   fontWeight: 600,
                   color: isToday ? C.amber : C.textMute,
+                  background: isToday ? alpha(C.amber, '10') : 'transparent',
+                  borderRadius: 999,
+                  padding: isToday ? '2px 8px' : 0,
                   flexShrink: 0,
                 },
               },

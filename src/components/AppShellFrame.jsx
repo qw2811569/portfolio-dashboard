@@ -1,4 +1,4 @@
-import { C } from '../theme.js'
+import { C, alpha } from '../theme.js'
 import AppPanels from './AppPanels.jsx'
 import { ConfirmDialog } from './common/index.js'
 import Header from './Header.jsx'
@@ -26,13 +26,13 @@ export default function AppShellFrame({
     return (
       <div
         style={{
-          background: C.bg,
+          background: `radial-gradient(circle at top right, ${C.glowBlue}, transparent 34%), radial-gradient(circle at top left, ${C.glowPink}, transparent 28%), linear-gradient(180deg, ${C.bg} 0%, #14181b 100%)`,
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: C.text,
-          fontFamily: "'Inter','Noto Sans TC',system-ui,sans-serif",
+          fontFamily: 'var(--font-body)',
           padding: '24px 18px',
         }}
       >
@@ -41,8 +41,8 @@ export default function AppShellFrame({
             width: 'min(520px, 100%)',
             border: `1px solid ${C.borderSub}`,
             borderRadius: 18,
-            background: C.shell,
-            boxShadow: '0 18px 48px rgba(15, 23, 42, 0.12)',
+            background: `linear-gradient(180deg, rgba(47,55,61,0.96) 0%, rgba(35,42,47,0.94) 100%)`,
+            boxShadow: C.shellShadow,
             overflow: 'hidden',
           }}
         >
@@ -88,9 +88,9 @@ export default function AppShellFrame({
                     borderRadius: 999,
                     padding: '6px 10px',
                     fontSize: 11,
-                    fontWeight: 600,
+                    fontWeight: 500,
                     color: C.textMute,
-                    background: C.card,
+                    background: alpha(C.blue, '08'),
                     border: `1px solid ${C.borderSub}`,
                   }}
                 >
@@ -119,7 +119,7 @@ export default function AppShellFrame({
                   width: '42%',
                   height: '100%',
                   borderRadius: 999,
-                  background: `linear-gradient(90deg, ${C.teal}, ${C.blue})`,
+                  background: `linear-gradient(90deg, ${C.teal}, ${C.lavender}, ${C.blue})`,
                   animation: 'app-shell-boot-indeterminate 1.8s ease-in-out infinite',
                 }}
               />
@@ -137,16 +137,38 @@ export default function AppShellFrame({
   return (
     <div
       style={{
-        background: C.bg,
+        background: `radial-gradient(circle at top right, ${C.glowBlue}, transparent 28%), radial-gradient(circle at top left, ${C.glowPink}, transparent 24%), linear-gradient(180deg, ${C.bg} 0%, #14181b 100%)`,
         minHeight: '100vh',
         color: C.text,
-        fontFamily: "'Inter','Noto Sans TC',system-ui,sans-serif",
+        fontFamily: 'var(--font-body)',
         paddingBottom: 40,
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        /* Global styles moved to a separate CSS file or a dedicated style component if needed */
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;700&display=swap');
+        :root {
+          --font-body: 'Noto Serif TC','Source Han Serif TC','Source Han Serif','Iowan Old Style','Georgia',serif;
+          --font-mono: 'IBM Plex Mono','JetBrains Mono','SFMono-Regular',ui-monospace,monospace;
+        }
+        body {
+          color: ${C.text};
+          font-family: var(--font-body);
+          background: var(--app-bg, ${C.bg});
+          text-rendering: optimizeLegibility;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        button, input, select, textarea {
+          font: inherit;
+        }
+        .tn {
+          font-family: var(--font-mono);
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -0.01em;
+        }
+        .ui-btn {
+          box-shadow: none;
+        }
       `}</style>
 
       <ErrorBoundary

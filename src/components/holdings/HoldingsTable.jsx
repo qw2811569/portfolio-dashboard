@@ -1,5 +1,5 @@
 import { createElement as h } from 'react'
-import { C } from '../../theme.js'
+import { C, alpha } from '../../theme.js'
 import { Card } from '../common'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { SupplyChainView } from './SupplyChainView.jsx'
@@ -10,9 +10,9 @@ import {
 } from '../../lib/holdings.js'
 
 const card = {
-  background: C.card,
+  background: `linear-gradient(180deg, ${C.card}, ${C.subtle})`,
   border: `1px solid ${C.border}`,
-  borderRadius: 10,
+  borderRadius: 14,
   padding: '12px 14px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
@@ -20,8 +20,8 @@ const card = {
 const lbl = {
   fontSize: 10,
   color: C.textMute,
-  letterSpacing: '0.06em',
-  fontWeight: 600,
+  letterSpacing: '0.08em',
+  fontWeight: 500,
   marginBottom: 5,
 }
 
@@ -55,9 +55,11 @@ export function HoldingRow({
           gap: 8,
           alignItems: 'center',
           padding: '10px 12px',
-          background: card.background,
+          background: expanded
+            ? `linear-gradient(90deg, ${C.subtleElev}, ${C.card})`
+            : `linear-gradient(90deg, ${C.card}, ${alpha(C.subtle, 'f4')})`,
           border: `1px solid ${C.border}`,
-          borderRadius: 8,
+          borderRadius: 10,
           marginBottom: expanded ? 0 : 6,
         },
       },
@@ -69,14 +71,14 @@ export function HoldingRow({
           'div',
           null,
           h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, holding.name),
-          h('div', { style: { fontSize: 9, color: C.textMute } }, holding.code)
+          h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code)
         )
       ),
 
       // Qty + Cost
       h(
         'div',
-        { style: { fontSize: 10, color: C.textSec } },
+        { className: 'tn', style: { fontSize: 10, color: C.textSec } },
         h('div', null, `${holding.qty.toLocaleString()} 股`),
         h('div', { style: { fontSize: 9, color: C.textMute } }, `成本 ${holding.cost}`)
       ),
@@ -84,7 +86,7 @@ export function HoldingRow({
       // Price + Value
       h(
         'div',
-        { style: { fontSize: 10, color: C.textSec } },
+        { className: 'tn', style: { fontSize: 10, color: C.textSec } },
         h('div', { style: { fontWeight: 600, color: C.text } }, holding.price),
         h('div', { style: { fontSize: 9, color: C.textMute } }, value.toLocaleString())
       ),
@@ -97,10 +99,11 @@ export function HoldingRow({
             fontSize: 10,
             fontWeight: 600,
             color: pc(pnl),
-            background: pcBg(pnl),
-            borderRadius: 6,
+            background: `linear-gradient(90deg, ${pcBg(pnl)}, transparent)`,
+            borderRadius: 999,
             padding: '4px 8px',
             textAlign: 'center',
+            border: `1px solid ${pnl == null ? C.borderSub : alpha(pc(pnl), '24')}`,
           },
         },
         h('div', null, `${pnl >= 0 ? '+' : ''}${Math.round(pnl).toLocaleString()}`),
@@ -138,7 +141,7 @@ export function HoldingRow({
             background: C.subtle,
             border: `1px solid ${C.border}`,
             borderTop: 'none',
-            borderRadius: '0 0 8px 8px',
+            borderRadius: '0 0 10px 10px',
             padding: '10px 12px',
             marginBottom: 6,
           },
@@ -158,9 +161,10 @@ export function HoldingRow({
                       style: {
                         fontSize: 9,
                         padding: '2px 6px',
-                        background: C.fillPrimary,
+                        background: alpha(C.lavender, '12'),
                         color: C.text,
-                        borderRadius: 4,
+                        border: `1px solid ${alpha(C.lavender, '24')}`,
+                        borderRadius: 999,
                       },
                     },
                     c.label
@@ -187,10 +191,11 @@ export function HoldingRow({
                 width: '100%',
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
-                borderRadius: 6,
+                borderRadius: 8,
                 padding: '6px 8px',
                 color: C.text,
                 fontSize: 11,
+                fontFamily: 'var(--font-mono)',
               },
             })
           ),
@@ -209,7 +214,7 @@ export function HoldingRow({
                 width: '100%',
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
-                borderRadius: 6,
+                borderRadius: 8,
                 padding: '6px 8px',
                 color: C.text,
                 fontSize: 11,
@@ -340,8 +345,8 @@ export function HoldingsTable({
           padding: '8px 12px',
           fontSize: 9,
           color: C.textMute,
-          fontWeight: 600,
-          letterSpacing: '0.05em',
+          fontWeight: 500,
+          letterSpacing: '0.08em',
         },
       },
       h('div', null, '股票'),

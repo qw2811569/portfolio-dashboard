@@ -18,7 +18,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // ─── Config ───────────────────────────────────────────────────────
 const PORT = Number(process.env.BRIDGE_PORT) || 9527
+const HOST = process.env.BRIDGE_HOST || '0.0.0.0'
 const AUTH_TOKEN = process.env.BRIDGE_AUTH_TOKEN || ''
+const AUTH_TOKEN_PREVIEW = process.env.BRIDGE_AUTH_TOKEN_PREVIEW || ''
+const VALID_TOKENS = new Set([AUTH_TOKEN, AUTH_TOKEN_PREVIEW].filter(Boolean))
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || process.cwd()
 const TASK_SEED_PATH = path.join(WORKSPACE_ROOT, 'coordination', 'llm-bus', 'agent-bridge-tasks.json')
 const TASK_PERSIST_PATH = path.join(__dirname, 'data', 'tasks.json')
@@ -63,10 +66,71 @@ function stripAnsi(str) {
 }
 
 // ─── Auth check ───────────────────────────────────────────────────
-function checkAuth(req) {
-  if (!AUTH_TOKEN) return true // no token = open (dev mode)
-  const header = req.headers.authorization || ''
-  return header === `Bearer ${AUTH_TOKEN}`
+const PUBLIC_HTTP_ROUTES = new Set([
+  '/',
+  '/index.html',
+  '/api/health',
+  '/api/status',
+  '/api/project',
+])
+const PROTECTED_HTTP_ROUTES = [
+  /^\/api\/sessions$/,
+  /^\/api\/send$/,
+  /^\/api\/terminal\/create$/,
+  /^\/api\/tasks$/,
+  /^\/api\/tasks\/sync$/,
+  /^\/api\/local-status$/,
+  /^\/api\/tasks\/[^/]+$/,
+  /^\/api\/tasks\/[^/]+\/dispatch$/,
+  /^\/api\/tasks\/[^/]+\/complete$/,
+  /^\/api\/tasks\/[^/]+\/consensus$/,
+]
+const PROTECTED_WS_MESSAGE_TYPES = new Set([
+  'send',
+  'terminal:create',
+  'task:create',
+  'task:update',
+  'task:dispatch',
+  'task:complete',
+  'task:consensus',
+  'task:sync',
+])
+
+function getBearerToken(value) {
+  return typeof value === 'string'
+    ? value.replace(/^Bearer\s+/i, '')
+    : ''
+}
+
+function identifyTokenKind(token) {
+  if (!VALID_TOKENS.size) return 'disabled'
+  if (token && AUTH_TOKEN && token === AUTH_TOKEN) return 'prod'
+  if (token && AUTH_TOKEN_PREVIEW && token === AUTH_TOKEN_PREVIEW) return 'preview'
+  return null
+}
+
+function hasValidAuth(req) {
+  return identifyTokenKind(getBearerToken(req.headers.authorization || ''))
+}
+
+function isProtectedHttpRoute(pathname, method) {
+  if (method === 'OPTIONS') return false
+  if ((method === 'GET' || method === 'HEAD') && PUBLIC_HTTP_ROUTES.has(pathname)) return false
+  return PROTECTED_HTTP_ROUTES.some((re) => re.test(pathname))
+}
+
+function hasWsAuth(req, msg) {
+  if (!VALID_TOKENS.size) return 'disabled'
+  const url = new URL(req.url ?? '/', 'http://127.0.0.1')
+  const queryToken = url.searchParams.get('token') || ''
+  const headerToken = getBearerToken(req.headers.authorization || '')
+  const messageToken = typeof msg?.authToken === 'string' ? msg.authToken : ''
+  return identifyTokenKind(queryToken) || identifyTokenKind(headerToken) || identifyTokenKind(messageToken)
+}
+
+function logAuthUsage(transport, target, tokenKind) {
+  if (!tokenKind || tokenKind === 'disabled') return
+  log(`Auth accepted (${transport}:${tokenKind}) ${target}`)
 }
 
 // ─── Session management (child_process based) ─────────────────────
@@ -438,9 +502,10 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url ?? '/', `http://127.0.0.1`)
   const p = url.pathname
+  const isReadMethod = req.method === 'GET' || req.method === 'HEAD'
 
   // Dashboard — no auth, no-cache, hot-reload from disk
-  if (p === '/' || p === '/index.html') {
+  if ((p === '/' || p === '/index.html') && isReadMethod) {
     let html = dashboardHtml
     try {
       if (fs.existsSync(dashboardPath)) html = fs.readFileSync(dashboardPath, 'utf-8')
@@ -452,18 +517,23 @@ const server = http.createServer(async (req, res) => {
     res.end(html); return
   }
 
-  // API auth check
-  if (p.startsWith('/api/') && !checkAuth(req)) {
+  const httpTokenKind = hasValidAuth(req)
+  if (isProtectedHttpRoute(p, req.method) && !httpTokenKind) {
     res.writeHead(401, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: 'Unauthorized' })); return
   }
+  if (isProtectedHttpRoute(p, req.method)) logAuthUsage('http', `${req.method} ${p}`, httpTokenKind)
 
   // GET routes
-  if (p === '/api/sessions' && req.method === 'GET') {
+  if (p === '/api/health' && isReadMethod) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, uptime: process.uptime() })); return
+  }
+  if (p === '/api/sessions' && isReadMethod) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(Array.from(sessions.values()).map(serializeSession))); return
   }
-  if (p === '/api/status' && req.method === 'GET') {
+  if (p === '/api/status' && isReadMethod) {
     const THIRTY_MIN = 30 * 60 * 1000
     const now = Date.now()
     const localEntries = [...localActivity.values()]
@@ -477,7 +547,7 @@ const server = http.createServer(async (req, res) => {
       localActivity: localEntries,
     })); return
   }
-  if (p === '/api/project' && req.method === 'GET') {
+  if (p === '/api/project' && isReadMethod) {
     const statusPath = path.join(__dirname, 'project-status.json')
     try {
       res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -485,7 +555,7 @@ const server = http.createServer(async (req, res) => {
     } catch { res.writeHead(404); res.end('{}') }
     return
   }
-  if (p === '/api/tasks' && req.method === 'GET') {
+  if (p === '/api/tasks' && isReadMethod) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(Array.from(tasks.values()).map(serializeTask))); return
   }
@@ -577,14 +647,6 @@ const server = http.createServer(async (req, res) => {
 // WebSocket
 const wss = new WebSocketServer({ server })
 wss.on('connection', (ws, req) => {
-  // Auth check for WS via query param
-  if (AUTH_TOKEN) {
-    const url = new URL(req.url ?? '/', 'http://127.0.0.1')
-    if (url.searchParams.get('token') !== AUTH_TOKEN) {
-      ws.close(4001, 'Unauthorized'); return
-    }
-  }
-
   wsClients.add(ws)
   log(`Client connected (total: ${wsClients.size})`)
 
@@ -601,6 +663,12 @@ wss.on('connection', (ws, req) => {
   ws.on('message', async (raw) => {
     try {
       const msg = JSON.parse(raw.toString())
+      const wsTokenKind = hasWsAuth(req, msg)
+      if (PROTECTED_WS_MESSAGE_TYPES.has(msg.type) && !wsTokenKind) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Unauthorized', requestType: msg.type }))
+        return
+      }
+      if (PROTECTED_WS_MESSAGE_TYPES.has(msg.type)) logAuthUsage('ws', msg.type, wsTokenKind)
       switch (msg.type) {
         case 'send': {
           const ok = sendToSession(msg.sessionId, msg.text)
@@ -635,11 +703,15 @@ wss.on('connection', (ws, req) => {
 
 // ─── Start ────────────────────────────────────────────────────────
 loadTasks()
-server.listen(PORT, '0.0.0.0', () => {
-  log(`Agent Bridge standalone server running on 0.0.0.0:${PORT}`)
-  log(`Dashboard: http://localhost:${PORT}`)
+server.listen(PORT, HOST, () => {
+  log(`Agent Bridge standalone server running on ${HOST}:${PORT}`)
+  log(`Dashboard: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`)
   log(`Workspace: ${WORKSPACE_ROOT}`)
-  log(`Auth: ${AUTH_TOKEN ? 'enabled' : 'DISABLED (set BRIDGE_AUTH_TOKEN)'}`)
+  if (!VALID_TOKENS.size) log('Auth: DISABLED (set BRIDGE_AUTH_TOKEN and optionally BRIDGE_AUTH_TOKEN_PREVIEW)')
+  else log(`Auth: enabled (${Array.from([
+    AUTH_TOKEN ? 'prod' : null,
+    AUTH_TOKEN_PREVIEW ? 'preview' : null,
+  ]).filter(Boolean).join(' + ')})`)
   log(`Hard gates: ${HARD_GATES_ENABLED ? 'ON' : 'off'}`)
   log(`Tasks loaded: ${tasks.size}`)
 })

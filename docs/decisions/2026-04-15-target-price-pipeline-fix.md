@@ -55,3 +55,10 @@
 ## 一句話結論
 
 > 先把 cron 跑活並做一次 backfill；跑穩後再用 Gemini 或 Perplexity 取代現有 AI extract。
+
+## 2026-04-15 Phase 2 實測結果
+
+- Prompt tuning + target-aware ranking + false-positive 過濾完成（commit a92311c）
+- **覆蓋率仍 4/11**（2489 瑞軒從 false-positive 42.9 掉到 0，3167 大量補回真 target 319）
+- **根因確認**：7/11 小型股 RSS 新聞**本身沒有明確 target price 文字**，prompt tuning 天花板到此
+- 要 ≥8/11 必須進 **Phase 3**：換更強 grounding 的 provider（Gemini 2.5 Flash）或擴大資料源（Yahoo 股市 / CMoney 頁面），不能再調 prompt

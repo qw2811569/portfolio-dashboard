@@ -130,9 +130,9 @@ export default function Header(props) {
             onClick: refreshPrices,
             disabled: refreshing,
             style: {
-              background: refreshing ? C.subtle : alpha(C.blue, A.faint),
-              color: refreshing ? C.textMute : C.blue,
-              border: `1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
+              background: refreshing ? C.subtle : alpha(C.neonBlue, A.faint),
+              color: refreshing ? C.textMute : C.neonBlue,
+              border: `1px solid ${refreshing ? C.border : alpha(C.neonBlue, A.strongLine)}`,
               ...ghostBtn,
               cursor: refreshing ? 'not-allowed' : 'pointer',
             },
@@ -145,9 +145,9 @@ export default function Header(props) {
             className: 'ui-btn',
             onClick: copyWeeklyReport,
             style: {
-              background: C.lavBg,
-              color: C.lavender,
-              border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
+              background: alpha(C.neonPink, A.faint),
+              color: C.neonPink,
+              border: `1px solid ${alpha(C.neonPink, A.strongLine)}`,
               ...ghostBtn,
             },
           },
@@ -210,12 +210,13 @@ export default function Header(props) {
         h(
           'div',
           {
+            className: 'drive-number',
             style: {
-              fontSize: 20,
+              fontSize: 28,
               fontWeight: 700,
               color: pc(displayedTotalPnl),
-              letterSpacing: '-0.02em',
               lineHeight: 1.1,
+              textShadow: `0 0 12px ${alpha(C.neonPink, '20')}`,
             },
           },
           `${displayedTotalPnl >= 0 ? '+' : ''}${Math.round(displayedTotalPnl).toLocaleString()}`
@@ -272,9 +273,9 @@ export default function Header(props) {
           onClick: editor?.openCreate || createPortfolio,
           disabled: !ready || portfolioSwitching,
           style: {
-            background: C.cardBlue,
-            color: C.blue,
-            border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+            background: alpha(C.neonBlue, A.faint),
+            color: C.neonBlue,
+            border: `1px solid ${alpha(C.neonBlue, A.strongLine)}`,
             ...ghostBtn,
             cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
           },
@@ -288,9 +289,12 @@ export default function Header(props) {
           onClick: viewMode === OVERVIEW_VIEW_MODE ? exitOverview : openOverview,
           disabled: !ready || portfolioSwitching,
           style: {
-            background: viewMode === OVERVIEW_VIEW_MODE ? C.cardAmber : C.cardRose,
-            color: viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.text,
-            border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : C.border}`,
+            background:
+              viewMode === OVERVIEW_VIEW_MODE
+                ? alpha(C.sunsetEnd, A.faint)
+                : alpha(C.neonPink, A.faint),
+            color: viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.neonPink,
+            border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : alpha(C.neonPink, A.strongLine)}`,
             ...ghostBtn,
             cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
           },
@@ -721,10 +725,14 @@ export default function Header(props) {
                 key: t.k,
                 onClick: () => navigateToTab(t.k),
                 style: {
-                  background: tab === t.k ? alpha(C.text, '10') : 'transparent',
+                  background:
+                    tab === t.k
+                      ? `linear-gradient(135deg, ${alpha(C.neonPink, '14')}, ${alpha(C.neonBlue, '10')})`
+                      : 'transparent',
                   color: tab === t.k ? C.text : C.textMute,
-                  border: `1px solid ${tab === t.k ? C.borderStrong : 'transparent'}`,
-                  boxShadow: tab === t.k ? C.insetLine : 'none',
+                  border: `1px solid ${tab === t.k ? alpha(C.neonPink, A.line) : 'transparent'}`,
+                  boxShadow:
+                    tab === t.k ? `${C.insetLine}, 0 0 14px ${alpha(C.neonBlue, '14')}` : 'none',
                   borderRadius: 999,
                   padding: '7px 13px',
                   fontSize: 11,

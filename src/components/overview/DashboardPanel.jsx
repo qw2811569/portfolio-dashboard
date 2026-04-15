@@ -34,23 +34,43 @@ function TodayPnlHero({ todayTotalPnl = 0 }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(color, '40')}`,
-        background: bgTint,
+        background: `linear-gradient(135deg, ${bgTint}, ${alpha(C.neonPink, '10')} 46%, ${alpha(
+          C.neonBlue,
+          '08'
+        )} 100%)`,
+        overflow: 'hidden',
       },
     },
+    h('div', {
+      className: 'drive-divider',
+      style: { marginBottom: 10 },
+    }),
     h('div', { style: { ...lbl, marginBottom: 6 } }, '今日損益'),
     h(
       'div',
       {
-        className: 'tn',
+        className: 'tn drive-number',
         style: {
-          fontSize: 28,
+          fontSize: 34,
           fontWeight: 700,
           color,
-          letterSpacing: '-0.02em',
+          textShadow: `0 0 14px ${alpha(C.neonPink, '22')}`,
           lineHeight: 1.2,
         },
       },
       text
+    ),
+    h(
+      'div',
+      {
+        style: {
+          marginTop: 6,
+          fontSize: 10,
+          color: C.textMute,
+          lineHeight: 1.7,
+        },
+      },
+      '白天看的是投組，夜裡看的是節奏。'
     )
   )
 }

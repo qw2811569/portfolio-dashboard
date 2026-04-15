@@ -22,6 +22,11 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
 fi
 
 if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${1:-}" != "-v" ]]; then
+  if [[ "$#" -eq 1 && -f "$1" && -r "$1" ]]; then
+    report_ai_start "Qwen CLI 啟動：brief 檔 $1"
+    exec qwen --auth-type qwen-oauth -y -p "$(cat "$1")"
+  fi
+
   if [[ "$#" -gt 0 ]]; then
     report_ai_start "Qwen CLI 啟動：$*"
   else
@@ -29,4 +34,4 @@ if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${
   fi
 fi
 
-exec qwen --auth-type qwen-oauth "$@"
+exec qwen --auth-type qwen-oauth -y "$@"

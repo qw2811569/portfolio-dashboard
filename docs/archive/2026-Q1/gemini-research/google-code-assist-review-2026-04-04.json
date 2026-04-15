@@ -1,52 +1,66 @@
 {
   "facts": [
     {
-      "topic": "Google Code Assist: Chat (Gemini Code Assist) - 最新功能與限制",
-      "details": {
-        "IDE Support": "VS Code (全功能/Agent Mode), JetBrains (IntelliJ, PyCharm, GoLand, WebStorm, Android Studio), Cloud Shell Editor, Cloud Workstations.",
-        "Context Window": "1M+ tokens (powered by Gemini 2.5/3.x models), 可處理 50,000+ 行程式碼。",
-        "Terminal Access": "具備 Deep Terminal Integration，Agent 可以跑 shell 指令 (build/test/lint) 來驗證修改內容。",
-        "Workspace Indexing": "支援 Local Codebase Indexing 以及 Remote Repository Context (Enterprise)，可用 @ 標記參考遠端倉庫。",
-        "Custom Instructions": "支援自訂 system prompt，可透過 `.gemini/system.md` 檔案或環境變數 `GEMINI_SYSTEM_MD` 設定。"
-      },
-      "source": "https://cloud.google.com/products/gemini/code-assist",
-      "confidence": "confirmed"
+      "category": "Supported IDEs",
+      "details": "Gemini Code Assist (formerly Duet AI) supports a wide range of environments: VS Code (via extension), JetBrains IDEs (IntelliJ IDEA, PyCharm, GoLand, WebStorm, CLion, DataGrip, PhpStorm, Rider, RubyMine), Android Studio, Google Cloud Shell Editor (pre-installed), and Google Cloud Workstations.",
+      "source": "https://cloud.google.com/products/gemini/code-assist"
     },
     {
-      "topic": "與其他 AI Coding Tools 比較",
-      "details": {
-        "vs GitHub Copilot Chat": "Gemini 擁有極大 context window (1M+ vs Copilot ~32k-128k)；支援跨檔案自主 Agent Mode。",
-        "vs Cursor": "Cursor 以 RAG 為基礎，Gemini 則是原生長文本支援；Gemini 在 Google Cloud 生態圈整合更深 (Cloud Console 整合)。",
-        "vs Claude Code CLI": "Claude Code (Anthropic) 強項在於推理能力與工具呼叫 (MCP)，而 Gemini Code Assist 則是透過 Gemini CLI 提供類似的終端機 agent 體驗，並擁有更大的記憶體 (Context)。"
-      },
-      "source": "https://github.com/google-gemini/gemini-cli",
-      "confidence": "confirmed"
+      "category": "Context Window Size",
+      "details": "Gemini 2.5 Flash and Pro models feature a 1M token context window. The upcoming Gemini 3 Pro (in preview) extends this to 2M tokens. This allows the assistant to process entire codebases, large documentation sets, or long execution logs in a single request.",
+      "source": "https://cloud.google.com/blog/products/ai-machine-learning/gemini-2-5-pro-code-assist"
     },
     {
-      "topic": "最佳實踐與進階用法",
-      "details": {
-        "Project Guidance": "使用 `.gemini/` 目錄放置專案指引，讓 AI 遵守特定程式碼規範。",
-        "Model Context Protocol (MCP)": "支援透過 MCP 連接外部工具與數據源，取代舊有的 Tool Calling API。",
-        "Unified Diff": "變更預覽採用 side-by-side diff 視圖，確保安全性。"
-      },
-      "source": "https://cloud.google.com/vertex-ai/docs/release-notes",
-      "confidence": "confirmed"
+      "category": "Terminal Access & Agent Mode",
+      "details": "Gemini CLI is an open-source AI agent that provides terminal-based code understanding, file manipulation, and command execution. In IDEs, 'Agent Mode' (preview) allows the assistant to execute terminal commands, perform multi-step reasoning, and handle multi-file refactors autonomously using tools and MCP (Model Context Protocol) servers.",
+      "source": "https://github.com/google/gemini-cli"
+    },
+    {
+      "category": "Workspace Indexing",
+      "details": "Supports 'Local Codebase Awareness' which indexes the local project to provide context-aware suggestions. Enterprise users can also index private remote repositories. It respects .aiexclude and .gitignore files to manage indexing scope.",
+      "source": "https://cloud.google.com/gemini/docs/code-assist/configure-local-codebase-awareness"
+    },
+    {
+      "category": "Custom Instructions & Rules",
+      "details": "Supports 'Rules' (User or Workspace level) for defining coding styles and preferences. 'Custom Commands' (e.g., /add-comments) can be created in IDE settings. For project-wide instructions, Agent Mode and Gemini CLI support GEMINI.md or AGENT.md files at the project root, similar to CLAUDE.md.",
+      "source": "https://cloud.google.com/gemini/docs/code-assist/chat-features-overview"
+    },
+    {
+      "category": "Comparison with Competitors - GitHub Copilot",
+      "details": "Gemini offers a significantly larger context window (1M vs ~128k) and deeper Google Cloud/Firebase integration compared to GitHub Copilot.",
+      "source": "https://digitalapplied.com/google-gemini-code-assist-agent-mode-guide/"
+    },
+    {
+      "category": "Comparison with Competitors - Cursor",
+      "details": "Cursor is a full IDE fork with superior multi-file 'Composer' editing, while Gemini relies on Agent Mode and long context.",
+      "source": "https://lowcode-agency.com/blog/gemini-code-assist-vs-cursor-ai/"
+    },
+    {
+      "category": "Comparison with Competitors - Claude Code CLI",
+      "details": "Both offer agentic CLI capabilities, but Gemini provides a larger context window (1M vs 200k) and higher free tier limits (180k completions/month) compared to Claude Code CLI.",
+      "source": "https://digitalapplied.com/google-gemini-code-assist-agent-mode-guide/"
     }
   ],
   "citations": [
     "https://cloud.google.com/products/gemini/code-assist",
-    "https://github.com/google-gemini/gemini-cli",
-    "https://cloud.google.com/vertex-ai/docs/release-notes"
+    "https://cloud.google.com/gemini/docs/code-assist/configure-local-codebase-awareness",
+    "https://cloud.google.com/gemini/docs/code-assist/chat-features-overview",
+    "https://cloud.google.com/gemini/docs/code-assist/use-agent-mode",
+    "https://github.com/google/gemini-cli",
+    "https://digitalapplied.com/google-gemini-code-assist-agent-mode-guide/",
+    "https://cloud.google.com/blog/products/ai-machine-learning/gemini-2-5-pro-code-assist",
+    "https://lowcode-agency.com/blog/gemini-code-assist-vs-cursor-ai/"
   ],
   "freshness": "2026-04-04",
   "recommendations": [
-    "Gemini Code Assist 適合擔任「大塊頭任務」(Heavy Lifting) 的執行者，例如全專案重構或跨檔案 bug 排除，因為它有 1M+ 的 context。",
-    "可取代 Qwen 的部分程式碼分析工作，Qwen 可轉向更專精的單檔邏輯優化或 UI 調整。",
-    "Gemini CLI 與 Code Assist 共用後端模型，Gemini CLI 可用於 CI/CD 或自動化腳本中，而 Code Assist 用於 IDE 內即時開發。",
-    "建議將本專案的 GEMINI.md 內容整合至 `.gemini/system.md` 以強化 IDE 內的 AI 遵守度。"
+    "Adopt GEMINI.md at the project root to standardize instructions for both Gemini CLI and IDE Agent Mode.",
+    "Utilize Agent Mode (Insiders channel) for complex multi-file refactoring tasks that exceed standard chat capabilities.",
+    "Configure .aiexclude to prevent sensitive or irrelevant files from consuming the 1M token context window during indexing.",
+    "Integrate MCP servers to extend Gemini's capabilities with external tools (e.g., database querying, specialized API docs)."
   ],
   "unresolved_questions": [
-    "免費版與企業版在 2026 年的「思考預算」(thinking budget) 具體額度仍有動態調整空間。",
-    "JetBrains 插件的本地索引速度在超大型專案中仍略遜於 VS Code 版本。"
+    "Exact release date for Gemini 3 Pro's 2M token window in the stable channel.",
+    "Whether Gemini Code Assist will eventually support CLAUDE.md natively for cross-tool compatibility without manual renaming.",
+    "Performance impact of 1M+ token context on response latency compared to RAG-based approaches like Cursor."
   ]
 }

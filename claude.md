@@ -14,8 +14,10 @@
 4. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
 
 讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼、**哪些題目已經有 decision 不准重討論**。
-視覺版：https://35.236.155.62.sslip.io/（VM Dashboard，HTTPS）
-持倉看板：https://jiucaivoice-dashboard.vercel.app/
+視覺版：https://35.236.155.62.sslip.io/（**Agent Bridge\*\*，VM 側 LLM 面板）
+持倉看板：https://jiucaivoice-dashboard.vercel.app/（Vercel 側產品，給投資人）
+
+**命名紀律**（2026-04-16）：只講「持倉看板」（Vercel）或「Agent Bridge」（VM）。不要混用 dashboard / VM dashboard / portfolio dashboard 等。詳 `docs/decisions/2026-04-16-naming-portfolio-vs-agent-bridge.md`
 
 **不要先讀 AGENTS.md / SOUL.md / IDENTITY.md / HEARTBEAT.md**（跟本專案無關）。
 

@@ -26,6 +26,14 @@
 | [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md) | 2026-04-15 | ✅ 決議     | Gemini 角色 = 用戶盲點審查員 + multi-LLM 反駁者。不做資料蒐集。不建議架構遷移。 |
 | [2026-04-15-bridge-auth-token-split](./2026-04-15-bridge-auth-token-split.md)         | 2026-04-15 | ✅ 實作完成 | VM Agent Bridge prod/preview token 拆開，避免 preview 分支拿 prod token         |
 
+## 產品策略
+
+| Decision                                                                                        | 日期       | 狀態      | 摘要                                                                                                                          |
+| ----------------------------------------------------------------------------------------------- | ---------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [2026-04-16-product-stage-stability-first](./2026-04-16-product-stage-stability-first.md)       | 2026-04-16 | ✅ 決議   | 當前階段 prototype → internal beta。先穩定再談錢。VM/Vercel 照用不優化成本。Stripe/multi-tenant 延後。UX / 呈現層優先於 infra |
+| [2026-04-16-vm-maximization-roadmap](./2026-04-16-vm-maximization-roadmap.md)                   | 2026-04-16 | 🟡 執行中 | 能搬 VM 就搬：5 個 cron + analyst-reports + research job queue。Vercel 只留 CDN + 輕量 API。11 項 P0/P1/P2 清單               |
+| [2026-04-16-naming-portfolio-vs-agent-bridge](./2026-04-16-naming-portfolio-vs-agent-bridge.md) | 2026-04-16 | ✅ 決議   | 持倉看板（Vercel 產品）vs Agent Bridge（VM LLM 面板）名稱統一，禁用 dashboard 單字                                            |
+
 ## 產品功能
 
 | Decision                                                                          | 日期       | 狀態        | 摘要                                                                                         |

@@ -13,6 +13,7 @@ import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { WebSocketServer } from 'ws'
 import { fileURLToPath } from 'node:url'
+import { createLlmDispatcher } from './workers/llm-dispatcher.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +29,7 @@ const TASK_PERSIST_PATH = path.join(__dirname, 'data', 'tasks.json')
 const HARD_GATES_ENABLED = process.env.AGENT_BRIDGE_HARD_GATES === '1'
 const MAX_BUFFER_LINES = 500
 const CONSENSUS_APPROVAL_QUORUM = 2
+const DISPATCH_DATA_ROOT = path.join(__dirname, 'data')
 
 // ─── Agent Detection ──────────────────────────────────────────────
 const AGENT_PROFILES = [
@@ -84,6 +86,8 @@ const PROTECTED_HTTP_ROUTES = [
   /^\/api\/tasks\/[^/]+\/dispatch$/,
   /^\/api\/tasks\/[^/]+\/complete$/,
   /^\/api\/tasks\/[^/]+\/consensus$/,
+  /^\/api\/workers\/dispatch$/,
+  /^\/api\/workers\/dispatch\/[^/]+$/,
 ]
 const PROTECTED_WS_MESSAGE_TYPES = new Set([
   'send',
@@ -94,6 +98,7 @@ const PROTECTED_WS_MESSAGE_TYPES = new Set([
   'task:complete',
   'task:consensus',
   'task:sync',
+  'worker:dispatch',
 ])
 
 function getBearerToken(value) {
@@ -480,6 +485,13 @@ function serializeSession(s) {
   }
 }
 
+const dispatcher = createLlmDispatcher({
+  workspaceRoot: WORKSPACE_ROOT,
+  dataRoot: DISPATCH_DATA_ROOT,
+  broadcast,
+  log,
+})
+
 // ─── HTTP + WebSocket Server ──────────────────────────────────────
 function readBody(req) {
   return new Promise((resolve) => {
@@ -559,6 +571,16 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(Array.from(tasks.values()).map(serializeTask))); return
   }
+  if (p === '/api/workers/dispatch' && isReadMethod) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(dispatcher.listDispatches())); return
+  }
+  const dispatchDetail = p.match(/^\/api\/workers\/dispatch\/([^/]+)$/)
+  if (dispatchDetail && isReadMethod) {
+    const run = dispatcher.getDispatch(decodeURIComponent(dispatchDetail[1]))
+    res.writeHead(run ? 200 : 404, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(run || { error: 'Dispatch not found' })); return
+  }
 
   // POST routes
   if (p === '/api/send' && req.method === 'POST') {
@@ -601,6 +623,12 @@ const server = http.createServer(async (req, res) => {
     loadTasks(); reconcileTaskAssignments(); broadcastTasksSnapshot()
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ ok: true, tasks: Array.from(tasks.values()).map(serializeTask) })); return
+  }
+  if (p === '/api/workers/dispatch' && req.method === 'POST') {
+    const body = await readBody(req)
+    const result = await dispatcher.dispatch(body)
+    res.writeHead(result.ok ? 202 : 400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(result)); return
   }
 
   // Task action routes
@@ -659,6 +687,10 @@ wss.on('connection', (ws, req) => {
     type: 'tasks:snapshot',
     tasks: Array.from(tasks.values()).map(serializeTask),
   }))
+  ws.send(JSON.stringify({
+    type: 'worker:dispatches',
+    dispatches: dispatcher.listDispatches(),
+  }))
 
   ws.on('message', async (raw) => {
     try {
@@ -690,6 +722,11 @@ wss.on('connection', (ws, req) => {
         case 'task:complete': { const r = completeTask(msg.taskId, msg.task ?? msg); ws.send(JSON.stringify({ type: 'task:complete:ack', ...r })); break }
         case 'task:consensus': { const r = applyConsensusReview(msg.taskId, msg.review ?? msg); ws.send(JSON.stringify({ type: 'task:consensus:ack', ...r })); break }
         case 'task:sync': loadTasks(); reconcileTaskAssignments(); broadcastTasksSnapshot(); break
+        case 'worker:dispatch': {
+          const r = await dispatcher.dispatch(msg.dispatch ?? msg)
+          ws.send(JSON.stringify({ type: 'worker:dispatch:ack', ...r }))
+          break
+        }
         case 'ping': ws.send(JSON.stringify({ type: 'pong' })); break
       }
     } catch { log('Invalid WS message') }

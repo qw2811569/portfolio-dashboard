@@ -20,38 +20,127 @@ const metricCard = {
 }
 
 /**
- * Today PnL — large red/green display
+ * Hero summary — total assets with supporting context
  */
-function TodayPnlHero({ todayTotalPnl = 0 }) {
+function TodayPnlHero({ totalVal = 0, todayTotalPnl = 0, holdings = [] }) {
   const color = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
-  const bgTint = todayTotalPnl > 0 ? C.upBg : todayTotalPnl < 0 ? C.downBg : 'transparent'
   const sign = todayTotalPnl > 0 ? '+' : ''
-  const text = `${sign}${todayTotalPnl.toLocaleString()}`
+  const totalText = Math.round(totalVal).toLocaleString()
+  const pnlText = `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
 
   return h(
     Card,
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(color, '40')}`,
-        background: `linear-gradient(135deg, ${bgTint}, ${alpha(C.card, 'ea')})`,
+        padding: '48px 24px',
+        background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
       },
     },
-    h('div', { style: { ...lbl, marginBottom: 6 } }, '今日損益'),
     h(
       'div',
       {
-        className: 'tn',
         style: {
-          fontSize: 28,
-          fontWeight: 700,
-          color,
-          fontFamily: 'var(--font-num)',
-          letterSpacing: '-0.02em',
-          lineHeight: 1.2,
+          display: 'grid',
+          gap: 24,
         },
       },
-      text
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 12,
+          },
+        },
+        h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
+        h(
+          'div',
+          {
+            className: 'tn',
+            style: {
+              fontSize: 'clamp(48px, 7vw, 72px)',
+              fontWeight: 600,
+              color: C.text,
+              fontFamily: 'var(--font-num)',
+              letterSpacing: '-0.02em',
+              lineHeight: 0.95,
+            },
+          },
+          totalText
+        )
+      ),
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 24,
+            alignItems: 'center',
+          },
+        },
+        h(
+          'div',
+          { style: { display: 'grid', gap: 4 } },
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 14,
+                color: C.textMute,
+                fontFamily: 'var(--font-body)',
+              },
+            },
+            '今日損益'
+          ),
+          h(
+            'div',
+            {
+              className: 'tn',
+              style: {
+                fontSize: 22,
+                fontWeight: 600,
+                color,
+                fontFamily: 'var(--font-num)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+              },
+            },
+            pnlText
+          )
+        ),
+        h(
+          'div',
+          { style: { display: 'grid', gap: 4 } },
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 14,
+                color: C.textMute,
+                fontFamily: 'var(--font-body)',
+              },
+            },
+            '總持倉'
+          ),
+          h(
+            'div',
+            {
+              className: 'tn',
+              style: {
+                fontSize: 22,
+                fontWeight: 600,
+                color: C.textSec,
+                fontFamily: 'var(--font-num)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+              },
+            },
+            `${holdings.length} 檔`
+          )
+        )
+      )
     )
   )
 }
@@ -387,7 +476,7 @@ export function DashboardPanel({
   return h(
     'div',
     null,
-    h(TodayPnlHero, { todayTotalPnl }),
+    h(TodayPnlHero, { holdings, totalVal, todayTotalPnl }),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })

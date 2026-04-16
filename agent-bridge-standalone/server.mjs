@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process'
 import { WebSocketServer } from 'ws'
 import { fileURLToPath } from 'node:url'
 import { createLlmDispatcher } from './workers/llm-dispatcher.mjs'
+import { createAnalystReportsWorker } from './workers/analyst-reports-worker.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,7 +23,8 @@ const PORT = Number(process.env.BRIDGE_PORT) || 9527
 const HOST = process.env.BRIDGE_HOST || '0.0.0.0'
 const AUTH_TOKEN = process.env.BRIDGE_AUTH_TOKEN || ''
 const AUTH_TOKEN_PREVIEW = process.env.BRIDGE_AUTH_TOKEN_PREVIEW || ''
-const VALID_TOKENS = new Set([AUTH_TOKEN, AUTH_TOKEN_PREVIEW].filter(Boolean))
+const INTERNAL_TOKEN = process.env.BRIDGE_INTERNAL_TOKEN || ''
+const VALID_TOKENS = new Set([AUTH_TOKEN, AUTH_TOKEN_PREVIEW, INTERNAL_TOKEN].filter(Boolean))
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || process.cwd()
 const TASK_SEED_PATH = path.join(WORKSPACE_ROOT, 'coordination', 'llm-bus', 'agent-bridge-tasks.json')
 const TASK_PERSIST_PATH = path.join(__dirname, 'data', 'tasks.json')
@@ -76,6 +78,8 @@ const PUBLIC_HTTP_ROUTES = new Set([
   '/api/project',
 ])
 const PROTECTED_HTTP_ROUTES = [
+  /^\/internal\/analyst-reports$/,
+  /^\/internal\/analyst-reports\/[^/]+$/,
   /^\/api\/sessions$/,
   /^\/api\/send$/,
   /^\/api\/terminal\/create$/,
@@ -111,6 +115,7 @@ function identifyTokenKind(token) {
   if (!VALID_TOKENS.size) return 'disabled'
   if (token && AUTH_TOKEN && token === AUTH_TOKEN) return 'prod'
   if (token && AUTH_TOKEN_PREVIEW && token === AUTH_TOKEN_PREVIEW) return 'preview'
+  if (token && INTERNAL_TOKEN && token === INTERNAL_TOKEN) return 'internal'
   return null
 }
 
@@ -491,6 +496,7 @@ const dispatcher = createLlmDispatcher({
   broadcast,
   log,
 })
+const analystReportsWorker = createAnalystReportsWorker({ logger: console })
 
 // ─── HTTP + WebSocket Server ──────────────────────────────────────
 function readBody(req) {
@@ -581,8 +587,29 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(run ? 200 : 404, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(run || { error: 'Dispatch not found' })); return
   }
+  const analystJob = p.match(/^\/internal\/analyst-reports\/([^/]+)$/)
+  if (analystJob && isReadMethod) {
+    const job = analystReportsWorker.get(decodeURIComponent(analystJob[1]))
+    res.writeHead(job ? 200 : 404, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(job || { error: 'Job not found' })); return
+  }
 
   // POST routes
+  if (p === '/internal/analyst-reports' && req.method === 'POST') {
+    const body = await readBody(req)
+    const wait = url.searchParams.get('wait') === '1'
+    try {
+      const job = await analystReportsWorker.submit(body, { wait })
+      res.writeHead(job.status === 'failed' ? 500 : wait ? 200 : 202, {
+        'Content-Type': 'application/json',
+      })
+      res.end(JSON.stringify(job))
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: error?.message || 'invalid analyst-reports request' }))
+    }
+    return
+  }
   if (p === '/api/send' && req.method === 'POST') {
     const { sessionId, text } = await readBody(req)
     const ok = sendToSession(sessionId, text)

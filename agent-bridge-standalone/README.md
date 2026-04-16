@@ -11,6 +11,7 @@ Production should run behind Nginx with TLS termination and keep the Node server
 - `WORKSPACE_ROOT=/home/chenkuichen/app`
 - `BRIDGE_AUTH_TOKEN=<strong random token>` — prod write token, do not commit; inject via PM2 env only
 - `BRIDGE_AUTH_TOKEN_PREVIEW=<strong random token>` — preview write token, distinct from prod
+- `BRIDGE_INTERNAL_TOKEN=<strong random token>` — optional alias if you want `/internal/*` callers to use a distinct env name on Vercel; if unset, code falls back to `BRIDGE_AUTH_TOKEN`
 
 ### Auth model
 

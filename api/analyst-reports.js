@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import { list, put } from '@vercel/blob'
+import supplyChain from '../src/data/supplyChain.json' with { type: 'json' }
 import {
   callAiRaw,
   callGeminiGrounded,
@@ -19,7 +20,14 @@ const VM_POLL_INTERVAL_MS = 1500
 const VM_POLL_TIMEOUT_MS = 45000
 
 const STOCK_NAME_BY_CODE = new Map(
-  [...INIT_HOLDINGS, ...INIT_HOLDINGS_JINLIANCHENG]
+  [
+    ...Object.entries(supplyChain || {}).map(([code, value]) => ({
+      code,
+      name: String(value?.name || '').trim(),
+    })),
+    ...INIT_HOLDINGS,
+    ...INIT_HOLDINGS_JINLIANCHENG,
+  ]
     .map((item) => [String(item?.code || '').trim(), String(item?.name || '').trim()])
     .filter(([code, name]) => code && name)
 )

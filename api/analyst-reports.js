@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import { list, put } from '@vercel/blob'
 import {
   callAiRaw,
   callGeminiGrounded,
@@ -10,6 +11,18 @@ import {
   buildCmoneyInsightItem,
   collectCmoneyNotes,
 } from './cmoney-notes.js'
+import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../src/seedData.js'
+
+const ANALYST_REPORTS_BLOB_PREFIX = 'analyst-reports'
+const VM_ANALYST_REPORTS_PATH = '/internal/analyst-reports'
+const VM_POLL_INTERVAL_MS = 1500
+const VM_POLL_TIMEOUT_MS = 45000
+
+const STOCK_NAME_BY_CODE = new Map(
+  [...INIT_HOLDINGS, ...INIT_HOLDINGS_JINLIANCHENG]
+    .map((item) => [String(item?.code || '').trim(), String(item?.name || '').trim()])
+    .filter(([code, name]) => code && name)
+)
 
 function decodeHtml(value) {
   return String(value || '')
@@ -76,6 +89,79 @@ function parseBoolean(value) {
     String(value || '')
       .trim()
       .toLowerCase()
+  )
+}
+
+function getBlobToken() {
+  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+}
+
+function getBridgeBaseUrl() {
+  return String(process.env.BRIDGE_BASE_URL || '')
+    .trim()
+    .replace(/\/$/, '')
+}
+
+function getBridgeInternalToken() {
+  return String(process.env.BRIDGE_INTERNAL_TOKEN || process.env.BRIDGE_AUTH_TOKEN || '').trim()
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+export function normalizeTicker(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+}
+
+export function resolveStockInput(input = {}) {
+  const code = normalizeTicker(input.code || input.ticker)
+  const name = String(input.name || '').trim() || STOCK_NAME_BY_CODE.get(code) || ''
+  return { code, name }
+}
+
+export async function readAnalystReportsSnapshot(
+  code,
+  { token = getBlobToken(), fetchImpl = fetch } = {}
+) {
+  const normalizedCode = normalizeTicker(code)
+  if (!normalizedCode || !token) return null
+
+  const { blobs } = await list({
+    prefix: `${ANALYST_REPORTS_BLOB_PREFIX}/${normalizedCode}.json`,
+    limit: 1,
+    token,
+  })
+
+  if (!blobs.length) return null
+
+  const response = await fetchImpl(blobs[0].url)
+  if (!response.ok) {
+    throw new Error(`blob read failed (${response.status})`)
+  }
+
+  return response.json()
+}
+
+export async function writeAnalystReportsSnapshot(code, payload, { token = getBlobToken() } = {}) {
+  const normalizedCode = normalizeTicker(code)
+  if (!normalizedCode) throw new Error('code is required')
+  if (!token) throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for analyst-reports writes')
+
+  await put(
+    `${ANALYST_REPORTS_BLOB_PREFIX}/${normalizedCode}.json`,
+    JSON.stringify(payload, null, 2),
+    {
+      token,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      access: 'public',
+      contentType: 'application/json',
+    }
   )
 }
 
@@ -603,126 +689,30 @@ function normalizeTargetDetails(item, insight) {
   }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+export async function runAnalystReportsPipeline(input = {}) {
+  const { code, name } = resolveStockInput(input)
+  const { knownHashes = [], maxItems = 6, maxExtract = 4 } = input || {}
+  if (!code || !name) throw new Error('缺少 code 或 name')
 
-  try {
-    const { code, name, knownHashes = [], maxItems = 6, maxExtract = 4 } = req.body || {}
-    if (!code || !name) {
-      return res.status(400).json({ error: '缺少 code 或 name' })
+  const stock = { code, name }
+  let geminiPayload = null
+  let rssPayload = null
+  let cmoneyPayload = null
+
+  if (isGeminiGroundingEnabled()) {
+    try {
+      geminiPayload = await collectGeminiGroundedReports(stock)
+    } catch {
+      geminiPayload = null
     }
+  }
 
-    const stock = { code, name }
-    let geminiPayload = null
-    let rssPayload = null
-    let cmoneyPayload = null
-
-    if (isGeminiGroundingEnabled()) {
-      try {
-        geminiPayload = await collectGeminiGroundedReports(stock)
-      } catch {
-        geminiPayload = null
-      }
-    }
-
-    if (!geminiPayload || geminiPayload.targetPriceCount === 0) {
-      try {
-        rssPayload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
-      } catch {
-        rssPayload = {
-          query: { code: stock.code, name: stock.name, mode: 'rss' },
-          fetchedAt: new Date().toISOString(),
-          totalFound: 0,
-          newCount: 0,
-          items: [],
-          targetPriceSource: 'per-band',
-          targetPriceCount: 0,
-        }
-      }
-    }
-
-    if (
-      isCmoneyNotesEnabled() &&
-      (!geminiPayload || geminiPayload.targetPriceCount === 0) &&
-      (!rssPayload || rssPayload.targetPriceCount === 0)
-    ) {
-      try {
-        cmoneyPayload = await collectCmoneyReports(stock)
-      } catch {
-        cmoneyPayload = null
-      }
-    }
-
-    const mergedReports = mergeLatestReportsByFirm([
-      ...(geminiPayload?.reports || geminiPayload?.items || []).map((item) => ({
-        ...item,
-        source: 'gemini',
-      })),
-      ...(rssPayload?.items || [])
-        .filter((item) => Number.isFinite(Number(item?.target)) && Number(item.target) > 0)
-        .map((item) => ({ ...item, source: 'rss' })),
-      ...(cmoneyPayload?.reports || cmoneyPayload?.items || []).map((item) => ({
-        ...item,
-        source: 'cmoney',
-      })),
-    ])
-
-    let payload = null
-    if (mergedReports.length > 0) {
-      const primarySource = mergedReports[0]?.source || 'rss'
-      const items = mergedReports.map((report, index) => ({
-        id: buildReportId(stock, report),
-        hash: buildReportId(stock, report),
-        title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
-        url: report.source_url,
-        source: report.firm,
-        publishedAt: report.date,
-        snippet: report.evidence,
-        summary: report.evidence,
-        target: report.target,
-        targetType: 'price-target',
-        targetEvidence: report.evidence,
-        firm: report.firm,
-        stance: report.stance,
-        tags: [`${report.source}-merged`],
-        confidence: null,
-        extractedAt: new Date().toISOString(),
-        rank: index + 1,
-      }))
-
-      payload = {
-        query: {
-          code: stock.code,
-          name: stock.name,
-          mode: 'merged',
-        },
-        fetchedAt:
-          geminiPayload?.fetchedAt ||
-          rssPayload?.fetchedAt ||
-          cmoneyPayload?.fetchedAt ||
-          new Date().toISOString(),
-        totalFound: items.length,
-        newCount: items.length,
-        items,
-        aggregate: cmoneyPayload?.aggregate || null,
-        targetPriceSource: primarySource,
-        targetPriceCount: items.length,
-      }
-    } else if (cmoneyPayload?.aggregate) {
-      payload = {
-        ...cmoneyPayload,
-        targetPriceSource: 'cmoney',
-        targetPriceCount: 0,
-      }
-    } else if (rssPayload) {
-      payload = rssPayload
-    } else {
-      payload = {
-        query: { code: stock.code, name: stock.name, mode: 'per-band' },
+  if (!geminiPayload || geminiPayload.targetPriceCount === 0) {
+    try {
+      rssPayload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
+    } catch {
+      rssPayload = {
+        query: { code: stock.code, name: stock.name, mode: 'rss' },
         fetchedAt: new Date().toISOString(),
         totalFound: 0,
         newCount: 0,
@@ -730,6 +720,198 @@ export default async function handler(req, res) {
         targetPriceSource: 'per-band',
         targetPriceCount: 0,
       }
+    }
+  }
+
+  if (
+    isCmoneyNotesEnabled() &&
+    (!geminiPayload || geminiPayload.targetPriceCount === 0) &&
+    (!rssPayload || rssPayload.targetPriceCount === 0)
+  ) {
+    try {
+      cmoneyPayload = await collectCmoneyReports(stock)
+    } catch {
+      cmoneyPayload = null
+    }
+  }
+
+  const mergedReports = mergeLatestReportsByFirm([
+    ...(geminiPayload?.reports || geminiPayload?.items || []).map((item) => ({
+      ...item,
+      source: 'gemini',
+    })),
+    ...(rssPayload?.items || [])
+      .filter((item) => Number.isFinite(Number(item?.target)) && Number(item.target) > 0)
+      .map((item) => ({ ...item, source: 'rss' })),
+    ...(cmoneyPayload?.reports || cmoneyPayload?.items || []).map((item) => ({
+      ...item,
+      source: 'cmoney',
+    })),
+  ])
+
+  let payload = null
+  if (mergedReports.length > 0) {
+    const primarySource = mergedReports[0]?.source || 'rss'
+    const items = mergedReports.map((report, index) => ({
+      id: buildReportId(stock, report),
+      hash: buildReportId(stock, report),
+      title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
+      url: report.source_url,
+      source: report.firm,
+      publishedAt: report.date,
+      snippet: report.evidence,
+      summary: report.evidence,
+      target: report.target,
+      targetType: 'price-target',
+      targetEvidence: report.evidence,
+      firm: report.firm,
+      stance: report.stance,
+      tags: [`${report.source}-merged`],
+      confidence: null,
+      extractedAt: new Date().toISOString(),
+      rank: index + 1,
+    }))
+
+    payload = {
+      query: {
+        code: stock.code,
+        name: stock.name,
+        mode: 'merged',
+      },
+      fetchedAt:
+        geminiPayload?.fetchedAt ||
+        rssPayload?.fetchedAt ||
+        cmoneyPayload?.fetchedAt ||
+        new Date().toISOString(),
+      totalFound: items.length,
+      newCount: items.length,
+      items,
+      aggregate: cmoneyPayload?.aggregate || null,
+      targetPriceSource: primarySource,
+      targetPriceCount: items.length,
+    }
+  } else if (cmoneyPayload?.aggregate) {
+    payload = {
+      ...cmoneyPayload,
+      targetPriceSource: 'cmoney',
+      targetPriceCount: 0,
+    }
+  } else if (rssPayload) {
+    payload = rssPayload
+  } else {
+    payload = {
+      query: { code: stock.code, name: stock.name, mode: 'per-band' },
+      fetchedAt: new Date().toISOString(),
+      totalFound: 0,
+      newCount: 0,
+      items: [],
+      targetPriceSource: 'per-band',
+      targetPriceCount: 0,
+    }
+  }
+
+  return payload
+}
+
+async function triggerVmRefresh(input = {}, { fetchImpl = fetch } = {}) {
+  const baseUrl = getBridgeBaseUrl()
+  const token = getBridgeInternalToken()
+  if (!baseUrl || !token) throw new Error('VM bridge config missing')
+
+  const response = await fetchImpl(`${baseUrl}${VM_ANALYST_REPORTS_PATH}?wait=1`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new Error(
+      payload?.detail || payload?.error || `VM analyst-reports failed (${response.status})`
+    )
+  }
+  if (payload?.result) return payload.result
+
+  const jobId = String(payload?.jobId || '').trim()
+  if (!jobId) throw new Error('VM analyst-reports missing jobId')
+
+  const deadline = Date.now() + VM_POLL_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await sleep(VM_POLL_INTERVAL_MS)
+    const pollResponse = await fetchImpl(
+      `${baseUrl}${VM_ANALYST_REPORTS_PATH}/${encodeURIComponent(jobId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    const pollPayload = await pollResponse.json().catch(() => null)
+    if (!pollResponse.ok) {
+      throw new Error(
+        pollPayload?.detail || pollPayload?.error || `VM poll failed (${pollResponse.status})`
+      )
+    }
+    if (pollPayload?.status === 'completed' && pollPayload?.result) return pollPayload.result
+    if (pollPayload?.status === 'failed') {
+      throw new Error(pollPayload?.error || 'VM analyst-reports job failed')
+    }
+  }
+
+  throw new Error('VM analyst-reports poll timeout')
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (!['GET', 'POST'].includes(req.method)) {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  try {
+    if (req.method === 'GET') {
+      const { code } = resolveStockInput(req.query || {})
+      if (!code) return res.status(400).json({ error: '缺少 code 或 ticker' })
+
+      const snapshot = await readAnalystReportsSnapshot(code)
+      if (!snapshot) {
+        return res.status(404).json({ error: `no analyst-reports snapshot for ${code}` })
+      }
+
+      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300')
+      res.setHeader('x-target-price-source', snapshot?.targetPriceSource || 'rss')
+      res.setHeader('x-target-price-count', String(snapshot?.targetPriceCount || 0))
+      return res.status(200).json(snapshot)
+    }
+
+    const refresh = parseBoolean(req.query?.refresh)
+    const input = req.body || {}
+    const { code, name } = resolveStockInput(input)
+    if (!code || !name) {
+      return res.status(400).json({ error: '缺少 code 或 name' })
+    }
+
+    let payload = null
+    if (refresh) {
+      try {
+        payload = await triggerVmRefresh({ ...input, code, name })
+      } catch (vmError) {
+        payload = await runAnalystReportsPipeline({ ...input, code, name })
+        try {
+          await writeAnalystReportsSnapshot(code, payload)
+        } catch {
+          // best effort: fallback path should still return fresh payload even if blob write fails
+        }
+        res.setHeader('x-analyst-reports-fallback', 'local')
+        res.setHeader('x-analyst-reports-vm-error', String(vmError?.message || 'unknown'))
+      }
+    } else {
+      payload = await runAnalystReportsPipeline({ ...input, code, name })
     }
 
     res.setHeader('x-target-price-source', payload.targetPriceSource)

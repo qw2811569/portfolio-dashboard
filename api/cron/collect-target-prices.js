@@ -186,7 +186,7 @@ async function readJsonSafely(response) {
 }
 
 async function fetchAnalystReports(stock, { origin, fetchImpl = fetch } = {}) {
-  const response = await fetchImpl(new URL('/api/analyst-reports', origin), {
+  const response = await fetchImpl(new URL('/api/analyst-reports?refresh=1', origin), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -46,6 +46,7 @@ function TodayPnlHero({ todayTotalPnl = 0 }) {
           fontSize: 28,
           fontWeight: 700,
           color,
+          fontFamily: 'var(--font-num)',
           letterSpacing: '-0.02em',
           lineHeight: 1.2,
         },
@@ -256,7 +257,15 @@ function PortfolioHealthCard({
         h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '獲利'),
         h(
           'div',
-          { style: { fontSize: 14, fontWeight: 600, color: C.up, marginTop: 2 } },
+          {
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.up,
+              marginTop: 2,
+              fontFamily: 'var(--font-num)',
+            },
+          },
           `${winners.length}檔`
         )
       ),
@@ -266,7 +275,15 @@ function PortfolioHealthCard({
         h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '虧損'),
         h(
           'div',
-          { style: { fontSize: 14, fontWeight: 600, color: C.down, marginTop: 2 } },
+          {
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.down,
+              marginTop: 2,
+              fontFamily: 'var(--font-num)',
+            },
+          },
           `${losers.length}檔`
         )
       ),
@@ -276,7 +293,15 @@ function PortfolioHealthCard({
         h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '持平'),
         h(
           'div',
-          { style: { fontSize: 14, fontWeight: 600, color: C.textSec, marginTop: 2 } },
+          {
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.textSec,
+              marginTop: 2,
+              fontFamily: 'var(--font-num)',
+            },
+          },
           `${flat}檔`
         )
       ),
@@ -292,7 +317,13 @@ function PortfolioHealthCard({
           'div',
           {
             className: 'tn',
-            style: { fontSize: 14, fontWeight: 600, color: returnColor, marginTop: 2 },
+            style: {
+              fontSize: 14,
+              fontWeight: 600,
+              color: returnColor,
+              marginTop: 2,
+              fontFamily: 'var(--font-num)',
+            },
           },
           `${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(1)}%`
         )

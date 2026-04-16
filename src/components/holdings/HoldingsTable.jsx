@@ -70,7 +70,18 @@ export function HoldingRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, holding.name),
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 11,
+                fontWeight: 600,
+                color: C.text,
+                fontFamily: 'var(--font-headline)',
+              },
+            },
+            holding.name
+          ),
           h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code)
         )
       ),
@@ -80,15 +91,27 @@ export function HoldingRow({
         'div',
         { className: 'tn', style: { fontSize: 10, color: C.textSec } },
         h('div', null, `${holding.qty.toLocaleString()} 股`),
-        h('div', { style: { fontSize: 9, color: C.textMute } }, `成本 ${holding.cost}`)
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textMute, fontFamily: 'var(--font-num)' } },
+          `成本 ${holding.cost}`
+        )
       ),
 
       // Price + Value
       h(
         'div',
         { className: 'tn', style: { fontSize: 10, color: C.textSec } },
-        h('div', { style: { fontWeight: 600, color: C.text } }, holding.price),
-        h('div', { style: { fontSize: 9, color: C.textMute } }, value.toLocaleString())
+        h(
+          'div',
+          { style: { fontWeight: 600, color: C.text, fontFamily: 'var(--font-num)' } },
+          holding.price
+        ),
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textMute, fontFamily: 'var(--font-num)' } },
+          value.toLocaleString()
+        )
       ),
 
       // P&L
@@ -99,6 +122,7 @@ export function HoldingRow({
             fontSize: 10,
             fontWeight: 600,
             color: pc(pnl),
+            fontFamily: 'var(--font-num)',
             background: `linear-gradient(90deg, ${pcBg(pnl)}, transparent)`,
             borderRadius: 999,
             padding: '4px 8px',
@@ -109,7 +133,7 @@ export function HoldingRow({
         h('div', null, `${pnl >= 0 ? '+' : ''}${Math.round(pnl).toLocaleString()}`),
         h(
           'div',
-          { style: { fontSize: 9, fontWeight: 500 } },
+          { style: { fontSize: 9, fontWeight: 500, fontFamily: 'var(--font-num)' } },
           `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`
         )
       ),

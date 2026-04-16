@@ -87,7 +87,7 @@ export default function Header(props) {
     {
       className: 'app-shell',
       style: {
-        background: `linear-gradient(180deg, rgba(35,42,47,0.94) 0%, rgba(35,42,47,0.86) 100%)`,
+        background: `linear-gradient(180deg, ${alpha(C.shell, 'f4')} 0%, ${alpha(C.subtleElev, 'ea')} 100%)`,
         borderBottom: `1px solid ${C.borderSoft}`,
         padding: '10px 14px 0',
         position: 'sticky',
@@ -124,6 +124,7 @@ export default function Header(props) {
               fontSize: 20,
               fontWeight: 700,
               color: C.text,
+              fontFamily: 'var(--font-headline)',
               letterSpacing: '0.01em',
             },
           },
@@ -221,6 +222,7 @@ export default function Header(props) {
               fontSize: 20,
               fontWeight: 700,
               color: pc(displayedTotalPnl),
+              fontFamily: 'var(--font-num)',
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
             },
@@ -229,7 +231,14 @@ export default function Header(props) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, fontWeight: 600, color: pc(displayedRetPct) } },
+          {
+            style: {
+              fontSize: 10,
+              fontWeight: 600,
+              color: pc(displayedRetPct),
+              fontFamily: 'var(--font-num)',
+            },
+          },
           `${displayedRetPct >= 0 ? '+' : ''}${displayedRetPct.toFixed(2)}%`
         )
       )
@@ -471,9 +480,9 @@ export default function Header(props) {
                             ? deleteDialog.open(portfolio)
                             : deletePortfolio(portfolio.id),
                         style: {
-                          background: C.upBg,
-                          color: C.up,
-                          border: `1px solid ${alpha(C.up, A.strongLine)}`,
+                          background: C.downBg,
+                          color: C.down,
+                          border: `1px solid ${alpha(C.down, A.strongLine)}`,
                           ...ghostBtn,
                         },
                       },

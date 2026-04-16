@@ -530,6 +530,80 @@
     gap: var(--space-5);
   }
 
+  .dispatch-shell {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .dispatch-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .dispatch-list {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .dispatch-card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.68);
+    cursor: pointer;
+  }
+
+  .dispatch-card.active {
+    border-color: var(--accent);
+    background: rgba(184, 92, 56, 0.12);
+  }
+
+  .dispatch-card[data-status="running"] {
+    border-color: rgba(111, 141, 88, 0.45);
+  }
+
+  .dispatch-card[data-status="failed"] {
+    border-color: rgba(176, 77, 58, 0.46);
+  }
+
+  .dispatch-log-shell {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .dispatch-log-meta,
+  .dispatch-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .dispatch-log {
+    min-height: 320px;
+    max-height: 56vh;
+    overflow: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: #F6EFE6;
+  }
+
+  .dispatch-log-line {
+    font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .dispatch-log-line.error {
+    color: var(--danger);
+  }
+
   .task-board-scroll.collapsed,
   .project-body.collapsed,
   .architecture-meta.collapsed {
@@ -1104,6 +1178,9 @@
     .gantt-grid {
       grid-template-columns: 1fr;
     }
+    .dispatch-grid {
+      grid-template-columns: 1fr;
+    }
     .gantt-track { grid-column: 1; }
     .activity-chart { grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .heatmap-grid { grid-template-columns: 34px repeat(8, minmax(0, 1fr)); }
@@ -1273,6 +1350,28 @@
                 <div class="micro" id="ganttMeta">12h window</div>
               </div>
               <div id="ganttChart"></div>
+            </div>
+          </div>
+          <div class="timeline-card dispatch-shell">
+            <div class="chart-head">
+              <div>
+                <div class="label">VM worker dispatcher</div>
+                <h3>最終摘要留小 payload，live log 留在 VM 面板</h3>
+              </div>
+              <div class="micro" id="workerDispatchMeta">尚未收到 dispatch</div>
+            </div>
+            <div class="dispatch-grid">
+              <div class="dispatch-list" id="workerDispatchList"></div>
+              <div class="dispatch-log-shell">
+                <div class="dispatch-log-meta" id="workerDispatchDetailMeta"></div>
+                <div class="dispatch-log" id="workerDispatchLog">
+                  <div class="task-board-empty">
+                    <div class="eyebrow">Dispatcher log</div>
+                    <div class="card-title">還沒有選中的 dispatch</div>
+                    <div class="empty-copy">第一個 remote-vm 任務送出後，這裡會接 live log；完成時只保留 summary、verdict、next step。</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1469,9 +1568,11 @@ const state = {
   ws: null,
   sessions: new Map(),
   tasks: new Map(),
+  dispatches: new Map(),
   projectData: null,
   localActivity: [],
   activeSessionId: null,
+  activeDispatchId: null,
   connected: false,
   reconnectTimer: null,
   heartbeatTimer: null,
@@ -1481,6 +1582,23 @@ const state = {
   activePage: 'hero',
   sessionActivity: new Map(),
 };
+
+const AGENT_BRIDGE_BASE_URL = (() => {
+  if (window.AGENT_BRIDGE_BASE_URL) {
+    return String(window.AGENT_BRIDGE_BASE_URL).replace(/\/$/, '');
+  }
+  return window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '';
+})();
+
+function bridgeUrl(path) {
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  return `${AGENT_BRIDGE_BASE_URL}${safePath}`;
+}
+
+function bridgeWebSocketUrl() {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${location.host}${bridgeUrl('/ws')}`;
+}
 
 const COLORS = {
   claude: '#E87B35',
@@ -1510,6 +1628,9 @@ const macEmptyState = $('macEmptyState');
 const quickActions = $('quickActions');
 const modalBackdrop = $('modalBackdrop');
 const fabBtn = $('fabBtn');
+const workerDispatchList = $('workerDispatchList');
+const workerDispatchMeta = $('workerDispatchMeta');
+const workerDispatchLog = $('workerDispatchLog');
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -1657,8 +1778,8 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 function connect() {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${location.host}`;
+  const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${wsProtocol}//${location.host}/ws`;
   const ws = new WebSocket(wsUrl);
   state.ws = ws;
 
@@ -1711,6 +1832,37 @@ function handleMessage(msg) {
       (msg.tasks || []).forEach((task) => state.tasks.set(task.id, task));
       renderAll();
       break;
+    case 'worker:dispatches':
+      state.dispatches.clear();
+      (msg.dispatches || []).forEach((dispatch) => state.dispatches.set(dispatch.taskId, dispatch));
+      if (!state.activeDispatchId && msg.dispatches?.length) {
+        state.activeDispatchId = msg.dispatches[0].taskId;
+      }
+      renderTaskBoard();
+      break;
+    case 'worker:dispatched':
+    case 'worker:completed':
+      if (msg.dispatch) {
+        state.dispatches.set(msg.dispatch.taskId, msg.dispatch);
+        state.activeDispatchId = msg.dispatch.taskId;
+      }
+      renderTaskBoard();
+      break;
+    case 'worker:log': {
+      const dispatch = state.dispatches.get(msg.taskId) || {
+        taskId: msg.taskId,
+        agent: msg.agent,
+        status: 'running',
+        recentLines: [],
+      };
+      dispatch.recentLines = [...(dispatch.recentLines || []), ...(msg.lines || [])].slice(-120);
+      dispatch.updatedAt = msg.timestamp || Date.now();
+      if (dispatch.status !== 'completed' && dispatch.status !== 'failed') dispatch.status = 'running';
+      state.dispatches.set(msg.taskId, dispatch);
+      if (!state.activeDispatchId) state.activeDispatchId = msg.taskId;
+      renderTaskBoard();
+      break;
+    }
     case 'task:created':
     case 'task:updated':
     case 'task:dispatched':
@@ -2195,6 +2347,7 @@ function renderTaskBoard() {
     taskBoardScroll.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Task board</div><div class="card-title">目前沒有待分派工作</div><div class="empty-copy">新的工作進來後，這裡會自動長出卡片；現在先把版面留給進度和整體地圖。</div></div>';
     taskCount.textContent = '0';
     $('ganttChart').innerHTML = '';
+    renderDispatchBoard();
     return;
   }
 
@@ -2272,6 +2425,72 @@ function renderTaskBoard() {
   $('ganttChart').innerHTML = `${header}${rows}`;
   $('ganttMeta').textContent = `${Math.min(tasks.length, 10)} active tasks / 12h window`;
   readyBars($('page-tasks'));
+  renderDispatchBoard();
+}
+
+function renderDispatchBoard() {
+  const detailMeta = $('workerDispatchDetailMeta');
+  const dispatches = [...state.dispatches.values()].sort((a, b) => {
+    const statusRank = { running: 0, queued: 1, completed: 2, failed: 3 };
+    return (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) || (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+
+  if (!dispatches.length) {
+    workerDispatchList.innerHTML = '<div class="task-board-empty"><div class="eyebrow">VM worker</div><div class="card-title">還沒有 dispatcher run</div><div class="empty-copy">等第一個 remote-vm 任務送到 VM 後，這裡才會開始累積 run。</div></div>';
+    workerDispatchMeta.textContent = '尚未收到 dispatch';
+    detailMeta.innerHTML = '';
+    workerDispatchLog.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Dispatcher log</div><div class="card-title">目前沒有可顯示的 log</div></div>';
+    return;
+  }
+
+  if (!state.activeDispatchId || !state.dispatches.has(state.activeDispatchId)) {
+    state.activeDispatchId = dispatches[0].taskId;
+  }
+  const active = state.dispatches.get(state.activeDispatchId) || dispatches[0];
+  workerDispatchMeta.textContent = `${dispatches.length} runs · active ${active.taskId}`;
+
+  workerDispatchList.innerHTML = dispatches.map((dispatch) => `
+    <button class="dispatch-card ${dispatch.taskId === state.activeDispatchId ? 'active' : ''}" data-dispatch-id="${escapeHtml(dispatch.taskId)}" data-status="${escapeHtml(dispatch.status || 'completed')}">
+      <div class="task-meta">
+        <span class="task-status ${escapeHtml(dispatch.status || 'completed')}">${escapeHtml(dispatch.status || 'completed')}</span>
+        <span class="task-owner" style="border-color:${escapeHtml(ownerColor(dispatch.agent))};color:${escapeHtml(ownerColor(dispatch.agent))}">${escapeHtml(dispatch.agent || '-')}</span>
+      </div>
+      <div class="task-main">
+        <div class="task-title">${escapeHtml(dispatch.taskId)}</div>
+        <div class="micro">${escapeHtml(dispatch.verdict || 'running')}</div>
+      </div>
+      <div class="task-summary">${escapeHtml(dispatch.summary_250words || '尚未產生 summary')}</div>
+      <div class="dispatch-inline">
+        <span class="summary-chip">${escapeHtml(relativeTime(dispatch.updatedAt))}</span>
+        <span class="summary-chip">${escapeHtml(dispatch.durationSec != null ? `${dispatch.durationSec}s` : 'running')}</span>
+      </div>
+    </button>
+  `).join('');
+
+  workerDispatchList.querySelectorAll('[data-dispatch-id]').forEach((node) => {
+    node.addEventListener('click', () => {
+      state.activeDispatchId = node.getAttribute('data-dispatch-id');
+      renderDispatchBoard();
+    });
+  });
+
+  detailMeta.innerHTML = `
+    <span class="task-status ${escapeHtml(active.status || 'completed')}">${escapeHtml(active.status || 'completed')}</span>
+    <span class="task-owner" style="border-color:${escapeHtml(ownerColor(active.agent))};color:${escapeHtml(ownerColor(active.agent))}">${escapeHtml(active.agent || '-')}</span>
+    <span class="summary-chip">verdict ${escapeHtml(active.verdict || '-')}</span>
+    <span class="summary-chip">duration ${escapeHtml(active.durationSec != null ? `${active.durationSec}s` : 'running')}</span>
+    <span class="summary-chip">callback ${escapeHtml(active.callbackDelivered ? 'sent' : active.callback ? 'pending' : 'none')}</span>
+  `;
+
+  const lines = Array.isArray(active.recentLines) ? active.recentLines : [];
+  const blocks = [];
+  if (active.summary_250words) blocks.push(`<div class="dispatch-log-line"><strong>SUMMARY</strong>: ${escapeHtml(active.summary_250words)}</div>`);
+  if (active.next_step) blocks.push(`<div class="dispatch-log-line"><strong>NEXT_STEP</strong>: ${escapeHtml(active.next_step)}</div>`);
+  if (active.changed_files?.length) blocks.push(`<div class="dispatch-log-line"><strong>CHANGED_FILES</strong>: ${escapeHtml(active.changed_files.join(', '))}</div>`);
+  workerDispatchLog.innerHTML = [
+    ...blocks,
+    ...lines.map((line) => `<div class="dispatch-log-line ${/error|fail|exception/i.test(line) ? 'error' : ''}">${escapeHtml(line)}</div>`),
+  ].join('') || '<div class="task-board-empty"><div class="eyebrow">Dispatcher log</div><div class="card-title">這個 run 還沒有輸出</div></div>';
 }
 
 function renderTimeline() {
@@ -2602,7 +2821,7 @@ function renderAll() {
 
 async function fetchProject() {
   try {
-    const res = await fetch('/api/project');
+    const res = await fetch(bridgeUrl('/api/project'));
     if (!res.ok) return;
     state.projectData = await res.json();
     renderProjects();
@@ -2613,7 +2832,7 @@ async function fetchProject() {
 
 async function fetchLocalActivity() {
   try {
-    const res = await fetch('/api/status');
+    const res = await fetch(bridgeUrl('/api/status'));
     if (!res.ok) return;
     const data = await res.json();
     state.localActivity = data.localActivity || [];
@@ -2626,7 +2845,7 @@ async function fetchLocalActivity() {
 
 async function fetchSessionsSnapshot() {
   try {
-    const res = await fetch('/api/sessions');
+    const res = await fetch(bridgeUrl('/api/sessions'));
     if (!res.ok) return;
     const sessions = await res.json();
     state.sessions.clear();
@@ -2641,7 +2860,7 @@ async function fetchSessionsSnapshot() {
 
 async function fetchTasksSnapshot() {
   try {
-    const res = await fetch('/api/tasks');
+    const res = await fetch(bridgeUrl('/api/tasks'));
     if (!res.ok) return;
     const tasks = await res.json();
     state.tasks.clear();
@@ -2649,6 +2868,20 @@ async function fetchTasksSnapshot() {
     renderAll();
   } catch (error) {
     console.warn('fetchTasks failed', error);
+  }
+}
+
+async function fetchDispatchSnapshot() {
+  try {
+    const res = await fetch(bridgeUrl('/api/workers/dispatch'));
+    if (!res.ok) return;
+    const dispatches = await res.json();
+    state.dispatches.clear();
+    dispatches.forEach((dispatch) => state.dispatches.set(dispatch.taskId, dispatch));
+    if (!state.activeDispatchId && dispatches[0]) state.activeDispatchId = dispatches[0].taskId;
+    renderTaskBoard();
+  } catch (error) {
+    console.warn('fetchDispatches failed', error);
   }
 }
 
@@ -2667,11 +2900,11 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-taskToggle.addEventListener('click', () => {
-  state.taskBoardCollapsed = !state.taskBoardCollapsed;
-  taskToggle.textContent = state.taskBoardCollapsed ? '展開' : '收合';
-  taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
-});
+  taskToggle.addEventListener('click', () => {
+    state.taskBoardCollapsed = !state.taskBoardCollapsed;
+    taskToggle.textContent = state.taskBoardCollapsed ? '展開' : '收合';
+    taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
+  });
 
 architectureToggle.addEventListener('click', () => {
   state.architectureExpanded = !state.architectureExpanded;
@@ -2739,10 +2972,12 @@ fetchProject();
 fetchLocalActivity();
 fetchSessionsSnapshot();
 fetchTasksSnapshot();
+fetchDispatchSnapshot();
 setInterval(fetchProject, 60000);
 setInterval(fetchLocalActivity, 60000);
 setInterval(fetchSessionsSnapshot, 90000);
 setInterval(fetchTasksSnapshot, 90000);
+setInterval(fetchDispatchSnapshot, 45000);
 </script>
 </body>
 </html>

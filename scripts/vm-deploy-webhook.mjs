@@ -36,13 +36,22 @@ function log(message) {
 }
 
 function verifySignature(rawBody, signatureHeader) {
-  if (!WEBHOOK_SECRET) return true
-  if (!signatureHeader) return false
+  if (!WEBHOOK_SECRET) {
+    return { ok: false, status: 503, error: 'webhook secret not configured' }
+  }
+  if (!signatureHeader) {
+    return { ok: false, status: 401, error: 'missing signature' }
+  }
   const expected = `sha256=${crypto.createHmac('sha256', WEBHOOK_SECRET).update(rawBody).digest('hex')}`
   const received = Buffer.from(signatureHeader)
   const wanted = Buffer.from(expected)
-  if (received.length !== wanted.length) return false
-  return crypto.timingSafeEqual(received, wanted)
+  if (received.length !== wanted.length) {
+    return { ok: false, status: 401, error: 'invalid signature' }
+  }
+  if (!crypto.timingSafeEqual(received, wanted)) {
+    return { ok: false, status: 401, error: 'invalid signature' }
+  }
+  return { ok: true, status: 200, error: null }
 }
 
 function runCommand(command, { cwd = DEPLOY_REPO_DIR, env = process.env } = {}) {
@@ -145,8 +154,9 @@ app.post(
   (req, res) => {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || '')
     const signatureHeader = req.get('x-hub-signature-256') || ''
-    if (!verifySignature(rawBody, signatureHeader)) {
-      return res.status(401).json({ ok: false, error: 'invalid signature' })
+    const signatureCheck = verifySignature(rawBody, signatureHeader)
+    if (!signatureCheck.ok) {
+      return res.status(signatureCheck.status).json({ ok: false, error: signatureCheck.error })
     }
 
     const event = req.get('x-github-event') || 'unknown'

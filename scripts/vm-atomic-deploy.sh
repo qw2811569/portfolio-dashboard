@@ -25,7 +25,12 @@ RELEASE_DIR="${RELEASES_DIR}/${TIMESTAMP}"
 mkdir -p "$RELEASES_DIR"
 mkdir -p "$RELEASE_DIR"
 
-rsync -a --delete "${SOURCE_DIR%/}/" "${RELEASE_DIR}/dist/"
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete "${SOURCE_DIR%/}/" "${RELEASE_DIR}/dist/"
+else
+  mkdir -p "${RELEASE_DIR}/dist"
+  cp -a "${SOURCE_DIR%/}/." "${RELEASE_DIR}/dist/"
+fi
 
 ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 

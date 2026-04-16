@@ -163,48 +163,11 @@ export default function AppShellFrame({
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=Source+Sans+3:wght@400;500;600&family=Noto+Serif+TC:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
         :root {
           --font-headline: 'Source Serif 4','Noto Serif TC',serif;
           --font-body: 'Source Sans 3','Noto Sans TC',sans-serif;
           --font-num: 'Source Serif 4','IBM Plex Mono',serif;
           --font-mono: 'IBM Plex Mono','SFMono-Regular',ui-monospace,monospace;
-        }
-        html {
-          background: ${C.bg};
-        }
-        body {
-          color: ${C.text};
-          font-family: var(--font-body);
-          background: var(--app-bg, ${C.bg});
-          text-rendering: optimizeLegibility;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-        body::after {
-          content: '';
-          position: fixed;
-          inset: 0;
-          pointer-events: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-          background-size: 180px 180px;
-          opacity: 0.04;
-          z-index: 0;
-        }
-        #root {
-          position: relative;
-          z-index: 1;
-        }
-        button, input, select, textarea {
-          font: inherit;
-        }
-        .tn {
-          font-family: var(--font-num);
-          font-variant-numeric: tabular-nums;
-          letter-spacing: -0.01em;
-        }
-        .ui-btn {
-          box-shadow: none;
         }
       `}</style>
 

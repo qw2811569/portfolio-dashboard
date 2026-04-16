@@ -1,66 +1,66 @@
 export const C = {
-  bg: '#171C20',
-  shell: '#232A2F',
-  card: '#2D363A',
-  cardHover: '#364145',
-  subtle: '#242D31',
-  subtleElev: '#384347',
-  border: 'rgba(241,233,216,0.12)',
-  borderSub: 'rgba(241,233,216,0.07)',
-  borderStrong: 'rgba(241,233,216,0.18)',
-  borderSoft: 'rgba(241,233,216,0.09)',
-  shadow: '0 18px 38px rgba(6, 10, 14, 0.26)',
-  insetLine: 'inset 0 1px 0 rgba(255,255,255,0.03)',
-  shellShadow: '0 20px 48px rgba(8, 10, 18, 0.34)',
+  bg: '#F4EFE6',
+  shell: '#EEE7DB',
+  card: '#F4EFE6',
+  cardHover: '#F7F2EA',
+  subtle: '#EEE7DB',
+  subtleElev: '#E8E1D3',
+  border: '#CFC6B8',
+  borderSub: 'rgba(111,116,107,0.14)',
+  borderStrong: 'rgba(111,116,107,0.26)',
+  borderSoft: 'rgba(111,116,107,0.1)',
+  shadow: '0 1px 0 rgba(32,40,35,0.06)',
+  insetLine: 'inset 0 1px 0 rgba(255,255,255,0.5)',
+  shellShadow: '0 18px 34px rgba(91,84,72,0.08)',
 
-  cardBlue: '#203B45',
-  cardAmber: '#40342C',
-  cardOlive: '#2F4037',
-  cardRose: '#402E38',
+  cardBlue: '#E1E6DA',
+  cardAmber: '#F3E8D7',
+  cardOlive: '#E1E6DA',
+  cardRose: '#F0E1DA',
 
-  text: '#F1E9D8',
-  textSec: '#D0C4B8',
-  textMute: '#AA9F95',
+  text: '#202823',
+  textSec: '#3B433D',
+  textMute: '#6F746B',
 
-  up: '#C9775F',
-  upBg: '#C9775F18',
-  down: '#7FB19A',
-  downBg: '#7FB19A18',
+  up: '#6F8568',
+  upBg: 'rgba(111,133,104,0.12)',
+  down: '#B65A4D',
+  downBg: 'rgba(182,90,77,0.12)',
 
-  blue: '#6FD6FF',
-  blueBg: '#6FD6FF14',
-  cyan: '#83C7D7',
-  cyanBg: '#83C7D714',
-  amber: '#D7A35D',
-  amberBg: '#D7A35D14',
-  orange: '#BF7C63',
-  orangeBg: '#BF7C6314',
-  teal: '#6ED0D6',
-  tealBg: '#6ED0D614',
-  mint: '#8CA993',
-  mintBg: '#8CA99314',
-  olive: '#96B39C',
-  oliveBg: '#96B39C16',
-  lavender: '#FF5FA2',
-  lavBg: '#FF5FA214',
-  rose: '#D58A9F',
-  roseBg: '#D58A9F14',
-  choco: '#9D6C55',
-  chocoBg: '#9D6C5514',
-  stone: '#978C84',
-  urgent: '#D7A35D',
-  onFill: '#FFF7EA',
-  focusRing: '0 0 0 3px rgba(111,214,255,0.16)',
+  blue: '#A8B59A',
+  blueBg: 'rgba(168,181,154,0.14)',
+  cyan: '#C4CEB5',
+  cyanBg: 'rgba(196,206,181,0.16)',
+  amber: '#B9853E',
+  amberBg: 'rgba(185,133,62,0.12)',
+  orange: '#B65A4D',
+  orangeBg: 'rgba(182,90,77,0.12)',
+  teal: '#7E9175',
+  tealBg: 'rgba(126,145,117,0.12)',
+  mint: '#A8B59A',
+  mintBg: 'rgba(168,181,154,0.12)',
+  olive: '#6F8568',
+  oliveBg: 'rgba(111,133,104,0.12)',
+  lavender: '#8A9580',
+  lavBg: 'rgba(138,149,128,0.12)',
+  rose: '#B77F72',
+  roseBg: 'rgba(183,127,114,0.12)',
+  choco: '#8B725D',
+  chocoBg: 'rgba(139,114,93,0.12)',
+  stone: '#8A837A',
+  urgent: '#B9853E',
+  onFill: '#202823',
+  focusRing: '0 0 0 3px rgba(168,181,154,0.22)',
 
-  fillPrimary: '#FF5FA2',
-  fillTeal: '#2888A2',
-  fillAmber: '#9A6B28',
-  fillTomato: '#9F5A49',
-  fillChoco: '#6D493A',
+  fillPrimary: '#A8B59A',
+  fillTeal: '#7E9175',
+  fillAmber: '#B9853E',
+  fillTomato: '#B65A4D',
+  fillChoco: '#8B725D',
 
-  glowPink: 'rgba(255,95,162,0.18)',
-  glowBlue: 'rgba(111,214,255,0.16)',
-  glowWarm: 'rgba(215,163,93,0.14)',
+  glowPink: 'rgba(183,127,114,0.08)',
+  glowBlue: 'rgba(168,181,154,0.1)',
+  glowWarm: 'rgba(185,133,62,0.08)',
 }
 
 export const A = {
@@ -81,12 +81,19 @@ export const alpha = (color, opacity) => `${color}${opacity}`
 export function applyThemeVars(target = document.documentElement) {
   if (!target?.style) return
   target.style.setProperty('--app-bg', C.bg)
-  target.style.setProperty(
-    '--font-body',
-    "'Noto Serif TC','Source Han Serif TC','Source Han Serif','Iowan Old Style','Georgia',serif"
-  )
-  target.style.setProperty(
-    '--font-mono',
-    "'IBM Plex Mono','JetBrains Mono','SFMono-Regular',ui-monospace,monospace"
-  )
+  target.style.setProperty('--ink', C.text)
+  target.style.setProperty('--bone', C.shell)
+  target.style.setProperty('--bone-soft', C.bg)
+  target.style.setProperty('--line', C.border)
+  target.style.setProperty('--muted', C.textMute)
+  target.style.setProperty('--sage', C.blue)
+  target.style.setProperty('--sage-soft', C.cyan)
+  target.style.setProperty('--up', C.up)
+  target.style.setProperty('--down', C.down)
+  target.style.setProperty('--warning', C.amber)
+  target.style.setProperty('--danger', C.down)
+  target.style.setProperty('--font-body', "'Source Sans 3','Noto Sans TC',sans-serif")
+  target.style.setProperty('--font-headline', "'Source Serif 4','Noto Serif TC',serif")
+  target.style.setProperty('--font-num', "'Source Serif 4','IBM Plex Mono',serif")
+  target.style.setProperty('--font-mono', "'IBM Plex Mono','SFMono-Regular',ui-monospace,monospace")
 }

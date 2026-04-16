@@ -1,18 +1,18 @@
 import { createElement as h } from 'react'
-import { C } from '../../theme.js'
-import { alpha } from '../../theme.js'
+import { C, alpha } from '../../theme.js'
 
 export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
+  const accent = color || C.blue
   const baseStyle = {
-    background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.subtle, 'f4')})`,
+    background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
     border: `1px solid ${C.border}`,
-    borderRadius: 14,
-    padding: '13px 15px',
+    borderRadius: 22,
+    padding: '16px 18px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
     ...(highlighted
       ? {
-          borderLeft: `3px solid ${color || C.teal}`,
-          boxShadow: `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(color || C.teal, '10')}`,
+          borderLeft: `3px solid ${accent}`,
+          boxShadow: `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(accent, '14')}`,
         }
       : {}),
     ...style,
@@ -35,10 +35,10 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
     'div',
     {
       style: {
-        background: C.card,
+        background: C.shell,
         border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: '8px 11px',
+        borderRadius: 16,
+        padding: '10px 12px',
         boxShadow: `${C.insetLine}, ${C.shadow}`,
         ...style,
       },
@@ -48,18 +48,26 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
         'div',
         {
           style: {
-            fontSize: 9,
+            fontSize: 10,
             color: C.textMute,
-            letterSpacing: '0.05em',
-            fontWeight: 600,
-            marginBottom: 3,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            fontWeight: 500,
+            marginBottom: 4,
           },
         },
         label
       ),
     h(
       'div',
-      { style: { fontSize: 12, fontWeight: 600, color: toneColors[tone] || toneColors.default } },
+      {
+        style: {
+          fontSize: 15,
+          fontWeight: 600,
+          color: toneColors[tone] || toneColors.default,
+          fontFamily: 'var(--font-num)',
+        },
+      },
       value
     )
   )
@@ -67,7 +75,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
 
 export function Badge({ children, color = 'default', size = 'sm', style = {} }) {
   const colors = {
-    default: { bg: C.subtle, text: C.textSec, border: C.border },
+    default: { bg: C.card, text: C.textSec, border: C.border },
     up: { bg: C.upBg, text: C.up, border: alpha(C.up, '20') },
     down: { bg: C.downBg, text: C.down, border: alpha(C.down, '20') },
     teal: { bg: alpha(C.teal, '15'), text: C.teal, border: alpha(C.teal, '25') },
@@ -77,9 +85,9 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
   }
 
   const sizes = {
-    xs: { padding: '2px 6px', fontSize: 8 },
-    sm: { padding: '3px 8px', fontSize: 9 },
-    md: { padding: '4px 10px', fontSize: 10 },
+    xs: { padding: '3px 7px', fontSize: 9 },
+    sm: { padding: '5px 9px', fontSize: 10 },
+    md: { padding: '6px 11px', fontSize: 11 },
   }
 
   const selectedColor = colors[color] || colors.default
@@ -97,7 +105,8 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
         border: `1px solid ${selectedColor.border}`,
         borderRadius: 999,
         fontWeight: 500,
-        letterSpacing: '0.03em',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
         ...selectedSize,
         ...style,
       },
@@ -116,28 +125,28 @@ export function Button({
   style = {},
   ...props
 }) {
-  const A = { faint: '08', line: '1a', strongLine: '2a', glow: '40' }
+  const A = { strongLine: '2a' }
 
   const variants = {
     ghost: {
-      default: { bg: 'transparent', text: C.textSec, border: 'transparent' },
-      blue: { bg: C.cardBlue, text: C.blue, border: alpha(C.blue, A.strongLine) },
-      rose: { bg: C.cardRose, text: C.text, border: C.border },
+      default: { bg: C.card, text: C.textSec, border: C.border },
+      blue: { bg: C.cardBlue, text: C.teal, border: alpha(C.blue, A.strongLine) },
+      rose: { bg: C.cardRose, text: C.down, border: alpha(C.down, A.strongLine) },
       amber: { bg: C.cardAmber, text: C.amber, border: alpha(C.amber, A.strongLine) },
       olive: { bg: C.oliveBg, text: C.olive, border: alpha(C.olive, A.strongLine) },
       up: { bg: C.upBg, text: C.up, border: alpha(C.up, A.strongLine) },
     },
     filled: {
-      default: { bg: C.subtle, text: C.text, border: C.border },
-      blue: { bg: C.blue, text: '#fff', border: alpha(C.blue, A.strongLine) },
+      default: { bg: C.subtleElev, text: C.text, border: C.border },
+      blue: { bg: C.blue, text: C.text, border: alpha(C.blue, A.strongLine) },
     },
   }
 
   const sizes = {
-    xs: { padding: '3px 8px', fontSize: 8 },
-    sm: { padding: '4px 11px', fontSize: 9 },
-    md: { padding: '6px 14px', fontSize: 10 },
-    lg: { padding: '8px 18px', fontSize: 11 },
+    xs: { padding: '4px 9px', fontSize: 9 },
+    sm: { padding: '6px 12px', fontSize: 10 },
+    md: { padding: '8px 15px', fontSize: 11 },
+    lg: { padding: '10px 18px', fontSize: 12 },
   }
 
   const selectedVariant = variants[variant]?.[color] || variants.ghost.default
@@ -150,7 +159,7 @@ export function Button({
       disabled,
       onClick,
       style: {
-        borderRadius: 20,
+        borderRadius: 999,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         whiteSpace: 'nowrap',
@@ -158,7 +167,9 @@ export function Button({
         background: selectedVariant.bg,
         color: selectedVariant.text,
         border: `1px solid ${selectedVariant.border}`,
-        boxShadow: disabled ? 'none' : `0 10px 20px rgba(8, 10, 18, 0.08)`,
+        boxShadow: disabled ? 'none' : C.shadow,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
         ...selectedSize,
         ...style,
       },
@@ -172,7 +183,8 @@ export function SectionHeader({ title, description, action, style = {} }) {
   const lblStyle = {
     fontSize: 10,
     color: C.textMute,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
     fontWeight: 500,
     marginBottom: 5,
   }
@@ -193,9 +205,21 @@ export function SectionHeader({ title, description, action, style = {} }) {
     h(
       'div',
       null,
-      title && h('div', { style: { ...lblStyle, color: C.lavender, marginBottom: 3 } }, title),
+      title && h('div', { style: { ...lblStyle, color: C.textMute, marginBottom: 4 } }, title),
       description &&
-        h('div', { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7 } }, description)
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 22,
+              color: C.text,
+              lineHeight: 1.15,
+              fontFamily: 'var(--font-headline)',
+              fontWeight: 600,
+            },
+          },
+          description
+        )
     ),
     action
   )
@@ -207,11 +231,11 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
     {
       style: {
         textAlign: 'center',
-        padding: '32px 16px',
+        padding: '36px 18px',
         color: C.textMute,
-        background: `linear-gradient(180deg, ${alpha(C.subtle, 'd8')}, ${alpha(C.card, '90')})`,
+        background: `linear-gradient(180deg, ${alpha(C.subtle, 'fc')}, ${alpha(C.card, 'f2')})`,
         border: `1px dashed ${C.border}`,
-        borderRadius: 14,
+        borderRadius: 22,
         ...style,
       },
     },
@@ -219,10 +243,18 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
     title &&
       h(
         'div',
-        { style: { fontSize: 11, fontWeight: 600, color: C.textSec, marginBottom: 4 } },
+        {
+          style: {
+            fontSize: 20,
+            fontWeight: 600,
+            color: C.text,
+            marginBottom: 6,
+            fontFamily: 'var(--font-headline)',
+          },
+        },
         title
       ),
-    description && h('div', { style: { fontSize: 10, lineHeight: 1.6 } }, description),
+    description && h('div', { style: { fontSize: 11, lineHeight: 1.7 } }, description),
     action && h('div', { style: { marginTop: 12 } }, action)
   )
 }

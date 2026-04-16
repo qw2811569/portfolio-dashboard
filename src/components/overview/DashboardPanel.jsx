@@ -2,6 +2,7 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card } from '../common'
 import Md from '../Md.jsx'
+import HoldingsRing from './HoldingsRing.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -476,7 +477,26 @@ export function DashboardPanel({
   return h(
     'div',
     null,
-    h(TodayPnlHero, { holdings, totalVal, todayTotalPnl }),
+    h(
+      'div',
+      { className: 'dashboard-hero' },
+      h(
+        'div',
+        { className: 'dashboard-hero-main' },
+        h(TodayPnlHero, { holdings, totalVal, todayTotalPnl })
+      ),
+      h(
+        Card,
+        {
+          className: 'dashboard-hero-ring',
+          style: {
+            marginBottom: 8,
+            padding: 24,
+          },
+        },
+        h(HoldingsRing, { holdings, totalVal })
+      )
+    ),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })

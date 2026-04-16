@@ -42,3 +42,21 @@ textarea {
 .ui-btn {
   box-shadow: none;
 }
+
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 420px);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.dashboard-hero-main,
+.dashboard-hero-ring {
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .dashboard-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -49,5 +49,6 @@ describe('tradeAiResponse', () => {
     expect(result).not.toContain('2. 操作建議：加碼 / 減碼 / 停損')
     expect(result).toContain('公司代表 / 合規模式')
     expect(result).toContain('法規遵循觀察')
+    expect(result.toLowerCase()).not.toContain('insider')
   })
 })

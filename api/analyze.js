@@ -4,6 +4,7 @@ import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio
 // API Key 安全地存在後端，前端不會暴露
 import { callAiRaw, callAiRawStream, ensureAiConfigured } from './_lib/ai-provider.js'
 import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
+import { findPromptInjectionInRequest } from '../src/lib/promptInjectionGuard.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
 function wantsStreamingResponse(req) {
@@ -37,6 +38,15 @@ async function handler(req, res) {
   try {
     const stream = wantsStreamingResponse(req)
     const { systemPrompt, userPrompt, maxTokens = 2200, allowThinking = false } = req.body || {}
+    const injectionAttempt = findPromptInjectionInRequest({ systemPrompt, userPrompt })
+
+    if (injectionAttempt) {
+      return res.status(400).json({
+        error: 'Prompt injection attempt detected',
+        detail: `${injectionAttempt.field} contains blocked prompt-injection text: ${injectionAttempt.excerpt}`,
+      })
+    }
+
     const decoratedSystemPrompt = applyAccuracyGatePrompt(
       stripBuySellForInsider(systemPrompt, portfolio),
       {

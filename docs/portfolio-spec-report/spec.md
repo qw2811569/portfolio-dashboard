@@ -612,6 +612,26 @@
 - `T54`：`useAppRuntimeComposer` 拆成 6 個 bounded slices + barrel re-export，外部 import / API shape 不變
 - final verify：`95/95` targeted tests passed；`npm run lint`、`npm run check:runtime-entry`、`npm run check:fast-refresh` 全綠
 
+## Round 121c · Codex · Agent Bridge dashboard v5 poster-tier · 2026-04-18 20:17:25 CST
+
+- `agent-bridge-standalone/dashboard/index-v4.html`：保存 v4 版面備份
+- `agent-bridge-standalone/dashboard/index-v5.html`：新建 poster-tier v5；測試後同步成正式 `index.html`
+- `agent-bridge-standalone/dashboard/index.html`：正式入口切換到 v5
+- `agent-bridge-standalone/dashboard/dashboard-live-v5.js`：新 renderer，改用 ship-before hero / active focus / weekly rhythm 三屏 live data
+- `agent-bridge-standalone/dashboard/wake.html` + `wake-live.js`：把 Layer 2 panel 遷出 dashboard，獨立成 utility route
+- `agent-bridge-standalone/server.mjs`：dashboard static MIME 補 `.html`，讓 `/dashboard/wake.html` 與 `/dashboard/index-v5.html` 可直接 serve
+- strategic direction：`D` 為主，混 `M` 的巨型字階與 `S` 的亮卡資料落點；首頁只保留 1 個主詞／screen
+- verify：
+  - `curl -I http://127.0.0.1:9527/dashboard/index.html` → `200`
+  - `curl -I http://127.0.0.1:9527/dashboard/wake.html` → `200`
+  - `node --check agent-bridge-standalone/dashboard/dashboard-live-v5.js`
+  - `node --check agent-bridge-standalone/dashboard/wake-live.js`
+  - Playwright 390×844 capture 完成
+- screenshots：
+  - `agent-bridge-standalone/dashboard/assets/v5-hero.png`
+  - `agent-bridge-standalone/dashboard/assets/v5-progress.png`
+  - `agent-bridge-standalone/dashboard/assets/v5-commits.png`
+
 ## Round 123 · Codex · L2 third wave · 2026-04-18 20:29:26 CST
 
 - `T30`：月營收 row 改以「所屬月」正規化 `date`，另保留 `announcedAt`；fundamentals mapper 不再把公告月誤當營收月
@@ -621,3 +641,33 @@
 - `M15`：新增 shared `<StaleBadge>`，統一 `fresh / stale / missing / failed` 四態，接入 holdings / overview / events / daily report
 - `T66`：新增 GitHub Actions CI workflow，`push main` / `PR -> main` 會自舉 local dev server 後跑 `npm ci + npm run verify:local`；同步修正 `research` type-aware regression test 以對齊現行 `callPortfolioClaude` wrapper
 - final verify：`npm run verify:local` 全綠，`860/860` tests passed，build / healthcheck / smoke:ui 全過
+
+## Round 121d · Codex · Agent Bridge v5d light rebuild · 2026-04-18 20:44 CST
+
+- `agent-bridge-standalone/dashboard/index-v5-dark.html`：保存本輪覆寫前的 v5 dark 入口
+- `agent-bridge-standalone/dashboard/index.html`：重建為 bone + tangerine poster tier；Section 1/2 改回 `--canvas-soft`，Section 3 用 `--canvas`
+- `agent-bridge-standalone/dashboard/login.html`：同步翻回 light palette；PIN `0306` / dashboard token / bridge token flow 不變
+- `agent-bridge-standalone/dashboard/dashboard-live-v5.js`：hero meta 改吃 `shipBefore.label`；`Wake To Route` 在沒有 live session 時改直接導去 `wake.html`
+- 字體系統切到 `Source Han Serif TC` / `Source Sans 3` / `Anton` / `IBM Plex Mono` 的 portfolio 同族堆疊
+- 禁用項已落實：不再用整片黑底 section、不再用 `#FF3E1F` screaming orange block、login 不再維持 dark surface
+- live deploy：用 `scp` 同步 `index.html` / `index-v5-dark.html` / `login.html` / `dashboard-live-v5.js` 到 VM `/home/chenkuichen/app/agent-bridge-standalone/dashboard/`
+- verify：
+  - `node --check agent-bridge-standalone/dashboard/dashboard-live-v5.js`
+  - `node --check agent-bridge-standalone/server.mjs`
+  - `curl https://35.236.155.62.sslip.io/agent-bridge/dashboard/` 命中新版 HTML 文案
+  - `curl https://35.236.155.62.sslip.io/agent-bridge/dashboard/login.html` 命中新版 light login
+  - Playwright `390×844` live capture + PIN `0306` 登入成功
+- screenshots：
+  - `agent-bridge-standalone/dashboard/assets/v5d-hero.png`
+  - `agent-bridge-standalone/dashboard/assets/v5d-focus.png`
+  - `agent-bridge-standalone/dashboard/assets/v5d-week.png`
+
+## Round 125 · Codex · L4 fifth wave · 2026-04-18 21:31:21 CST
+
+- `T01`：Dashboard 補上 `Morning Note` surface，新增 `events / holdings / daily` deep-link handoff；`src/lib/morningNoteBuilder.js` 加出入口 contract，`DashboardPanel` 可以直接接 runtime note。
+- `T02`：`Today in Markets` 從 `總經 / 行事曆` v1 擴成 `大盤 / 總經 / 行事曆` 單卡 surface，支援 safe external links，排序固定為 market-first。
+- `T71`：`vercel.json` 全域加 CSP / XFO / XCTO / Referrer / Permissions headers；`api/analyze.js` 新增 prompt-injection guard，遇 `ignore previous instructions` / `you are now` / `system:` 直接回 `400`。
+- `Q08`：insider guard 改成不外露 literal `insider` 字樣，並擴大 action-language strip 到英中混合；新增 `tests/lib/insiderGuardHarness.test.js`，120 組 adversarial prompts 全過，證據落 `docs/qa/insider-enforcement-evidence.md`。
+- `Q09`：新增 `tests/lib/accuracyGateEnforcement.test.js`，會用 `file:line` 報漏 gate 的 prompt builder；順手把 `api/parse.js` / `api/research-extract.js` 也補進 `Accuracy Gate`。
+- `T14/T15`：同日 staged close-analysis / diff / rerun cues 既有路徑在本輪修改後維持綠燈，未回退。
+- final verify：`15/15` targeted test files passed、`76/76` tests passed、`npm run build` passed；`security / insider / Accuracy Gate` 三條 grep 全過。

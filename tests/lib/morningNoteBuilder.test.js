@@ -5,6 +5,7 @@ import {
   buildInstitutionalSummary,
   buildWatchlistAlerts,
   buildMorningNote,
+  buildMorningNoteDeepLinks,
   renderMorningNotePlainText,
 } from '../../src/lib/morningNoteBuilder.js'
 
@@ -127,6 +128,29 @@ describe('buildMorningNote', () => {
     expect(result.sections).toHaveProperty('institutional')
     expect(result.sections).toHaveProperty('watchlistAlerts')
     expect(result.sections).toHaveProperty('announcements')
+  })
+
+  it('builds cross-page handoff links for dashboard surfaces', () => {
+    const note = buildMorningNote({
+      holdings: [{ code: '2330', name: '台積電', price: 1845 }],
+      theses: [{ stockId: '2330', conviction: 'high', pillars: [], stopLoss: 1650 }],
+      events: [
+        {
+          title: '台積電法說',
+          date: '2026/03/29',
+          stocks: ['台積電 2330'],
+        },
+      ],
+      watchlist: [],
+      announcements: [],
+      today: '2026/03/29',
+    })
+
+    expect(buildMorningNoteDeepLinks(note)).toEqual([
+      expect.objectContaining({ target: 'events', label: '前往事件' }),
+      expect.objectContaining({ target: 'holdings', label: '查看持倉' }),
+      expect.objectContaining({ target: 'daily', label: '盤後接續' }),
+    ])
   })
 })
 

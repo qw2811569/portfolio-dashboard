@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPanel } from '../../src/components/overview/DashboardPanel.jsx'
 
 function buildProps(overrides = {}) {
   return {
     holdings: [],
+    morningNote: null,
     todayTotalPnl: 0,
     totalVal: 0,
     totalCost: 0,
@@ -55,6 +56,15 @@ describe('components/DashboardPanel', () => {
         {...buildProps({
           newsEvents: [
             {
+              id: 'market-1',
+              source: 'market-cache',
+              type: 'market-summary',
+              date: '2026-04-18',
+              title: '台股加權指數收 21,245 點，上漲 0.8%',
+              detail: '外資買超，電子權值股撐盤。',
+              link: 'https://example.com/market',
+            },
+            {
               id: 'macro-1',
               source: 'auto-calendar',
               type: 'macro',
@@ -76,6 +86,9 @@ describe('components/DashboardPanel', () => {
     )
 
     expect(screen.getByText('Today in Markets')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: '大盤｜台股加權指數收 21,245 點，上漲 0.8%' })
+    ).toHaveAttribute('href', 'https://example.com/market')
     expect(screen.getByText('總經｜台灣央行理監事會議')).toBeInTheDocument()
     expect(screen.getByText('行事曆｜2026/03 月營收公布截止')).toBeInTheDocument()
   })
@@ -83,5 +96,48 @@ describe('components/DashboardPanel', () => {
   it('shows a truthful empty state when no market items exist', () => {
     render(<DashboardPanel {...buildProps()} />)
     expect(screen.getByText('市場資訊暫無更新')).toBeInTheDocument()
+  })
+
+  it('surfaces Morning Note with deep-links for events holdings and daily follow-up', () => {
+    const onNavigate = vi.fn()
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          onNavigate,
+          morningNote: {
+            date: '2026/04/18',
+            sections: {
+              todayEvents: [
+                {
+                  title: '台積電法說',
+                  impactLabel: 'HIGH',
+                  relatedPillars: [{ stockId: '2330', pillar: { id: 'p1' } }],
+                },
+              ],
+              holdingStatus: [
+                {
+                  code: '2330',
+                  name: '台積電',
+                  pillarSummary: '2/3 on_track',
+                },
+              ],
+              watchlistAlerts: [{ code: '2454', name: '聯發科' }],
+              announcements: [],
+            },
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByText('Morning Note')).toBeInTheDocument()
+    expect(screen.getByText('HIGH')).toBeInTheDocument()
+    expect(screen.getByText('台積電法說')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText('前往事件'))
+    fireEvent.click(screen.getByText('查看持倉'))
+    fireEvent.click(screen.getByText('盤後接續'))
+
+    expect(onNavigate.mock.calls).toEqual([['events'], ['holdings'], ['daily']])
   })
 })

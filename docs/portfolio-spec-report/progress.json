@@ -1,5 +1,5 @@
 {
-  "lastUpdatedAt": "2026-04-18T13:14:53.117Z",
+  "lastUpdatedAt": "2026-04-18T13:32:56.620Z",
   "totalItems": 89,
   "totalEstHours": 485,
   "trackedEstHours": 597,
@@ -8,17 +8,17 @@
       "track": "shipBefore",
       "label": "Ship-Before",
       "total": 30,
-      "done": 19,
+      "done": 22,
       "totalEstHours": 193,
-      "doneEstHours": 126
+      "doneEstHours": 148
     },
     "beta1": {
       "track": "beta1",
       "label": "Beta+1",
       "total": 20,
-      "done": 3,
+      "done": 5,
       "totalEstHours": 149,
-      "doneEstHours": 24
+      "doneEstHours": 38
     },
     "backlog": {
       "track": "backlog",
@@ -32,9 +32,9 @@
       "track": "qa",
       "label": "QA Supplement",
       "total": 12,
-      "done": 0,
+      "done": 2,
       "totalEstHours": 80,
-      "doneEstHours": 0
+      "doneEstHours": 10
     },
     "ops": {
       "track": "ops",
@@ -45,12 +45,12 @@
       "doneEstHours": 0
     }
   },
-  "completionPct": 65.28497409326425,
-  "fullProductCompletionPct": 31.34020618556701,
-  "trackedCompletionPct": 25.4606365159129,
-  "etaDaysToShipBefore": 9,
-  "etaDaysToFullProduct": 42,
-  "etaDaysToAllTracked": 56,
+  "completionPct": 76.68393782383419,
+  "fullProductCompletionPct": 38.76288659793815,
+  "trackedCompletionPct": 33.165829145728644,
+  "etaDaysToShipBefore": 6,
+  "etaDaysToFullProduct": 38,
+  "etaDaysToAllTracked": 50,
   "velocityHoursPerDay": 8,
   "items": [
     {
@@ -58,8 +58,8 @@
       "title": "Surface Morning Note on Dashboard with deep-links",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 1
     },
     {
@@ -67,8 +67,8 @@
       "title": "Build Dashboard `Today in Markets` module",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 2
     },
     {
@@ -166,8 +166,8 @@
       "title": "Add CSP/security headers + XSS/prompt-injection review",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 13
     },
     {
@@ -391,8 +391,8 @@
       "title": "Finish streaming close-analysis UX and fallback states",
       "track": "beta1",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 38
     },
     {
@@ -400,8 +400,8 @@
       "title": "Ship same-day fast/confirmed diff and rerun cues",
       "track": "beta1",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 39
     },
     {
@@ -742,8 +742,8 @@
       "title": "Insider buy/sell prompt guard QA harness with mocked AI forbidden output",
       "track": "qa",
       "estH": 4,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 77
     },
     {
@@ -751,8 +751,8 @@
       "title": "Accuracy Gate 5-rule auto-tests across current AI entry points",
       "track": "qa",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:32:56.619Z",
       "sortOrder": 78
     },
     {

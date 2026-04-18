@@ -195,8 +195,10 @@ describe('api/analyst-reports helpers', () => {
 
     expect(payload.system).toContain('公司代表 / 合規模式')
     expect(payload.system).toContain('【Accuracy Gate】')
+    expect(payload.system.toLowerCase()).not.toContain('insider')
     expect(payload.user).toContain('法規遵循觀察')
     expect(payload.user).toContain('【Accuracy Gate】')
+    expect(payload.user.toLowerCase()).not.toContain('insider')
   })
 
   it('normalizes report dates from mixed source formats', () => {

@@ -16,7 +16,7 @@ export function extractTradeParseJsonText(rawText) {
 }
 
 const INSIDER_PROMPT_LINE_CUE =
-  /(操作建議|買賣策略|買進|買入|賣出|加碼|減碼|停損|出場|持倉調整|資金調度|最需要行動|逢低|布局|續抱)/u
+  /(操作建議|買賣策略|買進|買入|賣出|加碼|減碼|停損|出場|持倉調整|資金調度|最需要行動|逢低|布局|續抱|\bbuy\b|\bsell\b|\btrim\b|\bexit\b|\baccumulate\b|\brebalance\b|\baction\b|\blong\b|\bshort\b)/iu
 
 const INSIDER_PROMPT_APPENDIX = `【公司代表 / 合規模式】
 - 只保留公開資訊、風險、狀態與法規遵循觀察

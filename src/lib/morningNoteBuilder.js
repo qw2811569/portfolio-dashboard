@@ -134,6 +134,40 @@ export function buildMorningNote({
   }
 }
 
+export function buildMorningNoteDeepLinks(note) {
+  if (!note || typeof note !== 'object') return []
+
+  const sections = note.sections || {}
+  const links = []
+
+  if (Array.isArray(sections.todayEvents) && sections.todayEvents.length > 0) {
+    links.push({
+      key: 'events',
+      target: 'events',
+      label: '前往事件',
+      summary: `今日 ${sections.todayEvents.length} 則事件`,
+    })
+  }
+
+  if (Array.isArray(sections.holdingStatus) && sections.holdingStatus.length > 0) {
+    links.push({
+      key: 'holdings',
+      target: 'holdings',
+      label: '查看持倉',
+      summary: `追蹤 ${sections.holdingStatus.length} 檔持股`,
+    })
+  }
+
+  links.push({
+    key: 'daily',
+    target: 'daily',
+    label: '盤後接續',
+    summary: '收盤後接續 Close Analysis',
+  })
+
+  return links
+}
+
 /**
  * Render morning note as plain text (for AI prompt or export)
  */

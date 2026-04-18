@@ -1,7 +1,8 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
-import { Card } from '../common'
+import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
+import { Button, Card } from '../common'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
@@ -44,6 +45,16 @@ function formatMetricValue(value, { signed = false, suffix = '' } = {}) {
   if (!Number.isFinite(value)) return '-'
   const sign = signed && value > 0 ? '+' : ''
   return `${sign}${Math.round(value).toLocaleString()}${suffix}`
+}
+
+function isSafeExternalUrl(value) {
+  if (!value) return false
+  try {
+    const parsed = new URL(String(value))
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
 }
 
 function toMarketDateString(value) {
@@ -372,21 +383,27 @@ function buildTodayInMarketsItems(newsEvents = []) {
         .trim()
         .toLowerCase()
       const date = toMarketDateString(event?.eventDate || event?.date)
+      const link = [event?.link, event?.url, event?.sourceUrl, event?.source_url]
+        .map((value) => String(value || '').trim())
+        .find((value) => isSafeExternalUrl(value))
+      const isMarket =
+        ['market', 'market-summary', 'index', 'indices'].includes(type) || source === 'market-cache'
       const isMacro = type === 'macro' || catalystType === 'macro'
       const isCalendar =
         source === 'auto-calendar' ||
         ['revenue', 'conference', 'earnings', 'dividend', 'shareholder'].includes(type) ||
         ['earnings', 'dividend', 'conference'].includes(catalystType)
 
-      if (!isMacro && !isCalendar) return null
+      if (!isMarket && !isMacro && !isCalendar) return null
 
       return {
         id: event?.id || `market-${index}`,
         title: String(event?.title || '').trim() || '未命名市場事件',
         detail: String(event?.detail || event?.summary || '').trim(),
         date,
-        category: isMacro ? '總經' : '行事曆',
-        categoryOrder: isMacro ? 0 : 1,
+        link,
+        category: isMarket ? '大盤' : isMacro ? '總經' : '行事曆',
+        categoryOrder: isMarket ? 0 : isMacro ? 1 : 2,
       }
     })
     .filter(Boolean)
@@ -399,6 +416,188 @@ function buildTodayInMarketsItems(newsEvents = []) {
   })
 
   return items
+}
+
+function MorningNoteCard({ morningNote = null, onNavigate = null }) {
+  if (!morningNote) return null
+
+  const sections = morningNote.sections || {}
+  const hasContent =
+    sections.todayEvents?.length > 0 ||
+    sections.holdingStatus?.length > 0 ||
+    sections.watchlistAlerts?.length > 0 ||
+    sections.announcements?.length > 0
+
+  if (!hasContent) return null
+
+  const todayEvents = Array.isArray(sections.todayEvents) ? sections.todayEvents.slice(0, 2) : []
+  const holdingStatus = Array.isArray(sections.holdingStatus)
+    ? sections.holdingStatus.slice(0, 2)
+    : []
+  const watchlistAlerts = Array.isArray(sections.watchlistAlerts) ? sections.watchlistAlerts : []
+  const announcements = Array.isArray(sections.announcements) ? sections.announcements : []
+  const deepLinks = buildMorningNoteDeepLinks(morningNote)
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.teal, '40')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        },
+      },
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.teal } }, 'Morning Note'),
+      h('span', { style: { fontSize: 9, color: C.textMute } }, morningNote.date || '')
+    ),
+    todayEvents.length > 0 &&
+      h(
+        'div',
+        { style: { display: 'grid', gap: 6, marginBottom: 8 } },
+        todayEvents.map((event) =>
+          h(
+            'div',
+            {
+              key: `${event.date}-${event.title}`,
+              style: {
+                display: 'flex',
+                gap: 8,
+                alignItems: 'flex-start',
+              },
+            },
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 9,
+                  color: event.impactLabel === 'HIGH' ? C.down : C.teal,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                },
+              },
+              event.impactLabel || 'INFO'
+            ),
+            h(
+              'div',
+              { style: { fontSize: 11, color: C.text, lineHeight: 1.7 } },
+              event.title,
+              event.relatedPillars?.length > 0 &&
+                h('span', { style: { fontSize: 9, color: C.teal, marginLeft: 6 } }, '主軸驗證')
+            )
+          )
+        )
+      ),
+    holdingStatus.length > 0 &&
+      h(
+        'div',
+        { style: { display: 'grid', gap: 4, marginBottom: 8 } },
+        holdingStatus.map((holding) =>
+          h(
+            'div',
+            {
+              key: holding.code,
+              style: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap',
+                fontSize: 10,
+                color: C.textSec,
+                lineHeight: 1.7,
+              },
+            },
+            h('span', null, `${holding.name} ${holding.code}`),
+            h(
+              'span',
+              { style: { color: C.textMute } },
+              holding.pillarSummary || '今日先看 thesis 是否有變'
+            )
+          )
+        )
+      ),
+    (watchlistAlerts.length > 0 || announcements.length > 0) &&
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            marginBottom: 8,
+          },
+        },
+        watchlistAlerts.length > 0 &&
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                color: C.up,
+                background: alpha(C.up, '12'),
+                borderRadius: 999,
+                padding: '3px 8px',
+              },
+            },
+            `觀察股 ${watchlistAlerts.length} 檔接近進場價`
+          ),
+        announcements.length > 0 &&
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 9,
+                color: C.textSec,
+                background: alpha(C.blue, '12'),
+                borderRadius: 999,
+                padding: '3px 8px',
+              },
+            },
+            `重大訊息 ${announcements.length} 則`
+          )
+      ),
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+      },
+      deepLinks.map((item) =>
+        h(
+          Button,
+          {
+            key: item.key,
+            onClick: () => typeof onNavigate === 'function' && onNavigate(item.target),
+            style: {
+              padding: '7px 12px',
+              borderRadius: 999,
+              border: `1px solid ${alpha(C.teal, '32')}`,
+              background: alpha(C.teal, '10'),
+              color: C.teal,
+              fontSize: 10,
+              fontWeight: 600,
+              cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
+            },
+            title: item.summary,
+          },
+          item.label
+        )
+      )
+    )
+  )
 }
 
 function TodayInMarketsCard({ newsEvents = [] }) {
@@ -469,13 +668,21 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                   },
                 },
                 h(
-                  'div',
+                  item.link ? 'a' : 'div',
                   {
+                    ...(item.link
+                      ? {
+                          href: item.link,
+                          target: '_blank',
+                          rel: 'noreferrer',
+                        }
+                      : {}),
                     style: {
                       fontSize: 11,
-                      color: C.text,
+                      color: item.link ? C.blue : C.text,
                       fontWeight: 500,
                       lineHeight: 1.6,
+                      textDecoration: 'none',
                     },
                   },
                   `${item.category}｜${item.title}`
@@ -805,6 +1012,7 @@ function PortfolioHealthCard({
 export function DashboardPanel({
   holdings = [],
   watchlist = [],
+  morningNote = null,
   todayTotalPnl = 0,
   totalVal = 0,
   totalCost = 0,
@@ -816,6 +1024,7 @@ export function DashboardPanel({
   todayAlertSummary = '',
   portfolioName = '',
   portfolioId = '',
+  onNavigate = null,
 }) {
   return h(
     'div',
@@ -846,6 +1055,7 @@ export function DashboardPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+    h(MorningNoteCard, { morningNote, onNavigate }),
     h(PrincipleCards),
     h(TodayInMarketsCard, { newsEvents }),
     h(AiQuickSummary, { latestInsight }),

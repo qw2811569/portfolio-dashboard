@@ -1,122 +1,115 @@
-import { callAiRaw, ensureAiConfigured } from "./_lib/ai-provider.js";
+import { withApiAuth } from './_lib/auth-middleware.js'
+import { callAiRaw, ensureAiConfigured } from './_lib/ai-provider.js'
+import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 
 function extractText(data) {
   return Array.isArray(data?.content)
     ? data.content
-        .filter(item => item?.type === "text" && typeof item.text === "string")
-        .map(item => item.text)
-        .join("\n\n")
-    : "";
+        .filter((item) => item?.type === 'text' && typeof item.text === 'string')
+        .map((item) => item.text)
+        .join('\n\n')
+    : ''
 }
 
 function normalizeTargetReports(reports, fallbackDate) {
   return Array.isArray(reports)
     ? reports
-        .map(report => {
-          const firm = String(report?.firm || "").trim();
-          const target = Number(report?.target);
-          const date = String(report?.date || "").trim() || fallbackDate;
-          if (!firm || !Number.isFinite(target) || target <= 0) return null;
-          return { firm, target, date };
+        .map((report) => {
+          const firm = String(report?.firm || '').trim()
+          const target = Number(report?.target)
+          const date = String(report?.date || '').trim() || fallbackDate
+          if (!firm || !Number.isFinite(target) || target <= 0) return null
+          return { firm, target, date }
         })
         .filter(Boolean)
-    : [];
+    : []
 }
 
 function inferFallbackTargetReports(text, fallbackDate) {
-  const sourceText = String(text || "");
-  if (!sourceText) return [];
-  const lines = sourceText.split(/\n+/).map(line => line.trim()).filter(Boolean);
-  const reports = [];
+  const sourceText = String(text || '')
+  if (!sourceText) return []
+  const lines = sourceText
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const reports = []
   const patterns = [
     /(?:目標價|目標價位|目標區間|目標上看|股價目標)[^\d]{0,12}(\d{2,5}(?:\.\d+)?)/,
     /(?:操作建議|策略建議|研究結論).{0,40}?(?:目標|上看|看到)[^\d]{0,10}(\d{2,5}(?:\.\d+)?)/,
-  ];
+  ]
 
   for (const line of lines) {
-    if (!/目標|上看|看到/.test(line)) continue;
+    if (!/目標|上看|看到/.test(line)) continue
     for (const pattern of patterns) {
-      const match = line.match(pattern);
-      if (!match) continue;
-      const target = Number(match[1]);
-      if (!Number.isFinite(target) || target <= 0) continue;
-      const firmMatch = line.match(/(元大|凱基|中信投顧|華南投顧|富邦|大摩|大和|國際共識|FactSet共識|深度研究|研究建議)/);
+      const match = line.match(pattern)
+      if (!match) continue
+      const target = Number(match[1])
+      if (!Number.isFinite(target) || target <= 0) continue
+      const firmMatch = line.match(
+        /(元大|凱基|中信投顧|華南投顧|富邦|大摩|大和|國際共識|FactSet共識|深度研究|研究建議)/
+      )
       reports.push({
-        firm: firmMatch?.[1] || "本次深度研究",
+        firm: firmMatch?.[1] || '本次深度研究',
         target,
         date: fallbackDate,
-      });
-      break;
+      })
+      break
     }
   }
 
-  const unique = [];
-  const seen = new Set();
+  const unique = []
+  const seen = new Set()
   for (const report of reports) {
-    const key = `${report.firm}-${report.target}-${report.date}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    unique.push(report);
+    const key = `${report.firm}-${report.target}-${report.date}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    unique.push(report)
   }
-  return unique.slice(0, 3);
+  return unique.slice(0, 3)
 }
 
 function normalizeExtractedFundamentals(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const readNumber = (raw) => {
-    const num = Number(raw);
-    return Number.isFinite(num) ? num : null;
-  };
+    const num = Number(raw)
+    return Number.isFinite(num) ? num : null
+  }
   const normalized = {
-    revenueMonth: String(value.revenueMonth || "").trim() || null,
+    revenueMonth: String(value.revenueMonth || '').trim() || null,
     revenueYoY: readNumber(value.revenueYoY),
     revenueMoM: readNumber(value.revenueMoM),
-    quarter: String(value.quarter || "").trim() || null,
+    quarter: String(value.quarter || '').trim() || null,
     eps: readNumber(value.eps),
     grossMargin: readNumber(value.grossMargin),
     roe: readNumber(value.roe),
-    updatedAt: String(value.updatedAt || "").trim() || null,
-    source: String(value.source || "").trim(),
-    note: String(value.note || "").trim(),
-  };
+    updatedAt: String(value.updatedAt || '').trim() || null,
+    source: String(value.source || '').trim(),
+    note: String(value.note || '').trim(),
+  }
   const numericValues = [
     normalized.revenueYoY,
     normalized.revenueMoM,
     normalized.eps,
     normalized.grossMargin,
     normalized.roe,
-  ].filter(item => item != null);
-  const looksLikePlaceholderZeros = numericValues.length > 0
-    && numericValues.every(item => Number(item) === 0)
-    && !normalized.revenueMonth
-    && !normalized.quarter
-    && !normalized.note;
-  if (looksLikePlaceholderZeros) return null;
-  const hasContent = Object.values(normalized).some(item => item !== null && item !== "");
-  return hasContent ? normalized : null;
+  ].filter((item) => item != null)
+  const looksLikePlaceholderZeros =
+    numericValues.length > 0 &&
+    numericValues.every((item) => Number(item) === 0) &&
+    !normalized.revenueMonth &&
+    !normalized.quarter &&
+    !normalized.note
+  if (looksLikePlaceholderZeros) return null
+  const hasContent = Object.values(normalized).some((item) => item !== null && item !== '')
+  return hasContent ? normalized : null
 }
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+function buildResearchExtractPromptPayload({ report, stock, dossier }) {
+  const sourceLabel = 'research report text / dossier summary / report metadata'
 
-  try {
-    ensureAiConfigured();
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-
-  try {
-    const { report, stock, dossier } = req.body || {};
-    if (!report?.code || !report?.text) {
-      return res.status(400).json({ error: "缺少 report.code 或 report.text" });
-    }
-
-    const data = await callAiRaw({
-      system: `你是台股研究資料抽取器。你的任務是從研究報告文字中抽出可回寫到持股 dossier 的結構化資料。
+  return {
+    system: applyAccuracyGatePrompt(
+      `你是台股研究資料抽取器。你的任務是從研究報告文字中抽出可回寫到持股 dossier 的結構化資料。
 只能抽出文字裡有明確提到的數字或來源，不可猜測。
 0 不是缺值佔位符。除非原文真的明確寫出 0，否則缺資料一律填 null，不可用 0 代替。
 目標價資料規則：
@@ -145,12 +138,11 @@ export default async function handler(req, res) {
     ]
   }
 }`,
-      maxTokens: 900,
-      allowThinking: false,
-      messages: [{
-        role: "user",
-        content: `股票：${stock?.name || report.name || ""}(${report.code})
-研究日期：${report.date || ""}
+      { sourceLabel }
+    ),
+    user: applyAccuracyGatePrompt(
+      `股票：${stock?.name || report.name || ''}(${report.code})
+研究日期：${report.date || ''}
 
 現有 dossier 摘要：
 ${JSON.stringify(dossier || {}, null, 2)}
@@ -159,21 +151,57 @@ ${JSON.stringify(dossier || {}, null, 2)}
 ${report.text}
 
 請抽出可回寫的財報/營收/目標價資料。若數字只是模糊描述或沒有明確來源，不要硬填。沒有明確數字時請填 null，不要填 0。`,
-      }],
-    });
+      { sourceLabel }
+    ),
+  }
+}
 
-    const text = extractText(data).replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(text);
-    const fallbackDate = String(report?.date || "").trim() || null;
-    const normalizedReports = normalizeTargetReports(parsed?.targets?.reports, fallbackDate);
-    const fallbackReports = normalizedReports.length > 0 ? [] : inferFallbackTargetReports(report.text, fallbackDate);
+async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  try {
+    ensureAiConfigured()
+  } catch (err) {
+    return res.status(500).json({ error: err.message })
+  }
+
+  try {
+    const { report, stock, dossier } = req.body || {}
+    if (!report?.code || !report?.text) {
+      return res.status(400).json({ error: '缺少 report.code 或 report.text' })
+    }
+
+    const prompts = buildResearchExtractPromptPayload({ report, stock, dossier })
+
+    const data = await callAiRaw({
+      system: prompts.system,
+      maxTokens: 900,
+      allowThinking: false,
+      messages: [
+        {
+          role: 'user',
+          content: prompts.user,
+        },
+      ],
+    })
+
+    const text = extractText(data)
+      .replace(/```json|```/g, '')
+      .trim()
+    const parsed = JSON.parse(text)
+    const fallbackDate = String(report?.date || '').trim() || null
+    const normalizedReports = normalizeTargetReports(parsed?.targets?.reports, fallbackDate)
+    const fallbackReports =
+      normalizedReports.length > 0 ? [] : inferFallbackTargetReports(report.text, fallbackDate)
     return res.status(200).json({
       fundamentals: normalizeExtractedFundamentals(parsed?.fundamentals),
       targets: {
         reports: normalizedReports.length > 0 ? normalizedReports : fallbackReports,
       },
-    });
+    })
   } catch (err) {
-    return res.status(500).json({ error: "研究資料抽取失敗", detail: err.message });
+    return res.status(500).json({ error: '研究資料抽取失敗', detail: err.message })
   }
 }
+
+export default withApiAuth(handler)

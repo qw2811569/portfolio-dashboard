@@ -1,5 +1,8 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — 截圖解析（圖片 → 交易資料）
 import { callAiImage, ensureAiConfigured, extractAiText } from './_lib/ai-provider.js'
+import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
+import { TradeParseRequestSchema } from '../src/lib/contracts/index.mjs'
 import { normalizeTradeParseResult } from '../src/lib/tradeParseUtils.js'
 import { extractTradeParseJsonText } from '../src/lib/tradeAiResponse.js'
 
@@ -10,30 +13,35 @@ function truncateForLog(value, maxLength = 4000) {
 }
 
 function buildParsePrompt(systemPrompt = '') {
-  return [
-    systemPrompt,
-    '你是台股交易截圖 OCR 專家。請仔細閱讀這張圖片，辨識所有股票資料。',
-    '',
-    '台股代碼規則：',
-    '- 一般股票：4 位數字（如 2308、3443、1503）',
-    '- 權證：6 位數字（如 053848、702157、084891）',
-    '- ETF：4-5 位數字或代碼（如 0050、00637L、00918）',
-    '- 注意區分：不要把股票名稱的數字跟代碼搞混',
-    '',
-    '常見台股券商截圖欄位：股票代碼、股票名稱、買/賣/庫存、成交價/現價、張數/股數、成本均價、損益',
-    '',
-    '必須嚴格按以下 JSON 格式回傳，不要加任何說明文字、markdown 或 code fence：',
-    '{"trades":[{"code":"股票代碼","name":"股票名稱","action":"buy或sell或hold","price":現價數字,"quantity":股數數字,"cost":成本均價數字或null,"pnl":損益數字或null,"note":"備註"}]}',
-    '',
-    '重要：',
-    '- code 必須是正確的台股代碼格式',
-    '- 如果是持倉庫存截圖，action 用 "hold"',
-    '- price 和 cost 用實際數字，不要帶逗號或千分位',
-    '- quantity 是股數（1張=1000股，如果看到"張"要乘1000）',
-    '- 如果某欄看不清楚，寧可填 null 也不要亂猜',
-  ]
-    .filter(Boolean)
-    .join('\n')
+  return applyAccuracyGatePrompt(
+    [
+      systemPrompt,
+      '你是台股交易截圖 OCR 專家。請仔細閱讀這張圖片，辨識所有股票資料。',
+      '',
+      '台股代碼規則：',
+      '- 一般股票：4 位數字（如 2308、3443、1503）',
+      '- 權證：6 位數字（如 053848、702157、084891）',
+      '- ETF：4-5 位數字或代碼（如 0050、00637L、00918）',
+      '- 注意區分：不要把股票名稱的數字跟代碼搞混',
+      '',
+      '常見台股券商截圖欄位：股票代碼、股票名稱、買/賣/庫存、成交價/現價、張數/股數、成本均價、損益',
+      '',
+      '必須嚴格按以下 JSON 格式回傳，不要加任何說明文字、markdown 或 code fence：',
+      '{"trades":[{"code":"股票代碼","name":"股票名稱","action":"buy或sell或hold","price":現價數字,"quantity":股數數字,"cost":成本均價數字或null,"pnl":損益數字或null,"note":"備註"}]}',
+      '',
+      '重要：',
+      '- code 必須是正確的台股代碼格式',
+      '- 如果是持倉庫存截圖，action 用 "hold"',
+      '- price 和 cost 用實際數字，不要帶逗號或千分位',
+      '- quantity 是股數（1張=1000股，如果看到"張"要乘1000）',
+      '- 如果某欄看不清楚，寧可填 null 也不要亂猜',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    {
+      sourceLabel: 'uploaded screenshot / OCR pixels / user-supplied parse prompt',
+    }
+  )
 }
 
 function buildUserFacingParseError(error, rawText = '') {
@@ -62,11 +70,7 @@ function buildUserFacingParseError(error, rawText = '') {
   }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
@@ -77,10 +81,11 @@ export default async function handler(req, res) {
 
   let rawText = ''
   try {
-    const { systemPrompt, base64, mediaType: explicitMediaType } = req.body || {}
-    if (!base64) {
+    const parsedRequest = TradeParseRequestSchema.safeParse(req.body || {})
+    if (!parsedRequest.success) {
       return res.status(400).json({ error: '缺少圖片內容(base64)' })
     }
+    const { systemPrompt, base64, mediaType: explicitMediaType } = parsedRequest.data
 
     // 自動偵測圖片格式
     const detectMediaType = (b64) => {
@@ -204,3 +209,5 @@ export default async function handler(req, res) {
     })
   }
 }
+
+export default withApiAuth(handler)

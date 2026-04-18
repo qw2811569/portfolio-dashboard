@@ -2,6 +2,7 @@ import { DEFAULT_FUNDAMENTAL_DRAFT } from '../constants.js'
 import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from './dateUtils.js'
 import { isSkippedTargetPriceInstrumentType } from './instrumentTypes.js'
 import { getEventStockCodes } from './eventUtils.js'
+import { HoldingDossierSchema } from './contracts/index.mjs'
 import {
   shouldDebugFinMindPromptCoverage,
   summarizeFinMindPromptDatasets,
@@ -437,38 +438,40 @@ export function buildHoldingDossiers(input, options = {}) {
 
   const rows = Array.isArray(holdings) ? holdings : []
   const now = new Date()
-  return rows.map((holding) => {
-    const targetReports = targets[holding.code]?.reports || []
-    const fundamentalsEntry = fundamentals[holding.code] || null
-    // Non-company instrument types do not have company-level analyst targets
-    // or financial statements, so "fresh" here means "refresh not applicable".
-    const isNonCompany = isSkippedTargetPriceInstrumentType(holding)
-    const targetsFreshness = isNonCompany
-      ? 'fresh'
-      : computeFreshnessGrade(
-          targetReports.map((report) => report?.date),
-          { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
-        )
-    const fundamentalsFreshness = isNonCompany
-      ? 'fresh'
-      : computeFreshnessGrade(fundamentalsEntry ? [fundamentalsEntry.updatedAt] : [], { now })
-    return {
-      code: holding.code,
-      name: holding.name,
-      position: holding,
-      targets: targetReports,
-      fundamentals: fundamentalsEntry,
-      analystReports: analystReports[holding.code]?.items || [],
-      events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
-      research: researchHistory.filter((r) => r.code === holding.code),
-      stockMeta: stockMeta[holding.code] || null,
-      finmind: null, // 由 usePortfolioDerivedData 異步充實
-      freshness: {
-        targets: targetsFreshness,
-        fundamentals: fundamentalsFreshness,
-      },
-    }
-  })
+  return rows
+    .map((holding) => {
+      const targetReports = targets[holding.code]?.reports || []
+      const fundamentalsEntry = fundamentals[holding.code] || null
+      // Non-company instrument types do not have company-level analyst targets
+      // or financial statements, so "fresh" here means "refresh not applicable".
+      const isNonCompany = isSkippedTargetPriceInstrumentType(holding)
+      const targetsFreshness = isNonCompany
+        ? 'fresh'
+        : computeFreshnessGrade(
+            targetReports.map((report) => report?.date),
+            { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+          )
+      const fundamentalsFreshness = isNonCompany
+        ? 'fresh'
+        : computeFreshnessGrade(fundamentalsEntry ? [fundamentalsEntry.updatedAt] : [], { now })
+      return HoldingDossierSchema.parse({
+        code: holding.code,
+        name: holding.name,
+        position: holding,
+        targets: targetReports,
+        fundamentals: fundamentalsEntry,
+        analystReports: analystReports[holding.code]?.items || [],
+        events: newsEvents.filter((event) => getEventStockCodes(event).includes(holding.code)),
+        research: researchHistory.filter((r) => r.code === holding.code),
+        stockMeta: stockMeta[holding.code] || null,
+        finmind: null, // 由 usePortfolioDerivedData 異步充實
+        freshness: {
+          targets: targetsFreshness,
+          fundamentals: fundamentalsFreshness,
+        },
+      })
+    })
+    .filter(Boolean)
 }
 
 export function buildResearchHoldingDossierContext(dossier, { compact = false } = {}) {
@@ -720,23 +723,13 @@ export function normalizeHoldingDossiers(value) {
 }
 
 export function normalizeHoldingDossier(value) {
-  if (!value || typeof value !== 'object') return null
-  const code = String(value.code || '').trim()
-  if (!code) return null
-  return {
-    code,
-    name: String(value.name || code).trim(),
-    position: value.position || null, // Assuming normalizeHoldingRow is used here
-    thesis: value.thesis || null,
-    targets: Array.isArray(value.targets) ? value.targets : [],
-    fundamentals: normalizeFundamentalsEntry(value.fundamentals),
-    analystReports: Array.isArray(value.analystReports) ? value.analystReports : [],
-    events: Array.isArray(value.events) ? value.events : [],
-    research: Array.isArray(value.research) ? value.research : [],
-    brainContext: value.brainContext || null,
-    freshness: value.freshness || null,
-    validationSignals: value.validationSignals || null,
-  }
+  const result = HoldingDossierSchema.safeParse({
+    ...value,
+    code: String(value?.code || '').trim(),
+    name: String(value?.name || value?.code || '').trim(),
+    fundamentals: normalizeFundamentalsEntry(value?.fundamentals),
+  })
+  return result.success ? result.data : null
 }
 
 export function normalizeTaiwanValidationSignalStatus(value) {

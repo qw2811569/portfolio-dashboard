@@ -258,6 +258,7 @@ export default function Header(props) {
       h(
         'select',
         {
+          'data-testid': 'portfolio-select',
           value: activePortfolioId,
           onChange: (e) => switchPortfolio(e.target.value),
           disabled: !ready || portfolioSwitching,
@@ -333,7 +334,10 @@ export default function Header(props) {
       activePortfolioId &&
         h(
           'span',
-          { style: { fontSize: 10, color: C.textSec } },
+          {
+            'data-testid': 'portfolio-context-label',
+            style: { fontSize: 10, color: C.textSec },
+          },
           viewMode === OVERVIEW_VIEW_MODE
             ? `全部總覽 · ${portfolioSummaries.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
             : `${portfolioSummaries.find((p) => p.id === activePortfolioId)?.name || ''} · ${portfolioSummaries.find((p) => p.id === activePortfolioId)?.holdingCount || 0} 檔 · 損益 ${portfolioSummaries.find((p) => p.id === activePortfolioId)?.totalPnl >= 0 ? '+' : ''}${Math.round(portfolioSummaries.find((p) => p.id === activePortfolioId)?.totalPnl || 0).toLocaleString()}`
@@ -752,6 +756,7 @@ export default function Header(props) {
               {
                 className: 'ui-btn',
                 key: t.k,
+                'data-testid': `tab-${t.k}`,
                 onClick: () => navigateToTab(t.k),
                 style: {
                   background:

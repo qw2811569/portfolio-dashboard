@@ -1,13 +1,9 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — TWSE 三大法人買賣超 API
 // 來源：https://www.twse.com.tw/rwd/zh/fund/T86
 import { getCachedResponse, setCachedResponse } from './_lib/cache.js'
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const { date } = req.query
@@ -131,3 +127,5 @@ function parseInstitutionalRow(data, institutionName) {
 
   return { buy, sell, net }
 }
+
+export default withApiAuth(handler)

@@ -1,0 +1,4 @@
+{"id":"r129-pending-order","createdAt":"2026-04-18T14:35:44.240Z","askedBy":"codex","context":"R129 · pending decisions infrastructure","question":"Pending poster 要固定放在 Focus 後、Week 前嗎？","options":[{"key":"A","label":"放 Focus 後、Week 前"},{"key":"B","label":"放 Week 後，保留舊節奏"}],"recommendation":"A","recommendationReason":"決策比回顧更該先看到","status":"pending"}
+{"id":"r129-answer-smoke","createdAt":"2026-04-18T14:37:54.959Z","askedBy":"codex","context":"R129 · answer smoke","question":"Smoke test：API answer route 正常嗎？","options":[{"key":"A","label":"正常"},{"key":"B","label":"異常"}],"recommendation":"A","recommendationReason":"先驗路徑","status":"pending"}
+{"id":"r129-answer-smoke","answer":"A","answeredAt":"2026-04-18T14:38:04.754Z","notes":"curl smoke","status":"answered"}
+{"id":"r129-pending-order","answer":"A","answeredAt":"2026-04-18T14:52:19.950Z","status":"answered"}

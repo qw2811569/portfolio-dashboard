@@ -1,3 +1,4 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — 知識庫讀寫
 // 本地檔案優先，提供知識查詢與相似度比對
 // 知識庫位置：src/lib/knowledge-base/
@@ -151,17 +152,10 @@ function getCategoryStats() {
 }
 
 // ── Export handler ──
-export default async function handler(request, response) {
+async function handler(request, response) {
   const { method, query, body } = request
 
   // CORS headers
-  response.setHeader('Access-Control-Allow-Origin', '*')
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  if (method === 'OPTIONS') {
-    return response.status(200).end()
-  }
 
   try {
     switch (method) {
@@ -215,3 +209,5 @@ export default async function handler(request, response) {
     return response.status(500).json({ success: false, error: error.message })
   }
 }
+
+export default withApiAuth(handler)

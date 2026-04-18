@@ -169,6 +169,271 @@ li + li { margin-top: 0.35rem; }
   gap: 28px;
   margin-top: 28px;
 }
+.progress-panel-shell {
+  margin-top: 28px;
+}
+.progress-panel {
+  min-height: 120px;
+}
+.progress-wrap {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+  padding: 48px 40px 38px;
+  overflow: hidden;
+  border: 1px solid rgba(23, 23, 23, 0.12);
+  border-radius: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(217, 211, 209, 0.18), rgba(231, 224, 214, 0.96));
+  box-shadow: var(--shadow);
+}
+.progress-wrap::before {
+  content: "01 · TODO · Live progress";
+  position: absolute;
+  top: -10px;
+  left: 40px;
+  padding: 0 12px;
+  background: var(--bone);
+  color: var(--iron);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+.progress-wrap::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: -28px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(236, 102, 45, 0.18), rgba(236, 102, 45, 0) 70%);
+  pointer-events: none;
+}
+.progress-visual {
+  position: relative;
+  z-index: 1;
+}
+.progress-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.progress-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.progress-stat {
+  padding-left: 14px;
+  border-left: 1px solid rgba(23, 23, 23, 0.12);
+}
+.progress-stat__label {
+  margin-bottom: 8px;
+  color: var(--iron);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.progress-stat__value {
+  color: var(--ink);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 48px;
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.progress-stat__unit {
+  margin-top: 6px;
+  color: var(--iron);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.donut {
+  display: block;
+  width: min(100%, 380px);
+  height: auto;
+}
+.donut-track,
+.donut-value,
+.donut-accent-track,
+.donut-accent-value {
+  fill: none;
+}
+.donut-track {
+  stroke: rgba(217, 211, 209, 0.96);
+  stroke-width: 30;
+}
+.donut-value {
+  stroke: url(#progress-arc);
+  stroke-width: 30;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.8s cubic-bezier(.22, .94, .37, 1);
+  filter: drop-shadow(0 8px 24px rgba(236, 102, 45, 0.18));
+}
+.donut-accent-track {
+  stroke: rgba(131, 133, 133, 0.16);
+  stroke-width: 6;
+}
+.donut-accent-value {
+  stroke: rgba(47, 50, 50, 0.24);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.donut-pct {
+  fill: var(--ink);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 72px;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.donut-sub {
+  fill: var(--iron);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.donut-meta {
+  fill: var(--charcoal);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.eta {
+  display: grid;
+  gap: 12px;
+  padding: 24px 0;
+  border-top: 1px solid rgba(23, 23, 23, 0.08);
+  border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+}
+.eta-label {
+  color: var(--iron);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.eta-days {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.eta-days .num {
+  color: var(--cta);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 92px;
+  font-weight: 600;
+  line-height: 0.88;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.eta-days .unit {
+  color: var(--iron);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.eta-secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+}
+.eta-secondary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(131, 133, 133, 0.18);
+  color: var(--charcoal);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 13px;
+}
+.eta-secondary__row strong {
+  color: var(--ink);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.eta-note {
+  color: var(--iron);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 11px;
+  font-style: italic;
+}
+.breakdown {
+  display: grid;
+  gap: 2px;
+}
+.breakdown-row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(131, 133, 133, 0.18);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+}
+.breakdown-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.breakdown-label {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+.breakdown-tally {
+  color: var(--ink);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.breakdown-hours {
+  color: var(--iron);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.velocity {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+  color: var(--iron);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.velocity strong {
+  color: var(--ink);
+  font-family: "Source Serif 4", "Source Han Serif TC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.progress-error {
+  padding: 18px 20px;
+  border: 1px solid rgba(240, 161, 69, 0.28);
+  background: rgba(240, 161, 69, 0.14);
+  color: var(--ink);
+  font-family: "Source Han Sans TC", "Noto Sans TC", sans-serif;
+}
 .toc {
   position: sticky;
   top: 96px;
@@ -333,6 +598,15 @@ li + li { margin-top: 0.35rem; }
   .report-nav__tabs { justify-self: start; overflow-x: auto; max-width: 100%; }
   .report-nav__status { justify-self: start; }
   .page-grid { grid-template-columns: 1fr; }
+  .progress-wrap {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 40px 28px 32px;
+  }
+  .progress-visual {
+    display: grid;
+    place-items: center;
+  }
   .toc { position: static; }
   .spec-doc { width: calc(100% - 24px); padding: 20px; }
 }
@@ -348,6 +622,54 @@ li + li { margin-top: 0.35rem; }
   .spec-doc .mermaid {
     padding: 12px;
     overflow: hidden;
+  }
+  .progress-wrap {
+    gap: 28px;
+    padding: 34px 20px 24px;
+  }
+  .progress-wrap::before {
+    left: 20px;
+    padding: 0 8px;
+  }
+  .progress-wrap::after {
+    right: -56px;
+    top: -40px;
+    width: 180px;
+    height: 180px;
+  }
+  .progress-stat-strip {
+    gap: 10px;
+  }
+  .progress-stat {
+    padding-left: 10px;
+  }
+  .progress-stat__value {
+    font-size: 34px;
+  }
+  .donut {
+    max-width: 300px;
+  }
+  .donut-pct {
+    font-size: 58px;
+  }
+  .donut-sub {
+    font-size: 11px;
+  }
+  .donut-meta {
+    font-size: 12px;
+  }
+  .eta-days .num {
+    font-size: 68px;
+  }
+  .eta-secondary {
+    grid-template-columns: 1fr;
+  }
+  .breakdown-row {
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+  .breakdown-hours {
+    grid-column: 2 / 4;
   }
   .doc table,
   .spec-doc table {

@@ -25,7 +25,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "infra-02": {
     "id": "infra-02",
@@ -53,7 +53,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "infra-03": {
     "id": "infra-03",
@@ -81,7 +81,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "infra-04": {
     "id": "infra-04",
@@ -109,7 +109,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "p0-01": {
     "id": "p0-01",
@@ -137,7 +137,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "p0-02": {
     "id": "p0-02",
@@ -165,7 +165,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "p0-03": {
     "id": "p0-03",
@@ -193,7 +193,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "p0-04": {
     "id": "p0-04",
@@ -221,7 +221,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "feat-01": {
     "id": "feat-01",
@@ -249,7 +249,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-02": {
     "id": "feat-02",
@@ -277,7 +277,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-03": {
     "id": "feat-03",
@@ -305,7 +305,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-04": {
     "id": "feat-04",
@@ -333,7 +333,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-05": {
     "id": "feat-05",
@@ -361,7 +361,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-06": {
     "id": "feat-06",
@@ -389,7 +389,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "test-01": {
     "id": "test-01",
@@ -417,7 +417,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "test-02": {
     "id": "test-02",
@@ -445,7 +445,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "test-03": {
     "id": "test-03",
@@ -473,7 +473,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "feat-07": {
     "id": "feat-07",
@@ -501,7 +501,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776231958178,
-    "updatedAt": 1776518477466
+    "updatedAt": 1776523636927
   },
   "r121-T27": {
     "id": "r121-T27",
@@ -529,7 +529,7 @@
     "completedAt": 1776511573308,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r121-T46": {
     "id": "r121-T46",
@@ -557,7 +557,7 @@
     "completedAt": 1776511573769,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r121-T50": {
     "id": "r121-T50",
@@ -585,7 +585,7 @@
     "completedAt": 1776511574235,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r121-T53": {
     "id": "r121-T53",
@@ -613,7 +613,7 @@
     "completedAt": 1776511574686,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r121-M09": {
     "id": "r121-M09",
@@ -644,7 +644,7 @@
     "completedAt": 1776511575142,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T28": {
     "id": "r122-T28",
@@ -683,7 +683,7 @@
     "completedAt": 1776513804074,
     "consensusState": "none",
     "createdAt": 1776512870915,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T37": {
     "id": "r122-T37",
@@ -720,7 +720,7 @@
     "completedAt": 1776513804558,
     "consensusState": "none",
     "createdAt": 1776512871354,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T47": {
     "id": "r122-T47",
@@ -756,7 +756,7 @@
     "completedAt": 1776513805030,
     "consensusState": "none",
     "createdAt": 1776512871812,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T67": {
     "id": "r122-T67",
@@ -793,7 +793,7 @@
     "completedAt": 1776513805511,
     "consensusState": "none",
     "createdAt": 1776512872317,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T51": {
     "id": "r122-T51",
@@ -821,7 +821,7 @@
     "completedAt": 1776513805985,
     "consensusState": "none",
     "createdAt": 1776512872776,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T52": {
     "id": "r122-T52",
@@ -860,7 +860,7 @@
     "completedAt": 1776513806447,
     "consensusState": "none",
     "createdAt": 1776512873247,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r122-T54": {
     "id": "r122-T54",
@@ -897,7 +897,7 @@
     "completedAt": 1776513806912,
     "consensusState": "none",
     "createdAt": 1776512873709,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-T31": {
     "id": "r123-T31",
@@ -925,7 +925,7 @@
     "completedAt": 1776515707115,
     "consensusState": "none",
     "createdAt": 1776514413728,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-T57": {
     "id": "r123-T57",
@@ -953,7 +953,7 @@
     "completedAt": 1776515707586,
     "consensusState": "none",
     "createdAt": 1776514632960,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-T60": {
     "id": "r123-T60",
@@ -981,7 +981,7 @@
     "completedAt": 1776515708056,
     "consensusState": "none",
     "createdAt": 1776514866484,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-M15": {
     "id": "r123-M15",
@@ -1009,7 +1009,7 @@
     "completedAt": 1776515708518,
     "consensusState": "none",
     "createdAt": 1776515092970,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-T66": {
     "id": "r123-T66",
@@ -1037,7 +1037,7 @@
     "completedAt": 1776515708957,
     "consensusState": "none",
     "createdAt": 1776515366715,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r123-T30": {
     "id": "r123-T30",
@@ -1065,7 +1065,7 @@
     "completedAt": 1776515706673,
     "consensusState": "none",
     "createdAt": 1776515706673,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T32": {
     "id": "r124-T32",
@@ -1093,7 +1093,7 @@
     "completedAt": 1776518089051,
     "consensusState": "none",
     "createdAt": 1776518089051,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T33": {
     "id": "r124-T33",
@@ -1121,7 +1121,7 @@
     "completedAt": 1776518089933,
     "consensusState": "none",
     "createdAt": 1776518089933,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T38": {
     "id": "r124-T38",
@@ -1149,7 +1149,7 @@
     "completedAt": 1776518090778,
     "consensusState": "none",
     "createdAt": 1776518090778,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T40": {
     "id": "r124-T40",
@@ -1177,7 +1177,7 @@
     "completedAt": 1776518091709,
     "consensusState": "none",
     "createdAt": 1776518091709,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T49": {
     "id": "r124-T49",
@@ -1205,7 +1205,7 @@
     "completedAt": 1776518092637,
     "consensusState": "none",
     "createdAt": 1776518092637,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r124-T62": {
     "id": "r124-T62",
@@ -1233,7 +1233,7 @@
     "completedAt": 1776518093577,
     "consensusState": "none",
     "createdAt": 1776518093577,
-    "updatedAt": 1776518477465
+    "updatedAt": 1776523636927
   },
   "r125-T01": {
     "id": "r125-T01",
@@ -1242,13 +1242,13 @@
     "consensusReviews": [],
     "title": "r125-T01",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-T01",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-T01",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519181594,
     "dispatchCount": 1,
@@ -1261,7 +1261,7 @@
     "completedAt": 1776519181594,
     "consensusState": "none",
     "createdAt": 1776519181594,
-    "updatedAt": 1776519181594
+    "updatedAt": 1776523636927
   },
   "r125-T02": {
     "id": "r125-T02",
@@ -1270,13 +1270,13 @@
     "consensusReviews": [],
     "title": "r125-T02",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-T02",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-T02",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519182057,
     "dispatchCount": 1,
@@ -1289,7 +1289,7 @@
     "completedAt": 1776519182057,
     "consensusState": "none",
     "createdAt": 1776519182057,
-    "updatedAt": 1776519182057
+    "updatedAt": 1776523636927
   },
   "r125-T14": {
     "id": "r125-T14",
@@ -1298,13 +1298,13 @@
     "consensusReviews": [],
     "title": "r125-T14",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-T14",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-T14",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519182518,
     "dispatchCount": 1,
@@ -1317,7 +1317,7 @@
     "completedAt": 1776519182518,
     "consensusState": "none",
     "createdAt": 1776519182518,
-    "updatedAt": 1776519182518
+    "updatedAt": 1776523636927
   },
   "r125-T15": {
     "id": "r125-T15",
@@ -1326,13 +1326,13 @@
     "consensusReviews": [],
     "title": "r125-T15",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-T15",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-T15",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519182950,
     "dispatchCount": 1,
@@ -1345,7 +1345,7 @@
     "completedAt": 1776519182950,
     "consensusState": "none",
     "createdAt": 1776519182950,
-    "updatedAt": 1776519182950
+    "updatedAt": 1776523636927
   },
   "r125-T71": {
     "id": "r125-T71",
@@ -1354,13 +1354,13 @@
     "consensusReviews": [],
     "title": "r125-T71",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-T71",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-T71",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519183406,
     "dispatchCount": 1,
@@ -1373,7 +1373,7 @@
     "completedAt": 1776519183406,
     "consensusState": "none",
     "createdAt": 1776519183406,
-    "updatedAt": 1776519183406
+    "updatedAt": 1776523636927
   },
   "r125-Q08": {
     "id": "r125-Q08",
@@ -1382,13 +1382,13 @@
     "consensusReviews": [],
     "title": "r125-Q08",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-Q08",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-Q08",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519183876,
     "dispatchCount": 1,
@@ -1401,7 +1401,7 @@
     "completedAt": 1776519183876,
     "consensusState": "none",
     "createdAt": 1776519183876,
-    "updatedAt": 1776519183876
+    "updatedAt": 1776523636927
   },
   "r125-Q09": {
     "id": "r125-Q09",
@@ -1410,13 +1410,13 @@
     "consensusReviews": [],
     "title": "r125-Q09",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r125-Q09",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r125-Q09",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776519184342,
     "dispatchCount": 1,
@@ -1429,7 +1429,7 @@
     "completedAt": 1776519184342,
     "consensusState": "none",
     "createdAt": 1776519184342,
-    "updatedAt": 1776519184342
+    "updatedAt": 1776523636927
   },
   "r126-T04": {
     "id": "r126-T04",
@@ -1438,13 +1438,13 @@
     "consensusReviews": [],
     "title": "r126-T04",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-T04",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-T04",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520322642,
     "dispatchCount": 1,
@@ -1457,7 +1457,7 @@
     "completedAt": 1776520322642,
     "consensusState": "none",
     "createdAt": 1776520322642,
-    "updatedAt": 1776520322642
+    "updatedAt": 1776523636927
   },
   "r126-T22": {
     "id": "r126-T22",
@@ -1466,13 +1466,13 @@
     "consensusReviews": [],
     "title": "r126-T22",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-T22",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-T22",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520332678,
     "dispatchCount": 1,
@@ -1485,7 +1485,7 @@
     "completedAt": 1776520332678,
     "consensusState": "none",
     "createdAt": 1776520332678,
-    "updatedAt": 1776520332678
+    "updatedAt": 1776523636927
   },
   "r126-T72a": {
     "id": "r126-T72a",
@@ -1494,13 +1494,13 @@
     "consensusReviews": [],
     "title": "r126-T72a",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-T72a",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-T72a",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520340297,
     "dispatchCount": 1,
@@ -1513,7 +1513,7 @@
     "completedAt": 1776520340297,
     "consensusState": "none",
     "createdAt": 1776520340297,
-    "updatedAt": 1776520340297
+    "updatedAt": 1776523636927
   },
   "r126-Q05": {
     "id": "r126-Q05",
@@ -1522,13 +1522,13 @@
     "consensusReviews": [],
     "title": "r126-Q05",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-Q05",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-Q05",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520348166,
     "dispatchCount": 1,
@@ -1541,7 +1541,7 @@
     "completedAt": 1776520348166,
     "consensusState": "none",
     "createdAt": 1776520348166,
-    "updatedAt": 1776520348166
+    "updatedAt": 1776523636927
   },
   "r126-Q07": {
     "id": "r126-Q07",
@@ -1550,13 +1550,13 @@
     "consensusReviews": [],
     "title": "r126-Q07",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-Q07",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-Q07",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520356591,
     "dispatchCount": 1,
@@ -1569,7 +1569,7 @@
     "completedAt": 1776520356591,
     "consensusState": "none",
     "createdAt": 1776520356591,
-    "updatedAt": 1776520356591
+    "updatedAt": 1776523636927
   },
   "r126-Q12": {
     "id": "r126-Q12",
@@ -1578,13 +1578,13 @@
     "consensusReviews": [],
     "title": "r126-Q12",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-Q12",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-Q12",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520364242,
     "dispatchCount": 1,
@@ -1597,7 +1597,7 @@
     "completedAt": 1776520364242,
     "consensusState": "none",
     "createdAt": 1776520364242,
-    "updatedAt": 1776520364242
+    "updatedAt": 1776523636927
   },
   "r126-T64": {
     "id": "r126-T64",
@@ -1612,7 +1612,7 @@
     "writeScope": [],
     "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
     "summary": "Autonomous task r126-T64",
-    "dispatchPrompt": "",
+    "dispatchPrompt": "Autonomous task r126-T64",
     "assignedSessionId": "autonomous",
     "lastDispatchedAt": 1776520370147,
     "dispatchCount": 1,
@@ -1625,6 +1625,6 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776520370147,
-    "updatedAt": 1776520370147
+    "updatedAt": 1776523636927
   }
 }

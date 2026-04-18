@@ -445,7 +445,7 @@ export function HoldingsPanel({
 }) {
   return h(
     'div',
-    null,
+    { 'data-testid': 'holdings-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     h(
       'div',

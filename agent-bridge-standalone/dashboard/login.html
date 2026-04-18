@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#E7E0D6">
+<title>Agent Bridge · 解鎖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&family=Source+Sans+3:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --canvas: #E7E0D6;
+    --canvas-soft: #F4EDE4;
+    --canvas-card: rgba(244, 237, 228, 0.92);
+    --ink: #0B120E;
+    --ink-muted: #838585;
+    --line: #BCB3AD;
+    --accent: #EC662D;
+    --accent-hot: #FC6D2B;
+    --display: 'Source Han Serif TC', 'Inter Display', 'Noto Serif TC', serif;
+    --body: 'Source Han Sans TC', 'Source Sans 3', 'Noto Sans TC', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+      radial-gradient(circle at 86% 10%, rgba(236, 102, 45, 0.2), transparent 24%),
+      radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.42), transparent 28%),
+      linear-gradient(180deg, var(--canvas-soft) 0%, var(--canvas) 100%);
+    color: var(--ink);
+    font-family: var(--body);
+  }
+
+  .card {
+    width: min(100%, 360px);
+    padding: 34px 28px 30px;
+    border: 1px solid rgba(188, 179, 173, 0.82);
+    border-radius: 28px;
+    background: var(--canvas-card);
+    text-align: center;
+    box-shadow: 0 26px 52px rgba(72, 47, 31, 0.12);
+    backdrop-filter: blur(12px);
+  }
+
+  .eyebrow {
+    margin: 0 0 10px;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 18px;
+    font-family: var(--display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  p {
+    margin: 0 0 18px;
+    color: var(--ink-muted);
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
+  .field-input {
+    width: 100%;
+    padding: 15px 17px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.54);
+    color: var(--ink);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .pin-input {
+    font-size: 2rem;
+    letter-spacing: 0.42em;
+    text-align: center;
+  }
+
+  .token-input {
+    margin-top: 12px;
+    font-size: 0.96rem;
+    letter-spacing: 0;
+    text-align: left;
+  }
+
+  .field-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(236, 102, 45, 0.12);
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-hot), var(--accent));
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 0.93rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 18px 36px rgba(236, 102, 45, 0.2);
+  }
+
+  button:disabled {
+    opacity: 0.72;
+    cursor: wait;
+  }
+
+  .secondary {
+    background: rgba(11, 18, 14, 0.08);
+    color: var(--ink);
+    box-shadow: none;
+  }
+
+  .divider {
+    margin: 18px 0 10px;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .note {
+    margin-top: 12px;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .err {
+    min-height: 1.4em;
+    margin-top: 12px;
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="eyebrow">Agent Bridge</div>
+  <h1>解鎖 Dashboard</h1>
+  <p>有 PIN 就用 PIN 取 session token；如果 VM 目前還沒開 PIN，也可以直接貼 bridge access token 進入。</p>
+  <label class="sr-only" for="pin">PIN</label>
+  <input id="pin" class="field-input pin-input" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="one-time-code" autofocus>
+  <button id="submitPin" type="button">用 PIN 進入</button>
+
+  <div class="divider">或</div>
+
+  <label class="sr-only" for="bridgeToken">Bridge token</label>
+  <input id="bridgeToken" class="field-input token-input" type="password" autocomplete="off" placeholder="貼上 bridge bearer token">
+  <button id="submitToken" class="secondary" type="button">用 access token 進入</button>
+  <div class="note">access token 只會存在這台裝置的 localStorage，不會寫進 repo。</div>
+  <div id="err" class="err" aria-live="polite"></div>
+</main>
+
+<script>
+const DASHBOARD_TOKEN_KEY = 'dashboard_token';
+const DASHBOARD_TOKEN_AT_KEY = 'dashboard_token_at';
+const DASHBOARD_TOKEN_EXPIRES_KEY = 'dashboard_token_expires_at';
+const BRIDGE_AUTH_TOKEN_KEY = 'bridge_auth_token';
+const AGENT_BRIDGE_BASE_URL = window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '';
+
+function bridgeUrl(path) {
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  return `${AGENT_BRIDGE_BASE_URL}${safePath}`;
+}
+
+function clearDashboardAuth() {
+  localStorage.removeItem(DASHBOARD_TOKEN_KEY);
+  localStorage.removeItem(DASHBOARD_TOKEN_AT_KEY);
+  localStorage.removeItem(DASHBOARD_TOKEN_EXPIRES_KEY);
+  document.cookie = 'dashboard_token=; Max-Age=0; Path=/';
+}
+
+function clearBridgeAuth() {
+  localStorage.removeItem(BRIDGE_AUTH_TOKEN_KEY);
+}
+
+function getStoredDashboardToken() {
+  const token = localStorage.getItem(DASHBOARD_TOKEN_KEY) || '';
+  const expiresAt = Number(localStorage.getItem(DASHBOARD_TOKEN_EXPIRES_KEY) || '0');
+  if (!token || !expiresAt || Date.now() >= expiresAt) {
+    clearDashboardAuth();
+    return '';
+  }
+  return token;
+}
+
+function getStoredBridgeToken() {
+  return String(localStorage.getItem(BRIDGE_AUTH_TOKEN_KEY) || '').trim();
+}
+
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  const bridgeToken = String(params.get('token') || params.get('bridge_token') || '').trim();
+  if (!bridgeToken) return;
+  localStorage.setItem(BRIDGE_AUTH_TOKEN_KEY, bridgeToken.replace(/^Bearer\s+/i, ''));
+  params.delete('token');
+  params.delete('bridge_token');
+  const nextQuery = params.toString();
+  const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+  window.history.replaceState({}, '', cleanUrl);
+})();
+
+if (getStoredDashboardToken() || getStoredBridgeToken()) {
+  window.location.replace(bridgeUrl('/dashboard/'));
+}
+
+const pinInput = document.getElementById('pin');
+const pinButton = document.getElementById('submitPin');
+const tokenInput = document.getElementById('bridgeToken');
+const tokenButton = document.getElementById('submitToken');
+const err = document.getElementById('err');
+
+async function submitPin() {
+  const pin = String(pinInput.value || '').trim();
+  if (!/^\d{4}$/.test(pin)) {
+    err.textContent = 'PIN 需 4 位數字';
+    pinInput.focus();
+    pinInput.select();
+    return;
+  }
+
+  pinButton.disabled = true;
+  tokenButton.disabled = true;
+  err.textContent = '';
+  try {
+    const res = await fetch(bridgeUrl('/dashboard/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    });
+
+    if (res.status === 500) {
+      err.textContent = 'PIN 尚未在伺服器設定';
+      return;
+    }
+    if (!res.ok) {
+      clearDashboardAuth();
+      err.textContent = 'PIN 錯誤';
+      pinInput.value = '';
+      pinInput.focus();
+      return;
+    }
+
+    const { token, expiresInMs, expiresAt } = await res.json();
+    const resolvedExpiresAt = Number(expiresAt) || (Date.now() + Number(expiresInMs || 0));
+    clearBridgeAuth();
+    localStorage.setItem(DASHBOARD_TOKEN_KEY, token);
+    localStorage.setItem(DASHBOARD_TOKEN_AT_KEY, String(Date.now()));
+    localStorage.setItem(DASHBOARD_TOKEN_EXPIRES_KEY, String(resolvedExpiresAt));
+    window.location.replace(bridgeUrl('/dashboard/'));
+  } catch (error) {
+    err.textContent = '連線失敗，稍後再試';
+  } finally {
+    pinButton.disabled = false;
+    tokenButton.disabled = false;
+  }
+}
+
+function submitBridgeToken() {
+  const token = String(tokenInput.value || '').trim().replace(/^Bearer\s+/i, '');
+  if (!token) {
+    err.textContent = '請先貼上 access token';
+    tokenInput.focus();
+    return;
+  }
+  clearDashboardAuth();
+  localStorage.setItem(BRIDGE_AUTH_TOKEN_KEY, token);
+  window.location.replace(bridgeUrl('/dashboard/'));
+}
+
+pinButton.addEventListener('click', submitPin);
+tokenButton.addEventListener('click', submitBridgeToken);
+pinInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') submitPin();
+});
+tokenInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') submitBridgeToken();
+});
+</script>
+</body>
+</html>

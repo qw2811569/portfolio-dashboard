@@ -1435,3 +1435,58 @@ Round 7 結束。下一步不是 Round 8，是：
 - **用戶驗收 mockup v3 PNG**（donut + Dispatch Input 在 iPhone / desktop 都 OK）
 
 ---
+
+## Round 121b · Codex · Agent Bridge v4 dashboard · dark + orange highlight · 2026-04-18 19:39:05 CST
+
+### A. 新 index.html line count · palette
+
+- `agent-bridge-standalone/dashboard/index.html` 重建為 **719 行**，完全移除舊的 bone/clay serif dashboard。
+- palette 改成 Agent Bridge v4 dark set：`#0B0B0D / #18181B / #27272A / #F4F4F5 / #A1A1AA / #3F3F46 / #F1502F / #EF7D2F`。
+- typography 全面改 `Inter / Helvetica Neue / -apple-system / sans-serif`，大字 `font-weight: 900`、`letter-spacing: -0.06em`，uppercase label `0.16em`。
+- layout 改成 **iPhone-first 長頁 poster flow**：7 張 section card，`ACTIVE / TODAY / 7-DAY COMMIT BARS / SHIP-BEFORE / AGENTS / RECENT COMMITS / SUMMARY+INPUT`，section gap 大幅拉開。
+- active poster 用橘紅邊框 + glow；其他 card 維持灰階 dark surface，只把今日 bar、progress fill、active dot、主 CTA 用橘紅點亮。
+
+### B. dashboard-live.js 接 real data
+
+- 新增 `agent-bridge-standalone/dashboard/dashboard-live.js`（**328 行**），把舊 inline script 全抽離。
+- 保留 R119c token auth：讀 `dashboard_token` / `bridge_auth_token`，401 直接回 login。
+- 改成 10 秒 poll `GET /agent-bridge/api/dashboard-snapshot`。
+- render 採 `data-bind` / `data-placeholder-bind`，把 snapshot 綁進 DOM，不再硬編資料。
+- bottom composer 保留 `POST /api/send`，有 live session 才可發訊息；沒 live session 時自動 disable。
+- `login.html` redirect 改成 `/agent-bridge/dashboard/`，避免登入後落回 root path 導致新 JS path 對不上。
+
+### C. server.mjs /api/dashboard-snapshot 加
+
+- `agent-bridge-standalone/server.mjs` 現在輸出 v4 snapshot schema：`focus / today / commitBars / shipBefore / agents / recentCommits / composer`。
+- commit bars 改成 7-day weekday letters，today bar 由前端 accent highlight。
+- `shipBefore` 直接吃 `docs/portfolio-spec-report/progress.json`：本輪本地 smoke data 為 `12.4%`、`eta 22 days`、`3 / 30`。
+- `agents` 改成 consolidated rows（`CODEX / CLAUDE / QWEN / GEMINI`），不再吐 local/session/task 混雜 list。
+- 補了 dashboard static route：`/dashboard/dashboard-live.js` 與 `/dashboard-live.js` 都能取到 JS。
+- 修正 `parseStatus('in-progress')` → `in_progress`，避免 dashboard active lane 被錯判成 pending。
+
+### D. VM deploy + 4 snapshot screenshots
+
+- 已 `scp` 到 VM：
+  - `~/app/agent-bridge-standalone/server.mjs`
+  - `~/app/agent-bridge-standalone/dashboard/index.html`
+  - `~/app/agent-bridge-standalone/dashboard/dashboard-live.js`
+  - `~/app/agent-bridge-standalone/dashboard/login.html`
+- 已執行：`pm2 reload agent-bridge --update-env`
+- live verify：
+  - `https://35.236.155.62.sslip.io/agent-bridge/dashboard/` → `HTTP 200`
+  - `https://35.236.155.62.sslip.io/agent-bridge/dashboard/dashboard-live.js` → `HTTP 200`
+  - `POST /agent-bridge/dashboard/login` with PIN `0306` → `ok: true`
+- Playwright live capture（無 console/page/network error）：
+  - `agent-bridge-standalone/dashboard/assets/v4-iphone.png`
+  - `agent-bridge-standalone/dashboard/assets/v4-iphone-lower.png`
+  - `agent-bridge-standalone/dashboard/assets/v4-desktop.png`
+  - `agent-bridge-standalone/dashboard/assets/v4-desktop-lower.png`
+
+### E. 自評（潮流 · 桌布感 · 橘紅點亮精準 · 灰階對比）
+
+- 潮流 / 運動 app 感：**9.4**
+- 桌布感（首屏可直接截）：**9.5**
+- 橘紅點亮精準：**9.3**
+- 灰階對比 / 可讀性：**9.6**
+
+**Overall target self-score: 9.45 / 10**

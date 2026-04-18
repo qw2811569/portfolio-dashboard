@@ -43,7 +43,7 @@ export function UploadDropzone({
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'upload-dropzone' },
     h(
       'div',
       {
@@ -71,6 +71,7 @@ export function UploadDropzone({
         },
       },
       h('input', {
+        'data-testid': 'trade-upload-input',
         id: 'fi',
         type: 'file',
         multiple: true,
@@ -331,7 +332,7 @@ export function ParseResults({
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'trade-parse-results' },
     h(TextFieldDialog, {
       open: Boolean(editingField),
       title: editingField
@@ -398,6 +399,7 @@ export function ParseResults({
           { style: { display: 'grid', gap: 4 } },
           h('span', { style: { fontSize: 9, color: C.textMute } }, '成交日期'),
           h('input', {
+            'data-testid': 'trade-date-input',
             value: tradeDate || '',
             onChange: (event) => setTradeDate?.(event.target.value),
             placeholder: '例如 2026/03/28',
@@ -786,6 +788,7 @@ export function ParseResults({
         h(
           Button,
           {
+            'data-testid': 'skip-memo-btn',
             onClick: skipMemo,
             style: {
               width: '100%',
@@ -853,18 +856,20 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
 
   return h(
     Card,
-    { style: { marginTop: 12 } },
+    { 'data-testid': 'manual-trade-entry', style: { marginTop: 12 } },
     h('div', { style: lbl }, '手動新增交易'),
     h(
       'div',
       { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
       h('input', {
+        'data-testid': 'manual-trade-code-input',
         style: inputStyle,
         placeholder: '股票代碼',
         value: code,
         onChange: (e) => setCode(e.target.value),
       }),
       h('input', {
+        'data-testid': 'manual-trade-name-input',
         style: inputStyle,
         placeholder: '名稱（選填）',
         value: name,
@@ -873,6 +878,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
       h(
         'select',
         {
+          'data-testid': 'manual-trade-action-select',
           style: { ...inputStyle, cursor: 'pointer' },
           value: action,
           onChange: (e) => setAction(e.target.value),
@@ -881,6 +887,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
         h('option', { value: '賣出' }, '賣出')
       ),
       h('input', {
+        'data-testid': 'manual-trade-qty-input',
         style: inputStyle,
         placeholder: '股數',
         type: 'number',
@@ -888,6 +895,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
         onChange: (e) => setQty(e.target.value),
       }),
       h('input', {
+        'data-testid': 'manual-trade-price-input',
         style: inputStyle,
         placeholder: '價格',
         type: 'number',
@@ -898,6 +906,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
       h(
         Button,
         {
+          'data-testid': 'manual-trade-submit-btn',
           onClick: handleSubmit,
           style: { fontSize: 11, padding: '4px 12px' },
         },
@@ -1187,7 +1196,7 @@ export function TradePanel({
 }) {
   return h(
     'div',
-    null,
+    { 'data-testid': 'trade-panel' },
     h(UploadDropzone, {
       img,
       parsed,

@@ -1,0 +1,420 @@
+{
+  "config": {
+    "configFile": "/Users/chenkuichen/app/test/playwright.config.mjs",
+    "rootDir": "/Users/chenkuichen/app/test/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 5
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/chenkuichen/app/test/.playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 5
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/chenkuichen/app/test/tests/e2e",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/chenkuichen/app/test/.playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 5
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/chenkuichen/app/test/tests/e2e",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/chenkuichen/app/test/.playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 5
+        },
+        "id": "ios-safari",
+        "name": "ios-safari",
+        "testDir": "/Users/chenkuichen/app/test/tests/e2e",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [["html"], ["json"]],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 5,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "agentBridge.spec.mjs",
+      "file": "agentBridge.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "agent bridge dashboard login renders hero, focus, and week sections",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5091,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-18T14:47:17.153Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "76f9aee1f342572485f9-f3fe748102e6be45eaf2",
+          "file": "agentBridge.spec.mjs",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "agent bridge dashboard login renders hero, focus, and week sections",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 6016,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-18T14:47:17.176Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "76f9aee1f342572485f9-f90deebc096f33a878c8",
+          "file": "agentBridge.spec.mjs",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "agent bridge dashboard login renders hero, focus, and week sections",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "ios-safari",
+              "projectName": "ios-safari",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "passed",
+                  "duration": 5880,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-18T14:47:17.159Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "76f9aee1f342572485f9-2209900838fa0e5676a0",
+          "file": "agentBridge.spec.mjs",
+          "line": 19,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "goldenPath.spec.mjs",
+      "file": "goldenPath.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "golden path smoke covers holdings, research, events, news, daily, log, upload, and logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 30383,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "step 1: open home",
+                      "duration": 3508
+                    },
+                    {
+                      "title": "step 2: enter owner context and verify holdings shell",
+                      "duration": 2843
+                    },
+                    {
+                      "title": "step 3: deep research renders",
+                      "duration": 2141
+                    },
+                    {
+                      "title": "step 4: events render",
+                      "duration": 2150
+                    },
+                    {
+                      "title": "step 5: news render",
+                      "duration": 2158
+                    },
+                    {
+                      "title": "step 6: daily report renders",
+                      "duration": 2080
+                    },
+                    {
+                      "title": "step 7: trade log route renders",
+                      "duration": 2019
+                    },
+                    {
+                      "title": "step 8: upload route writes a manual trade and shows it in log",
+                      "duration": 9937
+                    },
+                    {
+                      "title": "step 9: logout by clearing site data",
+                      "duration": 3241
+                    }
+                  ],
+                  "startTime": "2026-04-18T14:47:17.146Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3adfd337da97e048f62d-d5d190fac8ffdbe0dccc",
+          "file": "goldenPath.spec.mjs",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "golden path smoke covers holdings, research, events, news, daily, log, upload, and logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 32359,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "step 1: open home",
+                      "duration": 3737
+                    },
+                    {
+                      "title": "step 2: enter owner context and verify holdings shell",
+                      "duration": 2932
+                    },
+                    {
+                      "title": "step 3: deep research renders",
+                      "duration": 2298
+                    },
+                    {
+                      "title": "step 4: events render",
+                      "duration": 2385
+                    },
+                    {
+                      "title": "step 5: news render",
+                      "duration": 2323
+                    },
+                    {
+                      "title": "step 6: daily report renders",
+                      "duration": 2168
+                    },
+                    {
+                      "title": "step 7: trade log route renders",
+                      "duration": 2099
+                    },
+                    {
+                      "title": "step 8: upload route writes a manual trade and shows it in log",
+                      "duration": 10129
+                    },
+                    {
+                      "title": "step 9: logout by clearing site data",
+                      "duration": 3520
+                    }
+                  ],
+                  "startTime": "2026-04-18T14:47:17.144Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3adfd337da97e048f62d-4fa515b24cd9a59f563b",
+          "file": "goldenPath.spec.mjs",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "golden path smoke covers holdings, research, events, news, daily, log, upload, and logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "ios-safari",
+              "projectName": "ios-safari",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 31645,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "step 1: open home",
+                      "duration": 3452
+                    },
+                    {
+                      "title": "step 2: enter owner context and verify holdings shell",
+                      "duration": 2769
+                    },
+                    {
+                      "title": "step 3: deep research renders",
+                      "duration": 2289
+                    },
+                    {
+                      "title": "step 4: events render",
+                      "duration": 2320
+                    },
+                    {
+                      "title": "step 5: news render",
+                      "duration": 2400
+                    },
+                    {
+                      "title": "step 6: daily report renders",
+                      "duration": 2140
+                    },
+                    {
+                      "title": "step 7: trade log route renders",
+                      "duration": 2062
+                    },
+                    {
+                      "title": "step 8: upload route writes a manual trade and shows it in log",
+                      "duration": 10186
+                    },
+                    {
+                      "title": "step 9: logout by clearing site data",
+                      "duration": 3324
+                    }
+                  ],
+                  "startTime": "2026-04-18T14:47:22.663Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3adfd337da97e048f62d-a935601af4dc3c138312",
+          "file": "goldenPath.spec.mjs",
+          "line": 88,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-18T14:47:16.824Z",
+    "duration": 37766.623999999996,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

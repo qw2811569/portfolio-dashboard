@@ -78,6 +78,26 @@ export function useTradeCaptureRuntime({
     })
   }, [])
 
+  const buildSyntheticUpload = useCallback(
+    (parsed = null) => {
+      uploadIdRef.current += 1
+      return {
+        id: `manual-upload-${Date.now()}-${uploadIdRef.current}`,
+        name: '手動新增交易',
+        img: null,
+        b64: '',
+        mediaType: '',
+        parsed,
+        parseErr: '',
+        tradeDate: parsed?.tradeDate || toSlashDate(),
+        memoStep: 0,
+        memoAns: [],
+        memoIn: '',
+      }
+    },
+    [toSlashDate]
+  )
+
   const enqueueFiles = useCallback(
     async (incomingFiles) => {
       const files = Array.from(incomingFiles || []).filter((file) =>
@@ -187,13 +207,37 @@ export function useTradeCaptureRuntime({
 
   const setParsed = useCallback(
     (valueOrUpdater) => {
-      updateActiveUpload((upload) => {
+      setTradeEditorState((prev) => {
+        const activeUpload =
+          prev.uploads.find((upload) => upload.id === prev.activeUploadId) || null
         const nextParsed =
-          typeof valueOrUpdater === 'function' ? valueOrUpdater(upload.parsed) : valueOrUpdater
-        return { ...upload, parsed: nextParsed }
+          typeof valueOrUpdater === 'function'
+            ? valueOrUpdater(activeUpload?.parsed || null)
+            : valueOrUpdater
+
+        if (!activeUpload) {
+          const syntheticUpload = buildSyntheticUpload(nextParsed)
+          return {
+            ...prev,
+            uploads: [...prev.uploads, syntheticUpload],
+            activeUploadId: syntheticUpload.id,
+          }
+        }
+
+        const uploads = prev.uploads.map((upload) =>
+          upload.id === activeUpload.id
+            ? {
+                ...upload,
+                parsed: nextParsed,
+                tradeDate: nextParsed?.tradeDate || upload.tradeDate,
+              }
+            : upload
+        )
+
+        return { ...prev, uploads }
       })
     },
-    [updateActiveUpload]
+    [buildSyntheticUpload]
   )
 
   const setTradeDate = useCallback(

@@ -1,3 +1,4 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — Gemini Research Browser API
 // 提供 docs/gemini-research/ 目錄的檔案列表和內容讀取
 
@@ -6,12 +7,7 @@ import path from 'path'
 
 const GEMINI_DIR = path.join(process.cwd(), 'docs/gemini-research')
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const { file } = req.query
@@ -20,7 +16,7 @@ export default async function handler(req, res) {
     if (file) {
       // 讀取單一檔案內容
       const filePath = path.join(GEMINI_DIR, file)
-      
+
       // 安全性檢查：確保路徑在 GEMINI_DIR 內
       const resolvedPath = path.resolve(filePath)
       if (!resolvedPath.startsWith(GEMINI_DIR)) {
@@ -52,12 +48,13 @@ function listGeminiResearchFiles() {
     return []
   }
 
-  const files = fs.readdirSync(GEMINI_DIR)
-    .filter(f => f.endsWith('.json'))
-    .map(filename => {
+  const files = fs
+    .readdirSync(GEMINI_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((filename) => {
       const filePath = path.join(GEMINI_DIR, filename)
       const stat = fs.statSync(filePath)
-      
+
       let content = null
       try {
         content = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
@@ -78,8 +75,8 @@ function listGeminiResearchFiles() {
  * Extract metadata from filename and content
  */
 function extractMetadata(filename, content, mtime) {
-  const date = content.freshness?.match(/\d{4}-\d{2}-\d{2}/)?.[0] || 
-               mtime.toISOString().slice(0, 10)
+  const date =
+    content.freshness?.match(/\d{4}-\d{2}-\d{2}/)?.[0] || mtime.toISOString().slice(0, 10)
 
   // Determine type from filename
   let type = '未知'
@@ -129,3 +126,5 @@ function extractMetadata(filename, content, mtime) {
     mtime: mtime.toISOString(),
   }
 }
+
+export default withApiAuth(handler)

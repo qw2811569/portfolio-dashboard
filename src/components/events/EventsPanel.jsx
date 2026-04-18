@@ -752,7 +752,7 @@ export function EventsPanel({
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'events-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     h(
       'div',

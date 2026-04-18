@@ -1646,7 +1646,7 @@ export function DailyReportPanel({
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'daily-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     h(
       'div',
@@ -1712,6 +1712,7 @@ export function DailyReportPanel({
         h(
           Button,
           {
+            'data-testid': 'run-daily-analysis-btn',
             onClick: (ev) => {
               ev.stopPropagation()
               runDailyAnalysis()
@@ -1741,6 +1742,7 @@ export function DailyReportPanel({
         h(
           Button,
           {
+            'data-testid': 'go-research-btn',
             onClick: (ev) => {
               ev.stopPropagation()
               setTab('research')

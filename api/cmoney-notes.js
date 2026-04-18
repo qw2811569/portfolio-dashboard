@@ -1,3 +1,4 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 import { createHash } from 'crypto'
 
 const CMONEY_TAG_URL = 'https://www.cmoney.tw/notes/?tag=78570'
@@ -380,11 +381,7 @@ export function buildCmoneyAggregateItem(stock, aggregate) {
   }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
@@ -399,3 +396,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'CMoney notes 抓取失敗', detail: error.message })
   }
 }
+
+export default withApiAuth(handler)

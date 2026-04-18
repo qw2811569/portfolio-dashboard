@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta id="themeColorMeta" name="theme-color" content="#FF3E1F" />
+    <title>Agent Bridge Dashboard v5</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      ;(() => {
+        const base = window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : ''
+        window.AGENT_BRIDGE_BASE_URL = base
+        const dashboardTokenKey = 'dashboard_token'
+        const dashboardTokenAtKey = 'dashboard_token_at'
+        const dashboardExpiresKey = 'dashboard_token_expires_at'
+        const bridgeTokenKey = 'bridge_auth_token'
+        const params = new URLSearchParams(window.location.search)
+        const bridgeTokenFromUrl = String(
+          params.get('token') || params.get('bridge_token') || ''
+        ).trim()
+        if (bridgeTokenFromUrl) {
+          localStorage.setItem(bridgeTokenKey, bridgeTokenFromUrl.replace(/^Bearer\s+/i, ''))
+          params.delete('token')
+          params.delete('bridge_token')
+          const nextQuery = params.toString()
+          const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`
+          window.history.replaceState({}, '', cleanUrl)
+        }
+        const dashboardToken = localStorage.getItem(dashboardTokenKey) || ''
+        const expiresAt = Number(localStorage.getItem(dashboardExpiresKey) || '0')
+        if (!dashboardToken || !expiresAt || Date.now() >= expiresAt) {
+          localStorage.removeItem(dashboardTokenKey)
+          localStorage.removeItem(dashboardTokenAtKey)
+          localStorage.removeItem(dashboardExpiresKey)
+        }
+      })()
+    </script>
+    <style>
+      :root {
+        --canvas-black: #0a0a0a;
+        --canvas-orange: #ff3e1f;
+        --canvas-orange-deep: #eb3214;
+        --canvas-white: #f8f6f2;
+        --canvas-white-deep: #ebe7df;
+        --ink-on-black: #f8f6f2;
+        --ink-on-orange: #0e0d0b;
+        --ink-on-white: #0a0a0a;
+        --ink-muted: #6e6a63;
+        --ink-subtle: rgba(248, 246, 242, 0.62);
+        --line-soft: rgba(248, 246, 242, 0.18);
+        --line-paper: rgba(10, 10, 10, 0.16);
+        --display: 'Inter Tight', 'Noto Sans TC', sans-serif;
+        --display-condensed: 'Barlow Condensed', 'Inter Tight', 'Noto Sans TC', sans-serif;
+        --body: 'Inter Tight', 'Noto Sans TC', sans-serif;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+        --size-poster: clamp(116px, 33vw, 164px);
+        --size-hero: clamp(84px, 26vw, 122px);
+        --size-h1: clamp(44px, 14vw, 76px);
+        --size-body: 15px;
+        --size-eyebrow: 11px;
+        --space-1: 8px;
+        --space-2: 12px;
+        --space-3: 16px;
+        --space-4: 20px;
+        --space-5: 28px;
+        --space-6: 36px;
+        --radius-xl: 34px;
+        --radius-pill: 999px;
+        --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+        background: var(--canvas-black);
+      }
+
+      body {
+        margin: 0;
+        background: var(--canvas-black);
+        color: var(--ink-on-black);
+        font-family: var(--body);
+        overflow: hidden;
+      }
+
+      a,
+      button,
+      textarea,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        background: none;
+        color: inherit;
+      }
+
+      .poster-body {
+        position: relative;
+        min-height: 100svh;
+      }
+
+      .poster-deck {
+        height: 100svh;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
+      }
+
+      .poster-deck::-webkit-scrollbar {
+        display: none;
+      }
+
+      .poster {
+        position: relative;
+        min-height: 100svh;
+        scroll-snap-align: start;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .poster::before,
+      .poster::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .poster--heat {
+        background: linear-gradient(
+          180deg,
+          var(--canvas-orange) 0%,
+          var(--canvas-orange-deep) 100%
+        );
+        color: var(--ink-on-orange);
+      }
+
+      .poster--heat::before {
+        background: repeating-linear-gradient(
+          90deg,
+          rgba(248, 246, 242, 0.09) 0 1px,
+          transparent 1px 64px
+        );
+        opacity: 0.72;
+      }
+
+      .poster--heat::after {
+        inset: auto -8% -18% auto;
+        width: 68%;
+        height: 44%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(10, 10, 10, 0.12) 0%, transparent 72%);
+        transform: rotate(-8deg);
+      }
+
+      .poster--ink {
+        background: var(--canvas-black);
+        color: var(--ink-on-black);
+      }
+
+      .poster--ink::before {
+        inset: -20% -12%;
+        background:
+          radial-gradient(circle at 14% 18%, rgba(248, 246, 242, 0.06) 0 17px, transparent 18px) 0
+            0 / 112px 112px,
+          radial-gradient(circle at 68% 56%, rgba(248, 246, 242, 0.04) 0 14px, transparent 15px) 0
+            0 / 138px 138px;
+        opacity: 0.64;
+        transform: rotate(-16deg);
+      }
+
+      .poster--ink::after {
+        background:
+          linear-gradient(180deg, rgba(248, 246, 242, 0.02) 0%, transparent 28%),
+          radial-gradient(circle at 78% 8%, rgba(255, 62, 31, 0.16), transparent 34%);
+      }
+
+      .poster--paper {
+        background: linear-gradient(180deg, var(--canvas-white) 0%, var(--canvas-white-deep) 100%);
+        color: var(--ink-on-white);
+      }
+
+      .poster--paper::before {
+        background:
+          linear-gradient(180deg, rgba(10, 10, 10, 0.015), rgba(10, 10, 10, 0)),
+          repeating-linear-gradient(180deg, rgba(10, 10, 10, 0.024) 0 1px, transparent 1px 80px);
+      }
+
+      .section-shell {
+        position: relative;
+        z-index: 1;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        padding: calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .section-head > * {
+        min-width: 0;
+      }
+
+      .eyebrow,
+      .micro-copy,
+      .micro-link,
+      .micro-note {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .eyebrow {
+        font-size: var(--size-eyebrow);
+        font-weight: 800;
+      }
+
+      .micro-copy,
+      .micro-link,
+      .micro-note {
+        font-size: 10px;
+        font-weight: 600;
+        opacity: 0.78;
+      }
+
+      .micro-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .micro-link::after {
+        content: '';
+        width: 20px;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.44;
+      }
+
+      .hero-stack,
+      .focus-stack {
+        margin: auto 0;
+      }
+
+      .hero-stack {
+        display: grid;
+        gap: 18px;
+        align-content: center;
+      }
+
+      .poster-number,
+      .poster-headline {
+        margin: 0;
+        font-family: var(--display-condensed);
+        font-weight: 800;
+        letter-spacing: -0.07em;
+        line-height: 0.82;
+        text-transform: uppercase;
+        text-wrap: balance;
+      }
+
+      .poster-number {
+        font-size: var(--size-poster);
+        max-width: 4ch;
+      }
+
+      .hero-strata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .heat-foot {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: auto;
+      }
+
+      .foot-chip {
+        min-height: 82px;
+        padding: 12px 12px 14px;
+        border-radius: 24px;
+        background: rgba(10, 10, 10, 0.14);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        display: grid;
+        align-content: space-between;
+        gap: 10px;
+        box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.09);
+      }
+
+      .foot-chip span {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.56;
+      }
+
+      .foot-chip strong {
+        font-family: var(--display);
+        font-size: 18px;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+      }
+
+      .led-label {
+        margin: 0 0 10px;
+        font-family: var(--display-condensed);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: transparent;
+        background-image: radial-gradient(
+          circle,
+          rgba(248, 246, 242, 0.92) 1.1px,
+          transparent 1.45px
+        );
+        background-size: 7px 7px;
+        background-position: 0 58%;
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+
+      .poster-headline {
+        font-size: var(--size-hero);
+        max-width: 5ch;
+      }
+
+      .focus-title {
+        margin: 14px 0 0;
+        max-width: 10ch;
+        font-family: var(--display);
+        font-size: clamp(24px, 8.6vw, 34px);
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.05em;
+      }
+
+      .focus-card {
+        margin-top: 18px;
+        padding: 18px 18px 20px;
+        border-radius: var(--radius-xl);
+        background: rgba(248, 246, 242, 0.96);
+        color: var(--ink-on-white);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .focus-card-bar {
+        width: 100%;
+        height: 10px;
+        border-radius: var(--radius-pill);
+        background: rgba(10, 10, 10, 0.12);
+        overflow: hidden;
+      }
+
+      .focus-card-bar span {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--canvas-orange), #ff7b63);
+        transition: width 260ms ease;
+      }
+
+      .focus-card-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px 10px;
+        margin-top: 18px;
+      }
+
+      .focus-card-grid span {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+      }
+
+      .focus-card-grid strong {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--display);
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+      }
+
+      .focus-detail {
+        margin: 18px 0 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: rgba(10, 10, 10, 0.78);
+      }
+
+      .action-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .action-row.is-hidden {
+        display: none;
+      }
+
+      .poster-button {
+        min-height: 52px;
+        border-radius: 18px;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          opacity 180ms ease,
+          background 180ms ease;
+      }
+
+      .poster-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.38;
+        transform: none;
+      }
+
+      .poster-button:not(:disabled):active {
+        transform: translateY(1px);
+      }
+
+      .poster-button--light {
+        background: var(--canvas-white);
+        color: var(--ink-on-black);
+      }
+
+      .poster-button--ghost {
+        border: 1px solid rgba(248, 246, 242, 0.22);
+        color: var(--ink-on-black);
+        background: rgba(248, 246, 242, 0.06);
+      }
+
+      .micro-note {
+        margin-top: 12px;
+        color: rgba(248, 246, 242, 0.68);
+      }
+
+      .week-list {
+        display: grid;
+        gap: 10px;
+        margin: 12px 0 auto;
+      }
+
+      .week-row {
+        opacity: var(--row-opacity, 1);
+        transition: opacity 180ms ease;
+      }
+
+      .week-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 14px;
+      }
+
+      .week-name {
+        font-family: var(--display-condensed);
+        font-size: clamp(42px, 14vw, 64px);
+        font-weight: 800;
+        line-height: 0.88;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+      }
+
+      .week-count {
+        padding-bottom: 8px;
+        font-family: var(--mono);
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .week-track {
+        margin-top: 8px;
+        width: 100%;
+        height: 10px;
+        border-radius: var(--radius-pill);
+        background: rgba(10, 10, 10, 0.09);
+        overflow: hidden;
+      }
+
+      .week-track span {
+        display: block;
+        width: var(--fill, 0%);
+        height: 100%;
+        border-radius: inherit;
+        background: rgba(10, 10, 10, 0.82);
+      }
+
+      .week-row.is-today .week-name,
+      .week-row.is-today .week-count {
+        color: var(--canvas-orange);
+      }
+
+      .week-row.is-today .week-track span {
+        background: var(--canvas-orange);
+      }
+
+      .week-row.is-quiet .week-track span {
+        width: 0;
+      }
+
+      .commit-footer {
+        display: grid;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      .latest-commit {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: baseline;
+        gap: 8px 14px;
+        padding-bottom: 8px;
+        font-size: 18px;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+      }
+
+      .latest-commit::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 12%;
+        bottom: 0;
+        height: 3px;
+        border-radius: var(--radius-pill);
+        background: var(--canvas-orange);
+        opacity: 0.92;
+      }
+
+      .latest-hash {
+        font-family: var(--display-condensed);
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+      }
+
+      .latest-message {
+        max-width: 14ch;
+        font-family: var(--display);
+        font-weight: 700;
+        text-transform: uppercase;
+        overflow-wrap: anywhere;
+      }
+
+      body:not(.is-ready) .section-shell > * {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      body.is-ready .section-shell > * {
+        opacity: 1;
+        transform: translateY(0);
+        transition:
+          opacity 720ms ease,
+          transform 720ms ease;
+      }
+
+      body.is-ready .section-shell > *:nth-child(2) {
+        transition-delay: 80ms;
+      }
+
+      body.is-ready .section-shell > *:nth-child(3) {
+        transition-delay: 140ms;
+      }
+
+      @media (min-width: 760px) {
+        .section-shell {
+          width: min(100vw, 480px);
+          margin: 0 auto;
+          padding-left: 30px;
+          padding-right: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body class="poster-body">
+    <main class="poster-deck" data-deck>
+      <section class="poster poster--heat" data-section data-theme="#FF3E1F" data-label="HEAT">
+        <div class="section-shell">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">Agent Bridge</p>
+              <p class="micro-copy" data-sync-label>Live snapshot</p>
+            </div>
+            <p class="micro-copy">R121C</p>
+          </header>
+
+          <div class="hero-stack">
+            <p class="eyebrow">Ship-Before</p>
+            <h1 class="poster-number" data-ship-pct>0%</h1>
+            <div class="hero-strata">
+              <span data-ship-count>0 / 0</span>
+              <span data-ship-eta>0 days left</span>
+            </div>
+          </div>
+
+          <footer class="heat-foot">
+            <div class="foot-chip">
+              <span>Active</span>
+              <strong data-hero-focus>Standby</strong>
+            </div>
+            <div class="foot-chip">
+              <span>Today</span>
+              <strong data-hero-today>0 commits</strong>
+            </div>
+            <div class="foot-chip">
+              <span>Push</span>
+              <strong data-hero-pending>0 pending</strong>
+            </div>
+          </footer>
+        </div>
+      </section>
+
+      <section class="poster poster--ink" data-section data-theme="#0A0A0A" data-label="FOCUS">
+        <div class="section-shell">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">Current Lane</p>
+              <p class="micro-copy" data-focus-status>Bridge idle</p>
+            </div>
+            <a class="micro-link" href="./wake.html">Layer 2</a>
+          </header>
+
+          <div class="focus-stack">
+            <p class="led-label">Active</p>
+            <h2 class="poster-headline" data-focus-headline>Standby</h2>
+            <p class="focus-title" data-focus-subhead>Waiting for the next lane.</p>
+
+            <div class="focus-card">
+              <div class="focus-card-bar"><span data-focus-fill></span></div>
+              <div class="focus-card-grid">
+                <div>
+                  <span>Progress</span>
+                  <strong data-focus-progress>0%</strong>
+                </div>
+                <div>
+                  <span>Lanes</span>
+                  <strong data-focus-parallel>0 lanes</strong>
+                </div>
+                <div>
+                  <span>Updated</span>
+                  <strong data-focus-meta>waiting</strong>
+                </div>
+              </div>
+              <p class="focus-detail" data-focus-detail>Bridge is ready for the next task.</p>
+            </div>
+
+            <div class="action-row" data-action-row>
+              <button class="poster-button poster-button--light" data-action="approve">
+                Send Review
+              </button>
+              <button class="poster-button poster-button--ghost" data-action="continue">
+                Push Next
+              </button>
+            </div>
+
+            <p class="micro-note" data-session-hint>No live session</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="poster poster--paper" data-section data-theme="#F8F6F2" data-label="WEEK">
+        <div class="section-shell">
+          <header class="section-head">
+            <div>
+              <p class="eyebrow">This Week</p>
+              <p class="micro-copy" data-week-summary>7-day commit rhythm</p>
+            </div>
+            <p class="micro-copy" data-latest-meta>Latest commit</p>
+          </header>
+
+          <div class="week-list" data-week-list></div>
+
+          <footer class="commit-footer">
+            <p class="eyebrow">Latest</p>
+            <div class="latest-commit">
+              <span class="latest-hash" data-latest-hash>----</span>
+              <span class="latest-message" data-latest-message>No recent commit</span>
+            </div>
+          </footer>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./dashboard-live-v5.js"></script>
+  </body>
+</html>

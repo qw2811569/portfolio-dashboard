@@ -20,6 +20,7 @@
 | Decision                                                                          | 日期       | 狀態                   | 摘要                                                                                                                        |
 | --------------------------------------------------------------------------------- | ---------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [2026-04-15-knowledge-api-blob-not-vm](./2026-04-15-knowledge-api-blob-not-vm.md) | 2026-04-15 | 🟡 設計完成 (v2 brief) | 知識庫搬 Vercel Blob（不 VM）+ 直連 Blob read + `/api/knowledge/update` write + manifest 原子切版 + dev local JSON fallback |
+| [2026-04-18-appshell-state-ownership](./2026-04-18-appshell-state-ownership.md)   | 2026-04-18 | ✅ 決議                | AppShell vs route-shell 的 state owner map、current/target/migration state machine、以及 cutover trigger 被正式寫死         |
 
 ## Multi-LLM 協作
 
@@ -40,9 +41,10 @@
 
 ## 產品功能
 
-| Decision                                                                          | 日期       | 狀態        | 摘要                                                                                         |
-| --------------------------------------------------------------------------------- | ---------- | ----------- | -------------------------------------------------------------------------------------------- |
-| [2026-04-15-news-vs-events-separation](./2026-04-15-news-vs-events-separation.md) | 2026-04-15 | ✅ 實作完成 | News/Events UI 完全分離，discriminator 用 `recordType`（不用 `type` 避免與 event.type 衝突） |
+| Decision                                                                          | 日期       | 狀態        | 摘要                                                                                                                                 |
+| --------------------------------------------------------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [2026-04-15-news-vs-events-separation](./2026-04-15-news-vs-events-separation.md) | 2026-04-15 | ✅ 實作完成 | News/Events UI 完全分離，discriminator 用 `recordType`（不用 `type` 避免與 event.type 衝突）                                         |
+| [2026-04-11-staged-daily-analysis](./2026-04-11-staged-daily-analysis.md)         | 2026-04-11 | ✅ 決議     | 2026-04-11 staged-daily analysis 成為正式 runtime contract：`T0 收盤快版`、`T1 資料確認版`、inline diff、cooldown-gated auto confirm |
 
 ## 待歸檔（TODO）
 

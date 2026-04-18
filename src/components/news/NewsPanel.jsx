@@ -804,7 +804,7 @@ export function NewsAnalysisPanel({
 }) {
   return h(
     'div',
-    null,
+    { 'data-testid': 'news-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     holdingCodes.length > 0 &&
       h(NewsFeedSection, {

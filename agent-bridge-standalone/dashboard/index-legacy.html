@@ -1,0 +1,3661 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2EADF">
+<title>Agent Bridge Dashboard</title>
+<script>
+(() => {
+  const base = window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '';
+  const dashboardTokenKey = 'dashboard_token';
+  const dashboardTokenAtKey = 'dashboard_token_at';
+  const dashboardExpiresKey = 'dashboard_token_expires_at';
+  const bridgeTokenKey = 'bridge_auth_token';
+  const params = new URLSearchParams(window.location.search);
+  const bridgeTokenFromUrl = String(params.get('token') || params.get('bridge_token') || '').trim();
+  if (bridgeTokenFromUrl) {
+    localStorage.setItem(bridgeTokenKey, bridgeTokenFromUrl);
+    params.delete('token');
+    params.delete('bridge_token');
+    const nextQuery = params.toString();
+    const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+
+  const dashboardToken = localStorage.getItem(dashboardTokenKey);
+  const expiresAt = Number(localStorage.getItem(dashboardExpiresKey) || '0');
+  if (!dashboardToken || !expiresAt || Date.now() >= expiresAt) {
+    localStorage.removeItem(dashboardTokenKey);
+    localStorage.removeItem(dashboardTokenAtKey);
+    localStorage.removeItem(dashboardExpiresKey);
+  }
+
+  const hasDashboardToken = Boolean(localStorage.getItem(dashboardTokenKey));
+  const hasBridgeToken = Boolean(localStorage.getItem(bridgeTokenKey));
+  if (!hasDashboardToken && !hasBridgeToken) {
+    window.location.replace(`${base}/login.html`);
+  }
+})();
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #F2EADF;
+    --surface: rgba(246, 240, 232, 0.94);
+    --surface-strong: #E7DACC;
+    --surface-deep: #E0D2C2;
+    --accent: #B85C38;
+    --accent-soft: #D48D67;
+    --ink: #34271F;
+    --muted-ink: #6E5B51;
+    --muted: #A89A86;
+    --line: #CDBFAD;
+    --line-strong: #B7A793;
+    --paper: #FBF6F0;
+    --ok: #6F8D58;
+    --warn: #C68642;
+    --danger: #B04D3A;
+    --vm-accent: #A8B59A;
+    --vm-surface: rgba(232, 236, 226, 0.94);
+    --mac-accent: #B9853E;
+    --mac-surface: rgba(244, 235, 220, 0.96);
+    --shadow: none;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 40px;
+    --space-8: 56px;
+    --radius: 22px;
+    --container: 1440px;
+    --header-h: 86px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.4;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(168, 154, 134, 0.11) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(168, 154, 134, 0.08) 1px, transparent 1px);
+    background-size: 64px 64px;
+    opacity: 0.52;
+  }
+
+  button, input, textarea {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  [hidden] { display: none !important; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .app-shell {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    padding: 0 var(--space-5) var(--space-7);
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-5);
+    align-items: center;
+    min-height: var(--header-h);
+    padding: var(--space-5) 0 var(--space-4);
+    background: linear-gradient(180deg, rgba(242, 234, 223, 0.98), rgba(242, 234, 223, 0.86) 82%, rgba(242, 234, 223, 0));
+    border-bottom: 1px solid rgba(205, 191, 173, 0.55);
+    backdrop-filter: blur(6px);
+  }
+
+  .brand {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .eyebrow,
+  .label,
+  .micro,
+  .tiny,
+  .chip,
+  .status-pill,
+  .page-tab,
+  .agent-status,
+  .task-meta-strip span,
+  .task-owner,
+  .quick-btn,
+  .modal-option small,
+  .summary-chip {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-ink);
+    font-size: 12px;
+  }
+
+  .brand .eyebrow { font-size: 11px; }
+
+  h1, h2, h3, h4, .display, .card-title, .task-title, .section-title, .terminal-title, .big-number {
+    font-family: "Source Serif 4", "Noto Serif TC", serif;
+    font-weight: 600;
+    line-height: 1.04;
+    margin: 0;
+  }
+
+  h1 { font-size: clamp(52px, 7vw, 90px); }
+  h2 { font-size: clamp(34px, 4.8vw, 60px); }
+  h3 { font-size: 28px; }
+  h4 { font-size: 22px; }
+
+  p {
+    margin: 0;
+    color: var(--muted-ink);
+    max-width: 64ch;
+    font-size: 18px;
+  }
+
+  .frame {
+    width: min(100%, var(--container));
+    margin: 0 auto;
+  }
+
+  .page-tabs {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .page-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.9);
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+
+  .page-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  .page-tab:focus-visible,
+  .session-tab:focus-visible,
+  .task-dispatch:focus-visible,
+  .task-toggle:focus-visible,
+  .fab:focus-visible,
+  .send-btn:focus-visible,
+  .quick-btn:focus-visible,
+  .wake-btn:focus-visible,
+  .modal-option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  main {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .page-panel {
+    display: none;
+    min-height: calc(100vh - var(--header-h) - var(--space-7));
+    padding: var(--space-4) 0 var(--space-7);
+  }
+
+  .page-panel.active {
+    display: block;
+  }
+
+  .page-grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .copy-block,
+  .hero-dial-wrap,
+  .panel,
+  .card,
+  .task-row,
+  .timeline-card,
+  .project-card,
+  .terminal-shell,
+  .mac-card,
+  .task-board-shell,
+  .roadmap-card,
+  .architecture-card,
+  .modal {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .copy-block,
+  .panel,
+  .timeline-card,
+  .project-card,
+  .task-board-shell,
+  .terminal-shell,
+  .mac-card,
+  .architecture-card,
+  .modal {
+    padding: var(--space-6);
+  }
+
+  .copy-block {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .hero-copy { grid-column: span 5; }
+  .hero-dial-wrap {
+    grid-column: span 7;
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+    padding: var(--space-6);
+  }
+
+  .hero-dial,
+  .donut,
+  .radar {
+    position: relative;
+  }
+
+  .hero-dial {
+    width: min(100%, 360px);
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
+  .hero-dial svg,
+  .sparkline svg,
+  .donut svg,
+  .radar svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .dial-center,
+  .donut-center {
+    position: absolute;
+    inset: 64px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: var(--space-4);
+  }
+
+  .dial-center strong,
+  .donut-center strong,
+  .big-number,
+  .stat-figure {
+    display: block;
+    color: var(--accent);
+    font-size: clamp(34px, 4vw, 62px);
+    line-height: 0.92;
+  }
+
+  .metrics {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .action-center {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid rgba(168, 181, 154, 0.4);
+    background: rgba(196, 206, 181, 0.18);
+    border-radius: 4px;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .action-center.urgent {
+    border-color: rgba(185, 133, 62, 0.55);
+    background: rgba(243, 232, 215, 0.55);
+  }
+  .action-center.calm {
+    border-color: rgba(168, 181, 154, 0.3);
+    background: rgba(244, 239, 230, 0.6);
+  }
+  .action-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .action-headline {
+    font-family: var(--serif);
+    font-size: clamp(18px, 2vw, 22px);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .action-detail {
+    font-size: 13px;
+    color: #4a554c;
+    line-height: 1.55;
+  }
+  .action-buttons {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .action-buttons button {
+    padding: 6px 14px;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 150ms;
+  }
+  .action-buttons button.primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .action-buttons button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(32,40,35,0.12);
+  }
+
+  .today-timeline {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: rgba(244, 239, 230, 0.5);
+    border-radius: 4px;
+  }
+  .wake-panel {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid rgba(111, 141, 88, 0.36);
+    background: rgba(231, 238, 224, 0.54);
+    border-radius: 4px;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .wake-panel h2 {
+    font-size: clamp(24px, 2.6vw, 34px);
+  }
+  .wake-panel p {
+    font-size: 15px;
+    max-width: none;
+  }
+  .wake-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .wake-btn {
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .wake-btn.primary {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: var(--paper);
+  }
+  .wake-btn.secondary {
+    background: rgba(246, 240, 232, 0.82);
+  }
+  .wake-btn:disabled {
+    opacity: 0.64;
+    cursor: wait;
+  }
+  .wake-textarea {
+    min-height: 104px;
+    width: 100%;
+    resize: vertical;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: rgba(251, 246, 240, 0.9);
+    color: var(--ink);
+  }
+  .wake-note {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--muted-ink);
+  }
+  .wake-output {
+    min-height: 164px;
+    max-height: 340px;
+    overflow: auto;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: #F6EFE6;
+    color: #243028;
+    font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .timeline-list {
+    list-style: none;
+    margin: var(--space-2) 0 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .timeline-list li {
+    display: grid;
+    grid-template-columns: 56px 60px 1fr;
+    gap: var(--space-2);
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed rgba(207, 198, 184, 0.4);
+    align-items: baseline;
+  }
+  .timeline-list li:last-child { border-bottom: none; }
+  .timeline-list .ts {
+    font-family: var(--mono, monospace);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .timeline-list .hash {
+    font-family: var(--mono, monospace);
+    font-size: 10px;
+    color: var(--ink);
+    background: rgba(168, 181, 154, 0.18);
+    padding: 1px 5px;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .timeline-list .msg {
+    color: #2a3530;
+    line-height: 1.4;
+  }
+  .timeline-list .commit-stat {
+    margin-left: 8px;
+    font-family: var(--mono, monospace);
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .timeline-list .commit-stat .ins {
+    color: #6F8568;
+  }
+  .timeline-list .commit-stat .del {
+    color: #B65A4D;
+  }
+
+  .mac-message-details {
+    grid-column: 1 / -1;
+    margin: 4px 0;
+  }
+  .mac-message-summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink);
+    padding: 4px 0;
+    list-style: none;
+  }
+  .mac-message-summary::-webkit-details-marker { display: none; }
+  .mac-message-summary::before {
+    content: '▸ ';
+    color: var(--muted);
+  }
+  .mac-message-details[open] .mac-message-summary::before {
+    content: '▾ ';
+  }
+  .mac-message-pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: rgba(0,0,0,0.03);
+    padding: 8px 10px;
+    border-radius: 3px;
+    font-family: var(--mono, monospace);
+    font-size: 11px;
+    color: #2a3530;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 6px 0 0 0;
+  }
+  .timeline-empty {
+    color: var(--muted);
+    font-style: italic;
+    grid-column: 1 / -1 !important;
+    text-align: center;
+    padding: 12px 0;
+  }
+
+  .hero-side,
+  .hero-dial-block,
+  .summary-list,
+  .cards,
+  .task-list,
+  .session-stack,
+  .roadmap-stack,
+  .project-stack,
+  .timeline-track,
+  .terminal-feed {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .hero-detail {
+    display: grid;
+    gap: var(--space-3);
+    border: 1px solid var(--line);
+    padding: var(--space-4);
+    background: rgba(242, 234, 223, 0.78);
+  }
+
+  .summary-item,
+  .timeline-event,
+  .roadmap-phase-row,
+  .architecture-row,
+  .project-note {
+    display: grid;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .summary-item:last-child,
+  .timeline-event:last-child,
+  .roadmap-phase-row:last-child,
+  .architecture-row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .summary-head,
+  .card-head,
+  .task-main,
+  .timeline-head,
+  .chart-head,
+  .terminal-head,
+  .task-board-head,
+  .project-head,
+  .architecture-head,
+  .roadmap-top,
+  .projects-top,
+  .mac-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    align-items: baseline;
+  }
+
+  .sparkline-shell { display: grid; gap: var(--space-2); }
+  .sparkline {
+    min-height: 76px;
+    border: 1px solid var(--line);
+    background: rgba(231, 218, 204, 0.24);
+    padding: 4px;
+  }
+
+  .sparkline-legend,
+  .legend,
+  .timeline-share,
+  .stat-row,
+  .task-footnote,
+  .project-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .sparkline-fill {
+    fill: rgba(184, 92, 56, 0.18);
+    transform-origin: bottom center;
+    transform: scaleY(0);
+    transition: transform 420ms ease;
+  }
+
+  .sparkline-fill.is-ready { transform: scaleY(1); }
+
+  .sparkline-line,
+  .progress-stroke {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: var(--dash, 0);
+    stroke-dashoffset: calc(var(--dash, 0) * (1 - var(--progress, 1)));
+    transition: stroke-dashoffset 640ms ease;
+  }
+
+  .bar {
+    position: relative;
+    height: 16px;
+    border: 1px solid var(--line);
+    background: rgba(168, 154, 134, 0.08);
+    overflow: hidden;
+  }
+
+  .bar > span,
+  .day-bar > span,
+  .stack-segment > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: calc(var(--value) * 100%);
+    background: var(--accent);
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 480ms ease;
+  }
+
+  .bar.is-ready > span,
+  .day-bar.is-ready > span,
+  .stack-segment.is-ready > span {
+    transform: scaleX(1);
+  }
+
+  .bar::after,
+  .day-bar::after,
+  .stack-segment::after {
+    content: attr(data-label);
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bg);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .task-grid,
+  .timeline-grid,
+  .project-grid,
+  .workbench-grid,
+  .sessions-grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-column: 1 / -1;
+  }
+
+  .sessions-layout,
+  .tasks-layout,
+  .timeline-layout,
+  .projects-layout {
+    display: grid;
+    gap: var(--space-5);
+    grid-column: span 7;
+  }
+
+  .section-copy {
+    grid-column: span 5;
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card,
+  .task-row,
+  .roadmap-card {
+    padding: var(--space-4);
+  }
+
+  .session-card {
+    border-left: 6px solid var(--vm-accent);
+    background: var(--vm-surface);
+  }
+
+  .session-card-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+
+  .session-mini {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .waffle {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .waffle span {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    background: rgba(168, 154, 134, 0.08);
+    opacity: 0;
+    transform: scale(0.86);
+    transition: opacity 240ms ease, transform 240ms ease;
+    transition-delay: calc(var(--i) * 8ms);
+  }
+
+  .waffle.is-ready span {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .waffle span.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .task-board-shell {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .dispatch-shell {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .dispatch-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .dispatch-list {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .dispatch-card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.68);
+    cursor: pointer;
+  }
+
+  .dispatch-card.active {
+    border-color: var(--accent);
+    background: rgba(184, 92, 56, 0.12);
+  }
+
+  .dispatch-card[data-status="running"] {
+    border-color: rgba(111, 141, 88, 0.45);
+  }
+
+  .dispatch-card[data-status="failed"] {
+    border-color: rgba(176, 77, 58, 0.46);
+  }
+
+  .dispatch-log-shell {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .dispatch-log-meta,
+  .dispatch-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .dispatch-log {
+    min-height: 320px;
+    max-height: 56vh;
+    overflow: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: #F6EFE6;
+  }
+
+  .dispatch-log-line {
+    font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .dispatch-log-line.error {
+    color: var(--danger);
+  }
+
+  .task-board-scroll.collapsed,
+  .project-body.collapsed,
+  .architecture-meta.collapsed {
+    display: none;
+  }
+
+  .task-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.68);
+  }
+
+  .task-card[data-status="blocked"] { border-color: rgba(176, 77, 58, 0.5); }
+  .task-card[data-status="completed"] { border-color: rgba(111, 141, 88, 0.46); }
+
+  .task-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .task-status,
+  .task-owner,
+  .status-badge,
+  .task-review-chip,
+  .priority-badge,
+  .imp-owner,
+  .roadmap-chip,
+  .product-source,
+  .agent-load,
+  .consensus-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.92);
+  }
+
+  .task-status.in_progress,
+  .agent-load.running,
+  .status-badge.connecting { color: var(--muted); border-color: rgba(168, 154, 134, 0.5); }
+  .status-badge.connected { color: var(--ok); border-color: rgba(111, 141, 88, 0.48); }
+  .task-status.pending { color: var(--warn); }
+  .task-status.blocked,
+  .status-badge.disconnected { color: var(--danger); border-color: rgba(176, 77, 58, 0.42); }
+  .task-status.completed,
+  .task-review-chip.approved { color: var(--ok); }
+  .task-review-chip.rejected,
+  .consensus-chip.rejected { color: var(--danger); }
+  .task-review-chip.pending { color: var(--muted-ink); }
+
+  .task-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .task-dispatch,
+  .task-toggle,
+  .send-btn,
+  .fab,
+  .quick-btn,
+  .modal-option,
+  .empty-action {
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.92);
+    cursor: pointer;
+  }
+
+  .task-dispatch {
+    padding: 12px 16px;
+    min-width: 148px;
+  }
+
+  .task-dispatch:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .task-consensus,
+  .task-consensus-chips,
+  .task-verify,
+  .task-meta-strip,
+  .session-meta-row,
+  .session-tab-row,
+  .project-tag-row,
+  .roadmap-chip-row,
+  .architecture-chip-row,
+  .mac-activity-grid,
+  .quick-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .task-summary,
+  .task-ref,
+  .task-session,
+  .timeline-copy,
+  .empty-copy,
+  .muted-copy {
+    color: var(--muted-ink);
+  }
+
+  .gantt {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .gantt-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, 164px) repeat(12, minmax(0, 1fr));
+    gap: 8px;
+    align-items: center;
+  }
+
+  .gantt-header,
+  .gantt-label {
+    color: var(--muted-ink);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .gantt-track {
+    position: relative;
+    grid-column: 2 / -1;
+    height: 22px;
+    border: 1px solid var(--line);
+    background:
+      linear-gradient(to right, rgba(168, 154, 134, 0.12) 1px, transparent 1px);
+    background-size: calc(100% / 12) 100%;
+  }
+
+  .gantt-bar {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: calc((var(--start) - 1) * (100% / 12));
+    width: calc(var(--span) * (100% / 12));
+    background: rgba(184, 92, 56, 0.14);
+    border-left: 3px solid var(--accent);
+    overflow: hidden;
+  }
+
+  .gantt-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 480ms ease;
+  }
+
+  .gantt-bar.is-ready::after { transform: scaleX(1); }
+
+  .timeline-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
+  }
+
+  .activity-chart {
+    display: grid;
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+    min-height: 210px;
+  }
+
+  .day-column {
+    display: grid;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .day-bar {
+    position: relative;
+    min-height: 160px;
+    border: 1px solid var(--line);
+    background: rgba(168, 154, 134, 0.08);
+    overflow: hidden;
+  }
+
+  .day-bar > span {
+    inset: auto 0 0 0;
+    height: calc(var(--value) * 100%);
+    width: auto;
+    transform-origin: bottom center;
+    transform: scaleY(0);
+  }
+
+  .day-bar.is-ready > span { transform: scaleY(1); }
+
+  .day-label {
+    text-align: center;
+    color: var(--muted-ink);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  .heatmap {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 42px repeat(8, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .heat-label {
+    display: flex;
+    align-items: center;
+    color: var(--muted-ink);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .heat-cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    background: rgba(184, 92, 56, calc(var(--level) * 0.96));
+    opacity: 0;
+    transform: scale(0.86);
+    transition: opacity 220ms ease, transform 220ms ease;
+    transition-delay: calc(var(--i) * 8ms);
+  }
+
+  .heatmap.is-ready .heat-cell {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .projects-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .projects-hero {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 320px);
+    align-items: center;
+  }
+
+  .stats-inline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .projects-grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  }
+
+  .roadmap-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stack-segment {
+    position: relative;
+    min-height: 56px;
+    border: 1px solid var(--line);
+    background: rgba(168, 154, 134, 0.08);
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+
+  .stack-segment > span {
+    inset: 0 auto 0 0;
+  }
+
+  .stack-segment strong {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+
+  .stack-segment.empty {
+    color: var(--muted);
+  }
+
+  .product-map {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .project-section {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .project-kv {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .project-kv .project-card,
+  .architecture-card,
+  .roadmap-card {
+    min-height: 100%;
+  }
+
+  .session-strip {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .session-tabs {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .session-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.78);
+    cursor: pointer;
+  }
+
+  .session-tab.active {
+    background: rgba(184, 92, 56, 0.14);
+    border-color: var(--accent);
+  }
+
+  .tab-dot,
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: currentColor;
+    display: inline-block;
+  }
+
+  .session-tab.inactive {
+    opacity: 0.6;
+  }
+
+  .session-tab.has-activity::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .workbench-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(340px, 0.9fr);
+  }
+
+  .terminal-shell {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .terminal-viewport {
+    min-height: 420px;
+    max-height: 62vh;
+    overflow: auto;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: #F6EFE6;
+  }
+
+  .terminal-line {
+    font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+    font-size: 15px;
+    line-height: 1.48;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-bottom: 4px;
+  }
+
+  .terminal-line.prompt { color: var(--accent); }
+  .terminal-line.error { color: var(--danger); }
+  .terminal-line.system { color: var(--muted-ink); }
+
+  .empty-state {
+    display: grid;
+    place-items: center;
+    min-height: 300px;
+    text-align: center;
+    gap: var(--space-3);
+    color: var(--muted-ink);
+  }
+
+  .quick-actions {
+    padding-top: var(--space-2);
+  }
+
+  .quick-btn {
+    padding: 10px 12px;
+  }
+
+  .input-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: end;
+  }
+
+  .input-field {
+    width: 100%;
+    min-height: 56px;
+    max-height: 140px;
+    resize: vertical;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.82);
+  }
+
+  .send-btn,
+  .fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+  }
+
+  .send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .send-btn svg,
+  .fab svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  .mac-card {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .mac-activity-card {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    background: rgba(246, 240, 232, 0.68);
+    border-left: 6px solid var(--mac-accent);
+    background: var(--mac-surface);
+  }
+
+  .surface-prefix {
+    color: var(--muted-ink);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .surface-prefix.vm {
+    color: #6E7F62;
+  }
+
+  .surface-prefix.mac {
+    color: #9A6A2A;
+  }
+
+  .mac-agent-name {
+    font-family: "Source Serif 4", "Noto Serif TC", serif;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  .mac-agent-status.start,
+  .mac-agent-status.progress,
+  .mac-agent-status.running { color: var(--ok); }
+  .mac-agent-status.done { color: var(--accent); }
+  .mac-agent-status.idle { color: var(--muted-ink); }
+
+  .status-badge {
+    color: var(--muted-ink);
+  }
+
+  .task-board-empty {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px dashed var(--line);
+    color: var(--muted-ink);
+  }
+
+  .empty-state code,
+  .task-board-empty code {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--line);
+    background: rgba(251, 246, 240, 0.92);
+    color: var(--ink);
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(52, 39, 31, 0.18);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-5);
+    z-index: 50;
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    width: min(100%, 680px);
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .modal-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .modal-option {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: var(--space-4);
+    text-align: left;
+  }
+
+  .modal-option strong {
+    font-family: "Source Serif 4", "Noto Serif TC", serif;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .fab-wrap {
+    position: fixed;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    z-index: 15;
+  }
+
+  @media (max-width: 1180px) {
+    .hero-copy,
+    .hero-dial-wrap,
+    .section-copy,
+    .sessions-layout,
+    .tasks-layout,
+    .timeline-layout,
+    .projects-layout {
+      grid-column: 1 / -1;
+    }
+
+    .hero-dial-wrap,
+    .timeline-layout,
+    .projects-grid,
+    .workbench-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cards,
+    .roadmap-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 820px) {
+    .app-shell { padding: 0 var(--space-4) var(--space-7); }
+    .site-header { grid-template-columns: 1fr; }
+    .page-tabs { justify-content: flex-start; }
+    .hero-dial-wrap,
+    .projects-hero,
+    .session-card-grid,
+    .metrics,
+    .stats-inline,
+    .project-kv,
+    .modal-options,
+    .input-bar {
+      grid-template-columns: 1fr;
+    }
+    .gantt-grid {
+      grid-template-columns: 1fr;
+    }
+    .dispatch-grid {
+      grid-template-columns: 1fr;
+    }
+    .gantt-track { grid-column: 1; }
+    .activity-chart { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .heatmap-grid { grid-template-columns: 34px repeat(8, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="site-header frame">
+    <div class="brand">
+      <div class="eyebrow">Agent Bridge / VM dashboard / tp-7-clay</div>
+      <div class="display">先看弧線、折線、格子，再看 log。</div>
+      <div class="muted-copy">這裡先讓人看懂誰在做事、卡在哪、交付節奏跑到哪，再下探到 terminal 與任務細節。</div>
+    </div>
+    <nav class="page-tabs" id="pageTabs" aria-label="頁面切換">
+      <button class="page-tab" data-page="hero">1 Hero</button>
+      <button class="page-tab" data-page="sessions">2 Sessions</button>
+      <button class="page-tab" data-page="tasks">3 Tasks</button>
+      <button class="page-tab" data-page="timeline">4 Timeline</button>
+      <button class="page-tab" data-page="projects">5 Projects</button>
+    </nav>
+  </header>
+
+  <main class="frame">
+    <section class="page-panel active" id="page-hero" data-page="hero">
+      <div class="page-grid">
+        <div class="copy-block hero-copy">
+          <div class="eyebrow">Hero</div>
+          <h1 id="heroHeadline">你不用看 log，先看 session 是否真的在推進。</h1>
+          <p id="heroDescription">這裡看 LLM 在做什麼、已經做完什麼、需要你決定什麼。</p>
+
+          <!-- Action Center: 告訴你下一步該做什麼 -->
+          <div id="actionCenter" class="action-center">
+            <div class="action-eyebrow">🎯 現在你最該做的</div>
+            <div class="action-headline" id="actionHeadline">載入中…</div>
+            <div class="action-detail" id="actionDetail"></div>
+            <div class="action-buttons" id="actionButtons"></div>
+          </div>
+
+          <!-- Today Timeline: 今日做了什麼 -->
+          <div id="todayTimeline" class="today-timeline">
+            <div class="action-eyebrow">📜 今日故事（commit 倒敘）</div>
+            <ol id="todayTimelineList" class="timeline-list">
+              <li class="timeline-empty">載入中…</li>
+            </ol>
+          </div>
+
+          <section class="wake-panel" aria-labelledby="wakePanelTitle">
+            <div>
+              <div class="eyebrow">Layer 2 Rescue</div>
+              <h2 id="wakePanelTitle">緊急喚醒 VM LLM</h2>
+            </div>
+            <p>正常情況下先讓 Mac 端的 Claude + Codex 自動跑。只有當它們卡住、失聯或 quota 出問題時，才用這裡把 VM 上的本機 LLM 接手。</p>
+            <div class="wake-actions">
+              <button id="wakeContinueBtn" class="wake-btn primary" type="button">讓 VM LLM 繼續 TODO runbook</button>
+            </div>
+            <label class="sr-only" for="wakePromptInput">自訂 wake 指令</label>
+            <textarea id="wakePromptInput" class="wake-textarea" placeholder="或自訂指令，例如：檢查 git status 並回報、跑 npm test 驗證、T46 卡在哪給我 3 條 debug 線索"></textarea>
+            <div class="wake-actions">
+              <button id="wakeSendBtn" class="wake-btn secondary" type="button">送自訂訊息給 VM LLM</button>
+            </div>
+            <div class="wake-note">
+              <span id="wakeStatusMeta">尚未送出 Layer 2 任務</span>
+              <span>不建議和 Mac 端 agent 同時修改同一份 state</span>
+            </div>
+            <pre id="wakeOutput" class="wake-output">Layer 2 log 會顯示在這裡。</pre>
+          </section>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="label">在跑的 LLM</div>
+              <div class="stat-figure" id="heroSessionCount">00</div>
+            </div>
+            <div class="metric">
+              <div class="label">工作清單（進行/總數）</div>
+              <div class="stat-figure" id="heroTaskCount">0 / 0</div>
+            </div>
+            <div class="metric">
+              <div class="label">完成率（已 ship/總計）</div>
+              <div class="stat-figure" id="heroShippedRatio">0%</div>
+            </div>
+            <div class="metric">
+              <div class="label">三家 LLM 活動</div>
+              <div class="micro" id="heroAgentBreakdown">codex 0 · qwen 0 · gemini 0</div>
+            </div>
+            <div class="metric">
+              <div class="label">今日 commit 數</div>
+              <div class="stat-figure" id="heroTodayCommits">00</div>
+            </div>
+            <div class="metric">
+              <div class="label">等待 push</div>
+              <div class="stat-figure" id="heroPendingPush">00</div>
+            </div>
+          </div>
+          <div class="session-strip">
+            <div class="chart-head">
+              <div>
+                <div class="label">Live sessions</div>
+                <div class="card-title">Session selector</div>
+              </div>
+              <div id="statusBadge" class="status-badge connecting">
+                <span class="status-dot"></span>
+                <span id="statusText">連接中…</span>
+              </div>
+            </div>
+            <div class="session-tabs" id="agentTabs"></div>
+          </div>
+        </div>
+
+        <div class="hero-dial-wrap">
+          <div class="hero-dial-block">
+            <div class="hero-dial" id="heroDial"></div>
+            <div class="hero-detail">
+              <div class="chart-head">
+                <div>
+                  <div class="label">Recent 20 steps</div>
+                  <div class="card-title">Session sparkline</div>
+                </div>
+                <div class="micro" id="heroMomentumLabel">momentum</div>
+              </div>
+              <div class="sparkline-shell">
+                <div class="sparkline" id="heroSparkline"></div>
+                <div class="sparkline-legend">
+                  <span id="heroSparklineStart">step 01</span>
+                  <span id="heroSparklineEnd">step 20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-side">
+            <div class="summary-list" id="heroSummary"></div>
+          </div>
+        </div>
+
+        <div class="workbench-grid">
+          <div class="terminal-shell">
+            <div class="terminal-head">
+              <div>
+                <div class="label">Session interaction</div>
+                <div class="terminal-title" id="terminalSessionTitle">Terminal output</div>
+              </div>
+              <div class="micro" id="terminalSessionMeta">切換上方 session 看對話</div>
+            </div>
+            <div class="terminal-viewport" id="terminalOutput">
+              <div class="empty-state" id="emptyState">
+                <div class="card-title">現在沒有正在看的對話視窗。</div>
+                <div>開一個 agent，或切到上方分頁看最新輸出。</div>
+              </div>
+            </div>
+            <div class="quick-actions" id="quickActions"></div>
+            <div class="input-bar">
+              <textarea class="input-field" id="inputField" rows="1" placeholder="輸入訊息給 Agent..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+              <button class="send-btn" id="sendBtn" disabled aria-label="送出訊息">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="mac-card">
+            <div class="mac-card-head">
+              <div>
+                <div class="label">Mac ↔ VM dual track</div>
+                <div class="card-title">💻 Mac 本地活動摘要</div>
+              </div>
+              <div class="micro">localActivity</div>
+            </div>
+            <div class="mac-activity-grid" id="macActivityGrid"></div>
+            <div class="task-board-empty" id="macEmptyState" hidden>
+              <div class="eyebrow">Mac activity</div>
+              <div class="card-title">📭 目前沒有 Mac 本地活動</div>
+              <div class="empty-copy">跑 <code>bash scripts/sync-todos-to-bridge.sh</code> 來測，這裡就會長出 Mac 卡片。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page-panel" id="page-sessions" data-page="sessions">
+      <div class="page-grid">
+        <div class="section-copy">
+          <div class="eyebrow">Sessions</div>
+          <h2>每張 session 卡不只給完成條，也給活動節奏和填滿感。</h2>
+          <p>這裡保留橫條當主讀法，再補 sparkline 跟 waffle。Sparkline 看 agent 近 24h 節奏，waffle 看 completion，兩者都比 ring chart 更容易橫向比較卡片之間的差異。</p>
+        </div>
+        <div class="sessions-layout">
+          <div class="cards" id="sessionCards"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page-panel" id="page-tasks" data-page="tasks">
+      <div class="page-grid">
+        <div class="section-copy">
+          <div class="eyebrow">Tasks</div>
+          <h2>任務列尾保留 compact bar，再補一張全域 Gantt 看 overlap。</h2>
+          <p>這一區不做 burn-down。你要的是當前派工與衝突感，不是 sprint 儀式感。Gantt 更適合看誰同時卡在同一時段，讀完就知道是不是 lane 太擠。</p>
+        </div>
+        <div class="tasks-layout">
+          <div class="task-board-shell" id="taskBoard">
+            <div class="task-board-head">
+              <div>
+                <div class="label">任務佇列</div>
+                <div class="card-title">現在誰該接什麼</div>
+              </div>
+              <div class="task-consensus-chips">
+                <span class="summary-chip" id="taskCount">0</span>
+                <button class="task-toggle" id="taskToggle">收合</button>
+              </div>
+            </div>
+            <div class="task-board-scroll" id="taskBoardScroll"></div>
+            <div class="gantt">
+              <div class="chart-head">
+                <div>
+                  <div class="label">Overlap view</div>
+                  <h3>Gantt timeline</h3>
+                </div>
+                <div class="micro" id="ganttMeta">12h window</div>
+              </div>
+              <div id="ganttChart"></div>
+            </div>
+          </div>
+          <div class="timeline-card dispatch-shell">
+            <div class="chart-head">
+              <div>
+                <div class="label">VM worker dispatcher</div>
+                <h3>最終摘要留小 payload，live log 留在 VM 面板</h3>
+              </div>
+              <div class="micro" id="workerDispatchMeta">尚未收到 dispatch</div>
+            </div>
+            <div class="dispatch-grid">
+              <div class="dispatch-list" id="workerDispatchList"></div>
+              <div class="dispatch-log-shell">
+                <div class="dispatch-log-meta" id="workerDispatchDetailMeta"></div>
+                <div class="dispatch-log" id="workerDispatchLog">
+                  <div class="task-board-empty">
+                    <div class="eyebrow">Dispatcher log</div>
+                    <div class="card-title">還沒有選中的 dispatch</div>
+                    <div class="empty-copy">第一個 remote-vm 任務送出後，這裡會接 live log；完成時只保留 summary、verdict、next step。</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page-panel" id="page-timeline" data-page="timeline">
+      <div class="page-grid">
+        <div class="section-copy">
+          <div class="eyebrow">Timeline</div>
+          <h2>保留垂直事件流，再加一張 GitHub-style 熱度格。</h2>
+          <p>這裡不做 horizon chart。資料密度還不夠高，壓縮只會增加解碼成本。Heatmap 比月曆視角更俐落，能直接看最近幾週忙碌分布，和右上的 daily bar 分工清楚。</p>
+        </div>
+        <div class="timeline-layout">
+          <div class="timeline-card">
+            <div class="timeline-head">
+              <div>
+                <div class="label">Recent activity</div>
+                <h3>Vertical timeline</h3>
+              </div>
+              <div class="big-number" id="timelineTotal">0</div>
+            </div>
+            <div class="timeline-track" id="timelineTrack"></div>
+          </div>
+          <div class="timeline-card">
+            <div class="chart-head">
+              <div>
+                <div class="label">Daily volume</div>
+                <h3>Bar + heatmap</h3>
+              </div>
+              <div class="micro">events / day</div>
+            </div>
+            <div class="activity-chart" id="activityChart"></div>
+            <div class="heatmap" id="heatmapChart"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page-panel" id="page-projects" data-page="projects">
+      <div class="page-grid">
+        <div class="section-copy">
+          <div class="eyebrow">Projects</div>
+          <h2>Donut 留給總比例，stacked bar 給 phase 壓力，radar 補分工負擔。</h2>
+          <p>這區保留總體量，也補橫向角色結構。使用者先看 backlog / shipped / in-progress，再決定要不要往下讀 architecture、roadmap 和 work division。</p>
+        </div>
+        <div class="projects-layout">
+          <div class="project-card">
+            <div class="projects-hero">
+              <div class="projects-copy">
+                <div class="label">Project status</div>
+                <div class="stats-inline">
+                  <div>
+                    <div class="label">Backlog</div>
+                    <div class="stat-figure" id="backlogCount">0</div>
+                  </div>
+                  <div>
+                    <div class="label">Shipped</div>
+                    <div class="stat-figure" id="shippedCount">0</div>
+                  </div>
+                  <div>
+                    <div class="label">In progress</div>
+                    <div class="stat-figure" id="inProgressCount">0</div>
+                  </div>
+                </div>
+                <div class="legend">
+                  <span>Completed volume</span>
+                  <span class="neutral">Remaining volume</span>
+                </div>
+              </div>
+              <div class="donut" id="projectDonut"></div>
+            </div>
+          </div>
+
+          <div class="projects-grid">
+            <div class="project-stack">
+              <div class="project-card">
+                <div class="projects-top">
+                  <div>
+                    <div class="label">Roadmap pressure</div>
+                    <h3>Now / next / later</h3>
+                  </div>
+                  <div class="micro" id="roadmapSummaryChip">-</div>
+                </div>
+                <div class="roadmap-grid" id="roadmapGrid"></div>
+              </div>
+              <div class="project-kv">
+                <div class="architecture-card">
+                  <div class="architecture-head">
+                    <div>
+                      <div class="label">Architecture</div>
+                      <div class="card-title">這塊面板怎麼接到整個產品</div>
+                    </div>
+                    <button class="task-toggle" id="architectureToggle">展開細節</button>
+                  </div>
+                  <div id="architectureMap"></div>
+                  <div class="architecture-meta collapsed" id="architectureMeta"></div>
+                </div>
+                <div class="architecture-card">
+                  <div class="project-head">
+                    <div>
+                      <div class="label">Work division</div>
+                      <div class="card-title">誰在扛什麼</div>
+                    </div>
+                    <div class="micro" id="projectCount">-</div>
+                  </div>
+                  <div id="agentGrid" class="project-stack"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="project-stack">
+              <div class="project-card">
+                <div class="chart-head">
+                  <div>
+                    <div class="label">Team distribution</div>
+                    <h3>Agent radar</h3>
+                  </div>
+                  <div class="micro">task count / done / active / blocked</div>
+                </div>
+                <div class="radar" id="projectRadar"></div>
+                <div class="sparkline-legend">
+                  <span>Claude</span>
+                  <span>Codex</span>
+                  <span>Qwen</span>
+                  <span>Gemini</span>
+                </div>
+              </div>
+              <div class="project-card">
+                <div class="project-head">
+                  <div>
+                    <div class="label">Improvements</div>
+                    <div class="card-title">接下來要補的地方</div>
+                  </div>
+                </div>
+                <div id="improvementsList" class="project-stack"></div>
+              </div>
+              <div class="project-card">
+                <div class="project-head">
+                  <div>
+                    <div class="label">Delivery log</div>
+                    <div class="card-title">已交付紀錄</div>
+                  </div>
+                </div>
+                <div id="completedTimeline" class="project-stack"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="fab-wrap">
+    <button class="fab" id="fabBtn" title="開新視窗" aria-label="開新視窗">
+      <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"/></svg>
+    </button>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div>
+        <div class="label">Create terminal</div>
+        <h3>開新的 AI 視窗</h3>
+      </div>
+      <div class="modal-options">
+        <button class="modal-option" data-agent="claude" data-cmd="claude">
+          <strong>Claude Code</strong>
+          <small>anthropic claude</small>
+        </button>
+        <button class="modal-option" data-agent="codex" data-cmd="codex">
+          <strong>Codex CLI</strong>
+          <small>openai codex</small>
+        </button>
+        <button class="modal-option" data-agent="qwen" data-cmd="qwen-coder">
+          <strong>Qwen Coder</strong>
+          <small>tongyi qwen-coder</small>
+        </button>
+        <button class="modal-option" data-agent="gemini" data-cmd="gemini">
+          <strong>Gemini CLI</strong>
+          <small>google gemini</small>
+        </button>
+        <button class="modal-option" data-agent="custom" data-cmd="">
+          <strong>自訂 Terminal</strong>
+          <small>手動輸入指令</small>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  ws: null,
+  sessions: new Map(),
+  tasks: new Map(),
+  dispatches: new Map(),
+  projectData: null,
+  statusData: null,
+  localActivity: [],
+  activeSessionId: null,
+  activeDispatchId: null,
+  connected: false,
+  reconnectTimer: null,
+  heartbeatTimer: null,
+  connectTimeoutTimer: null,
+  autoScroll: true,
+  taskBoardCollapsed: false,
+  architectureExpanded: false,
+  activePage: 'hero',
+  sessionActivity: new Map(),
+  wakePollRunId: 0,
+};
+
+const AGENT_BRIDGE_BASE_URL = (() => {
+  if (window.AGENT_BRIDGE_BASE_URL) {
+    return String(window.AGENT_BRIDGE_BASE_URL).replace(/\/$/, '');
+  }
+  return window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '';
+})();
+const DASHBOARD_TOKEN_KEY = 'dashboard_token';
+const DASHBOARD_TOKEN_AT_KEY = 'dashboard_token_at';
+const DASHBOARD_TOKEN_EXPIRES_KEY = 'dashboard_token_expires_at';
+const BRIDGE_AUTH_TOKEN_KEY = 'bridge_auth_token';
+
+function bridgeUrl(path) {
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  return `${AGENT_BRIDGE_BASE_URL}${safePath}`;
+}
+
+function clearDashboardAuth() {
+  localStorage.removeItem(DASHBOARD_TOKEN_KEY);
+  localStorage.removeItem(DASHBOARD_TOKEN_AT_KEY);
+  localStorage.removeItem(DASHBOARD_TOKEN_EXPIRES_KEY);
+}
+
+function clearBridgeAuth() {
+  localStorage.removeItem(BRIDGE_AUTH_TOKEN_KEY);
+}
+
+function clearAllAuth() {
+  clearDashboardAuth();
+  clearBridgeAuth();
+}
+
+function getDashboardToken() {
+  const token = localStorage.getItem(DASHBOARD_TOKEN_KEY) || '';
+  const expiresAt = Number(localStorage.getItem(DASHBOARD_TOKEN_EXPIRES_KEY) || '0');
+  if (!token || !expiresAt || Date.now() >= expiresAt) {
+    clearDashboardAuth();
+    return '';
+  }
+  return token;
+}
+
+function getBridgeToken() {
+  return String(localStorage.getItem(BRIDGE_AUTH_TOKEN_KEY) || '').trim();
+}
+
+function getAuthContext() {
+  const dashboardToken = getDashboardToken();
+  if (dashboardToken) return { kind: 'dashboard', token: dashboardToken };
+  const bridgeToken = getBridgeToken();
+  if (bridgeToken) return { kind: 'bridge', token: bridgeToken };
+  return null;
+}
+
+function redirectToLogin() {
+  clearAllAuth();
+  const loginUrl = bridgeUrl('/login.html');
+  if (window.location.pathname !== loginUrl) window.location.replace(loginUrl);
+}
+
+async function apiFetch(url, opts = {}) {
+  const auth = getAuthContext();
+  if (!auth?.token) {
+    redirectToLogin();
+    throw new Error('Missing dashboard token');
+  }
+  const headers = new Headers(opts.headers || {});
+  headers.set('Authorization', `Bearer ${auth.token}`);
+  const response = await fetch(url, { ...opts, headers });
+  if (response.status === 401) {
+    redirectToLogin();
+    throw new Error('Dashboard auth expired');
+  }
+  return response;
+}
+
+function bridgeWebSocketUrl() {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const auth = getAuthContext();
+  if (!auth?.token) {
+    redirectToLogin();
+    return `${protocol}//${location.host}${bridgeUrl('/ws')}`;
+  }
+  const param = auth.kind === 'dashboard' ? 'dashboard_token' : 'token';
+  return `${protocol}//${location.host}${bridgeUrl('/ws')}?${param}=${encodeURIComponent(auth.token)}`;
+}
+
+const COLORS = {
+  claude: '#E87B35',
+  codex: '#8C7A4F',
+  qwen: '#7C9A86',
+  gemini: '#B85C38',
+  copilot: '#A89A86',
+  unknown: '#8B7C6B',
+};
+
+const $ = (id) => document.getElementById(id);
+
+const termOutput = $('terminalOutput');
+const emptyState = $('emptyState');
+const agentTabs = $('agentTabs');
+const inputField = $('inputField');
+const sendBtn = $('sendBtn');
+const taskBoardScroll = $('taskBoardScroll');
+const taskCount = $('taskCount');
+const taskToggle = $('taskToggle');
+const architectureToggle = $('architectureToggle');
+const architectureMeta = $('architectureMeta');
+const statusBadge = $('statusBadge');
+const statusText = $('statusText');
+const macActivityGrid = $('macActivityGrid');
+const macEmptyState = $('macEmptyState');
+const quickActions = $('quickActions');
+const modalBackdrop = $('modalBackdrop');
+const fabBtn = $('fabBtn');
+const workerDispatchList = $('workerDispatchList');
+const workerDispatchMeta = $('workerDispatchMeta');
+const workerDispatchLog = $('workerDispatchLog');
+const wakeContinueBtn = $('wakeContinueBtn');
+const wakeSendBtn = $('wakeSendBtn');
+const wakePromptInput = $('wakePromptInput');
+const wakeStatusMeta = $('wakeStatusMeta');
+const wakeOutput = $('wakeOutput');
+
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function pad(value) {
+  return String(value ?? 0).padStart(2, '0');
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatPct(value) {
+  return `${Math.round(clamp(value, 0, 1) * 100)}%`;
+}
+
+function relativeTime(ts) {
+  if (!ts) return '未知';
+  const diff = Math.max(0, Date.now() - Number(ts));
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec}s 前`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m 前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h 前`;
+  const day = Math.floor(hr / 24);
+  return `${day}d 前`;
+}
+
+function formatShortDate(value) {
+  if (!value) return '未知';
+  const date = new Date(typeof value === 'number' ? value : `${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('zh-TW', { month: 'numeric', day: 'numeric' }).format(date);
+}
+
+function formatDateLabel(ts) {
+  const d = new Date(ts);
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function dayKey(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function ownerColor(owner) {
+  return COLORS[String(owner || '').toLowerCase()] || COLORS.unknown;
+}
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+
+function pointsToPath(values, width, height, offsetX = 0, offsetY = 0) {
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+  return values.map((value, index) => {
+    const x = offsetX + (index / Math.max(values.length - 1, 1)) * width;
+    const y = offsetY + height - ((value - min) / range) * height;
+    return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+}
+
+function areaPath(values, width, height, offsetX = 0, offsetY = 0) {
+  const line = pointsToPath(values, width, height, offsetX, offsetY);
+  const endX = offsetX + width;
+  const baseY = offsetY + height;
+  return `${line} L ${endX} ${baseY} L ${offsetX} ${baseY} Z`;
+}
+
+function makeStroke(path, progress = 1) {
+  if (!path || typeof path.getTotalLength !== 'function') return;
+  const length = path.getTotalLength();
+  path.style.setProperty('--dash', length);
+  path.style.setProperty('--progress', progress);
+}
+
+function getTaskSummary() {
+  const summary = state.statusData?.tasks;
+  if (summary && typeof summary === 'object') {
+    return {
+      total: Number(summary.total) || 0,
+      active: Number(summary.active) || 0,
+      done: Number(summary.done) || 0,
+    };
+  }
+  const tasks = [...state.tasks.values()];
+  const done = tasks.filter((task) => task.status === 'completed').length;
+  return { total: tasks.length, active: Math.max(tasks.length - done, 0), done };
+}
+
+function getHeroHeadline(sessionCount, taskSummary) {
+  if (sessionCount > 0) return `${sessionCount} 個 agent 推進中`;
+  if (taskSummary.active > 0) return `${taskSummary.active} 個 task 待派`;
+  return '靜默中，下個 task 等待中';
+}
+
+function formatAgentBreakdown(breakdown = {}) {
+  return ['codex', 'qwen', 'gemini']
+    .map((agent) => `${agent} ${Number(breakdown?.[agent]) || 0}`)
+    .join(' · ');
+}
+
+function renderActionCenter(sessionCount, taskSummary, statusData) {
+  const center = document.getElementById('actionCenter');
+  const headline = document.getElementById('actionHeadline');
+  const detail = document.getElementById('actionDetail');
+  const buttons = document.getElementById('actionButtons');
+  if (!center || !headline) return;
+
+  const pendingPush = Number(statusData?.pendingPush) || 0;
+  const todayCommits = Number(statusData?.todayCommits) || 0;
+  const activeTasks = taskSummary?.active || 0;
+
+  // Order: 完工 > 有 LLM 在跑 > 累積過多 > 一般累積 > 有待辦 > 完全靜默
+  let level = 'calm';
+  let head = '進度正常';
+  let det = '今天暫無待辦動作。LLM 們會繼續推進工作清單。';
+  let btns = '';
+
+  if (sessionCount > 0) {
+    level = 'calm';
+    head = `🟢 ${sessionCount} 個 LLM 正在推進`;
+    det = `工作清單還有 ${activeTasks} 件待辦${pendingPush > 0 ? `，${pendingPush} 個 commit 待 push（先看完工再決定）` : ''}。`;
+  } else if (activeTasks === 0 && todayCommits > 0) {
+    level = 'calm';
+    head = `✅ 今日 ${todayCommits} 個改動完工`;
+    if (pendingPush > 0) {
+      det = `所有 LLM 完工。有 ${pendingPush} 個 commit 待 push，建議開 localhost 看完成果再決定 push 時機。`;
+      btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">👀 開 localhost 看完成果</button>`;
+    } else {
+      det = '所有 LLM 都閒著、沒待辦工作。可以休息或想新 feature。';
+    }
+  } else if (pendingPush >= 20) {
+    level = 'urgent';
+    head = `🚨 ${pendingPush} 個 commit 累積，建議今天決定 push`;
+    det = `今天做了 ${todayCommits} 個改動。LLM 還在跑 ${activeTasks} 件待辦。等告一段落，開 localhost 確認後 push。`;
+    btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">開 localhost 看看</button>`;
+  } else if (pendingPush >= 10) {
+    head = `📦 ${pendingPush} 個 commit 累積中`;
+    det = `今天做了 ${todayCommits} 個改動。可以開 localhost 看看，順手 push 也好、再累積也好。`;
+    btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">開 localhost 看看</button>`;
+  } else if (activeTasks > 0) {
+    head = `📋 ${activeTasks} 件工作待派`;
+    det = '沒 LLM 在跑，但有待辦清單。Claude 下一輪 loop（5 分鐘內）會自動派工。';
+  } else {
+    // 全空：第一次來、或剛清完
+    head = '👋 歡迎打開 Bridge';
+    det = '目前沒 LLM 在跑、沒待辦工作、今日無改動。可以從工作清單頁加新 task，或等 Claude 接下指示。';
+  }
+
+  center.className = `action-center ${level}`;
+  headline.textContent = head;
+  detail.textContent = det;
+  buttons.innerHTML = btns;
+}
+
+function renderTodayTimeline(recentCommits) {
+  const list = document.getElementById('todayTimelineList');
+  if (!list) return;
+  if (!recentCommits || recentCommits.length === 0) {
+    list.innerHTML = '<li class="timeline-empty">今天還沒有 commit</li>';
+    return;
+  }
+  list.innerHTML = recentCommits
+    .map((c) => {
+      const t = c.time ? new Date(c.time) : null;
+      const ts = t
+        ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+        : '--:--';
+      const hash = (c.hash || '').slice(0, 7);
+      const msg = escapeHtml(c.message || '(no message)');
+      const filesChanged = Number(c.filesChanged) || 0;
+      const ins = Number(c.insertions) || 0;
+      const del = Number(c.deletions) || 0;
+      const stat = filesChanged > 0
+        ? `<span class="commit-stat">${filesChanged}檔 <span class="ins">+${ins}</span> <span class="del">-${del}</span></span>`
+        : '';
+      return `<li><span class="ts">${ts}</span><span class="hash">${hash}</span><span class="msg">${msg}${stat}</span></li>`;
+    })
+    .join('');
+}
+
+function readyBars(root = document) {
+  requestAnimationFrame(() => {
+    root.querySelectorAll('.bar, .day-bar').forEach((el) => el.classList.add('is-ready'));
+    root.querySelectorAll('.stack-segment:not(.empty)').forEach((el) => el.classList.add('is-ready'));
+    root.querySelectorAll('.waffle').forEach((el) => el.classList.add('is-ready'));
+    root.querySelectorAll('.heatmap').forEach((el) => el.classList.add('is-ready'));
+    root.querySelectorAll('.gantt-bar').forEach((el) => el.classList.add('is-ready'));
+  });
+}
+
+function renderSparkline(target, values, left = '', right = '') {
+  if (!target) return;
+  const safe = Array.isArray(values) && values.length > 1 ? values : [0, 1];
+  const width = 320;
+  const height = 72;
+  target.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" aria-hidden="true">
+      <path class="sparkline-fill" d="${areaPath(safe, width - 8, height - 8, 4, 4)}"></path>
+      <path class="sparkline-line" d="${pointsToPath(safe, width - 8, height - 8, 4, 4)}"></path>
+    </svg>
+  `;
+  const line = target.querySelector('.sparkline-line');
+  const fill = target.querySelector('.sparkline-fill');
+  if (line) {
+    makeStroke(line, 1);
+    requestAnimationFrame(() => {
+      if (fill) fill.classList.add('is-ready');
+    });
+  }
+  const legend = target.parentElement?.querySelector('.sparkline-legend');
+  if (legend && left && right) {
+    legend.innerHTML = `<span>${escapeHtml(left)}</span><span>${escapeHtml(right)}</span>`;
+  }
+}
+
+function recordSessionActivity(sessionId, timestamp = Date.now()) {
+  const size = 24;
+  const history = state.sessionActivity.get(sessionId) || Array.from({ length: size }, () => 0);
+  const next = history.slice(-size);
+  next[next.length - 1] += 1;
+  state.sessionActivity.set(sessionId, next);
+}
+
+function setConnectionStatus(status, text) {
+  statusBadge.className = `status-badge ${status}`;
+  statusText.textContent = text;
+}
+
+function startConnectTimeout() {
+  if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+  state.connectTimeoutTimer = setTimeout(() => {
+    if (state.connected) return;
+    setConnectionStatus('connecting', '等待 WebSocket…');
+  }, 5000);
+}
+
+setInterval(() => {
+  for (const [sessionId, history] of state.sessionActivity.entries()) {
+    const next = history.slice(1);
+    next.push(0);
+    state.sessionActivity.set(sessionId, next);
+  }
+  renderAll();
+}, 60 * 60 * 1000);
+
+function connect() {
+  const wsUrl = bridgeWebSocketUrl();
+  state.connected = false;
+  setConnectionStatus('connecting', '連接中…');
+  startConnectTimeout();
+  const ws = new WebSocket(wsUrl);
+  state.ws = ws;
+
+  ws.onopen = () => {
+    state.connected = true;
+    if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+    setConnectionStatus('connected', 'WebSocket connected');
+    if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
+    if (state.heartbeatTimer) clearInterval(state.heartbeatTimer);
+    state.heartbeatTimer = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+    }, 30000);
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      handleMessage(JSON.parse(event.data));
+    } catch (error) {
+      console.error('WS parse error', error);
+    }
+  };
+
+  ws.onclose = (event) => {
+    state.connected = false;
+    if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+    setConnectionStatus('disconnected', 'WebSocket disconnected');
+    if (state.heartbeatTimer) clearInterval(state.heartbeatTimer);
+    if (event.code === 4401) {
+      redirectToLogin();
+      return;
+    }
+    state.reconnectTimer = setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'error':
+      if (/unauthorized/i.test(msg.error || '')) {
+        redirectToLogin();
+      }
+      break;
+    case 'snapshot':
+      state.sessions.clear();
+      (msg.sessions || []).forEach((session) => {
+        state.sessions.set(session.id, session);
+      });
+      if (!state.activeSessionId && state.sessions.size > 0) {
+        const first = [...state.sessions.values()].find((s) => s.isActive) || [...state.sessions.values()][0];
+        if (first) state.activeSessionId = first.id;
+      }
+      renderAll();
+      ensureActiveSessionSelection();
+      break;
+    case 'tasks:snapshot':
+      state.tasks.clear();
+      (msg.tasks || []).forEach((task) => state.tasks.set(task.id, task));
+      renderAll();
+      break;
+    case 'worker:dispatches':
+      state.dispatches.clear();
+      (msg.dispatches || []).forEach((dispatch) => state.dispatches.set(dispatch.taskId, dispatch));
+      if (!state.activeDispatchId && msg.dispatches?.length) {
+        state.activeDispatchId = msg.dispatches[0].taskId;
+      }
+      renderTaskBoard();
+      break;
+    case 'worker:dispatched':
+    case 'worker:completed':
+      if (msg.dispatch) {
+        state.dispatches.set(msg.dispatch.taskId, msg.dispatch);
+        state.activeDispatchId = msg.dispatch.taskId;
+      }
+      renderTaskBoard();
+      break;
+    case 'worker:log': {
+      const dispatch = state.dispatches.get(msg.taskId) || {
+        taskId: msg.taskId,
+        agent: msg.agent,
+        status: 'running',
+        recentLines: [],
+      };
+      dispatch.recentLines = [...(dispatch.recentLines || []), ...(msg.lines || [])].slice(-120);
+      dispatch.updatedAt = msg.timestamp || Date.now();
+      if (dispatch.status !== 'completed' && dispatch.status !== 'failed') dispatch.status = 'running';
+      state.dispatches.set(msg.taskId, dispatch);
+      if (!state.activeDispatchId) state.activeDispatchId = msg.taskId;
+      renderTaskBoard();
+      break;
+    }
+    case 'task:created':
+    case 'task:updated':
+    case 'task:dispatched':
+    case 'task:completed':
+    case 'task:consensus':
+      if (msg.task) state.tasks.set(msg.task.id, msg.task);
+      renderAll();
+      break;
+    case 'session:open':
+    case 'session:update':
+      if (msg.session) state.sessions.set(msg.session.id, msg.session);
+      if (!state.activeSessionId && msg.session) state.activeSessionId = msg.session.id;
+      renderAll();
+      ensureActiveSessionSelection();
+      break;
+    case 'session:close': {
+      const session = state.sessions.get(msg.sessionId);
+      if (session) {
+        session.isActive = false;
+        state.sessions.set(msg.sessionId, session);
+      }
+      renderAll();
+      break;
+    }
+    case 'terminal:data': {
+      const session = state.sessions.get(msg.sessionId);
+      if (session) {
+        if (!session._localBuffer) session._localBuffer = [];
+        session._localBuffer.push(msg.data);
+        if (session._localBuffer.length > 500) session._localBuffer.shift();
+        session.lastActivity = msg.timestamp;
+        recordSessionActivity(msg.sessionId, msg.timestamp);
+        state.sessions.set(msg.sessionId, session);
+        if (msg.sessionId === state.activeSessionId) {
+          appendLine(msg.data);
+        } else {
+          const tab = document.querySelector(`[data-session="${msg.sessionId}"]`);
+          if (tab) tab.classList.add('has-activity');
+        }
+        renderHero();
+        renderSessions();
+        renderTimeline();
+      }
+      break;
+    }
+    case 'session:history':
+      if (msg.sessionId === state.activeSessionId) {
+        termOutput.innerHTML = '';
+        (msg.lines || []).forEach((line) => appendLine(line, false));
+        emptyState.hidden = termOutput.children.length > 0;
+        scrollToBottom();
+      }
+      break;
+    case 'send:ack':
+      if (!msg.ok) appendLine('[發送失敗，session 可能已關閉]', false, 'error');
+      break;
+  }
+}
+
+function send(data) {
+  if (!getAuthContext()) {
+    redirectToLogin();
+    return;
+  }
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    state.ws.send(JSON.stringify(data));
+  }
+}
+
+function sendMessage(text) {
+  if (!text || !state.activeSessionId) return;
+  send({ type: 'send', sessionId: state.activeSessionId, text: text.trim() });
+  appendLine(`→ ${text.trim()}`, true, 'prompt');
+}
+
+function appendLine(text, animate = true, cls = '') {
+  if (!text || !String(text).trim()) return;
+  const lines = String(text).split('\n');
+  lines.forEach((line) => {
+    if (!line.trim()) return;
+    const div = document.createElement('div');
+    div.className = `terminal-line ${cls}`;
+    if (/^[>❯$#→%]/.test(line.trim()) || /^(claude|codex|qwen|gemini)/i.test(line.trim())) {
+      div.classList.add('prompt');
+    }
+    if (/error|fail|exception/i.test(line)) div.classList.add('error');
+    div.textContent = line;
+    if (!animate) div.style.animation = 'none';
+    termOutput.appendChild(div);
+  });
+  emptyState.hidden = termOutput.children.length > 0;
+  if (state.autoScroll) scrollToBottom();
+  while (termOutput.children.length > 600) {
+    termOutput.removeChild(termOutput.firstChild);
+  }
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    termOutput.scrollTop = termOutput.scrollHeight;
+  });
+}
+
+function updateQuickActions(agentId) {
+  const actions = {
+    claude: [
+      { label: '/status', cmd: '/status' },
+      { label: '/compact', cmd: '/compact' },
+      { label: '/cost', cmd: '/cost' },
+      { label: '/help', cmd: '/help' },
+      { label: 'yes', cmd: 'yes' },
+    ],
+    codex: [
+      { label: '/status', cmd: '/status' },
+      { label: 'yes', cmd: 'yes' },
+      { label: 'no', cmd: 'no' },
+      { label: '/retry', cmd: '/retry' },
+    ],
+    qwen: [
+      { label: '/help', cmd: '/help' },
+      { label: 'yes', cmd: 'yes' },
+      { label: 'clear', cmd: 'clear' },
+    ],
+    gemini: [
+      { label: '/help', cmd: '/help' },
+      { label: 'yes', cmd: 'yes' },
+      { label: '/stats', cmd: '/stats' },
+    ],
+  };
+  const btns = actions[agentId] || actions.claude;
+  quickActions.innerHTML = btns.map((btn) => `<button class="quick-btn" data-cmd="${escapeHtml(btn.cmd)}">${escapeHtml(btn.label)}</button>`).join('');
+  quickActions.querySelectorAll('.quick-btn').forEach((btn) => {
+    btn.addEventListener('click', () => sendMessage(btn.getAttribute('data-cmd') || ''));
+  });
+}
+
+function selectSession(sessionId) {
+  state.activeSessionId = sessionId;
+  const session = state.sessions.get(sessionId);
+  document.querySelectorAll('.session-tab').forEach((tab) => {
+    const active = tab.getAttribute('data-session') === sessionId;
+    tab.classList.toggle('active', active);
+    if (active) tab.classList.remove('has-activity');
+  });
+  termOutput.innerHTML = '';
+  emptyState.hidden = false;
+  if (!session) {
+    $('terminalSessionTitle').textContent = 'Terminal output';
+    $('terminalSessionMeta').textContent = '切換上方 session 看對話';
+    inputField.placeholder = '輸入訊息給 Agent...';
+    sendBtn.disabled = true;
+    return;
+  }
+  $('terminalSessionTitle').textContent = `${session.agent.name} / ${session.terminalName}`;
+  $('terminalSessionMeta').textContent = `最後活動 ${relativeTime(session.lastActivity)} · buffer ${session.bufferLength || 0}`;
+  if (session._localBuffer?.length) {
+    session._localBuffer.forEach((line) => appendLine(line, false));
+  } else if (session.lastLines?.length) {
+    session.lastLines.forEach((line) => appendLine(line, false));
+  }
+  send({ type: 'session:history', sessionId });
+  inputField.placeholder = `輸入要告訴 ${session.agent.name} 的話...`;
+  sendBtn.disabled = !inputField.value.trim();
+  updateQuickActions(session.agent.id);
+  renderHero();
+  renderSessions();
+}
+
+function ensureActiveSessionSelection() {
+  if (!state.activeSessionId) return;
+  const activeSession = state.sessions.get(state.activeSessionId);
+  if (!activeSession) return;
+  if (!termOutput.querySelector('.terminal-line')) {
+    selectSession(state.activeSessionId);
+  }
+}
+
+function taskStatusLabel(status) {
+  switch (status) {
+    case 'in_progress': return '正在處理';
+    case 'blocked': return '卡住';
+    case 'completed': return '已交付';
+    default: return '等排程';
+  }
+}
+
+function taskVerificationLabel(task) {
+  switch (task.verificationState) {
+    case 'verified': return '已確認';
+    case 'pending_consensus': return '等大家表態';
+    case 'rejected': return '多人看過後退回';
+    case 'draft': return '草稿已出';
+    default: return '還沒確認';
+  }
+}
+
+function taskDispatchLabel(task) {
+  if (task.status === 'completed') return '已完成';
+  if (task.status === 'blocked') return '先排除卡點';
+  if (task.recommendedSessionId || task.assignedSessionId) return '交給 AI';
+  return '目前沒人可接';
+}
+
+function statusToProgress(status) {
+  if (status === 'completed') return 1;
+  if (status === 'in_progress') return 0.62;
+  if (status === 'blocked') return 0.28;
+  return 0.08;
+}
+
+function computeTaskWindow(task, index) {
+  const baseTs = task.lastDispatchedAt || task.updatedAt || task.createdAt || Date.now();
+  const hour = 60 * 60 * 1000;
+  const start = clamp(Math.floor(((Date.now() - baseTs) / hour) % 12) + 1 + (index % 2), 1, 12);
+  const span = clamp(Math.round(statusToProgress(task.status) * 8) + 1, 1, 12 - start + 1);
+  return { start, span };
+}
+
+function buildDerivedSessions() {
+  const tasks = [...state.tasks.values()];
+  const sessions = [...state.sessions.values()].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return (b.lastActivity || 0) - (a.lastActivity || 0);
+  });
+
+  return sessions.map((session) => {
+    const related = tasks.filter((task) => {
+      const ownerMatch = String(task.owner || '').toLowerCase() === String(session.agent.id || '').toLowerCase();
+      const assigned = task.assignedSessionId === session.id || task.recommendedSessionId === session.id;
+      return ownerMatch || assigned;
+    });
+    const total = related.length;
+    const score = related.reduce((sum, task) => sum + statusToProgress(task.status), 0);
+    const fallback = clamp((session.bufferLength || 0) / 120, 0.06, 0.66);
+    const progress = total ? clamp(score / total, 0.04, 1) : fallback;
+    const history = state.sessionActivity.get(session.id) || [];
+    const trend = history.some(Boolean)
+      ? history.slice(-24)
+      : Array.from({ length: 24 }, (_, idx) => Math.round(((idx + 1) / 24) * ((session.bufferLength || 4) + 4)));
+    const completed = related.filter((task) => task.status === 'completed').length;
+    const blocked = related.filter((task) => task.status === 'blocked').length;
+    const inProgress = related.filter((task) => task.status === 'in_progress').length;
+    return {
+      ...session,
+      relatedTasks: related,
+      progress,
+      trend: trend.slice(-20),
+      activity24h: trend.slice(-24),
+      completionCount: completed,
+      blockedCount: blocked,
+      inProgressCount: inProgress,
+    };
+  });
+}
+
+function buildTimelineData() {
+  const buckets = new Map();
+  const now = Date.now();
+  const days = Array.from({ length: 14 }, (_, idx) => {
+    const ts = dayKey(now - (13 - idx) * 24 * 60 * 60 * 1000);
+    buckets.set(ts, 0);
+    return ts;
+  });
+
+  const feed = [];
+  for (const task of state.tasks.values()) {
+    const ts = task.completedAt || task.updatedAt || task.createdAt;
+    if (ts) {
+      const key = dayKey(ts);
+      if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + 1);
+      feed.push({
+        ts,
+        title: task.title || task.id,
+        kicker: task.id,
+        meta: task.status === 'completed' ? 'task delivered' : `task ${task.status}`,
+        share: task.priority || 'medium',
+      });
+    }
+  }
+
+  state.localActivity.forEach((entry) => {
+    const ts = entry.timestamp || now;
+    const key = dayKey(ts);
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + 1);
+    feed.push({
+      ts,
+      title: entry.message || `${entry.agent} local activity`,
+      kicker: entry.agent,
+      meta: entry.status || 'progress',
+      share: relativeTime(ts),
+    });
+  });
+
+  for (const session of state.sessions.values()) {
+    const ts = session.lastActivity || now;
+    const key = dayKey(ts);
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + 1);
+    feed.push({
+      ts,
+      title: `${session.agent.name} / ${session.terminalName}`,
+      kicker: session.id,
+      meta: session.isActive ? 'session active' : 'session idle',
+      share: relativeTime(ts),
+    });
+  }
+
+  const timeline = feed.sort((a, b) => b.ts - a.ts).slice(0, 12);
+  const bars = days.map((ts) => ({ ts, count: buckets.get(ts) || 0 }));
+  const total = bars.reduce((sum, item) => sum + item.count, 0);
+  const max = Math.max(...bars.map((item) => item.count), 1);
+
+  const weeks = Array.from({ length: 7 }, () => Array.from({ length: 8 }, () => 0));
+  for (let i = 0; i < 56; i += 1) {
+    const ts = dayKey(now - (55 - i) * 24 * 60 * 60 * 1000);
+    const count = buckets.get(ts) || 0;
+    const row = new Date(ts).getDay();
+    const normalizedRow = row === 0 ? 6 : row - 1;
+    const col = Math.floor(i / 7);
+    weeks[normalizedRow][col] = clamp(count / max, 0, 1);
+  }
+
+  return { timeline, bars, total, max, weeks };
+}
+
+function renderTabs() {
+  const sessions = buildDerivedSessions();
+  if (!sessions.length) {
+    agentTabs.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Sessions</div><div class="card-title">還沒有活的 session</div><div class="empty-copy">在 VS Code 開啟 AI agent terminal 後，這裡會自動長出 session selector。</div></div>';
+    return;
+  }
+  agentTabs.innerHTML = sessions.map((session) => `
+    <button class="session-tab ${session.id === state.activeSessionId ? 'active' : ''} ${session.isActive ? '' : 'inactive'}"
+      data-session="${escapeHtml(session.id)}"
+      style="color:${escapeHtml(ownerColor(session.agent.id))}">
+      <span class="tab-dot"></span>
+      <span>${escapeHtml(session.agent.name)}</span>
+      <span class="micro">${escapeHtml(session.terminalName)}</span>
+    </button>
+  `).join('');
+  agentTabs.querySelectorAll('.session-tab').forEach((tab) => {
+    tab.addEventListener('click', () => selectSession(tab.getAttribute('data-session')));
+  });
+}
+
+function renderHero() {
+  const sessions = buildDerivedSessions();
+  const current = sessions.find((session) => session.id === state.activeSessionId) || sessions[0];
+  const activeSessions = sessions.filter((session) => session.isActive).length;
+  const taskSummary = getTaskSummary();
+  const backlog = state.projectData?.improvements?.length || 0;
+  const shipped = state.projectData?.completed?.length || 0;
+  const shippedRatio = shipped + backlog > 0 ? shipped / (shipped + backlog) : 0;
+
+  $('heroHeadline').textContent = getHeroHeadline(activeSessions, taskSummary);
+  $('heroSessionCount').textContent = pad(activeSessions);
+  $('heroTaskCount').textContent = `${taskSummary.active} / ${taskSummary.total}`;
+  $('heroShippedRatio').textContent = formatPct(shippedRatio);
+  $('heroAgentBreakdown').textContent = formatAgentBreakdown(state.statusData?.agentBreakdown);
+  $('heroTodayCommits').textContent = pad(state.statusData?.todayCommits || 0);
+  $('heroPendingPush').textContent = pad(state.statusData?.pendingPush || 0);
+
+  renderActionCenter(activeSessions, taskSummary, state.statusData);
+  renderTodayTimeline(state.statusData?.recentCommits);
+
+  if (!current) {
+    $('heroDial').innerHTML = '<div class="task-board-empty"><div class="eyebrow">Hero</div><div class="card-title">還沒有 session</div></div>';
+    $('heroSparkline').innerHTML = '';
+    $('heroSummary').innerHTML = '';
+    return;
+  }
+
+  const size = 360;
+  const center = size / 2;
+  const radius = 128;
+  const arcEnd = -180 + current.progress * 360;
+  const ticks = sessions.map((session, index) => {
+    const angle = -180 + (index / Math.max(sessions.length, 1)) * 360;
+    const outer = polarToCartesian(center, center, radius + 28, angle);
+    const inner = polarToCartesian(center, center, radius + 6, angle);
+    return `<line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}" stroke="#A89A86" stroke-width="4"></line>`;
+  }).join('');
+
+  $('heroDial').innerHTML = `
+    <svg viewBox="0 0 ${size} ${size}" aria-hidden="true">
+      <circle cx="${center}" cy="${center}" r="${radius + 34}" fill="none" stroke="#CDBFAD" stroke-width="1"></circle>
+      ${ticks}
+      <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#A89A86" stroke-width="16"></circle>
+      <path id="heroArc" class="progress-stroke" d="${describeArc(center, center, radius, -180, arcEnd)}" fill="none" stroke="#B85C38" stroke-width="16" stroke-linecap="round"></path>
+      <circle cx="${center}" cy="${center}" r="${radius - 58}" fill="#F2EADF" stroke="#CDBFAD" stroke-width="1"></circle>
+    </svg>
+    <div class="dial-center">
+      <div>
+        <div class="label">Current session</div>
+        <strong>${formatPct(current.progress)}</strong>
+        <div>${escapeHtml(current.agent.name)} / ${escapeHtml(current.terminalName)}</div>
+      </div>
+    </div>
+  `;
+  const heroArc = $('heroArc');
+  if (heroArc) makeStroke(heroArc, 1);
+
+  renderSparkline($('heroSparkline'), current.trend, 'step 01', 'step 20');
+  $('heroMomentumLabel').textContent = current.isActive ? 'live momentum' : 'recent buffer';
+
+  $('heroSummary').innerHTML = sessions.map((session) => `
+    <div class="summary-item">
+      <div class="summary-head">
+        <div>
+          <div class="label">${escapeHtml(session.agent.name)}</div>
+          <div class="card-title">${escapeHtml(session.relatedTasks[0]?.title || session.terminalName)}</div>
+        </div>
+        <div class="micro">${escapeHtml(relativeTime(session.lastActivity))}</div>
+      </div>
+      <div class="bar" style="--value:${session.progress}" data-label="${escapeHtml(formatPct(session.progress))}">
+        <span></span>
+      </div>
+      <div class="timeline-share">
+        <span>done ${session.completionCount}</span>
+        <span>active ${session.inProgressCount}</span>
+        <span>blocked ${session.blockedCount}</span>
+      </div>
+    </div>
+  `).join('');
+
+  const activeSession = state.sessions.get(state.activeSessionId || current.id);
+  $('terminalSessionTitle').textContent = `${current.agent.name} / ${current.terminalName}`;
+  $('terminalSessionMeta').textContent = activeSession
+    ? `最後活動 ${relativeTime(activeSession.lastActivity)} · buffer ${activeSession.bufferLength || 0}`
+    : '切換上方 session 看對話';
+  readyBars($('page-hero'));
+}
+
+function renderSessions() {
+  const sessions = buildDerivedSessions();
+  const cards = $('sessionCards');
+  if (!sessions.length) {
+    cards.innerHTML = '<div class="task-board-empty"><div class="eyebrow">VM sessions</div><div class="card-title">💤 目前沒有 VM session</div><div class="empty-copy">dispatch task 後會出現，資料來源是 <code>/api/sessions</code>。</div></div>';
+    return;
+  }
+
+  cards.innerHTML = sessions.map((session) => {
+    const filled = Math.round(session.progress * 100);
+    const cells = Array.from({ length: 100 }, (_, index) => `<span class="${index < filled ? 'filled' : ''}" style="--i:${index}"></span>`).join('');
+    return `
+      <article class="card session-card">
+        <div class="bar" style="--value:${session.progress}" data-label="${escapeHtml(formatPct(session.progress))}">
+          <span></span>
+        </div>
+        <div class="card-head">
+          <div>
+            <div class="label">🖥️ VM / ${escapeHtml(session.agent.name)}</div>
+            <div class="card-title">VM session · ${escapeHtml(session.terminalName)}</div>
+          </div>
+          <div class="micro">${escapeHtml(relativeTime(session.lastActivity))}</div>
+        </div>
+        <div class="session-card-grid">
+          <div class="session-mini">
+            <p>${escapeHtml(session.relatedTasks[0]?.title || '目前還沒有綁定任務，先看 terminal 與 activity。')}</p>
+            <div>
+              <div class="tiny">24h activity</div>
+              <div class="sparkline" id="spark-${escapeHtml(session.id)}"></div>
+            </div>
+          </div>
+          <div>
+            <div class="tiny">completion grid</div>
+            <div class="waffle" id="waffle-${escapeHtml(session.id)}">${cells}</div>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  sessions.forEach((session) => {
+    renderSparkline($(`spark-${session.id}`), session.activity24h, '', '');
+    const waffle = $(`waffle-${session.id}`);
+    if (waffle) waffle.classList.add('is-ready');
+  });
+  readyBars($('page-sessions'));
+}
+
+function renderTaskBoard() {
+  const tasks = [...state.tasks.values()].sort((a, b) => {
+    const statusRank = { in_progress: 0, pending: 1, blocked: 2, completed: 3 };
+    const priorityRank = { critical: 0, high: 1, medium: 2, low: 3 };
+    return (
+      (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) ||
+      (priorityRank[a.priority] ?? 99) - (priorityRank[b.priority] ?? 99) ||
+      (b.updatedAt || 0) - (a.updatedAt || 0)
+    );
+  });
+
+  if (!tasks.length) {
+    taskBoardScroll.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Task board</div><div class="card-title">✨ 目前沒有 task</div><div class="empty-copy">從 <code>coordination/llm-bus/agent-bridge-tasks.json</code> 加新項目，這裡就會同步出現。</div></div>';
+    taskCount.textContent = '0 active / 0 total';
+    $('ganttChart').innerHTML = '';
+    renderDispatchBoard();
+    return;
+  }
+
+  const taskSummary = getTaskSummary();
+  taskCount.textContent = `${taskSummary.active} active / ${taskSummary.total} total`;
+  taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
+
+  taskBoardScroll.innerHTML = tasks.map((task, index) => {
+    const evidenceSummary = [];
+    if (task.evidence?.changedFiles?.length) evidenceSummary.push(`改檔 ${task.evidence.changedFiles.length}`);
+    if (task.evidence?.verificationRuns?.length) evidenceSummary.push(`驗證 ${task.evidence.verificationRuns.length}`);
+    if (task.evidence?.risksNoted?.length) evidenceSummary.push(`風險 ${task.evidence.risksNoted.length}`);
+    const dispatchable = task.status !== 'completed' && Boolean(task.recommendedSessionId || task.assignedSessionId);
+    const progress = statusToProgress(task.status);
+    return `
+      <div class="task-card" data-task-id="${escapeHtml(task.id)}" data-status="${escapeHtml(task.status)}">
+        <div class="task-meta">
+          <span class="task-status ${escapeHtml(task.status)}">${escapeHtml(taskStatusLabel(task.status))}</span>
+          <span class="task-owner" style="border-color:${escapeHtml(ownerColor(task.owner))};color:${escapeHtml(ownerColor(task.owner))}">${escapeHtml(task.owner || '-')}</span>
+        </div>
+        <div class="task-main">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          <div class="micro">${escapeHtml(task.priority || 'medium')}</div>
+        </div>
+        <div class="task-summary">${escapeHtml(task.summary || '')}</div>
+        <div class="bar" style="--value:${progress}" data-label="${escapeHtml(formatPct(progress))}">
+          <span></span>
+        </div>
+        <div class="task-verify ${escapeHtml(task.verificationState || 'open')}">
+          <span>${escapeHtml(taskVerificationLabel(task))}</span>
+          <span>${escapeHtml(evidenceSummary.join(' · ') || '還沒附上佐證')}</span>
+        </div>
+        ${task.requiresConsensus ? `
+          <div class="task-consensus">
+            <span>多人點頭 ${task.consensusApprovalCount || 0}/${task.consensusRequiredCount || 0}</span>
+            <div class="task-consensus-chips">
+              ${(task.consensusReviews?.length
+                ? task.consensusReviews.map((review) => `<span class="task-review-chip ${escapeHtml(review.decision)}">${escapeHtml(review.agentId)} ${review.decision === 'approved' ? '✓' : '✗'}</span>`).join('')
+                : '<span class="task-review-chip pending">還在等</span>')}
+            </div>
+          </div>
+        ` : ''}
+        <div class="task-actions">
+          <button class="task-dispatch" data-task-dispatch="${escapeHtml(task.id)}" ${dispatchable ? '' : 'disabled'}>${escapeHtml(taskDispatchLabel(task))}</button>
+          <div class="task-session">${escapeHtml(task.recommendedSessionName || task.assignedSessionId || '還沒指定')}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  taskBoardScroll.querySelectorAll('[data-task-dispatch]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const taskId = btn.getAttribute('data-task-dispatch');
+      if (!taskId) return;
+      send({ type: 'task:dispatch', taskId });
+    });
+  });
+
+  const header = `
+    <div class="gantt-grid">
+      <div></div>
+      ${Array.from({ length: 12 }, (_, index) => `<div class="gantt-header">${index + 1}h</div>`).join('')}
+    </div>
+  `;
+  const rows = tasks.slice(0, 10).map((task, index) => {
+    const { start, span } = computeTaskWindow(task, index);
+    return `
+      <div class="gantt-grid">
+        <div class="gantt-label">${escapeHtml(task.id)} / ${escapeHtml(task.owner || 'unknown')}</div>
+        <div class="gantt-track">
+          <div class="gantt-bar" style="--start:${start};--span:${span}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  $('ganttChart').innerHTML = `${header}${rows}`;
+  $('ganttMeta').textContent = `${Math.min(tasks.length, 10)} active tasks / 12h window`;
+  readyBars($('page-tasks'));
+  renderDispatchBoard();
+}
+
+function renderDispatchBoard() {
+  const detailMeta = $('workerDispatchDetailMeta');
+  const dispatches = [...state.dispatches.values()].sort((a, b) => {
+    const statusRank = { running: 0, queued: 1, completed: 2, failed: 3 };
+    return (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99) || (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+
+  if (!dispatches.length) {
+    workerDispatchList.innerHTML = '<div class="task-board-empty"><div class="eyebrow">VM worker</div><div class="card-title">還沒有 dispatcher run</div><div class="empty-copy">等第一個 remote-vm 任務送到 VM 後，這裡才會開始累積 run。</div></div>';
+    workerDispatchMeta.textContent = '尚未收到 dispatch';
+    detailMeta.innerHTML = '';
+    workerDispatchLog.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Dispatcher log</div><div class="card-title">目前沒有可顯示的 log</div></div>';
+    return;
+  }
+
+  if (!state.activeDispatchId || !state.dispatches.has(state.activeDispatchId)) {
+    state.activeDispatchId = dispatches[0].taskId;
+  }
+  const active = state.dispatches.get(state.activeDispatchId) || dispatches[0];
+  workerDispatchMeta.textContent = `${dispatches.length} runs · active ${active.taskId}`;
+
+  workerDispatchList.innerHTML = dispatches.map((dispatch) => `
+    <button class="dispatch-card ${dispatch.taskId === state.activeDispatchId ? 'active' : ''}" data-dispatch-id="${escapeHtml(dispatch.taskId)}" data-status="${escapeHtml(dispatch.status || 'completed')}">
+      <div class="task-meta">
+        <span class="task-status ${escapeHtml(dispatch.status || 'completed')}">${escapeHtml(dispatch.status || 'completed')}</span>
+        <span class="task-owner" style="border-color:${escapeHtml(ownerColor(dispatch.agent))};color:${escapeHtml(ownerColor(dispatch.agent))}">${escapeHtml(dispatch.agent || '-')}</span>
+      </div>
+      <div class="task-main">
+        <div class="task-title">${escapeHtml(dispatch.taskId)}</div>
+        <div class="micro">${escapeHtml(dispatch.verdict || 'running')}</div>
+      </div>
+      <div class="task-summary">${escapeHtml(dispatch.summary_250words || '尚未產生 summary')}</div>
+      <div class="dispatch-inline">
+        <span class="summary-chip">${escapeHtml(relativeTime(dispatch.updatedAt))}</span>
+        <span class="summary-chip">${escapeHtml(dispatch.durationSec != null ? `${dispatch.durationSec}s` : 'running')}</span>
+      </div>
+    </button>
+  `).join('');
+
+  workerDispatchList.querySelectorAll('[data-dispatch-id]').forEach((node) => {
+    node.addEventListener('click', () => {
+      state.activeDispatchId = node.getAttribute('data-dispatch-id');
+      renderDispatchBoard();
+    });
+  });
+
+  detailMeta.innerHTML = `
+    <span class="task-status ${escapeHtml(active.status || 'completed')}">${escapeHtml(active.status || 'completed')}</span>
+    <span class="task-owner" style="border-color:${escapeHtml(ownerColor(active.agent))};color:${escapeHtml(ownerColor(active.agent))}">${escapeHtml(active.agent || '-')}</span>
+    <span class="summary-chip">verdict ${escapeHtml(active.verdict || '-')}</span>
+    <span class="summary-chip">duration ${escapeHtml(active.durationSec != null ? `${active.durationSec}s` : 'running')}</span>
+    <span class="summary-chip">callback ${escapeHtml(active.callbackDelivered ? 'sent' : active.callback ? 'pending' : 'none')}</span>
+  `;
+
+  const lines = Array.isArray(active.recentLines) ? active.recentLines : [];
+  const blocks = [];
+  if (active.summary_250words) blocks.push(`<div class="dispatch-log-line"><strong>SUMMARY</strong>: ${escapeHtml(active.summary_250words)}</div>`);
+  if (active.next_step) blocks.push(`<div class="dispatch-log-line"><strong>NEXT_STEP</strong>: ${escapeHtml(active.next_step)}</div>`);
+  if (active.changed_files?.length) blocks.push(`<div class="dispatch-log-line"><strong>CHANGED_FILES</strong>: ${escapeHtml(active.changed_files.join(', '))}</div>`);
+  workerDispatchLog.innerHTML = [
+    ...blocks,
+    ...lines.map((line) => `<div class="dispatch-log-line ${/error|fail|exception/i.test(line) ? 'error' : ''}">${escapeHtml(line)}</div>`),
+  ].join('') || '<div class="task-board-empty"><div class="eyebrow">Dispatcher log</div><div class="card-title">這個 run 還沒有輸出</div></div>';
+}
+
+function renderTimeline() {
+  const { timeline, bars, total, max, weeks } = buildTimelineData();
+  $('timelineTotal').textContent = String(total);
+  const timelineTrack = $('timelineTrack');
+  if (!timeline.length) {
+    timelineTrack.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Timeline</div><div class="card-title">目前還沒有 activity timeline</div></div>';
+  } else {
+    timelineTrack.innerHTML = timeline.map((item) => `
+      <article class="timeline-event">
+        <div class="timeline-head">
+          <div>
+            <div class="label">${escapeHtml(formatShortDate(item.ts))}</div>
+            <div class="card-title">${escapeHtml(item.title)}</div>
+          </div>
+          <div class="micro">${escapeHtml(item.share)}</div>
+        </div>
+        <div class="timeline-copy">${escapeHtml(item.meta)}</div>
+      </article>
+    `).join('');
+  }
+
+  $('activityChart').innerHTML = bars.map((item) => `
+    <div class="day-column">
+      <div class="day-bar" style="--value:${item.count / max}" data-label="${escapeHtml(String(item.count))}">
+        <span></span>
+      </div>
+      <div class="day-label">${escapeHtml(formatDateLabel(item.ts))}</div>
+    </div>
+  `).join('');
+
+  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const heatRows = weekdays.map((label, rowIndex) => `
+    <div class="heat-label">${label}</div>
+    ${weeks[rowIndex].map((level, colIndex) => `<div class="heat-cell" style="--level:${level};--i:${rowIndex * 8 + colIndex}"></div>`).join('')}
+  `).join('');
+  $('heatmapChart').innerHTML = `
+    <div class="chart-head">
+      <div>
+        <div class="label">Last 8 weeks</div>
+        <div class="card-title">Contribution heatmap</div>
+      </div>
+      <div class="micro">low to high density</div>
+    </div>
+    <div class="heatmap-grid">${heatRows}</div>
+  `;
+  readyBars($('page-timeline'));
+}
+
+function buildProjectMetrics() {
+  const backlog = state.projectData?.improvements?.length || 0;
+  const shipped = state.projectData?.completed?.length || 0;
+  const inProgress = [...state.tasks.values()].filter((task) => task.status === 'in_progress').length;
+  const shippedRatio = shipped + backlog > 0 ? shipped / (shipped + backlog) : 0;
+  return { backlog, shipped, inProgress, shippedRatio };
+}
+
+function renderArchitecture(data) {
+  const architecture = data?.architecture || {};
+  const frontend = architecture.frontend || {};
+  const backend = architecture.backend || {};
+  const vm = architecture.vm || {};
+  const knowledgeBase = architecture.knowledgeBase || {};
+
+  $('architectureMap').innerHTML = `
+    <div class="project-stack">
+      <div class="architecture-row">
+        <div class="label">Frontend</div>
+        <div class="card-title">${escapeHtml(frontend.stack || '未知')}</div>
+        <div class="muted-copy">${escapeHtml(frontend.entry || '')}</div>
+      </div>
+      <div class="architecture-row">
+        <div class="label">Backend</div>
+        <div class="card-title">${escapeHtml(backend.stack || '未知')}</div>
+        <div class="muted-copy">${escapeHtml(`${backend.endpoints || 0} endpoints · ${backend.crons || 0} crons`)}</div>
+      </div>
+      <div class="architecture-row">
+        <div class="label">VM</div>
+        <div class="card-title">${escapeHtml(vm.host || '未知')}</div>
+        <div class="muted-copy">${escapeHtml((vm.services || []).join(' • ') || '')}</div>
+      </div>
+      <div class="architecture-row">
+        <div class="label">Knowledge</div>
+        <div class="card-title">${escapeHtml(knowledgeBase.status || '未知')}</div>
+        <div class="muted-copy">${escapeHtml(knowledgeBase.migration || '')}</div>
+      </div>
+    </div>
+  `;
+
+  $('architectureMeta').innerHTML = `
+    <div class="project-stack">
+      <div class="architecture-row">
+        <div class="label">Deploy</div>
+        <div>${escapeHtml(frontend.deploy || '未知')}</div>
+      </div>
+      <div class="architecture-row">
+        <div class="label">Data flow</div>
+        <div>${escapeHtml(Object.keys(architecture.dataFlow || {}).join(' • ') || '未知')}</div>
+      </div>
+      <div class="architecture-row">
+        <div class="label">Files</div>
+        <div>${escapeHtml(Object.keys(knowledgeBase.files || {}).join(' • ') || '未知')}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderWorkDivision(workDivision) {
+  const grid = $('agentGrid');
+  const entries = Object.entries(workDivision || {});
+  if (!entries.length) {
+    grid.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Work division</div><div class="card-title">目前沒有 AI 分工資料</div></div>';
+    return;
+  }
+  grid.innerHTML = entries.map(([name, agent]) => {
+    const taskIds = agent.activeTaskIds || [];
+    return `
+      <div class="task-card">
+        <div class="task-meta">
+          <span class="task-owner" style="border-color:${escapeHtml(agent.color || ownerColor(name))};color:${escapeHtml(agent.color || ownerColor(name))}">${escapeHtml(name)}</span>
+          <span class="agent-load ${escapeHtml((taskIds.length ? 'running' : 'idle'))}">${escapeHtml(taskIds.length ? 'running' : 'idle')}</span>
+        </div>
+        <div class="task-summary">${escapeHtml(agent.focus || '')}</div>
+        <div class="task-consensus-chips">
+          ${taskIds.length
+            ? taskIds.map((id) => `<span class="roadmap-chip">${escapeHtml(id)}</span>`).join('')
+            : '<span class="roadmap-chip">idle</span>'}
+        </div>
+        ${agent.note ? `<div class="muted-copy">${escapeHtml(agent.note)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderImprovements(items) {
+  const root = $('improvementsList');
+  if (!Array.isArray(items) || !items.length) {
+    root.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Improvements</div><div class="card-title">暫時沒有待改善項</div></div>';
+    return;
+  }
+  root.innerHTML = items.slice(0, 8).map((item) => `
+    <div class="task-card">
+      <div class="task-meta">
+        <span class="priority-badge">${escapeHtml(item.priority || 'P2')}</span>
+        <span class="imp-owner" style="border-color:${escapeHtml(ownerColor(item.owner))};color:${escapeHtml(ownerColor(item.owner))}">${escapeHtml(item.owner || '-')}</span>
+      </div>
+      <div class="task-title">${escapeHtml(item.title || '')}</div>
+      <div class="task-summary">${escapeHtml(item.why || '')}</div>
+    </div>
+  `).join('');
+}
+
+function renderCompletedTimeline(completed) {
+  const root = $('completedTimeline');
+  if (!Array.isArray(completed) || !completed.length) {
+    root.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Completed</div><div class="card-title">還沒有已完成紀錄</div></div>';
+    return;
+  }
+  root.innerHTML = [...completed]
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+    .slice(0, 10)
+    .map((item) => `
+      <div class="timeline-event">
+        <div class="timeline-head">
+          <div>
+            <div class="label">${escapeHtml(formatShortDate(item.date))}</div>
+            <div class="card-title">${escapeHtml(item.title || item.id || '')}</div>
+          </div>
+          <div class="micro">${escapeHtml(item.id || '-')}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+function renderProjects() {
+  const { backlog, shipped, inProgress, shippedRatio } = buildProjectMetrics();
+  $('backlogCount').textContent = String(backlog);
+  $('shippedCount').textContent = String(shipped);
+  $('inProgressCount').textContent = pad(inProgress);
+
+  $('projectDonut').innerHTML = `
+    <svg viewBox="0 0 260 260" aria-hidden="true">
+      <circle cx="130" cy="130" r="92" fill="none" stroke="#A89A86" stroke-width="24"></circle>
+      <circle id="projectDonutRing" class="progress-stroke" cx="130" cy="130" r="92" fill="none" stroke="#B85C38" stroke-width="24" stroke-linecap="butt" transform="rotate(-90 130 130)"></circle>
+    </svg>
+    <div class="donut-center">
+      <div>
+        <strong>${formatPct(shippedRatio)}</strong>
+        <div class="label">shipped ratio</div>
+      </div>
+    </div>
+  `;
+  const ring = $('projectDonutRing');
+  if (ring) {
+    const circumference = 2 * Math.PI * 92;
+    ring.style.strokeDasharray = `${circumference}`;
+    ring.style.strokeDashoffset = `${circumference * (1 - shippedRatio)}`;
+  }
+
+  const roadmap = state.projectData?.roadmap || {};
+  const order = ['now', 'next', 'later'];
+  const roadmapMeta = {
+    now: 'highest pressure',
+    next: 'queued',
+    later: 'parked',
+  };
+  const allTaskLengths = order.map((key) => (roadmap[key]?.taskIds || roadmap[key] || []).length);
+  const maxItems = Math.max(...allTaskLengths, 1);
+  $('roadmapGrid').innerHTML = order.map((key) => {
+    const raw = roadmap[key];
+    const items = Array.isArray(raw?.taskIds) ? raw.taskIds : Array.isArray(raw) ? raw : [];
+    return `
+      <article class="roadmap-card">
+        <div class="roadmap-top">
+          <div>
+            <div class="label">${escapeHtml(key)}</div>
+            <h4>${items.length} blocks</h4>
+          </div>
+          <div class="micro">${escapeHtml(roadmapMeta[key])}</div>
+        </div>
+        <div class="roadmap-stack">
+          ${items.map((item, index) => `<div class="stack-segment" style="--value:${Math.max(0.26, 0.92 - index * 0.1)}" data-label="${index + 1}"><span></span><strong>${escapeHtml(item)}</strong></div>`).join('')}
+          ${Array.from({ length: Math.max(0, maxItems - items.length) }).map(() => `<div class="stack-segment empty" style="--value:0"><span></span><strong>empty slot</strong></div>`).join('')}
+        </div>
+      </article>
+    `;
+  }).join('');
+  $('roadmapSummaryChip').textContent = `${shipped} shipped / ${backlog} backlog`;
+
+  const workDivision = state.projectData?.workDivision || {};
+  const axes = ['Task count', 'Completed', 'In progress', 'Blocked'];
+  const names = Object.keys(workDivision);
+  const agentValues = names.map((name) => {
+    const related = [...state.tasks.values()].filter((task) => String(task.owner || '').toLowerCase() === name.toLowerCase());
+    return [
+      related.length,
+      related.filter((task) => task.status === 'completed').length,
+      related.filter((task) => task.status === 'in_progress').length,
+      related.filter((task) => task.status === 'blocked').length,
+    ];
+  });
+  const maxByAxis = axes.map((_, axisIdx) => Math.max(1, ...agentValues.map((values) => values?.[axisIdx] || 0)));
+  const center = 170;
+  const radius = 120;
+
+  const gridPolygons = [0.25, 0.5, 0.75, 1].map((scale) => {
+    const points = axes.map((_, index) => {
+      const point = polarToCartesian(center, center, radius * scale, -90 + (360 / axes.length) * index);
+      return `${point.x},${point.y}`;
+    }).join(' ');
+    return `<polygon points="${points}" fill="none" stroke="#CDBFAD" stroke-width="1"></polygon>`;
+  }).join('');
+
+  const axisLines = axes.map((label, index) => {
+    const angle = -90 + (360 / axes.length) * index;
+    const point = polarToCartesian(center, center, radius, angle);
+    const text = polarToCartesian(center, center, radius + 26, angle);
+    return `
+      <line x1="${center}" y1="${center}" x2="${point.x}" y2="${point.y}" stroke="#CDBFAD" stroke-width="1"></line>
+      <text x="${text.x}" y="${text.y}" fill="#6E5B51" font-size="12" text-anchor="middle">${label}</text>
+    `;
+  }).join('');
+
+  const polygons = names.map((name, agentIndex) => {
+    const points = (agentValues[agentIndex] || [0, 0, 0, 0]).map((value, axisIndex) => {
+      const ratio = maxByAxis[axisIndex] ? value / maxByAxis[axisIndex] : 0;
+      const point = polarToCartesian(center, center, radius * ratio, -90 + (360 / axes.length) * axisIndex);
+      return `${point.x},${point.y}`;
+    }).join(' ');
+    return `<polygon points="${points}" fill="rgba(184,92,56,${0.14 + agentIndex * 0.08})" stroke="${ownerColor(name)}" stroke-width="2"></polygon>`;
+  }).join('');
+
+  $('projectRadar').innerHTML = `
+    <svg viewBox="0 0 340 340" aria-hidden="true">
+      ${gridPolygons}
+      ${axisLines}
+      ${polygons}
+    </svg>
+  `;
+
+  renderArchitecture(state.projectData);
+  renderWorkDivision(state.projectData?.workDivision || {});
+  renderImprovements(state.projectData?.improvements || []);
+  renderCompletedTimeline(state.projectData?.completed || []);
+  $('projectCount').textContent = `${backlog} 待補 · ${shipped} 已交付`;
+  readyBars($('page-projects'));
+}
+
+function renderMacActivity(entries) {
+  if (!Array.isArray(entries) || !entries.length) {
+    macActivityGrid.innerHTML = '';
+    macEmptyState.hidden = false;
+    return;
+  }
+  macEmptyState.hidden = true;
+  macActivityGrid.innerHTML = entries.map((entry) => {
+    const fullMessage = String(entry.message || '');
+    // 抽 message 的第一行有意義內容當摘要，避免整片 markdown 把卡撐爆
+    const lines = fullMessage.split('\n').map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || '(無內容)';
+    const headline = firstLine.length > 80 ? firstLine.slice(0, 80) + '…' : firstLine;
+    const lineCount = lines.length;
+    const stat = lineCount > 1 ? ` · ${lineCount} 行 markdown` : '';
+    const safeHeadline = escapeHtml(headline);
+    const safeMessage = escapeHtml(fullMessage);
+    return `
+      <div class="mac-activity-card">
+        <span class="surface-prefix mac">💻 Mac local</span>
+        <span class="mac-agent-name">Mac · ${escapeHtml(entry.agent)}</span>
+        <span class="mac-agent-status ${escapeHtml(entry.status || 'unknown')}">${escapeHtml(entry.status || 'unknown')}</span>
+        <details class="mac-message-details">
+          <summary class="mac-message-summary">${safeHeadline}${stat}</summary>
+          <pre class="mac-message-pre">${safeMessage}</pre>
+        </details>
+        <span class="micro">${escapeHtml(relativeTime(entry.timestamp))}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPages() {
+  document.querySelectorAll('.page-panel').forEach((panel) => {
+    panel.classList.toggle('active', panel.getAttribute('data-page') === state.activePage);
+  });
+  document.querySelectorAll('.page-tab').forEach((tab) => {
+    tab.classList.toggle('active', tab.getAttribute('data-page') === state.activePage);
+  });
+}
+
+function renderAll() {
+  renderPages();
+  renderTabs();
+  renderHero();
+  renderSessions();
+  renderTaskBoard();
+  renderTimeline();
+  if (state.projectData) renderProjects();
+  else {
+    $('projectCount').textContent = 'project loading';
+  }
+}
+
+function setWakeBusy(isBusy) {
+  wakeContinueBtn.disabled = isBusy;
+  wakeSendBtn.disabled = isBusy;
+}
+
+async function pollWakeLog(logPath) {
+  const match = /wake-(\d+)\.log$/.exec(String(logPath || ''));
+  if (!match) {
+    wakeStatusMeta.textContent = 'logPath 格式不正確';
+    return;
+  }
+  const wakeId = match[1];
+  const pollRunId = Date.now();
+  state.wakePollRunId = pollRunId;
+
+  for (let i = 0; i < 120; i += 1) {
+    if (state.wakePollRunId !== pollRunId) return;
+    try {
+      const res = await apiFetch(bridgeUrl(`/wake/log/${wakeId}`));
+      if (res.ok) {
+        const data = await res.json();
+        wakeOutput.textContent = data.content || 'Wake log 尚無輸出';
+        wakeStatusMeta.textContent = `wake-${wakeId} · ${data.status || 'running'}`;
+        if (data.status === 'finished') return;
+      }
+    } catch (error) {
+      wakeStatusMeta.textContent = '讀取 wake log 失敗';
+      return;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+  }
+  wakeStatusMeta.textContent = `wake-${wakeId} · polling timeout`;
+}
+
+async function submitWake(mode) {
+  const message = String(wakePromptInput.value || '').trim();
+  if (mode === 'command' && !message) {
+    wakeStatusMeta.textContent = '請先輸入自訂指令';
+    wakePromptInput.focus();
+    return;
+  }
+
+  setWakeBusy(true);
+  wakeOutput.textContent = '送出 Layer 2 任務中…';
+  wakeStatusMeta.textContent = mode === 'continue' ? 'continue runbook 送出中' : '自訂 wake 指令送出中';
+
+  try {
+    const res = await apiFetch(bridgeUrl('/wake'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mode === 'continue'
+        ? { mode }
+        : { mode, message }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      wakeOutput.textContent = data.error || 'wake 送出失敗';
+      wakeStatusMeta.textContent = 'Layer 2 送出失敗';
+      return;
+    }
+    wakeOutput.textContent = [
+      `queued: ${data.cli || 'vm-llm'}`,
+      `log: ${data.logPath}`,
+      data.hint || '',
+      '',
+    ].join('\n');
+    wakeStatusMeta.textContent = `已送出 ${mode === 'continue' ? 'continue runbook' : '自訂指令'}`;
+    if (mode === 'command') wakePromptInput.value = '';
+    await pollWakeLog(data.logPath);
+  } catch (error) {
+    wakeOutput.textContent = error?.message || 'wake 送出失敗';
+    wakeStatusMeta.textContent = 'Layer 2 送出失敗';
+  } finally {
+    setWakeBusy(false);
+  }
+}
+
+async function fetchProject() {
+  try {
+    const res = await apiFetch(bridgeUrl('/api/project'));
+    if (!res.ok) return;
+    state.projectData = await res.json();
+    renderProjects();
+  } catch (error) {
+    console.warn('fetchProject failed', error);
+  }
+}
+
+async function fetchLocalActivity() {
+  try {
+    const res = await apiFetch(bridgeUrl('/api/status'));
+    if (!res.ok) return;
+    const data = await res.json();
+    state.statusData = data;
+    state.localActivity = data.localActivity || [];
+    renderMacActivity(state.localActivity);
+    renderAll();
+  } catch (error) {
+    console.warn('fetchLocalActivity failed', error);
+  }
+}
+
+async function fetchSessionsSnapshot() {
+  try {
+    const res = await apiFetch(bridgeUrl('/api/sessions'));
+    if (!res.ok) return;
+    const sessions = await res.json();
+    state.sessions.clear();
+    sessions.forEach((session) => state.sessions.set(session.id, session));
+    if (!state.activeSessionId && sessions[0]) state.activeSessionId = sessions[0].id;
+    renderAll();
+    ensureActiveSessionSelection();
+  } catch (error) {
+    console.warn('fetchSessions failed', error);
+  }
+}
+
+async function fetchTasksSnapshot() {
+  try {
+    const res = await apiFetch(bridgeUrl('/api/tasks'));
+    if (!res.ok) return;
+    const tasks = await res.json();
+    state.tasks.clear();
+    tasks.forEach((task) => state.tasks.set(task.id, task));
+    renderAll();
+  } catch (error) {
+    console.warn('fetchTasks failed', error);
+  }
+}
+
+async function fetchDispatchSnapshot() {
+  try {
+    const res = await apiFetch(bridgeUrl('/api/workers/dispatch'));
+    if (!res.ok) return;
+    const dispatches = await res.json();
+    state.dispatches.clear();
+    dispatches.forEach((dispatch) => state.dispatches.set(dispatch.taskId, dispatch));
+    if (!state.activeDispatchId && dispatches[0]) state.activeDispatchId = dispatches[0].taskId;
+    renderTaskBoard();
+  } catch (error) {
+    console.warn('fetchDispatches failed', error);
+  }
+}
+
+document.querySelectorAll('.page-tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    state.activePage = tab.getAttribute('data-page') || 'hero';
+    renderPages();
+  });
+});
+
+document.addEventListener('keydown', (event) => {
+  if (/^[1-5]$/.test(event.key)) {
+    const pages = ['hero', 'sessions', 'tasks', 'timeline', 'projects'];
+    state.activePage = pages[Number(event.key) - 1];
+    renderPages();
+  }
+});
+
+  taskToggle.addEventListener('click', () => {
+    state.taskBoardCollapsed = !state.taskBoardCollapsed;
+    taskToggle.textContent = state.taskBoardCollapsed ? '展開' : '收合';
+    taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
+  });
+
+architectureToggle.addEventListener('click', () => {
+  state.architectureExpanded = !state.architectureExpanded;
+  architectureMeta.classList.toggle('collapsed', !state.architectureExpanded);
+  architectureToggle.textContent = state.architectureExpanded ? '收起細節' : '展開細節';
+});
+
+inputField.addEventListener('input', () => {
+  inputField.style.height = 'auto';
+  inputField.style.height = `${Math.min(inputField.scrollHeight, 140)}px`;
+  sendBtn.disabled = !inputField.value.trim() || !state.activeSessionId;
+});
+
+inputField.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    if (inputField.value.trim()) {
+      sendMessage(inputField.value);
+      inputField.value = '';
+      inputField.style.height = 'auto';
+      sendBtn.disabled = true;
+    }
+  }
+});
+
+sendBtn.addEventListener('click', () => {
+  if (!inputField.value.trim()) return;
+  sendMessage(inputField.value);
+  inputField.value = '';
+  inputField.style.height = 'auto';
+  sendBtn.disabled = true;
+});
+
+wakeContinueBtn.addEventListener('click', () => {
+  submitWake('continue');
+});
+
+wakeSendBtn.addEventListener('click', () => {
+  submitWake('command');
+});
+
+wakePromptInput.addEventListener('keydown', (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    event.preventDefault();
+    submitWake('command');
+  }
+});
+
+termOutput.addEventListener('scroll', () => {
+  const { scrollTop, scrollHeight, clientHeight } = termOutput;
+  state.autoScroll = (scrollHeight - scrollTop - clientHeight) < 60;
+});
+
+fabBtn.addEventListener('click', () => {
+  modalBackdrop.classList.add('open');
+});
+
+modalBackdrop.addEventListener('click', (event) => {
+  if (event.target === modalBackdrop) modalBackdrop.classList.remove('open');
+});
+
+document.querySelectorAll('.modal-option').forEach((option) => {
+  option.addEventListener('click', () => {
+    const agent = option.getAttribute('data-agent');
+    const cmd = option.getAttribute('data-cmd');
+    if (agent === 'custom') {
+      const userCmd = prompt('輸入啟動指令：');
+      if (userCmd) {
+        send({ type: 'terminal:create', name: userCmd.split(' ')[0], command: userCmd });
+      }
+    } else {
+      send({ type: 'terminal:create', name: cmd, command: cmd });
+    }
+    modalBackdrop.classList.remove('open');
+  });
+});
+
+connect();
+fetchProject();
+fetchLocalActivity();
+fetchSessionsSnapshot();
+fetchTasksSnapshot();
+fetchDispatchSnapshot();
+setInterval(fetchProject, 60000);
+setInterval(fetchLocalActivity, 60000);
+setInterval(fetchSessionsSnapshot, 90000);
+setInterval(fetchTasksSnapshot, 90000);
+setInterval(fetchDispatchSnapshot, 45000);
+</script>
+</body>
+</html>

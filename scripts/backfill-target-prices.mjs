@@ -5,6 +5,7 @@ import {
   putTargetPriceSnapshot,
   sleep,
 } from '../api/cron/collect-target-prices.js'
+import { buildInternalAuthHeaders } from '../api/_lib/auth-middleware.js'
 import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:3002'
@@ -67,9 +68,9 @@ async function readJsonSafely(response) {
 async function fetchAnalystReports(baseUrl, stock) {
   const response = await fetch(new URL('/api/analyst-reports', baseUrl), {
     method: 'POST',
-    headers: {
+    headers: buildInternalAuthHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({
       code: stock.code,
       name: stock.name,

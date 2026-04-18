@@ -8019,3 +8019,12 @@ Ops：T48 T58 T59 T60 T62 T64(slim) T67(+T65) **+M04**
 - `T49`：brain / research / portfolio snapshot blob 改 `private`；新增 signed blob helper + `/api/blob-read`，TTL 15 min；telemetry 維持 `public`。
 - `T62`：新增 `scripts/backup-to-vm.mjs`，checkpoint 納入 latest localStorage backup mirror，已安裝使用者 crontab：`CRON_TZ=Asia/Taipei` + daily `03:00` backup job。
 - verify：`npm run verify:local` 全綠，`126/126` test files passed、`868/868` tests passed、build/healthcheck/smoke:ui 均通過。
+
+## Round 128 · Codex · Playwright 自動 QA · 2026-04-18 22:48 CST
+
+- 新增 Playwright matrix：`chromium` / `webkit` / `ios-safari`，覆蓋 portfolio golden path 9 步驟與 Agent Bridge PIN login smoke。
+- 補 stable `data-testid` 到 header / holdings / research / events / news / daily / trade / log，讓 E2E selector 不靠 brittle text/class。
+- `scripts/full-smoke.mjs` 現在會自舉本機 Vite server、跑 `npx playwright test tests/e2e --reporter=html,json`、複製報告到 `docs/qa/playwright-report-2026-04-18/`，並把 evidence append 到 `docs/release/internal-beta-signoff.md`。
+- 最新驗證：`npx playwright test tests/e2e` = `6/6 pass`；`node scripts/full-smoke.mjs` = pass；`test-results/index.html` 可產出。
+- live portfolio 目前沒有顯性 `cust_id` login gate，所以腳本先嘗試 `7865`，不存在時自動 fallback 到 `portfolio-select -> 金聯成`。
+- `Q06` 自動覆蓋更新為「Playwright webkit + iOS viewport cover 90%」；真 iOS Safari 實機 10% 仍留給 owner manual signoff。

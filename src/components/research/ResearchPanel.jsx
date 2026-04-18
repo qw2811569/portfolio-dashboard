@@ -1183,7 +1183,7 @@ export function ResearchPanel({
 }) {
   return h(
     'div',
-    null,
+    { 'data-testid': 'research-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     h(ResearchHeader, {
       onEvolve,

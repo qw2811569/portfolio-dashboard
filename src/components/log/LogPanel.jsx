@@ -9,7 +9,7 @@ export function LogPanel({ tradeLog }) {
   if (!tradeLog || tradeLog.length === 0) {
     return h(
       Card,
-      { style: { textAlign: 'center', padding: '24px 14px' } },
+      { 'data-testid': 'trade-log-panel', style: { textAlign: 'center', padding: '24px 14px' } },
       h('div', { style: { fontSize: 20, marginBottom: 6, opacity: 0.3 } }, '◌'),
       h(
         'div',
@@ -23,7 +23,7 @@ export function LogPanel({ tradeLog }) {
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'trade-log-panel' },
     [...tradeLog]
       .sort((a, b) => b.id - a.id)
       .map((log) =>

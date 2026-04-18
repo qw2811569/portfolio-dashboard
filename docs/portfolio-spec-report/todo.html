@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TODO · 69 條 + 9 層 DAG | 持倉看板 · 2026-04-18</title>
+    <title>TODO · 89-item Live Matrix | 持倉看板 · 2026-04-18</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,9 +12,9 @@
     />
     <link rel="stylesheet" href="./source-han-fonts.css" />
     <link rel="stylesheet" href="./tokens.css" />
-    <link rel="stylesheet" href="./spec-doc.css?v=r111b" />
+    <link rel="stylesheet" href="./spec-doc.css?v=r119e" />
   </head>
-  <body data-md="./todo.md?v=r111b">
+  <body data-md="./todo.md?v=r119e">
     <nav class="report-nav">
       <div class="report-nav__inner">
         <div class="report-nav__brand"><strong>持倉看板 · 2026-04-18</strong></div>
@@ -25,17 +25,20 @@
           <a class="report-nav__tab" href="./architecture.html">架構</a>
           <a class="report-nav__tab is-active" href="./todo.html">TODO</a>
         </div>
-        <div class="report-nav__status">Ship-Before 30 · Beta+1 20</div>
+        <div class="report-nav__status">89 items · Ship-Before 30 · QA/Ops 20</div>
       </div>
     </nav>
     <main class="page-shell">
+      <section class="progress-panel-shell" aria-label="Live progress panel">
+        <div class="progress-panel" id="live-progress"></div>
+      </section>
       <section class="page-hero">
-        <div class="page-kicker">Task 2 TODO</div>
-        <h1>69 條 TODO 與 9 層 DAG</h1>
+        <div class="page-kicker">Task 2 TODO · Live Matrix</div>
+        <h1>89 條 Live TODO 與 9 層 DAG</h1>
         <p>
-          本頁只放 internal beta 的 execution ledger：Ship-Before 30、Beta+1 20、Backlog 19、Phase 2 debt、9 層 DAG、T-ID mapping 與兩條 critical path。
+          本頁整合 internal beta execution ledger 與 live progress：Ship-Before 30、Beta+1 20、Backlog 19、R118 QA 12、Recurring Ops 8、9 層 DAG、T-ID mapping 與兩條 critical path。
         </p>
-        <div class="page-meta">Source: <code>todo.md</code> · Rendered for portal review</div>
+        <div class="page-meta">Source: <code>todo.md</code> + <code>progress.json</code> · Auto-refresh every 60s</div>
       </section>
       <section class="page-grid">
         <aside class="toc" data-toc></aside>
@@ -43,6 +46,13 @@
       </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script type="module" src="./spec-doc.js?v=r111b"></script>
+    <script type="module">
+      import { renderProgress } from './progress.js?v=r119e'
+
+      const progressNode = document.getElementById('live-progress')
+      renderProgress(progressNode)
+      window.setInterval(() => renderProgress(progressNode), 60000)
+    </script>
+    <script type="module" src="./spec-doc.js?v=r119e"></script>
   </body>
 </html>

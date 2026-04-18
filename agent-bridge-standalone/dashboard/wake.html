@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0A0A0A" />
+    <title>Agent Bridge Wake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      ;(() => {
+        const base = window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : ''
+        window.AGENT_BRIDGE_BASE_URL = base
+        const params = new URLSearchParams(window.location.search)
+        const bridgeTokenFromUrl = String(
+          params.get('token') || params.get('bridge_token') || ''
+        ).trim()
+        if (bridgeTokenFromUrl) {
+          localStorage.setItem('bridge_auth_token', bridgeTokenFromUrl.replace(/^Bearer\s+/i, ''))
+          params.delete('token')
+          params.delete('bridge_token')
+          const nextQuery = params.toString()
+          const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`
+          window.history.replaceState({}, '', cleanUrl)
+        }
+      })()
+    </script>
+    <style>
+      :root {
+        --canvas-black: #0a0a0a;
+        --canvas-orange: #ff3e1f;
+        --canvas-orange-deep: #eb3214;
+        --canvas-white: #f8f6f2;
+        --ink-on-black: #f8f6f2;
+        --ink-muted: rgba(248, 246, 242, 0.64);
+        --display: 'Inter Tight', 'Noto Sans TC', sans-serif;
+        --display-condensed: 'Barlow Condensed', 'Inter Tight', 'Noto Sans TC', sans-serif;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+        --radius-xl: 28px;
+        --radius-pill: 999px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--canvas-black);
+        color: var(--ink-on-black);
+        font-family: var(--display);
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        min-height: 100svh;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: '';
+        position: fixed;
+        inset: -18% -10%;
+        background:
+          radial-gradient(circle at 14% 18%, rgba(248, 246, 242, 0.06) 0 17px, transparent 18px) 0
+            0 / 112px 112px,
+          radial-gradient(circle at 72% 58%, rgba(248, 246, 242, 0.04) 0 14px, transparent 15px) 0
+            0 / 138px 138px;
+        opacity: 0.52;
+        transform: rotate(-16deg);
+        pointer-events: none;
+      }
+
+      .wake-shell {
+        position: relative;
+        z-index: 1;
+        width: min(100vw, 480px);
+        min-height: 100svh;
+        margin: 0 auto;
+        padding: calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);
+        display: grid;
+        gap: 18px;
+        align-content: start;
+      }
+
+      .wake-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .eyebrow,
+      .micro-copy,
+      .back-link {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .micro-copy,
+      .back-link {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--ink-muted);
+      }
+
+      .back-link {
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .back-link::before {
+        content: '';
+        width: 20px;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.44;
+      }
+
+      .wake-card {
+        padding: 22px 20px;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(180deg, rgba(255, 62, 31, 0.12), rgba(248, 246, 242, 0.06));
+        box-shadow:
+          inset 0 0 0 1px rgba(248, 246, 242, 0.08),
+          0 24px 80px rgba(0, 0, 0, 0.34);
+      }
+
+      .led-label {
+        margin: 0 0 10px;
+        font-family: var(--display-condensed);
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: transparent;
+        background-image: radial-gradient(circle, rgba(255, 62, 31, 0.96) 1.4px, transparent 1.8px);
+        background-size: 10px 10px;
+        background-position: 0 62%;
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+
+      .wake-title {
+        margin: 0;
+        font-family: var(--display-condensed);
+        font-size: clamp(68px, 24vw, 112px);
+        font-weight: 800;
+        line-height: 0.86;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+      }
+
+      .wake-copy {
+        margin: 18px 0 0;
+        max-width: 26ch;
+        color: var(--ink-muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .wake-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .wake-button {
+        min-height: 52px;
+        padding: 0 16px;
+        border-radius: 18px;
+        border: 0;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .wake-button:disabled {
+        opacity: 0.42;
+        cursor: wait;
+      }
+
+      .wake-button--primary {
+        background: var(--canvas-white);
+        color: var(--canvas-black);
+      }
+
+      .wake-button--secondary {
+        background: rgba(248, 246, 242, 0.07);
+        color: var(--ink-on-black);
+        border: 1px solid rgba(248, 246, 242, 0.18);
+      }
+
+      .wake-label {
+        display: block;
+        margin-top: 18px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+      }
+
+      .wake-input {
+        width: 100%;
+        min-height: 132px;
+        margin-top: 10px;
+        padding: 16px;
+        border: 1px solid rgba(248, 246, 242, 0.14);
+        border-radius: 22px;
+        background: rgba(248, 246, 242, 0.05);
+        color: var(--ink-on-black);
+        font: inherit;
+        font-size: 15px;
+        line-height: 1.45;
+        resize: vertical;
+      }
+
+      .wake-input::placeholder {
+        color: rgba(248, 246, 242, 0.34);
+      }
+
+      .wake-status {
+        margin-top: 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+      }
+
+      .wake-log {
+        min-height: 260px;
+        margin: 12px 0 0;
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(0, 0, 0, 0.46);
+        color: #f3eee6;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wake-shell">
+      <header class="wake-head">
+        <div>
+          <p class="eyebrow">Agent Bridge</p>
+          <p class="micro-copy">Layer 2 utility</p>
+        </div>
+        <a class="back-link" href="./index.html">Dashboard</a>
+      </header>
+
+      <section class="wake-card">
+        <p class="led-label">Layer 2</p>
+        <h1 class="wake-title">Wake</h1>
+        <p class="wake-copy">
+          Dashboard 不再承載 dense panel。需要 escalate 時，從這裡送 continue runbook 或自訂指令。
+        </p>
+
+        <div class="wake-actions">
+          <button id="wakeContinueBtn" class="wake-button wake-button--primary">
+            Continue Runbook
+          </button>
+          <button id="wakeSendBtn" class="wake-button wake-button--secondary">Send Command</button>
+        </div>
+
+        <label class="wake-label" for="wakePromptInput">Custom prompt</label>
+        <textarea
+          id="wakePromptInput"
+          class="wake-input"
+          placeholder="Ask Layer 2 for the next safe move..."
+        ></textarea>
+
+        <div id="wakeStatusMeta" class="wake-status">standby</div>
+        <pre id="wakeOutput" class="wake-log">Wake output will appear here.</pre>
+      </section>
+    </main>
+
+    <script type="module" src="./wake-live.js"></script>
+  </body>
+</html>

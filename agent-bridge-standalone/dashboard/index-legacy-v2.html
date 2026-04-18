@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F2EADF">
+  <title>Agent Bridge Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+  (() => {
+    const base = window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '';
+    window.AGENT_BRIDGE_BASE_URL = base;
+
+    const dashboardTokenKey = 'dashboard_token';
+    const dashboardTokenAtKey = 'dashboard_token_at';
+    const dashboardExpiresKey = 'dashboard_token_expires_at';
+    const bridgeTokenKey = 'bridge_auth_token';
+
+    const params = new URLSearchParams(window.location.search);
+    const bridgeTokenFromUrl = String(params.get('token') || params.get('bridge_token') || '').trim();
+    if (bridgeTokenFromUrl) {
+      localStorage.setItem(bridgeTokenKey, bridgeTokenFromUrl.replace(/^Bearer\s+/i, ''));
+      params.delete('token');
+      params.delete('bridge_token');
+      const nextQuery = params.toString();
+      const cleanUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
+    const dashboardToken = localStorage.getItem(dashboardTokenKey) || '';
+    const expiresAt = Number(localStorage.getItem(dashboardExpiresKey) || '0');
+    if (!dashboardToken || !expiresAt || Date.now() >= expiresAt) {
+      localStorage.removeItem(dashboardTokenKey);
+      localStorage.removeItem(dashboardTokenAtKey);
+      localStorage.removeItem(dashboardExpiresKey);
+    }
+
+    const hasDashboardToken = Boolean(localStorage.getItem(dashboardTokenKey));
+    const hasBridgeToken = Boolean(localStorage.getItem(bridgeTokenKey));
+    if (!hasDashboardToken && !hasBridgeToken) {
+      window.location.replace(`${base}/login.html`);
+    }
+  })();
+  </script>
+  <style>
+    :root {
+      --bg: #F2EADF;
+      --surface: #F6F0E8;
+      --surface-strong: #E7DACC;
+      --accent: #B85C38;
+      --accent-soft: rgba(184, 92, 56, 0.1);
+      --ink: #34271F;
+      --muted-ink: #6E5B51;
+      --muted: #A89A86;
+      --line: #CDBFAD;
+      --line-strong: #B8A997;
+      --up: #6F8568;
+      --down: #B65A4D;
+      --amber: #B9853E;
+      --shadow: 0 20px 48px rgba(52, 39, 31, 0.08);
+      --radius: 8px;
+      --serif: "Source Serif 4", "Noto Serif TC", serif;
+      --sans: "Source Sans 3", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Consolas, monospace;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --space-5: 40px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top left, rgba(184, 92, 56, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(185, 133, 62, 0.1), transparent 24%),
+        linear-gradient(180deg, #F7F1E9 0%, var(--bg) 100%);
+      line-height: 1.5;
+      font-size: 16px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bridge-dashboard {
+      padding: max(16px, env(safe-area-inset-top)) 16px 56px;
+    }
+
+    .dashboard-shell {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .serif { font-family: var(--serif); }
+    .eyebrow {
+      font-size: 10px;
+      line-height: 1.2;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted-ink);
+      font-weight: 700;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(246, 240, 232, 0.7);
+      color: var(--muted-ink);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .chip.accent {
+      border-color: rgba(184, 92, 56, 0.28);
+      color: var(--accent);
+      background: rgba(184, 92, 56, 0.08);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--muted);
+      flex: 0 0 auto;
+    }
+    .dot.active { background: var(--up); }
+    .dot.up { background: var(--up); }
+    .dot.down { background: var(--down); }
+    .dot.amber { background: var(--amber); }
+    .dot.muted { background: var(--muted); }
+
+    .panel {
+      background: rgba(246, 240, 232, 0.92);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .bridge-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(246, 240, 232, 0.88);
+      box-shadow: 0 10px 28px rgba(52, 39, 31, 0.05);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: sticky;
+      top: max(12px, env(safe-area-inset-top));
+      z-index: 20;
+    }
+
+    .brand {
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      margin-left: 8px;
+      color: var(--muted-ink);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .sync-state {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted-ink);
+      font-size: 12px;
+    }
+
+    .status-note {
+      display: none;
+      padding: 12px 14px;
+      border: 1px solid rgba(184, 92, 56, 0.22);
+      border-radius: var(--radius);
+      background: rgba(184, 92, 56, 0.08);
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .status-note.visible {
+      display: block;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .dashboard-main,
+    .dashboard-side {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .action-center {
+      padding: 24px;
+      border: 1px solid rgba(184, 92, 56, 0.32);
+      border-left-width: 4px;
+      background:
+        linear-gradient(135deg, rgba(184, 92, 56, 0.09), rgba(246, 240, 232, 0.96)),
+        rgba(246, 240, 232, 0.96);
+    }
+
+    .action-center .eyebrow {
+      color: var(--accent);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      margin-bottom: 12px;
+    }
+
+    .hero-title {
+      margin: 10px 0 0;
+      font-family: var(--serif);
+      font-size: clamp(30px, 7vw, 56px);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      max-width: 14ch;
+    }
+
+    .hero-detail {
+      margin: 16px 0 0;
+      color: var(--muted-ink);
+      font-size: 15px;
+      line-height: 1.7;
+      max-width: 54ch;
+    }
+
+    .cta-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .cta {
+      appearance: none;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      min-height: 50px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    }
+
+    .cta:active { transform: translateY(1px); }
+    .cta:disabled { opacity: 0.7; cursor: wait; }
+    .cta.primary {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+      font-weight: 700;
+    }
+    .cta.secondary {
+      background: rgba(246, 240, 232, 0.9);
+      color: var(--ink);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      overflow: hidden;
+    }
+
+    .metric {
+      background: rgba(246, 240, 232, 0.94);
+      padding: 16px;
+      min-height: 122px;
+    }
+
+    .metric .label {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted-ink);
+      font-weight: 700;
+    }
+
+    .metric .value {
+      margin-top: 10px;
+      font-family: var(--serif);
+      font-size: clamp(28px, 6vw, 42px);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .metric .delta {
+      margin-top: 8px;
+      color: var(--muted-ink);
+      font-size: 12px;
+    }
+
+    .today-chart,
+    .phase-progress,
+    .agents,
+    .today-story,
+    .dispatch-input {
+      padding: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .section-meta {
+      color: var(--muted-ink);
+      font-size: 12px;
+    }
+
+    .commit-bars {
+      display: grid;
+      gap: 12px;
+    }
+
+    .chart-bar-row {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) 32px;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .chart-bar-label,
+    .chart-bar-value {
+      font-family: var(--mono);
+      color: var(--muted-ink);
+      font-size: 11px;
+    }
+
+    .chart-bar-track {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(205, 191, 173, 0.45);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chart-bar-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(185, 133, 62, 0.92), rgba(184, 92, 56, 0.94));
+      transition: width 180ms ease;
+    }
+
+    .chart-bar-row.today .chart-bar-fill {
+      background: linear-gradient(90deg, rgba(185, 133, 62, 1), rgba(184, 92, 56, 1));
+      box-shadow: 0 0 0 1px rgba(184, 92, 56, 0.14);
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted-ink);
+    }
+
+    .progress-header strong {
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .bar-wrap {
+      height: 12px;
+      background: rgba(205, 191, 173, 0.48);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(111, 133, 104, 0.86), rgba(184, 92, 56, 0.96));
+      transition: width 200ms ease;
+    }
+
+    .progress-meta {
+      color: var(--muted-ink);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .agents-body,
+    .commits-body {
+      display: grid;
+      gap: 8px;
+    }
+
+    .agent-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(205, 191, 173, 0.68);
+      align-items: start;
+    }
+
+    .agent-row:first-child,
+    .commit-row:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .agent-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 3px;
+    }
+
+    .agent-label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .agent-host {
+      color: var(--muted-ink);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .agent-message {
+      color: var(--muted-ink);
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .agent-time {
+      color: var(--muted-ink);
+      font-size: 11px;
+      font-family: var(--mono);
+      white-space: nowrap;
+      padding-top: 1px;
+    }
+
+    .commit-row {
+      display: grid;
+      grid-template-columns: 44px 58px minmax(0, 1fr);
+      gap: 8px;
+      align-items: baseline;
+      border-top: 1px dashed rgba(205, 191, 173, 0.86);
+      padding: 10px 0;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .commit-ts,
+    .commit-hash {
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .commit-ts {
+      color: var(--muted-ink);
+    }
+
+    .commit-hash {
+      background: rgba(184, 92, 56, 0.1);
+      color: var(--ink);
+      padding: 2px 6px;
+      border-radius: 999px;
+      text-align: center;
+      width: fit-content;
+    }
+
+    .commit-message {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .commit-stat {
+      margin-left: 6px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 9px;
+      white-space: nowrap;
+    }
+
+    .commit-stat .ins { color: var(--up); }
+    .commit-stat .del { color: var(--down); }
+
+    .empty {
+      padding: 14px;
+      border-radius: 6px;
+      border: 1px dashed rgba(205, 191, 173, 0.9);
+      color: var(--muted-ink);
+      background: rgba(231, 218, 204, 0.24);
+      font-size: 13px;
+    }
+
+    .dispatch-input {
+      display: grid;
+      gap: 12px;
+    }
+
+    .dispatch-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .dispatch-head h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .dispatch-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .dispatch-select,
+    .dispatch-textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(242, 234, 223, 0.86);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .dispatch-select {
+      min-height: 42px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .dispatch-textarea {
+      min-height: 110px;
+      padding: 12px 14px;
+      resize: vertical;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .dispatch-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted-ink);
+      font-size: 12px;
+    }
+
+    .dispatch-status {
+      min-height: 1.3em;
+    }
+
+    .dispatch-submit {
+      appearance: none;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 18px;
+      min-height: 46px;
+      background: var(--ink);
+      color: var(--bg);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .dispatch-submit:disabled {
+      opacity: 0.72;
+      cursor: wait;
+    }
+
+    .wake-panel {
+      background: rgba(246, 240, 232, 0.88);
+      border: 1px solid rgba(111, 133, 104, 0.34);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 28px rgba(52, 39, 31, 0.05);
+      overflow: hidden;
+    }
+
+    .wake-panel > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 16px 18px;
+      font-weight: 700;
+      color: var(--ink);
+      border-bottom: 1px solid transparent;
+    }
+
+    .wake-panel > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .wake-panel[open] > summary {
+      border-bottom-color: rgba(111, 133, 104, 0.2);
+      background: rgba(231, 238, 224, 0.42);
+    }
+
+    .wake-panel-body {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .wake-panel p {
+      margin: 0;
+      color: var(--muted-ink);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .wake-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .wake-btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 11px 14px;
+      min-height: 44px;
+      background: rgba(246, 240, 232, 0.88);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .wake-btn.primary {
+      background: var(--up);
+      color: var(--bg);
+      border-color: var(--up);
+      font-weight: 700;
+    }
+
+    .wake-btn:disabled {
+      opacity: 0.68;
+      cursor: wait;
+    }
+
+    .wake-textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.6;
+      background: rgba(251, 246, 240, 0.9);
+      color: var(--ink);
+    }
+
+    .wake-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted-ink);
+      font-size: 12px;
+    }
+
+    .wake-output {
+      margin: 0;
+      min-height: 156px;
+      max-height: 320px;
+      overflow: auto;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #F6EFE6;
+      color: #243028;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    @media (min-width: 900px) {
+      .bridge-dashboard {
+        padding: 24px 24px 72px;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+        align-items: start;
+      }
+
+      .cta-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-title {
+        max-width: 11ch;
+      }
+    }
+
+    @media (min-width: 1180px) {
+      .action-center {
+        padding: 28px;
+      }
+
+      .today-chart,
+      .phase-progress,
+      .agents,
+      .today-story,
+      .dispatch-input {
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-bar-row {
+        grid-template-columns: 46px minmax(0, 1fr) 28px;
+      }
+
+      .commit-row {
+        grid-template-columns: 42px 54px minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body class="bridge-dashboard">
+  <main class="dashboard-shell">
+    <header class="bridge-header">
+      <div class="brand">Agent Bridge<span class="brand-sub">v3 live</span></div>
+      <div class="sync-state">
+        <span class="dot active" data-sync-dot></span>
+        <span data-date>2026-04-18</span>
+        <span>·</span>
+        <span data-sync-label>同步中</span>
+      </div>
+    </header>
+
+    <div class="status-note" data-notice></div>
+
+    <div class="dashboard-grid">
+      <section class="dashboard-main">
+        <section class="panel action-center hero-focus" data-active-task>
+          <div class="eyebrow">Active focus</div>
+          <div class="hero-meta">
+            <span class="chip accent" data-owner-chip>CODEX</span>
+            <span class="chip" data-task-status>in progress</span>
+          </div>
+          <h1 class="hero-title serif" data-task-title>Codex 正在執行…</h1>
+          <p class="hero-detail" data-task-detail>R121 L0 first wave 正在推進，整理驗證與下一步後會回報這裡。</p>
+          <div class="cta-row">
+            <button class="cta primary" type="button" data-action="approve" data-cta-primary>送審查</button>
+            <button class="cta secondary" type="button" data-action="continue" data-cta-secondary>先別 · 繼續推進</button>
+          </div>
+        </section>
+
+        <section class="panel metrics kpi-grid" aria-label="關鍵指標">
+          <div class="metric">
+            <div class="label">等待決策</div>
+            <div class="value serif" data-waiting-count>—</div>
+            <div class="delta" data-waiting-meta>含 blocked / consensus</div>
+          </div>
+          <div class="metric">
+            <div class="label">今日 commit</div>
+            <div class="value serif" data-today-commits>—</div>
+            <div class="delta" data-commit-meta>近 7 天 commit 節奏</div>
+          </div>
+          <div class="metric">
+            <div class="label">本週完成</div>
+            <div class="value serif" data-week-done>—</div>
+            <div class="delta" data-week-meta>Ship-Before / progress items</div>
+          </div>
+        </section>
+
+        <section class="panel today-chart commit-chart">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">每日 commit · 近 7 天</div>
+              <h2 class="section-title">Commit Rhythm</h2>
+            </div>
+            <div class="section-meta" data-commit-summary>週平均 —</div>
+          </div>
+          <div class="commit-bars" data-commit-bars>
+            <div class="empty">載入 commit chart…</div>
+          </div>
+        </section>
+
+        <section class="panel phase-progress progress-bar">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">整體進度</div>
+              <h2 class="section-title" data-stage-label>Ship-Before</h2>
+            </div>
+            <div class="section-meta" data-stage-count>0 / 0</div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-header">
+              <span><strong data-progress-pct>0%</strong></span>
+              <span data-progress-updated>尚未讀到 progress.json</span>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-fill" data-progress-fill style="width: 0%"></div>
+            </div>
+            <div class="progress-meta">
+              距 ship-before 還有 <span data-eta-days>—</span> 天
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="dashboard-side">
+        <section class="panel agents agents-list">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">AI / CODEX</div>
+              <h2 class="section-title">Agent Activity</h2>
+            </div>
+            <div class="section-meta">近即時 activity</div>
+          </div>
+          <div class="agents-body" data-agents>
+            <div class="empty">載入 agent activity…</div>
+          </div>
+        </section>
+
+        <section class="panel today-story recent-commits">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">最近 commit</div>
+              <h2 class="section-title">Commit Story</h2>
+            </div>
+            <div class="section-meta" data-recent-commit-summary>最新 5 筆</div>
+          </div>
+          <div class="commits-body" data-recent-commits>
+            <div class="empty">載入 recent commits…</div>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <section class="panel dispatch-input quick-input">
+      <div class="dispatch-head">
+        <div>
+          <div class="eyebrow">快速送訊</div>
+          <h3>直接派一句給 agents</h3>
+        </div>
+        <div class="section-meta">不改 login / auth 模式</div>
+      </div>
+      <div class="dispatch-controls">
+        <label>
+          <span class="eyebrow">Target session</span>
+          <select class="dispatch-select" data-quick-target>
+            <option value="">載入中…</option>
+          </select>
+        </label>
+        <label>
+          <span class="eyebrow">Message</span>
+          <textarea class="dispatch-textarea" data-quick-input placeholder="例：先別送審，補一輪 verify 後再回報 changedFiles / risks / nextStep。不要 commit。"></textarea>
+        </label>
+      </div>
+      <div class="dispatch-footer">
+        <div class="dispatch-status" data-quick-status></div>
+        <button class="dispatch-submit" type="button" data-quick-submit>送出訊息</button>
+      </div>
+    </section>
+
+    <details class="wake-panel">
+      <summary>緊急喚醒 Layer 2（VM LLM）</summary>
+      <div class="wake-panel-body">
+        <div>
+          <div class="eyebrow">Layer 2 Rescue</div>
+          <h2 class="section-title" style="margin-top: 6px;">緊急喚醒 VM LLM</h2>
+        </div>
+        <p>正常情況下先讓 Mac 端的 Claude + Codex 自動跑。只有它們卡住、失聯或 quota 出問題時，才用這裡把 VM 上的本機 LLM 接手。</p>
+        <div class="wake-actions">
+          <button id="wakeContinueBtn" class="wake-btn primary" type="button">讓 VM LLM 繼續 TODO runbook</button>
+        </div>
+        <label for="wakePromptInput" class="eyebrow">自訂 wake 指令</label>
+        <textarea id="wakePromptInput" class="wake-textarea" placeholder="例如：檢查目前 git status 並回報、跑 smoke verify、整理 T46/T50/T53 的共用風險。"></textarea>
+        <div class="wake-actions">
+          <button id="wakeSendBtn" class="wake-btn" type="button">送自訂訊息給 VM LLM</button>
+        </div>
+        <div class="wake-note">
+          <span id="wakeStatusMeta">尚未送出 Layer 2 任務</span>
+          <span>不建議與 Mac 端 agent 同時修改同一份 state</span>
+        </div>
+        <pre id="wakeOutput" class="wake-output">Layer 2 log 會顯示在這裡。</pre>
+      </div>
+    </details>
+  </main>
+
+  <script type="module">
+    const base = window.AGENT_BRIDGE_BASE_URL || (window.location.pathname.startsWith('/agent-bridge/') ? '/agent-bridge' : '');
+    import(`${base}/dashboard/dashboard-live.js`);
+  </script>
+</body>
+</html>

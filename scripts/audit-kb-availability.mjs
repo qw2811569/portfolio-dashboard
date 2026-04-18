@@ -3,6 +3,11 @@ import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { normalizeFinancialStatementRows } from '../src/lib/finmindPeriodUtils.js'
+import {
+  buildKnowledgeDataAvailability,
+  hasQuarterlyRevenueFromMonthly,
+  hasStandaloneFinancialRows,
+} from '../src/lib/knowledgeAvailability.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
@@ -293,12 +298,27 @@ async function buildProbes(token) {
   const q2Revenue6862 = revenueRows6862
     .filter((row) => Number(row.revenue_year) === 2025 && [4, 5, 6].includes(Number(row.revenue_month)))
     .reduce((sum, row) => sum + Number(row.revenue || 0), 0)
+  const availability = buildKnowledgeDataAvailability({
+    finmind: {
+      institutional: institutionalRows,
+      margin: marginRows,
+      valuation: valuationRows,
+      revenue: revenueRows6862,
+      financials: normalizedFinancials6862,
+      balanceSheet: balanceSheetRows,
+      cashFlow: cashFlowRows,
+      dividend: dividendRows,
+      dividendResult: dividendResultRows,
+      shareholding: shareholdingRows,
+      news: newsRows,
+    },
+  })
 
   return {
     'institutional:daily-5d-trend': {
       available: institutionalRows.length > 0,
-      callMethodError: institutionalRows.some((row) => /Foreign_Dealer_Self|Dealer_Hedging/.test(String(row.name || ''))),
-      evidence: `6862 自 2026-04-01 起共 ${institutionalRows.length} 筆，包含 English participant labels`,
+      callMethodError: !availability.institutional.periodTypes['daily-5d-trend'],
+      evidence: `6862 自 2026-04-01 起共 ${institutionalRows.length} 筆；repo 已接受 English participant labels`,
     },
     'margin:daily-balance': {
       available: marginRows.length > 0,
@@ -317,12 +337,12 @@ async function buildProbes(token) {
     },
     'revenue:quarterly-sum-from-monthly': {
       available: revenueRows6862.length > 0 && q2Revenue6862 > 0,
-      callMethodError: true,
-      evidence: `6862 2025Q2 需用 4-6 月營收加總 ≈ ${Math.round(q2Revenue6862).toLocaleString('en-US')}`,
+      callMethodError: !hasQuarterlyRevenueFromMonthly(revenueRows6862),
+      evidence: `6862 2025Q2 4-6 月營收加總 ≈ ${Math.round(q2Revenue6862).toLocaleString('en-US')}`,
     },
     'financials:quarterly-standalone': {
       available: normalizedFinancials6862.length > 0,
-      callMethodError: true,
+      callMethodError: !hasStandaloneFinancialRows(normalizedFinancials6862),
       evidence: q2Financials6862
         ? `6862 2025Q2 = ${q2Financials6862.statementPeriodMode}; warnings=${q2Financials6862.statementWarnings.join(',') || 'none'}`
         : `6862 normalized financial rows = ${normalizedFinancials6862.length}`,
@@ -488,15 +508,17 @@ async function main() {
     '',
     '## Representative Call-Method Errors',
     '',
-    ...auditedRules
-      .filter((item) => item.status === 'call-method-error')
-      .slice(0, 12)
-      .map(
-        (item) =>
-          `- ${item.id} · ${item.title} — ${item.requiresData
-            .map((requirement) => `${requirement.dataset}/${requirement.periodType}`)
-            .join(', ')} · ${item.reason}`
-      ),
+    ...(auditedRules.some((item) => item.status === 'call-method-error')
+      ? auditedRules
+          .filter((item) => item.status === 'call-method-error')
+          .slice(0, 12)
+          .map(
+            (item) =>
+              `- ${item.id} · ${item.title} — ${item.requiresData
+                .map((requirement) => `${requirement.dataset}/${requirement.periodType}`)
+                .join(', ')} · ${item.reason}`
+          )
+      : ['- None. All audited rules are currently callable with the repo-side method/period handling.']),
     '',
     '## Representative True Missing',
     '',
@@ -510,7 +532,7 @@ async function main() {
                 .map((requirement) => `${requirement.dataset}/${requirement.periodType}`)
                 .join(', ')}`
           )
-      : ['- None in this paid-token probe set; current gaps are dominated by repo-side call method / interpretation issues.']),
+      : ['- None in this paid-token probe set.']),
     '',
     '## Notes',
     '',

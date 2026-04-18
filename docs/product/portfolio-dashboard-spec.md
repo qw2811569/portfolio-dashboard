@@ -7883,6 +7883,7 @@ Ops：T48 T58 T59 T60 T62 T64(slim) T67(+T65) **+M04**
 
 - Dashboard / Holdings / Events / News / Daily 各 2 variants × 3 viewport = 30 圖
 - 排成 A vs D 比對板 存 `docs/portfolio-spec-report/assets/font-blind-test/`
+
 - 寫 `docs/portfolio-spec-report/font-blind-test.html` shell 給用戶看
 
 **D. 不動產品 stack（暫不取代 production）**
@@ -7893,3 +7894,128 @@ Ops：T48 T58 T59 T60 T62 T64(slim) T67(+T65) **+M04**
 **E. 報告用戶**
 
 - 貼 URL 給用戶 · 雙欄視覺比對 · 用戶 5 分鐘就能拍板
+
+## Round 118 · Codex · QA/Ops 補帖摘要 · 2026-04-18 17:43 CST
+
+### 1. 為什麼要補
+
+- `todo.md` 現況的 Testing 只有 `T66/T68/T69/T70` 四條，加上一個 `T64` restore drill；對 30 條 ship-before 來說不足以承接 auth / insider / restore / artifact ACL 的 release risk。
+- R103 test audit 已明示 4 個洞：`0 E2E`、store direct test 幾乎沒有、components 偏淺、route-shell production guard 被 `NODE_ENV !== 'production'` skip。
+- ops 紀律也缺 recurring lane；Rule 4 有 push / build 成本紀律，但沒有對應 weekly/monthly 檢查表。
+
+### 2. R118 補了什麼
+
+- 新增 8 組 blocker QA matrix：`B1/B3/B4/B5/B6/B10/B11/B14`，把 auth、insider、contract boundary、stale badge、RBAC、FinMind governor、schemaVersion、Blob ACL 各自拆成 happy path / edge case / recovery / audit-trail。
+- 新增 `Q01-Q12` QA candidate ledger，建議最小 ship-before bundle 為 `Q03/Q05/Q06/Q08/Q09/Q12`，`Q07` 視 owner 對 accessibility risk 的容忍度再決定是否一併升級。
+- 新增 `O01-O08` recurring ops ledger，最低必跑為 `O01-O04`：backup freshness、FinMind quota、restore rehearsal、VM disk usage。
+
+### 3. 落地方式
+
+- `todo.md` 追加 `R118 QA Candidate Supplement` 與 `R118 Recurring Ops` 兩個 section，但**不重算原 69 條 active count**。
+- 完整 3 persona 討論、QA matrix、Q/O 表收在 `.tmp/portfolio-r8-loop/r118-qa-ops-supplement.md`。
+- `architecture.md` 不改；R118 只補 QA / ops ledger，不重開架構討論。
+
+## Round 119 · Codex · Executability Audit 摘要 · 2026-04-18 18:03 CST
+
+### 1. 為什麼要補
+
+- 用戶明確要求「todo 做完就要完全可用，且能自動化執行，不再靠人工監工」；原 `todo.md` 雖有 69 條主表與 R118 的 `Q/O` 補件，但仍缺 acceptance、auto-verify、question batch、executor boundary。
+- 若沒有這 4 欄，R121 之後即使繼續寫 code，也會在 Zod/ACL/secret/iPhone/manual signoff 這些外部控制面反覆卡住。
+
+### 2. R119 補了什麼
+
+- `todo.md` 新增 `§11 R119 Executability Matrix`，把 `69 + Q01-Q12 + O01-O08` 全部補成可執行 ledger：每條都有 acceptance criteria、verify command、sub-question、executor、layer。
+- 新增 `.tmp/portfolio-r8-loop/r120-open-questions-batch.md`，把真正會 block execution 的 decision 去重成一份 owner 可在 30 分鐘內答完的問卷，並分開列出 `M-U1-M-U5` 人工操作。
+- 新增 `.tmp/portfolio-r8-loop/r121-runbook.md`，把 release spine 拆成 strict `L0`、manual overlay、`L1-L8` 與 deferred lane，供後續 Codex 直接照波次執行。
+- 新增 `.tmp/portfolio-r8-loop/r119-executability-audit.md`，記錄本輪判準、strict L0、manual chokepoint、question register 與 ready statement。
+
+### 3. R119 的關鍵結論
+
+- **strict L0 pure-codex 只有 5 條**：`T27/T46/T50/T53/M09`；這一組全綠後才值得解鎖下一波 `T28/T37/T47/T67/T51/T52/T54`。
+- 最大 manual choke point 不是 code，而是 `T48/T49/T64/T72b/Q06` 這類 secret/ACL/restore/iPhone/owner signoff。
+- 除外部控制面外，R121 已有足夠 runbook 讓 Codex 依 layer 批次執行；剩下的不是「不知道怎麼做」，而是「哪些要 owner 先動」。
+
+## Round 120 · 用戶 batch 拍板 · 2026-04-18 18:xx CST
+
+**用戶答**：「都同意」（accept all Codex + Claude 推薦值）· 5 件 M-U 人工 task 延至 R121 啟動後依時機提醒。
+
+### 15 Decisions locked
+
+| ID   | Decision                                                                                           |
+| ---- | -------------------------------------------------------------------------------------------------- |
+| Q-D1 | Contract/Zod parse = **strict reject / fail-closed**                                               |
+| Q-D2 | Freshness: targets 7d · fundamentals 30d · macro 1d · restore artifact show exact timestamp        |
+| Q-D3 | Signed URL TTL = **15 min**                                                                        |
+| Q-D4 | Accuracy Gate fail = **hard-block + 明理由**（不用 placeholder）                                   |
+| Q-D5 | 4-persona 可見度 = **分數 + 簡短理由**（不露完整 trace）                                           |
+| Q-P1 | Morning Note = **08:30 pre-open**（T04 post-close ritual lane 另外）                               |
+| Q-P2 | Weekly export ship-before = **clipboard + MD/HTML download · 不 email**（true PDF/cover → beta+1） |
+| Q-P3 | Today in Markets v1 = **TW macro + 央行 + calendar**（跨市場延後）                                 |
+| Q-P4 | Daily Principle = **copy only**（share image → post-ship）                                         |
+| Q-P5 | Trade compliance = **preview + explicit confirm + audit memo**                                     |
+| Q-I1 | Secret rotation = **90d**（incident 立即）                                                         |
+| Q-I2 | Secure AI routes runtime = **Node**（非 Edge）                                                     |
+| Q-I3 | Backup cadence = **daily 03:00 Asia/Taipei snapshot + monthly 第一交易日 10:00 restore rehearsal** |
+| Q-I4 | Retention = audit 180d · restore permanent · stale blob 30d                                        |
+| Q-I5 | Cross-browser = real iPhone signoff + Codex desktop smoke                                          |
+
+### 3 new TODO 歸類
+
+- T76 · RSS + 財經 API 整合擴 KB · **beta+1**
+- T77 · Historical backtest accuracy scorecard · **beta+1**
+- T78 · Rule self-improvement loop · **beta+1**
+
+### Autonomy / Ops locked（先前已答）
+
+- Autonomy 最高 · Codex + Claude 全自主 commit / push / VM deploy / secret rotate
+- Backup 每 3h local commit · 1x/day push（Vercel Rule 4）
+- Agent Bridge PIN = `0306` · env var 存 · R119c 實作中
+- Escalate = ScheduleWakeup auto-wake 4h/8h fallback · VM LLM CLI R119d 實作中（iPhone → Agent Bridge → VM wake endpoint）
+- FinMind 付費夠 · 無需 rate limit 額外 guard
+
+### 5 M-U 延遲至 R121 執行時
+
+- M-U1 Vercel dashboard 確認（R121 啟動後第一個 layer 驗）
+- M-U2 真 rotate secret 值（R121 B2 phase）
+- M-U3 iPhone Safari 3 頁手動測 + 截圖（快 ship 時）
+- M-U4 Legal disclaimer 拍板（快 ship 時）
+- M-U5 DNS/port 擴展（通常 n/a）
+
+### R121 autonomous execution 啟動條件（checklist）
+
+- ✅ R118 QA supplement
+- ✅ R119 executability matrix
+- ✅ R120 user batch accept all defaults
+- ⏳ R119c Agent Bridge PIN login deploy
+- ⏳ R119d VM LLM CLI + /wake endpoint
+- ⏳ R119e todo.html donut chart + progress.json
+- **以上 3 個 R119 infra 完 → R121 L0 起跑**
+
+### R120 post-hoc · M-U2 調整（用戶 2026-04-18 追加決議）
+
+用戶明確說「FinMind 沒有外洩可能」 · 外推至所有 external provider secret。M-U2 範圍縮減：
+
+- **不 rotate**：FinMind / Anthropic / Gemini / Vercel Blob RW（維持現值）
+- **仍要換**：`CRON_SECRET`（弱字典詞 `cron-secret-2026` · brute-forceable · 非外洩）· Codex 自動換 32-byte random · 不需用戶手動
+
+故 M-U2 實質變 0 manual task · 全 Codex 自動執行。
+
+### R120 post-hoc 2 · 全 secret rotation 延後到正式產品（用戶 2026-04-18 18:xx 決議）
+
+用戶明確聲明「**所有 api 都沒必要更換 · 等產品正式使用 · 我會再更換 api**」。
+
+- FinMind / Anthropic / Gemini / Vercel Blob / CRON_SECRET / BRIDGE_AUTH_TOKEN **全不動**
+- B2 原 ship-before P0 → **降級 post-beta**（R121 runbook 跳過）
+- 接受內部 beta 7 天 risk：2 users · VM sslip.io · 非公開流量
+- 未來 session 遇此主題 · 預設「延後 · 用戶手動」· 不得建議 rotate
+
+## Round 124 · Codex · L3 fourth wave · 2026-04-18 21:13 CST
+
+- 完成 `T32/T33/T38/T40/T49/T62` 六條。
+- `T32`：MOPS announcements / revenue 改成較穩定 parser，announcement 支援 `codes` filter，revenue 改用官方 `ajax_t05st10_ifrs`，兩條都加 FinMind fallback 與 honest degraded payload。
+- `T33`：Dashboard `Today in Markets` 上線，直接吃 `newsEvents` auto-calendar feed，按 `總經` / `行事曆` 分組；無資料顯示 `市場資訊暫無更新`。
+- `T38`：`Accuracy Gate` 全面綁進 analyze / research / analyst reports / daily runtime / prompt catalog；insider strip 後強制 enforcement。
+- `T40`：route-shell `DailyReportPanel` 補齊 `analysisHistory` / `staleStatus` / `operatingContext` / `maybeAutoConfirmDailyReport`，t0/t1 diff + auto-confirm parity 與 AppShell 對齊。
+- `T49`：brain / research / portfolio snapshot blob 改 `private`；新增 signed blob helper + `/api/blob-read`，TTL 15 min；telemetry 維持 `public`。
+- `T62`：新增 `scripts/backup-to-vm.mjs`，checkpoint 納入 latest localStorage backup mirror，已安裝使用者 crontab：`CRON_TZ=Asia/Taipei` + daily `03:00` backup job。
+- verify：`npm run verify:local` 全綠，`126/126` test files passed、`868/868` tests passed、build/healthcheck/smoke:ui 均通過。

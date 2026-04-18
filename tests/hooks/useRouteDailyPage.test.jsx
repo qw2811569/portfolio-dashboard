@@ -33,6 +33,7 @@ describe('hooks/useRouteDailyPage.js', () => {
   })
 
   function setupDefaults() {
+    const maybeAutoConfirmDailyReport = vi.fn()
     mockUsePortfolioRouteContext.mockReturnValue({
       portfolioId: 'test-portfolio',
       dailyReport: { summary: 'test report' },
@@ -41,6 +42,9 @@ describe('hooks/useRouteDailyPage.js', () => {
       setAnalysisHistory: vi.fn(),
       newsEvents: [{ id: 'e1', title: 'Event 1' }],
       strategyBrain: { rules: [] },
+      staleStatus: 'aging',
+      operatingContext: { marketPhase: 'post-close' },
+      maybeAutoConfirmDailyReport,
     })
 
     mockUseBrainStore.mockImplementation((selector) => {
@@ -54,6 +58,7 @@ describe('hooks/useRouteDailyPage.js', () => {
     const { result } = renderHook(() => useRouteDailyPage())
 
     expect(result.current).toHaveProperty('dailyReport')
+    expect(result.current).toHaveProperty('analysisHistory')
     expect(result.current).toHaveProperty('analyzing', false)
     expect(result.current).toHaveProperty('analyzeStep', '')
     expect(result.current).toHaveProperty('stressResult', null)
@@ -70,6 +75,9 @@ describe('hooks/useRouteDailyPage.js', () => {
     expect(result.current).toHaveProperty('expandedStock')
     expect(result.current).toHaveProperty('setExpandedStock')
     expect(result.current).toHaveProperty('strategyBrain')
+    expect(result.current).toHaveProperty('staleStatus', 'aging')
+    expect(result.current).toHaveProperty('operatingContext')
+    expect(result.current).toHaveProperty('maybeAutoConfirmDailyReport')
   })
 
   it('passes through dailyReport and newsEvents from context', () => {
@@ -106,12 +114,15 @@ describe('hooks/useRouteDailyPage.js', () => {
     expect(result.current.expandedNews.size).toBe(0)
   })
 
-  it('does not expose main-runtime operating context parity props', () => {
+  it('passes through route-shell parity props for daily stage UI', () => {
     setupDefaults()
 
     const { result } = renderHook(() => useRouteDailyPage())
 
-    expect(result.current.operatingContext).toBeUndefined()
+    expect(result.current.analysisHistory).toEqual([])
+    expect(result.current.staleStatus).toBe('aging')
+    expect(result.current.operatingContext).toEqual({ marketPhase: 'post-close' })
+    expect(typeof result.current.maybeAutoConfirmDailyReport).toBe('function')
   })
 
   it('blocks runDailyAnalysis from mutating route-local state', async () => {

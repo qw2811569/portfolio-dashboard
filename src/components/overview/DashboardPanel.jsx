@@ -46,6 +46,25 @@ function formatMetricValue(value, { signed = false, suffix = '' } = {}) {
   return `${sign}${Math.round(value).toLocaleString()}${suffix}`
 }
 
+function toMarketDateString(value) {
+  const raw = String(value || '')
+    .trim()
+    .replace(/\//g, '-')
+    .slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : ''
+}
+
+function formatMarketItemDate(value) {
+  const normalized = toMarketDateString(value)
+  if (!normalized) return ''
+  const parsed = new Date(`${normalized}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return normalized
+  return new Intl.DateTimeFormat('zh-TW', {
+    month: 'numeric',
+    day: 'numeric',
+  }).format(parsed)
+}
+
 function readMetricValue(item, keys) {
   for (const key of keys) {
     const value = Number(item?.[key])
@@ -336,6 +355,159 @@ function AiQuickSummary({ latestInsight }) {
       'AI 快評'
     ),
     h(Md, { text: summary, color: C.textSec })
+  )
+}
+
+function buildTodayInMarketsItems(newsEvents = []) {
+  const safeEvents = Array.isArray(newsEvents) ? newsEvents : []
+  const items = safeEvents
+    .map((event, index) => {
+      const type = String(event?.type || '')
+        .trim()
+        .toLowerCase()
+      const catalystType = String(event?.catalystType || '')
+        .trim()
+        .toLowerCase()
+      const source = String(event?.source || '')
+        .trim()
+        .toLowerCase()
+      const date = toMarketDateString(event?.eventDate || event?.date)
+      const isMacro = type === 'macro' || catalystType === 'macro'
+      const isCalendar =
+        source === 'auto-calendar' ||
+        ['revenue', 'conference', 'earnings', 'dividend', 'shareholder'].includes(type) ||
+        ['earnings', 'dividend', 'conference'].includes(catalystType)
+
+      if (!isMacro && !isCalendar) return null
+
+      return {
+        id: event?.id || `market-${index}`,
+        title: String(event?.title || '').trim() || '未命名市場事件',
+        detail: String(event?.detail || event?.summary || '').trim(),
+        date,
+        category: isMacro ? '總經' : '行事曆',
+        categoryOrder: isMacro ? 0 : 1,
+      }
+    })
+    .filter(Boolean)
+
+  items.sort((left, right) => {
+    if (left.categoryOrder !== right.categoryOrder) {
+      return left.categoryOrder - right.categoryOrder
+    }
+    return String(left.date || '9999-99-99').localeCompare(String(right.date || '9999-99-99'))
+  })
+
+  return items
+}
+
+function TodayInMarketsCard({ newsEvents = [] }) {
+  const items = buildTodayInMarketsItems(newsEvents).slice(0, 6)
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+      },
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.blue } }, 'Today in Markets'),
+      h(
+        'span',
+        { style: { fontSize: 9, color: C.textMute } },
+        items.length > 0 ? `${items.length} 則` : 'v1'
+      )
+    ),
+    items.length === 0
+      ? h(
+          'div',
+          {
+            style: {
+              fontSize: 11,
+              color: C.textMute,
+              marginTop: 8,
+            },
+          },
+          '市場資訊暫無更新'
+        )
+      : h(
+          'div',
+          { style: { display: 'grid', gap: 8, marginTop: 8 } },
+          items.map((item, index) =>
+            h(
+              'div',
+              {
+                key: item.id,
+                style: {
+                  display: 'grid',
+                  gap: 4,
+                  paddingBottom: index < items.length - 1 ? 8 : 0,
+                  borderBottom: index < items.length - 1 ? `1px solid ${C.border}` : 'none',
+                },
+              },
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    gap: 8,
+                    flexWrap: 'wrap',
+                  },
+                },
+                h(
+                  'div',
+                  {
+                    style: {
+                      fontSize: 11,
+                      color: C.text,
+                      fontWeight: 500,
+                      lineHeight: 1.6,
+                    },
+                  },
+                  `${item.category}｜${item.title}`
+                ),
+                item.date &&
+                  h(
+                    'span',
+                    {
+                      style: {
+                        fontSize: 9,
+                        color: C.textMute,
+                        flexShrink: 0,
+                      },
+                    },
+                    formatMarketItemDate(item.date)
+                  )
+              ),
+              item.detail &&
+                h(
+                  'div',
+                  {
+                    style: {
+                      fontSize: 10,
+                      color: C.textSec,
+                      lineHeight: 1.7,
+                    },
+                  },
+                  item.detail
+                )
+            )
+          )
+        )
   )
 }
 
@@ -675,6 +847,7 @@ export function DashboardPanel({
       )
     ),
     h(PrincipleCards),
+    h(TodayInMarketsCard, { newsEvents }),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })

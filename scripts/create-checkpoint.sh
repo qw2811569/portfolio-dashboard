@@ -26,6 +26,7 @@ copy_if_exists "data/events.json" "events.json"
 copy_if_exists "data/strategy-brain.json" "strategy-brain.json"
 copy_if_exists "data/analysis-history-index.json" "analysis-history-index.json"
 copy_if_exists "data/research-index.json" "research-index.json"
+copy_if_exists ".tmp/localstorage-backups/latest.json" "localstorage-backup-latest.json"
 
 cat > "${CHECKPOINT_DIR}/manifest.md" <<EOF
 # Checkpoint
@@ -41,8 +42,8 @@ $(find "${STATE_DIR}" -maxdepth 1 -type f -print | sed 's#^.*/#- #' | sort)
 
 ## Notes
 
-- 這份 checkpoint 只備份 server-side/落地 JSON 狀態，不包含瀏覽器 localStorage。
-- 如果你要完整保住每個 portfolio 的本機狀態，仍應搭配 app 內建的「備份 / 匯入」JSON。
+- 若存在 \`.tmp/localstorage-backups/latest.json\`，本次 checkpoint 會一起收進最新瀏覽器 localStorage 匯出備份。
+- 若該檔不存在，代表尚未執行 \`node scripts/backup-to-vm.mjs\` 或尚未從 app 匯出最新 JSON。
 - 建議在頁面穩定時先執行這支腳本，再視需要進行 git commit / push。
 EOF
 

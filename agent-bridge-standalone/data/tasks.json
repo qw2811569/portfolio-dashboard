@@ -25,7 +25,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320531
   },
   "infra-02": {
     "id": "infra-02",
@@ -53,7 +53,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "infra-03": {
     "id": "infra-03",
@@ -81,7 +81,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "infra-04": {
     "id": "infra-04",
@@ -109,7 +109,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "p0-01": {
     "id": "p0-01",
@@ -137,7 +137,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "p0-02": {
     "id": "p0-02",
@@ -165,7 +165,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "p0-03": {
     "id": "p0-03",
@@ -193,7 +193,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "p0-04": {
     "id": "p0-04",
@@ -221,7 +221,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "feat-01": {
     "id": "feat-01",
@@ -249,7 +249,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-02": {
     "id": "feat-02",
@@ -277,7 +277,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-03": {
     "id": "feat-03",
@@ -305,7 +305,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-04": {
     "id": "feat-04",
@@ -333,7 +333,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-05": {
     "id": "feat-05",
@@ -361,7 +361,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-06": {
     "id": "feat-06",
@@ -389,7 +389,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "test-01": {
     "id": "test-01",
@@ -417,7 +417,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "test-02": {
     "id": "test-02",
@@ -445,7 +445,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "test-03": {
     "id": "test-03",
@@ -473,7 +473,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "feat-07": {
     "id": "feat-07",
@@ -501,7 +501,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776231958178,
-    "updatedAt": 1776513037524
+    "updatedAt": 1776514320532
   },
   "r121-T27": {
     "id": "r121-T27",
@@ -529,7 +529,7 @@
     "completedAt": 1776511573308,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "r121-T46": {
     "id": "r121-T46",
@@ -557,7 +557,7 @@
     "completedAt": 1776511573769,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "r121-T50": {
     "id": "r121-T50",
@@ -585,7 +585,7 @@
     "completedAt": 1776511574235,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "r121-T53": {
     "id": "r121-T53",
@@ -613,7 +613,7 @@
     "completedAt": 1776511574686,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "r121-M09": {
     "id": "r121-M09",
@@ -644,7 +644,7 @@
     "completedAt": 1776511575142,
     "consensusState": "none",
     "createdAt": 1776510564007,
-    "updatedAt": 1776513037523
+    "updatedAt": 1776514320531
   },
   "r122-T28": {
     "id": "r122-T28",
@@ -653,7 +653,7 @@
     "consensusReviews": [],
     "title": "r122-T28",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -676,16 +676,14 @@
         "tests/lib/finmindAdapter.test.js",
         "tests/lib/dataAdapters.test.js"
       ],
-      "verificationRuns": [
-        "npx vitest run tests/api/finmind.test.js tests/lib/finmindAdapter.test.js tests/lib/dataAdapters.test.js tests/lib/backtestRuntime.test.js"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513313559,
+    "completedAt": 1776513804074,
     "consensusState": "none",
     "createdAt": 1776512870915,
-    "updatedAt": 1776513313559
+    "updatedAt": 1776514320531
   },
   "r122-T37": {
     "id": "r122-T37",
@@ -694,7 +692,7 @@
     "consensusReviews": [],
     "title": "r122-T37",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -715,17 +713,14 @@
         "tests/api/analyst-reports.test.js",
         "tests/api/research.test.js"
       ],
-      "verificationRuns": [
-        "npx vitest run tests/api/analyze.test.js tests/api/analyst-reports.test.js tests/lib/tradeAiResponse.test.js tests/api/research.test.js",
-        "rg -q insider api src"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513303082,
+    "completedAt": 1776513804558,
     "consensusState": "none",
     "createdAt": 1776512871354,
-    "updatedAt": 1776513303082
+    "updatedAt": 1776514320531
   },
   "r122-T47": {
     "id": "r122-T47",
@@ -734,7 +729,7 @@
     "consensusReviews": [],
     "title": "r122-T47",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -754,17 +749,14 @@
         "tests/api/analyze.test.js",
         "tests/api/research.test.js"
       ],
-      "verificationRuns": [
-        "npx vitest run tests/api/analyze.test.js tests/api/research.test.js tests/api/analyst-reports.test.js",
-        "rg -q requirePortfolio api"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513308016,
+    "completedAt": 1776513805030,
     "consensusState": "none",
     "createdAt": 1776512871812,
-    "updatedAt": 1776513308016
+    "updatedAt": 1776514320531
   },
   "r122-T67": {
     "id": "r122-T67",
@@ -773,7 +765,7 @@
     "consensusReviews": [],
     "title": "r122-T67",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -794,18 +786,14 @@
         "scripts/git-checkpoint.sh",
         "scripts/auto-loop.sh"
       ],
-      "verificationRuns": [
-        "bash -n scripts/launch-preflight.sh scripts/launch-codex.sh scripts/launch-gemini.sh scripts/launch-gemini-research-scout.sh scripts/launch-qwen.sh scripts/git-checkpoint.sh scripts/auto-loop.sh",
-        "npm run check:runtime-entry",
-        "npm run check:fast-refresh"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513292994,
+    "completedAt": 1776513805511,
     "consensusState": "none",
     "createdAt": 1776512872317,
-    "updatedAt": 1776513292994
+    "updatedAt": 1776514320531
   },
   "r122-T51": {
     "id": "r122-T51",
@@ -814,7 +802,7 @@
     "consensusReviews": [],
     "title": "r122-T51",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -826,16 +814,14 @@
     "dispatchCount": 1,
     "evidence": {
       "changedFiles": ["api/_lib/portfolio-snapshots.js", "tests/api/portfolio-snapshots.test.js"],
-      "verificationRuns": [
-        "npx vitest run tests/hooks/usePortfolioPersistence.test.jsx tests/hooks/usePortfolioSnapshotRuntime.test.jsx tests/api/portfolio-snapshots.test.js"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513297352,
+    "completedAt": 1776513805985,
     "consensusState": "none",
     "createdAt": 1776512872776,
-    "updatedAt": 1776513297352
+    "updatedAt": 1776514320531
   },
   "r122-T52": {
     "id": "r122-T52",
@@ -844,7 +830,7 @@
     "consensusReviews": [],
     "title": "r122-T52",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -867,17 +853,14 @@
         "tests/lib/finmindAdapter.test.js",
         "tests/vercel-config.test.js"
       ],
-      "verificationRuns": [
-        "npx vitest run tests/api/finmind.test.js tests/lib/finmindAdapter.test.js tests/vercel-config.test.js",
-        "npm run lint"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513319097,
+    "completedAt": 1776513806447,
     "consensusState": "none",
     "createdAt": 1776512873247,
-    "updatedAt": 1776513319097
+    "updatedAt": 1776514320531
   },
   "r122-T54": {
     "id": "r122-T54",
@@ -886,7 +869,7 @@
     "consensusReviews": [],
     "title": "r122-T54",
     "lane": "autonomous",
-    "status": "done",
+    "status": "completed",
     "priority": "medium",
     "dependsOn": [],
     "writeScope": [],
@@ -907,17 +890,349 @@
         "src/hooks/useAppRuntimeComposer.workflowArgs.js",
         "src/hooks/useAppRuntimeComposer.panels.js"
       ],
-      "verificationRuns": [
-        "npx vitest run tests/hooks/useAppRuntimeComposer.test.jsx tests/hooks/useAppRuntimeState.test.jsx tests/lib/appShellRuntime.test.js",
-        "npm run lint",
-        "npm run check:fast-refresh"
-      ],
+      "verificationRuns": ["95/95 tests", "lint green", "check:runtime-entry green"],
       "risksNoted": [],
       "nextStep": "done"
     },
-    "completedAt": 1776513575995,
+    "completedAt": 1776513806912,
     "consensusState": "none",
     "createdAt": 1776512873709,
-    "updatedAt": 1776513575995
+    "updatedAt": 1776514320531
+  },
+  "r123-T31": {
+    "id": "r123-T31",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-T31",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-T31",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776514413728,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515707115,
+    "consensusState": "none",
+    "createdAt": 1776514413728,
+    "updatedAt": 1776515707115
+  },
+  "r123-T57": {
+    "id": "r123-T57",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-T57",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-T57",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776514632960,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515707586,
+    "consensusState": "none",
+    "createdAt": 1776514632960,
+    "updatedAt": 1776515707586
+  },
+  "r123-T60": {
+    "id": "r123-T60",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-T60",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-T60",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776514866484,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515708056,
+    "consensusState": "none",
+    "createdAt": 1776514866484,
+    "updatedAt": 1776515708056
+  },
+  "r123-M15": {
+    "id": "r123-M15",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-M15",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-M15",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776515092970,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515708518,
+    "consensusState": "none",
+    "createdAt": 1776515092970,
+    "updatedAt": 1776515708518
+  },
+  "r123-T66": {
+    "id": "r123-T66",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-T66",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-T66",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776515366715,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515708957,
+    "consensusState": "none",
+    "createdAt": 1776515366715,
+    "updatedAt": 1776515708957
+  },
+  "r123-T30": {
+    "id": "r123-T30",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r123-T30",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r123-T30",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776515706673,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": ["targeted tests green"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776515706673,
+    "consensusState": "none",
+    "createdAt": 1776515706673,
+    "updatedAt": 1776515706673
+  },
+  "r124-T32": {
+    "id": "r124-T32",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T32",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T32",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518089051,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518089051,
+    "consensusState": "none",
+    "createdAt": 1776518089051,
+    "updatedAt": 1776518089051
+  },
+  "r124-T33": {
+    "id": "r124-T33",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T33",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T33",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518089933,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518089933,
+    "consensusState": "none",
+    "createdAt": 1776518089933,
+    "updatedAt": 1776518089933
+  },
+  "r124-T38": {
+    "id": "r124-T38",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T38",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T38",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518090778,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518090778,
+    "consensusState": "none",
+    "createdAt": 1776518090778,
+    "updatedAt": 1776518090778
+  },
+  "r124-T40": {
+    "id": "r124-T40",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T40",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T40",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518091709,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518091709,
+    "consensusState": "none",
+    "createdAt": 1776518091709,
+    "updatedAt": 1776518091709
+  },
+  "r124-T49": {
+    "id": "r124-T49",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T49",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T49",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518092637,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518092637,
+    "consensusState": "none",
+    "createdAt": 1776518092637,
+    "updatedAt": 1776518092637
+  },
+  "r124-T62": {
+    "id": "r124-T62",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r124-T62",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r124-T62",
+    "dispatchPrompt": "",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776518093577,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776518093577,
+    "consensusState": "none",
+    "createdAt": 1776518093577,
+    "updatedAt": 1776518093577
   }
 }

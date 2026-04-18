@@ -33,7 +33,13 @@ function createJsonResponse(payload, { ok = true, status = 200 } = {}) {
     ok,
     status,
     json: async () => payload,
+    text: async () => JSON.stringify(payload),
   }
+}
+
+function getRequestedBlobPath(url) {
+  const parsed = new URL(String(url), 'http://127.0.0.1:3002')
+  return parsed.searchParams.get('path') || parsed.pathname.replace(/^\/+/, '')
 }
 
 describe('api/_lib/portfolio-snapshots', () => {
@@ -43,6 +49,7 @@ describe('api/_lib/portfolio-snapshots', () => {
     vi.clearAllMocks()
     vi.resetModules()
     process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    process.env.VITEST = '1'
     global.fetch = vi.fn()
     put.mockResolvedValue(undefined)
   })
@@ -50,6 +57,7 @@ describe('api/_lib/portfolio-snapshots', () => {
   afterEach(() => {
     global.fetch = originalFetch
     delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.VITEST
   })
 
   it('writes a dated snapshot to the portfolio snapshot path', async () => {
@@ -69,7 +77,7 @@ describe('api/_lib/portfolio-snapshots', () => {
         token: 'blob-token',
         addRandomSuffix: false,
         allowOverwrite: true,
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       })
     )
@@ -134,7 +142,7 @@ describe('api/_lib/portfolio-snapshots', () => {
       ],
     })
     global.fetch.mockImplementation((url) => {
-      if (url === 'https://blob.example/2026-04-10') {
+      if (getRequestedBlobPath(url) === '2026-04-10') {
         return Promise.resolve(
           createJsonResponse({
             date: '2026-04-10',
@@ -144,7 +152,7 @@ describe('api/_lib/portfolio-snapshots', () => {
           })
         )
       }
-      if (url === 'https://blob.example/2026-04-12') {
+      if (getRequestedBlobPath(url) === '2026-04-12') {
         return Promise.resolve(
           createJsonResponse({
             date: '2026-04-12',
@@ -183,7 +191,7 @@ describe('api/_lib/portfolio-snapshots', () => {
       ],
     })
     global.fetch.mockImplementation((url) => {
-      if (url === 'https://blob.example/2026-04-09') {
+      if (getRequestedBlobPath(url) === '2026-04-09') {
         return Promise.resolve(
           createJsonResponse({
             date: '2026-04-09',
@@ -193,7 +201,7 @@ describe('api/_lib/portfolio-snapshots', () => {
           })
         )
       }
-      if (url === 'https://blob.example/2026-04-12') {
+      if (getRequestedBlobPath(url) === '2026-04-12') {
         return Promise.resolve(
           createJsonResponse({
             date: '2026-04-12',

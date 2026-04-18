@@ -84,8 +84,8 @@ export async function fetchMonthlyRevenue(stockId, year, month) {
   return {
     revenueMonth: `${year}/${String(month).padStart(2, '0')}`,
     revenue: data.revenue ?? 0,
-    revenueYoY: data.yoy ?? 0,
-    revenueMoM: data.mom ?? 0,
+    revenueYoY: data.revenueYoY ?? data.yoy ?? 0,
+    revenueMoM: data.revenueMoM ?? data.mom ?? 0,
   }
 }
 

@@ -1,4 +1,6 @@
 import { list } from '@vercel/blob'
+import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
+import { fetchSignedBlobJson } from '../_lib/signed-url.js'
 
 import { fetchAllStockDailyPrices } from '../_lib/twse-market-data.js'
 import { formatSnapshotDate, writePortfolioSnapshot } from '../_lib/portfolio-snapshots.js'
@@ -33,19 +35,20 @@ function dedupePortfolioIds(values = []) {
   )
 }
 
-async function readJsonFromFirstBlob(prefix, { token, listImpl = list, fetchImpl = fetch } = {}) {
+async function readJsonFromFirstBlob(
+  prefix,
+  { token, listImpl = list, fetchImpl = fetch, origin } = {}
+) {
   if (!token) return null
 
   const response = await listImpl({ prefix, token, limit: 1 })
   const blob = Array.isArray(response?.blobs) ? response.blobs[0] : null
-  if (!blob?.url) return null
+  if (!blob?.url && !blob?.pathname) return null
 
-  const payloadResponse = await fetchImpl(blob.url)
-  if (!payloadResponse.ok) {
-    throw new Error(`blob read failed (${payloadResponse.status}) for ${prefix}`)
-  }
-
-  return payloadResponse.json()
+  return fetchSignedBlobJson(blob?.pathname || blob?.url, {
+    origin,
+    fetchImpl,
+  })
 }
 
 export async function loadActivePortfolioIds({
@@ -53,6 +56,7 @@ export async function loadActivePortfolioIds({
   token = getBlobToken(),
   listImpl = list,
   fetchImpl = fetch,
+  origin,
 } = {}) {
   const requested = dedupePortfolioIds(requestedPortfolioIds)
   if (requested.length > 0) return requested
@@ -62,6 +66,7 @@ export async function loadActivePortfolioIds({
       token,
       listImpl,
       fetchImpl,
+      origin,
     })
     const blobIds = dedupePortfolioIds(payload?.portfolioIds || payload?.activePortfolioIds || [])
     if (blobIds.length > 0) return blobIds
@@ -84,7 +89,7 @@ export async function loadPortfolioHoldings(
   if (portfolioId === OWNER_PORTFOLIO_ID) {
     const response = await fetchImpl(new URL('/api/brain', origin), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildInternalAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ action: 'load-holdings' }),
     })
 
@@ -100,6 +105,7 @@ export async function loadPortfolioHoldings(
     token,
     listImpl,
     fetchImpl,
+    origin,
   })
 
   return Array.isArray(payload?.holdings) ? payload.holdings : []
@@ -149,6 +155,7 @@ export async function snapshotPortfolios({
     token,
     listImpl,
     fetchImpl,
+    origin,
   })
   const date = formatSnapshotDate(now, timeZone)
   const dailyPrices = await loadPrices(date, { fetchImpl })

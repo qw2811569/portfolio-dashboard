@@ -128,8 +128,10 @@ describe('api/research', () => {
       rounds: [expect.objectContaining({ content: 'single pass 結論' })],
     })
     expect(callAiText).toHaveBeenCalledTimes(1)
-    const [{ user }] = callAiText.mock.calls[0]
+    const [{ system, user }] = callAiText.mock.calls[0]
+    expect(system).toContain('【Accuracy Gate】')
     expect(user).toContain('知識庫參考')
+    expect(user).toContain('【Accuracy Gate】')
     expect(user).toContain('月營收')
     expect(user).toContain('資產負債表')
     expect(user).toContain('現金流量表')
@@ -312,8 +314,10 @@ describe('api/research', () => {
 
     expect(res.statusCode).toBe(200)
     expect(callAiText).toHaveBeenCalledTimes(1)
-    const [{ user }] = callAiText.mock.calls[0]
+    const [{ system, user }] = callAiText.mock.calls[0]
+    expect(system).toContain('【Accuracy Gate】')
     expect(user).toContain('公司代表 / 合規模式')
+    expect(user).toContain('【Accuracy Gate】')
     expect(user).not.toContain('操作建議')
   })
 

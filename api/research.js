@@ -23,7 +23,9 @@ import {
   summarizeResearchRequestInput,
   validateResearchRequestInput,
 } from '../src/lib/researchRequestRuntime.js'
+import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
+import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
 const RESEARCH_INDEX_KEY = 'research-index.json'
@@ -54,14 +56,16 @@ function writeLocal(key, data) {
   }
 }
 
-async function read(key) {
+async function read(key, opts = {}) {
   const local = readLocal(key)
   if (local) return local
   try {
     const { blobs } = await list({ prefix: key, limit: 1, token: TOKEN })
     if (!blobs.length) return null
-    const r = await fetch(blobs[0].url)
-    const data = await r.json()
+    const data = await fetchSignedBlobJson(blobs[0]?.pathname || blobs[0]?.url, {
+      origin: opts.origin,
+      fetchImpl: opts.fetchImpl,
+    })
     writeLocal(key, data)
     return data
   } catch {
@@ -78,7 +82,7 @@ async function write(key, data) {
       /* best-effort cleanup before re-write — old blob may not exist */
     }
     await put(key, JSON.stringify(data), {
-      access: 'public',
+      access: 'private',
       token: TOKEN,
       contentType: 'application/json',
       addRandomSuffix: false,
@@ -90,8 +94,14 @@ async function write(key, data) {
 
 async function callClaude(system, user, maxTokens = 4000, portfolio = null) {
   return callAiText({
-    system: stripBuySellForInsider(system, portfolio),
-    user: stripBuySellForInsider(user, portfolio),
+    system: applyAccuracyGatePrompt(stripBuySellForInsider(system, portfolio), {
+      portfolio,
+      sourceLabel: '持股 dossier / 事件 / 分析歷史 / 研究索引',
+    }),
+    user: applyAccuracyGatePrompt(stripBuySellForInsider(user, portfolio), {
+      portfolio,
+      sourceLabel: '持股 dossier / 事件 / 分析歷史 / 研究索引',
+    }),
     maxTokens,
   })
 }
@@ -560,7 +570,8 @@ async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const { code } = req.query
-      const cached = (await read(RESEARCH_INDEX_KEY)) || []
+      const origin = resolveSignedBlobOrigin(req)
+      const cached = (await read(RESEARCH_INDEX_KEY, { origin })) || []
       if (cached.length > 0) {
         const reports = code
           ? cached.filter((r) => r.code === code).slice(0, 10)
@@ -571,8 +582,11 @@ async function handler(req, res) {
       const blobs = await list({ prefix, token: TOKEN })
       const reports = []
       for (const blob of blobs.blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 10)) {
-        const r = await fetch(blob.url)
-        reports.push(await r.json())
+        reports.push(
+          await fetchSignedBlobJson(blob?.pathname || blob?.url, {
+            origin,
+          })
+        )
       }
       if (reports.length > 0) writeLocal(RESEARCH_INDEX_KEY, reports)
       return res.status(200).json({ reports })
@@ -720,7 +734,7 @@ ${brainCtx}
         if (persist && TOKEN) {
           try {
             await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
-              access: 'public',
+              access: 'private',
               token: TOKEN,
               contentType: 'application/json',
             })
@@ -810,7 +824,7 @@ ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
         if (persist && TOKEN) {
           try {
             await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
-              access: 'public',
+              access: 'private',
               token: TOKEN,
               contentType: 'application/json',
             })
@@ -1126,7 +1140,7 @@ JSON 結構：
       if (persist && TOKEN) {
         try {
           await put(reportKey, JSON.stringify(report), {
-            access: 'public',
+            access: 'private',
             token: TOKEN,
             contentType: 'application/json',
           })

@@ -48,4 +48,40 @@ describe('components/DashboardPanel', () => {
     )
     expect(container.textContent).toContain('今日有 3 檔需要關注')
   })
+
+  it('renders Today in Markets items from macro and calendar feeds', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          newsEvents: [
+            {
+              id: 'macro-1',
+              source: 'auto-calendar',
+              type: 'macro',
+              date: '2026-04-18',
+              title: '台灣央行理監事會議',
+              detail: '決定利率與選擇性信用管制',
+            },
+            {
+              id: 'calendar-1',
+              source: 'auto-calendar',
+              type: 'revenue',
+              date: '2026-04-20',
+              title: '2026/03 月營收公布截止',
+              detail: '關注持股最新營收',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByText('Today in Markets')).toBeInTheDocument()
+    expect(screen.getByText('總經｜台灣央行理監事會議')).toBeInTheDocument()
+    expect(screen.getByText('行事曆｜2026/03 月營收公布截止')).toBeInTheDocument()
+  })
+
+  it('shows a truthful empty state when no market items exist', () => {
+    render(<DashboardPanel {...buildProps()} />)
+    expect(screen.getByText('市場資訊暫無更新')).toBeInTheDocument()
+  })
 })

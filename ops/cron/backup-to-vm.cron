@@ -1,0 +1,2 @@
+CRON_TZ=Asia/Taipei
+0 3 * * * /bin/zsh -lc 'cd /Users/chenkuichen/app/test && node scripts/backup-to-vm.mjs >> .tmp/localstorage-backups/cron.log 2>&1'

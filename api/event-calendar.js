@@ -288,7 +288,9 @@ async function fetchMopsConferenceEvents(today, rangeDays, stockCodes, req) {
     try {
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const host = req.headers.host || '127.0.0.1:3002'
-      const mopsUrl = `${protocol}://${host}/api/mops-announcements?date=${dateStr}`
+      const mopsParams = new URLSearchParams({ date: dateStr })
+      if (stockCodes.length > 0) mopsParams.set('codes', stockCodes.join(','))
+      const mopsUrl = `${protocol}://${host}/api/mops-announcements?${mopsParams.toString()}`
       const mopsRes = await fetch(mopsUrl, {
         signal: AbortSignal.timeout(3000),
         headers: buildInternalAuthHeaders(),

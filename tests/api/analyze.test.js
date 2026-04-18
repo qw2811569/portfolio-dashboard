@@ -72,12 +72,19 @@ describe('api/analyze', () => {
 
     await handler(req, res)
 
-    expect(callAiRaw).toHaveBeenCalledWith({
-      system: 'system',
-      maxTokens: 2200,
-      allowThinking: false,
-      messages: [{ role: 'user', content: 'user' }],
-    })
+    expect(callAiRaw).toHaveBeenCalledTimes(1)
+    const [payload] = callAiRaw.mock.calls[0]
+    expect(payload.maxTokens).toBe(2200)
+    expect(payload.allowThinking).toBe(false)
+    expect(payload.system).toContain('system')
+    expect(payload.system).toContain('【Accuracy Gate】')
+    expect(payload.messages).toEqual([
+      expect.objectContaining({
+        role: 'user',
+        content: expect.stringContaining('user'),
+      }),
+    ])
+    expect(payload.messages[0].content).toContain('【Accuracy Gate】')
     expect(res.payload).toEqual({
       id: 'msg_1',
       content: [{ type: 'text', text: '完成分析' }],
@@ -107,12 +114,14 @@ describe('api/analyze', () => {
     await handler(req, res)
 
     const streamText = res.writes.join('')
-    expect(callAiRawStream).toHaveBeenCalledWith({
-      system: 'system',
-      maxTokens: 1800,
-      allowThinking: false,
-      messages: [{ role: 'user', content: 'user' }],
-    })
+    expect(callAiRawStream).toHaveBeenCalledTimes(1)
+    const [streamPayload] = callAiRawStream.mock.calls[0]
+    expect(streamPayload.maxTokens).toBe(1800)
+    expect(streamPayload.allowThinking).toBe(false)
+    expect(streamPayload.system).toContain('system')
+    expect(streamPayload.system).toContain('【Accuracy Gate】')
+    expect(streamPayload.messages[0].content).toContain('user')
+    expect(streamPayload.messages[0].content).toContain('【Accuracy Gate】')
     expect(res.headers['Content-Type']).toContain('text/event-stream')
     expect(streamText).toContain('event: meta')
     expect(streamText).toContain('"model":"claude-sonnet"')
@@ -149,9 +158,11 @@ describe('api/analyze', () => {
     expect(callAiRaw).toHaveBeenCalledTimes(1)
     const [payload] = callAiRaw.mock.calls[0]
     expect(payload.system).toContain('公司代表 / 合規模式')
+    expect(payload.system).toContain('【Accuracy Gate】')
     expect(payload.system).not.toContain('買進建議')
     expect(payload.messages[0].content).not.toContain('操作建議')
     expect(payload.messages[0].content).toContain('法規遵循觀察')
+    expect(payload.messages[0].content).toContain('【Accuracy Gate】')
   })
 
   it('rejects user claims that access another owner portfolio', async () => {

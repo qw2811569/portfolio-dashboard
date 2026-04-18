@@ -1,5 +1,5 @@
 {
-  "lastUpdatedAt": "2026-04-18T11:59:27.792Z",
+  "lastUpdatedAt": "2026-04-18T13:14:53.117Z",
   "totalItems": 89,
   "totalEstHours": 485,
   "trackedEstHours": 597,
@@ -8,9 +8,9 @@
       "track": "shipBefore",
       "label": "Ship-Before",
       "total": 30,
-      "done": 7,
+      "done": 19,
       "totalEstHours": 193,
-      "doneEstHours": 52
+      "doneEstHours": 126
     },
     "beta1": {
       "track": "beta1",
@@ -45,12 +45,12 @@
       "doneEstHours": 0
     }
   },
-  "completionPct": 26.94300518134715,
-  "fullProductCompletionPct": 16.082474226804123,
-  "trackedCompletionPct": 13.06532663316583,
-  "etaDaysToShipBefore": 18,
-  "etaDaysToFullProduct": 51,
-  "etaDaysToAllTracked": 65,
+  "completionPct": 65.28497409326425,
+  "fullProductCompletionPct": 31.34020618556701,
+  "trackedCompletionPct": 25.4606365159129,
+  "etaDaysToShipBefore": 9,
+  "etaDaysToFullProduct": 42,
+  "etaDaysToAllTracked": 56,
   "velocityHoursPerDay": 8,
   "items": [
     {
@@ -103,8 +103,8 @@
       "title": "Enforce Accuracy Gate in all prompt builders",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:50.341Z",
       "sortOrder": 6
     },
     {
@@ -112,8 +112,8 @@
       "title": "Roll out `analysisStage` t0/t1 lifecycle and auto-confirm logic",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:51.246Z",
       "sortOrder": 7
     },
     {
@@ -139,8 +139,8 @@
       "title": "Regrade Blob ACLs: private brain/research/snapshot, telemetry exception",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:52.168Z",
       "sortOrder": 10
     },
     {
@@ -157,8 +157,8 @@
       "title": "Add backup import trust boundary (allowlist/schema/confirm)",
       "track": "shipBefore",
       "estH": 4,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:17:12.961Z",
       "sortOrder": 12
     },
     {
@@ -175,8 +175,8 @@
       "title": "Build shared `<StaleBadge>` component as the stale/freshness UI primitive",
       "track": "shipBefore",
       "estH": 4,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:24:52.972Z",
       "sortOrder": 14
     },
     {
@@ -202,8 +202,8 @@
       "title": "Correct monthly revenue announced-month semantics end-to-end",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:13:33.709Z",
       "sortOrder": 17
     },
     {
@@ -211,8 +211,8 @@
       "title": "Correct quarter/H1/H2 financial semantics and derived standalone logic",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:13:33.728Z",
       "sortOrder": 18
     },
     {
@@ -220,8 +220,8 @@
       "title": "Harden MOPS revenue/announcement ingestion and fallback contract",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:48.590Z",
       "sortOrder": 19
     },
     {
@@ -229,8 +229,8 @@
       "title": "Add macro / 央行 / calendar feed for `Today in Markets`",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:49.510Z",
       "sortOrder": 20
     },
     {
@@ -247,8 +247,8 @@
       "title": "Add cron last-success markers and lateness alerts",
       "track": "shipBefore",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:21:06.486Z",
       "sortOrder": 22
     },
     {
@@ -256,8 +256,8 @@
       "title": "Extend checkpoint/backup contract to include localStorage",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:14:53.116Z",
       "sortOrder": 23
     },
     {
@@ -283,8 +283,8 @@
       "title": "Add GitHub CI workflow + `verify:local` gate",
       "track": "shipBefore",
       "estH": 4,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T12:29:26.717Z",
       "sortOrder": 26
     },
     {

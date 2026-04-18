@@ -1,4 +1,5 @@
 import { list, put } from '@vercel/blob'
+import { fetchSignedBlobJson } from './signed-url.js'
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
 const DEFAULT_HISTORY_DAYS = 365
@@ -120,24 +121,21 @@ async function listAllBlobs(prefix, { token = getBlobToken(), listImpl = list } 
   return blobs
 }
 
-async function fetchJson(url, fetchImpl = fetch) {
-  const response = await fetchImpl(url)
-  if (!response.ok) {
-    throw new Error(`snapshot fetch failed (${response.status})`)
-  }
-  return response.json()
-}
-
 async function loadRawSnapshots(
   portfolioId,
-  { token = getBlobToken(), fetchImpl = fetch, listImpl = list } = {}
+  { token = getBlobToken(), fetchImpl = fetch, listImpl = list, origin } = {}
 ) {
   const prefix = `portfolios/${assertPortfolioId(portfolioId)}/snapshots/`
   const blobs = await listAllBlobs(prefix, { token, listImpl })
   const snapshots = []
 
   for (const blob of blobs) {
-    const payload = normalizePortfolioSnapshot(await fetchJson(blob.url, fetchImpl))
+    const payload = normalizePortfolioSnapshot(
+      await fetchSignedBlobJson(blob?.pathname || blob?.url, {
+        origin,
+        fetchImpl,
+      })
+    )
     snapshots.push(payload)
   }
 
@@ -204,7 +202,7 @@ export async function writePortfolioSnapshot(
     token,
     addRandomSuffix: false,
     allowOverwrite: true,
-    access: 'public',
+    access: 'private',
     contentType: 'application/json',
   })
 
@@ -218,6 +216,7 @@ export async function readPortfolioSnapshots(
     token = getBlobToken(),
     fetchImpl = fetch,
     listImpl = list,
+    origin,
     now = new Date(),
     timeZone = DEFAULT_TIMEZONE,
   } = {}
@@ -231,6 +230,7 @@ export async function readPortfolioSnapshots(
     token,
     fetchImpl,
     listImpl,
+    origin,
   })
 
   const bounded = rawSnapshots.filter((snapshot) => snapshot.date <= range.toDate)

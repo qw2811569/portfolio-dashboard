@@ -22,8 +22,10 @@ describe('lib/promptTemplateCatalog', () => {
     })
 
     expect(systemPrompt).toContain('你是策略知識庫管理器')
+    expect(systemPrompt).toContain('【Accuracy Gate】')
     expect(systemPrompt).toContain('historicalAnalogs')
     expect(userPrompt).toContain('事件：法說會')
+    expect(userPrompt).toContain('【Accuracy Gate】')
     expect(userPrompt).toContain('預測：看漲')
     expect(userPrompt).toContain('實際走勢：下跌')
     expect(userPrompt).toContain('無可用持股 dossier')

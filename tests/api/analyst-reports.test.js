@@ -173,6 +173,7 @@ describe('api/analyst-reports helpers', () => {
   it('builds the refined Gemini grounding prompt', () => {
     const prompt = buildGeminiGroundingPrompt('3491', '昇達科')
     expect(prompt).toContain('近30天，3491 昇達科')
+    expect(prompt).toContain('【Accuracy Gate】')
     expect(prompt).toContain('只輸出 JSON')
     expect(prompt).toContain('不要輸出 markdown')
   })
@@ -193,7 +194,9 @@ describe('api/analyst-reports helpers', () => {
     )
 
     expect(payload.system).toContain('公司代表 / 合規模式')
+    expect(payload.system).toContain('【Accuracy Gate】')
     expect(payload.user).toContain('法規遵循觀察')
+    expect(payload.user).toContain('【Accuracy Gate】')
   })
 
   it('normalizes report dates from mixed source formats', () => {

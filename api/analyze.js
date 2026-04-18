@@ -3,6 +3,7 @@ import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio
 // Vercel Serverless Function — AI 收盤策略分析
 // API Key 安全地存在後端，前端不會暴露
 import { callAiRaw, callAiRawStream, ensureAiConfigured } from './_lib/ai-provider.js'
+import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
 function wantsStreamingResponse(req) {
@@ -36,8 +37,20 @@ async function handler(req, res) {
   try {
     const stream = wantsStreamingResponse(req)
     const { systemPrompt, userPrompt, maxTokens = 2200, allowThinking = false } = req.body || {}
-    const decoratedSystemPrompt = stripBuySellForInsider(systemPrompt, portfolio)
-    const decoratedUserPrompt = stripBuySellForInsider(userPrompt, portfolio)
+    const decoratedSystemPrompt = applyAccuracyGatePrompt(
+      stripBuySellForInsider(systemPrompt, portfolio),
+      {
+        portfolio,
+        sourceLabel: '請求內提供的 dossier / tradeLog / events / fundamentals',
+      }
+    )
+    const decoratedUserPrompt = applyAccuracyGatePrompt(
+      stripBuySellForInsider(userPrompt, portfolio),
+      {
+        portfolio,
+        sourceLabel: '請求內提供的 dossier / tradeLog / events / fundamentals',
+      }
+    )
 
     if (!decoratedUserPrompt) {
       return res.status(400).json({

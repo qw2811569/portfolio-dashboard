@@ -16,6 +16,7 @@ import {
 import { buildCnyesAggregateItem, fetchCnyesAggregate } from './_lib/cnyes-target-price.js'
 import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio.js'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../src/seedData.js'
+import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
 const ANALYST_REPORTS_BLOB_PREFIX = 'analyst-reports'
@@ -186,7 +187,8 @@ export function isGeminiGroundingEnabled() {
 }
 
 export function buildGeminiGroundingPrompt(code, name) {
-  return `你是台股券商目標價蒐集器。
+  return applyAccuracyGatePrompt(
+    `你是台股券商目標價蒐集器。
 任務：找出「近30天，${String(code || '').trim()} ${String(name || '').trim()}」公開可驗證的券商/投顧目標價。
 只接受同時滿足：
 1. 有明確機構名稱 (firm)
@@ -201,7 +203,11 @@ export function buildGeminiGroundingPrompt(code, name) {
 - 同一 firm 重複只保留最新一筆
 - 若只有區間/共識均值/媒體轉述且無 firm，丟棄
 - 若無法確認，不要猜
-- 不要輸出 markdown`
+- 不要輸出 markdown`,
+    {
+      sourceLabel: '公開可驗證券商報告 / source_url',
+    }
+  )
 }
 
 function normalizeGeminiJsonText(text) {
@@ -621,9 +627,11 @@ async function collectCnyesReports(stock) {
 }
 
 export function buildInsightExtractionPromptPayload(stock, items, portfolio = null) {
+  const sourceLabel = '提供的標題 / 摘要 / publishedAt / source'
   return {
-    system: stripBuySellForInsider(
-      `你是台股公開報告索引整理器。你會從新聞標題與摘要中，抽出對持股 dossier 最有價值的結構化資訊。
+    system: applyAccuracyGatePrompt(
+      stripBuySellForInsider(
+        `你是台股公開報告索引整理器。你會從新聞標題與摘要中，抽出對持股 dossier 最有價值的結構化資訊。
 只根據提供的標題與摘要判斷，不可編造全文內容。
 回傳純 JSON，不要 markdown。格式：
 {"items":[{"id":"原樣回傳","summary":"一句話摘要","target":數字或null,"targetType":"price-target/range/narrative/none","targetEvidence":"原文中的目標價短語或空字串","firm":"券商/來源或空字串","stance":"bullish/neutral/bearish/unknown","tags":["標籤1","標籤2"],"confidence":0到1}]}
@@ -635,13 +643,18 @@ export function buildInsightExtractionPromptPayload(stock, items, portfolio = nu
 - 若只是偏多/偏空但沒有目標價數字，targetType = "narrative" 或 "none"
 - firm 優先抽券商/研究機構，抓不到就留空
 - summary 必須短，聚焦這份報告/新聞對投資判斷的意義`,
-      portfolio
+        portfolio
+      ),
+      { portfolio, sourceLabel }
     ),
-    user: stripBuySellForInsider(
-      `股票：${stock.name}(${stock.code})
+    user: applyAccuracyGatePrompt(
+      stripBuySellForInsider(
+        `股票：${stock.name}(${stock.code})
 請整理以下公開報告索引：
 ${items.map((item) => `- [${item.id}] ${item.title}\n  來源：${item.source || '未知'} | 日期：${item.publishedAt || '未知'}\n  摘要：${item.snippet || '無'}`).join('\n\n')}`,
-      portfolio
+        portfolio
+      ),
+      { portfolio, sourceLabel }
     ),
   }
 }

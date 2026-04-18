@@ -1,3 +1,5 @@
+import { applyAccuracyGatePrompt } from './accuracyGate.js'
+
 function formatPredictionLabel(value) {
   return value === 'up' ? '看漲' : value === 'down' ? '看跌' : '中性'
 }
@@ -68,7 +70,8 @@ ${(brain.lessons || [])
 }
 
 export function buildEventReviewBrainSystemPrompt() {
-  return `你是策略知識庫管理器。用戶剛完成一筆事件復盤，你要：
+  return applyAccuracyGatePrompt(
+    `你是策略知識庫管理器。用戶剛完成一筆事件復盤，你要：
 1. 評估用戶的覆盤心得是否合理（用戶不一定正確，需要糾正偏差）
 2. 從這次復盤中提取可學習的策略教訓
 3. 先驗證與本次事件 / 相關持股 dossier 有關的既有策略規則，判斷哪些被真實 outcome 支持、削弱或證偽
@@ -80,11 +83,16 @@ export function buildEventReviewBrainSystemPrompt() {
 另外，每條規則 / 候選規則盡量補上：
 - appliesTo / marketRegime / catalystWindow
 - contextRequired / invalidationSignals
-- historicalAnalogs：1-2 個過往台股相似案例；若這次失準，說明是規則失準還是個股情境差異`
+- historicalAnalogs：1-2 個過往台股相似案例；若這次失準，說明是規則失準還是個股情境差異`,
+    {
+      sourceLabel: '事件 outcome / review dossier / saved note / current brain',
+    }
+  )
 }
 
 export function buildStressTestSystemPrompt() {
-  return `你是風險管理專家，你的唯一任務是找出每一檔持股的致命風險。
+  return applyAccuracyGatePrompt(
+    `你是風險管理專家，你的唯一任務是找出每一檔持股的致命風險。
 
 規則：
 - 你不能說任何正面的事情。任何正面評論都代表你的分析不夠深入。
@@ -110,16 +118,25 @@ export function buildStressTestSystemPrompt() {
 ## 🚨 最需要立即行動的 3 檔
 （哪些持股的風險報酬比最差，應該優先處理）
 
-你的分析必須讓持有者感到不安。如果看完後覺得安心，代表分析不夠深入。`
+你的分析必須讓持有者感到不安。如果看完後覺得安心，代表分析不夠深入。`,
+    {
+      sourceLabel: 'holdingSummary / totalValue / dossier',
+    }
+  )
 }
 
 export function buildStressTestUserPrompt({ holdingSummary = '', totalValue = 0 }) {
-  return `持倉 dossier：
+  return applyAccuracyGatePrompt(
+    `持倉 dossier：
 ${holdingSummary || '目前沒有持股 dossier。'}
 
 目前組合總市值約 ${Number(totalValue || 0).toLocaleString()} 元
 
-請進行全面風險壓力測試。`
+請進行全面風險壓力測試。`,
+    {
+      sourceLabel: 'holdingSummary / totalValue / dossier',
+    }
+  )
 }
 
 export function buildEventReviewBrainUserPrompt({
@@ -134,7 +151,8 @@ export function buildEventReviewBrainUserPrompt({
   savedLessons = '',
   currentBrain = null,
 }) {
-  return `事件：${event?.title || ''}
+  return applyAccuracyGatePrompt(
+    `事件：${event?.title || ''}
 ${notesContext}
 相關持股 dossier：
 ${reviewDossierContext || '無可用持股 dossier'}
@@ -151,7 +169,11 @@ ${reviewDossierContext || '無可用持股 dossier'}
 現有策略大腦：
 ${JSON.stringify(currentBrain)}
 
-請更新策略大腦，特別注意：用戶的覆盤不一定客觀，如果有歸因偏差請指出。`
+請更新策略大腦，特別注意：用戶的覆盤不一定客觀，如果有歸因偏差請指出。`,
+    {
+      sourceLabel: '事件 outcome / review dossier / saved note / current brain',
+    }
+  )
 }
 
 export function buildWeeklyReportTemplate({

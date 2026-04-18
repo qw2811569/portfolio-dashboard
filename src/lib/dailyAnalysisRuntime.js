@@ -1,3 +1,5 @@
+import { applyAccuracyGatePrompt } from './accuracyGate.js'
+
 const BLIND_PREDICTION_SYSTEM_PROMPT = `你是台股策略分析師。以下是持股 dossier（不含今日價格變動）。
 請基於 thesis、催化劑、事件時程、財報趨勢，對每檔持股做出今日方向預判。
 這是盲測——你看不到今日漲跌，必須純粹基於基本面和事件邏輯做判斷。
@@ -479,22 +481,29 @@ export function buildBlindPredictionRequest({
   return {
     maxTokens: 900,
     allowThinking: false,
-    systemPrompt: BLIND_PREDICTION_SYSTEM_PROMPT,
-    userPrompt: [
-      '<analysis_packet mode="blind_prediction">',
-      wrapPromptSection('date', today, '未提供'),
-      wrapPromptSection('portfolio_notes', notesContext),
-      wrapPromptSection('brain_context', brainContext),
-      wrapPromptSection('portfolio_holdings', blindHoldingSummary, '目前沒有持股 dossier。'),
-      wrapPromptSection('tracking_events', eventSummary),
-      '</analysis_packet>',
-      '',
-      '<instruction>',
-      '請只根據 <portfolio_holdings> 與 <tracking_events> 判斷每檔持股今日方向。',
-      '忽略不存在的即時漲跌資料；若證據不足，方向可選 flat 並降低 confidence。',
-      '輸出純 JSON array，不要補充說明。',
-      '</instruction>',
-    ].join('\n'),
+    systemPrompt: applyAccuracyGatePrompt(BLIND_PREDICTION_SYSTEM_PROMPT, {
+      sourceLabel: 'portfolio_holdings / tracking_events',
+    }),
+    userPrompt: applyAccuracyGatePrompt(
+      [
+        '<analysis_packet mode="blind_prediction">',
+        wrapPromptSection('date', today, '未提供'),
+        wrapPromptSection('portfolio_notes', notesContext),
+        wrapPromptSection('brain_context', brainContext),
+        wrapPromptSection('portfolio_holdings', blindHoldingSummary, '目前沒有持股 dossier。'),
+        wrapPromptSection('tracking_events', eventSummary),
+        '</analysis_packet>',
+        '',
+        '<instruction>',
+        '請只根據 <portfolio_holdings> 與 <tracking_events> 判斷每檔持股今日方向。',
+        '忽略不存在的即時漲跌資料；若證據不足，方向可選 flat 並降低 confidence。',
+        '輸出純 JSON array，不要補充說明。',
+        '</instruction>',
+      ].join('\n'),
+      {
+        sourceLabel: 'portfolio_holdings / tracking_events',
+      }
+    ),
   }
 }
 
@@ -520,47 +529,56 @@ export function buildDailyAnalysisRequest({
   return {
     maxTokens: 2200,
     allowThinking: false,
-    systemPrompt: DAILY_ANALYSIS_SYSTEM_PROMPT,
-    userPrompt: [
-      '<analysis_packet mode="daily_close">',
-      wrapPromptSection('date', today, '未提供'),
-      wrapPromptSection('analysis_framework', analysisFrameworkContext),
-      wrapPromptSection('previous_review', prevReviewBlock),
-      wrapPromptSection('blind_prediction_review', blindPredBlock),
-      wrapPromptSection(
-        'today_performance',
-        `今日持倉損益: ${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()} 元`
-      ),
-      wrapPromptSection('market_context', marketContext),
-      wrapPromptSection('portfolio_notes', notesContext),
-      wrapPromptSection('brain_context', brainContext),
-      wrapPromptSection('reversal_watch', revContext),
-      wrapPromptSection('coverage_context', coverageContext),
-      wrapPromptSection('taiwan_market_signals', taiwanMarketSignals),
-      wrapPromptSection('historical_analogs', historicalAnalogs),
-      wrapPromptSection('portfolio_holdings', holdingSummary, '目前沒有持股 dossier。'),
-      wrapPromptSection(
-        'concentration_risk',
-        'AI/伺服器5檔、光通訊3檔、PCB材料3檔，需評估集中風險與龍頭/衛星配置差異。'
-      ),
-      wrapPromptSection('anomalies', anomalySummary || '無'),
-      wrapPromptSection('tracking_events', eventSummary),
-      wrapPromptSection('prediction_hit_rate', predictionHitRate || '0/0'),
-      '</analysis_packet>',
-      '',
-      '<instruction>',
-      blindPredictions.length > 0
-        ? '先對比 <blind_prediction_review> 與 <today_performance>，指出預測對錯與原因。'
-        : '先讀 <portfolio_holdings> 的 thesis / targets / events / brain，再結合 <today_performance> 判斷，不要只看漲跌幅。',
-      '把 <coverage_context> 當成跨持股一次性的供應鏈/主題補充，不要在每檔持股重複改寫整段供應鏈。',
-      'A 級優先處理只選 1-3 檔，其餘持股一律用一句話快照。',
-      '若資料 freshness 為 stale 或 missing，要直接標明不確定性，不可假裝有最新資料。',
-      '只挑 1-3 個與今日走勢真正有因果關聯的事件。',
-      '所有操作建議都要有具體數字、等待條件與「如果我錯了」的原因。',
-      '在 BRAIN_UPDATE 中先驗證既有規則，再決定是否新增少量候選規則。',
-      '必須先寫完整的中文分析評論，最後才能附上 EVENT_ASSESSMENTS 與 BRAIN_UPDATE JSON blocks。',
-      '</instruction>',
-    ].join('\n'),
+    systemPrompt: applyAccuracyGatePrompt(DAILY_ANALYSIS_SYSTEM_PROMPT, {
+      sourceLabel:
+        'portfolio_holdings / coverage_context / tracking_events / taiwan_market_signals',
+    }),
+    userPrompt: applyAccuracyGatePrompt(
+      [
+        '<analysis_packet mode="daily_close">',
+        wrapPromptSection('date', today, '未提供'),
+        wrapPromptSection('analysis_framework', analysisFrameworkContext),
+        wrapPromptSection('previous_review', prevReviewBlock),
+        wrapPromptSection('blind_prediction_review', blindPredBlock),
+        wrapPromptSection(
+          'today_performance',
+          `今日持倉損益: ${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()} 元`
+        ),
+        wrapPromptSection('market_context', marketContext),
+        wrapPromptSection('portfolio_notes', notesContext),
+        wrapPromptSection('brain_context', brainContext),
+        wrapPromptSection('reversal_watch', revContext),
+        wrapPromptSection('coverage_context', coverageContext),
+        wrapPromptSection('taiwan_market_signals', taiwanMarketSignals),
+        wrapPromptSection('historical_analogs', historicalAnalogs),
+        wrapPromptSection('portfolio_holdings', holdingSummary, '目前沒有持股 dossier。'),
+        wrapPromptSection(
+          'concentration_risk',
+          'AI/伺服器5檔、光通訊3檔、PCB材料3檔，需評估集中風險與龍頭/衛星配置差異。'
+        ),
+        wrapPromptSection('anomalies', anomalySummary || '無'),
+        wrapPromptSection('tracking_events', eventSummary),
+        wrapPromptSection('prediction_hit_rate', predictionHitRate || '0/0'),
+        '</analysis_packet>',
+        '',
+        '<instruction>',
+        blindPredictions.length > 0
+          ? '先對比 <blind_prediction_review> 與 <today_performance>，指出預測對錯與原因。'
+          : '先讀 <portfolio_holdings> 的 thesis / targets / events / brain，再結合 <today_performance> 判斷，不要只看漲跌幅。',
+        '把 <coverage_context> 當成跨持股一次性的供應鏈/主題補充，不要在每檔持股重複改寫整段供應鏈。',
+        'A 級優先處理只選 1-3 檔，其餘持股一律用一句話快照。',
+        '若資料 freshness 為 stale 或 missing，要直接標明不確定性，不可假裝有最新資料。',
+        '只挑 1-3 個與今日走勢真正有因果關聯的事件。',
+        '所有操作建議都要有具體數字、等待條件與「如果我錯了」的原因。',
+        '在 BRAIN_UPDATE 中先驗證既有規則，再決定是否新增少量候選規則。',
+        '必須先寫完整的中文分析評論，最後才能附上 EVENT_ASSESSMENTS 與 BRAIN_UPDATE JSON blocks。',
+        '</instruction>',
+      ].join('\n'),
+      {
+        sourceLabel:
+          'portfolio_holdings / coverage_context / tracking_events / taiwan_market_signals',
+      }
+    ),
   }
 }
 
@@ -574,8 +592,11 @@ export function buildFallbackBrainUpdateRequest({
   return {
     maxTokens: 2600,
     allowThinking: false,
-    systemPrompt: FALLBACK_BRAIN_UPDATE_SYSTEM_PROMPT,
-    userPrompt: `今日分析：
+    systemPrompt: applyAccuracyGatePrompt(FALLBACK_BRAIN_UPDATE_SYSTEM_PROMPT, {
+      sourceLabel: '今日分析 / 現有策略大腦 / 命中率 / 今日損益',
+    }),
+    userPrompt: applyAccuracyGatePrompt(
+      `今日分析：
 ${aiInsight}
 
 現有策略大腦：
@@ -585,6 +606,10 @@ ${JSON.stringify(strategyBrain || { rules: [], lessons: [], commonMistakes: [], 
 今日損益：${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()} 元
 
 請更新策略大腦，保留有效的舊規則，加入今日新教訓。`,
+      {
+        sourceLabel: '今日分析 / 現有策略大腦 / 命中率 / 今日損益',
+      }
+    ),
   }
 }
 

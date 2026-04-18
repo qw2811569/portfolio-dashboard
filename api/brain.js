@@ -1,8 +1,10 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — 策略大腦讀寫
 // 本地檔案優先，Blob 為備份
 import { put, list, del } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs'
 import { join } from 'path'
+import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
 const BRAIN_KEY = 'strategy-brain.json'
@@ -60,17 +62,18 @@ function buildHistoryKey(report) {
 }
 
 // ── Blob 讀寫（best-effort）──
-async function readBlob(blob) {
-  const r = await fetch(blob.url)
-  return r.json()
+async function readBlob(blob, opts = {}) {
+  return fetchSignedBlobJson(blob?.pathname || blob?.url, {
+    origin: opts.origin,
+    fetchImpl: opts.fetchImpl,
+  })
 }
 
 async function readPath(pathname, opts) {
   try {
     const { blobs } = await list({ prefix: pathname, limit: 1, ...opts })
     if (!blobs.length) return null
-    const r = await fetch(blobs[0].url)
-    return r.json()
+    return readBlob(blobs[0], opts)
   } catch {
     return null
   }
@@ -85,7 +88,7 @@ async function replaceSingleton(pathname, data, opts) {
   if (data == null) return
   await put(pathname, JSON.stringify(data), {
     contentType: 'application/json',
-    access: 'public',
+    access: 'private',
     addRandomSuffix: false,
     ...opts,
   })
@@ -162,13 +165,8 @@ async function deleteHistoryReportsByDate(date, keepId, opts) {
   }
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
-
-  const opts = { token: TOKEN }
+async function handler(req, res) {
+  const opts = { token: TOKEN, origin: resolveSignedBlobOrigin(req) }
 
   try {
     // GET — 讀取
@@ -192,7 +190,7 @@ export default async function handler(req, res) {
           const { blobs } = await list({ prefix: HISTORY_PREFIX, ...opts })
           const history = []
           for (const blob of blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 30)) {
-            history.push(await readBlob(blob))
+            history.push(await readBlob(blob, opts))
           }
           const normalized = normalizeHistoryReports(history)
           if (normalized.length > 0) writeLocal(HISTORY_INDEX_KEY, normalized)
@@ -227,7 +225,7 @@ export default async function handler(req, res) {
         try {
           await put(key, JSON.stringify(data), {
             contentType: 'application/json',
-            access: 'public',
+            access: 'private',
             addRandomSuffix: false,
             ...opts,
           })
@@ -272,3 +270,5 @@ export default async function handler(req, res) {
     return res.status(200).json({ brain: EMPTY_BRAIN, history: [], events: [], holdings: [] })
   }
 }
+
+export default withApiAuth(handler)

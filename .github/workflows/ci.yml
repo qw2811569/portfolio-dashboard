@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start local dev server
+        run: |
+          mkdir -p .tmp
+          npm run dev > .tmp/vite-ci.log 2>&1 &
+          echo $! > .tmp/vite-ci.pid
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3002/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat .tmp/vite-ci.log
+          exit 1
+
+      - name: Run verify:local
+        run: npm run verify:local
+
+      - name: Stop local dev server
+        if: always()
+        run: |
+          if [ -f .tmp/vite-ci.pid ]; then
+            kill "$(cat .tmp/vite-ci.pid)" || true
+          fi

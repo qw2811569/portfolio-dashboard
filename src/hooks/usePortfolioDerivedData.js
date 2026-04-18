@@ -677,9 +677,13 @@ export function usePortfolioDerivedData({
         .map((dossier) => {
           const targetStatus = dossier?.freshness?.targets || 'missing'
           const fundamentalStatus = dossier?.freshness?.fundamentals || 'missing'
-          const severity =
-            (targetStatus === 'missing' ? 2 : targetStatus === 'stale' ? 1 : 0) +
-            (fundamentalStatus === 'missing' ? 2 : fundamentalStatus === 'stale' ? 1 : 0)
+          const weight = (status) => {
+            if (status === 'failed') return 3
+            if (status === 'missing') return 2
+            if (status === 'stale' || status === 'aging') return 1
+            return 0
+          }
+          const severity = weight(targetStatus) + weight(fundamentalStatus)
           // Target source label for UI distinction (Task 7):
           // 'analyst' = cron-collected broker report, 'per-band' = PER-band estimate,
           // 'seed' = manually seeded, null = no targets yet

@@ -66,9 +66,11 @@ describe('api/research.js — type-aware per-holding prompts', () => {
   })
 
   describe('per-holding prompts still have non-type-aware call sites preserved', () => {
-    // Sanity: we haven't accidentally deleted the callClaude invocations
-    it('api/research.js still has at least 9 callClaude call sites (preserves existing structure)', () => {
-      const callSites = (researchSource.match(/await callClaude\(/g) || []).length
+    // Sanity: we haven't accidentally deleted the prompt call sites. The
+    // implementation may route through a portfolio-aware wrapper rather than
+    // calling callClaude directly.
+    it('api/research.js still has at least 9 prompt call sites (preserves existing structure)', () => {
+      const callSites = (researchSource.match(/await call(?:Portfolio)?Claude\(/g) || []).length
       expect(callSites).toBeGreaterThanOrEqual(9)
     })
 
@@ -77,11 +79,15 @@ describe('api/research.js — type-aware per-holding prompts', () => {
       // and assert the framework constant is not interpolated inside them.
       // If someone accidentally injects the framework into a system-diagnosis
       // prompt, this catches it.
-      const diagMatch = researchSource.match(/const diag = await callClaude\(\s*`([^`]+)`/)
-      const evolveMatch = researchSource.match(
-        /const evolveAdvice = await callClaude\(\s*`([^`]+)`/
+      const diagMatch = researchSource.match(
+        /const diag = await call(?:Portfolio)?Claude\(\s*`([^`]+)`/
       )
-      const brainMatch = researchSource.match(/const newBrainText = await callClaude\(\s*`([^`]+)`/)
+      const evolveMatch = researchSource.match(
+        /const evolveAdvice = await call(?:Portfolio)?Claude\(\s*`([^`]+)`/
+      )
+      const brainMatch = researchSource.match(
+        /const newBrainText = await call(?:Portfolio)?Claude\(\s*`([^`]+)`/
+      )
       expect(diagMatch?.[1]).toBeDefined()
       expect(evolveMatch?.[1]).toBeDefined()
       expect(brainMatch?.[1]).toBeDefined()

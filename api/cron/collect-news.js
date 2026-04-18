@@ -1,5 +1,6 @@
-import { put } from '@vercel/blob'
+import { list, put } from '@vercel/blob'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG, STOCK_META } from '../../src/seedData.js'
+import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
 const NEWS_BLOB_KEY = 'news-feed/latest.json'
 const MAX_ITEMS_PER_STOCK = 5
@@ -158,6 +159,12 @@ export default async function handler(req, res) {
       allowOverwrite: true,
       access: 'public',
       contentType: 'application/json',
+    })
+    await markCronSuccess('collect-news', {
+      token,
+      listImpl: list,
+      putImpl: put,
+      logger: console,
     })
     return res.status(200).json({
       ok: true,

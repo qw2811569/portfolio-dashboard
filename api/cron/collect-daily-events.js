@@ -1,6 +1,7 @@
-import { put } from '@vercel/blob'
+import { list, put } from '@vercel/blob'
 import { loadGeminiCalendarEvents, dedupeCalendarEvents } from '../event-calendar.js'
 import { queryFinMindDataset } from '../_lib/finmind-governor.js'
+import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
 const CRON_TOKEN = process.env.CRON_SECRET
 const BLOB_TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
@@ -157,15 +158,21 @@ export default async function handler(req, res) {
       events,
     }
 
-    if (BLOB_TOKEN) {
-      await put(SNAPSHOT_KEY, JSON.stringify(snapshot, null, 2), {
-        token: BLOB_TOKEN,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        access: 'public',
-        contentType: 'application/json',
-      })
-    }
+    if (!BLOB_TOKEN) return res.status(500).json({ error: 'blob token not configured' })
+
+    await put(SNAPSHOT_KEY, JSON.stringify(snapshot, null, 2), {
+      token: BLOB_TOKEN,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      access: 'public',
+      contentType: 'application/json',
+    })
+    await markCronSuccess('collect-daily-events', {
+      token: BLOB_TOKEN,
+      listImpl: list,
+      putImpl: put,
+      logger: console,
+    })
 
     return res.status(200).json({ ok: true, ...snapshot.stats, generatedAt: snapshot.generatedAt })
   } catch (error) {

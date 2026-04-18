@@ -14,6 +14,7 @@ export function composePortfolioPanelsContextInput({
     overviewDuplicateHoldings: data.overviewDuplicateHoldings,
     overviewPendingItems: data.overviewPendingItems,
     holdings: data.holdings,
+    holdingDossiers: data.holdingDossiers,
     totalVal: data.totalVal,
     totalCost: data.totalCost,
     todayTotalPnl: data.todayTotalPnl,

@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, MetricCard } from '../common'
+import { Card, Button, MetricCard, StaleBadge } from '../common'
 import { STOCK_META } from '../../seedData.js'
 import { ConcentrationDashboard } from './ConcentrationDashboard.jsx'
 import { KpiCards } from './KpiCards.jsx'
@@ -50,6 +50,7 @@ export function OverviewHeader({
   totalPnl,
   watchlistCount = 0,
   missingTargetCount = 0,
+  staleStatus = 'fresh',
   onExit,
 }) {
   const heroMetrics = [
@@ -124,6 +125,7 @@ export function OverviewHeader({
               },
             },
             h('span', { style: { fontSize: 11, color: C.textMute } }, formatTaipeiDate()),
+            h(StaleBadge, { status: staleStatus, title: 'overview panel freshness' }),
             h(
               'span',
               {
@@ -489,6 +491,7 @@ export function OverviewPanel({
   pendingItems,
   watchlistCount,
   missingTargetCount,
+  staleStatus = 'fresh',
   onExit,
   onSwitch,
 }) {
@@ -502,6 +505,7 @@ export function OverviewPanel({
       totalValue,
       totalPnl,
       watchlistCount,
+      staleStatus,
       missingTargetCount,
       onExit,
     }),

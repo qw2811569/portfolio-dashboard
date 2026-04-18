@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react'
+import { z } from 'zod'
 import {
   ACTIVE_PORTFOLIO_KEY,
   CURRENT_SCHEMA_VERSION,
@@ -18,11 +19,92 @@ import {
   downloadJson,
   ensurePortfolioRegistry,
   loadPortfolioSnapshot,
+  normalizeImportedStorageKey,
   normalizeBackupStorage,
   readSyncAt,
   save,
   pfKey,
 } from '../lib/portfolioUtils.js'
+
+const MAX_BACKUP_IMPORT_BYTES = 2 * 1024 * 1024
+
+const JsonValueSchema = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JsonValueSchema),
+    z.record(z.string(), JsonValueSchema),
+  ])
+)
+
+const BackupStorageSchema = z.record(z.string(), JsonValueSchema)
+
+function formatBytes(bytes = 0) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B'
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${bytes} B`
+}
+
+function extractRawBackupStorage(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
+  if (payload.storage && typeof payload.storage === 'object' && !Array.isArray(payload.storage)) {
+    return payload.storage
+  }
+  if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+    return payload.data
+  }
+  return payload
+}
+
+function validateBackupImportPayload(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error(APP_ERROR_MESSAGES.backupUnrecognizedData)
+  }
+
+  const appName = String(payload.app || '').trim()
+  if (appName && appName !== 'portfolio-dashboard') {
+    throw new Error(APP_ERROR_MESSAGES.backupUnsupportedApp(appName))
+  }
+
+  if (payload.version != null && Number(payload.version) !== 1) {
+    throw new Error(APP_ERROR_MESSAGES.backupUnsupportedVersion(payload.version))
+  }
+
+  const rawStorage = extractRawBackupStorage(payload)
+  const parsedStorage = BackupStorageSchema.safeParse(rawStorage)
+  if (!parsedStorage.success) {
+    throw new Error(APP_ERROR_MESSAGES.backupInvalidShape)
+  }
+
+  const unsafeKeys = Object.keys(parsedStorage.data).filter(
+    (key) => !normalizeImportedStorageKey(key)
+  )
+  if (unsafeKeys.length > 0) {
+    throw new Error(APP_ERROR_MESSAGES.backupUnsafeKeys(unsafeKeys))
+  }
+
+  const schemaVersion = Number(parsedStorage.data[SCHEMA_VERSION_KEY])
+  if (!Number.isFinite(schemaVersion)) {
+    throw new Error(APP_ERROR_MESSAGES.backupSchemaMissing)
+  }
+  if (schemaVersion > CURRENT_SCHEMA_VERSION) {
+    throw new Error(APP_ERROR_MESSAGES.backupSchemaTooNew(schemaVersion))
+  }
+
+  const normalizedStorage = normalizeBackupStorage({ storage: parsedStorage.data })
+  if (!normalizedStorage || Object.keys(normalizedStorage).length === 0) {
+    throw new Error(APP_ERROR_MESSAGES.backupUnrecognizedData)
+  }
+
+  return {
+    normalizedStorage,
+    schemaVersion,
+    rawKeyCount: Object.keys(parsedStorage.data).length,
+  }
+}
 
 export function useLocalBackupWorkflow({
   portfolios = [],
@@ -85,20 +167,39 @@ export function useLocalBackupWorkflow({
       }
       if (!file) return
 
-      const confirmed = await requestConfirmation(APP_DIALOG_MESSAGES.importBackup)
+      if (Number(file.size) > MAX_BACKUP_IMPORT_BYTES) {
+        flashSaved(
+          APP_TOAST_MESSAGES.backupImportFailed(
+            APP_ERROR_MESSAGES.backupTooLarge(formatBytes(MAX_BACKUP_IMPORT_BYTES))
+          ),
+          STATUS_MESSAGE_TIMEOUT_MS.LONG
+        )
+        return
+      }
+
+      const confirmed = await requestConfirmation(
+        APP_DIALOG_MESSAGES.importBackup(file.name || '', formatBytes(file.size))
+      )
       if (!confirmed) return
 
       let nextPid = activePortfolioId
       try {
         const text = await file.text()
         const parsed = JSON.parse(text)
-        const storage = normalizeBackupStorage(parsed)
-        if (!storage || Object.keys(storage).length === 0) {
-          throw new Error(APP_ERROR_MESSAGES.backupUnrecognizedData)
-        }
-
-        const normalizedStorage = { ...storage }
+        const validated = validateBackupImportPayload(parsed)
+        const normalizedStorage = { ...validated.normalizedStorage }
         const importedPortfolios = buildPortfoliosFromStorage(normalizedStorage)
+        const finalConfirmed = await requestConfirmation(
+          APP_DIALOG_MESSAGES.importBackupReview({
+            fileName: file.name || '',
+            sizeLabel: formatBytes(file.size),
+            schemaVersion: validated.schemaVersion,
+            keyCount: validated.rawKeyCount,
+            portfolioCount: importedPortfolios.length,
+          })
+        )
+        if (!finalConfirmed) return
+
         for (const key of Object.keys(normalizedStorage)) {
           if (!key.endsWith(`-${PORTFOLIO_ALIAS_TO_SUFFIX.holdings}`)) continue
           normalizedStorage[key] = normalizeHoldings(normalizedStorage[key], marketQuotes)

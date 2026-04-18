@@ -1,5 +1,7 @@
 import { list, put } from '@vercel/blob'
+import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../../src/seedData.js'
+import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 import { isSkippedTargetPriceInstrumentType } from '../../src/lib/instrumentTypes.js'
 
 const TRACKED_STOCKS_BLOB_KEYS = ['tracked-stocks/latest.json', 'tracked-stocks.json']
@@ -188,9 +190,9 @@ async function readJsonSafely(response) {
 async function fetchAnalystReports(stock, { origin, fetchImpl = fetch } = {}) {
   const response = await fetchImpl(new URL('/api/analyst-reports?refresh=1', origin), {
     method: 'POST',
-    headers: {
+    headers: buildInternalAuthHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({
       code: stock.code,
       name: stock.name,
@@ -292,6 +294,12 @@ export default async function handler(req, res) {
     const summary = await collectTargetPriceSnapshots({
       trackedStocks,
       origin: resolveRequestOrigin(req),
+      logger: console,
+    })
+    await markCronSuccess('collect-target-prices', {
+      token: getBlobToken(),
+      listImpl: list,
+      putImpl: put,
       logger: console,
     })
     return res.status(200).json(summary)

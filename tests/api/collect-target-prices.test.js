@@ -63,8 +63,14 @@ describe('api/cron/collect-target-prices', () => {
     const firstAnalystResponse = createDeferred()
     const secondAnalystResponse = createDeferred()
 
-    list.mockResolvedValue({
-      blobs: [{ url: trackedStocksBlobUrl }],
+    list.mockImplementation(async ({ prefix }) => {
+      if (prefix === 'tracked-stocks/latest.json' || prefix === 'tracked-stocks.json') {
+        return { blobs: [{ url: trackedStocksBlobUrl }] }
+      }
+      if (prefix === 'last-success-collect-target-prices.json') {
+        return { blobs: [] }
+      }
+      return { blobs: [] }
     })
 
     global.fetch.mockImplementation((input, init = {}) => {
@@ -196,7 +202,20 @@ describe('api/cron/collect-target-prices', () => {
       })
     )
 
-    const writtenSnapshots = put.mock.calls.map(([, body]) => JSON.parse(body))
+    expect(put).toHaveBeenNthCalledWith(
+      3,
+      'last-success-collect-target-prices.json',
+      expect.any(String),
+      expect.objectContaining({
+        token: 'blob-token',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        access: 'public',
+        contentType: 'application/json',
+      })
+    )
+
+    const writtenSnapshots = put.mock.calls.slice(0, 2).map(([, body]) => JSON.parse(body))
     expect(writtenSnapshots[0]).toMatchObject({
       code: '2330',
       name: '台積電',
@@ -210,6 +229,15 @@ describe('api/cron/collect-target-prices', () => {
       name: '聯發科',
       targets: {
         reports: [{ firm: '凱基', target: 1800, date: '2026/04/12' }],
+      },
+    })
+
+    const markerPayload = JSON.parse(put.mock.calls[2][1])
+    expect(markerPayload).toMatchObject({
+      job: 'collect-target-prices',
+      expectedCadence: 'weekday-daily',
+      lateness: {
+        late: false,
       },
     })
   })

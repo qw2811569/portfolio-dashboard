@@ -11,6 +11,37 @@ function formatRevenueMonth(row) {
   return `${year}-${String(month).padStart(2, '0')}`
 }
 
+function parseRevenuePeriod(row) {
+  const monthLabel = formatRevenueMonth(row)
+  if (monthLabel) return monthLabel
+
+  const match = String(row?.revenuePeriod || row?.date || '')
+    .trim()
+    .match(/^(\d{4})[-/](\d{2})/)
+  if (!match) return ''
+  return `${match[1]}-${match[2]}`
+}
+
+function compareRevenuePeriodsDesc(left, right) {
+  return String(right || '').localeCompare(String(left || ''))
+}
+
+function findLatestRevenueRow(rows = []) {
+  const normalizedRows = Array.isArray(rows) ? rows.filter(Boolean) : []
+  if (normalizedRows.length === 0) return null
+
+  return [...normalizedRows].sort((left, right) => {
+    const periodDiff = compareRevenuePeriodsDesc(
+      parseRevenuePeriod(left),
+      parseRevenuePeriod(right)
+    )
+    if (periodDiff !== 0) return periodDiff
+    return String(right?.announcedAt || right?.date || '').localeCompare(
+      String(left?.announcedAt || left?.date || '')
+    )
+  })[0]
+}
+
 function dateStringToQuarter(dateStr) {
   const match = String(dateStr || '').match(/^(\d{4})-(\d{2})/)
   if (!match) return ''
@@ -48,6 +79,25 @@ function computeRoe(financialRow, balanceRow) {
   return roundOneDecimal((netIncome / equity) * 100)
 }
 
+function describeStatementPeriod(financialRow) {
+  if (!financialRow) return ''
+  const quarter =
+    String(financialRow?.quarter || '').trim() || dateStringToQuarter(financialRow?.date)
+  const mode = String(financialRow?.statementPeriodMode || '').trim()
+  if (!quarter || !mode) return mode
+
+  if (mode === 'standalone-monthly-verified') {
+    return `${quarter} standalone verified from monthly revenue`
+  }
+  if (mode === 'ytd-cumulative-derived') {
+    return `${quarter} standalone derived from cumulative YTD/H1 statement`
+  }
+  if (mode === 'h2-cumulative-derived') {
+    return `${quarter} standalone derived from H2 cumulative statement`
+  }
+  return mode
+}
+
 export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
   if (!raw || typeof raw !== 'object') return null
 
@@ -55,13 +105,14 @@ export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
   const financialRows = Array.isArray(raw.financials) ? raw.financials : []
   const balanceRows = Array.isArray(raw.balanceSheet) ? raw.balanceSheet : []
 
-  const latestRevenue = revenueRows[0] || null
+  const latestRevenue = findLatestRevenueRow(revenueRows)
   const latestFinancials = financialRows[0] || null
   const latestBalance = balanceRows[0] || null
 
-  const revenueMonth = latestRevenue ? formatRevenueMonth(latestRevenue) : ''
+  const revenueMonth = latestRevenue ? parseRevenuePeriod(latestRevenue) : ''
   const revenueYoY = latestRevenue ? toNumber(latestRevenue.revenueYoY) : 0
   const revenueMoM = latestRevenue ? toNumber(latestRevenue.revenueMoM) : 0
+  const revenueAnnouncedAt = String(latestRevenue?.announcedAt || '').trim()
 
   const quarter =
     String(latestFinancials?.quarter || '').trim() ||
@@ -70,6 +121,7 @@ export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
   const grossMargin = computeGrossMargin(latestFinancials)
   const roe = computeRoe(latestFinancials, latestBalance)
   const statementPeriodMode = String(latestFinancials?.statementPeriodMode || '').trim()
+  const statementPeriodSummary = describeStatementPeriod(latestFinancials)
   const statementWarnings = Array.isArray(latestFinancials?.statementWarnings)
     ? latestFinancials.statementWarnings
     : []
@@ -95,6 +147,8 @@ export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
       updatedAt: now.toISOString(),
       note: [
         statementPeriodMode ? `statementPeriodMode=${statementPeriodMode}` : '',
+        statementPeriodSummary ? `statementPeriod=${statementPeriodSummary}` : '',
+        revenueAnnouncedAt ? `revenueAnnouncedAt=${revenueAnnouncedAt}` : '',
         statementWarnings.length > 0 ? `warnings=${statementWarnings.join(',')}` : '',
       ]
         .filter(Boolean)

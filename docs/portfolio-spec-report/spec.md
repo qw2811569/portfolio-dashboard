@@ -611,3 +611,13 @@
 - `T52`：新增 server-side FinMind governor、event-calendar / collect-daily-events upstream boundary 收口、`eslint` guardrail 禁 `src/**` 直寫 upstream endpoint
 - `T54`：`useAppRuntimeComposer` 拆成 6 個 bounded slices + barrel re-export，外部 import / API shape 不變
 - final verify：`95/95` targeted tests passed；`npm run lint`、`npm run check:runtime-entry`、`npm run check:fast-refresh` 全綠
+
+## Round 123 · Codex · L2 third wave · 2026-04-18 20:29:26 CST
+
+- `T30`：月營收 row 改以「所屬月」正規化 `date`，另保留 `announcedAt`；fundamentals mapper 不再把公告月誤當營收月
+- `T31`：quarter / H1 / H2 standalone derivation 改回正確語意，避免 cumulative totals 洩漏成單季值
+- `T57`：backup import 新增 allowlist + zod schema validate + `2MB` limit + two-step confirm；非法 payload fail-closed
+- `T60`：`collect-daily-events / collect-target-prices / collect-news` 三個 cron 會寫 `last-success-<job>.json` blob marker，並在 weekday lateness 超標時發 alert
+- `M15`：新增 shared `<StaleBadge>`，統一 `fresh / stale / missing / failed` 四態，接入 holdings / overview / events / daily report
+- `T66`：新增 GitHub Actions CI workflow，`push main` / `PR -> main` 會自舉 local dev server 後跑 `npm ci + npm run verify:local`；同步修正 `research` type-aware regression test 以對齊現行 `callPortfolioClaude` wrapper
+- final verify：`npm run verify:local` 全綠，`860/860` tests passed，build / healthcheck / smoke:ui 全過

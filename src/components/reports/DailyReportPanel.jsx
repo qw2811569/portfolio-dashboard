@@ -1,6 +1,6 @@
 import { createElement as h, useEffect, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, Badge, OperatingContextCard } from '../common'
+import { Card, Button, Badge, OperatingContextCard, StaleBadge } from '../common'
 import Md from '../Md.jsx'
 import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
 import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
@@ -1455,6 +1455,7 @@ export function DailyReportPanel({
   expandedStock: _expandedStock,
   setExpandedStock: _setExpandedStock,
   strategyBrain: _strategyBrain,
+  staleStatus = 'fresh',
   operatingContext = null,
 }) {
   const [autoConfirmState, setAutoConfirmState] = useState(null)
@@ -1531,6 +1532,14 @@ export function DailyReportPanel({
     'div',
     null,
     h(OperatingContextCard, { context: operatingContext }),
+    h(
+      'div',
+      {
+        style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
+      },
+      h('div', { style: { fontSize: 10, color: C.textMute, fontWeight: 600 } }, '資料狀態'),
+      h(StaleBadge, { status: staleStatus, title: 'daily panel freshness' })
+    ),
     // Morning note (always shown when available)
     h(MorningNoteSection, { morningNote }),
 

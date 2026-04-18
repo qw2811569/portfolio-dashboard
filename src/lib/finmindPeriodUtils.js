@@ -102,6 +102,69 @@ const INCOME_STATEMENT_METRICS = [
   'OperatingExpenses',
 ]
 
+function deriveStandaloneMetricValue({
+  metric,
+  rawValue,
+  statementPeriodMode,
+  parsedQuarter,
+  standaloneRowsByQuarter,
+  normalized,
+}) {
+  if (rawValue == null) return null
+
+  if (statementPeriodMode === 'standalone-monthly-verified' || metric === 'Revenue') {
+    if (metric === 'Revenue') {
+      const normalizedRevenue = toFiniteNumber(normalized.monthlyRevenueQuarterSum)
+      return normalizedRevenue != null ? normalizedRevenue : rawValue
+    }
+    return rawValue
+  }
+
+  if (statementPeriodMode === 'ytd-cumulative-derived' && parsedQuarter) {
+    const priorStandalone = sumPriorStandaloneMetrics(
+      standaloneRowsByQuarter,
+      parsedQuarter.year,
+      parsedQuarter.quarter,
+      metric
+    )
+    if (priorStandalone == null) return rawValue
+
+    // FinMind occasionally mixes cumulative revenue with standalone EPS in the
+    // same row (observed on 2025Q4 cases). Avoid subtracting a prior quarter
+    // when the reported EPS already looks like a standalone figure.
+    if (
+      metric === 'EPS' &&
+      Math.abs(rawValue) <= Math.abs(priorStandalone) * 1.1 &&
+      Math.sign(rawValue || 0) === Math.sign(priorStandalone || 0)
+    ) {
+      normalized.statementWarnings.push('eps-appears-standalone')
+      return rawValue
+    }
+
+    return Number((rawValue - priorStandalone).toFixed(6))
+  }
+
+  if (statementPeriodMode === 'h2-cumulative-derived' && parsedQuarter?.quarter === 4) {
+    const q3Standalone = toFiniteNumber(
+      standaloneRowsByQuarter.get(`${parsedQuarter.year}Q3`)?.[metric]
+    )
+    if (q3Standalone == null) return rawValue
+
+    if (
+      metric === 'EPS' &&
+      Math.abs(rawValue) <= Math.abs(q3Standalone) * 1.1 &&
+      Math.sign(rawValue || 0) === Math.sign(q3Standalone || 0)
+    ) {
+      normalized.statementWarnings.push('eps-appears-standalone')
+      return rawValue
+    }
+
+    return Number((rawValue - q3Standalone).toFixed(6))
+  }
+
+  return rawValue
+}
+
 export function normalizeFinancialStatementRows(statementRows = [], revenueRows = []) {
   const { quarterSums, ytdSums, h2Sums } = buildQuarterRevenueMaps(revenueRows)
   const rowsAsc = [...(Array.isArray(statementRows) ? statementRows : [])]
@@ -154,38 +217,14 @@ export function normalizeFinancialStatementRows(statementRows = [], revenueRows 
       const rawValue = toFiniteNumber(row?.[metric])
       if (rawValue == null) continue
       normalized[`reported${metric}`] = rawValue
-
-      if (statementPeriodMode === 'standalone-monthly-verified' || metric === 'Revenue') {
-        if (metric === 'Revenue' && quarterRevenue != null) {
-          normalized[metric] = quarterRevenue
-        } else {
-          normalized[metric] = rawValue
-        }
-        continue
-      }
-
-      if (statementPeriodMode === 'ytd-cumulative-derived' && parsedQuarter) {
-        const priorStandalone = sumPriorStandaloneMetrics(
-          standaloneRowsByQuarter,
-          parsedQuarter.year,
-          parsedQuarter.quarter,
-          metric
-        )
-        normalized[metric] =
-          priorStandalone == null ? rawValue : Number((rawValue - priorStandalone).toFixed(6))
-        continue
-      }
-
-      if (statementPeriodMode === 'h2-cumulative-derived' && parsedQuarter?.quarter === 4) {
-        const q3Standalone = toFiniteNumber(
-          standaloneRowsByQuarter.get(`${parsedQuarter.year}Q3`)?.[metric]
-        )
-        normalized[metric] =
-          q3Standalone == null ? rawValue : Number((rawValue - q3Standalone).toFixed(6))
-        continue
-      }
-
-      normalized[metric] = rawValue
+      normalized[metric] = deriveStandaloneMetricValue({
+        metric,
+        rawValue,
+        statementPeriodMode,
+        parsedQuarter,
+        standaloneRowsByQuarter,
+        normalized,
+      })
     }
 
     const normalizedRevenue = toFiniteNumber(normalized.Revenue)

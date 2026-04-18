@@ -1,7 +1,7 @@
 import { createElement as h } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
-import { Card, Button, OperatingContextCard } from '../common'
+import { Card, Button, OperatingContextCard, StaleBadge } from '../common'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
 import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
@@ -742,6 +742,7 @@ export function EventsPanel({
   filteredEvents,
   catalystFilter,
   setCatalystFilter,
+  staleStatus = 'fresh',
   operatingContext = null,
   onNavigateDaily = () => {},
 }) {
@@ -753,6 +754,14 @@ export function EventsPanel({
     'div',
     null,
     h(OperatingContextCard, { context: operatingContext }),
+    h(
+      'div',
+      {
+        style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
+      },
+      h('div', { style: { fontSize: 10, color: C.textMute, fontWeight: 600 } }, '資料狀態'),
+      h(StaleBadge, { status: staleStatus, title: 'events panel freshness' })
+    ),
     // Relay Plan
     showRelayPlan &&
       h(RelayPlanCard, {

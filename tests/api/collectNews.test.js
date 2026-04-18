@@ -1,5 +1,16 @@
-import { describe, it, expect, vi } from 'vitest'
-import { fetchStockNews, collectNewsFeed } from '../../api/cron/collect-news.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { list, put } = vi.hoisted(() => ({
+  list: vi.fn(),
+  put: vi.fn(),
+}))
+
+vi.mock('@vercel/blob', () => ({
+  list,
+  put,
+}))
+
+import handler, { fetchStockNews, collectNewsFeed } from '../../api/cron/collect-news.js'
 
 const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -20,7 +31,46 @@ const SAMPLE_RSS = `<?xml version="1.0" encoding="UTF-8"?>
 </channel>
 </rss>`
 
+function createMockResponse() {
+  return {
+    statusCode: 200,
+    payload: null,
+    headers: {},
+    setHeader(key, value) {
+      this.headers[key] = value
+    },
+    status(code) {
+      this.statusCode = code
+      return this
+    },
+    json(payload) {
+      this.payload = payload
+      return payload
+    },
+    end() {},
+  }
+}
+
 describe('collect-news', () => {
+  const originalFetch = global.fetch
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-14T02:30:00.000Z'))
+    vi.clearAllMocks()
+    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    delete process.env.CRON_SECRET
+    global.fetch = vi.fn()
+    put.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    global.fetch = originalFetch
+    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.CRON_SECRET
+  })
+
   describe('fetchStockNews', () => {
     it('parses RSS XML and returns news items with relatedStocks', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
@@ -98,5 +148,80 @@ describe('collect-news', () => {
       // First stock succeeds, second fails — should still have items
       expect(feed.mergedCount).toBeGreaterThan(0)
     })
+  })
+
+  it('writes a last-success marker and warns when the previous weekday run is late', async () => {
+    const previousMarkerUrl = 'https://blob.example/last-success-collect-news.json'
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    list.mockImplementation(async ({ prefix }) => {
+      if (prefix === 'last-success-collect-news.json') {
+        return { blobs: [{ url: previousMarkerUrl }] }
+      }
+      return { blobs: [] }
+    })
+
+    global.fetch.mockImplementation(async (input) => {
+      const url = String(input)
+      if (url === previousMarkerUrl) {
+        return {
+          ok: true,
+          json: async () => ({
+            job: 'collect-news',
+            lastSuccessAt: '2026-04-10T02:00:00.000Z',
+          }),
+        }
+      }
+      return {
+        ok: true,
+        text: async () => SAMPLE_RSS,
+      }
+    })
+
+    const req = { method: 'GET', headers: {} }
+    const res = createMockResponse()
+
+    const pending = handler(req, res)
+    await vi.runAllTimersAsync()
+    await pending
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toMatchObject({
+      ok: true,
+    })
+    expect(put).toHaveBeenNthCalledWith(
+      1,
+      'news-feed/latest.json',
+      expect.any(String),
+      expect.objectContaining({
+        token: 'blob-token',
+      })
+    )
+    expect(put).toHaveBeenNthCalledWith(
+      2,
+      'last-success-collect-news.json',
+      expect.any(String),
+      expect.objectContaining({
+        token: 'blob-token',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        access: 'public',
+        contentType: 'application/json',
+      })
+    )
+    expect(JSON.parse(put.mock.calls[1][1])).toMatchObject({
+      job: 'collect-news',
+      lateness: {
+        late: true,
+        elapsedWeekdays: 2,
+        previousSuccessAt: '2026-04-10T02:00:00.000Z',
+      },
+    })
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('lateness alert for collect-news: 2 weekday gaps')
+    )
+    infoSpy.mockRestore()
+    warnSpy.mockRestore()
   })
 })

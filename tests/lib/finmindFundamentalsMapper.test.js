@@ -8,7 +8,8 @@ function buildFullFixture() {
   return {
     revenue: [
       {
-        date: '2026-03-31',
+        date: '2026-03-01',
+        announcedAt: '2026-04-01',
         revenueMonth: 3,
         revenueYear: 2026,
         revenue: 1000000,
@@ -19,6 +20,7 @@ function buildFullFixture() {
     financials: [
       {
         date: '2025-12-31',
+        statementPeriodMode: 'standalone-monthly-verified',
         EPS: 8.25,
         Revenue: 850000,
         GrossProfit: 450000,
@@ -38,7 +40,8 @@ function buildRevenueOnlyFixture() {
   return {
     revenue: [
       {
-        date: '2026-03-31',
+        date: '2026-03-01',
+        announcedAt: '2026-04-01',
         revenueMonth: 3,
         revenueYear: 2026,
         revenue: 1000000,
@@ -90,6 +93,10 @@ describe('lib/dataAdapters/finmindFundamentalsMapper', () => {
       expect(entry.roe).toBeCloseTo(13.3, 1)
       expect(entry.source).toBe('finmind')
       expect(entry.updatedAt).toBe(FIXED_NOW.toISOString())
+      expect(entry.note).toContain('revenueAnnouncedAt=2026-04-01')
+      expect(entry.note).toContain(
+        'statementPeriod=2025Q4 standalone verified from monthly revenue'
+      )
     })
 
     it('produces an entry that round-trips through normalizeFundamentalsEntry', () => {
@@ -142,6 +149,41 @@ describe('lib/dataAdapters/finmindFundamentalsMapper', () => {
       expect(entry.eps).toBe(8.25)
       expect(entry.grossMargin).toBeCloseTo(52.9, 1)
     })
+
+    it('picks the latest revenue row by owned month instead of input ordering', () => {
+      const result = mapFinMindToFundamentals(
+        {
+          revenue: [
+            {
+              date: '2026-02-01',
+              announcedAt: '2026-03-01',
+              revenueMonth: 2,
+              revenueYear: 2026,
+              revenue: 900000,
+              revenueYoY: -5,
+              revenueMoM: -10,
+            },
+            {
+              date: '2026-03-01',
+              announcedAt: '2026-04-01',
+              revenueMonth: 3,
+              revenueYear: 2026,
+              revenue: 1000000,
+              revenueYoY: 12.5,
+              revenueMoM: -2.3,
+            },
+          ],
+          financials: [],
+          balanceSheet: [],
+        },
+        { code: '2330', now: FIXED_NOW }
+      )
+
+      expect(result).not.toBeNull()
+      expect(result.entry.revenueMonth).toBe('2026-03')
+      expect(result.entry.revenueYoY).toBe(12.5)
+      expect(result.entry.note).toContain('revenueAnnouncedAt=2026-04-01')
+    })
   })
 
   describe('mapFinMindToFundamentals — empty or null', () => {
@@ -167,7 +209,15 @@ describe('lib/dataAdapters/finmindFundamentalsMapper', () => {
     it('handles missing revenueYoY and revenueMoM gracefully', () => {
       const result = mapFinMindToFundamentals(
         {
-          revenue: [{ date: '2026-03-31', revenueMonth: 3, revenueYear: 2026, revenue: 1000000 }],
+          revenue: [
+            {
+              date: '2026-03-01',
+              announcedAt: '2026-04-01',
+              revenueMonth: 3,
+              revenueYear: 2026,
+              revenue: 1000000,
+            },
+          ],
           financials: [],
           balanceSheet: [],
         },

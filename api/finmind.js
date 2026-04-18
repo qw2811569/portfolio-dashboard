@@ -33,6 +33,31 @@ function sortByDateDesc(rows = []) {
   return [...rows].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
 }
 
+function toRevenueMonthInfo(row) {
+  const year = Number(row?.revenue_year ?? row?.revenueYear)
+  const month = Number(row?.revenue_month ?? row?.revenueMonth)
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return null
+  const paddedMonth = String(month).padStart(2, '0')
+  return {
+    year,
+    month,
+    label: `${year}-${paddedMonth}`,
+    periodDate: `${year}-${paddedMonth}-01`,
+  }
+}
+
+function sortRevenueRowsDesc(rows = []) {
+  return [...rows].sort((left, right) => {
+    const leftInfo = toRevenueMonthInfo(left)
+    const rightInfo = toRevenueMonthInfo(right)
+    if (leftInfo && rightInfo) {
+      if (leftInfo.year !== rightInfo.year) return rightInfo.year - leftInfo.year
+      if (leftInfo.month !== rightInfo.month) return rightInfo.month - leftInfo.month
+    }
+    return String(right?.date || '').localeCompare(String(left?.date || ''))
+  })
+}
+
 function normalizeInstitutionalName(name = '') {
   return String(name || '')
     .trim()
@@ -154,19 +179,28 @@ function transformDividendResult(rows = []) {
 }
 
 function transformMonthlyRevenue(rows = []) {
-  return sortByDateDesc(
-    rows.map((row) => ({
-      date: row.date,
-      revenueMonth: row.revenue_month || null,
-      revenueYear: row.revenue_year || null,
-      revenue: toNumber(row.revenue),
-      revenueYoY: Number.isFinite(Number(row.revenue_year_growth_rate))
-        ? Number(row.revenue_year_growth_rate)
-        : null,
-      revenueMoM: Number.isFinite(Number(row.revenue_month_growth_rate))
-        ? Number(row.revenue_month_growth_rate)
-        : null,
-    }))
+  return sortRevenueRowsDesc(
+    rows.map((row) => {
+      const monthInfo = toRevenueMonthInfo(row)
+      const announcedAt = String(row.date || '').trim() || null
+      return {
+        // FinMind revenue row `date` is the announcement month. Downstream
+        // consumers care about the actual revenue month, so normalize `date`
+        // to the owned month and keep the original announcement date separately.
+        date: monthInfo?.periodDate || announcedAt,
+        announcedAt,
+        revenueMonth: monthInfo?.month ?? row.revenue_month ?? null,
+        revenueYear: monthInfo?.year ?? row.revenue_year ?? null,
+        revenuePeriod: monthInfo?.label || null,
+        revenue: toNumber(row.revenue),
+        revenueYoY: Number.isFinite(Number(row.revenue_year_growth_rate))
+          ? Number(row.revenue_year_growth_rate)
+          : null,
+        revenueMoM: Number.isFinite(Number(row.revenue_month_growth_rate))
+          ? Number(row.revenue_month_growth_rate)
+          : null,
+      }
+    })
   )
 }
 

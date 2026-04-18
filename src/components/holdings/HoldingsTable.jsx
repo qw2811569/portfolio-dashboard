@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card } from '../common'
+import { Card, StaleBadge } from '../common'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { buildPriceDeviationBadgeMeta } from '../../lib/priceDeviation.js'
 import { PeerRankingBadge } from './PeerRankingBadge.jsx'
@@ -64,6 +64,7 @@ const badgeToneStyles = {
  */
 export function HoldingRow({
   holding,
+  dossier = null,
   expanded = false,
   onToggle = () => {},
   onUpdateTarget = () => {},
@@ -142,6 +143,18 @@ export function HoldingRow({
               },
             },
             h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code),
+            h(StaleBadge, {
+              dossier,
+              field: 'targets',
+              title: 'targets freshness',
+              style: { textTransform: 'none' },
+            }),
+            h(StaleBadge, {
+              dossier,
+              field: 'fundamentals',
+              title: 'fundamentals freshness',
+              style: { textTransform: 'none' },
+            }),
             deviationBadge &&
               h(
                 'span',
@@ -389,10 +402,12 @@ export function HoldingRow({
  */
 export function HoldingsTable({
   holdings = [],
+  dossierByCode = new Map(),
   expandedStock = null,
   setExpandedStock = () => {},
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
+  staleStatus = 'fresh',
   sortBy = 'code',
   sortDir = 'asc',
 }) {
@@ -448,7 +463,21 @@ export function HoldingsTable({
       null,
       '@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 rgba(111,133,104,0.18); } 50% { box-shadow: 0 0 0 5px rgba(111,133,104,0.06); } 100% { box-shadow: 0 0 0 0 rgba(111,133,104,0); } }'
     ),
-    h('div', { style: { ...lbl, marginBottom: 8 } }, `持股明細 · ${holdings.length}檔`),
+    h(
+      'div',
+      {
+        style: {
+          ...lbl,
+          marginBottom: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+      },
+      `持股明細 · ${holdings.length}檔`,
+      h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
+    ),
 
     // Header
     h(
@@ -480,6 +509,7 @@ export function HoldingsTable({
         h(HoldingRow, {
           key: holding.code,
           holding,
+          dossier: dossierByCode.get(holding.code) || null,
           expanded: expandedStock === holding.code,
           onToggle: () => setExpandedStock(expandedStock === holding.code ? null : holding.code),
           onUpdateTarget,

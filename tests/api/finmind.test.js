@@ -192,6 +192,69 @@ describe('api/finmind', () => {
     })
   })
 
+  it('normalizes monthly revenue rows to the owned month while preserving announcement date', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 200,
+        msg: 'success',
+        data: [
+          {
+            date: '2026-04-01',
+            revenue_year: 2026,
+            revenue_month: 3,
+            revenue: 180817000,
+            revenue_year_growth_rate: -16.9,
+            revenue_month_growth_rate: 68.3,
+          },
+          {
+            date: '2026-03-01',
+            revenue_year: 2026,
+            revenue_month: 2,
+            revenue: 107400000,
+            revenue_year_growth_rate: -48.3,
+            revenue_month_growth_rate: -41.3,
+          },
+        ],
+      }),
+    })
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'revenue', code: '6862', start_date: '2026-01-01' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload.data).toEqual([
+      {
+        date: '2026-03-01',
+        announcedAt: '2026-04-01',
+        revenueMonth: 3,
+        revenueYear: 2026,
+        revenuePeriod: '2026-03',
+        revenue: 180817000,
+        revenueYoY: -16.9,
+        revenueMoM: 68.3,
+      },
+      {
+        date: '2026-02-01',
+        announcedAt: '2026-03-01',
+        revenueMonth: 2,
+        revenueYear: 2026,
+        revenuePeriod: '2026-02',
+        revenue: 107400000,
+        revenueYoY: -48.3,
+        revenueMoM: -41.3,
+      },
+    ])
+  })
+
   it('normalizes ytd-cumulative financial rows into standalone quarter values', async () => {
     global.fetch = vi.fn(async (url) => {
       const requestUrl = new URL(url)
@@ -263,5 +326,79 @@ describe('api/finmind', () => {
       EPS: 1.2,
       reportedRevenue: 1200000,
     })
+  })
+
+  it('keeps standalone EPS when H2 cumulative revenue rows would otherwise over-subtract it', async () => {
+    global.fetch = vi.fn(async (url) => {
+      const requestUrl = new URL(url)
+      const dataset = requestUrl.searchParams.get('dataset')
+
+      if (dataset === 'TaiwanStockFinancialStatements') {
+        return {
+          ok: true,
+          json: async () => ({
+            status: 200,
+            msg: 'success',
+            data: [
+              { date: '2025-09-30', type: 'Revenue', value: 503000 },
+              { date: '2025-09-30', type: 'GrossProfit', value: 191140 },
+              { date: '2025-09-30', type: 'OperatingIncome', value: 110660 },
+              { date: '2025-09-30', type: 'IncomeAfterTaxes', value: 80000 },
+              { date: '2025-09-30', type: 'EPS', value: 2.82 },
+              { date: '2025-12-31', type: 'Revenue', value: 1006300 },
+              { date: '2025-12-31', type: 'GrossProfit', value: 382394 },
+              { date: '2025-12-31', type: 'OperatingIncome', value: 204336 },
+              { date: '2025-12-31', type: 'IncomeAfterTaxes', value: 130000 },
+              { date: '2025-12-31', type: 'EPS', value: 2.27 },
+            ],
+          }),
+        }
+      }
+
+      if (dataset === 'TaiwanStockMonthRevenue') {
+        return {
+          ok: true,
+          json: async () => ({
+            status: 200,
+            msg: 'success',
+            data: [
+              { revenue_year: 2025, revenue_month: 7, revenue: 170000 },
+              { revenue_year: 2025, revenue_month: 8, revenue: 166000 },
+              { revenue_year: 2025, revenue_month: 9, revenue: 167000 },
+              { revenue_year: 2025, revenue_month: 10, revenue: 170000 },
+              { revenue_year: 2025, revenue_month: 11, revenue: 176000 },
+              { revenue_year: 2025, revenue_month: 12, revenue: 157300 },
+            ],
+          }),
+        }
+      }
+
+      throw new Error(`unexpected dataset ${dataset}`)
+    })
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'financials', code: '6862', start_date: '2025-07-01' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload.data[0]).toMatchObject({
+      date: '2025-12-31',
+      quarter: '2025Q4',
+      statementPeriodMode: 'h2-cumulative-derived',
+      Revenue: 503300,
+      GrossProfit: 191254,
+      OperatingIncome: 93676,
+      IncomeAfterTaxes: 50000,
+      EPS: 2.27,
+      reportedEPS: 2.27,
+    })
+    expect(res.payload.data[0].statementWarnings).toContain('eps-appears-standalone')
   })
 })

@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useLocalBackupWorkflow } from '../../src/hooks/useLocalBackupWorkflow.js'
 import { usePortfolioPersistence } from '../../src/hooks/usePortfolioPersistence.js'
 
 function createPersistenceProps(overrides = {}) {
@@ -47,6 +48,7 @@ function createPersistenceProps(overrides = {}) {
 describe('hooks/usePortfolioPersistence.js', () => {
   beforeEach(() => {
     global.fetch = vi.fn()
+    localStorage.clear()
   })
 
   afterEach(() => {
@@ -299,6 +301,111 @@ describe('hooks/usePortfolioPersistence.js', () => {
     )
     expect(props.writeSyncAt).not.toHaveBeenCalledWith(
       'pf-research-cloud-sync-at',
+      expect.any(Number)
+    )
+  })
+
+  it('rejects backup imports that do not carry schemaVersion', async () => {
+    const requestConfirmation = vi.fn(async () => true)
+    const flashSaved = vi.fn()
+    const setPortfolios = vi.fn()
+    const applyPortfolioSnapshot = vi.fn()
+
+    const { result } = renderHook(() =>
+      useLocalBackupWorkflow({
+        portfolios: [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+        requestConfirmation,
+        flashSaved,
+        setPortfolios,
+        applyPortfolioSnapshot,
+      })
+    )
+
+    const file = new File(
+      [
+        JSON.stringify({
+          version: 1,
+          app: 'portfolio-dashboard',
+          storage: {
+            'pf-portfolios-v1': [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+          },
+        }),
+      ],
+      'backup-missing-schema.json',
+      { type: 'application/json' }
+    )
+
+    await act(async () => {
+      await result.current.importLocalBackup({
+        target: {
+          files: [file],
+          value: 'picked',
+        },
+      })
+    })
+
+    expect(requestConfirmation).toHaveBeenCalledTimes(1)
+    expect(setPortfolios).not.toHaveBeenCalled()
+    expect(applyPortfolioSnapshot).not.toHaveBeenCalled()
+    expect(flashSaved).toHaveBeenCalledWith(
+      expect.stringContaining('schemaVersion'),
+      expect.any(Number)
+    )
+  })
+
+  it('requires a second confirmation after backup schema validation before mutating state', async () => {
+    const requestConfirmation = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+    const flashSaved = vi.fn()
+    const setPortfolios = vi.fn()
+    const applyPortfolioSnapshot = vi.fn()
+
+    const { result } = renderHook(() =>
+      useLocalBackupWorkflow({
+        portfolios: [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+        requestConfirmation,
+        flashSaved,
+        setPortfolios,
+        applyPortfolioSnapshot,
+      })
+    )
+
+    const file = new File(
+      [
+        JSON.stringify({
+          version: 1,
+          app: 'portfolio-dashboard',
+          storage: {
+            'pf-portfolios-v1': [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+            'pf-active-portfolio-v1': 'me',
+            'pf-view-mode-v1': 'portfolio',
+            'pf-schema-version': 3,
+            'pf-me-holdings-v2': [{ code: '2330', name: '台積電', qty: 1, cost: 950, price: 980 }],
+          },
+        }),
+      ],
+      'backup-valid.json',
+      { type: 'application/json' }
+    )
+
+    await act(async () => {
+      await result.current.importLocalBackup({
+        target: {
+          files: [file],
+          value: 'picked',
+        },
+      })
+    })
+
+    expect(requestConfirmation).toHaveBeenCalledTimes(2)
+    expect(requestConfirmation.mock.calls[1][0]).toMatchObject({
+      title: '再次確認匯入內容',
+      message: expect.stringContaining('schemaVersion'),
+      confirmLabel: '確認匯入',
+    })
+    expect(setPortfolios).not.toHaveBeenCalled()
+    expect(applyPortfolioSnapshot).not.toHaveBeenCalled()
+    expect(flashSaved).not.toHaveBeenCalledWith(
+      expect.stringContaining('已匯入'),
       expect.any(Number)
     )
   })

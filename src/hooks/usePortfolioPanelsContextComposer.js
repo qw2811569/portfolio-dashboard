@@ -11,6 +11,7 @@ export function usePortfolioPanelsContextComposer({
   overviewDuplicateHoldings,
   overviewPendingItems,
   holdings,
+  holdingDossiers,
   totalVal,
   totalCost,
   todayTotalPnl,
@@ -105,9 +106,33 @@ export function usePortfolioPanelsContextComposer({
     ? overviewPendingItems
     : EMPTY_LIST
   const safeHoldings = Array.isArray(holdings) ? holdings : EMPTY_LIST
+  const safeHoldingDossiers = Array.isArray(holdingDossiers) ? holdingDossiers : EMPTY_LIST
   const safeNewsEvents = Array.isArray(newsEvents) ? newsEvents : EMPTY_LIST
   const safeDataRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : EMPTY_LIST
   const latestInsight = dailyReport?.insight || dailyReport?.aiInsight || null
+  const dossierByCode = useMemo(
+    () => new Map(safeHoldingDossiers.map((dossier) => [dossier.code, dossier])),
+    [safeHoldingDossiers]
+  )
+  const sharedStaleStatus = useMemo(() => {
+    let nextStatus = 'fresh'
+    const rank = { fresh: 0, stale: 1, missing: 2, failed: 3 }
+
+    for (const dossier of safeHoldingDossiers) {
+      for (const value of Object.values(dossier?.freshness || {})) {
+        const normalized =
+          value === 'aging'
+            ? 'stale'
+            : ['fresh', 'stale', 'missing', 'failed'].includes(value)
+              ? value
+              : ''
+        if (!normalized) continue
+        if (rank[normalized] > rank[nextStatus]) nextStatus = normalized
+      }
+    }
+
+    return nextStatus
+  }, [safeHoldingDossiers])
 
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
@@ -198,6 +223,7 @@ export function usePortfolioPanelsContextComposer({
         duplicateHoldings: safeOverviewDuplicateHoldings,
         pendingItems: safeOverviewPendingItems,
         watchlistCount: Array.isArray(watchlistRows) ? watchlistRows.length : 0,
+        staleStatus: sharedStaleStatus,
         missingTargetCount: safeHoldings.filter((holding) => {
           if (isSkippedTargetPriceInstrumentType(holding)) return false
           const targetPrice = Number(holding?.targetPrice)
@@ -229,6 +255,8 @@ export function usePortfolioPanelsContextComposer({
       holdingsTable: {
         holdings: safeHoldings,
         expandedStock,
+        dossierByCode,
+        staleStatus: sharedStaleStatus,
       },
       watchlist: {
         watchlistFocus,
@@ -242,6 +270,7 @@ export function usePortfolioPanelsContextComposer({
         filterType,
         filteredEvents,
         catalystFilter,
+        staleStatus: sharedStaleStatus,
         operatingContext,
       },
       daily: {
@@ -256,6 +285,7 @@ export function usePortfolioPanelsContextComposer({
         newsEvents: safeNewsEvents,
         expandedStock,
         strategyBrain,
+        staleStatus: sharedStaleStatus,
         operatingContext,
         maybeAutoConfirmDailyReport,
       },
@@ -301,6 +331,7 @@ export function usePortfolioPanelsContextComposer({
       dailyReport,
       analysisHistory,
       safeDataRefreshRows,
+      dossierByCode,
       enrichingResearchCode,
       expandedNews,
       expandedStock,
@@ -337,6 +368,7 @@ export function usePortfolioPanelsContextComposer({
       scanQuery,
       showRelayPlan,
       showReversal,
+      sharedStaleStatus,
       sortBy,
       stockMeta,
       strategyBrain,

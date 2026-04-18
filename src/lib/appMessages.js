@@ -86,12 +86,43 @@ export const APP_DIALOG_MESSAGES = {
       tone: 'warning',
     }
   },
-  importBackup: {
-    title: '匯入本機備份',
-    message: '匯入會覆蓋這個瀏覽器目前的本機資料；未包含在備份檔內的項目不會被改動。',
-    confirmLabel: '確認匯入',
-    cancelLabel: '取消',
-    tone: 'warning',
+  importBackup(fileName = '', sizeLabel = '') {
+    return {
+      title: '匯入本機備份',
+      message:
+        '匯入會覆蓋這個瀏覽器目前的本機資料；未包含在備份檔內的項目不會被改動。' +
+        [fileName ? `\n\n檔案：${fileName}` : '', sizeLabel ? `\n大小：${sizeLabel}` : '']
+          .filter(Boolean)
+          .join(''),
+      confirmLabel: '下一步',
+      cancelLabel: '取消',
+      tone: 'warning',
+    }
+  },
+  importBackupReview({
+    fileName = '',
+    sizeLabel = '',
+    schemaVersion = '',
+    keyCount = 0,
+    portfolioCount = 0,
+  } = {}) {
+    return {
+      title: '再次確認匯入內容',
+      message: [
+        fileName ? `檔案：${fileName}` : '',
+        sizeLabel ? `大小：${sizeLabel}` : '',
+        schemaVersion !== '' ? `schemaVersion：${schemaVersion}` : '',
+        `可匯入 key：${keyCount}`,
+        `投組數：${portfolioCount}`,
+        '',
+        '這次會把通過 allowlist / schema 驗證的內容寫回本機資料。',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      confirmLabel: '確認匯入',
+      cancelLabel: '取消',
+      tone: 'warning',
+    }
   },
 }
 
@@ -169,6 +200,23 @@ export const APP_STATUS_MESSAGES = {
 export const APP_ERROR_MESSAGES = {
   backupUnrecognizedData: '備份檔內沒有可識別的資料',
   backupInvalidJson: 'JSON 格式不正確',
+  backupTooLarge(limitLabel = '2 MB') {
+    return `備份檔過大（上限 ${limitLabel}）`
+  },
+  backupInvalidShape: '備份檔 schema 不符合匯入格式',
+  backupSchemaMissing: '備份檔缺少 schemaVersion，已拒絕匯入',
+  backupSchemaTooNew(schemaVersion) {
+    return `備份檔 schemaVersion=${schemaVersion} 較新，這個版本不能安全匯入`
+  },
+  backupUnsupportedApp(appName) {
+    return `備份檔 app=${appName} 不受信任`
+  },
+  backupUnsupportedVersion(version) {
+    return `備份檔 version=${version} 不受支援`
+  },
+  backupUnsafeKeys(keys = []) {
+    return `備份檔包含未允許 key：${keys.slice(0, 5).join(', ')}`
+  },
   researchSyncTimeout: '同步逾時，稍後再試',
   researchSyncFallback: '同步失敗',
 }

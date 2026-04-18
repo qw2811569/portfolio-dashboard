@@ -1,6 +1,6 @@
 import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
-import { C, alpha } from '../../theme.js'
+import { C, TOKENS, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard } from '../common'
 
 const lbl = {
@@ -12,18 +12,18 @@ const lbl = {
 }
 
 const PAPER = {
-  bone: '#F7F1E7',
-  paper: 'rgba(255,252,247,0.86)',
-  sand: '#EADBC3',
-  sage: '#A8B59A',
-  sageDeep: '#6F8568',
-  ink: '#202823',
-  muted: '#6F746B',
-  mutedSoft: '#8A837A',
-  grey: '#E7E0D5',
-  line: 'rgba(111,116,107,0.22)',
-  lineSoft: 'rgba(111,116,107,0.12)',
-  tangerine: '#F25623',
+  bone: TOKENS.boneSoft,
+  paper: TOKENS.paper,
+  sand: TOKENS.sand,
+  accent: C.blue,
+  accentStrong: C.olive,
+  ink: C.text,
+  muted: TOKENS.muted,
+  mutedSoft: TOKENS.mutedSoft,
+  grey: alpha(TOKENS.iron, '18'),
+  line: alpha(TOKENS.charcoal, '22'),
+  lineSoft: alpha(TOKENS.charcoal, '12'),
+  tangerine: TOKENS.cta,
 }
 
 const IMPACT_COPY = {
@@ -164,9 +164,9 @@ function NewsFeedCard({
     impact === 'positive'
       ? {
           label: IMPACT_COPY.positive,
-          bg: alpha(PAPER.sageDeep, '20'),
+          bg: alpha(PAPER.accentStrong, '20'),
           color: PAPER.ink,
-          border: alpha(PAPER.sageDeep, '32'),
+          border: alpha(PAPER.accentStrong, '32'),
         }
       : impact === 'negative'
         ? {
@@ -220,7 +220,7 @@ function NewsFeedCard({
             },
           },
           renderChip(normalizeSourceLabel(item.source), {
-            background: alpha(PAPER.sage, '26'),
+            background: alpha(PAPER.accent, '26'),
             color: PAPER.ink,
           }),
           renderChip(impactTone.label, {
@@ -282,9 +282,9 @@ function NewsFeedCard({
             renderChip(
               `${stock.code} ${stock.name}`,
               {
-                background: alpha(PAPER.sageDeep, '18'),
+                background: alpha(PAPER.accentStrong, '18'),
                 color: PAPER.ink,
-                border: `1px solid ${alpha(PAPER.sageDeep, '20')}`,
+                border: `1px solid ${alpha(PAPER.accentStrong, '20')}`,
               },
               stock.code
             )
@@ -534,7 +534,7 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
                 },
               },
               renderChip(`${filteredItems.length} 則相關新聞`, {
-                background: alpha(PAPER.sage, '22'),
+                background: alpha(PAPER.accent, '22'),
                 color: PAPER.ink,
               }),
               renderChip(`Ticker filter: ${holdingCodes.length || 'Auto'}`, {
@@ -657,9 +657,9 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
                     onClick: () => setTickerFilter(option),
                     style: {
                       borderRadius: 999,
-                      border: `1px solid ${tickerFilter === option ? alpha(PAPER.sageDeep, '28') : PAPER.lineSoft}`,
+                      border: `1px solid ${tickerFilter === option ? alpha(PAPER.accentStrong, '28') : PAPER.lineSoft}`,
                       background:
-                        tickerFilter === option ? alpha(PAPER.sageDeep, '18') : PAPER.paper,
+                        tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
                       color: PAPER.ink,
                       padding: '6px 10px',
                       fontSize: 11,
@@ -691,8 +691,8 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
                     onClick: () => setSourceFilter(option),
                     style: {
                       borderRadius: 999,
-                      border: `1px solid ${sourceFilter === option ? alpha(PAPER.sage, '38') : PAPER.lineSoft}`,
-                      background: sourceFilter === option ? alpha(PAPER.sage, '22') : PAPER.paper,
+                      border: `1px solid ${sourceFilter === option ? alpha(PAPER.accent, '38') : PAPER.lineSoft}`,
+                      background: sourceFilter === option ? alpha(PAPER.accent, '22') : PAPER.paper,
                       color: PAPER.ink,
                       padding: '6px 10px',
                       fontSize: 11,
@@ -760,8 +760,8 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
               style: {
                 padding: '14px',
                 borderRadius: 22,
-                background: alpha(PAPER.sageDeep, '16'),
-                border: `1px solid ${alpha(PAPER.sageDeep, '22')}`,
+                background: alpha(PAPER.accentStrong, '16'),
+                border: `1px solid ${alpha(PAPER.accentStrong, '22')}`,
               },
             },
             h(
@@ -772,7 +772,7 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
                 },
               },
               renderChip('今日趨勢摘要', {
-                background: alpha(PAPER.sageDeep, '22'),
+                background: alpha(PAPER.accentStrong, '22'),
                 color: PAPER.ink,
               })
             ),

@@ -101,13 +101,15 @@ function EmptySeasonalityCard({ name, code }) {
     Card,
     {
       style: {
-        border: '1px dashed var(--sage-soft)',
+        border: '1px dashed var(--positive-soft)',
         background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.cardBlue, 'c8')})`,
       },
     },
     h(
       'div',
-      { style: { fontSize: 10, color: 'var(--sage)', fontWeight: 700, letterSpacing: '0.06em' } },
+      {
+        style: { fontSize: 10, color: 'var(--positive)', fontWeight: 700, letterSpacing: '0.06em' },
+      },
       '營收季節性'
     ),
     h(
@@ -134,9 +136,9 @@ function SeasonalityCard({ holding, revenueRows }) {
     Card,
     {
       highlighted: true,
-      color: 'var(--sage)',
+      color: 'var(--positive)',
       style: {
-        border: '1px solid var(--sage-soft)',
+        border: '1px solid var(--positive-soft)',
         background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd4')})`,
       },
     },
@@ -158,7 +160,12 @@ function SeasonalityCard({ holding, revenueRows }) {
         h(
           'div',
           {
-            style: { fontSize: 10, color: 'var(--sage)', fontWeight: 700, letterSpacing: '0.06em' },
+            style: {
+              fontSize: 10,
+              color: 'var(--positive)',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+            },
           },
           '營收季節性'
         ),
@@ -178,8 +185,8 @@ function SeasonalityCard({ holding, revenueRows }) {
         {
           style: {
             fontSize: 10,
-            color: 'var(--sage)',
-            border: '1px solid var(--sage-soft)',
+            color: 'var(--positive)',
+            border: '1px solid var(--positive-soft)',
             background: alpha(C.olive, '16'),
             borderRadius: 999,
             padding: '4px 8px',

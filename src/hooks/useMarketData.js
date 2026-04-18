@@ -27,6 +27,7 @@ import {
   extractQuotesFromTwsePayload,
 } from '../lib/marketSyncRuntime.js'
 import { pfKey, readStorageValue, save } from '../lib/portfolioUtils.js'
+import { C } from '../theme.js'
 
 export function useMarketData({
   holdings = [],
@@ -339,11 +340,11 @@ export function useMarketData({
   }, [marketPriceSync])
 
   const priceSyncStatusTone = useMemo(() => {
-    if (!marketPriceSync) return '#888'
-    if (marketPriceSync.status === 'failed') return '#ef4444'
-    if (marketPriceSync.status === 'partial') return '#f59e0b'
-    if (marketPriceSync.status === 'success') return '#22c55e'
-    return '#888'
+    if (!marketPriceSync) return C.textMute
+    if (marketPriceSync.status === 'failed') return C.down
+    if (marketPriceSync.status === 'partial') return C.amber
+    if (marketPriceSync.status === 'success') return C.up
+    return C.textMute
   }, [marketPriceSync])
 
   const activePriceSyncAt = useMemo(() => {

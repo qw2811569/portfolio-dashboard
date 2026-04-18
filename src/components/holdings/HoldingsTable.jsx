@@ -37,7 +37,7 @@ const badgeToneStyles = {
     background: alpha(C.textMute, '12'),
     borderColor: alpha(C.textMute, '24'),
   },
-  sage: {
+  positive: {
     color: C.up,
     background: C.upBg,
     borderColor: alpha(C.up, '24'),
@@ -47,7 +47,7 @@ const badgeToneStyles = {
     background: C.amberBg,
     borderColor: alpha(C.amber, '24'),
   },
-  'sage-strong': {
+  'positive-strong': {
     color: C.up,
     background: alpha(C.up, '18'),
     borderColor: alpha(C.up, '30'),

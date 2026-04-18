@@ -103,7 +103,7 @@ describe('lib/priceDeviation', () => {
       })
     ).toMatchObject({
       level: 'significant',
-      tone: 'sage-strong',
+      tone: 'positive-strong',
       text: '+25% 大幅低估 ⚠️',
     })
   })

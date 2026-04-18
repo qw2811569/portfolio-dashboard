@@ -63,7 +63,7 @@ textarea {
 }
 
 .ui-btn:not(:disabled):hover {
-  background: var(--sage-soft) !important;
+  background: var(--positive-soft) !important;
   box-shadow: 0 6px 14px rgba(91, 84, 72, 0.08);
   transform: translateY(-1px);
 }

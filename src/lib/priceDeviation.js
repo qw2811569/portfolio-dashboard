@@ -87,7 +87,7 @@ export function buildPriceDeviationBadgeMeta(holding = {}) {
       ...result,
       text: result.deviation >= 0 ? `${percentText} 上行空間` : `${percentText} 偏高`,
       tooltip,
-      tone: result.deviation >= 0 ? 'sage' : 'amber',
+      tone: result.deviation >= 0 ? 'positive' : 'amber',
       pulse: false,
     }
   }
@@ -96,7 +96,7 @@ export function buildPriceDeviationBadgeMeta(holding = {}) {
     ...result,
     text: result.deviation >= 0 ? `${percentText} 大幅低估 ⚠️` : `${percentText} 大幅高估 ⚠️`,
     tooltip,
-    tone: result.deviation >= 0 ? 'sage-strong' : 'danger',
+    tone: result.deviation >= 0 ? 'positive-strong' : 'danger',
     pulse: true,
   }
 }

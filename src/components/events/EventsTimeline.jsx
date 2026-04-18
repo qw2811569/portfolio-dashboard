@@ -60,8 +60,8 @@ function buildTooltip(event, daysFromToday) {
 function resolveEventTone(daysFromToday) {
   if (daysFromToday === 0) {
     return {
-      marker: 'var(--up, #b33a3a)',
-      line: 'var(--up, #b33a3a)',
+      marker: `var(--up, ${C.up})`,
+      line: `var(--up, ${C.up})`,
       text: C.text,
       rail: alpha(C.up, '22'),
     }
@@ -69,16 +69,16 @@ function resolveEventTone(daysFromToday) {
 
   if (daysFromToday < 0) {
     return {
-      marker: 'var(--muted, #8a867d)',
-      line: 'var(--muted, #8a867d)',
+      marker: `var(--muted, ${C.textMute})`,
+      line: `var(--muted, ${C.textMute})`,
       text: C.textMute,
       rail: alpha(C.textMute, '18'),
     }
   }
 
   return {
-    marker: 'var(--sage, #7c8f63)',
-    line: 'var(--sage, #7c8f63)',
+    marker: `var(--positive, ${C.up})`,
+    line: `var(--positive, ${C.up})`,
     text: C.text,
     rail: alpha(C.olive, '18'),
   }
@@ -245,11 +245,11 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__legend-item{display:inline-flex;align-items:center;gap:5px}
 .events-timeline__legend-dot{width:8px;height:8px;border-radius:999px;display:inline-block}
 .events-timeline__desktop{position:relative;height:180px;margin-top:14px}
-.events-timeline__axis{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:linear-gradient(90deg,var(--muted, #8a867d) 0%,var(--muted, #8a867d) 49.2%,var(--up, #b33a3a) 49.2%,var(--up, #b33a3a) 50.8%,var(--sage, #7c8f63) 50.8%,var(--sage, #7c8f63) 100%);border-radius:999px;box-shadow:inset 0 0 0 1px ${alpha(C.borderStrong, '25')}}
+.events-timeline__axis{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:linear-gradient(90deg,var(--muted, ${C.textMute}) 0%,var(--muted, ${C.textMute}) 49.2%,var(--up, ${C.up}) 49.2%,var(--up, ${C.up}) 50.8%,var(--positive, ${C.up}) 50.8%,var(--positive, ${C.up}) 100%);border-radius:999px;box-shadow:inset 0 0 0 1px ${alpha(C.borderStrong, '25')}}
 .events-timeline__tick{position:absolute;top:50%;width:1px;height:18px;transform:translate(-50%,-50%);background:${alpha(C.borderStrong, '60')}}
-.events-timeline__tick--today{width:4px;height:34px;background:var(--up, #b33a3a);border-radius:999px}
+.events-timeline__tick--today{width:4px;height:34px;background:var(--up, ${C.up});border-radius:999px}
 .events-timeline__tick-label{position:absolute;top:calc(50% + 18px);transform:translateX(-50%);font-size:9px;color:${C.textMute};white-space:nowrap}
-.events-timeline__tick-label--today{color:var(--up, #b33a3a);font-weight:700}
+.events-timeline__tick-label--today{color:var(--up, ${C.up});font-weight:700}
 .events-timeline__marker{position:absolute;transform:translateX(0);width:max-content;max-width:132px;border:none;background:transparent;padding:0;cursor:pointer;text-align:center;color:var(--marker-text)}
 .events-timeline__marker--top{top:18px}
 .events-timeline__marker--bottom{bottom:20px}
@@ -302,7 +302,7 @@ export function EventsTimeline({ events = [] }) {
             { className: 'events-timeline__legend-item' },
             h('span', {
               className: 'events-timeline__legend-dot',
-              style: { background: 'var(--muted, #8a867d)' },
+              style: { background: `var(--muted, ${C.textMute})` },
             }),
             '過去'
           ),
@@ -311,7 +311,7 @@ export function EventsTimeline({ events = [] }) {
             { className: 'events-timeline__legend-item' },
             h('span', {
               className: 'events-timeline__legend-dot',
-              style: { background: 'var(--up, #b33a3a)' },
+              style: { background: `var(--up, ${C.up})` },
             }),
             '今天'
           ),
@@ -320,7 +320,7 @@ export function EventsTimeline({ events = [] }) {
             { className: 'events-timeline__legend-item' },
             h('span', {
               className: 'events-timeline__legend-dot',
-              style: { background: 'var(--sage, #7c8f63)' },
+              style: { background: `var(--positive, ${C.up})` },
             }),
             '未來'
           )

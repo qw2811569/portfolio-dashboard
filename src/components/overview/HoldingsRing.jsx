@@ -3,12 +3,12 @@ import { C } from '../../theme.js'
 import { getHoldingMarketValue } from '../../lib/holdings.js'
 
 const RING_COLORS = [
-  'var(--sage)',
+  'var(--positive)',
   'var(--up)',
   C.choco,
   'var(--muted)',
   'var(--warning)',
-  'var(--sage-soft)',
+  'var(--positive-soft)',
 ]
 
 export default function HoldingsRing({ holdings = [], totalVal = 0 }) {

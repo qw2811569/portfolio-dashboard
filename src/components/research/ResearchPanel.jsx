@@ -506,8 +506,8 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           position: 'relative',
           height: 14,
           borderRadius: 999,
-          background: 'linear-gradient(90deg, rgba(168,181,154,0.18), rgba(168,181,154,0.52))',
-          border: '1px solid var(--sage-soft)',
+          background: `linear-gradient(90deg, ${alpha(C.up, '18')}, ${alpha(C.up, '52')})`,
+          border: '1px solid var(--positive-soft)',
           overflow: 'hidden',
         },
       },
@@ -518,7 +518,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           bottom: 1,
           left: `${Math.max(0, Math.min(100, markerPosition))}%`,
           width: 2,
-          background: 'var(--sage)',
+          background: 'var(--positive)',
           transform: 'translateX(-1px)',
         },
       }),
@@ -530,7 +530,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           width: 10,
           height: 10,
           borderRadius: '50%',
-          background: 'var(--sage)',
+          background: 'var(--positive)',
           border: `2px solid ${C.card}`,
           transform: 'translate(-50%, -50%)',
           boxShadow: `0 0 0 2px ${alpha(C.blue, '30')}`,
@@ -552,7 +552,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
         },
       },
       h('span', null, `$${formatConsensusPrice(min)}`),
-      h('span', { style: { color: 'var(--sage)', fontWeight: 600 } }, 'mean'),
+      h('span', { style: { color: 'var(--positive)', fontWeight: 600 } }, 'mean'),
       h('span', null, `$${formatConsensusPrice(max)}`)
     )
   )
@@ -563,9 +563,9 @@ function ConsensusHighlightCard({ item }) {
     Card,
     {
       highlighted: true,
-      color: 'var(--sage)',
+      color: 'var(--positive)',
       style: {
-        border: '1px solid var(--sage-soft)',
+        border: '1px solid var(--positive-soft)',
         background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd8')})`,
       },
     },
@@ -583,7 +583,7 @@ function ConsensusHighlightCard({ item }) {
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, color: 'var(--sage)', marginBottom: 4 } }, '外資券商共識'),
+        h('div', { style: { ...lbl, color: 'var(--positive)', marginBottom: 4 } }, '外資券商共識'),
         h('div', { style: { fontSize: 10, color: C.textMute } }, `${item.name} · ${item.code}`)
       ),
       h(
@@ -591,8 +591,8 @@ function ConsensusHighlightCard({ item }) {
         {
           style: {
             fontSize: 9,
-            color: 'var(--sage)',
-            border: '1px solid var(--sage-soft)',
+            color: 'var(--positive)',
+            border: '1px solid var(--positive-soft)',
             background: alpha(C.blue, '18'),
             borderRadius: 999,
             padding: '4px 8px',

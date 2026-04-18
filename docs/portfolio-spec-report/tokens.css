@@ -1,24 +1,79 @@
 :root {
-  --ink: #0B120E;
-  --charcoal: #2F3232;
+  /* Core palette */
+  --ink: #0b120e;
+  --charcoal: #2f3232;
   --iron: #838585;
-  --bone-deep: #D9D3D1;
-  --bone: #E7E0D6;
+  --muted: #6f746b;
+  --muted-soft: #8a837a;
+  --bone: #e7e0d6;
+  --bone-deep: #d9d3d1;
+  --bone-soft: #f4efe6;
+  --paper: rgba(255, 252, 247, 0.86);
+  --sand: #eadbc3;
+  --line: #bcb3ad;
+  --line-soft: rgba(23, 23, 23, 0.08);
 
-  --line: #BCB3AD;
-
-  --warning: #F0A145;
+  --warning: #f0a145;
   --warning-soft: rgba(240, 161, 69, 0.24);
-  --positive: #EF7D2F;
-  --cta: #EC662D;
-  --hot: #FC6D2B;
+  --positive: #ef7d2f;
+  --positive-soft: rgba(239, 125, 47, 0.16);
+  --cta: #ec662d;
+  --cta-soft: rgba(236, 102, 45, 0.12);
+  --hot: #fc6d2b;
   --hot-soft: rgba(252, 109, 43, 0.12);
+  --negative: #3c3c3c;
+  --negative-soft: rgba(60, 60, 60, 0.12);
 
-  --negative: #3C3C3C;
-
+  /* Compatibility aliases */
   --up: var(--positive);
   --down: var(--negative);
+  --danger: var(--negative);
+  --sage: var(--positive);
+  --sage-soft: var(--positive-soft);
+
+  /* Type */
   --serif: "Source Han Serif TC", "Noto Serif TC", "Source Serif 4", serif;
   --sans: "Source Han Sans TC", "Noto Sans TC", "Source Sans 3", sans-serif;
   --mono: "IBM Plex Mono", "SF Mono", "Courier New", monospace;
+  --font-headline: var(--serif);
+  --font-head: var(--serif);
+  --font-body: var(--sans);
+  --font-num: "Source Serif 4", "IBM Plex Mono", serif;
+  --font-mono: var(--mono);
+
+  /* Radius + spacing */
+  --radius: 24px;
+  --radius-sm: 16px;
+  --space-1: 8px;
+  --space-2: 14px;
+  --space-3: 22px;
+  --space-4: 32px;
+  --space-5: 48px;
+  --space-6: 72px;
+
+  /* Motion + shadow */
+  --shadow: 0 1px 0 rgba(23, 23, 23, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --inset-line: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --shell-shadow: 0 18px 34px rgba(91, 84, 72, 0.08);
+  --focus-ring: 0 0 0 3px rgba(239, 125, 47, 0.22);
+  --ease: 240ms ease;
+  --max: 1240px;
+
+  /* Events preview aliases */
+  --ui-ink: var(--ink);
+  --ui-charcoal: var(--charcoal);
+  --ui-iron: var(--iron);
+  --ui-bone: var(--bone);
+  --ui-bone-deep: var(--bone-deep);
+  --ui-line: var(--line);
+  --ui-warning: var(--warning);
+  --ui-warning-soft: var(--warning-soft);
+  --ui-positive: var(--positive);
+  --ui-cta: var(--cta);
+  --ui-hot: var(--hot);
+  --ui-negative: var(--negative);
+  --ui-down-text: var(--negative);
+  --ui-shadow: var(--shadow);
+
+  font-variant-numeric: tabular-nums;
 }

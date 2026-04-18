@@ -44,10 +44,13 @@ describe('api/news-feed', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-15T10:00:45.215Z'))
     process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     delete process.env.PUB_BLOB_READ_WRITE_TOKEN
   })
 

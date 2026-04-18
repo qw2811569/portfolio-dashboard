@@ -4,10 +4,7 @@ import react from '@vitejs/plugin-react'
 const DEV_HOST = '127.0.0.1'
 const DEV_PORT = 3002
 const API_PROXY_TARGET = process.env.VITE_API_PROXY_TARGET?.trim() || ''
-const DEV_ALLOWED_HOSTS = [
-  'mac-mini.taila0e378.ts.net',
-  '.taila0e378.ts.net',
-]
+const DEV_ALLOWED_HOSTS = ['mac-mini.taila0e378.ts.net', '.taila0e378.ts.net']
 
 const shouldProxyApi = (() => {
   if (!API_PROXY_TARGET) return false
@@ -21,8 +18,95 @@ const shouldProxyApi = (() => {
   }
 })()
 
+async function readJsonBody(req) {
+  const chunks = []
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+  }
+
+  if (chunks.length === 0) return {}
+
+  const raw = Buffer.concat(chunks).toString('utf8').trim()
+  if (!raw) return {}
+  return JSON.parse(raw)
+}
+
+function toQueryObject(searchParams) {
+  const query = {}
+  for (const [key, value] of searchParams.entries()) {
+    if (key in query) {
+      query[key] = Array.isArray(query[key]) ? [...query[key], value] : [query[key], value]
+    } else {
+      query[key] = value
+    }
+  }
+  return query
+}
+
+function createNodeStyleResponse(res) {
+  return {
+    statusCode: 200,
+    setHeader(name, value) {
+      res.setHeader(name, value)
+    },
+    status(code) {
+      this.statusCode = code
+      res.statusCode = code
+      return this
+    },
+    json(payload) {
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8')
+      }
+      res.statusCode = this.statusCode
+      res.end(JSON.stringify(payload))
+      return payload
+    },
+    end(payload = '') {
+      res.statusCode = this.statusCode
+      res.end(payload)
+    },
+  }
+}
+
+function localApiBrainPlugin() {
+  let brainHandlerPromise
+
+  const getBrainHandler = async () => {
+    if (!brainHandlerPromise) {
+      brainHandlerPromise = import('./api/brain.js').then((mod) => mod.default)
+    }
+    return brainHandlerPromise
+  }
+
+  return {
+    name: 'local-api-brain',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/brain')) return next()
+
+        try {
+          const handler = await getBrainHandler()
+          const requestUrl = new URL(req.url, `http://${DEV_HOST}:${DEV_PORT}`)
+          const request = {
+            method: req.method || 'GET',
+            query: toQueryObject(requestUrl.searchParams),
+            body: req.method === 'POST' ? await readJsonBody(req) : undefined,
+          }
+          const response = createNodeStyleResponse(res)
+          await handler(request, response)
+        } catch (error) {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          res.end(JSON.stringify({ error: error?.message || 'local api bridge failed' }))
+        }
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), localApiBrainPlugin()],
   server: {
     host: DEV_HOST,
     port: DEV_PORT,

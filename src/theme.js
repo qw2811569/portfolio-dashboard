@@ -20,7 +20,8 @@ export const C = {
 
   text: '#202823',
   textSec: '#3B433D',
-  textMute: '#6F746B',
+  textMute: '#5A5F57',
+  textMuteFallback: '#6F746B',
 
   up: '#6F8568',
   upBg: 'rgba(111,133,104,0.12)',
@@ -86,14 +87,22 @@ export function applyThemeVars(target = document.documentElement) {
   target.style.setProperty('--bone-soft', C.bg)
   target.style.setProperty('--line', C.border)
   target.style.setProperty('--muted', C.textMute)
+  target.style.setProperty('--muted-fallback', C.textMuteFallback)
   target.style.setProperty('--sage', C.blue)
   target.style.setProperty('--sage-soft', C.cyan)
   target.style.setProperty('--up', C.up)
   target.style.setProperty('--down', C.down)
   target.style.setProperty('--warning', C.amber)
   target.style.setProperty('--danger', C.down)
-  target.style.setProperty('--font-body', "'Source Sans 3','Noto Sans TC',sans-serif")
-  target.style.setProperty('--font-headline', "'Source Serif 4','Noto Serif TC',serif")
-  target.style.setProperty('--font-num', "'Source Serif 4','IBM Plex Mono',serif")
+  // 中文先行，英文走 Latin fallback；數字保留 Source Serif 4 對齊節奏。
+  target.style.setProperty(
+    '--font-body',
+    "'Source Han Sans TC','Noto Sans TC','Source Sans 3',sans-serif"
+  )
+  target.style.setProperty(
+    '--font-headline',
+    "'Source Han Serif TC','Noto Serif TC','Source Serif 4',serif"
+  )
+  target.style.setProperty('--font-num', "'Source Serif 4','IBM Plex Mono','tabular-nums',serif")
   target.style.setProperty('--font-mono', "'IBM Plex Mono','SFMono-Regular',ui-monospace,monospace")
 }

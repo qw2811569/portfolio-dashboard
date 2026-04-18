@@ -1,0 +1,47 @@
+@font-face {
+  font-family: "Source Han Serif TC";
+  src: url("./assets/fonts/SourceHanSerifTC-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}
+
+@font-face {
+  font-family: "Source Han Serif TC";
+  src: url("./assets/fonts/SourceHanSerifTC-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}
+
+@font-face {
+  font-family: "Source Han Serif TC";
+  src: url("./assets/fonts/SourceHanSerifTC-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}
+
+@font-face {
+  font-family: "Source Han Sans TC";
+  src: url("./assets/fonts/SourceHanSansTC-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}
+
+@font-face {
+  font-family: "Source Han Sans TC";
+  src: url("./assets/fonts/SourceHanSansTC-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}
+
+@font-face {
+  font-family: "Source Han Sans TC";
+  src: url("./assets/fonts/SourceHanSansTC-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF, U+2E80-2EFF;
+}

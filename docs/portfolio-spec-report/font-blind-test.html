@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>繁體字體盲測 · Variant 01 vs Variant 02</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+TC:wght@400;500;700&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @font-face {
+        font-family: "Blind Source Han Serif TC";
+        src: url("./assets/fonts/SourceHanSerifTC-Regular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Source Han Serif TC";
+        src: url("./assets/fonts/SourceHanSerifTC-SemiBold.woff2") format("woff2");
+        font-weight: 600;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Source Han Serif TC";
+        src: url("./assets/fonts/SourceHanSerifTC-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Source Han Sans TC";
+        src: url("./assets/fonts/SourceHanSansTC-Regular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Source Han Sans TC";
+        src: url("./assets/fonts/SourceHanSansTC-Medium.woff2") format("woff2");
+        font-weight: 500;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Source Han Sans TC";
+        src: url("./assets/fonts/SourceHanSansTC-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Blind Chiron Hei TC";
+        src: url("./assets/fonts/ChironHeiTC-VF.woff2") format("woff2");
+        font-weight: 300 900;
+        font-display: swap;
+      }
+
+      :root {
+        --ink: #0b120e;
+        --charcoal: #2f3232;
+        --iron: #6f6f6f;
+        --bone: #e7e0d6;
+        --bone-deep: #d9d3d1;
+        --line: rgba(47, 50, 50, 0.16);
+        --panel: rgba(255, 255, 255, 0.46);
+        --accent: #ec662d;
+        --accent-soft: rgba(236, 102, 45, 0.12);
+        --shadow: 0 16px 40px rgba(47, 50, 50, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(240, 161, 69, 0.12), transparent 26%),
+          radial-gradient(circle at bottom right, rgba(131, 133, 133, 0.18), transparent 24%),
+          linear-gradient(180deg, var(--bone) 0%, #f1ebe2 100%);
+        font-family: "Source Sans 3", "Noto Sans TC", sans-serif;
+      }
+
+      main {
+        width: min(1280px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 72px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 40px;
+      }
+
+      .archive-note {
+        display: inline-flex;
+        width: fit-content;
+        margin-bottom: 20px;
+        padding: 10px 14px;
+        border: 1px solid rgba(236, 102, 45, 0.24);
+        border-radius: 999px;
+        background: rgba(236, 102, 45, 0.1);
+        color: var(--charcoal);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(11, 18, 14, 0.06);
+        color: var(--charcoal);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        margin: 0;
+        color: var(--accent);
+        font-family: "Source Serif 4", "Noto Serif TC", serif;
+        font-size: clamp(32px, 5vw, 54px);
+        line-height: 1.05;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 760px;
+        color: var(--charcoal);
+        font-size: 17px;
+        line-height: 1.75;
+      }
+
+      .hero-note {
+        display: grid;
+        gap: 8px;
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.35);
+      }
+
+      .hero-note strong {
+        font-size: 15px;
+      }
+
+      .section {
+        display: grid;
+        gap: 18px;
+        margin-top: 36px;
+      }
+
+      .section-heading {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .section-heading h2 {
+        margin: 0;
+        font-family: "Source Serif 4", "Noto Serif TC", serif;
+        font-size: 28px;
+      }
+
+      .section-heading p {
+        margin: 0;
+        color: var(--iron);
+        font-size: 14px;
+      }
+
+      .variant-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .variant {
+        display: grid;
+        gap: 16px;
+        min-height: 100%;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .variant-label {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(47, 50, 50, 0.08);
+        color: var(--iron);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .variant-a {
+        --font-display: "Blind Source Han Serif TC", "Source Serif 4", "Noto Serif TC", serif;
+        --font-text: "Blind Source Han Sans TC", "Source Sans 3", "Noto Sans TC", sans-serif;
+      }
+
+      .variant-d {
+        --font-display: "Noto Serif TC", "Source Serif 4", serif;
+        --font-text: "Blind Chiron Hei TC", "Noto Sans TC", sans-serif;
+      }
+
+      .sample-kicker,
+      .sample-meta,
+      .sample-chip,
+      .sample-list,
+      .sample-body,
+      .sample-table th,
+      .sample-table td,
+      .sample-footnote {
+        font-family: var(--font-text);
+      }
+
+      .sample-title,
+      .sample-subtitle,
+      .sample-quote {
+        font-family: var(--font-display);
+      }
+
+      .sample-kicker {
+        color: var(--iron);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .sample-title {
+        margin: 0;
+        font-size: clamp(28px, 3vw, 38px);
+        line-height: 1.15;
+        font-weight: 700;
+      }
+
+      .sample-subtitle {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 600;
+      }
+
+      .sample-body,
+      .sample-list {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .sample-quote {
+        margin: 0;
+        padding-left: 18px;
+        border-left: 3px solid rgba(236, 102, 45, 0.35);
+        font-size: 20px;
+        line-height: 1.6;
+        font-weight: 600;
+      }
+
+      .sample-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .sample-chip {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(236, 102, 45, 0.08);
+        color: var(--charcoal);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .metric-card {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .metric-label {
+        color: var(--iron);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        font-family: var(--font-display);
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .sample-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 14px;
+      }
+
+      .sample-table th,
+      .sample-table td {
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(47, 50, 50, 0.1);
+        text-align: left;
+      }
+
+      .sample-table th:last-child,
+      .sample-table td:last-child {
+        text-align: right;
+      }
+
+      .sample-footnote {
+        color: var(--iron);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 960px) {
+        .variant-grid,
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        main {
+          width: min(100% - 20px, 1280px);
+          padding: 20px 0 44px;
+        }
+
+        .variant {
+          padding: 18px;
+          border-radius: 18px;
+        }
+
+        .sample-title {
+          font-size: 28px;
+        }
+
+        .sample-subtitle {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="archive-note">⚠️ 2026-04-18 用戶選 Variant 01（Source Han Serif/Sans TC）· 此檔保留作未來 A/B 測試參考</div>
+      <section class="hero">
+        <span class="eyebrow">Traditional Chinese Blind Test</span>
+        <h1>繁體字體盲測 · Variant 01 vs Variant 02</h1>
+        <p>
+          同樣的台股內容、相同版面與層級，只換主要中文字體組合。請直覺選出你覺得更穩、更有質感、比較願意每天看的版本。
+        </p>
+        <div class="hero-note">
+          <strong>回報方式</strong>
+          <span>只要告訴我你整體偏好 `Variant 01` 或 `Variant 02`，以及哪一頁最明顯就夠。</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>1. Dashboard</h2>
+          <p>總覽儀表 · 首屏資訊密度 + editorial 感</p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant variant-a">
+            <div class="variant-label">Variant 01</div>
+            <div class="sample-kicker">Overview · 2026 Q2</div>
+            <h3 class="sample-title">持倉總覽 · 今日帳面狀態</h3>
+            <p class="sample-body">
+              盤中高點已經反映 AI 電源題材，下午要確認量價結構有沒有追價失真。先看集中度、事件時點與過去五日資金動能。
+            </p>
+            <div class="metric-row">
+              <div class="metric-card">
+                <div class="metric-label">Portfolio Value</div>
+                <div class="metric-value">NT$ 18.42M</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Day Change</div>
+                <div class="metric-value">+2.84%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Cash Buffer</div>
+                <div class="metric-value">12.6%</div>
+              </div>
+            </div>
+            <div class="sample-meta">
+              <span class="sample-chip">焦點：2308 台達電</span>
+              <span class="sample-chip">事件窗：法說前 6 日</span>
+              <span class="sample-chip">集中度：Top 3 = 61%</span>
+            </div>
+          </article>
+
+          <article class="variant variant-d">
+            <div class="variant-label">Variant 02</div>
+            <div class="sample-kicker">Overview · 2026 Q2</div>
+            <h3 class="sample-title">持倉總覽 · 今日帳面狀態</h3>
+            <p class="sample-body">
+              盤中高點已經反映 AI 電源題材，下午要確認量價結構有沒有追價失真。先看集中度、事件時點與過去五日資金動能。
+            </p>
+            <div class="metric-row">
+              <div class="metric-card">
+                <div class="metric-label">Portfolio Value</div>
+                <div class="metric-value">NT$ 18.42M</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Day Change</div>
+                <div class="metric-value">+2.84%</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Cash Buffer</div>
+                <div class="metric-value">12.6%</div>
+              </div>
+            </div>
+            <div class="sample-meta">
+              <span class="sample-chip">焦點：2308 台達電</span>
+              <span class="sample-chip">事件窗：法說前 6 日</span>
+              <span class="sample-chip">集中度：Top 3 = 61%</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>2. Holdings</h2>
+          <p>表格、數字、中文正文的混排穩定度</p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant variant-a">
+            <div class="variant-label">Variant 01</div>
+            <div class="sample-kicker">Holdings · Close Review</div>
+            <h3 class="sample-title">持倉結構 · 盤後分析</h3>
+            <h4 class="sample-subtitle">今日焦點 · 台達電 漲停</h4>
+            <p class="sample-body">
+              2308 台達電今日盤中漲停，主力買超 1,234 張，法人淨買超 +2,456 張，融資餘額減少 890 張。事件：AI 伺服器電源出貨上修，預估
+              2026Q2 毛利率 +2.3pp。
+            </p>
+            <p class="sample-body">
+              金聯成董座 insider holding 7865，本週新增持股 12,000 股，合規檢查通過。Morning Note：今日盤前 2 焦點，收盤後 Weekly PDF
+              產出。
+            </p>
+            <table class="sample-table">
+              <thead>
+                <tr>
+                  <th>代號 / 名稱</th>
+                  <th>收盤</th>
+                  <th>部位</th>
+                  <th>五日</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2308 台達電</td>
+                  <td>+5.00%</td>
+                  <td>4,567</td>
+                  <td>+12.00%</td>
+                </tr>
+                <tr>
+                  <td>2382 廣達</td>
+                  <td>+0.88%</td>
+                  <td>1,234</td>
+                  <td>+3.45%</td>
+                </tr>
+                <tr>
+                  <td>2454 聯發科</td>
+                  <td>-0.45%</td>
+                  <td>890</td>
+                  <td>-1.23%</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="variant variant-d">
+            <div class="variant-label">Variant 02</div>
+            <div class="sample-kicker">Holdings · Close Review</div>
+            <h3 class="sample-title">持倉結構 · 盤後分析</h3>
+            <h4 class="sample-subtitle">今日焦點 · 台達電 漲停</h4>
+            <p class="sample-body">
+              2308 台達電今日盤中漲停，主力買超 1,234 張，法人淨買超 +2,456 張，融資餘額減少 890 張。事件：AI 伺服器電源出貨上修，預估
+              2026Q2 毛利率 +2.3pp。
+            </p>
+            <p class="sample-body">
+              金聯成董座 insider holding 7865，本週新增持股 12,000 股，合規檢查通過。Morning Note：今日盤前 2 焦點，收盤後 Weekly PDF
+              產出。
+            </p>
+            <table class="sample-table">
+              <thead>
+                <tr>
+                  <th>代號 / 名稱</th>
+                  <th>收盤</th>
+                  <th>部位</th>
+                  <th>五日</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2308 台達電</td>
+                  <td>+5.00%</td>
+                  <td>4,567</td>
+                  <td>+12.00%</td>
+                </tr>
+                <tr>
+                  <td>2382 廣達</td>
+                  <td>+0.88%</td>
+                  <td>1,234</td>
+                  <td>+3.45%</td>
+                </tr>
+                <tr>
+                  <td>2454 聯發科</td>
+                  <td>-0.45%</td>
+                  <td>890</td>
+                  <td>-1.23%</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>3. Events</h2>
+          <p>calendar + chip + 次要資訊的掃讀感</p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant variant-a">
+            <div class="variant-label">Variant 01</div>
+            <div class="sample-kicker">Events · Next 14 Days</div>
+            <h3 class="sample-title">未來事件 · 決策節點清單</h3>
+            <p class="sample-quote">「如果法說會前兩天量縮、但法人續買，持股不急著降。」</p>
+            <div class="sample-meta">
+              <span class="sample-chip">04/22 · 台達電法說</span>
+              <span class="sample-chip">04/24 · 廣達營收</span>
+              <span class="sample-chip">04/29 · 聯發科法說</span>
+            </div>
+            <ul class="sample-list">
+              <li>法說前一日：看 sell-side preview 是否調升伺服器電源滲透率。</li>
+              <li>營收公布日：若 QoQ 不如預期，但 ASP 上修，先觀察而非立刻減碼。</li>
+              <li>法說後三日：若外資連三買 + 融資不增，才追蹤加碼條件。</li>
+            </ul>
+          </article>
+
+          <article class="variant variant-d">
+            <div class="variant-label">Variant 02</div>
+            <div class="sample-kicker">Events · Next 14 Days</div>
+            <h3 class="sample-title">未來事件 · 決策節點清單</h3>
+            <p class="sample-quote">「如果法說會前兩天量縮、但法人續買，持股不急著降。」</p>
+            <div class="sample-meta">
+              <span class="sample-chip">04/22 · 台達電法說</span>
+              <span class="sample-chip">04/24 · 廣達營收</span>
+              <span class="sample-chip">04/29 · 聯發科法說</span>
+            </div>
+            <ul class="sample-list">
+              <li>法說前一日：看 sell-side preview 是否調升伺服器電源滲透率。</li>
+              <li>營收公布日：若 QoQ 不如預期，但 ASP 上修，先觀察而非立刻減碼。</li>
+              <li>法說後三日：若外資連三買 + 融資不增，才追蹤加碼條件。</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>4. News</h2>
+          <p>中文摘要、英數夾雜、快讀節奏</p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant variant-a">
+            <div class="variant-label">Variant 01</div>
+            <div class="sample-kicker">News Digest · PM 5:40</div>
+            <h3 class="sample-title">新聞摘要 · 三條要不要看</h3>
+            <h4 class="sample-subtitle">AI 伺服器電源上修 · 市場開始提前交易 2026H2</h4>
+            <p class="sample-body">
+              市場傳出北美 CSP 客戶提前拉貨，供應鏈預期 PSU lead time 由 8 週拉長到 11 週。台達電與廣達被視為最直接受惠標的，但目前 sell-side
+              仍沒有全面上修 EPS。
+            </p>
+            <p class="sample-footnote">
+              Quick take：這條不是「立刻追價」型消息，比較像是把原本 2026 下半年的成長提前反映到第二季估值。
+            </p>
+          </article>
+
+          <article class="variant variant-d">
+            <div class="variant-label">Variant 02</div>
+            <div class="sample-kicker">News Digest · PM 5:40</div>
+            <h3 class="sample-title">新聞摘要 · 三條要不要看</h3>
+            <h4 class="sample-subtitle">AI 伺服器電源上修 · 市場開始提前交易 2026H2</h4>
+            <p class="sample-body">
+              市場傳出北美 CSP 客戶提前拉貨，供應鏈預期 PSU lead time 由 8 週拉長到 11 週。台達電與廣達被視為最直接受惠標的，但目前 sell-side
+              仍沒有全面上修 EPS。
+            </p>
+            <p class="sample-footnote">
+              Quick take：這條不是「立刻追價」型消息，比較像是把原本 2026 下半年的成長提前反映到第二季估值。
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>5. Daily</h2>
+          <p>長文敘事 + 可引用句子的可讀性</p>
+        </div>
+        <div class="variant-grid">
+          <article class="variant variant-a">
+            <div class="variant-label">Variant 01</div>
+            <div class="sample-kicker">Daily Note · Closing Memo</div>
+            <h3 class="sample-title">收盤短評 · 今天做對了什麼</h3>
+            <p class="sample-body">
+              今天最大的進步不是抓到漲停，而是沒有在早盤量縮時被洗掉。整體部位管理比前幾週穩，因為你已經先把「為什麼持有」寫成可執行條件，不再靠盤中情緒猜方向。
+            </p>
+            <p class="sample-body">
+              若明天開高後量能跟不上，就回到紀律：先看法說前預期是否繼續擴散，再決定要不要把台達電從 23% 降到 20%。這種微調，比情緒式加減碼更重要。
+            </p>
+            <p class="sample-quote">「贏家不是看得最準，而是把對的時候放大、錯的時候活下來。」</p>
+          </article>
+
+          <article class="variant variant-d">
+            <div class="variant-label">Variant 02</div>
+            <div class="sample-kicker">Daily Note · Closing Memo</div>
+            <h3 class="sample-title">收盤短評 · 今天做對了什麼</h3>
+            <p class="sample-body">
+              今天最大的進步不是抓到漲停，而是沒有在早盤量縮時被洗掉。整體部位管理比前幾週穩，因為你已經先把「為什麼持有」寫成可執行條件，不再靠盤中情緒猜方向。
+            </p>
+            <p class="sample-body">
+              若明天開高後量能跟不上，就回到紀律：先看法說前預期是否繼續擴散，再決定要不要把台達電從 23% 降到 20%。這種微調，比情緒式加減碼更重要。
+            </p>
+            <p class="sample-quote">「贏家不是看得最準，而是把對的時候放大、錯的時候活下來。」</p>
+          </article>
+        </div>
+      </section>
+    </main>
+    <!-- Variant 01 = A (Source Han Serif/Sans TC). Variant 02 = D (Chiron Hei TC + Noto Serif TC). -->
+  </body>
+</html>

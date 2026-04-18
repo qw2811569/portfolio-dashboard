@@ -1,0 +1,34 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "a4e5a494-344b-458d-ae74-e16cc1126ef3",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "好像還是沒渲染成功，你等等叫codex渲染好了",
+      "prompt_hash": "sha256:3a63b778fc6f8c9d9d95cd561ac635fa3f9e90aa64bfaee32db079f297e03424",
+      "message_count": 5703,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-18T09:14:56.110229Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "prompt_submitted_at": "2026-04-18T09:14:56.110230Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 457,
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

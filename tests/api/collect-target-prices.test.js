@@ -298,4 +298,47 @@ describe('api/cron/collect-target-prices', () => {
       reports: [{ firm: '凱基投顧', target: 1680, date: '2026-04-15' }],
     })
   })
+
+  it('preserves aggregate-only coverage in snapshots without faking firm reports', async () => {
+    const { buildTargetPriceSnapshot } = await import('../../api/cron/collect-target-prices.js')
+
+    const snapshot = buildTargetPriceSnapshot({
+      stock: { code: '2330', name: '台積電', type: '股票' },
+      analystPayload: {
+        targetPriceSource: 'cnyes',
+        aggregate: {
+          medianTarget: 2352.5,
+          meanTarget: 2390.17,
+          min: 1900,
+          max: 3030,
+          firmsCount: 36,
+          numEst: 36,
+          rateDate: '2026-04-13',
+        },
+        items: [
+          {
+            id: 'agg-1',
+            title: '台積電 Cnyes 目標價共識',
+            source: 'cnyes_aggregate',
+            targetType: 'aggregate',
+          },
+        ],
+      },
+    })
+
+    expect(snapshot.targets).toMatchObject({
+      source: 'cnyes',
+      reports: [],
+      coverageState: 'aggregate-only',
+      aggregate: {
+        medianTarget: 2352.5,
+        meanTarget: 2390.17,
+        min: 1900,
+        max: 3030,
+        firmsCount: 36,
+        numEst: 36,
+        rateDate: '2026-04-13',
+      },
+    })
+  })
 })

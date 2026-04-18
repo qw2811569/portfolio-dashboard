@@ -8,6 +8,41 @@ import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import { classifyStock, mergeClassification } from '../lib/stockClassifier.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
 
+function buildAggregateConsensusTargets(snapshot) {
+  const aggregate =
+    snapshot?.targets?.aggregate &&
+    typeof snapshot.targets.aggregate === 'object' &&
+    !Array.isArray(snapshot.targets.aggregate)
+      ? snapshot.targets.aggregate
+      : null
+  if (!aggregate) return []
+
+  const target =
+    Number.isFinite(Number(aggregate.medianTarget)) && Number(aggregate.medianTarget) > 0
+      ? Number(aggregate.medianTarget)
+      : Number.isFinite(Number(aggregate.meanTarget)) && Number(aggregate.meanTarget) > 0
+        ? Number(aggregate.meanTarget)
+        : null
+  if (!target) return []
+
+  const source = String(snapshot?.targets?.source || '')
+    .trim()
+    .toLowerCase()
+  const firm = source === 'cnyes' ? 'Cnyes 共識' : source === 'cmoney' ? 'CMoney 共識' : '券商共識'
+
+  return [
+    {
+      firm,
+      target,
+      date: aggregate.rateDate || snapshot?.targets?.updatedAt || null,
+      source: source ? `${source}_aggregate` : 'aggregate',
+      targetType: 'aggregate',
+      aggregate,
+      coverageState: 'aggregate-only',
+    },
+  ]
+}
+
 export function usePortfolioDerivedData({
   holdings,
   watchlist,
@@ -226,15 +261,22 @@ export function usePortfolioDerivedData({
         let nextTargets = d.targets
         let nextTargetsFreshness = existingFreshness.targets
         let nextTargetSource = hasExistingTargets ? 'seed' : null
+        let nextTargetAggregate = d.targetAggregate || null
         if (!hasExistingTargets) {
           // Daily target-price cron pipeline: prefer fresh analyst targets
           // collected by api/cron/collect-target-prices.js over PER-band.
           // PER-band is the fallback for unsupported instruments or stale cron data.
           if (cronSnapshot && isCronTargetUsable(cronSnapshot)) {
-            nextTargets = cronSnapshot.targets.reports
-            nextTargetSource = 'analyst'
+            const cronReports = Array.isArray(cronSnapshot?.targets?.reports)
+              ? cronSnapshot.targets.reports
+              : []
+            const aggregateTargets =
+              cronReports.length > 0 ? [] : buildAggregateConsensusTargets(cronSnapshot)
+            nextTargets = cronReports.length > 0 ? cronReports : aggregateTargets
+            nextTargetAggregate = cronSnapshot?.targets?.aggregate || null
+            nextTargetSource = String(cronSnapshot?.targets?.source || '').trim() || 'analyst'
             nextTargetsFreshness = computeFreshnessGrade(
-              cronSnapshot.targets.reports.map((report) => report.date),
+              nextTargets.map((report) => report.date),
               { now: new Date(), thresholds: TARGETS_FRESHNESS_THRESHOLDS }
             )
           } else {
@@ -254,6 +296,7 @@ export function usePortfolioDerivedData({
           ...next,
           fundamentals: resolvedFundamentals,
           targets: nextTargets,
+          targetAggregate: nextTargetAggregate,
           targetSource: nextTargetSource,
           freshness: {
             ...existingFreshness,
@@ -289,6 +332,7 @@ export function usePortfolioDerivedData({
         finmind: enriched.finmind ?? d.finmind,
         fundamentals: enriched.fundamentals ?? d.fundamentals,
         targets: enriched.targets ?? d.targets,
+        targetAggregate: enriched.targetAggregate ?? d.targetAggregate,
         targetSource: enriched.targetSource ?? d.targetSource,
         freshness: enriched.freshness
           ? { ...(d.freshness || {}), ...enriched.freshness }

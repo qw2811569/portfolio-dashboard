@@ -219,6 +219,10 @@ describe('api/analyst-reports handler', () => {
         expect.objectContaining({
           source: 'cnyes_aggregate',
           targetType: 'aggregate',
+          aggregate: expect.objectContaining({
+            medianTarget: 2352.5,
+            firmsCount: 36,
+          }),
         }),
       ],
     })
@@ -351,6 +355,11 @@ describe('api/analyst-reports handler', () => {
         expect.objectContaining({
           source: 'cnyes_aggregate',
           targetType: 'aggregate',
+          aggregate: expect.objectContaining({
+            medianTarget: 2352.5,
+            meanTarget: 2390.17,
+            firmsCount: 36,
+          }),
         }),
       ],
     })

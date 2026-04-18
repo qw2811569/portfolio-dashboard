@@ -126,7 +126,7 @@ async function main() {
       await putTargetPriceSnapshot(stock.code, snapshot)
       summary.succeeded += 1
       console.log(
-        `[backfill-target-prices] ${stock.code} saved (${snapshot.targets.reports.length} targets, ${snapshot.analystReports.items.length} items)`
+        `[backfill-target-prices] ${stock.code} saved (${snapshot.targets.reports.length} targets, ${snapshot.analystReports.items.length} items, source=${snapshot.targets.source}, coverage=${snapshot.targets.coverageState})`
       )
     } catch (error) {
       summary.failed += 1

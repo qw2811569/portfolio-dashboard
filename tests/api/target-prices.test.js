@@ -68,11 +68,45 @@ describe('api/target-prices', () => {
     expect(res.statusCode).toBe(200)
     expect(res.headers['x-target-price-source']).toBe('gemini')
     expect(res.headers['x-target-price-count']).toBe('2')
+    expect(res.headers['x-target-price-coverage-state']).toBe('none')
     expect(res.payload).toMatchObject({
       code: '3491',
       targets: {
         source: 'gemini',
       },
     })
+  })
+
+  it('preserves cnyes source for aggregate-only snapshots', async () => {
+    list.mockResolvedValue({
+      blobs: [{ url: 'https://blob.example/2330.json' }],
+    })
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        code: '2330',
+        name: '台積電',
+        targets: {
+          source: 'cnyes',
+          coverageState: 'aggregate-only',
+          reports: [],
+          aggregate: {
+            medianTarget: 2352.5,
+            firmsCount: 36,
+          },
+        },
+      }),
+    })
+
+    const { default: handler } = await import('../../api/target-prices.js')
+    const req = { method: 'GET', query: { code: '2330' } }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['x-target-price-source']).toBe('cnyes')
+    expect(res.headers['x-target-price-count']).toBe('0')
+    expect(res.headers['x-target-price-coverage-state']).toBe('aggregate-only')
   })
 })

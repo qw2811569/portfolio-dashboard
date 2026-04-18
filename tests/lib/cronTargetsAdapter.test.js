@@ -96,5 +96,26 @@ describe('cronTargetsAdapter', () => {
       const result = await fetchCronTargets('2330')
       expect(result).toBeNull()
     })
+
+    it('returns aggregate-only snapshots so downstream can treat them as degraded coverage', async () => {
+      const snapshot = {
+        code: '2330',
+        targets: {
+          reports: [],
+          aggregate: {
+            medianTarget: 2352.5,
+            firmsCount: 36,
+          },
+          updatedAt: new Date().toISOString(),
+        },
+      }
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => snapshot,
+      })
+
+      const result = await fetchCronTargets('2330')
+      expect(result).toEqual(snapshot)
+    })
   })
 })

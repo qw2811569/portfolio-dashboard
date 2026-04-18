@@ -18,7 +18,14 @@ export async function fetchCronTargets(code) {
   const res = await fetch(`/api/target-prices?code=${encodeURIComponent(code)}`)
   if (!res.ok) return null
   const snapshot = await res.json()
-  if (!snapshot?.targets?.reports?.length) return null
+  const reportCount = Array.isArray(snapshot?.targets?.reports)
+    ? snapshot.targets.reports.length
+    : 0
+  const hasAggregate =
+    snapshot?.targets?.aggregate &&
+    typeof snapshot.targets.aggregate === 'object' &&
+    !Array.isArray(snapshot.targets.aggregate)
+  if (reportCount === 0 && !hasAggregate) return null
   return snapshot
 }
 

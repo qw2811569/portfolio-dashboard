@@ -146,11 +146,41 @@ function buildSnapshotTargetReports(items, fallbackDate) {
   return reports
 }
 
+function normalizeTargetAggregate(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+
+  const normalized = {
+    medianTarget: Number.isFinite(Number(value.medianTarget)) ? Number(value.medianTarget) : null,
+    meanTarget: Number.isFinite(Number(value.meanTarget)) ? Number(value.meanTarget) : null,
+    min: Number.isFinite(Number(value.min)) ? Number(value.min) : null,
+    max: Number.isFinite(Number(value.max)) ? Number(value.max) : null,
+    firmsCount: Number.isFinite(Number(value.firmsCount)) ? Number(value.firmsCount) : null,
+    numEst: Number.isFinite(Number(value.numEst)) ? Number(value.numEst) : null,
+    rateDate: String(value.rateDate || '').trim() || null,
+  }
+
+  if (
+    normalized.medianTarget == null &&
+    normalized.meanTarget == null &&
+    normalized.min == null &&
+    normalized.max == null &&
+    normalized.firmsCount == null &&
+    normalized.numEst == null &&
+    normalized.rateDate == null
+  ) {
+    return null
+  }
+
+  return normalized
+}
+
 export function buildTargetPriceSnapshot({ stock, analystPayload, now = new Date() }) {
   const collectedAt = now.toISOString()
   const items = Array.isArray(analystPayload?.items) ? analystPayload.items : []
   const reports = buildSnapshotTargetReports(items, toSlashDate(now))
+  const aggregate = normalizeTargetAggregate(analystPayload?.aggregate)
   const targetSource = String(analystPayload?.targetPriceSource || '').trim() || 'rss'
+  const coverageState = reports.length > 0 ? 'firm-reports' : aggregate ? 'aggregate-only' : 'none'
 
   return {
     code: stock.code,
@@ -162,6 +192,8 @@ export function buildTargetPriceSnapshot({ stock, analystPayload, now = new Date
     newCount: Number(analystPayload?.newCount) || items.length,
     targets: {
       reports,
+      aggregate,
+      coverageState,
       updatedAt: collectedAt,
       source: targetSource,
     },
@@ -256,7 +288,7 @@ export async function collectTargetPriceSnapshots({
       await writeSnapshot(stock.code, snapshot)
       summary.succeeded += 1
       logger.info(
-        `[collect-target-prices] ${stock.code} saved (${snapshot.targets.reports.length} targets, ${snapshot.analystReports.items.length} items)`
+        `[collect-target-prices] ${stock.code} saved (${snapshot.targets.reports.length} targets, ${snapshot.analystReports.items.length} items, source=${snapshot.targets.source}, coverage=${snapshot.targets.coverageState})`
       )
     } catch (error) {
       summary.failed += 1

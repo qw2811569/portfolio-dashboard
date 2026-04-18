@@ -684,3 +684,21 @@
   - `T64` restore drill / rollback / MDD recovery → blocked (`M-U2`)
   - `Q06` real iOS Safari cross-browser matrix → blocked (`M-U3`)
 - final verify：T04 targeted vitest PASS、Q12 targeted vitest PASS、T22/T72a/Q05/Q07 grep PASS、shared `npm run build` PASS。
+
+## Round 130 · Codex · Target-price root cause fix + data gate · 2026-04-19 00:19:19 CST
+
+- 驗證 Claude 的 `Option A` 後確認：`cnyes` 其實早已接在 `api/analyst-reports.js`；真正的 root cause 是 `cnyes_aggregate` 只存在於 `analystReports.items`，但 `target-prices` snapshot / adapter / consumer 仍只認 `targets.reports`，所以 aggregate fallback 會被 downstream 當成 missing。
+- `api/_lib/cnyes-target-price.js` 現在會把 `aggregate` payload 掛回 `cnyes_aggregate` item；`api/cron/collect-target-prices.js` 的 snapshot 新增 `targets.aggregate` 與 `targets.coverageState`，並在 cron log 寫出 `source` / `coverage`。
+- `api/target-prices.js` 不再把 `cnyes` 誤標成 `rss`；`src/lib/dataAdapters/cronTargetsAdapter.js` 與 `src/hooks/usePortfolioDerivedData.js` 現在會接受 `aggregate-only` snapshot，並把它轉成 labeled consensus target（例如 `Cnyes 共識`），`targetAggregate` metadata 也會沿路保留。
+- 新增 `scripts/audit-data-coverage.mjs`，會輸出 `docs/status/data-coverage-YYYY-MM-DD.md`，並在 coverage < 80% 時 append `coordination/llm-bus/alerts.jsonl`；`verify:local` 已接入此 gate，`ops/cron/backup-to-vm.cron` 也新增 `03:30 Asia/Taipei` audit job。
+- 驗證：
+  - targeted vitest：`53/53` PASS
+  - full vitest：`130/130` files、`895/895` tests PASS
+  - `npm run lint` PASS
+  - `npm run typecheck:js-critical` PASS
+  - `npm run build` PASS
+- coverage before/after：
+  - before：`12/26` (`46.2%`) covered、`0` aggregate-only
+  - after local backfill：`20/26` (`76.9%`) covered、其中 `8` 檔轉為 `aggregate-only`
+- `verify:local` 現在會在 `audit:data-coverage` 正確 fail，因為 coverage 仍只有 `76.9%`，尚未過 `80%` 門檻；這不是 regression，而是新 gate 真正把剩餘缺口（`1799 / 2489 / 4562 / 7865 / 8074 / 8096`）打出來。
+- `git push origin main` 仍被 GitHub 拒絕：PAT 缺 `workflow` scope；本機沒有 `gh`，SSH 也未授權，所以沒有不破 T66 的 option D。Option B 只能透過改寫 `04b02c4` 歷史把 workflow 拆出去，本輪未執行。

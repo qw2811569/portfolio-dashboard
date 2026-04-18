@@ -8,8 +8,7 @@ function normalizeTargetSource(value) {
   const normalized = String(value || '')
     .trim()
     .toLowerCase()
-  if (normalized === 'gemini') return 'gemini'
-  if (normalized === 'rss') return 'rss'
+  if (['gemini', 'rss', 'cnyes', 'cmoney'].includes(normalized)) return normalized
   if (normalized === 'per-band' || normalized === 'finmind-per-band') return 'per-band'
   return 'rss'
 }
@@ -46,6 +45,10 @@ async function handler(req, res) {
       : 0
     res.setHeader('x-target-price-source', normalizeTargetSource(snapshot?.targets?.source))
     res.setHeader('x-target-price-count', String(reportCount))
+    res.setHeader(
+      'x-target-price-coverage-state',
+      String(snapshot?.targets?.coverageState || 'none')
+    )
     return res.status(200).json(snapshot)
   } catch (error) {
     console.error(`[target-prices] failed for ${code}:`, error)

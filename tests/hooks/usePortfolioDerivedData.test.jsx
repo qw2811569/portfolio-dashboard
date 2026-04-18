@@ -598,6 +598,62 @@ describe('usePortfolioDerivedData', () => {
       )
     })
 
+    it('promotes aggregate-only cron snapshots into labeled consensus targets', async () => {
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      const aggregateCronSnapshot = {
+        code: '2330',
+        name: '台積電',
+        collectedAt: twoDaysAgo.toISOString(),
+        targets: {
+          reports: [],
+          aggregate: {
+            medianTarget: 1700,
+            meanTarget: 1650,
+            min: 1500,
+            max: 2000,
+            firmsCount: 7,
+            numEst: 7,
+            rateDate: '2026-04-07',
+          },
+          updatedAt: twoDaysAgo.toISOString(),
+          source: 'cnyes',
+        },
+      }
+
+      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchCronTargets.mockResolvedValue(aggregateCronSnapshot)
+      isCronTargetUsable.mockReturnValue(true)
+
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 500, price: 600 }],
+            watchlist: [],
+          })
+        )
+      )
+
+      await waitFor(
+        () => {
+          const dossier = result.current.dossierByCode.get('2330')
+          expect(dossier.targets).toBeDefined()
+          expect(dossier.targets).toEqual([
+            expect.objectContaining({
+              firm: 'Cnyes 共識',
+              target: 1700,
+              targetType: 'aggregate',
+            }),
+          ])
+          expect(dossier.targetAggregate).toMatchObject({
+            medianTarget: 1700,
+            firmsCount: 7,
+          })
+          expect(dossier.targetSource).toBe('cnyes')
+        },
+        { timeout: 2000 }
+      )
+    })
+
     it('falls back to PER-band when cron targets are stale (>30 days)', async () => {
       const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
       const staleCronSnapshot = {

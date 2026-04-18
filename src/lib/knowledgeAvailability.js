@@ -101,8 +101,18 @@ export function buildKnowledgeDataAvailability({ finmind = {}, dossier = null } 
     pendingEvents.length > 0 || trackingEvents.length > 0
   )
 
-  const reports = Array.isArray(dossier?.targets?.reports) ? dossier.targets.reports : []
-  availability.targets = buildDatasetAvailability(reports.length > 0)
+  const reports = Array.isArray(dossier?.targets?.reports)
+    ? dossier.targets.reports
+    : Array.isArray(dossier?.targets)
+      ? dossier.targets
+      : []
+  const aggregate =
+    dossier?.targetAggregate && typeof dossier.targetAggregate === 'object'
+      ? dossier.targetAggregate
+      : dossier?.targets?.aggregate && typeof dossier.targets.aggregate === 'object'
+        ? dossier.targets.aggregate
+        : null
+  availability.targets = buildDatasetAvailability(reports.length > 0 || aggregate !== null)
 
   return availability
 }

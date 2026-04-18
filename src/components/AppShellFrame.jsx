@@ -1,9 +1,12 @@
-import { C, alpha } from '../theme.js'
+import { useEffect, useRef } from 'react'
+import { C } from '../theme.js'
 import AppPanels from './AppPanels.jsx'
 import { ConfirmDialog } from './common/index.js'
+import CmdKPalette from './common/CmdKPalette.jsx'
 import Header from './Header.jsx'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 import { PortfolioPanelsProvider } from '../contexts/PortfolioPanelsContext.jsx'
+import { useCmdK } from '../hooks/useCmdK.js'
 
 export default function AppShellFrame({
   ready,
@@ -16,6 +19,23 @@ export default function AppShellFrame({
   panelsProps,
   confirmDialogProps,
 }) {
+  const panelRootRef = useRef(null)
+  const cmdK = useCmdK({
+    headerProps,
+    panelsActions,
+    panelRootRef,
+  })
+  const handleCmdKKeyDown = cmdK.handleGlobalKeyDown
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      handleCmdKKeyDown(event)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleCmdKKeyDown])
+
   if (!ready) {
     const title = loadingState?.title || '正在啟動投組工作台'
     const detail = loadingState?.detail || loadingMessage
@@ -180,11 +200,24 @@ export default function AppShellFrame({
       </ErrorBoundary>
 
       <div className="app-shell" style={{ padding: '10px 14px' }}>
-        <PortfolioPanelsProvider data={panelsData} actions={panelsActions}>
-          <AppPanels {...panelsProps} />
-        </PortfolioPanelsProvider>
+        <div ref={panelRootRef}>
+          <PortfolioPanelsProvider data={panelsData} actions={panelsActions}>
+            <AppPanels {...panelsProps} />
+          </PortfolioPanelsProvider>
+        </div>
       </div>
 
+      <CmdKPalette
+        open={cmdK.open}
+        query={cmdK.query}
+        results={cmdK.results}
+        activeIndex={cmdK.activeIndex}
+        onQueryChange={cmdK.setQuery}
+        onKeyDown={cmdK.onInputKeyDown}
+        onHoverItem={cmdK.setActiveIndex}
+        onSelectItem={cmdK.onSelectItem}
+        onClose={cmdK.closePalette}
+      />
       <ConfirmDialog {...confirmDialogProps} />
     </div>
   )

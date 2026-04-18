@@ -2,6 +2,9 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card } from '../common'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
+import { buildPriceDeviationBadgeMeta } from '../../lib/priceDeviation.js'
+import { PeerRankingBadge } from './PeerRankingBadge.jsx'
+import HoldingSparkline from './HoldingSparkline.jsx'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
   getHoldingMarketValue,
@@ -28,6 +31,34 @@ const lbl = {
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
 
+const badgeToneStyles = {
+  muted: {
+    color: C.textMute,
+    background: alpha(C.textMute, '12'),
+    borderColor: alpha(C.textMute, '24'),
+  },
+  sage: {
+    color: C.up,
+    background: C.upBg,
+    borderColor: alpha(C.up, '24'),
+  },
+  amber: {
+    color: C.amber,
+    background: C.amberBg,
+    borderColor: alpha(C.amber, '24'),
+  },
+  'sage-strong': {
+    color: C.up,
+    background: alpha(C.up, '18'),
+    borderColor: alpha(C.up, '30'),
+  },
+  danger: {
+    color: C.down,
+    background: C.downBg,
+    borderColor: alpha(C.down, '28'),
+  },
+}
+
 /**
  * Single Holding Row
  */
@@ -41,6 +72,13 @@ export function HoldingRow({
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
   const value = getHoldingMarketValue(holding)
+  const deviationBadge = buildPriceDeviationBadgeMeta(holding)
+  const badgeTone = badgeToneStyles[deviationBadge?.tone || 'muted']
+  const sparklineHistory = Array.isArray(holding.priceHistory)
+    ? holding.priceHistory
+    : Array.isArray(holding.dailyHistory)
+      ? holding.dailyHistory
+      : []
 
   return h(
     'div',
@@ -49,6 +87,7 @@ export function HoldingRow({
     h(
       'div',
       {
+        className: expanded ? 'holding-row holding-row-expanded' : 'holding-row',
         style: {
           display: 'grid',
           gridTemplateColumns: '2fr 1fr 1fr 1fr 40px',
@@ -61,14 +100,23 @@ export function HoldingRow({
           border: `1px solid ${C.border}`,
           borderRadius: 10,
           marginBottom: expanded ? 0 : 6,
+          transition: 'background 0.1s ease',
         },
       },
-      // Name + Code + Sparkline
+      // Name + Code + Badge + Sparkline
       h(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            minWidth: 0,
+          },
+        },
         h(
           'div',
+          { style: { minWidth: 0, flex: '1 1 auto' } },
           null,
           h(
             'div',
@@ -82,8 +130,47 @@ export function HoldingRow({
             },
             holding.name
           ),
-          h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code)
-        )
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                marginTop: 2,
+              },
+            },
+            h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code),
+            deviationBadge &&
+              h(
+                'span',
+                {
+                  title: deviationBadge.tooltip,
+                  style: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    maxWidth: '100%',
+                    fontSize: 9,
+                    lineHeight: 1.2,
+                    fontWeight: 600,
+                    padding: '3px 7px',
+                    borderRadius: 999,
+                    border: `1px solid ${badgeTone.borderColor}`,
+                    background: badgeTone.background,
+                    color: badgeTone.color,
+                    whiteSpace: 'nowrap',
+                    animation: deviationBadge.pulse
+                      ? 'holding-price-deviation-pulse 1.8s ease-in-out infinite'
+                      : 'none',
+                  },
+                },
+                deviationBadge.text
+              )
+          ),
+          h(PeerRankingBadge, { holding })
+        ),
+        h(HoldingSparkline, { history: sparklineHistory })
       ),
 
       // Qty + Cost
@@ -356,6 +443,11 @@ export function HoldingsTable({
   return h(
     Card,
     null,
+    h(
+      'style',
+      null,
+      '@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 rgba(111,133,104,0.18); } 50% { box-shadow: 0 0 0 5px rgba(111,133,104,0.06); } 100% { box-shadow: 0 0 0 0 rgba(111,133,104,0); } }'
+    ),
     h('div', { style: { ...lbl, marginBottom: 8 } }, `持股明細 · ${holdings.length}檔`),
 
     // Header

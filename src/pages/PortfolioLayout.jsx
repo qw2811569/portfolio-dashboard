@@ -15,7 +15,7 @@ export function PortfolioLayout() {
   useEffect(() => {
     if (!import.meta.env.PROD) {
       console.warn(
-        '[route-shell] migration-only runtime: canonical entry remains src/main.jsx -> src/App.jsx'
+        '[route-shell] migration-only runtime: canonical entry remains src/main.jsx -> src/App.jsx. 路由頁面仍屬遷移殼層，部分操作不會同步回主 AppShell；正式 runtime 仍以主 AppShell 為準。'
       )
     }
   }, [])

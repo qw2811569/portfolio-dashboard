@@ -234,7 +234,7 @@ function classifyPosition(code, { stockMeta, holdingRank, totalHoldings } = {}) 
 const LEADER_KEYWORDS = /龍頭|領導|最大|第一|領先|獨占|寡占|壟斷|市佔.*第一|全球.*最大/
 const MOAT_KEYWORDS = /護城河|專利|獨家|技術門檻|不可替代|壁壘|獨佔|關鍵供應|唯���/
 
-function scoreLeaderDimensions(code, { finmind, holding } = {}) {
+function scoreLeaderDimensions(code, { finmind } = {}) {
   let score = 0
   const reasons = []
 

@@ -26,6 +26,7 @@ function buildProps(overrides = {}) {
 const MOCK_NEWS_ITEMS = [
   {
     title: '台積電法說會釋出樂觀展望',
+    description: '供應鏈認為第二季需求升溫，屬於偏正向 headline。',
     link: 'https://example.com/news/1',
     pubDate: '2026-04-12T10:30:00Z',
     source: '經濟日報',
@@ -33,6 +34,7 @@ const MOCK_NEWS_ITEMS = [
   },
   {
     title: '聯發科5G晶片出貨成長',
+    description: '市場等待更多數字確認，因此先視為中性偏正向。',
     link: 'https://example.com/news/2',
     pubDate: '2026-04-11T08:00:00Z',
     source: '工商時報',
@@ -49,15 +51,15 @@ describe('components/NewsAnalysisPanel', () => {
   it('shows the empty-state welcome card when newsEvents is empty and no holdingCodes', () => {
     render(<NewsAnalysisPanel {...buildProps()} />)
 
-    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
-    expect(screen.getByText('🔍 前往收盤分析')).toBeInTheDocument()
+    expect(screen.getByText('今天市場在說什麼')).toBeInTheDocument()
+    expect(screen.getByText('→ 前往收盤分析')).toBeInTheDocument()
   })
 
   it('fires onNavigateDaily when the empty-state CTA is clicked', () => {
     const onNavigateDaily = vi.fn()
     render(<NewsAnalysisPanel {...buildProps({ onNavigateDaily })} />)
 
-    fireEvent.click(screen.getByText('🔍 前往收盤分析'))
+    fireEvent.click(screen.getByText('→ 前往收盤分析'))
     expect(onNavigateDaily).toHaveBeenCalledTimes(1)
   })
 
@@ -65,13 +67,13 @@ describe('components/NewsAnalysisPanel', () => {
     const events = [{ id: 1, title: '台積電調漲資本支出', status: 'tracking', recordType: 'event' }]
     render(<NewsAnalysisPanel {...buildProps({ newsEvents: events })} />)
 
-    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
+    expect(screen.getByText('今天市場在說什麼')).toBeInTheDocument()
   })
 
   it('treats missing newsEvents (undefined) as empty and still shows welcome when no holdingCodes', () => {
     render(<NewsAnalysisPanel {...buildProps({ newsEvents: undefined })} />)
 
-    expect(screen.getByText('情報脈絡')).toBeInTheDocument()
+    expect(screen.getByText('今天市場在說什麼')).toBeInTheDocument()
   })
 
   it('hides empty-state when holdingCodes provided (news feed section will render)', async () => {
@@ -84,7 +86,7 @@ describe('components/NewsAnalysisPanel', () => {
       render(<NewsAnalysisPanel {...buildProps({ holdingCodes: ['2330', '2454'] })} />)
     })
 
-    expect(screen.queryByText('🔍 前往收盤分析')).not.toBeInTheDocument()
+    expect(screen.queryByText('→ 前往收盤分析')).not.toBeInTheDocument()
   })
 })
 
@@ -109,11 +111,11 @@ describe('components/NewsFeedSection', () => {
     })
 
     expect(screen.getByText('聯發科5G晶片出貨成長')).toBeInTheDocument()
-    expect(screen.getByText('經濟日報')).toBeInTheDocument()
-    expect(screen.getByText('工商時報')).toBeInTheDocument()
-    expect(screen.getByText('台積電')).toBeInTheDocument()
-    expect(screen.getByText('聯發科')).toBeInTheDocument()
-    expect(screen.getByText(/新聞脈絡 \(2\)/)).toBeInTheDocument()
+    expect(screen.getAllByText('經濟日報').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('工商時報').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/2330 台積電/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/2454 聯發科/).length).toBeGreaterThan(0)
+    expect(screen.getByText(/2 則相關新聞/)).toBeInTheDocument()
   })
 
   it('calls /api/news-feed with codes and days=3', async () => {
@@ -133,17 +135,20 @@ describe('components/NewsFeedSection', () => {
     expect(url).toContain('days=3')
   })
 
-  it('renders nothing when items array is empty', async () => {
+  it('falls back to preview content when items array is empty', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: [] }),
     })
 
-    const { container } = await act(async () => {
-      return render(<NewsFeedSection holdingCodes={['2330']} />)
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330']} />)
     })
 
-    expect(container.innerHTML).toBe('')
+    await waitFor(() => {
+      expect(screen.getByText('這些新聞跟你組合有關')).toBeInTheDocument()
+    })
+    expect(screen.getByText(/2 則相關新聞|1 則相關新聞/)).toBeInTheDocument()
   })
 
   it('shows loading state during fetch', () => {
@@ -159,7 +164,7 @@ describe('components/NewsFeedSection', () => {
     expect(screen.getByText('載入新聞中...')).toBeInTheDocument()
   })
 
-  it('shows error message when fetch fails', async () => {
+  it('shows fallback notice when fetch fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network error'))
 
     await act(async () => {
@@ -167,7 +172,7 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/新聞暫時打不開/)).toBeInTheDocument()
+      expect(screen.getByText(/preview fallback：network error/)).toBeInTheDocument()
     })
   })
 
@@ -179,7 +184,7 @@ describe('components/NewsFeedSection', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  it('news cards do not have direction arrows or impact styling', async () => {
+  it('news cards render impact badges and the daily handoff button', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({ items: MOCK_NEWS_ITEMS }),
@@ -193,9 +198,7 @@ describe('components/NewsFeedSection', () => {
       expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
     })
 
-    // No impact labels should appear (利多/利空/中性)
-    expect(screen.queryByText(/利多/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/利空/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/中性/)).not.toBeInTheDocument()
+    expect(screen.getAllByText(/→ 判讀影響/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/利多/).length).toBeGreaterThan(0)
   })
 })

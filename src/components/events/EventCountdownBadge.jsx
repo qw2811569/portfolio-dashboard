@@ -1,0 +1,64 @@
+import { createElement as h } from 'react'
+import { C, alpha } from '../../theme.js'
+import { calculateEventCountdown } from '../../lib/eventCountdown.js'
+
+const BADGE_STYLE = {
+  today: {
+    color: C.down,
+    background: alpha(C.down, '12'),
+    border: alpha(C.down, '30'),
+    fontWeight: 700,
+  },
+  imminent: {
+    color: C.amber,
+    background: alpha(C.amber, '12'),
+    border: alpha(C.amber, '30'),
+    fontWeight: 600,
+  },
+  soon: {
+    color: C.olive,
+    background: alpha(C.olive, '10'),
+    border: alpha(C.olive, '24'),
+    fontWeight: 600,
+  },
+  far: {
+    color: C.olive,
+    background: alpha(C.olive, '10'),
+    border: alpha(C.olive, '24'),
+    fontWeight: 500,
+  },
+  past: {
+    color: C.choco,
+    background: alpha(C.choco, '12'),
+    border: alpha(C.choco, '2c'),
+    fontWeight: 600,
+  },
+}
+
+export function EventCountdownBadge({ event, now }) {
+  const countdown = calculateEventCountdown(event, now)
+  const tone = BADGE_STYLE[countdown.urgency] || BADGE_STYLE.far
+  const label = countdown.autoReviewReady ? `${countdown.label} · 待復盤` : countdown.label
+
+  return h(
+    'span',
+    {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '3px 8px',
+        borderRadius: 999,
+        fontSize: 9,
+        lineHeight: 1.2,
+        color: tone.color,
+        background: tone.background,
+        border: `1px solid ${tone.border}`,
+        fontWeight: tone.fontWeight,
+        whiteSpace: 'nowrap',
+      },
+      title: countdown.autoReviewReady ? '事件已過 3 天，進入自動復盤視窗' : label,
+    },
+    label
+  )
+}

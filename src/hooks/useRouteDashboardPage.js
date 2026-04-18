@@ -4,11 +4,14 @@ import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 export function useRouteDashboardPage() {
   const {
     holdings = [],
+    watchlist = [],
     todayTotalPnl = 0,
     newsEvents = [],
     dailyReport,
     urgentCount = 0,
     todayAlertSummary = '',
+    portfolioId,
+    portfolioName,
   } = usePortfolioRouteContext()
 
   return useMemo(() => {
@@ -28,6 +31,7 @@ export function useRouteDashboardPage() {
 
     return {
       holdings,
+      watchlist,
       todayTotalPnl,
       totalVal,
       totalCost,
@@ -37,6 +41,18 @@ export function useRouteDashboardPage() {
       newsEvents,
       urgentCount,
       todayAlertSummary,
+      portfolioId,
+      portfolioName,
     }
-  }, [holdings, todayTotalPnl, newsEvents, dailyReport, urgentCount, todayAlertSummary])
+  }, [
+    holdings,
+    watchlist,
+    todayTotalPnl,
+    newsEvents,
+    dailyReport,
+    urgentCount,
+    todayAlertSummary,
+    portfolioId,
+    portfolioName,
+  ])
 }

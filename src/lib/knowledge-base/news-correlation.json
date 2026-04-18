@@ -12,7 +12,19 @@
       "tags": ["法說", "消息面", "股價反應"],
       "confidence": 0.75,
       "source": "財報分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-002",
@@ -23,7 +35,19 @@
       "tags": ["月營收", "營收趨勢", "買賣訊號"],
       "confidence": 0.7,
       "source": "營收分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-003",
@@ -34,7 +58,19 @@
       "tags": ["財報", "財報季", "利多出盡"],
       "confidence": 0.65,
       "source": "財報分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-004",
@@ -45,7 +81,19 @@
       "tags": ["政策", "產業影響", "布局時機"],
       "confidence": 0.65,
       "source": "政策分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-005",
@@ -56,7 +104,24 @@
       "tags": ["除權息", "季節性", "填息"],
       "confidence": 0.65,
       "source": "季節性效應分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-006",
@@ -67,7 +132,19 @@
       "tags": ["CPI", "總體經濟", "聯準會"],
       "confidence": 0.7,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-007",
@@ -78,7 +155,14 @@
       "tags": ["地緣政治", "風險管理", "供應鏈"],
       "confidence": 0.65,
       "source": "風險管理框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-008",
@@ -89,7 +173,19 @@
       "tags": ["產業新聞", "訊息解讀", "真實性"],
       "confidence": 0.65,
       "source": "新聞分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-009",
@@ -100,7 +196,19 @@
       "tags": ["新品", "供應鏈", "營收貢獻"],
       "confidence": 0.65,
       "source": "產品分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-010",
@@ -111,7 +219,14 @@
       "tags": ["併購", "戰略分析", "溢價"],
       "confidence": 0.65,
       "source": "併購分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-011",
@@ -122,7 +237,14 @@
       "tags": ["聯準會", "利率", "總體經濟"],
       "confidence": 0.75,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-012",
@@ -133,7 +255,14 @@
       "tags": ["油價", "產業影響", "多空操作"],
       "confidence": 0.82,
       "source": "商品市場分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-013",
@@ -144,7 +273,14 @@
       "tags": ["匯率", "產業影響", "進出口"],
       "confidence": 0.7,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-014",
@@ -155,7 +291,14 @@
       "tags": ["原物料", "產業影響", "週期股"],
       "confidence": 0.8,
       "source": "商品市場分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-015",
@@ -166,7 +309,14 @@
       "tags": ["中國經濟", "出口", "產業影響"],
       "confidence": 0.65,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-017",
@@ -177,7 +327,14 @@
       "tags": ["大股東", "內部人", "持股變化"],
       "confidence": 0.85,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-019",
@@ -188,7 +345,14 @@
       "tags": ["產業協會", "產銷數據", "景氣"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-020",
@@ -199,7 +363,19 @@
       "tags": ["股東會", "管理層", "展望"],
       "confidence": 0.65,
       "source": "財報分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-021",
@@ -210,7 +386,19 @@
       "tags": ["技術突破", "專利", "商業化"],
       "confidence": 0.8,
       "source": "產業分析框架",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-022",
@@ -221,7 +409,19 @@
       "tags": ["大客戶", "訂單", "供應鏈"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-023",
@@ -232,7 +432,14 @@
       "tags": ["天災", "工廠", "影響評估"],
       "confidence": 0.65,
       "source": "風險管理框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-024",
@@ -243,7 +450,14 @@
       "tags": ["勞資糾紛", "罷工", "生產影響"],
       "confidence": 0.8,
       "source": "風險管理框架",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-025",
@@ -254,7 +468,14 @@
       "tags": ["監管", "政策", "產業影響"],
       "confidence": 0.65,
       "source": "政策分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-026",
@@ -265,7 +486,14 @@
       "tags": ["庫存", "原物料", "供需"],
       "confidence": 0.65,
       "source": "商品市場分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-027",
@@ -276,7 +504,19 @@
       "tags": ["新廠", "產能", "營收貢獻"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-028",
@@ -287,7 +527,14 @@
       "tags": ["高管異動", "經營策略", "管理層"],
       "confidence": 0.8,
       "source": "公司治理分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-029",
@@ -298,7 +545,14 @@
       "tags": ["指數", "成分股", "被動基金"],
       "confidence": 0.7,
       "source": "市場結構分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-030",
@@ -309,7 +563,19 @@
       "tags": ["配息", "股東回報", "股利政策"],
       "confidence": 0.7,
       "source": "財報分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-031",
@@ -320,7 +586,19 @@
       "tags": ["MOPS", "重大訊息", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-032",
@@ -331,7 +609,14 @@
       "tags": ["台積電", "法說", "時間窗口", "台股特定"],
       "confidence": 0.75,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-033",
@@ -342,7 +627,19 @@
       "tags": ["月營收", "時間節奏", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-034",
@@ -353,7 +650,29 @@
       "tags": ["除權息", "季節性", "台股特定"],
       "confidence": 0.85,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-035",
@@ -364,7 +683,24 @@
       "tags": ["投信", "作帳", "時間窗口", "台股特定"],
       "confidence": 0.85,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-036",
@@ -375,7 +711,19 @@
       "tags": ["外資", "期貨結算", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-037",
@@ -386,7 +734,24 @@
       "tags": ["春節", "季節性", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-038",
@@ -397,7 +762,19 @@
       "tags": ["三大法人", "同向操作", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-039",
@@ -408,7 +785,19 @@
       "tags": ["融資", "斷頭", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-040",
@@ -419,7 +808,14 @@
       "tags": ["心理關卡", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-041",
@@ -430,7 +826,19 @@
       "tags": ["蘋果", "供應鏈", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-042",
@@ -441,7 +849,19 @@
       "tags": ["輝達", "AI", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-043",
@@ -452,7 +872,14 @@
       "tags": ["CES", "消費電子", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-044",
@@ -463,7 +890,14 @@
       "tags": ["Computex", "PC", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-045",
@@ -474,7 +908,19 @@
       "tags": ["股東會", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-046",
@@ -485,7 +931,19 @@
       "tags": ["外資", "連買連賣", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-047",
@@ -496,7 +954,19 @@
       "tags": ["融資", "創新高", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-048",
@@ -507,7 +977,19 @@
       "tags": ["券資比", "軋空", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-049",
@@ -518,7 +1000,29 @@
       "tags": ["外資", "配息", "季節性", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-050",
@@ -529,7 +1033,19 @@
       "tags": ["年底", "作帳", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-051",
@@ -540,7 +1056,19 @@
       "tags": ["興櫃", "上櫃", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-052",
@@ -551,7 +1079,24 @@
       "tags": ["股利", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-053",
@@ -562,7 +1107,24 @@
       "tags": ["庫藏股", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-054",
@@ -573,7 +1135,14 @@
       "tags": ["減資", "增資", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-055",
@@ -584,7 +1153,29 @@
       "tags": ["股票分割", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-056",
@@ -595,7 +1186,19 @@
       "tags": ["董監改選", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-057",
@@ -606,7 +1209,24 @@
       "tags": ["公司債", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-058",
@@ -617,7 +1237,24 @@
       "tags": ["營收", "創新高", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-059",
@@ -628,7 +1265,19 @@
       "tags": ["毛利率", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-060",
@@ -639,7 +1288,19 @@
       "tags": ["營業利益率", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-061",
@@ -650,7 +1311,19 @@
       "tags": ["自營商", "當沖", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-062",
@@ -661,7 +1334,19 @@
       "tags": ["權證", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-063",
@@ -672,7 +1357,19 @@
       "tags": ["外資", "研究報告", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-064",
@@ -683,7 +1380,19 @@
       "tags": ["投信", "經理人", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-065",
@@ -694,7 +1403,14 @@
       "tags": ["量價", "大盤", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-066",
@@ -705,7 +1421,14 @@
       "tags": ["類股輪動", "資金流向", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-067",
@@ -716,7 +1439,19 @@
       "tags": ["上市櫃", "景氣", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-068",
@@ -727,7 +1462,14 @@
       "tags": ["IPO", "抽籤", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-069",
@@ -738,7 +1480,14 @@
       "tags": ["質押", "大股東", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-070",
@@ -749,7 +1498,14 @@
       "tags": ["回購", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-071",
@@ -760,7 +1516,19 @@
       "tags": ["財報", "發布日", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-072",
@@ -771,7 +1539,24 @@
       "tags": ["除息", "填息", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-073",
@@ -782,7 +1567,19 @@
       "tags": ["外資", "台指期", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-074",
@@ -793,7 +1590,19 @@
       "tags": ["投信", "自營商", "台股特定"],
       "confidence": 0.8,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-075",
@@ -804,7 +1613,19 @@
       "tags": ["融資", "使用率", "台股特定"],
       "confidence": 0.82,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-076",
@@ -815,7 +1636,19 @@
       "tags": ["外資", "期現貨", "台股特定"],
       "confidence": 0.75,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-077",
@@ -826,7 +1659,19 @@
       "tags": ["投信", "連買", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-078",
@@ -837,7 +1682,19 @@
       "tags": ["自營商", "避險", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-079",
@@ -848,7 +1705,24 @@
       "tags": ["大戶", "散戶", "背離", "台股特定"],
       "confidence": 0.65,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-080",
@@ -859,7 +1733,19 @@
       "tags": ["融券", "強補", "軋空", "台股特定"],
       "confidence": 0.7,
       "source": "台股市場實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-081",
@@ -870,7 +1756,14 @@
       "tags": ["央行", "利率", "政策", "台股特定"],
       "confidence": 0.8,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "nc-082",
@@ -881,12 +1774,19 @@
       "tags": ["MSCI", "指數調整", "被動資金", "台股特定"],
       "confidence": 0.75,
       "source": "指數效應分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     }
   ],
   "metadata": {
     "itemCount": 80,
-    "lastUpdated": "2026-03-31T16:19:34.335Z",
+    "lastUpdated": "2026-04-18T00:00:00+08:00",
     "targetCount": 80,
     "notes": "已完成 80 條目標，涵蓋台股特定事件驅動模式"
   }

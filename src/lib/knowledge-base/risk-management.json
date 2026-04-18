@@ -12,7 +12,8 @@
       "tags": ["停損", "固定比例", "風險控制"],
       "confidence": 0.8,
       "source": "風險管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-002",
@@ -23,7 +24,8 @@
       "tags": ["停損", "技術位", "支撐壓力"],
       "confidence": 0.75,
       "source": "技術分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-003",
@@ -34,7 +36,8 @@
       "tags": ["倉位控制", "風險分散", "持股上限"],
       "confidence": 0.85,
       "source": "倉位管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-004",
@@ -45,7 +48,8 @@
       "tags": ["倉位控制", "產業分散", "系統性風險"],
       "confidence": 0.8,
       "source": "倉位管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-005",
@@ -56,7 +60,14 @@
       "tags": ["加碼", "金字塔", "獲利加碼"],
       "confidence": 0.75,
       "source": "加碼策略實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-006",
@@ -67,7 +78,8 @@
       "tags": ["加碼", "回測", "支撐位"],
       "confidence": 0.7,
       "source": "加碼策略實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-007",
@@ -78,7 +90,14 @@
       "tags": ["現金水位", "資產配置", "機會成本"],
       "confidence": 0.8,
       "source": "資產配置實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-008",
@@ -89,7 +108,8 @@
       "tags": ["心理建設", "虧損管理", "情緒控制"],
       "confidence": 0.85,
       "source": "交易心理學",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-009",
@@ -100,7 +120,8 @@
       "tags": ["心理建設", "FOMO", "追高"],
       "confidence": 0.8,
       "source": "交易心理學",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-010",
@@ -111,7 +132,8 @@
       "tags": ["覆盤", "交易日誌", "學習機制"],
       "confidence": 0.9,
       "source": "交易實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-011",
@@ -122,7 +144,8 @@
       "tags": ["VIX", "總體風險", "市場情緒"],
       "confidence": 0.7,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-012",
@@ -133,7 +156,8 @@
       "tags": ["騰落線", "市場廣度", "背離訊號"],
       "confidence": 0.65,
       "source": "技術分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-013",
@@ -144,7 +168,14 @@
       "tags": ["風險報酬比", "進場條件", "計算"],
       "confidence": 0.85,
       "source": "風險管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-014",
@@ -155,7 +186,14 @@
       "tags": ["最大回撤", "資金管理", "保護機制"],
       "confidence": 0.8,
       "source": "資金管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-015",
@@ -166,7 +204,8 @@
       "tags": ["凱利公式", "最佳下注", "數學"],
       "confidence": 0.7,
       "source": "資金管理數學",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-016",
@@ -177,7 +216,8 @@
       "tags": ["黑天鵝", "防護策略", "極端風險"],
       "confidence": 0.85,
       "source": "風險管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-017",
@@ -188,7 +228,8 @@
       "tags": ["交易頻率", "成本控制", "紀律"],
       "confidence": 0.75,
       "source": "交易實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-018",
@@ -199,7 +240,8 @@
       "tags": ["情緒管理", "貪婪恐懼", "紀律"],
       "confidence": 0.8,
       "source": "交易心理學",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-019",
@@ -210,7 +252,8 @@
       "tags": ["連虧", "停止交易", "檢討"],
       "confidence": 0.85,
       "source": "交易實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-020",
@@ -221,7 +264,8 @@
       "tags": ["部位調整", "市場狀況", "動態管理"],
       "confidence": 0.75,
       "source": "資金管理實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "rm-021",
@@ -232,7 +276,8 @@
       "tags": ["ATR", "波動率", "部位調整"],
       "confidence": 0.8,
       "source": "技術分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-022",
@@ -243,7 +288,14 @@
       "tags": ["回撤管理", "風險控制", "減碼"],
       "confidence": 0.85,
       "source": "資金管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-023",
@@ -254,7 +306,14 @@
       "tags": ["回撤管理", "風險控制", "停止交易"],
       "confidence": 0.85,
       "source": "資金管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-024",
@@ -265,7 +324,14 @@
       "tags": ["回撤管理", "風險控制", "策略重置"],
       "confidence": 0.9,
       "source": "資金管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-025",
@@ -276,7 +342,8 @@
       "tags": ["選擇權", "對沖", "尾部風險"],
       "confidence": 0.75,
       "source": "衍生性商品實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-026",
@@ -287,7 +354,8 @@
       "tags": ["反向 ETF", "對沖", "尾部風險"],
       "confidence": 0.7,
       "source": "衍生性商品實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-027",
@@ -298,7 +366,8 @@
       "tags": ["行為金融", "錨定效應", "心理偏誤"],
       "confidence": 0.85,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-028",
@@ -309,7 +378,8 @@
       "tags": ["行為金融", "沉沒成本", "心理偏誤"],
       "confidence": 0.85,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-029",
@@ -320,7 +390,8 @@
       "tags": ["行為金融", "確認偏誤", "心理偏誤"],
       "confidence": 0.85,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-030",
@@ -331,7 +402,14 @@
       "tags": ["行為金融", "損失厭惡", "心理偏誤"],
       "confidence": 0.85,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-031",
@@ -342,7 +420,14 @@
       "tags": ["行為金融", "近期偏誤", "心理偏誤"],
       "confidence": 0.8,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-032",
@@ -353,7 +438,8 @@
       "tags": ["行為金融", "過度自信", "心理偏誤"],
       "confidence": 0.85,
       "source": "行為金融學",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-033",
@@ -364,7 +450,8 @@
       "tags": ["流動性風險", "成交量", "風險控制"],
       "confidence": 0.8,
       "source": "風險管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-034",
@@ -375,7 +462,24 @@
       "tags": ["匯率風險", "資產配置", "風險控制"],
       "confidence": 0.7,
       "source": "總體經濟分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-035",
@@ -386,7 +490,14 @@
       "tags": ["稅務規劃", "長期投資", "報酬優化"],
       "confidence": 0.75,
       "source": "稅務規劃實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-036",
@@ -397,7 +508,8 @@
       "tags": ["相關性風險", "投資組合", "風險分散"],
       "confidence": 0.75,
       "source": "投資組合理論",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "rm-037",
@@ -408,7 +520,29 @@
       "tags": ["事件風險", "財報", "風險控制"],
       "confidence": 0.75,
       "source": "風險管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "rm-038",
@@ -419,7 +553,19 @@
       "tags": ["槓桿風險", "融資", "風險控制"],
       "confidence": 0.85,
       "source": "風險管理實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-039",
@@ -430,7 +576,14 @@
       "tags": ["集中度風險", "核心衛星", "資產配置"],
       "confidence": 0.8,
       "source": "資產配置實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "rm-040",
@@ -441,12 +594,19 @@
       "tags": ["再平衡", "資產配置", "紀律"],
       "confidence": 0.8,
       "source": "資產配置實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     }
   ],
   "metadata": {
     "itemCount": 40,
-    "lastUpdated": "2026-03-31T10:00:00+08:00",
+    "lastUpdated": "2026-04-18T00:00:00+08:00",
     "targetCount": 40
   }
 }

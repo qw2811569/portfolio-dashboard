@@ -74,6 +74,26 @@ export function normalizeAnalystReportItem(value) {
 
   const target = Number(value.target)
   const confidence = Number(value.confidence)
+  const aggregate =
+    value.aggregate && typeof value.aggregate === 'object' && !Array.isArray(value.aggregate)
+      ? {
+          medianTarget: Number.isFinite(Number(value.aggregate.medianTarget))
+            ? Number(value.aggregate.medianTarget)
+            : null,
+          meanTarget: Number.isFinite(Number(value.aggregate.meanTarget))
+            ? Number(value.aggregate.meanTarget)
+            : null,
+          min: Number.isFinite(Number(value.aggregate.min)) ? Number(value.aggregate.min) : null,
+          max: Number.isFinite(Number(value.aggregate.max)) ? Number(value.aggregate.max) : null,
+          firmsCount: Number.isFinite(Number(value.aggregate.firmsCount))
+            ? Number(value.aggregate.firmsCount)
+            : null,
+          numEst: Number.isFinite(Number(value.aggregate.numEst))
+            ? Number(value.aggregate.numEst)
+            : null,
+          rateDate: String(value.aggregate.rateDate || '').trim() || null,
+        }
+      : null
 
   return {
     id,
@@ -88,10 +108,12 @@ export function normalizeAnalystReportItem(value) {
     stance: ['bullish', 'neutral', 'bearish', 'unknown'].includes(value.stance)
       ? value.stance
       : 'unknown',
+    targetType: String(value.targetType || '').trim() || null,
     tags: Array.isArray(value.tags) ? value.tags.filter(Boolean).slice(0, 5) : [],
     confidence: Number.isFinite(confidence) ? confidence : null,
     extractedAt: String(value.extractedAt || '').trim() || null,
     hash: String(value.hash || id).trim(),
+    aggregate,
   }
 }
 

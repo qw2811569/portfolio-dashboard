@@ -200,7 +200,9 @@ export function usePortfolioDerivedData({
         const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
         const fundamentalsEntry = {
           ...mapped.entry,
-          note: `finmind completeness=${mapped.completeness}`,
+          note: [mapped.entry.note, `finmind completeness=${mapped.completeness}`]
+            .filter(Boolean)
+            .join(' | '),
         }
         const resolvedFundamentals = d.fundamentals || fundamentalsEntry
         // Freshness comes from the entry's updatedAt timestamp via the shared

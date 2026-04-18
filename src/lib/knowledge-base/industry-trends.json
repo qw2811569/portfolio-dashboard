@@ -12,7 +12,8 @@
       "tags": ["科技業", "產業分析", "趨勢"],
       "confidence": 0.8,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-002",
@@ -23,7 +24,8 @@
       "tags": ["半導體", "IC 設計", "晶圓製造"],
       "confidence": 0.85,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-003",
@@ -34,7 +36,14 @@
       "tags": ["AI", "伺服器", "供應鏈"],
       "confidence": 0.8,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-004",
@@ -45,7 +54,8 @@
       "tags": ["被動元件", "循環股", "庫存週期"],
       "confidence": 0.75,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-005",
@@ -56,7 +66,8 @@
       "tags": ["面板", "雙週期", "產品週期"],
       "confidence": 0.7,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-006",
@@ -67,7 +78,14 @@
       "tags": ["電動車", "供應鏈", "電池"],
       "confidence": 0.75,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-007",
@@ -78,7 +96,8 @@
       "tags": ["5G", "產業鏈", "投資順序"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-008",
@@ -89,7 +108,14 @@
       "tags": ["生技醫療", "新藥開發", "風險"],
       "confidence": 0.75,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-009",
@@ -100,7 +126,8 @@
       "tags": ["金融業", "銀行", "保險", "證券"],
       "confidence": 0.75,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-010",
@@ -111,7 +138,8 @@
       "tags": ["傳產", "龍頭", "循環股"],
       "confidence": 0.7,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-011",
@@ -122,7 +150,8 @@
       "tags": ["航運", "BDI", "循環股"],
       "confidence": 0.7,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-012",
@@ -133,7 +162,8 @@
       "tags": ["營建", "利率", "政策"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-013",
@@ -144,7 +174,8 @@
       "tags": ["觀光", "季節性", "事件驅動"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-014",
@@ -155,7 +186,14 @@
       "tags": ["電子零組件", "PCB", "連接器"],
       "confidence": 0.7,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-015",
@@ -166,7 +204,14 @@
       "tags": ["光電", "LED", "太陽能"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-016",
@@ -177,7 +222,14 @@
       "tags": ["網通", "5G", "AI"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-017",
@@ -188,7 +240,14 @@
       "tags": ["IC 封測", "規模經濟", "龍頭"],
       "confidence": 0.75,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-018",
@@ -199,7 +258,8 @@
       "tags": ["消費電子", "手機", "新品"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-019",
@@ -210,7 +270,14 @@
       "tags": ["綠能", "太陽能", "風電"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-020",
@@ -221,7 +288,19 @@
       "tags": ["競品分析", "市場定位", "差異化"],
       "confidence": 0.75,
       "source": "MY_TW_COVERAGE_ANALYSIS.md",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "it-021",
@@ -232,7 +311,8 @@
       "tags": ["鋼鐵", "原物料", "循環股"],
       "confidence": 0.7,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-022",
@@ -243,7 +323,8 @@
       "tags": ["塑化", "原油", "乙烯"],
       "confidence": 0.7,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-023",
@@ -254,7 +335,8 @@
       "tags": ["水泥", "營建", "環保政策"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-024",
@@ -265,7 +347,8 @@
       "tags": ["食品", "防禦股", "匯率"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-025",
@@ -276,7 +359,14 @@
       "tags": ["百貨", "零售", "電商"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-026",
@@ -287,7 +377,14 @@
       "tags": ["電信", "防禦股", "5G"],
       "confidence": 0.7,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "cashFlow",
+          "periodType": "quarterly-cashflow",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-027",
@@ -298,7 +395,14 @@
       "tags": ["電腦周邊", "供應鏈", "客戶集中度"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-028",
@@ -309,7 +413,14 @@
       "tags": ["汽車零組件", "電動車", "轉型"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-029",
@@ -320,7 +431,8 @@
       "tags": ["遊戲", "產品週期", "爆款"],
       "confidence": 0.65,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-030",
@@ -331,7 +443,19 @@
       "tags": ["雲端", "SaaS", "訂閱制"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "cashFlow",
+          "periodType": "quarterly-cashflow",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-031",
@@ -342,7 +466,14 @@
       "tags": ["物聯網", "平台", "感測器"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-032",
@@ -353,7 +484,14 @@
       "tags": ["機器人", "工業", "服務"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-033",
@@ -364,7 +502,14 @@
       "tags": ["太空", "衛星", "新興產業"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-034",
@@ -375,7 +520,8 @@
       "tags": ["量子計算", "早期", "觀察"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-035",
@@ -386,7 +532,14 @@
       "tags": ["龍頭", "市占率", "競爭優勢"],
       "confidence": 0.8,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-036",
@@ -397,7 +550,14 @@
       "tags": ["循環股", "投資時機", "本益比"],
       "confidence": 0.75,
       "source": "產業循環分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "it-037",
@@ -408,7 +568,19 @@
       "tags": ["成長股", "營收成長", "本益比"],
       "confidence": 0.75,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-038",
@@ -419,7 +591,24 @@
       "tags": ["價值股", "低本益比", "價值投資"],
       "confidence": 0.7,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "it-039",
@@ -430,7 +619,8 @@
       "tags": ["防禦股", "空頭市場", "避險"],
       "confidence": 0.7,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-040",
@@ -441,7 +631,8 @@
       "tags": ["新興產業", "高風險", "分散投資"],
       "confidence": 0.75,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-041",
@@ -452,7 +643,14 @@
       "tags": ["供應鏈", "台商回流", "地緣政治"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-042",
@@ -463,7 +661,8 @@
       "tags": ["ESG", "永續投資", "趨勢"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-043",
@@ -474,7 +673,14 @@
       "tags": ["數位轉型", "競爭力", "趨勢"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-044",
@@ -485,7 +691,8 @@
       "tags": ["高齡化", "醫療保健", "趨勢"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-045",
@@ -496,7 +703,8 @@
       "tags": ["少子化", "產業影響", "趨勢"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-046",
@@ -507,7 +715,14 @@
       "tags": ["地緣政治", "風險評估", "外資"],
       "confidence": 0.7,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "it-047",
@@ -518,7 +733,8 @@
       "tags": ["產業聚落", "競爭力", "成本"],
       "confidence": 0.7,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-048",
@@ -529,7 +745,14 @@
       "tags": ["技術壁垒", "競爭優勢", "獲利保護"],
       "confidence": 0.75,
       "source": "產業分析框架",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-049",
@@ -540,7 +763,8 @@
       "tags": ["產業整合", "併購", "集中度"],
       "confidence": 0.65,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": []
     },
     {
       "id": "it-050",
@@ -551,7 +775,14 @@
       "tags": ["供應鏈", "全球地位", "議價能力"],
       "confidence": 0.75,
       "source": "產業趨勢分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-051",
@@ -562,7 +793,14 @@
       "tags": ["CoWoS", "先進封裝", "AI", "台積電", "產能瓶頸"],
       "confidence": 0.85,
       "source": "台積電法說會、產業研究報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "it-052",
@@ -573,7 +811,8 @@
       "tags": ["HBM", "記憶體", "AI", "基板", "供需"],
       "confidence": 0.8,
       "source": "TrendForce、記憶體產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-053",
@@ -584,7 +823,14 @@
       "tags": ["液冷", "散熱", "AI 伺服器", "DLC", "功耗"],
       "confidence": 0.85,
       "source": "資料中心產業報告、散熱廠法說會",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-054",
@@ -595,7 +841,19 @@
       "tags": ["電源管理", "PSU", "AI 伺服器", "台達電", "高瓦數"],
       "confidence": 0.8,
       "source": "電源產業研究、ODM 法說會",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-055",
@@ -606,7 +864,14 @@
       "tags": ["探針卡", "ATE", "晶片測試", "AI 晶片", "中華精測"],
       "confidence": 0.75,
       "source": "測試設備產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-056",
@@ -617,7 +882,8 @@
       "tags": ["PCB", "ABF 載板", "AI 伺服器", "欣興", "高階製程"],
       "confidence": 0.8,
       "source": "Prismark PCB 產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-057",
@@ -628,7 +894,14 @@
       "tags": ["光模組", "800G", "1.6T", "矽光子", "資料中心"],
       "confidence": 0.8,
       "source": "LightCounting 光通訊報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-058",
@@ -639,7 +912,19 @@
       "tags": ["邊緣運算", "AI PC", "AI 手機", "NPU", "聯發科"],
       "confidence": 0.75,
       "source": "IDC、Counterpoint 報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-059",
@@ -650,7 +935,14 @@
       "tags": ["銅纜", "AEC", "高速傳輸", "連接器", "AI 伺服器"],
       "confidence": 0.75,
       "source": "連接器產業研究",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-060",
@@ -661,7 +953,14 @@
       "tags": ["AI 推理", "AI 訓練", "ASIC", "世芯", "能效比"],
       "confidence": 0.8,
       "source": "AI 晶片產業研究",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-061",
@@ -672,7 +971,8 @@
       "tags": ["電動車", "磷酸鐵鋰", "三元鋰", "電池材料", "碳酸鋰"],
       "confidence": 0.75,
       "source": "SNE Research 電池產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-062",
@@ -683,7 +983,14 @@
       "tags": ["車用晶片", "ADAS", "SoC", "自駕車", "車規認證"],
       "confidence": 0.75,
       "source": "IHS Markit 車用半導體報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-063",
@@ -694,7 +1001,14 @@
       "tags": ["充電樁", "快充", "電動車", "基礎設施", "DC 快充"],
       "confidence": 0.7,
       "source": "IEA 全球電動車報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-064",
@@ -705,7 +1019,14 @@
       "tags": ["太陽能", "多晶矽", "產業循環", "產能過剩", "裝機量"],
       "confidence": 0.65,
       "source": "PV InfoLink 太陽能報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-065",
@@ -716,7 +1037,8 @@
       "tags": ["離岸風電", "區塊開發", "世紀鋼", "再生能源", "供應鏈在地化"],
       "confidence": 0.7,
       "source": "經濟部能源署、GWEC 報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-066",
@@ -727,7 +1049,14 @@
       "tags": ["儲能", "BESS", "電力輔助服務", "台電", "再生能源"],
       "confidence": 0.75,
       "source": "BloombergNEF 儲能報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-067",
@@ -738,7 +1067,14 @@
       "tags": ["碳權", "ESG", "碳費", "CBAM", "減碳"],
       "confidence": 0.7,
       "source": "環境部碳費政策、歐盟 CBAM 法規",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-068",
@@ -749,7 +1085,14 @@
       "tags": ["SiC", "功率元件", "電動車", "馬達", "第三代半導體"],
       "confidence": 0.75,
       "source": "Yole SiC 產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-069",
@@ -760,7 +1103,19 @@
       "tags": ["半導體設備", "ASML", "EUV", "資本支出", "產業循環"],
       "confidence": 0.8,
       "source": "SEMI 設備市場報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "cashFlow",
+          "periodType": "quarterly-cashflow",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-070",
@@ -771,7 +1126,8 @@
       "tags": ["矽晶圓", "環球晶", "半導體材料", "供需循環", "合約價"],
       "confidence": 0.75,
       "source": "SUMCO/信越財報、矽晶圓產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-071",
@@ -782,7 +1138,19 @@
       "tags": ["SiC", "GaN", "化合物半導體", "功率元件", "穩懋"],
       "confidence": 0.75,
       "source": "Yole 化合物半導體報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-072",
@@ -793,7 +1161,14 @@
       "tags": ["DRAM", "DDR5", "記憶體", "南亞科", "產業循環"],
       "confidence": 0.75,
       "source": "TrendForce DRAM 報價、記憶體產業研究",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-073",
@@ -804,7 +1179,14 @@
       "tags": ["NAND Flash", "SSD", "群聯", "企業級儲存", "AI 伺服器"],
       "confidence": 0.7,
       "source": "TrendForce NAND 報價報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-074",
@@ -815,7 +1197,14 @@
       "tags": ["成熟製程", "28nm", "聯電", "中國產能", "車用晶片"],
       "confidence": 0.7,
       "source": "TrendForce 晶圓代工報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-075",
@@ -826,7 +1215,19 @@
       "tags": ["IC 設計", "產業集中度", "聯發科", "聯詠", "研發投入"],
       "confidence": 0.75,
       "source": "TrendForce IC 設計產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-076",
@@ -837,7 +1238,14 @@
       "tags": ["半導體在地化", "台積電", "地緣政治", "海外建廠", "補貼"],
       "confidence": 0.7,
       "source": "台積電法說會、各國晶片法案",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-077",
@@ -848,7 +1256,14 @@
       "tags": ["生技新藥", "FDA", "TFDA", "臨床試驗", "新藥審查"],
       "confidence": 0.65,
       "source": "TFDA 藥品查驗登記統計、FDA 報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-078",
@@ -859,7 +1274,19 @@
       "tags": ["CDMO", "委託製造", "台康生技", "保瑞", "生物相似藥"],
       "confidence": 0.7,
       "source": "生技產業報告、CDMO 市場分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-079",
@@ -870,7 +1297,19 @@
       "tags": ["醫療器材", "出口", "隱形眼鏡", "血糖監測", "FDA 510k"],
       "confidence": 0.7,
       "source": "工研院 ITIS 醫材產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-080",
@@ -881,7 +1320,14 @@
       "tags": ["原料藥", "API", "GMP", "旭富", "供應鏈分散"],
       "confidence": 0.65,
       "source": "全球原料藥市場報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-081",
@@ -892,7 +1338,19 @@
       "tags": ["生技股評價", "rNPV", "DCF", "pipeline", "臨床階段"],
       "confidence": 0.65,
       "source": "生技投資評價方法論",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-082",
@@ -903,7 +1361,19 @@
       "tags": ["學名藥", "健保", "藥價調整", "外銷", "處方藥"],
       "confidence": 0.65,
       "source": "健保署藥價統計、學名藥產業分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-083",
@@ -914,7 +1384,8 @@
       "tags": ["鋼鐵", "中鋼", "中國產能", "鐵礦砂", "產業循環"],
       "confidence": 0.7,
       "source": "世界鋼鐵協會、中鋼月報",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-084",
@@ -925,7 +1396,19 @@
       "tags": ["塑化", "乙烯", "台塑", "石化循環", "價差"],
       "confidence": 0.7,
       "source": "ICIS 石化報價、台塑法說會",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-085",
@@ -936,7 +1419,19 @@
       "tags": ["機能布", "紡織", "儒鴻", "聚陽", "ESG"],
       "confidence": 0.75,
       "source": "紡拓會產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-086",
@@ -947,7 +1442,19 @@
       "tags": ["航運", "SCFI", "BDI", "長榮", "貨櫃船"],
       "confidence": 0.7,
       "source": "Clarksons 航運數據、上海航運交易所",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-087",
@@ -958,7 +1465,14 @@
       "tags": ["營建", "房市", "信用管制", "新青安", "買賣移轉"],
       "confidence": 0.65,
       "source": "內政部不動產統計、央行政策",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-088",
@@ -969,7 +1483,19 @@
       "tags": ["金融", "淨利差", "金控", "NIM", "利率"],
       "confidence": 0.75,
       "source": "金管會銀行局統計、金控財報",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-089",
@@ -980,7 +1506,19 @@
       "tags": ["食品業", "通膨", "原料成本", "統一", "漲價"],
       "confidence": 0.7,
       "source": "主計處 CPI 數據、食品產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-090",
@@ -991,7 +1529,19 @@
       "tags": ["汽車零組件", "AM", "東陽", "帝寶", "售後市場"],
       "confidence": 0.75,
       "source": "台灣車輛零組件公會、AM 市場報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-091",
@@ -1002,7 +1552,14 @@
       "tags": ["低軌衛星", "LEO", "Starlink", "地面設備", "相位陣列天線"],
       "confidence": 0.75,
       "source": "SpaceX 發射數據、低軌衛星產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-092",
@@ -1013,7 +1570,14 @@
       "tags": ["AR", "VR", "MR", "空間運算", "光學元件"],
       "confidence": 0.65,
       "source": "IDC AR/VR 出貨報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-093",
@@ -1024,7 +1588,8 @@
       "tags": ["人形機器人", "Humanoid", "減速機", "伺服馬達", "Tesla Optimus"],
       "confidence": 0.65,
       "source": "機器人產業報告、Tesla AI Day",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": []
     },
     {
       "id": "it-094",
@@ -1035,7 +1600,14 @@
       "tags": ["量子運算", "量子位元", "低溫電子", "前瞻技術", "鴻海"],
       "confidence": 0.65,
       "source": "McKinsey 量子運算報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "it-095",
@@ -1046,7 +1618,14 @@
       "tags": ["資安", "零信任", "AI 資安", "訂閱制", "政府標案"],
       "confidence": 0.75,
       "source": "Gartner 資安報告、台灣資安產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-096",
@@ -1057,7 +1636,19 @@
       "tags": ["雲端", "資料中心", "公有雲", "廣達", "AI 工作負載"],
       "confidence": 0.85,
       "source": "Synergy Research 雲端報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "cashFlow",
+          "periodType": "quarterly-cashflow",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-097",
@@ -1068,7 +1659,14 @@
       "tags": ["電子紙", "ESL", "元太科技", "彩色電子紙", "新型顯示"],
       "confidence": 0.75,
       "source": "電子紙產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "it-098",
@@ -1079,7 +1677,19 @@
       "tags": ["半導體 IP", "IP 授權", "力旺", "M31", "權利金"],
       "confidence": 0.75,
       "source": "IPnest 半導體 IP 報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-099",
@@ -1090,7 +1700,19 @@
       "tags": ["第三方支付", "FinTech", "電子支付", "純網銀", "行動支付"],
       "confidence": 0.65,
       "source": "金管會電子支付統計",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "it-100",
@@ -1101,12 +1723,19 @@
       "tags": ["軍工", "國防", "國機國造", "國艦國造", "地緣政治"],
       "confidence": 0.7,
       "source": "國防部預算書、國防產業報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     }
   ],
   "metadata": {
     "itemCount": 100,
-    "lastUpdated": "2026-03-31T10:00:00+08:00",
+    "lastUpdated": "2026-04-18T00:00:00+08:00",
     "targetCount": 100
   }
 }

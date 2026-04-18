@@ -83,7 +83,7 @@ describe('api/cron/collect-target-prices', () => {
         })
       }
 
-      if (url === 'http://localhost:3002/api/analyst-reports') {
+      if (new URL(url).pathname === '/api/analyst-reports') {
         const body = JSON.parse(init.body)
         if (body.code === '2330') return firstAnalystResponse.promise
         if (body.code === '2454') return secondAnalystResponse.promise

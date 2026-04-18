@@ -16,6 +16,8 @@
 //   shareholding    — 外資持股比率
 //   news            — 個股新聞（提供 Qwen 建動態事件來源）
 
+import { normalizeFinancialStatementRows } from '../src/lib/finmindPeriodUtils.js'
+
 const FINMIND_BASE = 'https://api.finmindtrade.com/api/v4/data'
 const TOKEN = process.env.FINMIND_TOKEN || ''
 const FINMIND_RATE_LIMIT_COOLDOWN_MS = 5 * 60 * 1000
@@ -40,17 +42,26 @@ function sortByDateDesc(rows = []) {
   return [...rows].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
 }
 
+function normalizeInstitutionalName(name = '') {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+}
+
 function getInstitutionalBucket(name = '') {
+  const normalized = normalizeInstitutionalName(name)
   if (
     name.includes('外資') ||
     name.includes('陸資') ||
-    name === 'Foreign_Investor' ||
-    name === 'Foreign_Dealer_Self'
+    normalized.includes('foreign') ||
+    normalized.includes('overseas') ||
+    normalized.includes('foreign_dealer')
   ) {
     return 'foreign'
   }
-  if (name.includes('投信') || name === 'Investment_Trust') return 'investment'
-  if (name.includes('自營') || name === 'Dealer_self' || name === 'Dealer_Hedging') {
+  if (name.includes('投信') || normalized.includes('investment_trust')) return 'investment'
+  if (name.includes('自營') || normalized.includes('dealer')) {
     return 'dealer'
   }
   return null
@@ -164,7 +175,7 @@ function transformValuation(rows = []) {
   )
 }
 
-function pivotStatementRows(rows = []) {
+function pivotStatementRows(rows = [], { revenueRows = [] } = {}) {
   const byDate = {}
   for (const row of rows) {
     if (!row?.date) continue
@@ -173,7 +184,7 @@ function pivotStatementRows(rows = []) {
     if (!byDate[row.date]) byDate[row.date] = { date: row.date }
     byDate[row.date][type] = toNumber(row.value)
   }
-  return sortByDateDesc(Object.values(byDate))
+  return normalizeFinancialStatementRows(sortByDateDesc(Object.values(byDate)), revenueRows)
 }
 
 function transformDividend(rows = []) {
@@ -360,7 +371,15 @@ export default async function handler(req, res) {
       start_date: startDate,
       end_date,
     })
-    const data = config.transform(rows)
+    let revenueRows = []
+    if (dataset === 'financials') {
+      revenueRows = await queryFinMind(DATASET_MAP.revenue.finmindDataset, {
+        data_id: code,
+        start_date: startDate,
+        end_date,
+      })
+    }
+    const data = config.transform(rows, { revenueRows })
 
     return res.status(200).json({
       success: true,

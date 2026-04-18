@@ -9,6 +9,7 @@ import {
   getRelevantCases,
   getRelevantKnowledge,
 } from '../../src/lib/knowledgeBase.js'
+import { getMissingRuleRequirements } from '../../src/lib/knowledgeAvailability.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const KB_DIR = join(__dirname, '../../src/lib/knowledge-base')
@@ -89,6 +90,13 @@ describe('知識庫基礎驗證', () => {
       })
 
       expect(invalidIds).toHaveLength(0)
+    })
+
+    it('每個 entry 都有 requiresData 欄位（可為空陣列）', () => {
+      const items = getStandardItems()
+      const invalidItems = items.filter((item) => !Array.isArray(item.requiresData))
+
+      expect(invalidItems).toHaveLength(0)
     })
   })
 
@@ -397,6 +405,34 @@ describe('knowledgeBase.js 檢索模組', () => {
       )
       const ids = results.map((r) => r.id)
       expect(new Set(ids).size).toBe(ids.length)
+    })
+
+    it('有 dataAvailability 時會跳過缺資料規則', () => {
+      const availability = {
+        revenue: false,
+        financials: false,
+        balanceSheet: false,
+        cashFlow: false,
+        valuation: true,
+        news: true,
+        institutional: false,
+        margin: false,
+        shareholding: false,
+        dividend: true,
+        dividendResult: true,
+      }
+      const results = getRelevantKnowledge(
+        { strategy: '成長股' },
+        {
+          maxItems: 20,
+          minConfidence: 0.6,
+          dataAvailability: availability,
+        }
+      )
+
+      for (const item of results) {
+        expect(getMissingRuleRequirements(item, availability)).toHaveLength(0)
+      }
     })
   })
 

@@ -1099,6 +1099,7 @@ export function composePortfolioPanelsContextInput({
     dataRefreshRows: data.dataRefreshRows,
     researchResults: resources.researchResults,
     researchHistory: data.researchHistory,
+    analystReports: data.analystReports,
     enrichingResearchCode: asyncState.enrichingResearchCode,
     proposalActionId: asyncState.proposalActionId,
     proposalActionType: asyncState.proposalActionType,

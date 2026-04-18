@@ -46,15 +46,51 @@ if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
   fi
 fi
 
+ensure_ollama_ready() {
+  if ! command -v ollama >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+launch-qwen: ollama not found in PATH.
+Install it manually first:
+  brew install ollama
+EOF
+    return 1
+  fi
+
+  export OLLAMA_DUMMY_KEY="${OLLAMA_DUMMY_KEY:-ollama}"
+
+  if curl -fsS http://localhost:11434/api/tags >/dev/null 2>&1; then
+    return 0
+  fi
+
+  ollama serve >/tmp/ollama-serve.log 2>&1 &
+  local ollama_pid=$!
+
+  for _ in {1..20}; do
+    if curl -fsS http://localhost:11434/api/tags >/dev/null 2>&1; then
+      disown "${ollama_pid}" 2>/dev/null || true
+      return 0
+    fi
+    sleep 1
+  done
+
+  cat >&2 <<'EOF'
+launch-qwen: ollama serve did not become ready on localhost:11434.
+Check /tmp/ollama-serve.log for details.
+EOF
+  return 1
+}
+
 if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${1:-}" != "-v" ]]; then
   if [[ "$USE_REMOTE" == "1" ]]; then
     report_ai_start "Qwen VM dispatch：$*"
     exec bash "$ROOT_DIR/scripts/bridge-remote-dispatch.sh" --agent qwen "$@"
   fi
 
+  ensure_ollama_ready
+
   if [[ "$#" -eq 1 && -f "$1" && -r "$1" ]]; then
     report_ai_start "Qwen CLI 啟動：brief 檔 $1"
-    exec qwen --auth-type qwen-oauth -y -p "$(cat "$1")"
+    exec qwen -y -p "$(cat "$1")"
   fi
 
   if [[ "$#" -gt 0 ]]; then
@@ -64,4 +100,4 @@ if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${
   fi
 fi
 
-exec qwen --auth-type qwen-oauth -y "$@"
+exec qwen -y "$@"

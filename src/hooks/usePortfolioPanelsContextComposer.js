@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 
 const EMPTY_LIST = []
 
@@ -51,6 +52,7 @@ export function usePortfolioPanelsContextComposer({
   dataRefreshRows,
   researchResults,
   researchHistory,
+  analystReports,
   enrichingResearchCode,
   proposalActionId,
   proposalActionType,
@@ -195,6 +197,12 @@ export function usePortfolioPanelsContextComposer({
         activePortfolioId,
         duplicateHoldings: safeOverviewDuplicateHoldings,
         pendingItems: safeOverviewPendingItems,
+        watchlistCount: Array.isArray(watchlistRows) ? watchlistRows.length : 0,
+        missingTargetCount: safeHoldings.filter((holding) => {
+          if (isSkippedTargetPriceInstrumentType(holding)) return false
+          const targetPrice = Number(holding?.targetPrice)
+          return !Number.isFinite(targetPrice) || targetPrice <= 0
+        }).length,
       },
       holdings: {
         holdings: safeHoldings,
@@ -260,6 +268,7 @@ export function usePortfolioPanelsContextComposer({
         dataRefreshRows: safeDataRefreshRows,
         researchResults,
         researchHistory,
+        analystReports,
         enrichingResearchCode,
         proposalActionId,
         proposalActionType,
@@ -314,6 +323,7 @@ export function usePortfolioPanelsContextComposer({
       relayPlanExpanded,
       reportRefreshing,
       reportRefreshStatus,
+      analystReports,
       researchHistory,
       researchResults,
       researchTarget,

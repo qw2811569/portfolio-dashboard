@@ -191,5 +191,36 @@ describe('lib/dataAdapters/finmindFundamentalsMapper', () => {
       expect(result.entry.grossMargin).toBe(0)
       expect(result.entry.eps).toBe(5)
     })
+
+    it('computes roe from IncomeAfterTaxes when NetIncome is absent', () => {
+      const result = mapFinMindToFundamentals(
+        {
+          revenue: [],
+          financials: [
+            {
+              date: '2025-12-31',
+              quarter: '2025Q4',
+              statementPeriodMode: 'standalone-monthly-verified',
+              Revenue: 1000,
+              GrossProfit: 400,
+              IncomeAfterTaxes: 120,
+              EPS: 2.5,
+            },
+          ],
+          balanceSheet: [
+            {
+              date: '2025-12-31',
+              EquityAttributableToOwnersOfParent: 800,
+            },
+          ],
+        },
+        { code: '2330', now: FIXED_NOW }
+      )
+
+      expect(result).not.toBeNull()
+      expect(result.entry.quarter).toBe('2025Q4')
+      expect(result.entry.roe).toBeCloseTo(15, 1)
+      expect(result.entry.note).toContain('statementPeriodMode=standalone-monthly-verified')
+    })
   })
 })

@@ -24,6 +24,7 @@ describe('components/EventsPanel', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    vi.useRealTimers()
   })
 
   it('shows the empty-state welcome card when no events are filtered in', () => {
@@ -95,5 +96,32 @@ describe('components/EventsPanel', () => {
 
     expect(screen.getByText('台積電法說會')).toBeInTheDocument()
     expect(screen.queryByText('Google News headline')).not.toBeInTheDocument()
+  })
+
+  it('shows countdown and review-ready badges on matured events', () => {
+    // Freeze time so the countdown copy stays deterministic as real dates move.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-16T12:00:00+08:00'))
+
+    render(
+      <EventsPanel
+        {...buildProps({
+          filteredEvents: [
+            {
+              id: 'event-1',
+              title: '聯發科法說會',
+              date: '2026-04-10',
+              type: '法說',
+              impact: 'high',
+              pred: 'up',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByText('已過 6 天 · 待復盤')).toBeInTheDocument()
+    expect(screen.getByText('📋 待復盤')).toBeInTheDocument()
   })
 })

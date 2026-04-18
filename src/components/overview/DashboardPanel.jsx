@@ -1,8 +1,10 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
+import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { Card } from '../common'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
+import { PrincipleCards } from './PrincipleCards.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -20,14 +22,92 @@ const metricCard = {
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
 
+const heroHeadlineLabel = {
+  fontSize: 14,
+  color: 'var(--muted)',
+  fontFamily: 'var(--font-headline)',
+  letterSpacing: '0.08em',
+}
+
+function formatTaipeiDate() {
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(new Date())
+}
+
+function formatMetricValue(value, { signed = false, suffix = '' } = {}) {
+  if (value == null) return '-'
+  if (typeof value === 'string') return value
+  if (!Number.isFinite(value)) return '-'
+  const sign = signed && value > 0 ? '+' : ''
+  return `${sign}${Math.round(value).toLocaleString()}${suffix}`
+}
+
+function readMetricValue(item, keys) {
+  for (const key of keys) {
+    const value = Number(item?.[key])
+    if (Number.isFinite(value)) return value
+  }
+  return null
+}
+
+function buildSubmetrics({ holdings = [], watchlist = [] }) {
+  const safeHoldings = Array.isArray(holdings) ? holdings : []
+  const safeWatchlist = Array.isArray(watchlist) ? watchlist : []
+
+  const hasWeekPnl = safeHoldings.some(
+    (holding) => readMetricValue(holding, ['week_pnl', 'weekPnl', 'weeklyPnl']) != null
+  )
+  const hasMonthPnl = safeHoldings.some(
+    (holding) => readMetricValue(holding, ['month_pnl', 'monthPnl', 'monthlyPnl']) != null
+  )
+  const weekPnl = hasWeekPnl
+    ? safeHoldings.reduce(
+        (sum, holding) =>
+          sum + (readMetricValue(holding, ['week_pnl', 'weekPnl', 'weeklyPnl']) || 0),
+        0
+      )
+    : null
+  const monthPnl = hasMonthPnl
+    ? safeHoldings.reduce(
+        (sum, holding) =>
+          sum + (readMetricValue(holding, ['month_pnl', 'monthPnl', 'monthlyPnl']) || 0),
+        0
+      )
+    : null
+  const missingTargetCount = safeHoldings.filter((holding) => {
+    if (isSkippedTargetPriceInstrumentType(holding)) return false
+    const targetPrice = Number(holding?.targetPrice)
+    return !Number.isFinite(targetPrice) || targetPrice <= 0
+  }).length
+
+  return [
+    { label: '本週損益', value: formatMetricValue(weekPnl, { signed: true }) },
+    { label: '本月損益', value: formatMetricValue(monthPnl, { signed: true }) },
+    { label: '追蹤中', value: `${safeWatchlist.length}` },
+    { label: '需要補充', value: `${missingTargetCount}` },
+  ]
+}
+
 /**
  * Hero summary — total assets with supporting context
  */
-function TodayPnlHero({ totalVal = 0, todayTotalPnl = 0, holdings = [] }) {
+function TodayPnlHero({
+  totalVal = 0,
+  todayTotalPnl = 0,
+  holdings = [],
+  watchlist = [],
+  portfolioName = '',
+}) {
   const color = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
   const sign = todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
   const pnlText = `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
+  const submetrics = buildSubmetrics({ holdings, watchlist })
+  const portfolioLabel = portfolioName || '目前組合'
 
   return h(
     Card,
@@ -51,9 +131,59 @@ function TodayPnlHero({ totalVal = 0, todayTotalPnl = 0, holdings = [] }) {
         {
           style: {
             display: 'grid',
-            gap: 12,
+            gap: 18,
           },
         },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 12,
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+            },
+          },
+          h('div', { style: heroHeadlineLabel }, '投資組合'),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              },
+            },
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 11,
+                  color: C.textMute,
+                  fontFamily: 'var(--font-body)',
+                },
+              },
+              formatTaipeiDate()
+            ),
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 11,
+                  color: C.textSec,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: alpha(C.blue, '18'),
+                  border: `1px solid ${C.borderStrong}`,
+                },
+              },
+              portfolioLabel
+            )
+          )
+        ),
         h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
         h(
           'div',
@@ -69,6 +199,41 @@ function TodayPnlHero({ totalVal = 0, todayTotalPnl = 0, holdings = [] }) {
             },
           },
           totalText
+        ),
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 8,
+            },
+          },
+          submetrics.map((metric) =>
+            h(
+              'div',
+              { key: metric.label, style: metricCard },
+              h(
+                'div',
+                { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } },
+                metric.label
+              ),
+              h(
+                'div',
+                {
+                  className: 'tn',
+                  style: {
+                    fontSize: 18,
+                    fontWeight: 600,
+                    color: C.text,
+                    marginTop: 4,
+                    fontFamily: 'var(--font-num)',
+                  },
+                },
+                metric.value
+              )
+            )
+          )
         )
       ),
       h(
@@ -348,6 +513,7 @@ function PortfolioHealthCard({
         h(
           'div',
           {
+            className: 'tn',
             style: {
               fontSize: 14,
               fontWeight: 600,
@@ -366,6 +532,7 @@ function PortfolioHealthCard({
         h(
           'div',
           {
+            className: 'tn',
             style: {
               fontSize: 14,
               fontWeight: 600,
@@ -384,6 +551,7 @@ function PortfolioHealthCard({
         h(
           'div',
           {
+            className: 'tn',
             style: {
               fontSize: 14,
               fontWeight: 600,
@@ -464,6 +632,7 @@ function PortfolioHealthCard({
  */
 export function DashboardPanel({
   holdings = [],
+  watchlist = [],
   todayTotalPnl = 0,
   totalVal = 0,
   totalCost = 0,
@@ -473,6 +642,8 @@ export function DashboardPanel({
   newsEvents = [],
   urgentCount = 0,
   todayAlertSummary = '',
+  portfolioName = '',
+  portfolioId = '',
 }) {
   return h(
     'div',
@@ -483,7 +654,13 @@ export function DashboardPanel({
       h(
         'div',
         { className: 'dashboard-hero-main' },
-        h(TodayPnlHero, { holdings, totalVal, todayTotalPnl })
+        h(TodayPnlHero, {
+          holdings,
+          watchlist,
+          totalVal,
+          todayTotalPnl,
+          portfolioName: portfolioName || portfolioId,
+        })
       ),
       h(
         Card,
@@ -497,6 +674,7 @@ export function DashboardPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+    h(PrincipleCards),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })

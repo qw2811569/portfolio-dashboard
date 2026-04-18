@@ -12,6 +12,7 @@ import {
   buildKnowledgeContext,
   getTopKnowledgeRules,
 } from './knowledgeBase.js'
+import { buildKnowledgeDataAvailability } from './knowledgeAvailability.js'
 
 function compactPromptText(value, limit = 48) {
   const text = String(value || '')
@@ -44,6 +45,8 @@ function summarizeTargetsForPrompt(targets = [], limit = 2) {
 
   return rows.length > 0 ? rows.join(' | ') : '無'
 }
+
+const loggedKnowledgeRuleSkips = new Set()
 
 function summarizeEventsForPrompt(events = [], limit = 2) {
   const rows = (Array.isArray(events) ? events : [])
@@ -210,6 +213,24 @@ function buildCompactFinMindSummary(finmind, { debugLabel = '' } = {}) {
   return parts.length > 0 ? parts.join(' | ') : '無'
 }
 
+function buildRuleSkipLogger(code, lane = 'knowledge-base') {
+  return ({ ruleId, missingRequirements }) => {
+    if (!ruleId || !Array.isArray(missingRequirements) || missingRequirements.length === 0) return
+    if (typeof console === 'undefined' || typeof console.warn !== 'function') return
+    const signature = `${lane}:${code}:${ruleId}:${missingRequirements
+      .map((requirement) => requirement.dataset)
+      .sort()
+      .join(',')}`
+    if (loggedKnowledgeRuleSkips.has(signature)) return
+    loggedKnowledgeRuleSkips.add(signature)
+    console.warn(`[${lane}] skipped rule`, {
+      code,
+      ruleId,
+      missingDatasets: missingRequirements.map((requirement) => requirement.dataset),
+    })
+  }
+}
+
 export function buildDailyHoldingDossierContext(
   dossier,
   change,
@@ -246,9 +267,11 @@ export function buildDailyHoldingDossierContext(
   const supplyChainInfo = buildSupplyChainContext(dossier.code)
   const themeInfo = dossier.stockMeta ? buildThemeContext(dossier.code, dossier.stockMeta) : ''
   const themeChipsText = buildThemeChipsText(dossier.code)
+  const dataAvailability = buildKnowledgeDataAvailability({ finmind, dossier })
+  const onRuleSkipped = buildRuleSkipLogger(dossier.code)
   const knowledgeInfo = compact
-    ? buildCompactKnowledgeContext(dossier.stockMeta ?? {})
-    : buildKnowledgeContext(dossier.stockMeta ?? {})
+    ? buildCompactKnowledgeContext(dossier.stockMeta ?? {}, { dataAvailability, onRuleSkipped })
+    : buildKnowledgeContext(dossier.stockMeta ?? {}, { dataAvailability, onRuleSkipped })
   const finmindInfo = buildFinMindChipContext(finmind)
 
   if (compact) {
@@ -456,9 +479,14 @@ export function buildResearchHoldingDossierContext(dossier, { compact = false } 
   const fundamentals = dossier.fundamentals || {}
 
   if (compact) {
+    const dataAvailability = buildKnowledgeDataAvailability({
+      finmind: dossier.finmind || {},
+      dossier,
+    })
     const compactKnowledge = buildCompactKnowledgeContext(dossier.stockMeta ?? {}, {
       maxItems: 2,
       maxCaseItems: 1,
+      dataAvailability,
     })
     return [
       `${dossier.name}(${dossier.code}) - 持股: ${position.qty}股, 成本: ${position.cost}, 現價: ${position.price}, 損益: ${position.pnl} (${position.pct.toFixed(2)}%)`,

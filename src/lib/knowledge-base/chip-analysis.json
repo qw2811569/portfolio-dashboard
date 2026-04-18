@@ -12,7 +12,14 @@
       "tags": ["外資", "連續買超", "追蹤策略"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-002",
@@ -23,7 +30,19 @@
       "tags": ["投信", "作帳", "季節性"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "ca-003",
@@ -34,7 +53,24 @@
       "tags": ["主力", "進場", "底部布局"],
       "confidence": 0.7,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-004",
@@ -45,7 +81,24 @@
       "tags": ["主力", "出貨", "高位警戒"],
       "confidence": 0.75,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-005",
@@ -56,7 +109,19 @@
       "tags": ["融資", "警訊", "散戶"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-006",
@@ -67,7 +132,19 @@
       "tags": ["籌碼集中度", "股東人數", "大戶"],
       "confidence": 0.8,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-007",
@@ -78,7 +155,14 @@
       "tags": ["三大法人", "共識度", "訊號強度"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-008",
@@ -89,7 +173,14 @@
       "tags": ["借券", "空方", "訊號"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-009",
@@ -100,7 +191,14 @@
       "tags": ["董監持股", "內部人", "訊號"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-010",
@@ -111,7 +209,14 @@
       "tags": ["外資", "期貨", "未平倉"],
       "confidence": 0.7,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-011",
@@ -122,7 +227,19 @@
       "tags": ["融資", "情緒指標", "逆勢"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-012",
@@ -133,7 +250,19 @@
       "tags": ["融券", "空方", "軋空"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-013",
@@ -144,7 +273,14 @@
       "tags": ["外資", "現貨期貨", "背離"],
       "confidence": 0.65,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-014",
@@ -155,7 +291,19 @@
       "tags": ["投信", "連續買超", "題材"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "ca-015",
@@ -166,7 +314,14 @@
       "tags": ["自營商", "避險", "權證"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-016",
@@ -177,7 +332,19 @@
       "tags": ["大戶分點", "主力", "追蹤"],
       "confidence": 0.65,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-017",
@@ -188,7 +355,14 @@
       "tags": ["基差", "期貨", "預期"],
       "confidence": 0.65,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-018",
@@ -199,7 +373,14 @@
       "tags": ["選擇權", "Put/Call", "情緒指標"],
       "confidence": 0.65,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-019",
@@ -210,7 +391,19 @@
       "tags": ["融資", "使用率", "極端訊號"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-020",
@@ -221,7 +414,14 @@
       "tags": ["外資", "匯率", "資金流向"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-021",
@@ -232,7 +432,14 @@
       "tags": ["外資", "極值", "轉折訊號"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-022",
@@ -243,7 +450,19 @@
       "tags": ["投信", "持股集中", "作帳"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "ca-023",
@@ -254,7 +473,14 @@
       "tags": ["散戶", "反向指標", "情緒"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-024",
@@ -265,7 +491,14 @@
       "tags": ["主力", "成本區", "支撐"],
       "confidence": 0.65,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-025",
@@ -276,7 +509,19 @@
       "tags": ["融資", "維持率", "斷頭"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-026",
@@ -287,7 +532,19 @@
       "tags": ["券資比", "空方", "軋空"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-027",
@@ -298,7 +555,14 @@
       "tags": ["外資", "連續賣超", "空頭"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-028",
@@ -309,7 +573,19 @@
       "tags": ["大戶", "週變化", "主力"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-029",
@@ -320,7 +596,19 @@
       "tags": ["千張大戶", "籌碼集中度"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-030",
@@ -331,7 +619,14 @@
       "tags": ["法人", "反向操作", "避險"],
       "confidence": 0.65,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-031",
@@ -342,7 +637,19 @@
       "tags": ["融資", "新高", "極端訊號"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-032",
@@ -353,7 +660,14 @@
       "tags": ["外資", "目標價", "報告"],
       "confidence": 0.7,
       "source": "分析師報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-033",
@@ -364,7 +678,14 @@
       "tags": ["質押", "大股東", "警訊"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-034",
@@ -375,7 +696,14 @@
       "tags": ["庫藏股", "內部人", "股價支撐"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-035",
@@ -386,7 +714,14 @@
       "tags": ["現金增資", "股價效應"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-036",
@@ -397,7 +732,14 @@
       "tags": ["外資", "匯率", "連動"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-037",
@@ -408,7 +750,14 @@
       "tags": ["投信", "追價", "警戒訊號"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-038",
@@ -419,7 +768,19 @@
       "tags": ["主力", "鎖碼", "籌碼穩定"],
       "confidence": 0.7,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-039",
@@ -430,7 +791,19 @@
       "tags": ["融資", "大減", "底部訊號"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-040",
@@ -441,7 +814,14 @@
       "tags": ["三大法人", "同向操作", "強烈訊號"],
       "confidence": 0.8,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-041",
@@ -452,7 +832,14 @@
       "tags": ["外資", "轉折訊號", "反轉"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-042",
@@ -463,7 +850,14 @@
       "tags": ["投信", "季底調整", "機會"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-043",
@@ -474,7 +868,19 @@
       "tags": ["大戶", "散戶", "背離"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-044",
@@ -485,7 +891,19 @@
       "tags": ["融券", "強補", "軋空"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-045",
@@ -496,7 +914,24 @@
       "tags": ["外資", "配息", "季節性"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        }
+      ]
     },
     {
       "id": "ca-046",
@@ -507,7 +942,14 @@
       "tags": ["主力", "試盤", "賣壓測試"],
       "confidence": 0.65,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-047",
@@ -518,7 +960,24 @@
       "tags": ["融資", "背離", "訊號"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-048",
@@ -529,7 +988,14 @@
       "tags": ["外資", "轉債", "長期投資"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-049",
@@ -540,7 +1006,14 @@
       "tags": ["投信", "贖回", "賣壓"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-050",
@@ -551,7 +1024,19 @@
       "tags": ["主力", "換手", "籌碼趨穩"],
       "confidence": 0.7,
       "source": "主力軌跡",
-      "createdAt": "2026-03-30"
+      "createdAt": "2026-03-30",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-051",
@@ -562,7 +1047,14 @@
       "tags": ["外資", "期貨", "淨多單", "現貨連動"],
       "confidence": 0.75,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-052",
@@ -573,7 +1065,29 @@
       "tags": ["投信", "作帳", "季底", "中小型股"],
       "confidence": 0.72,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-053",
@@ -584,7 +1098,14 @@
       "tags": ["自營商", "避險", "權證", "部位解讀"],
       "confidence": 0.68,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-054",
@@ -595,7 +1116,14 @@
       "tags": ["三大法人", "共振", "同步買超", "強勢訊號"],
       "confidence": 0.82,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-055",
@@ -606,7 +1134,14 @@
       "tags": ["外資", "借券賣出", "放空", "看空訊號"],
       "confidence": 0.73,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-056",
@@ -617,7 +1152,19 @@
       "tags": ["投信", "認養股", "長期持股", "中小型股"],
       "confidence": 0.76,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-057",
@@ -628,7 +1175,14 @@
       "tags": ["外資", "目標價", "評等調整", "盈餘預估"],
       "confidence": 0.71,
       "source": "分析師報告",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-058",
@@ -639,7 +1193,19 @@
       "tags": ["法人", "持股比例", "長期趨勢", "核心指標"],
       "confidence": 0.78,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-059",
@@ -650,7 +1216,24 @@
       "tags": ["散戶", "融資", "追漲", "過熱警訊"],
       "confidence": 0.74,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "ca-060",
@@ -661,7 +1244,14 @@
       "tags": ["當沖", "市場情緒", "投機", "波動率"],
       "confidence": 0.7,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-061",
@@ -672,7 +1262,24 @@
       "tags": ["零股", "散戶熱度", "反向指標", "落後訊號"],
       "confidence": 0.66,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "ca-062",
@@ -683,7 +1290,29 @@
       "tags": ["散戶", "偏好股", "投機", "風險管理"],
       "confidence": 0.72,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "ca-063",
@@ -694,7 +1323,19 @@
       "tags": ["信用交易", "融資融券", "轉折", "極端訊號"],
       "confidence": 0.69,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-064",
@@ -705,7 +1346,19 @@
       "tags": ["散戶", "法人", "持股消長", "籌碼集中"],
       "confidence": 0.77,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-065",
@@ -716,7 +1369,14 @@
       "tags": ["主力", "分點進出", "追蹤", "佈局訊號"],
       "confidence": 0.73,
       "source": "主力軌跡",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-066",
@@ -727,7 +1387,19 @@
       "tags": ["主力", "鎖碼", "橫盤整理", "突破前兆"],
       "confidence": 0.71,
       "source": "主力軌跡",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-067",
@@ -738,7 +1410,29 @@
       "tags": ["主力", "出貨", "高檔警訊", "風險管理"],
       "confidence": 0.8,
       "source": "主力軌跡",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "ca-068",
@@ -749,7 +1443,14 @@
       "tags": ["主力", "外資", "同步", "共識判讀"],
       "confidence": 0.79,
       "source": "主力軌跡",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-069",
@@ -760,7 +1461,19 @@
       "tags": ["大戶", "持股比例", "籌碼集中度", "門檻"],
       "confidence": 0.76,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-070",
@@ -771,7 +1484,14 @@
       "tags": ["內部人", "董監事", "持股異動", "資訊優勢"],
       "confidence": 0.75,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-071",
@@ -782,7 +1502,14 @@
       "tags": ["台指期", "未平倉量", "多空對峙", "結算"],
       "confidence": 0.72,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-072",
@@ -793,7 +1520,14 @@
       "tags": ["選擇權", "最大痛點", "結算", "區間操作"],
       "confidence": 0.67,
       "source": "期貨籌碼分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-073",
@@ -804,7 +1538,19 @@
       "tags": ["權證", "避險", "自營商", "放大效應"],
       "confidence": 0.65,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "shareholding",
+          "periodType": "daily-ratio",
+          "availableWhen": "日更 / 申報後"
+        }
+      ]
     },
     {
       "id": "ca-074",
@@ -815,7 +1561,24 @@
       "tags": ["ETF", "申購贖回", "資金流", "被動式投資"],
       "confidence": 0.73,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        }
+      ]
     },
     {
       "id": "ca-075",
@@ -826,7 +1589,14 @@
       "tags": ["可轉債", "轉換套利", "賣壓", "溢價率"],
       "confidence": 0.64,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-076",
@@ -837,7 +1607,19 @@
       "tags": ["庫藏股", "買回", "股價保護", "內部人信心"],
       "confidence": 0.74,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "ca-077",
@@ -848,7 +1630,19 @@
       "tags": ["董監", "質押", "公司治理", "風險指標"],
       "confidence": 0.78,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "ca-078",
@@ -859,7 +1653,19 @@
       "tags": ["MSCI", "指數調整", "被動式基金", "確定性交易"],
       "confidence": 0.8,
       "source": "指數籌碼分析",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "ca-079",
@@ -870,7 +1676,19 @@
       "tags": ["定期定額", "長期投資", "穩定買盤", "散戶信心"],
       "confidence": 0.68,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "ca-080",
@@ -881,12 +1699,19 @@
       "tags": ["外資", "匯入匯出", "資金流", "領先指標"],
       "confidence": 0.76,
       "source": "籌碼分析實務",
-      "createdAt": "2026-03-31"
+      "createdAt": "2026-03-31",
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     }
   ],
   "metadata": {
     "itemCount": 80,
-    "lastUpdated": "2026-03-31T12:00:00+08:00",
+    "lastUpdated": "2026-04-18T00:00:00+08:00",
     "targetCount": 80
   }
 }

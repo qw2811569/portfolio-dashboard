@@ -8,6 +8,7 @@ import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
 import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
 import { buildCompactKnowledgeContext, buildKnowledgeContext } from '../src/lib/knowledgeBase.js'
+import { buildKnowledgeDataAvailability } from '../src/lib/knowledgeAvailability.js'
 import {
   buildBudgetedBrainContext,
   buildBudgetedHoldingSummary,
@@ -404,9 +405,10 @@ function buildResearchDossierContext(dossier, { compact = false } = {}) {
   const brainContext = dossier.brainContext || {}
   const freshness = dossier.freshness || {}
   const finmind = dossier.finmind || {}
+  const dataAvailability = buildKnowledgeDataAvailability({ finmind, dossier })
   const knowledgeContext = compact
-    ? buildCompactKnowledgeContext(meta, { maxItems: 3, maxCaseItems: 1 })
-    : buildKnowledgeContext(meta)
+    ? buildCompactKnowledgeContext(meta, { maxItems: 3, maxCaseItems: 1, dataAvailability })
+    : buildKnowledgeContext(meta, { dataAvailability })
   const finmindContext = buildFinMindChipContext(finmind)
 
   return [

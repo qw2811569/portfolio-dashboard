@@ -170,4 +170,77 @@ describe('api/finmind', () => {
       ],
     })
   })
+
+  it('normalizes ytd-cumulative financial rows into standalone quarter values', async () => {
+    global.fetch = vi.fn(async (url) => {
+      const requestUrl = new URL(url)
+      const dataset = requestUrl.searchParams.get('dataset')
+
+      if (dataset === 'TaiwanStockFinancialStatements') {
+        return {
+          ok: true,
+          json: async () => ({
+            status: 200,
+            msg: 'success',
+            data: [
+              { date: '2025-03-31', type: 'Revenue', value: 500000 },
+              { date: '2025-03-31', type: 'GrossProfit', value: 250000 },
+              { date: '2025-03-31', type: 'OperatingIncome', value: 100000 },
+              { date: '2025-03-31', type: 'IncomeAfterTaxes', value: 80000 },
+              { date: '2025-03-31', type: 'EPS', value: 1.0 },
+              { date: '2025-06-30', type: 'Revenue', value: 1200000 },
+              { date: '2025-06-30', type: 'GrossProfit', value: 600000 },
+              { date: '2025-06-30', type: 'OperatingIncome', value: 250000 },
+              { date: '2025-06-30', type: 'IncomeAfterTaxes', value: 180000 },
+              { date: '2025-06-30', type: 'EPS', value: 2.2 },
+            ],
+          }),
+        }
+      }
+
+      if (dataset === 'TaiwanStockMonthRevenue') {
+        return {
+          ok: true,
+          json: async () => ({
+            status: 200,
+            msg: 'success',
+            data: [
+              { revenue_year: 2025, revenue_month: 1, revenue: 100000 },
+              { revenue_year: 2025, revenue_month: 2, revenue: 200000 },
+              { revenue_year: 2025, revenue_month: 3, revenue: 200000 },
+              { revenue_year: 2025, revenue_month: 4, revenue: 100000 },
+              { revenue_year: 2025, revenue_month: 5, revenue: 300000 },
+              { revenue_year: 2025, revenue_month: 6, revenue: 300000 },
+            ],
+          }),
+        }
+      }
+
+      throw new Error(`unexpected dataset ${dataset}`)
+    })
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'financials', code: '2330', start_date: '2025-01-01' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload.data[0]).toMatchObject({
+      date: '2025-06-30',
+      quarter: '2025Q2',
+      statementPeriodMode: 'ytd-cumulative-derived',
+      Revenue: 700000,
+      GrossProfit: 350000,
+      OperatingIncome: 150000,
+      IncomeAfterTaxes: 100000,
+      EPS: 1.2,
+      reportedRevenue: 1200000,
+    })
+  })
 })

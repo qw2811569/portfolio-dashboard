@@ -122,6 +122,7 @@ export function Button({
   size = 'sm',
   disabled = false,
   onClick,
+  className = '',
   style = {},
   ...props
 }) {
@@ -155,7 +156,7 @@ export function Button({
   return h(
     'button',
     {
-      className: 'ui-btn',
+      className: ['ui-btn', className].filter(Boolean).join(' '),
       disabled,
       onClick,
       style: {
@@ -163,7 +164,7 @@ export function Button({
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         whiteSpace: 'nowrap',
-        transition: 'all 0.18s ease',
+        transition: 'background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
         background: selectedVariant.bg,
         color: selectedVariant.text,
         border: `1px solid ${selectedVariant.border}`,

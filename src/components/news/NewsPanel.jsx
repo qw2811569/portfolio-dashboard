@@ -1,4 +1,4 @@
-import { createElement as h, useEffect, useState, useRef, useMemo } from 'react'
+import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard } from '../common'
@@ -11,22 +11,187 @@ const lbl = {
   marginBottom: 5,
 }
 
-/**
- * Single news feed item card — pure info style, no direction arrows
- */
-function NewsFeedCard({ item }) {
-  const pubDate = item.pubDate ? new Date(item.pubDate) : null
-  const dateStr =
-    pubDate && !Number.isNaN(pubDate.getTime())
-      ? `${pubDate.getMonth() + 1}/${pubDate.getDate()} ${String(pubDate.getHours()).padStart(2, '0')}:${String(pubDate.getMinutes()).padStart(2, '0')}`
-      : ''
+const PAPER = {
+  bone: '#F7F1E7',
+  paper: 'rgba(255,252,247,0.86)',
+  sand: '#EADBC3',
+  sage: '#A8B59A',
+  sageDeep: '#6F8568',
+  ink: '#202823',
+  muted: '#6F746B',
+  mutedSoft: '#8A837A',
+  grey: '#E7E0D5',
+  line: 'rgba(111,116,107,0.22)',
+  lineSoft: 'rgba(111,116,107,0.12)',
+  tangerine: '#F25623',
+}
+
+const IMPACT_COPY = {
+  positive: '利多',
+  negative: '利空',
+  neutral: '中性',
+}
+
+const PREVIEW_NEWS = [
+  {
+    title: '台積電 CoWoS 產能續擴，供應鏈接單能見度再往上修',
+    description:
+      'Google News 與經濟日報同步聚焦先進封裝需求延續，市場解讀對半導體設備與材料鏈偏正向。',
+    link: 'https://example.com/news-preview/tsmc-cowos',
+    pubDate: '2026-04-17T08:25:00+08:00',
+    source: 'Google News',
+    relatedStocks: [
+      { code: '2330', name: '台積電' },
+      { code: '3131', name: '弘塑' },
+    ],
+  },
+  {
+    title: 'MoneyDJ：記憶體報價震盪，模組廠短線拉貨轉保守',
+    description: 'DRAM 現貨價格整理，新聞語氣偏向觀望，對高庫存持股的情緒較保守。',
+    link: 'https://example.com/news-preview/dram-softness',
+    pubDate: '2026-04-17T09:10:00+08:00',
+    source: 'MoneyDJ',
+    relatedStocks: [{ code: '2344', name: '華邦電' }],
+  },
+  {
+    title: '經濟日報：聯發科新平台出貨升溫，AI 手機題材回到主流',
+    description: '供應鏈訪查指向第二季拉貨升溫，法人認為手機 SoC 與邊緣 AI 敘事同步升級。',
+    link: 'https://example.com/news-preview/mediatek-ai-phone',
+    pubDate: '2026-04-17T10:05:00+08:00',
+    source: '經濟日報',
+    relatedStocks: [{ code: '2454', name: '聯發科' }],
+  },
+  {
+    title: 'Google News：航運運價持平，市場等待下週報價再定方向',
+    description: '運價沒有明顯上修或下修，現階段較像供需觀察點，適合交給 Daily 再判讀影響。',
+    link: 'https://example.com/news-preview/shipping-flat',
+    pubDate: '2026-04-17T11:15:00+08:00',
+    source: 'Google News',
+    relatedStocks: [{ code: '2603', name: '長榮' }],
+  },
+  {
+    title: 'FinMind：工業電腦客戶遞延專案，法人下修短期出貨預期',
+    description: '專案驗收往後遞延，雖不是結構性反轉，但短期營收節奏承壓。',
+    link: 'https://example.com/news-preview/industrial-delay',
+    pubDate: '2026-04-17T12:30:00+08:00',
+    source: 'FinMind',
+    relatedStocks: [{ code: '2395', name: '研華' }],
+  },
+]
+
+function getItemId(item, index = 0) {
+  return item.id || item.link || `${item.title || 'news'}-${item.pubDate || index}`
+}
+
+function formatDateTime(value) {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return ''
+  return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function normalizeSourceLabel(source = '') {
+  if (!source) return 'Google News'
+  if (/moneydj/i.test(source)) return 'MoneyDJ'
+  if (/google/i.test(source)) return 'Google News'
+  if (/finmind/i.test(source)) return 'FinMind'
+  return source
+}
+
+function inferImpact(item) {
+  const text = `${item.title || ''} ${item.description || ''}`.toLowerCase()
+  const positiveWords = ['成長', '上修', '擴', '回溫', '升溫', '樂觀', '接單', '受惠', '創高']
+  const negativeWords = ['下修', '衰退', '震盪', '保守', '遞延', '壓力', '疲弱', '下滑', '調降']
+  if (negativeWords.some((word) => text.includes(word.toLowerCase()))) return 'negative'
+  if (positiveWords.some((word) => text.includes(word.toLowerCase()))) return 'positive'
+  return 'neutral'
+}
+
+function summarizeItem(item) {
+  return (
+    item.description ||
+    `${normalizeSourceLabel(item.source)} 聚焦 ${item.relatedStocks?.[0]?.name || '持股'}，適合交給 Daily 做下一步影響判讀。`
+  )
+}
+
+function buildPreviewNewsItems(holdingCodes = []) {
+  if (!holdingCodes.length) return PREVIEW_NEWS
+  const filtered = PREVIEW_NEWS.filter((item) =>
+    (item.relatedStocks || []).some((stock) => holdingCodes.includes(stock.code))
+  )
+  return filtered.length ? filtered : PREVIEW_NEWS.slice(0, 4)
+}
+
+function buildTrendSummary(items) {
+  const positives = items.filter((item) => inferImpact(item) === 'positive').length
+  const negatives = items.filter((item) => inferImpact(item) === 'negative').length
+  if (positives > negatives) return '正向敘事集中在 AI 供應鏈，短線偏向接單與出貨能見度提升。'
+  if (negatives > positives)
+    return '負面訊號來自短期遞延與報價整理，今晚重點是確認是否只是節奏放慢。'
+  return '目前 headline 偏整理盤語氣，多數新聞更適合進 Daily 做脈絡判讀，而不是直接升格成事件。'
+}
+
+function renderChip(text, style = {}, key = text) {
+  return h(
+    'span',
+    {
+      key,
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '5px 10px',
+        borderRadius: 999,
+        border: `1px solid ${PAPER.lineSoft}`,
+        background: PAPER.paper,
+        color: PAPER.muted,
+        fontSize: 11,
+        letterSpacing: '0.04em',
+        ...style,
+      },
+    },
+    text
+  )
+}
+
+function NewsFeedCard({
+  item,
+  isRead = false,
+  onToggleRead = () => {},
+  onNavigateDaily = () => {},
+}) {
+  const impact = inferImpact(item)
+  const impactTone =
+    impact === 'positive'
+      ? {
+          label: IMPACT_COPY.positive,
+          bg: alpha(PAPER.sageDeep, '20'),
+          color: PAPER.ink,
+          border: alpha(PAPER.sageDeep, '32'),
+        }
+      : impact === 'negative'
+        ? {
+            label: `▼ ${IMPACT_COPY.negative}`,
+            bg: alpha(PAPER.ink, '12'),
+            color: PAPER.ink,
+            border: alpha(PAPER.ink, '24'),
+          }
+        : {
+            label: IMPACT_COPY.neutral,
+            bg: PAPER.grey,
+            color: PAPER.muted,
+            border: alpha(PAPER.muted, '20'),
+          }
 
   return h(
     Card,
     {
       style: {
-        marginBottom: 6,
-        borderLeft: `2px solid ${alpha(C.blue, '30')}`,
+        marginBottom: 14,
+        padding: '18px 18px 16px',
+        borderRadius: 28,
+        background: `linear-gradient(180deg, ${alpha(PAPER.paper, 'fc')}, ${alpha(PAPER.bone, 'f0')})`,
+        border: `1px solid ${PAPER.lineSoft}`,
+        boxShadow: '0 18px 30px rgba(91,84,72,0.06)',
       },
     },
     h(
@@ -36,12 +201,34 @@ function NewsFeedCard({ item }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 8,
+          gap: 16,
+          flexWrap: 'wrap',
         },
       },
       h(
         'div',
-        { style: { flex: 1, minWidth: 0 } },
+        { style: { flex: 1, minWidth: 280 } },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              marginBottom: 12,
+            },
+          },
+          renderChip(normalizeSourceLabel(item.source), {
+            background: alpha(PAPER.sage, '26'),
+            color: PAPER.ink,
+          }),
+          renderChip(impactTone.label, {
+            background: impactTone.bg,
+            color: impactTone.color,
+            border: `1px solid ${impactTone.border}`,
+          })
+        ),
         h(
           'a',
           {
@@ -49,15 +236,15 @@ function NewsFeedCard({ item }) {
             target: '_blank',
             rel: 'noopener noreferrer',
             style: {
-              fontSize: 12,
-              fontWeight: 500,
-              color: C.text,
+              fontSize: 26,
+              fontWeight: 600,
+              color: PAPER.ink,
               textDecoration: 'none',
-              lineHeight: 1.5,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              lineHeight: 1.08,
+              fontFamily: 'var(--font-headline)',
+              display: 'block',
+              textDecorationLine: isRead ? 'line-through' : 'none',
+              opacity: isRead ? 0.62 : 1,
             },
           },
           item.title
@@ -66,61 +253,103 @@ function NewsFeedCard({ item }) {
           'div',
           {
             style: {
-              display: 'flex',
-              gap: 6,
-              flexWrap: 'wrap',
-              marginTop: 4,
-              alignItems: 'center',
+              marginTop: 10,
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: PAPER.muted,
+              maxWidth: 560,
+              textDecorationLine: isRead ? 'line-through' : 'none',
+              opacity: isRead ? 0.72 : 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             },
           },
-          item.source &&
-            h(
-              'span',
-              {
-                style: {
-                  fontSize: 9,
-                  padding: '1px 5px',
-                  borderRadius: 999,
-                  background: alpha(C.blue, '14'),
-                  color: C.blue,
-                  fontWeight: 600,
-                },
-              },
-              item.source
-            ),
-          ...(item.relatedStocks || []).map((s) =>
-            h(
-              'span',
-              {
-                key: s.code,
-                style: {
-                  fontSize: 9,
-                  padding: '1px 5px',
-                  borderRadius: 999,
-                  background: alpha(C.teal, '14'),
-                  color: C.teal,
-                  fontWeight: 600,
-                },
-              },
-              `${s.name}`
-            )
-          )
-        )
-      ),
-      dateStr &&
+          summarizeItem(item)
+        ),
         h(
           'div',
           {
             style: {
-              fontSize: 9,
-              color: C.textMute,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              marginTop: 2,
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+              marginTop: 14,
             },
           },
-          dateStr
+          ...(item.relatedStocks || []).map((stock) =>
+            renderChip(
+              `${stock.code} ${stock.name}`,
+              {
+                background: alpha(PAPER.sageDeep, '18'),
+                color: PAPER.ink,
+                border: `1px solid ${alpha(PAPER.sageDeep, '20')}`,
+              },
+              stock.code
+            )
+          )
         )
+      ),
+      h(
+        'div',
+        {
+          style: {
+            width: 170,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 10,
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 11,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: PAPER.mutedSoft,
+            },
+          },
+          formatDateTime(item.pubDate)
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            onClick: () => onToggleRead(item),
+            style: {
+              border: `1px solid ${PAPER.line}`,
+              background: isRead ? PAPER.grey : PAPER.paper,
+              color: PAPER.muted,
+              borderRadius: 999,
+              padding: '7px 12px',
+              fontSize: 11,
+              cursor: 'pointer',
+            },
+          },
+          isRead ? '已看' : '標記已看'
+        ),
+        h(
+          Button,
+          {
+            onClick: () => onNavigateDaily(item),
+            style: {
+              background: PAPER.tangerine,
+              border: `1px solid ${alpha(PAPER.tangerine, '40')}`,
+              color: '#fff8f0',
+              textTransform: 'none',
+              letterSpacing: '0.02em',
+              padding: '10px 14px',
+              width: '100%',
+              justifyContent: 'center',
+            },
+          },
+          '→ 判讀影響'
+        )
+      )
     )
   )
 }
@@ -128,12 +357,16 @@ function NewsFeedCard({ item }) {
 /**
  * Section that fetches and displays news feed from /api/news-feed
  */
-export function NewsFeedSection({ holdingCodes = [] }) {
+export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} }) {
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(() => codesKey.length > 0)
   const [error, setError] = useState(null)
+  const [sourceFilter, setSourceFilter] = useState('全部來源')
+  const [impactFilter, setImpactFilter] = useState('全部影響')
+  const [tickerFilter, setTickerFilter] = useState('全部持股')
+  const [readIds, setReadIds] = useState(() => new Set())
   const fetchedRef = useRef(false)
 
   useEffect(() => {
@@ -146,20 +379,20 @@ export function NewsFeedSection({ holdingCodes = [] }) {
         return res.json()
       })
       .then((data) => {
-        setItems(
-          (data.items || []).map((item) => ({
-            ...item,
-            recordType: 'news',
-          }))
-        )
+        const remoteItems = (data.items || []).map((item) => ({
+          ...item,
+          recordType: 'news',
+        }))
+        setItems(remoteItems.length ? remoteItems : buildPreviewNewsItems(holdingCodes))
       })
       .catch((err) => {
         setError(err.message || 'fetch failed')
+        setItems(buildPreviewNewsItems(holdingCodes))
       })
       .finally(() => {
         setLoading(false)
       })
-  }, [codesKey])
+  }, [codesKey, holdingCodes])
 
   if (loading) {
     return h(
@@ -169,21 +402,395 @@ export function NewsFeedSection({ holdingCodes = [] }) {
     )
   }
 
-  if (error) {
-    return h(
-      Card,
-      { style: { padding: '12px 14px' } },
-      h('div', { style: { fontSize: 11, color: C.textMute } }, `新聞暫時打不開：${error}`)
-    )
+  if (items.length === 0) return null
+
+  const sources = ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))]
+  const impacts = ['全部影響', '利多', '利空', '中性']
+  const tickers = [
+    '全部持股',
+    ...new Set(
+      items.flatMap((item) =>
+        (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
+      )
+    ),
+  ]
+
+  const filteredItems = items.filter((item) => {
+    const sourceLabel = normalizeSourceLabel(item.source)
+    const impactLabel = IMPACT_COPY[inferImpact(item)]
+    const itemTickers = (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
+    const sourceOk = sourceFilter === '全部來源' || sourceFilter === sourceLabel
+    const impactOk = impactFilter === '全部影響' || impactFilter === impactLabel
+    const tickerOk = tickerFilter === '全部持股' || itemTickers.includes(tickerFilter)
+    return sourceOk && impactOk && tickerOk
+  })
+
+  const unreadCount = filteredItems.filter(
+    (item, index) => !readIds.has(getItemId(item, index))
+  ).length
+
+  const handleToggleRead = (item, index) => {
+    const itemId = getItemId(item, index)
+    setReadIds((current) => {
+      const next = new Set(current)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
   }
 
-  if (items.length === 0) return null
+  const heroTitle = holdingCodes.length > 0 ? '這些新聞跟你組合有關' : '今天市場在說什麼'
 
   return h(
     'div',
-    null,
-    h('div', { style: { ...lbl, color: C.blue } }, `新聞脈絡 (${items.length})`),
-    items.map((item, i) => h(NewsFeedCard, { key: item.link || i, item }))
+    {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1.9fr) minmax(280px, 0.9fr)',
+        gap: 18,
+        alignItems: 'start',
+      },
+    },
+    h(
+      'div',
+      null,
+      h(
+        Card,
+        {
+          style: {
+            marginBottom: 16,
+            padding: '24px 26px',
+            borderRadius: 30,
+            background: `radial-gradient(circle at 16% 18%, ${alpha(PAPER.sand, '90')}, transparent 28%), linear-gradient(180deg, ${alpha(PAPER.paper, 'fb')}, ${alpha(PAPER.bone, 'ee')})`,
+            position: 'relative',
+            overflow: 'hidden',
+          },
+        },
+        h('div', {
+          style: {
+            position: 'absolute',
+            inset: 0,
+            backgroundImage:
+              'radial-gradient(rgba(32,40,35,0.035) 0.7px, transparent 0.7px), radial-gradient(rgba(32,40,35,0.025) 0.7px, transparent 0.7px)',
+            backgroundPosition: '0 0, 12px 12px',
+            backgroundSize: '24px 24px',
+            opacity: 0.38,
+            pointerEvents: 'none',
+          },
+        }),
+        h(
+          'div',
+          {
+            style: {
+              position: 'relative',
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: 16,
+              alignItems: 'end',
+            },
+          },
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 10 } },
+              '情報脈絡 / News preview'
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontFamily: 'var(--font-headline)',
+                  fontSize: 52,
+                  lineHeight: 0.94,
+                  color: PAPER.ink,
+                  maxWidth: 520,
+                },
+              },
+              heroTitle
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  marginTop: 14,
+                  maxWidth: 520,
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  color: PAPER.muted,
+                },
+              },
+              'Google News RSS 與 FinMind headline 先進來，先標已看、先收斂脈絡，再 handoff 給 Daily 判讀影響，不在這頁直接產事件。'
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                  marginTop: 18,
+                },
+              },
+              renderChip(`${filteredItems.length} 則相關新聞`, {
+                background: alpha(PAPER.sage, '22'),
+                color: PAPER.ink,
+              }),
+              renderChip(`Ticker filter: ${holdingCodes.length || 'Auto'}`, {
+                background: PAPER.paper,
+              })
+            )
+          ),
+          h(
+            'div',
+            {
+              style: {
+                textAlign: 'right',
+                minWidth: 120,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 14,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: PAPER.mutedSoft,
+                  marginBottom: 4,
+                },
+              },
+              'today'
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontFamily: 'var(--font-headline)',
+                  fontSize: 104,
+                  lineHeight: 0.82,
+                  color: PAPER.ink,
+                },
+              },
+              filteredItems.length
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  color: PAPER.muted,
+                },
+              },
+              '新增新聞數 N'
+            )
+          )
+        )
+      ),
+      error &&
+        h(
+          'div',
+          {
+            style: {
+              marginBottom: 12,
+              fontSize: 11,
+              color: PAPER.mutedSoft,
+            },
+          },
+          `新聞源暫時打不開，以下改用 preview fallback：${error}`
+        ),
+      filteredItems.map((item, i) =>
+        h(NewsFeedCard, {
+          key: getItemId(item, i),
+          item,
+          isRead: readIds.has(getItemId(item, i)),
+          onToggleRead: () => handleToggleRead(item, i),
+          onNavigateDaily,
+        })
+      )
+    ),
+    h(
+      'div',
+      null,
+      h(
+        Card,
+        {
+          style: {
+            borderRadius: 28,
+            padding: '18px 18px 20px',
+            position: 'sticky',
+            top: 16,
+          },
+        },
+        h(
+          'div',
+          { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 10 } },
+          'Filter / Side notes'
+        ),
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+            },
+          },
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              '依 ticker'
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+              ...tickers.map((option) =>
+                h(
+                  'button',
+                  {
+                    key: option,
+                    type: 'button',
+                    onClick: () => setTickerFilter(option),
+                    style: {
+                      borderRadius: 999,
+                      border: `1px solid ${tickerFilter === option ? alpha(PAPER.sageDeep, '28') : PAPER.lineSoft}`,
+                      background:
+                        tickerFilter === option ? alpha(PAPER.sageDeep, '18') : PAPER.paper,
+                      color: PAPER.ink,
+                      padding: '6px 10px',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    },
+                  },
+                  option
+                )
+              )
+            )
+          ),
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              '依來源'
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+              ...sources.map((option) =>
+                h(
+                  'button',
+                  {
+                    key: option,
+                    type: 'button',
+                    onClick: () => setSourceFilter(option),
+                    style: {
+                      borderRadius: 999,
+                      border: `1px solid ${sourceFilter === option ? alpha(PAPER.sage, '38') : PAPER.lineSoft}`,
+                      background: sourceFilter === option ? alpha(PAPER.sage, '22') : PAPER.paper,
+                      color: PAPER.ink,
+                      padding: '6px 10px',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    },
+                  },
+                  option
+                )
+              )
+            )
+          ),
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              '依 impact'
+            ),
+            h(
+              'div',
+              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+              ...impacts.map((option) =>
+                h(
+                  'button',
+                  {
+                    key: option,
+                    type: 'button',
+                    onClick: () => setImpactFilter(option),
+                    style: {
+                      borderRadius: 999,
+                      border: `1px solid ${impactFilter === option ? PAPER.line : PAPER.lineSoft}`,
+                      background: impactFilter === option ? PAPER.sand : PAPER.paper,
+                      color: PAPER.ink,
+                      padding: '6px 10px',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    },
+                  },
+                  option
+                )
+              )
+            )
+          ),
+          h(
+            'div',
+            {
+              style: {
+                padding: '12px 14px',
+                borderRadius: 22,
+                background: alpha(PAPER.sand, '90'),
+                color: PAPER.ink,
+              },
+            },
+            h('div', { style: { fontSize: 11, color: PAPER.muted, marginBottom: 6 } }, 'Notice'),
+            renderChip(`未讀 ${unreadCount} 則`, {
+              background: PAPER.sand,
+              color: PAPER.ink,
+              border: `1px solid ${alpha(PAPER.tangerine, '22')}`,
+            })
+          ),
+          h(
+            'div',
+            {
+              style: {
+                padding: '14px',
+                borderRadius: 22,
+                background: alpha(PAPER.sageDeep, '16'),
+                border: `1px solid ${alpha(PAPER.sageDeep, '22')}`,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  marginBottom: 8,
+                },
+              },
+              renderChip('今日趨勢摘要', {
+                background: alpha(PAPER.sageDeep, '22'),
+                color: PAPER.ink,
+              })
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  color: PAPER.ink,
+                },
+              },
+              buildTrendSummary(filteredItems)
+            )
+          )
+        )
+      )
+    )
   )
 }
 
@@ -199,59 +806,74 @@ export function NewsAnalysisPanel({
     'div',
     null,
     h(OperatingContextCard, { context: operatingContext }),
-    holdingCodes.length > 0 && h(NewsFeedSection, { holdingCodes }),
+    holdingCodes.length > 0 &&
+      h(NewsFeedSection, {
+        holdingCodes,
+        onNavigateDaily,
+      }),
     holdingCodes.length === 0 &&
       h(
         Card,
         {
           style: {
-            textAlign: 'center',
-            padding: '40px 20px',
+            textAlign: 'left',
+            padding: '28px 26px',
+            borderRadius: 30,
           },
         },
-        h('div', { style: { fontSize: 40, marginBottom: 12, opacity: 0.5 } }, '📰'),
         h(
           'div',
           {
             style: {
-              fontSize: 16,
-              fontWeight: 600,
-              color: C.text,
-              marginBottom: 8,
+              fontSize: 11,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: C.textMute,
+              marginBottom: 10,
             },
           },
-          '情報脈絡'
+          '情報脈絡 / News'
         ),
         h(
           'div',
           {
             style: {
-              fontSize: 12,
-              color: C.textSec,
-              lineHeight: 1.7,
-              maxWidth: 320,
-              margin: '0 auto 16px',
+              fontSize: 38,
+              fontFamily: 'var(--font-headline)',
+              color: C.text,
+              lineHeight: 1,
+              marginBottom: 12,
             },
           },
-          '這裡顯示與持股相關的市場脈絡和背景資訊，幫助你理解大環境。'
+          '今天市場在說什麼'
+        ),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 14,
+              color: C.textSec,
+              lineHeight: 1.8,
+              maxWidth: 520,
+              marginBottom: 18,
+            },
+          },
+          '這頁先聚合 headline，再 handoff 給 Daily 判讀影響。加入持股後，ticker filter、impact tag 與已看機制會一起啟用。'
         ),
         h(
           Button,
           {
             onClick: onNavigateDaily,
             style: {
-              padding: '10px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: C.cardBlue,
-              color: C.text,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: C.shadow,
+              padding: '10px 18px',
+              background: PAPER.tangerine,
+              border: `1px solid ${alpha(PAPER.tangerine, '40')}`,
+              color: '#fff8f0',
+              textTransform: 'none',
+              letterSpacing: '0.02em',
             },
           },
-          '🔍 前往收盤分析'
+          '→ 前往收盤分析'
         )
       )
   )

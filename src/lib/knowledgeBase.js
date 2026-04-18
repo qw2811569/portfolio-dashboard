@@ -9,6 +9,7 @@ import fundamentalAnalysis from './knowledge-base/fundamental-analysis.json' wit
 import riskManagement from './knowledge-base/risk-management.json' with { type: 'json' }
 import strategyCases from './knowledge-base/strategy-cases.json' with { type: 'json' }
 import newsCorrelation from './knowledge-base/news-correlation.json' with { type: 'json' }
+import { getMissingRuleRequirements } from './knowledgeAvailability.js'
 
 const KNOWLEDGE_CATALOG = {
   chip: chipAnalysis,
@@ -98,7 +99,14 @@ function getPersonaMap() {
 
 export function getRelevantKnowledge(
   stockMeta = {},
-  { maxItems = 5, minConfidence = 0.7, queryProfile = null, persona = null } = {}
+  {
+    maxItems = 5,
+    minConfidence = 0.7,
+    queryProfile = null,
+    persona = null,
+    dataAvailability = null,
+    onRuleSkipped = null,
+  } = {}
 ) {
   const { strategy } = stockMeta
   const resolvedProfile = queryProfile || buildKnowledgeQueryProfile(stockMeta)
@@ -112,6 +120,17 @@ export function getRelevantKnowledge(
     items.forEach((item) => {
       const confidence = Number(item?.confidence ?? 0)
       if (confidence < minConfidence) return
+      const missingRequirements = dataAvailability
+        ? getMissingRuleRequirements(item, dataAvailability)
+        : []
+      if (missingRequirements.length > 0) {
+        onRuleSkipped?.({
+          ruleId: item.id,
+          missingRequirements,
+          reason: 'missing-data',
+        })
+        return
+      }
 
       // 如果有 persona filtering，優先選該人格的規則
       let personaBoost = 1.0
@@ -140,6 +159,17 @@ export function getRelevantKnowledge(
     strategySources.forEach((source) => {
       ;(source.items ?? []).forEach((item) => {
         if ((item.confidence ?? 0) >= minConfidence) {
+          const missingRequirements = dataAvailability
+            ? getMissingRuleRequirements(item, dataAvailability)
+            : []
+          if (missingRequirements.length > 0) {
+            onRuleSkipped?.({
+              ruleId: item.id,
+              missingRequirements,
+              reason: 'missing-data',
+            })
+            return
+          }
           weightedCandidates.push({
             ...item,
             __sourceKey: 'fallback',
@@ -211,9 +241,20 @@ export function getRelevantCases(stockMeta = {}, { maxItems = 2 } = {}) {
 
 export function getKnowledgeSelection(
   stockMeta = {},
-  { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2 } = {}
+  {
+    maxItems = 5,
+    minConfidence = 0.7,
+    maxCaseItems = 2,
+    dataAvailability = null,
+    onRuleSkipped = null,
+  } = {}
 ) {
-  const knowledge = getRelevantKnowledge(stockMeta, { maxItems, minConfidence })
+  const knowledge = getRelevantKnowledge(stockMeta, {
+    maxItems,
+    minConfidence,
+    dataAvailability,
+    onRuleSkipped,
+  })
   const cases = getRelevantCases(stockMeta, { maxItems: maxCaseItems })
   return {
     knowledge,
@@ -235,7 +276,7 @@ function compactKnowledgeText(value, limit = 32) {
 
 export function collectInjectedKnowledgeIdsFromDossiers(
   dossiers = [],
-  { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2 } = {}
+  { maxItems = 5, minConfidence = 0.7, maxCaseItems = 2, getDataAvailability = null } = {}
 ) {
   return Array.from(
     new Set(
@@ -245,6 +286,7 @@ export function collectInjectedKnowledgeIdsFromDossiers(
             maxItems,
             minConfidence,
             maxCaseItems,
+            dataAvailability: getDataAvailability ? getDataAvailability(dossier) : null,
           }).itemIds
       )
     )
@@ -253,12 +295,20 @@ export function collectInjectedKnowledgeIdsFromDossiers(
 
 export function buildCompactKnowledgeContext(
   stockMeta = {},
-  { maxItems = 2, minConfidence = 0.7, maxCaseItems = 1 } = {}
+  {
+    maxItems = 2,
+    minConfidence = 0.7,
+    maxCaseItems = 1,
+    dataAvailability = null,
+    onRuleSkipped = null,
+  } = {}
 ) {
   const { knowledge, cases } = getKnowledgeSelection(stockMeta, {
     maxItems,
     minConfidence,
     maxCaseItems,
+    dataAvailability,
+    onRuleSkipped,
   })
 
   trackUsage([...knowledge, ...cases])
@@ -330,8 +380,14 @@ export function getTopKnowledgeRules({ maxItems = 10, minConfidence = 0.75 } = {
     .slice(0, maxItems)
 }
 
-export function buildKnowledgeContext(stockMeta = {}) {
-  const { knowledge, cases } = getKnowledgeSelection(stockMeta)
+export function buildKnowledgeContext(
+  stockMeta = {},
+  { dataAvailability = null, onRuleSkipped = null } = {}
+) {
+  const { knowledge, cases } = getKnowledgeSelection(stockMeta, {
+    dataAvailability,
+    onRuleSkipped,
+  })
 
   // Usage tracking: 記錄哪些 entry 被選中（side-effect，不阻塞主流程）
   trackUsage([...knowledge, ...cases])

@@ -14,7 +14,24 @@
       "tags": ["台積電", "AI 行情", "成功案例", "趨勢追蹤", "成長股"],
       "lessons": "趨勢形成初期佈局，外資連續買超是確認訊號",
       "createdAt": "2026-03-30",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-002",
@@ -27,7 +44,8 @@
       "tags": ["升息循環", "失敗案例", "風險管理", "景氣循環"],
       "lessons": "升息循環初期不宜抄底，現金部位管理至關重要",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-003",
@@ -40,7 +58,8 @@
       "tags": ["疫情", "底部佈局", "成功案例", "反向操作", "ETF/指數"],
       "lessons": "黑天鵝事件是長期投資者佈局機會，但需控制部位速度",
       "createdAt": "2026-03-30",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": []
     },
     {
       "id": "sc-004",
@@ -53,7 +72,8 @@
       "tags": ["追高殺低", "失敗案例", "情緒管理"],
       "lessons": "追高必須設停損，回檔時應冷靜判斷是否趨勢改變",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-005",
@@ -66,7 +86,19 @@
       "tags": ["投信", "作帳行情", "季節性", "成功案例"],
       "lessons": "季節性效應可預測，但需嚴格執行進出場紀律",
       "createdAt": "2026-03-30",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-006",
@@ -79,7 +111,14 @@
       "tags": ["利多出盡", "財報", "失敗案例", "事件驅動"],
       "lessons": "財報前已大漲 = 利多出盡，應減碼而非加碼",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-007",
@@ -92,7 +131,8 @@
       "tags": ["停損", "風險管理", "成功案例", "紀律"],
       "lessons": "停損要嚴格執行，避免小虧變大虧",
       "createdAt": "2026-03-30",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": []
     },
     {
       "id": "sc-008",
@@ -105,7 +145,8 @@
       "tags": ["加碼", "趨勢反轉", "失敗案例"],
       "lessons": "下跌加碼需確認支撐和趨勢，不應盲目接刀",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-009",
@@ -118,7 +159,19 @@
       "tags": ["產業輪動", "資金流向", "成功案例"],
       "lessons": "產業輪動可預測，應提前佈局而非追高",
       "createdAt": "2026-03-30",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-010",
@@ -131,7 +184,14 @@
       "tags": ["過度交易", "手續費", "失敗案例"],
       "lessons": "交易品質重於數量，手續費是隱形成本",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-011",
@@ -144,7 +204,8 @@
       "tags": ["航運", "循環股", "BDI", "成功案例", "ETF/指數"],
       "lessons": "循環股要看產業指標，運價是領先訊號",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-012",
@@ -157,7 +218,29 @@
       "tags": ["價值陷阱", "低本益比", "失敗案例", "價值股"],
       "lessons": "低本益比 + 產業衰退 = 價值陷阱，不應抄底",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-013",
@@ -170,7 +253,24 @@
       "tags": ["除權息", "填息", "季節性", "成功案例", "事件驅動"],
       "lessons": "填息行情可預測，但需選擇基本面穩健公司",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        }
+      ]
     },
     {
       "id": "sc-014",
@@ -183,7 +283,19 @@
       "tags": ["融資斷頭", "反向操作", "底部訊號", "成功案例"],
       "lessons": "散戶斷頭 + 法人買超 = 高信心度底部訊號",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-015",
@@ -196,7 +308,24 @@
       "tags": ["內線消息", "聽消息", "失敗案例", "成長股"],
       "lessons": "消息炒股十賭九輸，應建立自己的分析框架",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-016",
@@ -209,7 +338,8 @@
       "tags": ["均線", "突破", "量價", "成功案例"],
       "lessons": "均線糾結是變盤訊號，突破方向即交易方向",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-017",
@@ -222,7 +352,8 @@
       "tags": ["假突破", "壓力位", "失敗案例"],
       "lessons": "突破無量 = 假突破機率高，應等待確認",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-018",
@@ -235,7 +366,14 @@
       "tags": ["外資賣超", "逆勢操作", "失敗案例"],
       "lessons": "不宜逆外資操作，連續賣超是明確空頭訊號",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-019",
@@ -248,7 +386,8 @@
       "tags": ["季線", "支撐", "量縮", "成功案例"],
       "lessons": "季線是多空分界線，回測不破是加碼點",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-020",
@@ -261,7 +400,8 @@
       "tags": ["重押", "風險集中", "失敗案例"],
       "lessons": "分散投資是免費午餐，重押單一持股風險極高",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-021",
@@ -274,7 +414,8 @@
       "tags": ["KD", "背離", "技術分析", "成功案例"],
       "lessons": "KD 背離是高信心度反轉訊號，配合量價確認",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-022",
@@ -287,7 +428,19 @@
       "tags": ["財報", "賭方向", "失敗案例", "事件驅動"],
       "lessons": "財報公布前不確定性高，應避免賭方向",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-023",
@@ -300,7 +453,8 @@
       "tags": ["ETF", "定時定額", "長期投資", "成功案例", "ETF/指數"],
       "lessons": "定時定額是適合一般投資人的策略，分散進場點",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-024",
@@ -313,7 +467,14 @@
       "tags": ["槓桿 ETF", "耗損", "失敗案例", "ETF/指數"],
       "lessons": "槓桿 ETF 有追蹤誤差和耗損，只適合短線",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-025",
@@ -326,7 +487,8 @@
       "tags": ["突破", "回測", "加碼", "成功案例"],
       "lessons": "回測確認是加碼點，分批進場降低風險",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-026",
@@ -339,7 +501,8 @@
       "tags": ["空頭市場", "搶反彈", "失敗案例"],
       "lessons": "空頭市場搶反彈等於接刀，應等待趨勢反轉",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-027",
@@ -352,7 +515,19 @@
       "tags": ["高股息", "配息", "長期投資", "成功案例", "價值股"],
       "lessons": "高股息策略報酬穩定，適合保守型投資人",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "sc-028",
@@ -365,7 +540,14 @@
       "tags": ["再平衡", "資產配置", "成功案例"],
       "lessons": "定期再平衡是紀律投資，可降低風險",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-029",
@@ -378,7 +560,8 @@
       "tags": ["新手", "全押", "風險管理", "失敗案例"],
       "lessons": "投資需要學習，新手應小額起步建立系統",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-030",
@@ -391,7 +574,8 @@
       "tags": ["美股", "複委託", "科技龍頭", "成功案例"],
       "lessons": "分散投資全球可降低單一市場風險",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-031",
@@ -404,7 +588,8 @@
       "tags": ["區間操作", "箱型震盪", "成功案例"],
       "lessons": "區間操作需嚴格紀律，突破區間應停損",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-032",
@@ -417,7 +602,8 @@
       "tags": ["趨勢追蹤", "突破", "成功案例"],
       "lessons": "趨勢追蹤需耐心持有，直到趨勢反轉",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-033",
@@ -430,7 +616,8 @@
       "tags": ["逆勢操作", "接刀", "失敗案例"],
       "lessons": "逆勢操作需高難度技巧，一般投資人應避免",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-034",
@@ -443,7 +630,19 @@
       "tags": ["事件驅動", "法說會", "成功案例"],
       "lessons": "事件驅動需掌握時間點，不貪心",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-035",
@@ -456,7 +655,19 @@
       "tags": ["技術面", "基本面", "結合策略", "成功案例", "成長股"],
       "lessons": "技術面與基本面結合可提高成功率和信心度",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-036",
@@ -469,7 +680,8 @@
       "tags": ["小型股", "流動性", "失敗案例"],
       "lessons": "小型股流動性風險高，進場前需評估退出難度",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-037",
@@ -482,7 +694,14 @@
       "tags": ["權值股", "外資回補", "成功案例"],
       "lessons": "外資回補行情中，權值股是首選",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-038",
@@ -495,7 +714,8 @@
       "tags": ["止盈止損", "盈虧比", "失敗案例"],
       "lessons": "正確做法是停損要快，停利要慢",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-039",
@@ -508,7 +728,14 @@
       "tags": ["循環股", "塑化", "投資時機", "成功案例", "景氣循環"],
       "lessons": "循環股投資需逆向操作，與一般股相反",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-040",
@@ -521,7 +748,8 @@
       "tags": ["投資組合保險", "趨勢反轉", "風險管理", "成功案例"],
       "lessons": "投資組合保險可在空頭來臨時保護獲利",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-041",
@@ -534,7 +762,8 @@
       "tags": ["停損", "風險管理", "失敗案例"],
       "lessons": "停損是投資生存的第一法則",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-042",
@@ -547,7 +776,24 @@
       "tags": ["配息", "陷阱", "失敗案例"],
       "lessons": "高配息不一定是好事，需檢視獲利品質",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "sc-043",
@@ -560,7 +806,14 @@
       "tags": ["定期定額", "估值", "ETF", "成功案例", "ETF/指數"],
       "lessons": "定期定額加上估值調整，可進一步提高報酬",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-044",
@@ -573,7 +826,8 @@
       "tags": ["分散投資", "過度分散", "失敗案例"],
       "lessons": "分散投資是免費午餐，但過度分散是詛咒",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-045",
@@ -586,7 +840,8 @@
       "tags": ["景氣對策信號", "總體指標", "成功案例", "景氣循環"],
       "lessons": "總體指標可幫助判斷大方向",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-046",
@@ -599,7 +854,14 @@
       "tags": ["融資", "槓桿", "斷頭", "失敗案例"],
       "lessons": "槓桿是雙面刃，使用需謹慎",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-047",
@@ -612,7 +874,8 @@
       "tags": ["月線", "趨勢", "成功案例"],
       "lessons": "月線行情適合中線操作",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-048",
@@ -625,7 +888,8 @@
       "tags": ["投資日誌", "心態管理", "成功案例"],
       "lessons": "投資是不斷學習與改進的過程",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-049",
@@ -638,7 +902,14 @@
       "tags": ["總體風險", "基本面", "失敗案例"],
       "lessons": "個股分析不能取代總體風險評估",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-050",
@@ -651,7 +922,8 @@
       "tags": ["波段操作", "支撐壓力", "成功案例"],
       "lessons": "波段操作需嚴格紀律，不可貪心",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-051",
@@ -664,7 +936,14 @@
       "tags": ["長線投資", "複利效應", "成功案例"],
       "lessons": "長線投資需要耐心，但報酬最豐厚",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-052",
@@ -677,7 +956,14 @@
       "tags": ["短線交易", "成本", "失敗案例"],
       "lessons": "短線交易是零和遊戲，散戶勝率低",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-053",
@@ -690,7 +976,14 @@
       "tags": ["價值投資", "低本益比", "高股息", "成功案例", "價值股"],
       "lessons": "價值投資需要耐心，但長期報酬穩定",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-054",
@@ -703,7 +996,19 @@
       "tags": ["成長投資", "營收成長", "成功案例", "成長股"],
       "lessons": "成長投資報酬高，但波動也大",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-055",
@@ -716,7 +1021,14 @@
       "tags": ["投資組合保險", "風險管理", "成功案例"],
       "lessons": "投資組合保險是保護獲利的重要工具",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-056",
@@ -729,7 +1041,34 @@
       "tags": ["跟風", "媒體推薦", "失敗案例", "事件驅動"],
       "lessons": "投資需要獨立思考，不能依賴他人",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-057",
@@ -742,7 +1081,14 @@
       "tags": ["定期檢視", "投資組合", "成功案例"],
       "lessons": "定期檢視是成功投資的必要條件",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-058",
@@ -755,7 +1101,8 @@
       "tags": ["資金期限", "錯配", "失敗案例", "ETF/指數"],
       "lessons": "投資前需考慮資金使用期限",
       "createdAt": "2026-03-30",
-      "confidence": 0.7
+      "confidence": 0.7,
+      "requiresData": []
     },
     {
       "id": "sc-059",
@@ -768,7 +1115,19 @@
       "tags": ["核心衛星", "資產配置", "成功案例", "ETF/指數"],
       "lessons": "核心衛星策略適合大多數投資人",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-060",
@@ -781,7 +1140,8 @@
       "tags": ["投資目標", "計劃", "成功案例"],
       "lessons": "投資前需設定明確的目標和計劃",
       "createdAt": "2026-03-30",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-061",
@@ -794,7 +1154,14 @@
       "tags": ["廣達", "AI 伺服器", "2024 案例", "成功案例", "成長股"],
       "lessons": "AI 供應鏈行情初期應積極佈局龍頭，趨勢中段檢視訂單能見度",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-062",
@@ -807,7 +1174,19 @@
       "tags": ["緯創", "AI 伺服器", "2024 案例", "成功案例", "成長股"],
       "lessons": "AI 伺服器組裝廠行情落後於 GPU 供應商，可輪動佈局",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-063",
@@ -820,7 +1199,14 @@
       "tags": ["奇鋐", "散熱", "AI 伺服器", "2024 案例", "成功案例", "成長股"],
       "lessons": "散熱是 AI 伺服器價值量提升最多的環節之一，應早期佈局",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-064",
@@ -833,7 +1219,14 @@
       "tags": ["日月光", "先進封裝", "CoWoS", "2025 案例", "成功案例", "成長股"],
       "lessons": "先進封裝產能擴張週期長，早期佈局可享受完整行情",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-065",
@@ -846,7 +1239,14 @@
       "tags": ["京元電", "先進封裝", "晶片測試", "2025 案例", "成功案例"],
       "lessons": "封裝測試環節在 AI 浪潮中被低估，可挖掘落後補漲股",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-066",
@@ -859,7 +1259,8 @@
       "tags": ["地緣政治", "台海風險", "2024 案例", "失敗案例"],
       "lessons": "地緣政治風險應避險而非抄底，等待 VIX 回穩再進場",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-067",
@@ -872,7 +1273,14 @@
       "tags": ["地緣政治", "避險策略", "2024 案例", "成功案例"],
       "lessons": "地緣政治風險無法預測，但可事前配置避險資產",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-068",
@@ -885,7 +1293,8 @@
       "tags": ["美中衝突", "晶片禁令", "2024 案例", "失敗案例"],
       "lessons": "政策風險股應降低部位並嚴格停損，不應僥倖",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-069",
@@ -898,7 +1307,14 @@
       "tags": ["台達電", "電源管理", "AI 伺服器", "2025 案例", "成功案例", "成長股"],
       "lessons": "電源是 AI 伺服器被低估的環節，應早期挖掘",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-070",
@@ -911,7 +1327,14 @@
       "tags": ["欣興", "PCB", "AI 伺服器", "2025 案例", "成功案例", "成長股"],
       "lessons": "PCB 族群在 AI 行情中落後，可挖掘高階產品供應商",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-071",
@@ -924,7 +1347,14 @@
       "tags": ["HBM", "南亞科", "AI 供應鏈", "成功案例", "催化劑", "成長股"],
       "lessons": "HBM 世代交替帶動整體 DRAM 產業升級，應追蹤良率與產能進度作為進場依據",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-072",
@@ -937,7 +1367,14 @@
       "tags": ["光模組", "聯亞", "AI 供應鏈", "成功案例", "成長股", "趨勢追蹤"],
       "lessons": "光模組升級週期明確（400G→800G→1.6T），技術領先者享有定價權",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-073",
@@ -950,7 +1387,14 @@
       "tags": ["銅纜", "AI 供應鏈", "失敗案例", "催化劑", "趨勢追蹤", "成長股"],
       "lessons": "題材股已大漲超過 100% 時不宜追高，應等回檔整理再評估基本面是否支撐",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-074",
@@ -963,7 +1407,14 @@
       "tags": ["ASIC", "創意電子", "AI 供應鏈", "成功案例", "成長股", "成長投資"],
       "lessons": "ASIC 設計服務有長期訂單能見度，適合中長線佈局而非短線操作",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-075",
@@ -976,7 +1427,8 @@
       "tags": ["邊緣 AI", "瑞昱", "AI 供應鏈", "失敗案例", "催化劑", "成長股"],
       "lessons": "新應用題材需等待實際訂單驗證，不宜僅憑概念佈局；停損紀律必須嚴格執行",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-076",
@@ -989,7 +1441,24 @@
       "tags": ["降息循環", "金融股", "富邦金", "成功案例", "高股息", "配息", "景氣循環"],
       "lessons": "降息循環初期金融股有雙重紅利：債券利得 + 放款利差改善，是確定性高的佈局",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "sc-077",
@@ -1002,7 +1471,19 @@
       "tags": ["降息循環", "REITs", "成功案例", "高股息", "長期投資", "景氣循環"],
       "lessons": "REITs 在降息循環中表現優異，折價時買進是低風險策略",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-078",
@@ -1015,7 +1496,24 @@
       "tags": ["降息循環", "公用事業", "失敗案例", "風險管理", "景氣循環"],
       "lessons": "公用事業受政策管制，降息利多可能被政策風險抵銷，需評估政策變動機率",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-079",
@@ -1028,7 +1526,14 @@
       "tags": ["地緣政治", "台海風險", "避險策略", "成功案例", "風險管理", "ETF/指數"],
       "lessons": "地緣政治風險是台股特有系統性風險，常態配置避險部位是必要的保險成本",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-080",
@@ -1041,7 +1546,8 @@
       "tags": ["美中衝突", "科技戰", "矽智財", "失敗案例", "事件驅動"],
       "lessons": "科技戰受影響個股政策風險極高，部位應控制在 5% 以下，一有風吹草動立即減碼",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-081",
@@ -1054,7 +1560,14 @@
       "tags": ["半導體", "去庫存", "聯發科", "成功案例", "循環股", "景氣", "催化劑", "景氣循環"],
       "lessons": "半導體庫存循環底部是最佳佈局時機，搭配新品催化效果更佳",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-082",
@@ -1067,7 +1580,8 @@
       "tags": ["被動元件", "庫存回補", "國巨", "失敗案例", "循環股", "景氣", "景氣循環"],
       "lessons": "被動元件循環落後半導體，需等待通路商實際拉貨訊號而非提前佈局",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-083",
@@ -1080,7 +1594,14 @@
       "tags": ["車用半導體", "庫存回補", "成功案例", "循環股", "景氣", "月營收", "景氣循環"],
       "lessons": "車用半導體回補週期可持續 4-6 季，月營收連增是可靠的進場確認訊號",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-084",
@@ -1093,7 +1614,14 @@
       "tags": ["電動車", "和大工業", "成功案例", "成長股", "催化劑"],
       "lessons": "電動車零組件廠營收與車廠出貨高度連動，追蹤車廠交車數據是領先指標",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-085",
@@ -1106,7 +1634,14 @@
       "tags": ["綠能", "儲能", "失敗案例", "催化劑", "事件驅動"],
       "lessons": "政策驅動題材需等待預算實際撥款確認，不宜在政策宣示階段就重押",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-086",
@@ -1119,7 +1654,14 @@
       "tags": ["轉機股", "虧轉盈", "華新科", "成功案例", "基本面", "事件驅動"],
       "lessons": "轉機股最佳進場點是首季轉盈確認後，而非預期階段；需確認轉盈來自本業而非業外",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-087",
@@ -1132,7 +1674,14 @@
       "tags": ["轉機股", "新產品", "穩懋", "成功案例", "成長投資", "催化劑", "轉型股"],
       "lessons": "新產品線轉機需追蹤營收佔比變化，突破 15% 是值得關注的轉折點",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-088",
@@ -1145,7 +1694,14 @@
       "tags": ["轉機股", "管理層", "宏碁", "成功案例", "反向操作", "轉型股"],
       "lessons": "管理層更換是轉機股重要催化劑，但需等待 1-2 季財報驗證策略是否落地",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-089",
@@ -1158,7 +1714,14 @@
       "tags": ["轉機股", "面板", "失敗案例", "反向操作", "景氣循環"],
       "lessons": "轉機題材需量產數據驗證，純概念炒作風險極高；應等待良率達標再進場",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-090",
@@ -1171,7 +1734,19 @@
       "tags": ["轉機股", "數位轉型", "成功案例", "基本面", "成長投資", "轉型股"],
       "lessons": "傳統產業數位轉型看營業利益率改善幅度，連續 2 季改善是可靠訊號",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-091",
@@ -1184,7 +1759,24 @@
       "tags": ["價值投資", "低本益比", "中鋼", "成功案例", "高股息", "價值股"],
       "lessons": "龍頭股低 PB 是安全邊際，但需確認公司競爭力未衰退，配息穩定是重要驗證",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "sc-092",
@@ -1197,7 +1789,24 @@
       "tags": ["高股息", "配息", "價值投資", "航運", "失敗案例", "價值股"],
       "lessons": "高殖利率可能是陷阱，需檢視配息來源的可持續性，循環股不適合用殖利率選股",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        }
+      ]
     },
     {
       "id": "sc-093",
@@ -1210,7 +1819,19 @@
       "tags": ["價值投資", "均值回歸", "統一超", "成功案例", "基本面", "價值股"],
       "lessons": "穩定獲利公司的估值會均值回歸，低於均值一個標準差是好的進場時機",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-094",
@@ -1223,7 +1844,24 @@
       "tags": ["價值投資", "低本益比", "價值陷阱", "失敗案例", "基本面", "價值股"],
       "lessons": "低本益比需搭配產業前景分析，客戶轉單與產業外移是結構性風險，不可單靠估值判斷",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "monthly-announcement",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-095",
@@ -1236,7 +1874,24 @@
       "tags": ["高股息", "配息", "長期投資", "ETF", "成功案例", "價值投資", "ETF/指數"],
       "lessons": "高股息 ETF 適合不想花時間選股的投資人，紀律定期買進比擇時更重要",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "valuation",
+          "periodType": "daily-history",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "dividend",
+          "periodType": "annual-history",
+          "availableWhen": "董事會 / 股東會後"
+        },
+        {
+          "dataset": "dividendResult",
+          "periodType": "ex-date-result",
+          "availableWhen": "除權息交易後"
+        }
+      ]
     },
     {
       "id": "sc-096",
@@ -1249,7 +1904,19 @@
       "tags": ["法說會", "事件驅動", "信驊", "成功案例", "催化劑"],
       "lessons": "法說會上修財測後股價常有 2-4 週慣性上漲，隔日追買仍有利潤空間",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-097",
@@ -1262,7 +1929,19 @@
       "tags": ["法說會", "事件驅動", "失敗案例", "催化劑", "風險管理"],
       "lessons": "法說會前若庫存天數已攀升，應先減碼 50% 避險；下修後第一時間出場比等反彈更明智",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-098",
@@ -1275,7 +1954,19 @@
       "tags": ["法說會", "事件驅動", "利多出盡", "失敗案例", "催化劑"],
       "lessons": "法說會投資的關鍵是預期差，股價已大幅反應時即使財報佳也可能利多出盡",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-099",
@@ -1288,7 +1979,29 @@
       "tags": ["法說會", "事件驅動", "網通", "成功案例", "催化劑", "成長股"],
       "lessons": "法說會揭露大型訂單是高確定性催化劑，訂單金額佔營收比重越高越值得重押",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-100",
@@ -1301,7 +2014,19 @@
       "tags": ["法說會", "事件驅動", "反向操作", "成功案例", "基本面"],
       "lessons": "保守展望不一定是利空，需交叉比對產業數據與客戶訂單，管理層保守時可能是反向買點",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        },
+        {
+          "dataset": "news",
+          "periodType": "rolling-14d",
+          "availableWhen": "盤中 / 日更"
+        }
+      ]
     },
     {
       "id": "sc-101",
@@ -1314,7 +2039,14 @@
       "tags": ["月營收", "事件驅動", "矽力", "成功案例", "成長股", "催化劑"],
       "lessons": "月營收連增 3 個月以上是趨勢確認訊號，年增率開始縮小時應準備出場",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-102",
@@ -1327,7 +2059,14 @@
       "tags": ["月營收", "事件驅動", "被動元件", "失敗案例", "循環股", "景氣循環"],
       "lessons": "月營收連衰時不宜抄底，應等待年減幅度收斂甚至轉正，才是安全的進場時機",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-103",
@@ -1340,7 +2079,24 @@
       "tags": ["月營收", "事件驅動", "ABF 載板", "成功案例", "催化劑"],
       "lessons": "月營收大幅超預期是短線催化劑，通常帶來 2-4 週法人買盤推升股價",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "institutional",
+          "periodType": "daily-5d-trend",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-104",
@@ -1353,7 +2109,14 @@
       "tags": ["月營收", "事件驅動", "季節性", "消費電子", "失敗案例"],
       "lessons": "月營收分析需排除季節性因素，消費電子 Q4 旺季數據不宜外推至全年",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-105",
@@ -1366,7 +2129,14 @@
       "tags": ["月營收", "事件驅動", "循環股", "鋼鐵", "成功案例", "景氣", "產業輪動", "景氣循環"],
       "lessons": "循環股月營收年增率從負轉正是最佳買點，比等待獲利轉正更有利",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "revenue",
+          "periodType": "quarterly-sum-from-monthly",
+          "availableWhen": "每月營收公告後"
+        }
+      ]
     },
     {
       "id": "sc-106",
@@ -1379,7 +2149,8 @@
       "tags": ["錨定效應", "行為偏誤", "失敗案例", "風險管理"],
       "lessons": "買進成本是沉沒成本，持有決策應基於未來預期而非過去價格；設停損可破除錨定",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-107",
@@ -1392,7 +2163,14 @@
       "tags": ["損失厭惡", "行為偏誤", "失敗案例", "風險管理"],
       "lessons": "損失厭惡是散戶最大敵人，解法是進場前設好停損並使用條件單自動執行",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-108",
@@ -1405,7 +2183,8 @@
       "tags": ["FOMO", "追高", "行為偏誤", "失敗案例", "趨勢追蹤"],
       "lessons": "FOMO 是追高最大推手，對策是建立買進清單與目標價，在冷靜時做決策",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-109",
@@ -1418,7 +2197,8 @@
       "tags": ["過度自信", "行為偏誤", "失敗案例", "風險管理"],
       "lessons": "過度自信是績效殺手，再有信心的看法也應控制單一產業曝險在 30% 以下",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-110",
@@ -1431,7 +2211,14 @@
       "tags": ["從眾效應", "行為偏誤", "融資", "失敗案例", "反向操作"],
       "lessons": "散戶一致看多時反而是危險訊號，融資餘額是判斷散戶情緒的重要指標",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        }
+      ]
     },
     {
       "id": "sc-111",
@@ -1444,7 +2231,8 @@
       "tags": ["停損", "紀律", "成功案例", "風險管理"],
       "lessons": "停損是保護資本最有效的工具，使用條件單排除情緒干擾是最佳實踐",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": []
     },
     {
       "id": "sc-112",
@@ -1457,7 +2245,14 @@
       "tags": ["停利", "紀律", "失敗案例", "趨勢追蹤"],
       "lessons": "趨勢行情中過早停利的機會成本極高，應改用移動停利（如高點回落 15% 才出場）",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-113",
@@ -1470,7 +2265,14 @@
       "tags": ["移動停損", "紀律", "成功案例", "趨勢追蹤", "風險管理"],
       "lessons": "移動停損是趨勢交易最佳夥伴，可在不預測高點的情況下鎖住大部分利潤",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-114",
@@ -1483,7 +2285,8 @@
       "tags": ["計劃交易", "紀律", "成功案例", "風險管理"],
       "lessons": "交易計劃書是提升績效最有效的工具，事前冷靜規劃勝過盤中衝動決策",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": []
     },
     {
       "id": "sc-115",
@@ -1496,7 +2299,8 @@
       "tags": ["紀律", "衝動交易", "失敗案例", "風險管理"],
       "lessons": "盤中衝動加碼是紀律最大破口，應設定每日最大交易額度限制衝動行為",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-116",
@@ -1509,7 +2313,14 @@
       "tags": ["黑天鵝", "尾部避險", "選擇權", "成功案例", "風險管理", "權證"],
       "lessons": "尾部避險是投資組合保險，年化成本約 3% 但可在極端事件中避免毀滅性虧損",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-117",
@@ -1522,7 +2333,19 @@
       "tags": ["槓桿", "融資", "斷頭", "失敗案例", "風險管理"],
       "lessons": "過度槓桿是投資人最大殺手，融資使用率超過 40% 就進入危險區，應自律控管",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": [
+        {
+          "dataset": "margin",
+          "periodType": "daily-balance",
+          "availableWhen": "T+0 收盤後"
+        },
+        {
+          "dataset": "financials",
+          "periodType": "quarterly-standalone",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-118",
@@ -1535,7 +2358,14 @@
       "tags": ["分散投資", "資產配置", "成功案例", "風險管理", "產業輪動"],
       "lessons": "分散投資是唯一免費午餐，跨產業配置可在獲取合理報酬的同時大幅降低波動",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     },
     {
       "id": "sc-119",
@@ -1548,7 +2378,8 @@
       "tags": ["資金管理", "滿倉", "失敗案例", "風險管理"],
       "lessons": "投資資金與生活資金必須完全分開，投資帳戶至少保留 10% 現金以把握機會",
       "createdAt": "2026-03-31",
-      "confidence": 0.75
+      "confidence": 0.75,
+      "requiresData": []
     },
     {
       "id": "sc-120",
@@ -1561,12 +2392,19 @@
       "tags": ["再平衡", "資產配置", "長期投資", "成功案例", "風險管理"],
       "lessons": "定期再平衡是最簡單有效的紀律投資方法，適合所有投資人長期執行",
       "createdAt": "2026-03-31",
-      "confidence": 0.8
+      "confidence": 0.8,
+      "requiresData": [
+        {
+          "dataset": "balanceSheet",
+          "periodType": "quarterly-balance",
+          "availableWhen": "季報公告後"
+        }
+      ]
     }
   ],
   "metadata": {
     "itemCount": 120,
-    "lastUpdated": "2026-03-31T17:00:00+08:00",
+    "lastUpdated": "2026-04-18T00:00:00+08:00",
     "targetCount": 120,
     "successCases": 71,
     "failureCases": 49,

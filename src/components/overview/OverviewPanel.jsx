@@ -1,6 +1,10 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, MetricCard } from '../common'
+import { STOCK_META } from '../../seedData.js'
+import { ConcentrationDashboard } from './ConcentrationDashboard.jsx'
+import { KpiCards } from './KpiCards.jsx'
+import { PrincipleCards } from './PrincipleCards.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -22,78 +26,196 @@ const ghostBtn = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
 
+function flattenPortfolioHoldings(portfolios = []) {
+  return (Array.isArray(portfolios) ? portfolios : []).flatMap((portfolio) =>
+    Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
+  )
+}
+
+function formatTaipeiDate() {
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(new Date())
+}
+
 /**
  * Overview Header
  */
-export function OverviewHeader({ portfolioCount, totalValue, totalPnl, onExit }) {
+export function OverviewHeader({
+  portfolioCount,
+  totalValue,
+  totalPnl,
+  watchlistCount = 0,
+  missingTargetCount = 0,
+  onExit,
+}) {
+  const heroMetrics = [
+    { label: '本週損益', value: '-' },
+    { label: '本月損益', value: '-' },
+    { label: '追蹤中', value: `${watchlistCount}` },
+    { label: '需要補充', value: `${missingTargetCount}` },
+  ]
+
   return h(
-    Card,
-    {
-      style: {
-        marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
-      },
-    },
+    'div',
+    null,
     h(
-      'div',
+      Card,
       {
         style: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 10,
-          flexWrap: 'wrap',
+          marginBottom: 8,
+          padding: '28px 24px',
+          background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
         },
       },
       h(
         'div',
-        null,
-        h('div', { style: { ...lbl, color: C.blue, marginBottom: 4 } }, '全部總覽'),
+        {
+          style: {
+            display: 'grid',
+            gap: 18,
+          },
+        },
         h(
           'div',
-          { style: { fontSize: 13, color: C.text, fontWeight: 600 } },
-          '跨組合檢視目前持倉、重複部位與待處理事件'
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 14,
+                  color: 'var(--muted)',
+                  fontFamily: 'var(--font-headline)',
+                  letterSpacing: '0.08em',
+                  marginBottom: 8,
+                },
+              },
+              '投資組合'
+            ),
+            h(
+              'div',
+              { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
+              '跨組合檢視目前持倉、重複部位與待處理事件'
+            )
+          ),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              },
+            },
+            h('span', { style: { fontSize: 11, color: C.textMute } }, formatTaipeiDate()),
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 11,
+                  color: C.textSec,
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: alpha(C.blue, '18'),
+                  border: `1px solid ${C.borderStrong}`,
+                },
+              },
+              '全部總覽'
+            ),
+            h(
+              Button,
+              {
+                onClick: onExit,
+                style: {
+                  background: C.cardBlue,
+                  color: C.blue,
+                  border: `1px solid ${alpha(C.blue, '2a')}`,
+                  ...ghostBtn,
+                },
+              },
+              '返回目前組合'
+            )
+          )
+        ),
+        h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
+        h(
+          'div',
+          {
+            className: 'tn',
+            style: {
+              fontSize: 'clamp(42px, 6vw, 64px)',
+              fontWeight: 600,
+              color: C.text,
+              letterSpacing: '-0.02em',
+              lineHeight: 0.95,
+            },
+          },
+          Math.round(totalValue).toLocaleString()
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.7 } },
-          '這裡只做彙總，不會修改任何組合資料。'
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 8,
+            },
+          },
+          heroMetrics.map((metric) =>
+            h(MetricCard, {
+              key: metric.label,
+              label: metric.label,
+              value: metric.value,
+              tone: 'muted',
+            })
+          )
         )
       ),
       h(
-        Button,
-        {
-          onClick: onExit,
-          style: {
-            background: C.cardBlue,
-            color: C.blue,
-            border: `1px solid ${alpha(C.blue, '2a')}`,
-            ...ghostBtn,
-          },
-        },
-        '返回目前組合'
+        Card,
+        { style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.blue, '40')}` } },
+        h('div', { style: { ...lbl, color: C.blue, marginBottom: 4 } }, '全部總覽'),
+        h(
+          'div',
+          { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 } },
+          h(MetricCard, {
+            label: '組合數',
+            value: portfolioCount,
+            tone: 'muted',
+          }),
+          h(MetricCard, {
+            label: '總市值',
+            value: Math.round(totalValue).toLocaleString(),
+            tone: 'blue',
+          }),
+          h(MetricCard, {
+            label: '總損益',
+            value: `${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString()}`,
+            tone: totalPnl >= 0 ? 'up' : 'down',
+          })
+        ),
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textMute, marginTop: 8, lineHeight: 1.7 } },
+          '這裡只做彙總，不會修改任何組合資料。'
+        )
       )
-    ),
-    h(
-      'div',
-      {
-        style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 10 },
-      },
-      h(MetricCard, {
-        label: '組合數',
-        value: portfolioCount,
-        tone: 'muted',
-      }),
-      h(MetricCard, {
-        label: '總市值',
-        value: Math.round(totalValue).toLocaleString(),
-        tone: 'blue',
-      }),
-      h(MetricCard, {
-        label: '總損益',
-        value: `${totalPnl >= 0 ? '+' : ''}${Math.round(totalPnl).toLocaleString()}`,
-        tone: totalPnl >= 0 ? 'up' : 'down',
-      })
     )
   )
 }
@@ -365,9 +487,13 @@ export function OverviewPanel({
   activePortfolioId,
   duplicateHoldings,
   pendingItems,
+  watchlistCount,
+  missingTargetCount,
   onExit,
   onSwitch,
 }) {
+  const overviewHoldings = flattenPortfolioHoldings(portfolios)
+
   return h(
     'div',
     null,
@@ -375,8 +501,13 @@ export function OverviewPanel({
       portfolioCount,
       totalValue,
       totalPnl,
+      watchlistCount,
+      missingTargetCount,
       onExit,
     }),
+    h(KpiCards, { portfolios }),
+    h(ConcentrationDashboard, { holdings: overviewHoldings, stockMeta: STOCK_META }),
+    h(PrincipleCards),
     h(PortfolioSummaryList, {
       portfolios,
       activePortfolioId,

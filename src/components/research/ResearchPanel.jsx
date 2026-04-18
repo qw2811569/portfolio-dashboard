@@ -1,7 +1,8 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, OperatingContextCard } from '../common'
+import { Card, Button, DataSourceBadge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
+import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -389,6 +390,424 @@ function knowledgeProposalStatusMeta(status, gatePassed) {
   return { label: '暫無調整', color: C.textMute }
 }
 
+function formatConsensusPrice(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return null
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 1,
+    maximumFractionDigits: 1,
+  }).format(number)
+}
+
+function inferDataSource(item) {
+  const source = String(item?.source || '')
+    .trim()
+    .toLowerCase()
+  const tags = Array.isArray(item?.tags)
+    ? item.tags.map((tag) =>
+        String(tag || '')
+          .trim()
+          .toLowerCase()
+      )
+    : []
+
+  if (source === 'finmind') return 'finmind'
+  if (source === 'rss') return 'rss'
+  if (source === 'cnyes_aggregate') return 'cnyes_aggregate'
+  if (source === 'user_manual') return 'user_manual'
+  if (source === 'gemini' || source === 'gemini_grounded') return 'gemini_grounded'
+  if (source === 'cmoney') return 'cmoney'
+  if (source.includes('cmoney')) return 'cmoney'
+  if (tags.includes('gemini-grounding') || tags.includes('gemini-merged')) return 'gemini_grounded'
+  if (tags.includes('cmoney-notes') || tags.includes('cmoney-merged')) return 'cmoney'
+  if (tags.includes('rss-merged')) return 'rss'
+  return null
+}
+
+function buildAnalystReportGroups(holdings, analystReports) {
+  return (Array.isArray(holdings) ? holdings : [])
+    .map((holding) => {
+      const items = Array.isArray(analystReports?.[holding.code]?.items)
+        ? analystReports[holding.code].items
+        : []
+      const visibleItems = items
+        .filter((item) => item?.source !== 'cnyes_aggregate')
+        .map((item) => ({
+          ...item,
+          dataSource: inferDataSource(item),
+        }))
+
+      if (visibleItems.length === 0) return null
+      return {
+        code: holding.code,
+        name: holding.name,
+        items: visibleItems,
+      }
+    })
+    .filter(Boolean)
+}
+
+function getConsensusCards(holdings, analystReports) {
+  return (Array.isArray(holdings) ? holdings : [])
+    .map((holding) => {
+      const items = Array.isArray(analystReports?.[holding.code]?.items)
+        ? analystReports[holding.code].items
+        : []
+      const aggregateItem = items.find(
+        (item) => item?.source === 'cnyes_aggregate' && item?.aggregate && item.aggregate !== null
+      )
+      if (!aggregateItem?.aggregate) return null
+
+      const aggregate = aggregateItem.aggregate
+      const medianTarget =
+        Number.isFinite(Number(aggregate.medianTarget)) && Number(aggregate.medianTarget) > 0
+          ? Number(aggregate.medianTarget)
+          : null
+      const meanTarget =
+        Number.isFinite(Number(aggregate.meanTarget)) && Number(aggregate.meanTarget) > 0
+          ? Number(aggregate.meanTarget)
+          : null
+      const min = Number.isFinite(Number(aggregate.min)) ? Number(aggregate.min) : null
+      const max = Number.isFinite(Number(aggregate.max)) ? Number(aggregate.max) : null
+      const firmsCount = Number.isFinite(Number(aggregate.firmsCount))
+        ? Number(aggregate.firmsCount)
+        : Number.isFinite(Number(aggregate.numEst))
+          ? Number(aggregate.numEst)
+          : null
+      const displayTarget = medianTarget ?? meanTarget
+      if (!displayTarget || !min || !max) return null
+
+      return {
+        code: holding.code,
+        name: holding.name,
+        displayTarget,
+        meanTarget,
+        min,
+        max,
+        firmsCount,
+        rateDate: aggregate.rateDate || aggregateItem.publishedAt || null,
+      }
+    })
+    .filter(Boolean)
+}
+
+function ConsensusRangeBar({ min, max, meanTarget }) {
+  const span = max - min
+  const markerPosition =
+    Number.isFinite(meanTarget) && span > 0 ? ((meanTarget - min) / span) * 100 : 50
+
+  return h(
+    'div',
+    { style: { marginTop: 10 } },
+    h(
+      'div',
+      {
+        style: {
+          position: 'relative',
+          height: 14,
+          borderRadius: 999,
+          background: 'linear-gradient(90deg, rgba(168,181,154,0.18), rgba(168,181,154,0.52))',
+          border: '1px solid var(--sage-soft)',
+          overflow: 'hidden',
+        },
+      },
+      h('div', {
+        style: {
+          position: 'absolute',
+          top: 1,
+          bottom: 1,
+          left: `${Math.max(0, Math.min(100, markerPosition))}%`,
+          width: 2,
+          background: 'var(--sage)',
+          transform: 'translateX(-1px)',
+        },
+      }),
+      h('div', {
+        style: {
+          position: 'absolute',
+          top: '50%',
+          left: `${Math.max(0, Math.min(100, markerPosition))}%`,
+          width: 10,
+          height: 10,
+          borderRadius: '50%',
+          background: 'var(--sage)',
+          border: `2px solid ${C.card}`,
+          transform: 'translate(-50%, -50%)',
+          boxShadow: `0 0 0 2px ${alpha(C.blue, '30')}`,
+        },
+      })
+    ),
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          marginTop: 6,
+          fontSize: 10,
+          color: C.textMute,
+          fontFamily: 'var(--font-num)',
+        },
+      },
+      h('span', null, `$${formatConsensusPrice(min)}`),
+      h('span', { style: { color: 'var(--sage)', fontWeight: 600 } }, 'mean'),
+      h('span', null, `$${formatConsensusPrice(max)}`)
+    )
+  )
+}
+
+function ConsensusHighlightCard({ item }) {
+  return h(
+    Card,
+    {
+      highlighted: true,
+      color: 'var(--sage)',
+      style: {
+        border: '1px solid var(--sage-soft)',
+        background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd8')})`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: 8,
+          alignItems: 'flex-start',
+          marginBottom: 10,
+        },
+      },
+      h(
+        'div',
+        null,
+        h('div', { style: { ...lbl, color: 'var(--sage)', marginBottom: 4 } }, '外資券商共識'),
+        h('div', { style: { fontSize: 10, color: C.textMute } }, `${item.name} · ${item.code}`)
+      ),
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 9,
+            color: 'var(--sage)',
+            border: '1px solid var(--sage-soft)',
+            background: alpha(C.blue, '18'),
+            borderRadius: 999,
+            padding: '4px 8px',
+            letterSpacing: '0.06em',
+          },
+        },
+        'FactSet 聚合'
+      )
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 38,
+          lineHeight: 1,
+          color: C.text,
+          fontFamily: 'var(--font-headline)',
+          fontWeight: 600,
+          marginBottom: 10,
+        },
+      },
+      `$${formatConsensusPrice(item.displayTarget)}`
+    ),
+    h(
+      'div',
+      { style: { fontSize: 11, color: C.textSec } },
+      `${item.firmsCount || '—'} 家投顧 · ${item.rateDate || '日期未知'}`
+    ),
+    h(ConsensusRangeBar, {
+      min: item.min,
+      max: item.max,
+      meanTarget: item.meanTarget,
+    })
+  )
+}
+
+function ConsensusHighlights({ holdings, analystReports }) {
+  const consensusCards = getConsensusCards(holdings, analystReports)
+  if (consensusCards.length === 0) return null
+
+  return h(
+    'div',
+    {
+      style: {
+        display: 'grid',
+        gap: 10,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        marginBottom: 10,
+      },
+    },
+    consensusCards.map((item) => h(ConsensusHighlightCard, { key: item.code, item }))
+  )
+}
+
+function renderAnalystReportTarget(item) {
+  const target = Number(item?.target)
+  if (Number.isFinite(target) && target > 0) {
+    return `目標價 $${formatConsensusPrice(target)}`
+  }
+
+  if (item?.targetType === 'range') return '目標價區間'
+  if (item?.targetType === 'narrative') return '觀點摘錄'
+  return '研究摘要'
+}
+
+function AnalystReportRow({ item }) {
+  const summary = item?.summary || item?.snippet || '沒有摘要'
+  const metaParts = [renderAnalystReportTarget(item)]
+  if (item?.firm) metaParts.push(item.firm)
+  if (item?.publishedAt) metaParts.push(item.publishedAt)
+
+  return h(
+    'div',
+    {
+      style: {
+        display: 'grid',
+        gap: 5,
+        padding: '10px 0',
+        borderTop: `1px solid ${C.borderSub}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+      },
+      item?.url
+        ? h(
+            'a',
+            {
+              href: item.url,
+              target: '_blank',
+              rel: 'noreferrer',
+              style: {
+                fontSize: 11,
+                color: C.text,
+                fontWeight: 600,
+                lineHeight: 1.5,
+                textDecoration: 'none',
+              },
+            },
+            item.title || '未命名報告'
+          )
+        : h(
+            'div',
+            {
+              style: {
+                fontSize: 11,
+                color: C.text,
+                fontWeight: 600,
+                lineHeight: 1.5,
+              },
+            },
+            item?.title || '未命名報告'
+          ),
+      item?.dataSource && h(DataSourceBadge, { source: item.dataSource })
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 10,
+          color: C.textSec,
+          lineHeight: 1.7,
+        },
+      },
+      summary
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 9,
+          color: C.textMute,
+          lineHeight: 1.6,
+        },
+      },
+      metaParts.join(' · ')
+    )
+  )
+}
+
+function AnalystReportsSection({ holdings, analystReports }) {
+  const groups = buildAnalystReportGroups(holdings, analystReports)
+  if (groups.length === 0) return null
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 10,
+        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.blue, marginBottom: 4 } }, '研究來源索引'),
+    h(
+      'div',
+      { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
+      '每則研究旁都標示資料來源，讓你分辨外資共識、新聞摘錄、AI 搜尋與投顧整理。'
+    ),
+    groups.map((group) =>
+      h(
+        'div',
+        {
+          key: group.code,
+          style: {
+            padding: '10px 0',
+            borderTop: `1px solid ${C.borderSub}`,
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 2,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            { style: { fontSize: 11, color: C.text, fontWeight: 600 } },
+            `${group.name} · ${group.code}`
+          ),
+          h('div', { style: { fontSize: 9, color: C.textMute } }, `${group.items.length} 則`)
+        ),
+        group.items.map((item) =>
+          h(AnalystReportRow, { key: item.id || item.hash || item.title, item })
+        )
+      )
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 10,
+          color: C.textMute,
+          lineHeight: 1.7,
+          marginTop: 10,
+        },
+      },
+      '💡 資料來源：FactSet 外資共識（cnyes）、媒體新聞（RSS）、AI 搜尋（Gemini grounding）、投顧摘錄（CMoney）。優先順序由系統自動決定。'
+    )
+  )
+}
+
 export function ResearchProposalCard({
   results,
   onApplyProposal,
@@ -747,6 +1166,7 @@ export function ResearchPanel({
   dataRefreshRows,
   researchResults,
   researchHistory,
+  analystReports,
   enrichingResearchCode,
   proposalActionId,
   proposalActionType,
@@ -787,6 +1207,17 @@ export function ResearchPanel({
       researching,
       researchTarget,
       holdings,
+    }),
+    h(ConsensusHighlights, {
+      holdings,
+      analystReports,
+    }),
+    h(SeasonalityHeatmap, {
+      holdings,
+    }),
+    h(AnalystReportsSection, {
+      holdings,
+      analystReports,
     }),
     h(ResearchResults, {
       results: researchResults,

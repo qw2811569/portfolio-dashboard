@@ -4,6 +4,7 @@ import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { Card, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import Md from '../Md.jsx'
+import HoldingsRing from '../overview/HoldingsRing.jsx'
 
 const lbl = {
   fontSize: 10,
@@ -446,8 +447,33 @@ export function HoldingsPanel({
     'div',
     null,
     h(OperatingContextCard, { context: operatingContext }),
-    // Summary metrics
-    h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl }),
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 8,
+          alignItems: 'start',
+          marginBottom: 8,
+        },
+      },
+      h(
+        'div',
+        { style: { minWidth: 0 } },
+        // Summary metrics
+        h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl })
+      ),
+      h(
+        Card,
+        {
+          style: {
+            padding: '18px 18px 14px',
+          },
+        },
+        h(HoldingsRing, { holdings, totalVal })
+      )
+    ),
 
     // Daily insight card
     h(DailyInsightCard, { latestInsight }),

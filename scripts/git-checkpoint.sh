@@ -22,9 +22,7 @@ git add \
   vite.config.js \
   vercel.json \
   claude.md \
-  CLAUDE.md \
-  GEMINI.md \
-  QWEN.md
+  CLAUDE.md
 
 if git diff --cached --quiet; then
   echo "No staged changes to commit."

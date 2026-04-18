@@ -36,8 +36,14 @@ function computeGrossMargin(financialRow) {
 
 function computeRoe(financialRow, balanceRow) {
   if (!financialRow || !balanceRow) return 0
-  const netIncome = toNumber(financialRow.NetIncome)
-  const equity = toNumber(balanceRow.Equity)
+  const netIncome = toNumber(
+    financialRow.NetIncome ??
+      financialRow.IncomeAfterTaxes ??
+      financialRow.EquityAttributableToOwnersOfParent
+  )
+  const equity = toNumber(
+    balanceRow.Equity ?? balanceRow.EquityAttributableToOwnersOfParent ?? balanceRow.TotalEquity
+  )
   if (equity <= 0 || netIncome === 0) return 0
   return roundOneDecimal((netIncome / equity) * 100)
 }
@@ -57,10 +63,16 @@ export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
   const revenueYoY = latestRevenue ? toNumber(latestRevenue.revenueYoY) : 0
   const revenueMoM = latestRevenue ? toNumber(latestRevenue.revenueMoM) : 0
 
-  const quarter = latestFinancials ? dateStringToQuarter(latestFinancials.date) : ''
+  const quarter =
+    String(latestFinancials?.quarter || '').trim() ||
+    (latestFinancials ? dateStringToQuarter(latestFinancials.date) : '')
   const eps = latestFinancials ? toNumber(latestFinancials.EPS) : 0
   const grossMargin = computeGrossMargin(latestFinancials)
   const roe = computeRoe(latestFinancials, latestBalance)
+  const statementPeriodMode = String(latestFinancials?.statementPeriodMode || '').trim()
+  const statementWarnings = Array.isArray(latestFinancials?.statementWarnings)
+    ? latestFinancials.statementWarnings
+    : []
 
   const hasRevenue = Boolean(revenueMonth)
   const hasFinancials = eps !== 0 || grossMargin !== 0 || roe !== 0
@@ -81,7 +93,12 @@ export function mapFinMindToFundamentals(raw, { code, now = new Date() } = {}) {
       roe,
       source: 'finmind',
       updatedAt: now.toISOString(),
-      note: '',
+      note: [
+        statementPeriodMode ? `statementPeriodMode=${statementPeriodMode}` : '',
+        statementWarnings.length > 0 ? `warnings=${statementWarnings.join(',')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' | '),
     },
   }
 }

@@ -12,6 +12,7 @@ import {
   buildCmoneyInsightItem,
   collectCmoneyNotes,
 } from './cmoney-notes.js'
+import { buildCnyesAggregateItem, fetchCnyesAggregate } from './_lib/cnyes-target-price.js'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../src/seedData.js'
 
 const ANALYST_REPORTS_BLOB_PREFIX = 'analyst-reports'
@@ -599,6 +600,23 @@ async function collectCmoneyReports(stock) {
   }
 }
 
+async function collectCnyesReports(stock) {
+  const payload = await fetchCnyesAggregate(stock.code)
+  const items = payload.aggregate ? [buildCnyesAggregateItem(stock, payload.aggregate)] : []
+
+  return {
+    query: { code: stock.code, name: stock.name, mode: 'cnyes' },
+    fetchedAt: new Date().toISOString(),
+    totalFound: items.length,
+    newCount: items.length,
+    items,
+    aggregate: payload.aggregate,
+    reason: payload.reason || null,
+    targetPriceSource: payload.aggregate ? 'cnyes' : 'per-band',
+    targetPriceCount: 0,
+  }
+}
+
 async function extractInsights(stock, items) {
   if (!Array.isArray(items) || items.length === 0) return new Map()
   try {
@@ -706,6 +724,7 @@ export async function runAnalystReportsPipeline(input = {}) {
   let geminiPayload = null
   let rssPayload = null
   let cmoneyPayload = null
+  let cnyesPayload = null
 
   if (isGeminiGroundingEnabled()) {
     try {
@@ -743,6 +762,12 @@ export async function runAnalystReportsPipeline(input = {}) {
     }
   }
 
+  try {
+    cnyesPayload = await collectCnyesReports(stock)
+  } catch {
+    cnyesPayload = null
+  }
+
   const mergedReports = mergeLatestReportsByFirm([
     ...(geminiPayload?.reports || geminiPayload?.items || []).map((item) => ({
       ...item,
@@ -760,25 +785,28 @@ export async function runAnalystReportsPipeline(input = {}) {
   let payload = null
   if (mergedReports.length > 0) {
     const primarySource = mergedReports[0]?.source || 'rss'
-    const items = mergedReports.map((report, index) => ({
-      id: buildReportId(stock, report),
-      hash: buildReportId(stock, report),
-      title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
-      url: report.source_url,
-      source: report.firm,
-      publishedAt: report.date,
-      snippet: report.evidence,
-      summary: report.evidence,
-      target: report.target,
-      targetType: 'price-target',
-      targetEvidence: report.evidence,
-      firm: report.firm,
-      stance: report.stance,
-      tags: [`${report.source}-merged`],
-      confidence: null,
-      extractedAt: new Date().toISOString(),
-      rank: index + 1,
-    }))
+    const items = [
+      ...mergedReports.map((report, index) => ({
+        id: buildReportId(stock, report),
+        hash: buildReportId(stock, report),
+        title: `${report.firm} ${stock.name}(${stock.code}) 目標價 ${report.target}`,
+        url: report.source_url,
+        source: report.firm,
+        publishedAt: report.date,
+        snippet: report.evidence,
+        summary: report.evidence,
+        target: report.target,
+        targetType: 'price-target',
+        targetEvidence: report.evidence,
+        firm: report.firm,
+        stance: report.stance,
+        tags: [`${report.source}-merged`],
+        confidence: null,
+        extractedAt: new Date().toISOString(),
+        rank: index + 1,
+      })),
+      ...(cnyesPayload?.items || []),
+    ]
 
     payload = {
       query: {
@@ -790,13 +818,30 @@ export async function runAnalystReportsPipeline(input = {}) {
         geminiPayload?.fetchedAt ||
         rssPayload?.fetchedAt ||
         cmoneyPayload?.fetchedAt ||
+        cnyesPayload?.fetchedAt ||
         new Date().toISOString(),
       totalFound: items.length,
       newCount: items.length,
       items,
-      aggregate: cmoneyPayload?.aggregate || null,
+      aggregate: cnyesPayload?.aggregate || cmoneyPayload?.aggregate || null,
       targetPriceSource: primarySource,
       targetPriceCount: items.length,
+    }
+  } else if (rssPayload?.targetPriceCount > 0) {
+    payload = {
+      ...rssPayload,
+      items: [...(rssPayload.items || []), ...(cnyesPayload?.items || [])],
+      aggregate: cnyesPayload?.aggregate || null,
+      totalFound: (rssPayload.items || []).length + (cnyesPayload?.items || []).length,
+      newCount: (rssPayload.items || []).length + (cnyesPayload?.items || []).length,
+      targetPriceSource: 'rss',
+      targetPriceCount: rssPayload.targetPriceCount,
+    }
+  } else if (cnyesPayload?.aggregate) {
+    payload = {
+      ...cnyesPayload,
+      targetPriceSource: 'cnyes',
+      targetPriceCount: 0,
     }
   } else if (cmoneyPayload?.aggregate) {
     payload = {

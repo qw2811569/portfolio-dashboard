@@ -3,6 +3,9 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard } from '../common'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
+import { EventsTimeline } from './EventsTimeline.jsx'
+import { EventCountdownBadge } from './EventCountdownBadge.jsx'
+import { calculateEventCountdown } from '../../lib/eventCountdown.js'
 
 const TYPE_COLOR = {
   法說: C.up,
@@ -439,6 +442,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
   const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
   const predictionMeta = getPredictionMeta(event)
   const reviewMeta = getReviewMeta(event)
+  const countdown = calculateEventCountdown(event)
   const title = event.label || event.title || '未命名事件'
   const subtitle = event.sub || event.detail || ''
   const reviewSummary = [event.actualNote, event.lessons].filter(Boolean).join('｜')
@@ -488,8 +492,21 @@ export function NewsEventCard({ event, onReview, onToggle }) {
         { style: { flex: 1 } },
         h(
           'div',
-          { style: { fontSize: 12, fontWeight: 500, color: event.urgent ? C.up : C.text } },
-          title
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 8,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            { style: { fontSize: 12, fontWeight: 500, color: event.urgent ? C.up : C.text } },
+            title
+          ),
+          h(EventCountdownBadge, { event })
         ),
         subtitle
           ? h(
@@ -552,6 +569,21 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             },
             reviewMeta.label
           ),
+          countdown.autoReviewReady &&
+            h(
+              'span',
+              {
+                style: {
+                  fontSize: 9,
+                  padding: '2px 6px',
+                  borderRadius: 999,
+                  background: alpha(C.choco, '12'),
+                  color: C.choco,
+                  fontWeight: 600,
+                },
+              },
+              '📋 待復盤'
+            ),
           h(
             'span',
             {
@@ -733,6 +765,8 @@ export function EventsPanel({
 
     // Catalyst type filter buttons (only shown if props provided)
     setCatalystFilter && h(CatalystFilter, { catalystFilter, setCatalystFilter }),
+
+    h(EventsTimeline, { events: eventCards }),
 
     // Events list — empty state
     eventCards.length === 0 &&

@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
   BRAIN: '/api/brain',
   RESEARCH: '/api/research',
   RESEARCH_EXTRACT: '/api/research-extract',
+  TRACKED_STOCKS: '/api/tracked-stocks',
   TWSE: '/api/twse',
 }
 export const MARKET_PRICE_CACHE_KEY = 'pf-market-price-cache-v1'

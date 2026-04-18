@@ -1,4 +1,5 @@
 import { list, put } from '@vercel/blob'
+import { getPrivateBlobToken } from '../_lib/blob-tokens.js'
 import { loadLocalEnvIfPresent } from '../_lib/local-env.js'
 import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 import { fetchHistoricalPerBandValuation } from '../../src/lib/dataAdapters/finmindValuationAdapter.js'
@@ -6,13 +7,14 @@ import {
   isAuthorized,
   isSkippedInstrumentType,
   loadTrackedStocks,
+  resolveRequestOrigin,
 } from './collect-target-prices.js'
 
 const VALUATION_PREFIX = 'valuation'
 const PROCESSING_PAUSE_MS = 150
 
 function getBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  return getPrivateBlobToken()
 }
 
 function sleep(ms) {
@@ -27,14 +29,14 @@ export async function putValuationSnapshot(
   { token = getBlobToken(), putImpl = put } = {}
 ) {
   if (!token) {
-    throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for valuation writes')
+    throw new Error('BLOB_READ_WRITE_TOKEN is required for valuation writes')
   }
 
   await putImpl(`${VALUATION_PREFIX}/${code}.json`, JSON.stringify(snapshot, null, 2), {
     token,
     addRandomSuffix: false,
     allowOverwrite: true,
-    access: 'public',
+    access: 'private',
     contentType: 'application/json',
   })
 }
@@ -98,7 +100,8 @@ export default async function handler(req, res) {
   if (!isAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' })
 
   try {
-    const { trackedStocks } = await loadTrackedStocks({ logger: console })
+    const origin = resolveRequestOrigin(req)
+    const { trackedStocks } = await loadTrackedStocks({ logger: console, origin })
     const summary = await collectValuationSnapshots({
       trackedStocks,
       logger: console,
@@ -106,6 +109,7 @@ export default async function handler(req, res) {
 
     await markCronSuccess('compute-valuations', {
       token: getBlobToken(),
+      access: 'private',
       listImpl: list,
       putImpl: put,
       logger: console,

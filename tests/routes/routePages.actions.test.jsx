@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -22,7 +22,7 @@ import { ResearchPage } from '../../src/pages/ResearchPage.jsx'
 import { TradePage } from '../../src/pages/TradePage.jsx'
 import { WatchlistPage } from '../../src/pages/WatchlistPage.jsx'
 
-const ROUTE_ACTION_TIMEOUT = 20000
+const ROUTE_ACTION_TIMEOUT = 30000
 
 function createStorageMock(seed = {}) {
   const store = new Map(Object.entries(seed).map(([key, value]) => [key, JSON.stringify(value)]))
@@ -134,6 +134,13 @@ function renderRoute(ui) {
 describe('routes/page actions', () => {
   beforeEach(() => {
     installStorage(createSeedStorage())
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        totalTracked: 2,
+        lastSyncedAt: '2026-04-19T06:00:00.000Z',
+      }),
+    })
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
       configurable: true,
@@ -144,6 +151,7 @@ describe('routes/page actions', () => {
 
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -221,6 +229,34 @@ describe('routes/page actions', () => {
         )
       })
 
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5200))
+      })
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith('/api/tracked-stocks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            portfolioId: OWNER_PORTFOLIO_ID,
+            pid: OWNER_PORTFOLIO_ID,
+            stocks: [
+              { code: '2330', name: '台積電', type: '股票' },
+              { code: '2454', name: '聯發科', type: '股票' },
+            ],
+          }),
+          signal: expect.any(AbortSignal),
+        })
+      })
+
+      expect(
+        JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-tracked-sync-v1`))
+      ).toMatchObject({
+        portfolioId: OWNER_PORTFOLIO_ID,
+        status: 'fresh',
+        totalTracked: 2,
+        lastSyncedAt: '2026-04-19T06:00:00.000Z',
+      })
       expect(localStorage.setItem).toHaveBeenCalled()
       expect(warnSpy).not.toHaveBeenCalledWith(
         expect.stringContaining('[route-shell] write blocked')

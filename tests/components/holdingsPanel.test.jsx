@@ -56,4 +56,26 @@ describe('components/HoldingsPanel', () => {
     // HoldingsSummary renders totalVal with thousands separators — check for '9,876'
     expect(container.textContent).toContain('9,876')
   })
+
+  it('renders tracked-stocks sync badge when local sync state exists', () => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem(key) {
+          if (key !== 'pf-me-tracked-sync-v1') return null
+          return JSON.stringify({
+            portfolioId: 'me',
+            status: 'fresh',
+            lastSyncedAt: '2026-04-19T06:00:00.000Z',
+            totalTracked: 2,
+            source: 'live-sync',
+          })
+        },
+        setItem() {},
+      },
+      configurable: true,
+    })
+
+    render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
+    expect(screen.getByTestId('tracked-stocks-sync-badge')).toHaveTextContent('last-synced')
+  })
 })

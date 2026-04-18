@@ -69,27 +69,46 @@ function createNodeStyleResponse(res) {
   }
 }
 
-function localApiBrainPlugin() {
-  let brainHandlerPromise
+const LOCAL_API_ROUTE_MODULES = {
+  '/api/blob-read': './api/blob-read.js',
+  '/api/brain': './api/brain.js',
+  '/api/target-prices': './api/target-prices.js',
+  '/api/telemetry': './api/telemetry.js',
+  '/api/tracked-stocks': './api/tracked-stocks.js',
+  '/api/valuation': './api/valuation.js',
+}
 
-  const getBrainHandler = async () => {
-    if (!brainHandlerPromise) {
-      brainHandlerPromise = import('./api/brain.js').then((mod) => mod.default)
+function localApiBridgePlugin() {
+  const handlerPromiseByPrefix = new Map()
+
+  const getHandler = async (prefix) => {
+    if (!handlerPromiseByPrefix.has(prefix)) {
+      handlerPromiseByPrefix.set(
+        prefix,
+        Promise.all([
+          import('./api/_lib/local-env.js').then((mod) => mod.loadLocalEnvIfPresent()),
+          import(LOCAL_API_ROUTE_MODULES[prefix]),
+        ]).then(([, mod]) => mod.default)
+      )
     }
-    return brainHandlerPromise
+    return handlerPromiseByPrefix.get(prefix)
   }
 
   return {
-    name: 'local-api-brain',
+    name: 'local-api-bridge',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (!req.url?.startsWith('/api/brain')) return next()
+        const matchedPrefix = Object.keys(LOCAL_API_ROUTE_MODULES).find((prefix) =>
+          req.url?.startsWith(prefix)
+        )
+        if (!matchedPrefix) return next()
 
         try {
-          const handler = await getBrainHandler()
+          const handler = await getHandler(matchedPrefix)
           const requestUrl = new URL(req.url, `http://${DEV_HOST}:${DEV_PORT}`)
           const request = {
             method: req.method || 'GET',
+            headers: req.headers,
             query: toQueryObject(requestUrl.searchParams),
             body: req.method === 'POST' ? await readJsonBody(req) : undefined,
           }
@@ -106,7 +125,7 @@ function localApiBrainPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), localApiBrainPlugin()],
+  plugins: [react(), localApiBridgePlugin()],
   server: {
     host: DEV_HOST,
     port: DEV_PORT,

@@ -1,19 +1,28 @@
 import { list, put } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
-import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../../src/seedData.js'
+import {
+  dedupeTrackedStocks,
+  getBlobToken,
+  loadTrackedStocksWithFallback,
+  normalizeTrackedStock,
+  extractTrackedStocksFromPayload,
+  getFallbackTrackedStocks,
+} from '../_lib/tracked-stocks.js'
 import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 import { isSkippedTargetPriceInstrumentType } from '../../src/lib/instrumentTypes.js'
 
-const TRACKED_STOCKS_BLOB_KEYS = ['tracked-stocks/latest.json', 'tracked-stocks.json']
+export {
+  normalizeTrackedStock,
+  dedupeTrackedStocks,
+  extractTrackedStocksFromPayload,
+  getFallbackTrackedStocks,
+} from '../_lib/tracked-stocks.js'
+
 const TARGET_PRICE_PREFIX = 'target-prices'
 const PROCESSING_PAUSE_MS = 250
 
 function getCronSecret() {
   return String(process.env.CRON_SECRET || '').trim()
-}
-
-function getBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
 }
 
 export function sleep(ms) {
@@ -26,95 +35,11 @@ export function isSkippedInstrumentType(type) {
   return isSkippedTargetPriceInstrumentType(type)
 }
 
-export function normalizeTrackedStock(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-
-  const code = String(value.code || '').trim()
-  const name = String(value.name || '').trim()
-  const type = String(value.type || '股票').trim() || '股票'
-
-  if (!code || !name) return null
-
-  return { code, name, type }
-}
-
-export function dedupeTrackedStocks(values = []) {
-  const deduped = []
-  const seen = new Set()
-
-  for (const value of Array.isArray(values) ? values : []) {
-    const normalized = normalizeTrackedStock(value)
-    if (!normalized || seen.has(normalized.code)) continue
-    seen.add(normalized.code)
-    deduped.push(normalized)
-  }
-
-  return deduped
-}
-
-export function extractTrackedStocksFromPayload(payload) {
-  const candidates = []
-
-  if (Array.isArray(payload)) candidates.push(payload)
-  if (payload && typeof payload === 'object') {
-    candidates.push(payload.stocks, payload.items, payload.holdings, payload.watchlist)
-  }
-
-  for (const candidate of candidates) {
-    if (!Array.isArray(candidate)) continue
-    const trackedStocks = dedupeTrackedStocks(candidate)
-    if (trackedStocks.length > 0) return trackedStocks
-  }
-
-  return []
-}
-
-export function getFallbackTrackedStocks() {
-  return dedupeTrackedStocks([...INIT_HOLDINGS, ...INIT_HOLDINGS_JINLIANCHENG])
-}
-
-async function readTrackedStocksFromBlob({
-  token = getBlobToken(),
-  fetchImpl = fetch,
-  logger = console,
-} = {}) {
-  if (!token) return null
-
-  for (const key of TRACKED_STOCKS_BLOB_KEYS) {
-    try {
-      const { blobs } = await list({ prefix: key, limit: 1, token })
-      if (!blobs.length) continue
-
-      const response = await fetchImpl(blobs[0].url)
-      if (!response.ok) {
-        throw new Error(`blob read failed (${response.status})`)
-      }
-
-      const payload = await response.json()
-      const trackedStocks = extractTrackedStocksFromPayload(payload)
-      if (trackedStocks.length === 0) {
-        logger.warn(`[collect-target-prices] blob ${key} did not contain a usable stock list`)
-        continue
-      }
-
-      logger.info(`[collect-target-prices] using tracked stocks from blob: ${key}`)
-      return { trackedStocks, source: key }
-    } catch (error) {
-      logger.warn(`[collect-target-prices] tracked stocks blob read failed for ${key}:`, error)
-    }
-  }
-
-  return null
-}
-
 export async function loadTrackedStocks(options = {}) {
-  const blobResult = await readTrackedStocksFromBlob(options)
-  if (blobResult) return blobResult
-
-  const trackedStocks = getFallbackTrackedStocks()
+  const result = await loadTrackedStocksWithFallback(options)
   const logger = options.logger || console
-  logger.info('[collect-target-prices] using fallback tracked stocks from seedData')
-  return { trackedStocks, source: 'seedData' }
+  logger.info(`[collect-target-prices] using tracked stocks source=${result.source}`)
+  return result
 }
 
 function toSlashDate(value = new Date()) {
@@ -243,14 +168,14 @@ async function fetchAnalystReports(stock, { origin, fetchImpl = fetch } = {}) {
 
 export async function putTargetPriceSnapshot(code, snapshot, { token = getBlobToken() } = {}) {
   if (!token) {
-    throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for target-price writes')
+    throw new Error('BLOB_READ_WRITE_TOKEN is required for target-price writes')
   }
 
   await put(`${TARGET_PRICE_PREFIX}/${code}.json`, JSON.stringify(snapshot, null, 2), {
     token,
     addRandomSuffix: false,
     allowOverwrite: true,
-    access: 'public',
+    access: 'private',
     contentType: 'application/json',
   })
 }
@@ -322,14 +247,16 @@ export default async function handler(req, res) {
   if (!isAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' })
 
   try {
-    const { trackedStocks } = await loadTrackedStocks({ logger: console })
+    const origin = resolveRequestOrigin(req)
+    const { trackedStocks } = await loadTrackedStocks({ logger: console, origin })
     const summary = await collectTargetPriceSnapshots({
       trackedStocks,
-      origin: resolveRequestOrigin(req),
+      origin,
       logger: console,
     })
     await markCronSuccess('collect-target-prices', {
       token: getBlobToken(),
+      access: 'private',
       listImpl: list,
       putImpl: put,
       logger: console,

@@ -116,7 +116,11 @@ async function migrateBlob(blob, newToken) {
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   const oldToken = getEnvValue('OLD_BLOB_READ_WRITE_TOKEN', 'PUB_BLOB_READ_WRITE_TOKEN')
-  const newToken = getEnvValue('NEW_BLOB_READ_WRITE_TOKEN', 'PRIVATE_BLOB_READ_WRITE_TOKEN')
+  const newToken = getEnvValue(
+    'NEW_BLOB_READ_WRITE_TOKEN',
+    'BLOB_READ_WRITE_TOKEN',
+    'PRIVATE_BLOB_READ_WRITE_TOKEN'
+  )
 
   if (!oldToken) {
     throw new Error(
@@ -126,7 +130,7 @@ async function main() {
 
   if (!options.dryRun && !newToken) {
     throw new Error(
-      'NEW_BLOB_READ_WRITE_TOKEN or PRIVATE_BLOB_READ_WRITE_TOKEN is required for destination writes'
+      'NEW_BLOB_READ_WRITE_TOKEN or BLOB_READ_WRITE_TOKEN is required for destination writes'
     )
   }
 

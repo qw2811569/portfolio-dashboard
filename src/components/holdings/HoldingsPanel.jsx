@@ -1,6 +1,7 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
+import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
 import { Card, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import Md from '../Md.jsx'
@@ -19,6 +20,29 @@ const metricCard = {
   borderRadius: 8,
   padding: '8px 11px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
+}
+
+const trackedSyncTone = {
+  fresh: {
+    color: C.textSec,
+    border: alpha(C.olive, '30'),
+    background: alpha(C.olive, '10'),
+  },
+  stale: {
+    color: C.amber,
+    border: alpha(C.amber, '30'),
+    background: alpha(C.amber, '12'),
+  },
+  missing: {
+    color: C.textMute,
+    border: alpha(C.textMute, '24'),
+    background: alpha(C.textMute, '10'),
+  },
+  failed: {
+    color: C.down,
+    border: alpha(C.down, '30'),
+    background: alpha(C.down, '10'),
+  },
 }
 
 /**
@@ -94,6 +118,47 @@ export function HoldingsIntegrityWarning({ issues }) {
       .join('、'),
     issues.length > 5 ? '…' : '',
     '。先按一次「收盤價」重抓；如果還在，就表示這幾檔要手動補資料。'
+  )
+}
+
+function TrackedStocksSyncBadge({ portfolioId = '' }) {
+  const { badge } = useTrackedStocksSyncStatus(portfolioId)
+  if (!badge) return null
+
+  const tone = trackedSyncTone[badge.status] || trackedSyncTone.missing
+
+  return h(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginTop: 6,
+      },
+    },
+    h(
+      'span',
+      {
+        'data-testid': 'tracked-stocks-sync-badge',
+        title: badge.title,
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          borderRadius: 999,
+          padding: '4px 9px',
+          fontSize: 10,
+          lineHeight: 1.2,
+          fontWeight: 700,
+          letterSpacing: '0.01em',
+          border: `1px solid ${tone.border}`,
+          background: tone.background,
+          color: tone.color,
+        },
+      },
+      badge.label
+    )
   )
 }
 
@@ -428,6 +493,7 @@ function DailyInsightCard({ latestInsight }) {
  * Main Holdings Panel Component
  */
 export function HoldingsPanel({
+  activePortfolioId = '',
   holdings = [],
   totalVal = 0,
   totalCost = 0,
@@ -462,7 +528,8 @@ export function HoldingsPanel({
         'div',
         { style: { minWidth: 0 } },
         // Summary metrics
-        h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl })
+        h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl }),
+        h(TrackedStocksSyncBadge, { portfolioId: activePortfolioId })
       ),
       h(
         Card,

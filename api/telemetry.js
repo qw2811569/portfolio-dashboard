@@ -1,8 +1,9 @@
 import { put, list } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
+import { getTelemetryBlobToken } from './_lib/blob-tokens.js'
 
-const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
+const TOKEN = getTelemetryBlobToken()
 const DATA_DIR = join(process.cwd(), 'data')
 const TELEMETRY_KEY = 'telemetry-events.json'
 const TELEMETRY_LIMIT = 200

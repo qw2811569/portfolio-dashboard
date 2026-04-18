@@ -1,13 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { list, put } = vi.hoisted(() => ({
+const { list, put, get } = vi.hoisted(() => ({
   list: vi.fn(),
   put: vi.fn(),
+  get: vi.fn(),
 }))
 
 vi.mock('@vercel/blob', () => ({
   list,
   put,
+  get,
 }))
 
 import handler, { fetchStockNews, collectNewsFeed } from '../../api/cron/collect-news.js'

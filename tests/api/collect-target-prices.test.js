@@ -2,10 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const list = vi.fn()
 const put = vi.fn()
+const get = vi.fn()
 
 vi.mock('@vercel/blob', () => ({
   list,
   put,
+  get,
 }))
 
 function createMockResponse() {
@@ -45,7 +47,7 @@ describe('api/cron/collect-target-prices', () => {
     vi.useFakeTimers()
     vi.clearAllMocks()
     vi.resetModules()
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
     delete process.env.CRON_SECRET
     put.mockResolvedValue(undefined)
     global.fetch = vi.fn()
@@ -54,18 +56,21 @@ describe('api/cron/collect-target-prices', () => {
   afterEach(() => {
     vi.useRealTimers()
     global.fetch = originalFetch
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
     delete process.env.CRON_SECRET
   })
 
   it('processes stocks serially and skips ETF/權證 rows', async () => {
-    const trackedStocksBlobUrl = 'https://blob.example/tracked-stocks.json'
     const firstAnalystResponse = createDeferred()
     const secondAnalystResponse = createDeferred()
 
     list.mockImplementation(async ({ prefix }) => {
-      if (prefix === 'tracked-stocks/latest.json' || prefix === 'tracked-stocks.json') {
-        return { blobs: [{ url: trackedStocksBlobUrl }] }
+      if (prefix === 'tracked-stocks/') {
+        return {
+          blobs: [
+            { pathname: 'tracked-stocks/me/latest.json', uploadedAt: '2026-04-19T06:00:00.000Z' },
+          ],
+        }
       }
       if (prefix === 'last-success-collect-target-prices.json') {
         return { blobs: [] }
@@ -75,7 +80,12 @@ describe('api/cron/collect-target-prices', () => {
 
     global.fetch.mockImplementation((input, init = {}) => {
       const url = String(input)
-      if (url === trackedStocksBlobUrl) {
+      if (new URL(url).pathname === '/api/blob-read') {
+        const path = new URL(url).searchParams.get('path')
+        if (path !== 'tracked-stocks/me/latest.json') {
+          throw new Error(`unexpected signed blob path: ${path}`)
+        }
+
         return Promise.resolve({
           ok: true,
           json: async () => ({
@@ -185,7 +195,7 @@ describe('api/cron/collect-target-prices', () => {
         token: 'blob-token',
         addRandomSuffix: false,
         allowOverwrite: true,
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       })
     )
@@ -197,7 +207,7 @@ describe('api/cron/collect-target-prices', () => {
         token: 'blob-token',
         addRandomSuffix: false,
         allowOverwrite: true,
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       })
     )
@@ -210,7 +220,7 @@ describe('api/cron/collect-target-prices', () => {
         token: 'blob-token',
         addRandomSuffix: false,
         allowOverwrite: true,
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
       })
     )
@@ -239,6 +249,76 @@ describe('api/cron/collect-target-prices', () => {
       lateness: {
         late: false,
       },
+    })
+  })
+
+  it('falls back to latest portfolio snapshot when live sync blobs are absent', async () => {
+    list.mockImplementation(async ({ prefix }) => {
+      if (prefix === 'tracked-stocks/') return { blobs: [] }
+      if (prefix === 'tracked-stocks/latest.json' || prefix === 'tracked-stocks.json') {
+        return { blobs: [] }
+      }
+      if (prefix === 'portfolios/active.json') {
+        return {
+          blobs: [{ pathname: 'portfolios/active.json', uploadedAt: '2026-04-19T05:50:00.000Z' }],
+        }
+      }
+      if (prefix === 'portfolios/me/snapshots/') {
+        return {
+          blobs: [
+            {
+              pathname: 'portfolios/me/snapshots/2026-04-18.json',
+              uploadedAt: '2026-04-18T14:00:00.000Z',
+            },
+          ],
+        }
+      }
+      return { blobs: [] }
+    })
+
+    global.fetch.mockImplementation((input) => {
+      const url = new URL(String(input))
+      if (url.pathname !== '/api/blob-read') {
+        throw new Error(`unexpected fetch: ${String(input)}`)
+      }
+
+      const pathname = url.searchParams.get('path')
+      if (pathname === 'portfolios/active.json') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ portfolioIds: ['me'] }),
+        })
+      }
+      if (pathname === 'portfolios/me/snapshots/2026-04-18.json') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            portfolioId: 'me',
+            date: '2026-04-18',
+            trackedStocks: [
+              { code: '2330', name: '台積電', type: '股票' },
+              { code: '2454', name: '聯發科', type: '股票' },
+            ],
+          }),
+        })
+      }
+
+      throw new Error(`unexpected blob path: ${pathname}`)
+    })
+
+    const { loadTrackedStocks } = await import('../../api/cron/collect-target-prices.js')
+    const result = await loadTrackedStocks({
+      token: 'blob-token',
+      logger: { info() {}, warn() {}, error() {} },
+      origin: 'http://127.0.0.1:3002',
+    })
+
+    expect(result).toMatchObject({
+      source: 'snapshot-derived',
+      trackedStocks: [
+        { code: '2330', name: '台積電', type: '股票' },
+        { code: '2454', name: '聯發科', type: '股票' },
+      ],
     })
   })
 

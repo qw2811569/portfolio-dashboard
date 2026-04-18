@@ -1,9 +1,11 @@
 import { list } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
+import { getPrivateBlobToken } from '../_lib/blob-tokens.js'
 import { fetchSignedBlobJson } from '../_lib/signed-url.js'
 
 import { fetchAllStockDailyPrices } from '../_lib/twse-market-data.js'
 import { formatSnapshotDate, writePortfolioSnapshot } from '../_lib/portfolio-snapshots.js'
+import { dedupeTrackedStocks } from '../_lib/tracked-stocks.js'
 import { getPortfolioCost, getPortfolioValue, normalizeHoldings } from '../../src/lib/holdings.js'
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
@@ -11,7 +13,7 @@ const ACTIVE_PORTFOLIOS_KEY = 'portfolios/active.json'
 const OWNER_PORTFOLIO_ID = 'me'
 
 function getBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  return getPrivateBlobToken()
 }
 
 function getCronSecret() {
@@ -126,6 +128,7 @@ export function buildQuotesMap(dailyPrices = []) {
 
 export function buildPortfolioSnapshot(portfolioId, holdings, quotes, date) {
   const normalizedHoldings = normalizeHoldings(holdings, quotes)
+  const trackedStocks = dedupeTrackedStocks(normalizedHoldings)
 
   return {
     portfolioId,
@@ -135,6 +138,7 @@ export function buildPortfolioSnapshot(portfolioId, holdings, quotes, date) {
     holdingsCount: normalizedHoldings.length,
     pricedCount: normalizedHoldings.filter((item) => Number(item?.price) > 0).length,
     missingPriceCount: normalizedHoldings.filter((item) => Number(item?.price) <= 0).length,
+    trackedStocks,
   }
 }
 

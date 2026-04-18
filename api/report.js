@@ -2,9 +2,10 @@ import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — 週報素材 API
 // 回傳 HTML 頁面，讓 Claude.ai 的 web fetch 能正確解析
 import { list } from '@vercel/blob'
+import { getPrivateBlobToken } from './_lib/blob-tokens.js'
 import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
 
-const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
+const TOKEN = getPrivateBlobToken()
 
 async function readBlob(blob, { origin } = {}) {
   return fetchSignedBlobJson(blob?.pathname || blob?.url, { origin })

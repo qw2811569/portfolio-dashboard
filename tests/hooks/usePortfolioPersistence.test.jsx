@@ -60,8 +60,10 @@ describe('hooks/usePortfolioPersistence.js', () => {
     vi.useFakeTimers()
 
     const props = createPersistenceProps({
-      holdings: [{ code: '2330', qty: 1 }],
-      normalizeHoldings: vi.fn(() => [{ code: '2330', qty: 1, normalized: true }]),
+      holdings: [{ code: '2330', name: '台積電', type: '股票', qty: 1 }],
+      normalizeHoldings: vi.fn(() => [
+        { code: '2330', name: '台積電', type: '股票', qty: 1, normalized: true },
+      ]),
       cloudSyncStateRef: { current: { enabled: true, syncedAt: 0 } },
     })
 
@@ -71,20 +73,36 @@ describe('hooks/usePortfolioPersistence.js', () => {
 
     // holdings 已在 setHoldings 時 normalize，persistence effect 直接存原值
     expect(props.savePortfolioData).toHaveBeenCalledWith('me', 'holdings-v2', [
-      { code: '2330', qty: 1 },
+      { code: '2330', name: '台積電', type: '股票', qty: 1 },
     ])
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20000)
     })
 
-    expect(global.fetch).toHaveBeenCalledTimes(1)
-    expect(global.fetch).toHaveBeenCalledWith('/api/brain', {
+    const brainCalls = global.fetch.mock.calls.filter(([url]) => url === '/api/brain')
+    const trackedStocksCalls = global.fetch.mock.calls.filter(
+      ([url]) => url === '/api/tracked-stocks'
+    )
+
+    expect(trackedStocksCalls).toHaveLength(1)
+    expect(trackedStocksCalls[0][1]).toMatchObject({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        portfolioId: 'me',
+        pid: 'me',
+        stocks: [{ code: '2330', name: '台積電', type: '股票' }],
+      }),
+    })
+
+    expect(brainCalls).toHaveLength(1)
+    expect(brainCalls[0][1]).toEqual({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'save-holdings',
-        data: [{ code: '2330', qty: 1 }],
+        data: [{ code: '2330', name: '台積電', type: '股票', qty: 1 }],
       }),
     })
     expect(props.writeSyncAt).toHaveBeenCalledWith('pf-cloud-sync-at', expect.any(Number))
@@ -173,8 +191,10 @@ describe('hooks/usePortfolioPersistence.js', () => {
     vi.useFakeTimers()
 
     const props = createPersistenceProps({
-      holdings: [{ code: '2330', qty: 1 }],
-      normalizeHoldings: vi.fn(() => [{ code: '2330', qty: 1, normalized: true }]),
+      holdings: [{ code: '2330', name: '台積電', type: '股票', qty: 1 }],
+      normalizeHoldings: vi.fn(() => [
+        { code: '2330', name: '台積電', type: '股票', qty: 1, normalized: true },
+      ]),
       cloudSyncStateRef: { current: { enabled: true, syncedAt: 0 } },
     })
 
@@ -183,14 +203,15 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     expect(props.savePortfolioData).toHaveBeenCalledWith('me', 'holdings-v2', [
-      { code: '2330', qty: 1 },
+      { code: '2330', name: '台積電', type: '股票', qty: 1 },
     ])
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20000)
     })
 
-    expect(global.fetch).toHaveBeenCalledTimes(1)
+    expect(global.fetch.mock.calls.filter(([url]) => url === '/api/tracked-stocks')).toHaveLength(1)
+    expect(global.fetch.mock.calls.filter(([url]) => url === '/api/brain')).toHaveLength(1)
     expect(props.writeSyncAt).not.toHaveBeenCalled()
     expect(props.cloudSyncStateRef.current.syncedAt).toBe(0)
   })
@@ -199,8 +220,10 @@ describe('hooks/usePortfolioPersistence.js', () => {
     vi.useFakeTimers()
 
     const props = createPersistenceProps({
-      holdings: [{ code: '2330', qty: 1 }],
-      normalizeHoldings: vi.fn(() => [{ code: '2330', qty: 1, normalized: true }]),
+      holdings: [{ code: '2330', name: '台積電', type: '股票', qty: 1 }],
+      normalizeHoldings: vi.fn(() => [
+        { code: '2330', name: '台積電', type: '股票', qty: 1, normalized: true },
+      ]),
       cloudSyncStateRef: { current: { enabled: true, syncedAt: 0 } },
     })
 

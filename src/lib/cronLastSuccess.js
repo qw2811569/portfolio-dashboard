@@ -1,4 +1,4 @@
-import { list, put } from '@vercel/blob'
+import { get, list, put } from '@vercel/blob'
 import { getTaipeiClock } from './datetime.js'
 
 const DEFAULT_WEEKDAY_SUCCESS_GAP = 1
@@ -44,11 +44,34 @@ export function countElapsedWeekdays(fromValue, toValue) {
 
 export async function readLastSuccessMarker(
   job,
-  { token, fetchImpl = fetch, listImpl = list, logger = console } = {}
+  {
+    token,
+    fetchImpl = fetch,
+    listImpl = list,
+    getImpl = get,
+    logger = console,
+    access = 'public',
+  } = {}
 ) {
   if (!token) return null
 
   const key = getLastSuccessBlobKey(job)
+  if (access === 'private') {
+    try {
+      const blobResult = await getImpl(key, {
+        access: 'private',
+        token,
+        useCache: false,
+      })
+      if (!blobResult) return null
+      return await new Response(blobResult.stream).json()
+    } catch (error) {
+      if (error?.name === 'BlobNotFoundError') return null
+      logger.warn(`[cron-monitor] failed to read ${key}:`, error)
+      return null
+    }
+  }
+
   try {
     const { blobs } = await listImpl({ prefix: key, limit: 1, token })
     if (!Array.isArray(blobs) || blobs.length === 0) return null
@@ -74,10 +97,11 @@ export async function writeLastSuccessMarker(
     previousMarker = null,
     putImpl = put,
     logger = console,
+    access = 'public',
   } = {}
 ) {
   if (!token) {
-    throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for last-success writes')
+    throw new Error('blob token is required for last-success writes')
   }
 
   const previousSuccessAt = String(previousMarker?.lastSuccessAt || '').trim()
@@ -106,7 +130,7 @@ export async function writeLastSuccessMarker(
     token,
     addRandomSuffix: false,
     allowOverwrite: true,
-    access: 'public',
+    access,
     contentType: 'application/json',
   })
 
@@ -120,16 +144,26 @@ export async function markCronSuccess(
     now = new Date(),
     fetchImpl = fetch,
     listImpl = list,
+    getImpl = get,
     putImpl = put,
     logger = console,
+    access = 'public',
   } = {}
 ) {
-  const previousMarker = await readLastSuccessMarker(job, { token, fetchImpl, listImpl, logger })
+  const previousMarker = await readLastSuccessMarker(job, {
+    token,
+    fetchImpl,
+    listImpl,
+    getImpl,
+    logger,
+    access,
+  })
   return writeLastSuccessMarker(job, {
     token,
     now,
     previousMarker,
     putImpl,
     logger,
+    access,
   })
 }

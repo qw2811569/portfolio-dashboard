@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const list = vi.fn()
+const get = vi.fn()
 
 vi.mock('@vercel/blob', () => ({
-  list,
+  get,
 }))
 
 function createMockResponse() {
@@ -27,33 +27,34 @@ function createMockResponse() {
 }
 
 describe('api/valuation', () => {
-  const originalFetch = global.fetch
-
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
-    global.fetch = vi.fn()
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
   })
 
   afterEach(() => {
-    global.fetch = originalFetch
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
   })
 
   it('returns the stored valuation snapshot when blob exists', async () => {
-    list.mockResolvedValue({
-      blobs: [{ url: 'https://blob.example/7865.json' }],
-    })
-    global.fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        code: '7865',
-        method: 'historical-per-band',
-        confidence: 'high',
-        positionInBand: 'within',
-        lowerBound: 30.2,
-        midPoint: 37.5,
-        upperBound: 44.8,
+    get.mockResolvedValue({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              JSON.stringify({
+                code: '7865',
+                method: 'historical-per-band',
+                confidence: 'high',
+                positionInBand: 'within',
+                lowerBound: 30.2,
+                midPoint: 37.5,
+                upperBound: 44.8,
+              })
+            )
+          )
+          controller.close()
+        },
       }),
     })
 
@@ -74,7 +75,7 @@ describe('api/valuation', () => {
   })
 
   it('returns 304 with compute hint when no valuation blob exists', async () => {
-    list.mockResolvedValue({ blobs: [] })
+    get.mockResolvedValue(null)
 
     const { default: handler } = await import('../../api/valuation.js')
     const req = { method: 'GET', query: { code: '2489' } }

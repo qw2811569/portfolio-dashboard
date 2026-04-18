@@ -41,7 +41,7 @@ Env:
   TARGET_PRICE_BASE_URL   Override API origin
   APP_BASE_URL            Fallback API origin
   BACKFILL_PAUSE_MS       Pause between stocks in milliseconds
-  PUB_BLOB_READ_WRITE_TOKEN  Required for Blob writes`)
+  BLOB_READ_WRITE_TOKEN   Required for Blob writes`)
 }
 
 function resolveBaseUrl(cliBaseUrl = '') {

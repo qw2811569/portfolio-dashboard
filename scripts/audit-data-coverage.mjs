@@ -1,7 +1,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { list } from '@vercel/blob'
+import { get } from '@vercel/blob'
 
 import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 import { isSkippedInstrumentType, loadTrackedStocks } from '../api/cron/collect-target-prices.js'
@@ -9,6 +9,7 @@ import { isCronTargetUsable } from '../src/lib/dataAdapters/cronTargetsAdapter.j
 
 const TARGET_PRICE_THRESHOLD = 0.8
 const VALUATION_THRESHOLD = 0.95
+const TRACKED_STOCKS_LIVE_SYNC_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const TARGET_PRICE_PREFIX = 'target-prices/'
 const VALUATION_PREFIX = 'valuation/'
 const STATUS_DIR = path.resolve('docs/status')
@@ -118,6 +119,48 @@ function getValuationCoverage(snapshot) {
   return { state: 'missing', covered: false, updatedAt }
 }
 
+function evaluateTrackedStocksGate({ trackedSource, trackedLastSyncedAt, now = new Date() }) {
+  if (trackedSource === 'live-sync') {
+    const syncedAt = Date.parse(String(trackedLastSyncedAt || ''))
+    if (!Number.isFinite(syncedAt)) {
+      return {
+        fail: true,
+        status: 'FAIL',
+        reason: 'live-sync missing last-synced timestamp',
+      }
+    }
+
+    const ageMs = Math.max(0, new Date(now).getTime() - syncedAt)
+    if (ageMs > TRACKED_STOCKS_LIVE_SYNC_MAX_AGE_MS) {
+      return {
+        fail: true,
+        status: 'FAIL',
+        reason: `live-sync older than ${Math.round(TRACKED_STOCKS_LIVE_SYNC_MAX_AGE_MS / (24 * 60 * 60 * 1000))} days`,
+      }
+    }
+
+    return {
+      fail: false,
+      status: 'PASS',
+      reason: 'live-sync within freshness window',
+    }
+  }
+
+  if (trackedSource === 'seedData-fallback') {
+    return { fail: false, status: 'WARN', reason: 'using seedData fallback' }
+  }
+
+  if (trackedSource === 'snapshot-derived') {
+    return { fail: false, status: 'WARN', reason: 'using snapshot-derived fallback' }
+  }
+
+  if (trackedSource === 'legacy-global-blob') {
+    return { fail: false, status: 'WARN', reason: 'using legacy global tracked-stocks blob' }
+  }
+
+  return { fail: false, status: 'PASS', reason: 'tracked stocks source not gated' }
+}
+
 async function readSnapshotMap(trackedStocks, token, prefix) {
   const snapshotMap = new Map()
 
@@ -125,20 +168,18 @@ async function readSnapshotMap(trackedStocks, token, prefix) {
     const code = String(stock?.code || '').trim()
     if (!code) continue
 
-    const { blobs } = await list({ prefix: `${prefix}${code}.json`, limit: 1, token })
-    if (!Array.isArray(blobs) || blobs.length === 0) {
-      snapshotMap.set(code, null)
-      continue
-    }
-
-    const response = await fetch(blobs[0].url)
-    if (!response.ok) {
+    const blobResult = await get(`${prefix}${code}.json`, {
+      access: 'private',
+      token,
+      useCache: false,
+    })
+    if (!blobResult) {
       snapshotMap.set(code, null)
       continue
     }
 
     try {
-      snapshotMap.set(code, await response.json())
+      snapshotMap.set(code, await new Response(blobResult.stream).json())
     } catch {
       snapshotMap.set(code, null)
     }
@@ -150,6 +191,7 @@ async function readSnapshotMap(trackedStocks, token, prefix) {
 function renderMarkdownReport({
   now,
   trackedSource,
+  trackedLastSyncedAt,
   summary,
   rows,
   targetThreshold = TARGET_PRICE_THRESHOLD,
@@ -168,6 +210,7 @@ function renderMarkdownReport({
     '',
     `Generated at: ${generatedAt}`,
     `Tracked source: ${trackedSource}`,
+    `Tracked last synced: ${trackedLastSyncedAt || '-'}`,
     '',
     '## Summary',
     '',
@@ -182,6 +225,7 @@ function renderMarkdownReport({
     `- Valuation EPS negative: ${summary.valuation.epsNegative}/${summary.total} (${toPercent(summary.valuation.epsNegativeRate)})`,
     `- Valuation insufficient data: ${summary.valuation.insufficientData}/${summary.total} (${toPercent(summary.valuation.insufficientDataRate)})`,
     `- Valuation missing: ${summary.valuation.missing}/${summary.total} (${toPercent(summary.valuation.missingCoverageRate)})`,
+    `- Tracked source gate: ${summary.tracked.status} (${summary.tracked.reason})`,
     `- Target gate: coverage >= ${toPercent(targetThreshold)} => ${summary.target.coverageRate >= targetThreshold ? 'PASS' : 'FAIL'}`,
     `- Valuation gate: coverage >= ${toPercent(valuationThreshold)} => ${summary.valuation.coverageRate >= valuationThreshold ? 'PASS' : 'FAIL'}`,
     `- Overall gate: ${summary.passed ? 'PASS' : 'FAIL'}`,
@@ -218,12 +262,16 @@ export async function auditDataCoverage({
 } = {}) {
   loadLocalEnvIfPresent()
 
-  const token = String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  const token = String(process.env.BLOB_READ_WRITE_TOKEN || '').trim()
   if (!token) {
-    throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for audit-data-coverage')
+    throw new Error('BLOB_READ_WRITE_TOKEN is required for audit-data-coverage')
   }
 
-  const { trackedStocks, source: trackedSource } = await loadTrackedStocks({
+  const {
+    trackedStocks,
+    source: trackedSource,
+    lastSyncedAt: trackedLastSyncedAt,
+  } = await loadTrackedStocks({
     token,
     logger: { info() {}, warn() {}, error() {} },
   })
@@ -280,12 +328,26 @@ export async function auditDataCoverage({
   valuation.epsNegativeRate = valuation.epsNegative / safeTotal
   valuation.insufficientDataRate = valuation.insufficientData / safeTotal
   valuation.missingCoverageRate = valuation.missing / safeTotal
+  const tracked = evaluateTrackedStocksGate({
+    trackedSource,
+    trackedLastSyncedAt,
+    now,
+  })
 
   const summary = {
     total,
     target,
     valuation,
-    passed: target.coverageRate >= targetThreshold && valuation.coverageRate >= valuationThreshold,
+    tracked: {
+      source: trackedSource,
+      lastSyncedAt: trackedLastSyncedAt,
+      status: tracked.status,
+      reason: tracked.reason,
+    },
+    passed:
+      target.coverageRate >= targetThreshold &&
+      valuation.coverageRate >= valuationThreshold &&
+      !tracked.fail,
   }
 
   mkdirSync(STATUS_DIR, { recursive: true })
@@ -295,6 +357,7 @@ export async function auditDataCoverage({
     renderMarkdownReport({
       now,
       trackedSource,
+      trackedLastSyncedAt,
       summary,
       rows,
       targetThreshold,
@@ -303,7 +366,7 @@ export async function auditDataCoverage({
     'utf8'
   )
 
-  return { trackedSource, summary, rows, reportPath }
+  return { trackedSource, trackedLastSyncedAt, summary, rows, reportPath }
 }
 
 const isMain =
@@ -317,6 +380,7 @@ if (isMain) {
         {
           ok: result.summary.passed,
           trackedSource: result.trackedSource,
+          trackedLastSyncedAt: result.trackedLastSyncedAt,
           summary: result.summary,
           reportPath: result.reportPath,
         },
@@ -358,6 +422,22 @@ if (isMain) {
           epsNegative: result.summary.valuation.epsNegative,
           insufficientData: result.summary.valuation.insufficientData,
           missing: result.summary.valuation.missing,
+        },
+      })
+      process.exitCode = 1
+    }
+
+    if (result.summary.tracked.status === 'FAIL') {
+      appendCoverageAlert({
+        now: new Date(),
+        trackedSource: result.trackedSource,
+        metric: 'tracked-stocks-live-sync-freshness',
+        threshold: TRACKED_STOCKS_LIVE_SYNC_MAX_AGE_MS,
+        actual: 1,
+        summary: {
+          source: result.trackedSource,
+          lastSyncedAt: result.trackedLastSyncedAt,
+          reason: result.summary.tracked.reason,
         },
       })
       process.exitCode = 1

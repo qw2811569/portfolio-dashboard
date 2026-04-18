@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useSavedToast } from './useSavedToast.js'
+import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 import { useTransientUiActions } from './useTransientUiActions.js'
 import { useWatchlistActions } from './useWatchlistActions.js'
 import {
@@ -209,6 +210,12 @@ export function useRoutePortfolioRuntime() {
   const [researching, setResearching] = useState(false)
   const [researchTarget, setResearchTarget] = useState(null)
   const backupFileInputRef = useRef(null)
+
+  useTrackedStocksSync({
+    activePortfolioId: routePortfolioId,
+    holdings: routeData.holdings,
+    enabled: true,
+  })
 
   const reloadRuntime = useCallback(
     (nextPortfolioId = routePortfolioId) => {

@@ -46,6 +46,8 @@ export function getSignedBlobSecret() {
     process.env.BRIDGE_INTERNAL_TOKEN,
     process.env.BRIDGE_AUTH_TOKEN,
     process.env.CRON_SECRET,
+    process.env.BLOB_READ_WRITE_TOKEN,
+    process.env.PUB_BLOB_TELEMETRY_TOKEN,
     process.env.PUB_BLOB_READ_WRITE_TOKEN,
   ]
     .map((value) => String(value || '').trim())

@@ -1,4 +1,5 @@
 import { list, put } from '@vercel/blob'
+import { getPrivateBlobToken } from './blob-tokens.js'
 import { fetchSignedBlobJson } from './signed-url.js'
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
@@ -7,7 +8,7 @@ const MIN_MDD_HISTORY_DAYS = 7
 const SNAPSHOT_SCHEMA_VERSION = 1
 
 function getBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  return getPrivateBlobToken()
 }
 
 function formatDateParts(value, timeZone = DEFAULT_TIMEZONE) {
@@ -101,7 +102,7 @@ function buildDateSeries(fromDate, toDate) {
 }
 
 async function listAllBlobs(prefix, { token = getBlobToken(), listImpl = list } = {}) {
-  if (!token) throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for snapshot reads')
+  if (!token) throw new Error('BLOB_READ_WRITE_TOKEN is required for snapshot reads')
 
   const blobs = []
   let cursor
@@ -192,7 +193,7 @@ export async function writePortfolioSnapshot(
   { token = getBlobToken(), putImpl = put } = {}
 ) {
   if (!token) {
-    throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for snapshot writes')
+    throw new Error('BLOB_READ_WRITE_TOKEN is required for snapshot writes')
   }
 
   const normalized = normalizePortfolioSnapshot(snapshot)

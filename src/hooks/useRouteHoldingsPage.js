@@ -11,7 +11,12 @@ function warnBlockedRouteWrite(actionName) {
 }
 
 export function useRouteHoldingsPage() {
-  const { holdings = [], todayTotalPnl = 0, reversalConditions = {} } = usePortfolioRouteContext()
+  const {
+    portfolioId = '',
+    holdings = [],
+    todayTotalPnl = 0,
+    reversalConditions = {},
+  } = usePortfolioRouteContext()
 
   const expandedStock = useBrainStore((state) => state.expandedStock)
   const setExpandedStock = useBrainStore((state) => state.setExpandedStock)
@@ -46,6 +51,7 @@ export function useRouteHoldingsPage() {
 
     return {
       panelProps: {
+        activePortfolioId: portfolioId,
         holdings,
         totalVal,
         totalCost,
@@ -66,5 +72,5 @@ export function useRouteHoldingsPage() {
         onUpdateAlert: blockUpdateAlert,
       },
     }
-  }, [expandedStock, holdings, todayTotalPnl, reversalConditions, setExpandedStock])
+  }, [expandedStock, holdings, portfolioId, todayTotalPnl, reversalConditions, setExpandedStock])
 }

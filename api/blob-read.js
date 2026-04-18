@@ -1,9 +1,10 @@
 import { get } from '@vercel/blob'
 import { withApiAuth } from './_lib/auth-middleware.js'
+import { getPrivateBlobToken } from './_lib/blob-tokens.js'
 import { verifySignedBlobReadQuery } from './_lib/signed-url.js'
 
 function getBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  return getPrivateBlobToken()
 }
 
 async function handler(req, res) {

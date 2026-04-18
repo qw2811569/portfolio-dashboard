@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const list = vi.fn()
+const get = vi.fn()
 
 vi.mock('@vercel/blob', () => ({
-  list,
+  get,
 }))
 
 function createMockResponse() {
@@ -27,34 +27,35 @@ function createMockResponse() {
 }
 
 describe('api/target-prices', () => {
-  const originalFetch = global.fetch
-
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
-    global.fetch = vi.fn()
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
   })
 
   afterEach(() => {
-    global.fetch = originalFetch
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
   })
 
   it('surfaces source and count headers from the stored snapshot', async () => {
-    list.mockResolvedValue({
-      blobs: [{ url: 'https://blob.example/3491.json' }],
-    })
-    global.fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        code: '3491',
-        name: '昇達科',
-        targets: {
-          source: 'gemini',
-          reports: [
-            { firm: '凱基投顧', target: 1680, date: '2026-04-15' },
-            { firm: '元大投顧', target: 1650, date: '2026-04-12' },
-          ],
+    get.mockResolvedValue({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              JSON.stringify({
+                code: '3491',
+                name: '昇達科',
+                targets: {
+                  source: 'gemini',
+                  reports: [
+                    { firm: '凱基投顧', target: 1680, date: '2026-04-15' },
+                    { firm: '元大投顧', target: 1650, date: '2026-04-12' },
+                  ],
+                },
+              })
+            )
+          )
+          controller.close()
         },
       }),
     })
@@ -78,22 +79,27 @@ describe('api/target-prices', () => {
   })
 
   it('preserves cnyes source for aggregate-only snapshots', async () => {
-    list.mockResolvedValue({
-      blobs: [{ url: 'https://blob.example/2330.json' }],
-    })
-    global.fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        code: '2330',
-        name: '台積電',
-        targets: {
-          source: 'cnyes',
-          coverageState: 'aggregate-only',
-          reports: [],
-          aggregate: {
-            medianTarget: 2352.5,
-            firmsCount: 36,
-          },
+    get.mockResolvedValue({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              JSON.stringify({
+                code: '2330',
+                name: '台積電',
+                targets: {
+                  source: 'cnyes',
+                  coverageState: 'aggregate-only',
+                  reports: [],
+                  aggregate: {
+                    medianTarget: 2352.5,
+                    firmsCount: 36,
+                  },
+                },
+              })
+            )
+          )
+          controller.close()
         },
       }),
     })

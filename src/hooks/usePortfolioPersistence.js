@@ -8,6 +8,7 @@ import {
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
 import { STOCK_META } from '../seedData.js'
+import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 
 function mergeResearchHistory(existingReports, incomingReports) {
   return [...(existingReports || []), ...(incomingReports || [])]
@@ -62,6 +63,12 @@ export function usePortfolioPersistence({
   readSyncAt,
   writeSyncAt,
 }) {
+  useTrackedStocksSync({
+    activePortfolioId,
+    holdings,
+    enabled: canPersistPortfolioData,
+  })
+
   const emitSaved = useCallback(
     (message, timeout = STATUS_MESSAGE_TIMEOUT_MS.DEFAULT) => {
       if (typeof notifySaved === 'function') {

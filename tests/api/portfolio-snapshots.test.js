@@ -48,7 +48,7 @@ describe('api/_lib/portfolio-snapshots', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
     process.env.VITEST = '1'
     global.fetch = vi.fn()
     put.mockResolvedValue(undefined)
@@ -56,7 +56,7 @@ describe('api/_lib/portfolio-snapshots', () => {
 
   afterEach(() => {
     global.fetch = originalFetch
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
     delete process.env.VITEST
   })
 
@@ -499,12 +499,12 @@ describe('api/portfolio-mdd', () => {
     vi.resetModules()
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-17T12:00:00.000Z'))
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
   })
 
   it('returns 400 when portfolioId is missing', async () => {
@@ -568,14 +568,14 @@ describe('api/cron/snapshot-portfolios', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.resetModules()
-    process.env.PUB_BLOB_READ_WRITE_TOKEN = 'blob-token'
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
     delete process.env.CRON_SECRET
     global.fetch = vi.fn()
   })
 
   afterEach(() => {
     global.fetch = originalFetch
-    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    delete process.env.BLOB_READ_WRITE_TOKEN
     delete process.env.CRON_SECRET
   })
 

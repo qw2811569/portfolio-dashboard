@@ -231,6 +231,7 @@ export function usePortfolioPanelsContextComposer({
         }).length,
       },
       holdings: {
+        activePortfolioId,
         holdings: safeHoldings,
         totalVal,
         totalCost,

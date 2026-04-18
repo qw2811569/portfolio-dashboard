@@ -6,6 +6,7 @@ import { put, list, del } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
+import { getPrivateBlobToken } from './_lib/blob-tokens.js'
 import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
 import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
@@ -27,7 +28,7 @@ import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
 
-const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
+const TOKEN = getPrivateBlobToken()
 const RESEARCH_INDEX_KEY = 'research-index.json'
 const BRAIN_PROPOSAL_PREFIX = 'brain-proposals'
 const DATA_DIR = join(process.cwd(), 'data')

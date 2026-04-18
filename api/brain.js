@@ -4,9 +4,10 @@ import { withApiAuth } from './_lib/auth-middleware.js'
 import { put, list, del } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs'
 import { join } from 'path'
+import { getPrivateBlobToken } from './_lib/blob-tokens.js'
 import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
 
-const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
+const TOKEN = getPrivateBlobToken()
 const BRAIN_KEY = 'strategy-brain.json'
 const HISTORY_PREFIX = 'analysis-history/'
 const HISTORY_INDEX_KEY = 'analysis-history-index.json'

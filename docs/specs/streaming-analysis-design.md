@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態：Phase 1 已於 2026-04-02 上線，保留作 Phase 2-3 roadmap 參考
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # 收盤分析 Streaming 設計草案
 
 最後更新：2026-04-02

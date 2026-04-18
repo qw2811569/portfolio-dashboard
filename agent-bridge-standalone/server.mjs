@@ -9,8 +9,9 @@
 
 import http from 'node:http'
 import fs from 'node:fs'
+import fsPromises from 'node:fs/promises'
 import path from 'node:path'
-import { spawn } from 'node:child_process'
+import { exec, spawn } from 'node:child_process'
 import { WebSocketServer } from 'ws'
 import { fileURLToPath } from 'node:url'
 import { createLlmDispatcher } from './workers/llm-dispatcher.mjs'
@@ -28,10 +29,13 @@ const VALID_TOKENS = new Set([AUTH_TOKEN, AUTH_TOKEN_PREVIEW, INTERNAL_TOKEN].fi
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || process.cwd()
 const TASK_SEED_PATH = path.join(WORKSPACE_ROOT, 'coordination', 'llm-bus', 'agent-bridge-tasks.json')
 const TASK_PERSIST_PATH = path.join(__dirname, 'data', 'tasks.json')
+const LOCAL_ACTIVITY_PERSIST_PATH = path.join(__dirname, 'data', 'local-activity.json')
 const HARD_GATES_ENABLED = process.env.AGENT_BRIDGE_HARD_GATES === '1'
 const MAX_BUFFER_LINES = 500
 const CONSENSUS_APPROVAL_QUORUM = 2
 const DISPATCH_DATA_ROOT = path.join(__dirname, 'data')
+const LOCAL_ACTIVITY_TTL_MS = 30 * 60 * 1000
+const LOCAL_ACTIVITY_WRITE_DEBOUNCE_MS = 5000
 
 // ─── Agent Detection ──────────────────────────────────────────────
 const AGENT_PROFILES = [
@@ -55,11 +59,126 @@ const tasks = new Map()      // id -> BridgeTask
 const processes = new Map()  // sessionId -> ChildProcess
 const wsClients = new Set()
 const localActivity = new Map() // agent name -> {agent, status, message, timestamp, host}
+let localActivityPersistTimer = null
+let localActivityPersistPromise = null
+let localActivityPersistDisabled = false
+let isShuttingDown = false
 
 // ─── Logging ──────────────────────────────────────────────────────
 function log(msg) {
   const ts = new Date().toISOString().slice(11, 19)
   console.log(`[${ts}] ${msg}`)
+}
+
+function pruneLocalActivity(now = Date.now()) {
+  for (const [agent, entry] of localActivity.entries()) {
+    if (!entry?.timestamp || now - entry.timestamp >= LOCAL_ACTIVITY_TTL_MS) {
+      localActivity.delete(agent)
+    }
+  }
+}
+
+function serializeLocalActivity() {
+  pruneLocalActivity()
+  return Array.from(localActivity.values())
+    .sort((a, b) => b.timestamp - a.timestamp)
+}
+
+async function persistLocalActivity() {
+  if (localActivityPersistDisabled) return
+  pruneLocalActivity()
+  const dir = path.dirname(LOCAL_ACTIVITY_PERSIST_PATH)
+  const payload = JSON.stringify(serializeLocalActivity(), null, 2)
+  try {
+    await fsPromises.mkdir(dir, { recursive: true })
+    await fsPromises.writeFile(LOCAL_ACTIVITY_PERSIST_PATH, payload, 'utf-8')
+  } catch (error) {
+    if (error?.code === 'ENOSPC') {
+      localActivityPersistDisabled = true
+      log(`ERROR localActivity persist disabled after ENOSPC: ${error.message}`)
+      console.error(`[Agent Bridge] localActivity persist disabled after ENOSPC: ${error.message}`)
+      return
+    }
+    log(`WARN localActivity persist failed: ${error.message}`)
+  }
+}
+
+function scheduleLocalActivityPersist() {
+  if (localActivityPersistDisabled) return
+  if (localActivityPersistTimer) clearTimeout(localActivityPersistTimer)
+  localActivityPersistTimer = setTimeout(() => {
+    localActivityPersistTimer = null
+    localActivityPersistPromise = persistLocalActivity()
+      .finally(() => { localActivityPersistPromise = null })
+  }, LOCAL_ACTIVITY_WRITE_DEBOUNCE_MS)
+}
+
+async function flushLocalActivityPersist() {
+  if (localActivityPersistDisabled) return
+  if (localActivityPersistTimer) {
+    clearTimeout(localActivityPersistTimer)
+    localActivityPersistTimer = null
+    localActivityPersistPromise = persistLocalActivity()
+      .finally(() => { localActivityPersistPromise = null })
+  }
+  if (localActivityPersistPromise) await localActivityPersistPromise
+}
+
+async function backupCorruptedLocalActivityFile() {
+  const backupPath = `${LOCAL_ACTIVITY_PERSIST_PATH}.corrupted-${Date.now()}`
+  await fsPromises.rename(LOCAL_ACTIVITY_PERSIST_PATH, backupPath)
+  log(`ERROR localActivity corrupted file backed up to ${backupPath}`)
+  return backupPath
+}
+
+async function loadLocalActivity() {
+  try {
+    const raw = await fsPromises.readFile(LOCAL_ACTIVITY_PERSIST_PATH, 'utf-8')
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      throw Object.assign(new Error('expected array'), { code: 'EBADJSON' })
+    }
+    const now = Date.now()
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== 'object' || !entry.agent) continue
+      const timestamp = typeof entry.timestamp === 'number' ? entry.timestamp : now
+      if (now - timestamp >= LOCAL_ACTIVITY_TTL_MS) continue
+      localActivity.set(entry.agent, {
+        agent: entry.agent,
+        status: entry.status || 'unknown',
+        message: entry.message || '',
+        timestamp,
+        host: entry.host || 'unknown',
+      })
+    }
+    log(`Local activity restored: ${localActivity.size}`)
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      log('Local activity restore: no persisted file, starting empty')
+      return
+    }
+    if (error instanceof SyntaxError || error?.code === 'EBADJSON') {
+      localActivity.clear()
+      try {
+        await backupCorruptedLocalActivityFile()
+      } catch (backupError) {
+        log(`WARN localActivity corrupted backup failed: ${backupError.message}`)
+      }
+      log('Local activity restore: starting with empty map after corrupted file')
+      return
+    }
+    log(`WARN localActivity restore failed: ${error.message}`)
+  }
+}
+
+function registerShutdownFlush(signal) {
+  process.once(signal, () => {
+    if (isShuttingDown) return
+    isShuttingDown = true
+    flushLocalActivityPersist()
+      .catch((error) => log(`WARN localActivity flush failed on ${signal}: ${error.message}`))
+      .finally(() => process.exit(0))
+  })
 }
 
 // ─── ANSI strip ───────────────────────────────────────────────────
@@ -75,11 +194,11 @@ const PUBLIC_HTTP_ROUTES = new Set([
   '/index.html',
   '/api/health',
   '/api/status',
-  '/api/project',
 ])
 const PROTECTED_HTTP_ROUTES = [
   /^\/internal\/analyst-reports$/,
   /^\/internal\/analyst-reports\/[^/]+$/,
+  /^\/api\/project$/,
   /^\/api\/sessions$/,
   /^\/api\/send$/,
   /^\/api\/terminal\/create$/,
@@ -95,7 +214,9 @@ const PROTECTED_HTTP_ROUTES = [
 ]
 const PROTECTED_WS_MESSAGE_TYPES = new Set([
   'send',
+  'session:history',
   'terminal:create',
+  'task:list',
   'task:create',
   'task:update',
   'task:dispatch',
@@ -103,6 +224,24 @@ const PROTECTED_WS_MESSAGE_TYPES = new Set([
   'task:consensus',
   'task:sync',
   'worker:dispatch',
+])
+const PRIVATE_WS_OUTBOUND_TYPES = new Set([
+  'snapshot',
+  'session:open',
+  'session:update',
+  'session:close',
+  'session:history',
+  'terminal:data',
+  'tasks:snapshot',
+  'task:created',
+  'task:updated',
+  'task:completed',
+  'task:dispatched',
+  'task:consensus',
+  'worker:dispatches',
+  'worker:dispatched',
+  'worker:completed',
+  'worker:log',
 ])
 
 function getBearerToken(value) {
@@ -141,6 +280,119 @@ function hasWsAuth(req, msg) {
 function logAuthUsage(transport, target, tokenKind) {
   if (!tokenKind || tokenKind === 'disabled') return
   log(`Auth accepted (${transport}:${tokenKind}) ${target}`)
+}
+
+function execCommand(command, { cwd = WORKSPACE_ROOT, timeoutMs = 5000 } = {}) {
+  // 5s timeout 防 git command hang（Qwen reg-5 找的 P1 risk）
+  return new Promise((resolve) => {
+    const child = exec(command, { cwd, timeout: timeoutMs, killSignal: 'SIGKILL' }, (error, stdout, stderr) => {
+      if (error) {
+        const isTimeout = error.killed && error.signal === 'SIGKILL'
+        resolve({
+          ok: false,
+          stdout: stdout || '',
+          stderr: stderr || error.message,
+          timedOut: isTimeout,
+        })
+        return
+      }
+      resolve({ ok: true, stdout: stdout || '', stderr: stderr || '' })
+    })
+    // 雙重保險：節點原生 timeout 失效時也能 SIGKILL
+    const watchdog = setTimeout(() => {
+      try { child.kill('SIGKILL') } catch {}
+    }, timeoutMs + 500)
+    child.on('exit', () => clearTimeout(watchdog))
+  })
+}
+
+function parseTaskSummaryFromRecords(records) {
+  const summary = { total: 0, active: 0, done: 0 }
+  for (const record of records) {
+    if (!record || typeof record !== 'object') continue
+    summary.total += 1
+    const status = String(record.status || '').trim().toLowerCase()
+    if (status === 'completed' || status === 'done') summary.done += 1
+    else summary.active += 1
+  }
+  return summary
+}
+
+async function readTaskSummary() {
+  try {
+    const raw = await fsPromises.readFile(TASK_PERSIST_PATH, 'utf-8')
+    const parsed = JSON.parse(raw)
+    const records = parsed && typeof parsed === 'object' ? Object.values(parsed) : []
+    return parseTaskSummaryFromRecords(records)
+  } catch {
+    return parseTaskSummaryFromRecords(Array.from(tasks.values()))
+  }
+}
+
+function computeAgentBreakdown(entries) {
+  const breakdown = { codex: 0, qwen: 0, gemini: 0 }
+  for (const entry of entries) {
+    const agentId = detectAgent(entry?.agent || '').id
+    if (agentId in breakdown) breakdown[agentId] += 1
+  }
+  return breakdown
+}
+
+async function readTodayCommits() {
+  // git --since='today' 在某些 git 版本不可靠，用 24 小時內代替
+  const result = await execCommand("git log --since='24 hours ago' --oneline")
+  if (!result.ok) return 0
+  return result.stdout.split('\n').filter(Boolean).length
+}
+
+async function readRecentCommits(limit = 10) {
+  // 拉近 24 小時 commit list（最新優先），給 Bridge 故事化 timeline 用
+  // 包含 file count + +/- 行數
+  const result = await execCommand(
+    `git log --since='24 hours ago' --shortstat --pretty=format:'COMMIT|%h|%cI|%s' -n ${limit}`
+  )
+  if (!result.ok) return []
+
+  // 解析 git log --shortstat 輸出（每 commit 兩行：第 1 行 metadata，第 2 行 stat）
+  const lines = result.stdout.split('\n').filter((l) => l.trim() || l === '')
+  const commits = []
+  let current = null
+  for (const line of lines) {
+    if (line.startsWith('COMMIT|')) {
+      if (current) commits.push(current)
+      const [, hash, time, ...msgParts] = line.split('|')
+      current = {
+        hash,
+        time,
+        message: msgParts.join('|'),
+        filesChanged: 0,
+        insertions: 0,
+        deletions: 0,
+      }
+    } else if (current && line.includes('changed')) {
+      // " 3 files changed, 45 insertions(+), 12 deletions(-)"
+      const filesMatch = line.match(/(\d+) files? changed/)
+      const insMatch = line.match(/(\d+) insertions?/)
+      const delMatch = line.match(/(\d+) deletions?/)
+      if (filesMatch) current.filesChanged = Number(filesMatch[1])
+      if (insMatch) current.insertions = Number(insMatch[1])
+      if (delMatch) current.deletions = Number(delMatch[1])
+    }
+  }
+  if (current) commits.push(current)
+  return commits
+}
+
+async function readPendingPush() {
+  const dirtyResult = await execCommand('git status --porcelain')
+  const dirtyCount = dirtyResult.ok ? dirtyResult.stdout.split('\n').filter(Boolean).length : 0
+  const upstreamResult = await execCommand('git rev-parse --abbrev-ref --symbolic-full-name @{upstream}')
+  if (!upstreamResult.ok) return dirtyCount
+  const upstream = upstreamResult.stdout.trim()
+  if (!upstream) return dirtyCount
+  const unpushedResult = await execCommand(`git rev-list --count ${upstream}..HEAD`)
+  const unpushedCount = unpushedResult.ok ? Number(unpushedResult.stdout.trim()) || 0 : 0
+  return dirtyCount + unpushedCount
 }
 
 // ─── Session management (child_process based) ─────────────────────
@@ -389,6 +641,31 @@ function serializeTask(t) {
   }
 }
 
+// 公開 dashboard 用的 sanitized task：只暴露 metadata，藏 dispatchPrompt / writeScope / sourcePlanRef / evidence 等敏感
+function serializeTaskPublic(t) {
+  const full = serializeTask(t)
+  return {
+    id: full.id,
+    title: full.title,
+    summary: full.summary?.slice(0, 200) || '',
+    owner: full.owner,
+    status: full.status,
+    lane: full.lane,
+    priority: full.priority,
+    requiresConsensus: full.requiresConsensus,
+    consensusState: full.consensusState,
+    consensusApprovalCount: full.consensusApprovalCount,
+    consensusRequiredCount: full.consensusRequiredCount,
+    verificationState: full.verificationState,
+    dependsOn: full.dependsOn || [],
+    completedAt: full.completedAt,
+    createdAt: full.createdAt,
+    updatedAt: full.updatedAt,
+    recommendedSessionId: full.recommendedSessionId,
+    recommendedSessionName: full.recommendedSessionName,
+  }
+}
+
 function upsertTask(raw) {
   const id = norm(raw.id)
   const cur = id ? tasks.get(id) : undefined
@@ -474,10 +751,16 @@ function broadcastTasksSnapshot() {
 }
 
 // ─── WebSocket broadcast ──────────────────────────────────────────
+function isPrivateWsOutboundMessage(data) {
+  return PRIVATE_WS_OUTBOUND_TYPES.has(data?.type)
+}
+
 function broadcast(data) {
   const json = JSON.stringify(data)
   for (const ws of wsClients) {
-    if (ws.readyState === 1) ws.send(json)
+    if (ws.readyState !== 1) continue
+    if (isPrivateWsOutboundMessage(data) && !ws.authTokenKind) continue
+    ws.send(json)
   }
 }
 
@@ -552,24 +835,35 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(Array.from(sessions.values()).map(serializeSession))); return
   }
   if (p === '/api/status' && isReadMethod) {
-    const THIRTY_MIN = 30 * 60 * 1000
-    const now = Date.now()
-    const localEntries = [...localActivity.values()]
-      .filter(e => now - e.timestamp < THIRTY_MIN)
-      .sort((a, b) => b.timestamp - a.timestamp)
+    const localEntries = serializeLocalActivity()
+    const [taskSummary, todayCommits, pendingPush, recentCommits] = await Promise.all([
+      readTaskSummary(),
+      readTodayCommits(),
+      readPendingPush(),
+      readRecentCommits(15),
+    ])
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({
-      uptime: process.uptime(), sessions: sessions.size, tasks: tasks.size,
+      uptime: process.uptime(),
+      sessions: sessions.size,
+      tasks: taskSummary,
       clients: wsClients.size, workspace: path.basename(WORKSPACE_ROOT),
-      hardGates: { enabled: HARD_GATES_ENABLED, envVar: 'AGENT_BRIDGE_HARD_GATES' },
+      agentBreakdown: computeAgentBreakdown(localEntries),
+      todayCommits,
+      pendingPush,
+      recentCommits,
       localActivity: localEntries,
     })); return
   }
   if (p === '/api/project' && isReadMethod) {
     const statusPath = path.join(__dirname, 'project-status.json')
     try {
+      const project = JSON.parse(fs.readFileSync(statusPath, 'utf-8'))
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(fs.readFileSync(statusPath, 'utf-8'))
+      res.end(JSON.stringify({
+        ...project,
+        hardGates: { enabled: HARD_GATES_ENABLED, envVar: 'AGENT_BRIDGE_HARD_GATES' },
+      }))
     } catch { res.writeHead(404); res.end('{}') }
     return
   }
@@ -642,6 +936,7 @@ const server = http.createServer(async (req, res) => {
       timestamp: timestamp || Date.now(),
       host: host || 'unknown',
     })
+    scheduleLocalActivityPersist()
     log(`Local status update: ${agent} → ${status}`)
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ ok: true, agent })); return
@@ -703,21 +998,28 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({ server })
 wss.on('connection', (ws, req) => {
   wsClients.add(ws)
+  ws.authTokenKind = hasWsAuth(req)
   log(`Client connected (total: ${wsClients.size})`)
 
   ws.send(JSON.stringify({
     type: 'snapshot',
-    sessions: Array.from(sessions.values()).map(serializeSession),
+    sessions: ws.authTokenKind ? Array.from(sessions.values()).map(serializeSession) : [],
     workspace: path.basename(WORKSPACE_ROOT),
   }))
+  // 公開 task list (sanitized) — dashboard 預設能看任務狀態 / lane / 進度，不含 dispatchPrompt 等敏感
   ws.send(JSON.stringify({
     type: 'tasks:snapshot',
-    tasks: Array.from(tasks.values()).map(serializeTask),
+    tasks: ws.authTokenKind
+      ? Array.from(tasks.values()).map(serializeTask)
+      : Array.from(tasks.values()).map(serializeTaskPublic),
   }))
-  ws.send(JSON.stringify({
-    type: 'worker:dispatches',
-    dispatches: dispatcher.listDispatches(),
-  }))
+  if (ws.authTokenKind) {
+    logAuthUsage('ws', 'connect', ws.authTokenKind)
+    ws.send(JSON.stringify({
+      type: 'worker:dispatches',
+      dispatches: dispatcher.listDispatches(),
+    }))
+  }
 
   ws.on('message', async (raw) => {
     try {
@@ -767,6 +1069,9 @@ wss.on('connection', (ws, req) => {
 
 // ─── Start ────────────────────────────────────────────────────────
 loadTasks()
+registerShutdownFlush('SIGINT')
+registerShutdownFlush('SIGTERM')
+await loadLocalActivity()
 server.listen(PORT, HOST, () => {
   log(`Agent Bridge standalone server running on ${HOST}:${PORT}`)
   log(`Dashboard: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`)

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Report Preview Round 43</title>
+  <link rel="stylesheet" href="../source-han-fonts.css">
+  <style>
+    :root{--ink:#0B120E;--charcoal:#2F3232;--iron:#838585;--bone:#E7E0D6;--bone-deep:#D9D3D1;--line:#BCB3AD;--warning:#F0A145;--warning-soft:rgba(240,161,69,.24);--positive:#EF7D2F;--cta:#EC662D;--hot:#FC6D2B;--hot-soft:rgba(252,109,43,.12);--negative:#3C3C3C;--up:var(--positive);--down:var(--negative);--shadow:0 1px 0 rgba(23,23,23,.05),inset 0 1px 0 rgba(255,255,255,.72);--serif:"Source Han Serif TC","Noto Serif TC","Source Serif 4",serif;--sans:"Source Han Sans TC","Noto Sans TC","Source Sans 3",sans-serif;--mono:"IBM Plex Mono","SF Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+    *{box-sizing:border-box} body{margin:0;min-width:1600px;background:radial-gradient(circle at top left,rgba(168,181,154,.14),transparent 28%),radial-gradient(circle at bottom right,rgba(242,86,35,.07),transparent 24%),var(--bone-deep);color:var(--ink);font-family:var(--sans)}
+    .screen{width:1600px;height:1200px;margin:0 auto;padding:24px;overflow:hidden;background:linear-gradient(180deg,var(--bone) 0%,#f6f1e8 100%)}
+    .topbar,.meta,.hero-meta,.head,.row,.copy-btn,.spark-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.topbar{padding-bottom:14px;border-bottom:1px solid rgba(23,23,23,.08);margin-bottom:14px}
+    .eyebrow,.small,.meta-text,.archive-date,.copy-note{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--charcoal)} [data-meta]{letter-spacing:-.04em}@media (max-width:768px){[data-meta]{letter-spacing:-.02em}} .date{font-size:14px;color:var(--charcoal)}
+    .chip,.pill,.conf,.archive-pill,.copy-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.5);font-size:12px;font-weight:600}
+    .chip.dark,.copy-btn{background:var(--cta);border-color:var(--cta);color:var(--bone)} .chip.outline,.conf.low{border:1.5px solid var(--hot);color:var(--ink);background:rgba(255,255,255,.56)} .warn,.dot{width:8px;height:8px;border-radius:50%;background:var(--hot);display:inline-block;flex:0 0 auto}
+    .hero{position:relative;display:grid;grid-template-columns:1.16fr .84fr;gap:16px;padding:22px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.42),rgba(255,255,255,0) 42%),linear-gradient(180deg,rgba(168,181,154,.12),rgba(168,181,154,.03)),var(--bone);box-shadow:var(--shadow);overflow:hidden}
+    .hero:before{content:"";position:absolute;inset:0;opacity:.18;background-image:radial-gradient(rgba(23,23,23,.18) .7px,transparent .8px),radial-gradient(rgba(23,23,23,.08) .7px,transparent .8px);background-size:14px 14px,22px 22px;background-position:0 0,8px 10px}
+    .hero>*{position:relative;z-index:1}.title,.section-title,.card-title,.verb{font-family:var(--serif);margin:0;line-height:.93;font-weight:600}.title{max-width:760px;font-family:"Courier New",var(--mono);font-size:34px;line-height:1.16;letter-spacing:.12em;text-transform:uppercase}.section-title{font-size:30px}.card-title{font-size:24px}.hero-copy{display:grid;gap:14px}.lede{max-width:680px;font-size:15px;line-height:1.72;color:var(--charcoal)}.long-form{line-height:1.65}h1,h2,h3{padding-block:8px 12px}.mobile-sticky-meta,.mobile-sticky-section{position:static}
+    .hero-stat{display:grid;justify-items:end;align-content:end;gap:10px;text-align:right}.big{font-family:var(--serif);font-size:128px;line-height:.82;color:var(--hot)} .big-note{max-width:250px;font-size:13px;line-height:1.6;color:var(--charcoal)}
+    .layout{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-top:14px}.panel,.side{border:1px solid var(--line);background:rgba(255,255,255,.44);box-shadow:var(--shadow)} .panel{padding:16px;display:grid;gap:14px} .side{padding:16px;display:grid;gap:14px;align-content:start}
+    .summary{display:grid;gap:12px}.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pillar{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.84)} .pillar p,.hint-note,.archive-item p,.hit-copy{margin:0;font-size:13px;line-height:1.55;color:var(--charcoal)}
+    .hints{display:grid;gap:10px}.hint{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.9)} .ticker{font-size:12px;font-weight:700;letter-spacing:.12em}.verb{font-size:26px}
+    .meta{flex-wrap:wrap;margin:8px 0 10px}.pill{font-size:11px;padding:4px 10px}.pill.tag{background:rgba(239,125,47,.12)} .pill.insider{border-color:rgba(23,23,23,.08);background:rgba(131,133,133,.16)} .conf{font-size:11px;padding:5px 10px} .conf.high{background:var(--positive);color:var(--bone);border-color:var(--positive)}
+    .down{color:var(--negative);font-weight:700}.archive-list,.spark,.copy-box{display:grid;gap:10px}.archive-item{padding:8px 0;border-top:1px solid rgba(23,23,23,.08)}.archive-item:first-child{border-top:none;padding-top:0}
+    .archive-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.archive-pill{padding:4px 10px;font-size:10px;background:rgba(168,181,154,.14)}
+    .copy-box{padding:14px;border:1px solid rgba(23,23,23,.08);background:linear-gradient(180deg,rgba(168,181,154,.12),rgba(255,255,255,.2))}.copy-btn{justify-content:center;padding:12px 16px;cursor:pointer;transition:filter 140ms ease,transform 140ms ease,box-shadow 140ms ease}.copy-btn:hover{filter:brightness(.92)}.copy-btn:active{transform:scale(.98)}.copy-btn:focus-visible{outline:2px solid var(--hot);outline-offset:3px;box-shadow:0 0 0 5px rgba(242,86,35,.12)}
+    .spark svg{width:100%;height:86px;display:block;background:rgba(250,247,241,.68);border:1px solid rgba(23,23,23,.08)} .spark path.line{fill:none;stroke:var(--iron);stroke-width:3}.spark path.area{fill:rgba(168,181,154,.18)} .spark circle.low{fill:var(--hot)}
+    .legend{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--charcoal)} .mono{font-family:var(--mono)}
+    @media (max-width:768px){:root{--space-3:16px;--section-gap:40px;--card-inner:24px;--timeline-gap:24px;--chapter-gap:64px}body{min-width:0}.screen{width:100%;height:auto;padding:var(--space-3);overflow:visible}.topbar,.meta,.hero-meta,.head,.row,.copy-btn,.spark-head,.legend,.archive-head{flex-wrap:wrap;align-items:flex-start}.hero,.layout,.summary-grid{grid-template-columns:1fr}.hero{padding:var(--card-inner)}.layout{margin-top:40px;gap:24px}.title{font-size:22px;line-height:1.3;max-width:12ch}.section-title,.card-title{font-size:24px}.lede,.pillar p,.hint-note,.archive-item p,.hit-copy,.big-note{font-size:14px;line-height:1.58}.big{font-size:76px}.panel,.side,.copy-box{padding:var(--card-inner);background:var(--bone-deep);border-radius:12px}.summary-grid{padding-top:24px;border-top:1px solid rgba(23,23,23,.08);gap:24px}.legend{font-size:11px}.hints,.archive-list,.spark,.copy-box{gap:24px}.pillar,.hint{background:rgba(255,255,255,.52);border-radius:12px}.archive-item{padding:16px 0}.mobile-sticky-meta{position:sticky;top:0;z-index:20;padding:10px 0 12px;background:rgba(250,247,241,.92);backdrop-filter:blur(20px)}.mobile-sticky-section{position:sticky;top:56px;z-index:15;padding:8px 0 10px;background:rgba(250,247,241,.92);backdrop-filter:blur(20px)}}
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="topbar">
+      <div><div class="eyebrow">Daily Report Preview</div><h1 class="section-title">收盤分析</h1></div>
+      <div class="date">2026-04-17（五）</div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="hero-meta"><span class="chip outline">14:05 fixed window</span><span class="chip">streaming 已完成</span></div>
+        <div class="mobile-sticky-meta"><h2 class="title">DAILY REPORT · POST-CLOSE · 14:05</h2></div>
+        <p class="lede long-form">平常日 hero 退回結構化標頭；右側 action count 與下方 summary 才是主資訊層級。</p>
+      </div>
+      <div class="hero-stat">
+        <div class="small">今日有 action hint 的持股數</div>
+        <div class="big">5</div>
+        <div class="big-note">2 檔需等催化驗證，1 檔屬 insider holding 僅記數字與事件，避免把董事持股誤包裝成 AI 建議。</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <section class="summary">
+          <div class="head mobile-sticky-section"><div><div class="eyebrow">Streaming Analysis</div><h3 class="card-title">今日摘要</h3></div><span class="chip dark">Accuracy Gate 5/5</span></div>
+          <p class="lede long-form" style="max-width:none">市場今天給的訊號不在於全面轉弱，而是資金選股標準更收斂。AI 判讀三件事：第一，AI 伺服器與高階製程鏈維持原 thesis，但追價要等量能確認；第二，傳產高股息持股進入「等數字不等故事」階段，事件比敘事重要；第三，若某檔只剩情緒支撐、沒有新催化，明天應把它從操作優先序往後排。</p>
+          <div class="summary-grid">
+            <article class="pillar"><div class="small">PILLAR 01</div><h4 class="card-title">基本面</h4><p>2330 與 3017 的毛利率敘事未破，但外資追價力道沒有擴大，結論是 thesis intact、進場條件更嚴。</p></article>
+            <article class="pillar"><div class="small">PILLAR 02</div><h4 class="card-title">事件節奏</h4><p>2059 等待法說後三天驗證，今天先不硬做方向；事件先進 archive，避免 Daily 把未結案事件當成結論。</p></article>
+            <article class="pillar"><div class="small">PILLAR 03</div><h4 class="card-title">風險警示</h4><p>7865 為 insider holding，只記錄收盤數字、量縮與公告，不產生買賣語氣。低信心提示改 hot outline，不混入一般建議。</p></article>
+          </div>
+        </section>
+
+        <section class="hints">
+          <div class="head mobile-sticky-section"><div><div class="eyebrow">Per Holding</div><h3 class="card-title">行動提示</h3></div><span class="small">最多顯示 5 檔</span></div>
+
+          <article class="hint">
+            <div class="row"><span class="ticker">2330 台積電</span><span class="conf high">confidence 0.83</span></div>
+            <div class="meta"><div class="verb">追加</div><span class="pill tag">製程 / 需求</span><span class="pill">條件：站回五日量增區</span></div>
+            <p class="hint-note">今天收 <span class="down">▼ 1.2%</span> 但主因是短線獲利了結，若明日量能回補、ADR 不轉弱，可分段補；否則維持觀察。</p>
+          </article>
+
+          <article class="hint">
+            <div class="row"><span class="ticker">3017 奇鋐</span><span class="conf high">confidence 0.78</span></div>
+            <div class="meta"><div class="verb">持平</div><span class="pill tag">散熱 / AI 伺服器</span><span class="pill">條件：法說前不追</span></div>
+            <p class="hint-note">動能仍在，但漲幅已反映部分樂觀預期。保留部位，等待法說對出貨節奏的確認再決定是否加碼。</p>
+          </article>
+
+          <article class="hint">
+            <div class="row"><span class="ticker">2059 川湖</span><span class="conf low"><span class="warn"></span>confidence 0.64</span></div>
+            <div class="meta"><div class="verb">觀察</div><span class="pill tag">事件 / 驗證</span><span class="pill">條件：三天後回看法說 impact</span></div>
+            <p class="hint-note">催化已發生但市場尚未完成消化。信心不足的原因是資料仍在事件視窗內，先做 timeline 驗證，再回 Daily 更新 thesis。</p>
+          </article>
+
+          <article class="hint">
+            <div class="row"><span class="ticker">2603 長榮</span><span class="conf low"><span class="warn"></span>confidence 0.67</span></div>
+            <div class="meta"><div class="verb">減倉</div><span class="pill tag">運價 / 現金流</span><span class="pill">條件：跌破前低且量縮</span></div>
+            <p class="hint-note">若明日無法收復關鍵區間，這筆部位的上行空間不足以抵消波動。屬風險整理，不是情緒性看空。</p>
+          </article>
+
+          <article class="hint">
+            <div class="row"><span class="ticker">7865 金聯成</span><span class="conf low"><span class="warn"></span>僅記錄</span></div>
+            <div class="meta"><div class="verb">👑 公司代表</div><span class="pill insider">insider holding</span><span class="pill">僅記數字 + 事件</span></div>
+            <p class="hint-note">今日收 <span class="down">▼ 0.4%</span>，量縮，無新增公開重大訊息。此檔跳過 AI thesis 與買賣建議，只保留部位事實與事件紀錄。</p>
+          </article>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="archive">
+          <div class="head mobile-sticky-section"><div><div class="eyebrow">Archive</div><h3 class="card-title">過去 7 天 analysis archive</h3></div><span class="archive-pill">30 天可回看</span></div>
+          <div class="archive-list">
+            <article class="archive-item"><div class="archive-head"><span class="archive-date">04/16</span><span class="meta-text">3 檔 action hint</span></div><p>市場接受權值股整理，操作重點轉向事件後驗證，先守 thesis 再談加碼。</p></article>
+            <article class="archive-item"><div class="archive-head"><span class="archive-date">04/15</span><span class="meta-text">2 檔 low confidence</span></div><p>法說前情緒偏熱，Daily 將兩檔降為觀察，等待量價與新聞交叉確認。</p></article>
+            <article class="archive-item"><div class="archive-head"><span class="archive-date">04/14</span><span class="meta-text">risk alert 1</span></div><p>航運部位進入風險整理，AI 提示先縮表、把注意力移回現金流與景氣循環。</p></article>
+            <article class="archive-item"><div class="archive-head"><span class="archive-date">04/11</span><span class="meta-text">insider tracked</span></div><p>董事持股改走數字紀錄，不再輸出推論型動作，語氣更乾淨也更可信。</p></article>
+          </div>
+        </section>
+
+        <section class="copy-box">
+          <div class="mobile-sticky-section"><div class="eyebrow">Clipboard</div><h3 class="card-title">一鍵複製今日摘要</h3></div>
+          <div class="copy-note">用 CTA 實心色，不把最亮暖色浪費在一般操作。</div>
+          <button class="copy-btn" type="button">複製今日摘要</button>
+        </section>
+
+        <section class="spark">
+          <div class="spark-head mobile-sticky-section"><div><div class="eyebrow">Accuracy</div><h3 class="card-title">命中率跟蹤</h3></div><span class="chip outline"><span class="dot"></span>低信心另計</span></div>
+          <svg viewBox="0 0 420 86" preserveAspectRatio="none" aria-label="命中率火花圖">
+            <path class="area" d="M0,68 L0,52 L60,44 L120,48 L180,37 L240,40 L300,26 L360,32 L420,20 L420,86 L0,86 Z"></path>
+            <path class="line" d="M0,52 L60,44 L120,48 L180,37 L240,40 L300,26 L360,32 L420,20"></path>
+            <circle cx="240" cy="40" r="5" class="low"></circle>
+          </svg>
+          <div class="legend"><span>7d hit rate <strong class="mono">74%</strong></span><span>低信心樣本 <strong class="mono">2</strong></span><span>本週最佳 <strong class="mono">04/17</strong></span></div>
+          <p class="hit-copy">sparkline 用 iron 主線，只有低信心節點打 hot，讓「警告」仍是一個節點而不是整條圖的主色。</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

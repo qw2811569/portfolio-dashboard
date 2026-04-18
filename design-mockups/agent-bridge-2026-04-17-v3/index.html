@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Agent Bridge v3 · iOS Safari Mobile + Desktop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F2EADF;
+      --surface: #F6F0E8;
+      --surface-strong: #E7DACC;
+      --accent: #B85C38;      /* clay — Bridge 專屬 */
+      --ink: #34271F;
+      --muted: #A89A86;
+      --muted-ink: #6E5B51;
+      --line: #CDBFAD;
+      --line-strong: #B8A997;
+      --up: #6F8568;
+      --down: #B65A4D;
+      --amber: #B9853E;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --space-5: 40px;
+      --serif: 'Source Serif 4', 'Noto Serif TC', serif;
+      --sans: 'Source Sans 3', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      --mono: ui-monospace, 'SF Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: rgba(0,0,0,0.04); }
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+      font-size: 16px;  /* iOS 防 auto-zoom */
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* ─────── 通用工具 ─────── */
+    .serif { font-family: var(--serif); }
+    .mono { font-family: var(--mono); }
+    .muted { color: var(--muted-ink); }
+    .eyebrow { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-ink); font-weight: 600; }
+    .divider { height: 1px; background: var(--line); margin: var(--space-3) 0; }
+    .chip { display: inline-block; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; color: var(--muted-ink); background: var(--surface); }
+    .chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .chip.up { color: var(--up); border-color: var(--up); }
+    .chip.down { color: var(--down); border-color: var(--down); }
+    .chip.amber { color: var(--amber); border-color: var(--amber); }
+
+    /* ─────── 對比導覽 ─────── */
+    .section-label {
+      padding: var(--space-4) var(--space-3) var(--space-2);
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted-ink);
+      background: var(--surface-strong);
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* ─────── iPhone mockup frame ─────── */
+    .phone {
+      max-width: 375px;
+      margin: var(--space-4) auto;
+      background: var(--bg);
+      border: 1px solid var(--line-strong);
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(52, 39, 31, 0.08);
+    }
+    .phone-statusbar {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-3);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .phone-statusbar .time { font-weight: 600; }
+    .phone-statusbar .right { display: flex; gap: 4px; font-size: 10px; }
+
+    /* ─────── Bridge header ─────── */
+    .bridge-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--line);
+    }
+    .bridge-header .brand {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .bridge-header .brand .sub {
+      color: var(--muted-ink);
+      font-weight: 400;
+      font-size: 13px;
+      margin-left: 6px;
+    }
+    .bridge-header .sync-state {
+      font-size: 10px;
+      color: var(--muted-ink);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .bridge-header .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--up);
+    }
+
+    /* ─────── Action Center ─────── */
+    .action-center {
+      margin: var(--space-3);
+      padding: var(--space-4);
+      border: 1px solid var(--accent);
+      border-left-width: 4px;
+      background: rgba(184, 92, 56, 0.06);
+      border-radius: 4px;
+    }
+    .action-center .eyebrow { color: var(--accent); }
+    .action-center h2 {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      margin: var(--space-2) 0 var(--space-2);
+      color: var(--ink);
+    }
+    .action-center .detail {
+      font-size: 13px;
+      color: var(--muted-ink);
+      line-height: 1.6;
+      margin-bottom: var(--space-3);
+    }
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-family: var(--sans);
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      border-radius: 6px;
+      text-align: center;
+      min-height: 48px;  /* iOS touch target 44+ */
+      transition: all 150ms;
+    }
+    .btn.primary {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+      font-weight: 600;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn .sub {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* ─────── Decision queue ─────── */
+    .decision-queue {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .decision-queue .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-2);
+    }
+    .decision-queue .queue-header h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .decision-queue .count {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .decision-item {
+      padding: var(--space-2) 0;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .decision-item:first-of-type { border-top: none; padding-top: 0; }
+    .decision-item .label {
+      color: var(--muted-ink);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .decision-item .text {
+      color: var(--ink);
+    }
+
+    /* ─────── Metrics (3 column) ─────── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      margin: 0 var(--space-3) var(--space-4);
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .metric {
+      padding: var(--space-3);
+      background: var(--surface);
+      text-align: left;
+    }
+    .metric .label {
+      font-size: 10px;
+      color: var(--muted-ink);
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .metric .value {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+    .metric .delta {
+      font-size: 11px;
+      color: var(--up);
+      margin-top: 2px;
+    }
+    .metric .sparkline {
+      margin-top: 4px;
+      height: 18px;
+    }
+    .metric .sparkline svg { width: 100%; height: 100%; }
+
+    /* ─────── Now Running Hero ─────── */
+    .now-running {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .now-running .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-2);
+    }
+    .now-running h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .now-running .elapsed {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted-ink);
+    }
+    .now-running .session-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-2);
+      align-items: center;
+      padding: var(--space-2) 0;
+      border-top: 1px solid var(--line);
+    }
+    .now-running .session-card:first-of-type { border-top: none; }
+    .ring {
+      width: 42px; height: 42px;
+      position: relative;
+    }
+    .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring .bg { stroke: var(--line); stroke-width: 5; fill: none; }
+    .ring .fg { stroke: var(--accent); stroke-width: 5; fill: none; stroke-linecap: round; }
+    .ring .label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--serif); font-size: 11px; font-weight: 600;
+      color: var(--ink);
+    }
+    .session-card .meta .name { font-size: 12px; font-weight: 600; }
+    .session-card .meta .task { font-size: 10px; color: var(--muted-ink); margin-top: 2px; }
+    .session-card .step { font-family: var(--mono); font-size: 10px; color: var(--muted-ink); text-align: right; }
+
+    /* ─────── Today Chart (commit trend sparkline) ─────── */
+    .today-chart {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .today-chart h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    .today-chart .chart-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: var(--space-2);
+    }
+    .today-chart .chart-value {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .today-chart .chart-legend {
+      font-size: 11px;
+      color: var(--muted-ink);
+    }
+    .today-chart .bar-chart {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      align-items: end;
+      height: 64px;
+    }
+    .today-chart .bar {
+      background: var(--accent);
+      opacity: 0.75;
+      border-radius: 2px 2px 0 0;
+      position: relative;
+    }
+    .today-chart .bar.today { opacity: 1; }
+    .today-chart .bar-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-top: 4px;
+      font-size: 9px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ─────── Overall task donut ─────── */
+    .task-donut {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .task-donut h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: var(--space-3);
+    }
+    .donut-wrap {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: var(--space-3);
+      align-items: center;
+    }
+    .donut-ring {
+      width: 150px;
+      height: 150px;
+      position: relative;
+      margin: 0 auto;
+    }
+    .donut-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .donut-ring .track { fill: none; stroke: #E7DACC; stroke-width: 14; }
+    .donut-ring .seg-done { fill: none; stroke: #6F8568; stroke-width: 14; stroke-linecap: butt; }
+    .donut-ring .seg-wip { fill: none; stroke: #B85C38; stroke-width: 14; stroke-linecap: butt; }
+    .donut-ring .seg-blocked { fill: none; stroke: #B65A4D; stroke-width: 14; stroke-linecap: butt; }
+    .donut-ring .center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .donut-ring .pct {
+      font-family: var(--serif);
+      font-size: 34px;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--ink);
+    }
+    .donut-ring .sub {
+      font-size: 10px;
+      color: var(--muted-ink);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+    .donut-legend {
+      display: grid;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .donut-legend-row {
+      display: grid;
+      grid-template-columns: 14px auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .donut-legend .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+    .donut-legend .label {
+      color: var(--muted-ink);
+      font-size: 11px;
+    }
+    .donut-legend .count {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 600;
+      text-align: right;
+    }
+
+    /* ─────── Phase progress ─────── */
+    .phase-progress {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .phase-progress h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    .phase-bar {
+      height: 8px;
+      background: var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: var(--space-2) 0;
+      position: relative;
+    }
+    .phase-bar > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+    }
+    .phase-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted-ink);
+    }
+    .phase-label strong {
+      color: var(--ink);
+      font-family: var(--mono);
+    }
+
+    /* ─────── Agent rows ─────── */
+    .agents {
+      margin: 0 var(--space-3) var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .agents .header {
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .agents .header h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .agent-row {
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: var(--space-2);
+      padding: 10px var(--space-3);
+      border-top: 1px solid var(--line);
+      align-items: center;
+      font-size: 13px;
+    }
+    .agent-row:first-of-type { border-top: none; }
+    .agent-row .kind-prefix {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted-ink);
+      font-weight: 600;
+      border: 1px solid var(--line);
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-align: center;
+      background: var(--bg);
+    }
+    .agent-row .name {
+      font-weight: 500;
+    }
+    .agent-row .task {
+      font-size: 11px;
+      color: var(--muted-ink);
+      margin-top: 2px;
+    }
+    .agent-row .duration {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted-ink);
+    }
+    .agent-row .progress {
+      grid-column: 1 / -1;
+      height: 3px;
+      background: var(--line);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .agent-row .progress > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    /* ─────── Today story timeline ─────── */
+    .today-story {
+      margin: 0 var(--space-3) var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: var(--space-3);
+    }
+    .today-story h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+    }
+    .commit-row {
+      display: grid;
+      grid-template-columns: 40px 60px 1fr;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+      line-height: 1.4;
+      align-items: baseline;
+      border-top: 1px dashed var(--line);
+    }
+    .commit-row:first-of-type { border-top: none; }
+    .commit-row .ts {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted-ink);
+    }
+    .commit-row .hash {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink);
+      background: rgba(184, 92, 56, 0.1);
+      padding: 1px 5px;
+      border-radius: 2px;
+      text-align: center;
+    }
+    .commit-row .msg {
+      color: var(--ink);
+    }
+    .commit-row .stat {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+    .commit-row .stat .ins { color: var(--up); }
+    .commit-row .stat .del { color: var(--down); }
+
+    /* ─────── Bottom nav (iOS tab bar) ─────── */
+    .tabbar {
+      position: sticky;
+      bottom: 0;
+      background: rgba(242, 234, 223, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    }
+    .tab {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted-ink);
+      padding: 4px 0;
+      cursor: pointer;
+    }
+    .tab.active { color: var(--accent); font-weight: 600; }
+
+    /* ─────── Diff box ─────── */
+    .diff-box {
+      max-width: 800px;
+      margin: var(--space-4) auto;
+      padding: var(--space-4);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .diff-box h3 { font-family: var(--serif); font-size: 16px; margin-bottom: 10px; }
+    .diff-box table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .diff-box th, .diff-box td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .diff-box th { color: var(--muted-ink); font-weight: 600; font-size: 11px; }
+    .diff-box .x { color: var(--down); text-decoration: line-through; }
+    .diff-box .v { color: var(--up); }
+
+    /* ─────── Desktop version - 3 col dense layout ─────── */
+    .desktop {
+      max-width: 1440px;
+      margin: var(--space-4) auto;
+      background: var(--bg);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(52, 39, 31, 0.06);
+    }
+    .desktop-head {
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--line);
+    }
+    .desktop-head .brand {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 600;
+    }
+    /* 2 欄密排（主 4fr + 側 3fr）for 1440 canvas */
+    .desktop-body {
+      display: grid;
+      grid-template-columns: 4fr 3fr;
+      gap: var(--space-3);
+      padding: var(--space-3);
+    }
+    .desktop-body > div > * { margin: 0 0 var(--space-3) !important; }
+    .desktop-head .meta { font-size: 11px; color: var(--muted-ink); }
+
+    /* ─────── Dispatch Input ─────── */
+    .dispatch-input {
+      margin: 0 var(--space-3) var(--space-4);
+      padding: var(--space-3);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+    .dispatch-input .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-2);
+    }
+    .dispatch-input h3 {
+      font-family: var(--serif);
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .dispatch-input .picker-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .dispatch-input .picker {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+    .dispatch-input textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 16px;  /* iOS 防 auto-zoom */
+      font-family: var(--sans);
+      line-height: 1.5;
+      color: var(--ink);
+      resize: vertical;
+      min-height: 100px;
+    }
+    .dispatch-input textarea::placeholder {
+      color: var(--muted);
+    }
+    .dispatch-input .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted-ink);
+    }
+    .dispatch-input .btn-send {
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--ink);
+      color: var(--bg);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .dispatch-input .recent {
+      margin-top: var(--space-3);
+      padding-top: var(--space-2);
+      border-top: 1px dashed var(--line);
+    }
+    .dispatch-input .recent-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-ink);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .recent-item {
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 11px;
+      border-top: 1px dotted var(--line);
+      align-items: baseline;
+    }
+    .recent-item:first-of-type { border-top: none; }
+    .recent-item .agent {
+      font-weight: 600;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .recent-item .brief {
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .recent-item .replay {
+      font-size: 10px;
+      color: var(--muted-ink);
+      cursor: pointer;
+    }
+
+    /* ─────── Section title ─────── */
+    h1.section-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 600;
+      padding: var(--space-4) var(--space-3);
+      max-width: 1200px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--line);
+      letter-spacing: -0.01em;
+    }
+    h1.section-title .sub {
+      display: block;
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--muted-ink);
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1 class="section-title">
+  Agent Bridge v3 · iOS Safari First
+  <span class="sub">2026-04-17 · 對齊 Round 7 合稿共識（R1→R6.8）</span>
+</h1>
+
+<!-- ────────────── Diff summary ────────────── -->
+<div class="diff-box">
+  <h3>v3 vs v2 變化（why 改）</h3>
+  <table>
+    <thead>
+      <tr><th width="20%">項目</th><th width="40%">原 v2</th><th width="40%">v3（Round 7 ship spec）</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>裝置定位</td>
+        <td class="x">desktop only</td>
+        <td class="v">iOS Safari first（iPhone + iPad），桌機兜底</td>
+      </tr>
+      <tr>
+        <td>Hero 大標</td>
+        <td class="x">editorial「你不用看 log...」</td>
+        <td class="v">刪除（用戶 R4.7/5.5 刪情緒承諾）</td>
+      </tr>
+      <tr>
+        <td>Metric labels</td>
+        <td class="x">ACTIVE SESSIONS / TASKS WITH MOTION / SHIPPED RATIO（英）</td>
+        <td class="v">在跑的 LLM / 工作清單 / 完成率（中）</td>
+      </tr>
+      <tr>
+        <td>Action Center</td>
+        <td class="x">無</td>
+        <td class="v">top center，白話「現在你最該做的」+ 兩段式確認</td>
+      </tr>
+      <tr>
+        <td>Decision queue</td>
+        <td class="x">無</td>
+        <td class="v">pull-based list「等你決策 · N 件」（R6.6 砍 push notification，只 pull）</td>
+      </tr>
+      <tr>
+        <td>Mac/VM 區分</td>
+        <td class="x">💻 / 🖥️ emoji</td>
+        <td class="v">icon + 文字 prefix「MAC」/「VM」（R3 + R6 共識：砍 emoji）</td>
+      </tr>
+      <tr>
+        <td>今日故事 timeline</td>
+        <td class="x">無</td>
+        <td class="v">commit + N 檔 + <span class="ins">+X</span>-<span class="del">-Y</span>（R5 ship）</td>
+      </tr>
+      <tr>
+        <td>Session dial</td>
+        <td class="x">大中央 crosshair dial</td>
+        <td class="v">降級（讓位 Action Center），精簡小 indicator</td>
+      </tr>
+      <tr>
+        <td>iOS PWA</td>
+        <td class="x">無</td>
+        <td class="v">加 manifest，可「加入主畫面」</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═════════════ iPhone mockup ═════════════ -->
+<div class="section-label">① iPhone 15 · 375px（主要戰場）</div>
+
+<div class="phone">
+  <!-- iOS status bar -->
+  <div class="phone-statusbar">
+    <span class="time">04:12</span>
+    <span class="right">·  ·  ·</span>
+  </div>
+
+  <!-- Bridge header -->
+  <div class="bridge-header">
+    <div class="brand">Agent Bridge<span class="sub">v3</span></div>
+    <div class="sync-state"><span class="dot"></span> 已連線 · 5 秒前</div>
+  </div>
+
+  <!-- Action Center（主角） -->
+  <div class="action-center">
+    <div class="eyebrow">🎯 現在你最該做的</div>
+    <h2>Codex 完工 cnyes adapter，test 10/10 綠了</h2>
+    <div class="detail">
+      今晚做了 <strong>12 個改動</strong>，3 件待你決策。
+      建議看 localhost 驗完後批 push。
+    </div>
+    <div class="action-buttons">
+      <button class="btn primary">
+        👍 同意 push
+        <span class="sub">2 段式確認 · 可 5 秒內 undo</span>
+      </button>
+      <button class="btn">
+        💬 派 Qwen 再審
+        <span class="sub">不會直接 push</span>
+      </button>
+      <button class="btn">
+        ⏸ 先別，繼續累積
+      </button>
+    </div>
+  </div>
+
+  <!-- Decision queue -->
+  <div class="decision-queue">
+    <div class="queue-header">
+      <h3>等你決策</h3>
+      <span class="count">3 件</span>
+    </div>
+    <div class="decision-item">
+      <div class="label">PUSH 批准 · 3 分鐘前</div>
+      <div class="text">Codex cnyes adapter 完工 → 要 push 嗎？</div>
+    </div>
+    <div class="decision-item">
+      <div class="label">Bug 批准 · 12 分鐘前</div>
+      <div class="text">Qwen 找 5 個 P2 bug，要派 Codex 修嗎？</div>
+    </div>
+    <div class="decision-item">
+      <div class="label">里程碑確認 · 45 分鐘前</div>
+      <div class="text">Phase 3 P1 4/4 完成，要標為 done?</div>
+    </div>
+  </div>
+
+  <!-- Now Running Hero - 圖表型進度一眼掃 -->
+  <div class="now-running">
+    <div class="title-row">
+      <h3>🟢 現在正在跑</h3>
+      <div class="elapsed">即時 · 5 秒前同步</div>
+    </div>
+
+    <!-- Codex session -->
+    <div class="session-card">
+      <div class="ring">
+        <svg viewBox="0 0 42 42">
+          <circle class="bg" cx="21" cy="21" r="16" />
+          <circle class="fg" cx="21" cy="21" r="16" stroke-dasharray="100 100"/>
+        </svg>
+        <div class="label">100%</div>
+      </div>
+      <div class="meta">
+        <div class="name">Codex · codex-01</div>
+        <div class="task">cnyes adapter test 10/10 ✓ 完工</div>
+      </div>
+      <div class="step">step 20<br>/ 20</div>
+    </div>
+
+    <!-- Qwen session -->
+    <div class="session-card">
+      <div class="ring">
+        <svg viewBox="0 0 42 42">
+          <circle class="bg" cx="21" cy="21" r="16" />
+          <circle class="fg" cx="21" cy="21" r="16" stroke-dasharray="62 100"/>
+        </svg>
+        <div class="label">62%</div>
+      </div>
+      <div class="meta">
+        <div class="name">Qwen · qwen-01</div>
+        <div class="task">regression 716/716 驗證中</div>
+      </div>
+      <div class="step">step 12<br>/ 20</div>
+    </div>
+  </div>
+
+  <!-- Metrics 3 cell 含 trend sparkline -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="label">在跑的 LLM</div>
+      <div class="value">2</div>
+      <div class="delta">Codex · Qwen</div>
+      <div class="sparkline">
+        <svg viewBox="0 0 60 18" preserveAspectRatio="none">
+          <polyline points="0,14 10,12 20,10 30,8 40,6 50,4 60,2" fill="none" stroke="#6F8568" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="metric">
+      <div class="label">工作清單</div>
+      <div class="value">14</div>
+      <div class="delta muted">/ 18 total</div>
+      <div class="sparkline">
+        <svg viewBox="0 0 60 18" preserveAspectRatio="none">
+          <polyline points="0,4 10,6 20,8 30,6 40,4 50,6 60,4" fill="none" stroke="#B8A997" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="metric">
+      <div class="label">等待 push</div>
+      <div class="value">12</div>
+      <div class="delta muted">今日 25 commit</div>
+      <div class="sparkline">
+        <svg viewBox="0 0 60 18" preserveAspectRatio="none">
+          <polyline points="0,14 10,12 20,8 30,6 40,4 50,2 60,1" fill="none" stroke="#B85C38" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today commit trend chart (7-day bar) -->
+  <div class="today-chart">
+    <h3>📊 每日 commit 趨勢</h3>
+    <div class="chart-row">
+      <div class="chart-value">25 <span style="font-size: 13px; color: var(--muted);">今日</span></div>
+      <div class="chart-legend">週平均 12 · 峰值 25</div>
+    </div>
+    <div class="bar-chart">
+      <div class="bar" style="height: 30%"></div>
+      <div class="bar" style="height: 45%"></div>
+      <div class="bar" style="height: 55%"></div>
+      <div class="bar" style="height: 35%"></div>
+      <div class="bar" style="height: 40%"></div>
+      <div class="bar" style="height: 65%"></div>
+      <div class="bar today" style="height: 100%"></div>
+    </div>
+    <div class="bar-labels">
+      <span>週四</span>
+      <span>週五</span>
+      <span>週六</span>
+      <span>週日</span>
+      <span>週一</span>
+      <span>週二</span>
+      <span>今日</span>
+    </div>
+  </div>
+
+  <!-- Overall Task Donut -->
+  <div class="task-donut">
+    <h3>⭕ 整體任務進度</h3>
+    <div class="donut-wrap">
+      <div class="donut-ring">
+        <svg viewBox="0 0 120 120">
+          <!-- track -->
+          <circle class="track" cx="60" cy="60" r="50" />
+          <!-- done 10/18 = 55.5% : 174.5 of 314 -->
+          <circle class="seg-done" cx="60" cy="60" r="50" stroke-dasharray="174.5 314" stroke-dashoffset="0" />
+          <!-- wip 5/18 = 27.8% : 87.3 of 314, offset 174.5 (so it skips done) -->
+          <circle class="seg-wip" cx="60" cy="60" r="50" stroke-dasharray="87.3 314" stroke-dashoffset="-174.5" />
+          <!-- blocked 1/18 = 5.5% : 17.4 of 314, offset 261.8 -->
+          <circle class="seg-blocked" cx="60" cy="60" r="50" stroke-dasharray="17.4 314" stroke-dashoffset="-261.8" />
+        </svg>
+        <div class="center">
+          <div class="pct">83%</div>
+          <div class="sub">15 / 18 推進中</div>
+        </div>
+      </div>
+      <div class="donut-legend">
+        <div class="donut-legend-row">
+          <div class="dot" style="background: #6F8568;"></div>
+          <span class="label">完工</span>
+          <span></span>
+          <span class="count">10</span>
+        </div>
+        <div class="donut-legend-row">
+          <div class="dot" style="background: #B85C38;"></div>
+          <span class="label">進行中</span>
+          <span></span>
+          <span class="count">5</span>
+        </div>
+        <div class="donut-legend-row">
+          <div class="dot" style="background: #E7DACC;"></div>
+          <span class="label">待派</span>
+          <span></span>
+          <span class="count">2</span>
+        </div>
+        <div class="donut-legend-row">
+          <div class="dot" style="background: #B65A4D;"></div>
+          <span class="label">卡住</span>
+          <span></span>
+          <span class="count">1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase progress bar -->
+  <div class="phase-progress">
+    <h3>🎯 當前階段進度</h3>
+
+    <div class="phase-label">
+      <span>Phase 3 P1 UX</span>
+      <strong>4 / 4 ✓ 全完</strong>
+    </div>
+    <div class="phase-bar"><span style="width: 100%"></span></div>
+
+    <div class="phase-label" style="margin-top: 12px;">
+      <span>Phase 3 P2 資料源</span>
+      <strong>2 / 6 · 33%</strong>
+    </div>
+    <div class="phase-bar"><span style="width: 33%"></span></div>
+
+    <div class="phase-label" style="margin-top: 12px;">
+      <span>VM P0 搬遷</span>
+      <strong>1 / 5 · 20%</strong>
+    </div>
+    <div class="phase-bar"><span style="width: 20%"></span></div>
+  </div>
+
+  <!-- Agent rows（icon+label 取代 emoji） -->
+  <div class="agents">
+    <div class="header">
+      <h3>三家 LLM 活動</h3>
+      <span class="chip">即時</span>
+    </div>
+    <div class="agent-row">
+      <span class="kind-prefix">VM</span>
+      <div>
+        <div class="name">Codex · codex-01</div>
+        <div class="task">cnyes-target-price test 10/10 ✓</div>
+      </div>
+      <div class="duration">14:22</div>
+      <div class="progress"><span style="width:100%"></span></div>
+    </div>
+    <div class="agent-row">
+      <span class="kind-prefix">VM</span>
+      <div>
+        <div class="name">Qwen · qwen-01</div>
+        <div class="task">regression 716/716 驗證中</div>
+      </div>
+      <div class="duration">08:15</div>
+      <div class="progress"><span style="width:62%"></span></div>
+    </div>
+    <div class="agent-row">
+      <span class="kind-prefix">MAC</span>
+      <div>
+        <div class="name">Claude · Claude-Todos</div>
+        <div class="task">SA/SD Round 7 合稿中</div>
+      </div>
+      <div class="duration">02:08</div>
+      <div class="progress"><span style="width:80%"></span></div>
+    </div>
+    <div class="agent-row">
+      <span class="kind-prefix">—</span>
+      <div>
+        <div class="name" style="color: var(--muted)">Gemini</div>
+        <div class="task">429 quota · UTC 0:00 重置</div>
+      </div>
+      <div class="duration">—</div>
+    </div>
+  </div>
+
+  <!-- Dispatch Input (核心) - 小奎可直接打字派工 -->
+  <div class="dispatch-input">
+    <div class="head">
+      <h3>📋 派工給 agent</h3>
+      <span style="font-size: 10px; color: var(--muted-ink);">直接輸入 brief</span>
+    </div>
+    <div class="picker-row">
+      <select class="picker">
+        <option>自動推薦</option>
+        <option selected>Codex · 實作</option>
+        <option>Qwen · QA / 研究</option>
+        <option>Gemini · 盲點審查</option>
+      </select>
+      <select class="picker">
+        <option>空白範本</option>
+        <option>Phase 3 feature</option>
+        <option>Bug fix</option>
+        <option>Regression</option>
+        <option>Research 廣度掃</option>
+        <option>VM ops</option>
+      </select>
+    </div>
+    <textarea placeholder="例：Codex，讀 api/_lib/cnyes-*.js，加個 timeout 8 秒 + 寫 test 驗證。不 commit 不 push。"></textarea>
+    <div class="footer">
+      <span>0 / 2000 字 · 支援 @stock @event mention</span>
+      <button class="btn-send">送出派工</button>
+    </div>
+
+    <div class="recent">
+      <div class="recent-label">最近派工</div>
+      <div class="recent-item">
+        <span class="agent">CODEX</span>
+        <span class="brief">cnyes adapter test 10/10，剛完工</span>
+        <span class="replay">↻ 重派</span>
+      </div>
+      <div class="recent-item">
+        <span class="agent">QWEN</span>
+        <span class="brief">regression 716/716，驗證中 (62%)</span>
+        <span class="replay">↻ 重派</span>
+      </div>
+      <div class="recent-item">
+        <span class="agent">CODEX</span>
+        <span class="brief">events timeline bug fix</span>
+        <span class="replay">↻ 重派</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today story timeline -->
+  <div class="today-story">
+    <h3>今日故事 · 25 commit</h3>
+    <div class="commit-row">
+      <span class="ts">04:08</span>
+      <span class="hash">abc1234</span>
+      <span class="msg">feat(bridge): iOS mobile Action Center
+        <span class="stat">3檔 <span class="ins">+45</span> <span class="del">-12</span></span>
+      </span>
+    </div>
+    <div class="commit-row">
+      <span class="ts">03:50</span>
+      <span class="hash">def5678</span>
+      <span class="msg">style: sage palette 調校
+        <span class="stat">5檔 <span class="ins">+102</span> <span class="del">-34</span></span>
+      </span>
+    </div>
+    <div class="commit-row">
+      <span class="ts">03:20</span>
+      <span class="hash">baaf5c0</span>
+      <span class="msg">feat(持倉看板): holdings ring chart
+        <span class="stat">5檔 <span class="ins">+625</span> <span class="del">-4</span></span>
+      </span>
+    </div>
+    <div class="commit-row">
+      <span class="ts">02:55</span>
+      <span class="hash">f828454</span>
+      <span class="msg">style: paper grain + google fonts
+        <span class="stat">4檔 <span class="ins">+51</span> <span class="del">-37</span></span>
+      </span>
+    </div>
+    <div class="commit-row">
+      <span class="ts">02:30</span>
+      <span class="hash">fddcab5</span>
+      <span class="msg">style: hero source serif 4
+        <span class="stat">1檔 <span class="ins">+105</span> <span class="del">-16</span></span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Bottom tabbar (iOS) -->
+  <div class="tabbar">
+    <div class="tab active">主控</div>
+    <div class="tab">Sessions</div>
+    <div class="tab">任務</div>
+    <div class="tab">Timeline</div>
+    <div class="tab">專案</div>
+  </div>
+</div>
+
+<!-- ═════════════ Desktop mockup ═════════════ -->
+<div class="section-label">② 桌機 Safari · 1200px（兜底）</div>
+
+<div class="desktop">
+  <div class="desktop-head">
+    <div class="brand">Agent Bridge <span style="color: var(--muted-ink); font-weight: 400; font-size: 13px;">v3</span></div>
+    <div class="meta">Last sync · 5 秒前 · 04:12 CST</div>
+  </div>
+  <div class="desktop-body">
+    <div class="desktop-main">
+      <!-- Action Center 桌機佔主 -->
+      <div class="action-center">
+        <div class="eyebrow">🎯 現在你最該做的</div>
+        <h2>Codex 完工 cnyes adapter，test 10/10 綠了</h2>
+        <div class="detail">
+          今晚做了 <strong>12 個改動</strong>，3 件待你決策。
+          建議看 localhost 驗完後批 push。
+        </div>
+        <div class="action-buttons" style="flex-direction: row; gap: var(--space-2);">
+          <button class="btn primary" style="flex: 1;">👍 同意 push</button>
+          <button class="btn" style="flex: 1;">💬 派 Qwen 再審</button>
+          <button class="btn" style="flex: 1;">⏸ 先別</button>
+        </div>
+      </div>
+
+      <!-- Dispatch Input 桌機 (R6.9 補) -->
+      <div class="dispatch-input">
+        <div class="head">
+          <h3>📋 派工給 agent</h3>
+          <span style="font-size: 10px; color: var(--muted-ink);">直接輸入 brief</span>
+        </div>
+        <div class="picker-row">
+          <select class="picker"><option>自動推薦</option><option selected>Codex · 實作</option><option>Qwen · QA</option><option>Gemini · 盲點</option></select>
+          <select class="picker"><option>空白範本</option><option>Phase 3 feature</option><option>Bug fix</option><option>Regression</option><option>Research 廣度掃</option></select>
+        </div>
+        <textarea placeholder="例：Codex，讀 api/_lib/cnyes-*.js，加個 timeout 8 秒 + 寫 test 驗證。不 commit 不 push。"></textarea>
+        <div class="footer">
+          <span>0 / 2000 字 · 支援 @stock @event</span>
+          <button class="btn-send">送出派工</button>
+        </div>
+        <div class="recent">
+          <div class="recent-label">最近派工</div>
+          <div class="recent-item"><span class="agent">CODEX</span><span class="brief">cnyes adapter test 10/10，剛完工</span><span class="replay">↻ 重派</span></div>
+          <div class="recent-item"><span class="agent">QWEN</span><span class="brief">regression 716/716，62%</span><span class="replay">↻ 重派</span></div>
+          <div class="recent-item"><span class="agent">CODEX</span><span class="brief">events timeline bug fix</span><span class="replay">↻ 重派</span></div>
+        </div>
+      </div>
+
+      <!-- Now Running 桌機 -->
+      <div class="now-running">
+        <div class="title-row"><h3>🟢 現在正在跑</h3><div class="elapsed">5 秒前同步</div></div>
+        <div class="session-card">
+          <div class="ring"><svg viewBox="0 0 42 42"><circle class="bg" cx="21" cy="21" r="16"/><circle class="fg" cx="21" cy="21" r="16" stroke-dasharray="100 100"/></svg><div class="label">100%</div></div>
+          <div class="meta"><div class="name">Codex · codex-01</div><div class="task">cnyes adapter test 10/10 ✓ 完工</div></div>
+          <div class="step">step 20/20</div>
+        </div>
+        <div class="session-card">
+          <div class="ring"><svg viewBox="0 0 42 42"><circle class="bg" cx="21" cy="21" r="16"/><circle class="fg" cx="21" cy="21" r="16" stroke-dasharray="62 100"/></svg><div class="label">62%</div></div>
+          <div class="meta"><div class="name">Qwen · qwen-01</div><div class="task">regression 716/716 驗證中</div></div>
+          <div class="step">step 12/20</div>
+        </div>
+      </div>
+
+      <!-- Metrics 桌機 + sparkline -->
+      <div class="metrics">
+        <div class="metric">
+          <div class="label">在跑的 LLM</div><div class="value">2</div><div class="delta">Codex · Qwen</div>
+          <div class="sparkline"><svg viewBox="0 0 60 18" preserveAspectRatio="none"><polyline points="0,14 10,12 20,10 30,8 40,6 50,4 60,2" fill="none" stroke="#6F8568" stroke-width="1.5"/></svg></div>
+        </div>
+        <div class="metric">
+          <div class="label">工作清單</div><div class="value">14</div><div class="delta muted">/ 18 total</div>
+          <div class="sparkline"><svg viewBox="0 0 60 18" preserveAspectRatio="none"><polyline points="0,4 10,6 20,8 30,6 40,4 50,6 60,4" fill="none" stroke="#B8A997" stroke-width="1.5"/></svg></div>
+        </div>
+        <div class="metric">
+          <div class="label">等待 push</div><div class="value">12</div><div class="delta muted">今日 25 commit</div>
+          <div class="sparkline"><svg viewBox="0 0 60 18" preserveAspectRatio="none"><polyline points="0,14 10,12 20,8 30,6 40,4 50,2 60,1" fill="none" stroke="#B85C38" stroke-width="1.5"/></svg></div>
+        </div>
+      </div>
+
+      <!-- Today chart 桌機 -->
+      <div class="today-chart">
+        <h3>📊 每日 commit 趨勢</h3>
+        <div class="chart-row">
+          <div class="chart-value">25 <span style="font-size: 13px; color: var(--muted);">今日</span></div>
+          <div class="chart-legend">週平均 12 · 峰值 25</div>
+        </div>
+        <div class="bar-chart">
+          <div class="bar" style="height: 30%"></div>
+          <div class="bar" style="height: 45%"></div>
+          <div class="bar" style="height: 55%"></div>
+          <div class="bar" style="height: 35%"></div>
+          <div class="bar" style="height: 40%"></div>
+          <div class="bar" style="height: 65%"></div>
+          <div class="bar today" style="height: 100%"></div>
+        </div>
+        <div class="bar-labels">
+          <span>週四</span><span>週五</span><span>週六</span><span>週日</span><span>週一</span><span>週二</span><span>今日</span>
+        </div>
+      </div>
+
+      <!-- Overall Task Donut 桌機 -->
+      <div class="task-donut">
+        <h3>⭕ 整體任務進度</h3>
+        <div class="donut-wrap">
+          <div class="donut-ring">
+            <svg viewBox="0 0 120 120">
+              <circle class="track" cx="60" cy="60" r="50" />
+              <circle class="seg-done" cx="60" cy="60" r="50" stroke-dasharray="174.5 314" stroke-dashoffset="0" />
+              <circle class="seg-wip" cx="60" cy="60" r="50" stroke-dasharray="87.3 314" stroke-dashoffset="-174.5" />
+              <circle class="seg-blocked" cx="60" cy="60" r="50" stroke-dasharray="17.4 314" stroke-dashoffset="-261.8" />
+            </svg>
+            <div class="center">
+              <div class="pct">83%</div>
+              <div class="sub">15 / 18 推進中</div>
+            </div>
+          </div>
+          <div class="donut-legend">
+            <div class="donut-legend-row"><div class="dot" style="background: #6F8568;"></div><span class="label">完工</span><span></span><span class="count">10</span></div>
+            <div class="donut-legend-row"><div class="dot" style="background: #B85C38;"></div><span class="label">進行中</span><span></span><span class="count">5</span></div>
+            <div class="donut-legend-row"><div class="dot" style="background: #E7DACC;"></div><span class="label">待派</span><span></span><span class="count">2</span></div>
+            <div class="donut-legend-row"><div class="dot" style="background: #B65A4D;"></div><span class="label">卡住</span><span></span><span class="count">1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 桌機 -->
+      <div class="phase-progress">
+        <h3>🎯 當前階段進度</h3>
+        <div class="phase-label"><span>Phase 3 P1 UX</span><strong>4 / 4 ✓ 全完</strong></div>
+        <div class="phase-bar"><span style="width: 100%"></span></div>
+        <div class="phase-label" style="margin-top: 12px;"><span>Phase 3 P2 資料源</span><strong>2 / 6 · 33%</strong></div>
+        <div class="phase-bar"><span style="width: 33%"></span></div>
+        <div class="phase-label" style="margin-top: 12px;"><span>VM P0 搬遷</span><strong>1 / 5 · 20%</strong></div>
+        <div class="phase-bar"><span style="width: 20%"></span></div>
+      </div>
+
+      <!-- Agents -->
+      <div class="agents">
+        <div class="header"><h3>三家 LLM 活動</h3><span class="chip">即時</span></div>
+        <div class="agent-row">
+          <span class="kind-prefix">VM</span>
+          <div><div class="name">Codex · codex-01</div><div class="task">cnyes-target-price test 10/10 ✓</div></div>
+          <div class="duration">14:22</div>
+          <div class="progress"><span style="width:100%"></span></div>
+        </div>
+        <div class="agent-row">
+          <span class="kind-prefix">VM</span>
+          <div><div class="name">Qwen · qwen-01</div><div class="task">regression 716/716 驗證中</div></div>
+          <div class="duration">08:15</div>
+          <div class="progress"><span style="width:62%"></span></div>
+        </div>
+        <div class="agent-row">
+          <span class="kind-prefix">MAC</span>
+          <div><div class="name">Claude · Claude-Todos</div><div class="task">SA/SD Round 7 合稿中</div></div>
+          <div class="duration">02:08</div>
+          <div class="progress"><span style="width:80%"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="desktop-side">
+      <!-- Decision queue -->
+      <div class="decision-queue">
+        <div class="queue-header"><h3>等你決策</h3><span class="count">3 件</span></div>
+        <div class="decision-item">
+          <div class="label">PUSH 批准 · 3 分鐘前</div>
+          <div class="text">Codex cnyes adapter 完工 → 要 push 嗎？</div>
+        </div>
+        <div class="decision-item">
+          <div class="label">Bug 批准 · 12 分鐘前</div>
+          <div class="text">Qwen 找 5 個 P2 bug，要派 Codex 修嗎？</div>
+        </div>
+        <div class="decision-item">
+          <div class="label">里程碑 · 45 分鐘前</div>
+          <div class="text">Phase 3 P1 4/4 完成，標 done?</div>
+        </div>
+      </div>
+
+      <!-- Today story -->
+      <div class="today-story">
+        <h3>今日故事 · 25 commit</h3>
+        <div class="commit-row">
+          <span class="ts">04:08</span>
+          <span class="hash">abc1234</span>
+          <span class="msg">feat(bridge): iOS mobile Action Center
+            <span class="stat">3檔 <span class="ins">+45</span> <span class="del">-12</span></span>
+          </span>
+        </div>
+        <div class="commit-row">
+          <span class="ts">03:50</span>
+          <span class="hash">def5678</span>
+          <span class="msg">style: sage palette 調校
+            <span class="stat">5檔 <span class="ins">+102</span> <span class="del">-34</span></span>
+          </span>
+        </div>
+        <div class="commit-row">
+          <span class="ts">03:20</span>
+          <span class="hash">baaf5c0</span>
+          <span class="msg">feat(持倉看板): holdings ring chart
+            <span class="stat">5檔 <span class="ins">+625</span> <span class="del">-4</span></span>
+          </span>
+        </div>
+        <div class="commit-row">
+          <span class="ts">02:55</span>
+          <span class="hash">f828454</span>
+          <span class="msg">style: paper grain + google fonts
+            <span class="stat">4檔 <span class="ins">+51</span> <span class="del">-37</span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">③ 設計決策索引</div>
+
+<div class="diff-box">
+  <h3>對應 spec 來源</h3>
+  <p style="font-size: 12px; color: var(--muted-ink); line-height: 1.7;">
+    本 mockup 實現 <code>docs/product/agent-bridge-spec.md</code> 的：<br>
+    • R1 Scope + R2 Codex 架構反駁 + R3 Claude design 7 pass<br>
+    • R4 Codex 打分 + R4b Gemini 用戶盲點<br>
+    • R5 Claude 合稿（Truthfulness contract / Trust Boundary / Failure Semantics）<br>
+    • <strong>R5.5 用戶 mobile pivot</strong>（Action Center 兩段式 + Decision queue）<br>
+    • <strong>R6 Codex 挑戰 + R6.6 用戶砍 push notification</strong>（pull-based queue 保留）<br>
+    • <strong>R6.8 iOS Safari first</strong>（safe-area + PWA + 16px input）<br>
+  </p>
+  <p style="font-size: 12px; color: var(--muted-ink); line-height: 1.7; margin-top: 10px;">
+    <strong>v3 vs v2 最大哲學差</strong>：v2 是「漂亮 progress dashboard」， v3 是「**行動決策中心**」— 手機打開立刻知道要做什麼。
+  </p>
+</div>
+
+</body>
+</html>

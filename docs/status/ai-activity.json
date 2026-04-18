@@ -1,26 +1,25 @@
 {
-  "lastUpdated": "2026-04-14T17:13:16+08:00",
-  "current": "Qwen",
+  "lastUpdated": "2026-04-16T22:04:07+08:00",
+  "current": "Codex",
   "members": [
     {
       "name": "Codex",
       "role": "技術主導 / 最終裁決",
       "avatar": "🧠",
       "status": "working",
-      "currentTask": "Codex CLI 啟動：brief 檔 /Users/chenkuichen/app/test/.tmp/scripts-cleanup/brief.md",
-      "tasksCompleted": 62,
-      "lastActive": "2026-04-14 17:10",
-      "statusSource": "manual",
-      "activitySource": "~/.codex/session_index.jsonl"
+      "currentTask": "Codex CLI 啟動：brief 檔 .tmp/snapshot-bugs/brief.md",
+      "tasksCompleted": 0,
+      "lastActive": "2026-04-16 22:04",
+      "statusSource": "manual"
     },
     {
       "name": "Qwen",
       "role": "低風險實作 / 文件整理",
       "avatar": "✍️",
-      "status": "working",
-      "currentTask": "Qwen CLI 啟動：-y -p # Codex Task D2: 簡化 auto-* scripts 三兄弟\n\n## 背景\n\nMulti-LLM 共識：`auto-loop.sh` / `auto-evolve.sh` / `dispatch-llm.sh` 三腳本職責重疊，用戶搞不清楚何時用哪個。**已驗證 cron 沒在呼叫這三個**（只有 openclaw-keepalive，而且 openclaw 本身也是 dead），可以安全重構。\n\n## 現況\n\n| 腳本 | 行數 | 目前職責 | 問題 |\n|------|------|---------|------|\n| `scripts/dispatch-llm.sh` | 106 行 | status / restart / push / analyze / evolve / loop（菜單） | 是菜單，裡面又會呼叫 auto-evolve 和 auto-loop |\n| `scripts/auto-evolve.sh` | 248 行 | 健檢（lint/test/build）→ 寫 tasks → 建議 dispatch | 寫完 tasks 建議用 `/acp spawn`（dead hint 已清）或 launch-codex.sh |\n| `scripts/auto-loop.sh` | 419 行 | QA→Fix→Verify→Review 連續閉環（最多 5 輪） | 仍有 `openclaw agent` dead 呼叫（Claude 上輪已 flag，在 line 205/277/290/366） |\n\n## Claude 判斷（歡迎反駁）\n\n### 目標職責\n\n| 腳本 | 目標職責 |\n|------|---------|\n| `dispatch-llm.sh` | **唯一入口**（status / restart / push / evolve / loop / analyze） |\n| `auto-evolve.sh` | **純健檢**（lint/test/build + 寫 docs/status/auto-evolve-tasks.md），不碰 dispatch |\n| `auto-loop.sh` | **連續閉環**（修掉剩餘 dead openclaw 呼叫，改成 launch-codex/launch-qwen） |\n\n### 要做的事\n\n1. **清 auto-loop.sh 的 dead `openclaw agent` 呼叫**（line ~205/277/290/366）\n   - 改成 `bash scripts/launch-codex.sh \"<brief>\"` 或 `bash scripts/launch-qwen.sh -y -p \"<brief>\"`\n   - 保持輸入/輸出界面不變\n\n2. **簡化 auto-evolve.sh**\n   - 刪掉 dispatch 建議段（line 230+，就是之前你清過 dead hint 的那塊）\n   - 結尾只寫「✅ tasks 寫到 docs/status/auto-evolve-tasks.md，用 dispatch-llm.sh evolve 後續派工」\n   - 健檢邏輯保留\n\n3. **確認 dispatch-llm.sh 仍然能正常跑每個 subcommand**\n   - `bash scripts/dispatch-llm.sh status` / `url` / `push` / `analyze` / `evolve` / `loop` / `report` 都跑一次確認沒壞\n\n4. **grep 整個 repo** 找其他殘留的 `openclaw agent` 或 `/acp spawn` 呼叫，列出來給 Claude 看（不要改，只列）\n\n## 要你反駁我的地方\n\n1. auto-loop.sh 的 `openclaw agent` 呼叫要全部改掉嗎？還是保留 fallback 機制（如果未來裝回 openclaw）？我傾向直接改，因為沒在用的 fallback 就是 dead hint\n2. `auto-evolve.sh` 要不要完全去掉「建議 dispatch」那段？還是留一行 `bash scripts/launch-codex.sh docs/status/auto-evolve-tasks.md` 當範例？\n3. 回報前先提 2-3 個你覺得我漏掉的觀察（例：`scripts/launch-*.sh` 的 error handling 不足？ai-status.sh 被這些 script 呼叫時會不會壞？）\n\n## 交付\n\n- 改 `scripts/auto-loop.sh`、`scripts/auto-evolve.sh`、`scripts/dispatch-llm.sh`\n- 跑 `bash -n` 對每個改過的 script 驗語法\n- 跑 `bash scripts/dispatch-llm.sh status` 確認不壞（印出專案狀態）\n- 回報 250 字內：\n  - 改了哪些 dead 呼叫（file:line）\n  - 你反駁 Claude 什麼\n  - grep 結果列表（其他殘留）\n  - 剩下的風險\n- **不要 commit、不要 push** — Claude review + deploy\n\n## 規則\n\n- 只改 `scripts/auto-*.sh` 和 `scripts/dispatch-llm.sh`\n- 不要改 `scripts/launch-*.sh`（canonical launcher，已穩定）\n- 不要動 `scripts/ai-status.sh` / `ai-git-identity.sh` / `sync-state.sh`\n- 遇到不確定的改動 → 保守，列出來問",
-      "tasksCompleted": 16,
-      "lastActive": "2026-04-14 17:13",
+      "status": "idle",
+      "currentTask": "等待分配新任務",
+      "tasksCompleted": 3,
+      "lastActive": "2026-04-16 21:57",
       "statusSource": "manual",
       "activitySource": "~/.qwen/projects/*/chats"
     },
@@ -28,32 +27,19 @@
       "name": "Gemini",
       "role": "公開資料蒐集",
       "avatar": "🔍",
-      "status": "working",
-      "currentTask": "Gemini：interactive/general (gemini-2.5-flash)",
-      "tasksCompleted": 5,
-      "lastActive": "2026-04-14 17:02",
-      "statusSource": "auto",
-      "activitySource": "~/.gemini/usage-log.tsv"
+      "status": "idle",
+      "currentTask": "等待分配新任務",
+      "tasksCompleted": 0,
+      "lastActive": ""
     },
     {
       "name": "Claude",
       "role": "strategy brain second opinion",
       "avatar": "🎯",
-      "status": "working",
-      "currentTask": "Test end-to-end Mac→VM status bridge",
-      "tasksCompleted": 7,
-      "lastActive": "2026-04-14 13:23",
-      "statusSource": "manual"
-    },
-    {
-      "name": "OpenClaw",
-      "role": "外部協作 AI",
-      "avatar": "🤖",
       "status": "idle",
       "currentTask": "等待分配新任務",
-      "tasksCompleted": 15,
-      "lastActive": "2026-04-03 12:17",
-      "statusSource": "manual"
+      "tasksCompleted": 0,
+      "lastActive": ""
     }
   ]
 }

@@ -22,7 +22,7 @@
     },
     {
       "category": "Custom Instructions & Rules",
-      "details": "Supports 'Rules' (User or Workspace level) for defining coding styles and preferences. 'Custom Commands' (e.g., /add-comments) can be created in IDE settings. For project-wide instructions, Agent Mode and Gemini CLI support GEMINI.md or AGENT.md files at the project root, similar to CLAUDE.md.",
+      "details": "Supports 'Rules' (User or Workspace level) for defining coding styles and preferences. 'Custom Commands' (e.g., /add-comments) can be created in IDE settings. For project-wide instructions, Agent Mode and Gemini CLI support repo-root instruction files, similar to CLAUDE.md.",
       "source": "https://cloud.google.com/gemini/docs/code-assist/chat-features-overview"
     },
     {
@@ -53,7 +53,7 @@
   ],
   "freshness": "2026-04-04",
   "recommendations": [
-    "Adopt GEMINI.md at the project root to standardize instructions for both Gemini CLI and IDE Agent Mode.",
+    "Adopt a repo-root instruction file to standardize instructions for both Gemini CLI and IDE Agent Mode.",
     "Utilize Agent Mode (Insiders channel) for complex multi-file refactoring tasks that exceed standard chat capabilities.",
     "Configure .aiexclude to prevent sensitive or irrelevant files from consuming the 1M token context window during indexing.",
     "Integrate MCP servers to extend Gemini's capabilities with external tools (e.g., database querying, specialized API docs)."

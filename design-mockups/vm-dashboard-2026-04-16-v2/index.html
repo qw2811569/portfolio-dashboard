@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VM Dashboard Visual Mockup</title>
+  <style>
+    :root {
+      --bg: #F2EADF;
+      --surface: #F6F0E8;
+      --surface-strong: #E7DACC;
+      --accent: #B85C38;
+      --ink: #34271F;
+      --muted: #A89A86;
+      --muted-ink: #6E5B51;
+      --line: #CDBFAD;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --space-5: 40px;
+      --space-6: 64px;
+      --space-7: 96px;
+      --container: 1440px;
+      --bar-h: 16px;
+      --dial-size: 360px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.4;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(168, 154, 134, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(168, 154, 134, 0.08) 1px, transparent 1px);
+      background-size: var(--space-6) var(--space-6);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    main { position: relative; z-index: 1; }
+    section {
+      min-height: 100vh;
+      padding: calc(var(--space-7) + var(--space-4)) var(--space-4) var(--space-7);
+      scroll-margin-top: var(--space-7);
+      display: flex;
+      align-items: center;
+    }
+
+    #hero { min-height: 88vh; }
+
+    .page-nav {
+      position: fixed;
+      top: var(--space-4);
+      left: var(--space-4);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      max-width: min(60vw, 520px);
+    }
+
+    .page-nav a {
+      border: 1px solid var(--line);
+      padding: var(--space-2) var(--space-3);
+      background: rgba(242, 234, 223, 0.92);
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .frame {
+      width: min(100%, var(--container));
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .eyebrow, .label, .stat-kicker, .micro, .tiny {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted-ink);
+      font-size: 13px;
+    }
+
+    .tiny { font-size: 11px; }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Source Serif 4", "Noto Serif TC", "Times New Roman", serif;
+      font-weight: 600;
+      line-height: 1.02;
+    }
+
+    h1 { font-size: clamp(56px, 7vw, 96px); }
+    h2 { font-size: clamp(40px, 5vw, 64px); }
+    h3 { font-size: 28px; }
+
+    p {
+      margin: 0;
+      color: var(--muted-ink);
+      max-width: 60ch;
+      font-size: 18px;
+    }
+
+    .intro, .panel, .card, .task-row, .timeline-card, .roadmap-card, .chart-card, .hero-detail {
+      border: 1px solid var(--line);
+      background: rgba(246, 240, 232, 0.92);
+    }
+
+    .intro, .panel, .timeline-card, .chart-card { padding: var(--space-5); }
+
+    .hero-copy {
+      grid-column: span 5;
+      display: grid;
+      gap: var(--space-4);
+      align-content: start;
+    }
+
+    .hero-dial-wrap {
+      grid-column: span 7;
+      display: grid;
+      grid-template-columns: minmax(280px, 400px) minmax(260px, 1fr);
+      gap: var(--space-4);
+      align-items: stretch;
+      padding: var(--space-5);
+      border: 1px solid var(--line);
+      background: rgba(246, 240, 232, 0.92);
+    }
+
+    .hero-dial-block, .hero-side {
+      display: grid;
+      gap: var(--space-4);
+      align-content: start;
+    }
+
+    .hero-dial {
+      width: min(100%, var(--dial-size));
+      aspect-ratio: 1;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .hero-dial svg,
+    .hero-sparkline svg,
+    .radar svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .dial-center, .donut-center {
+      position: absolute;
+      inset: var(--space-6);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: var(--space-3);
+      background: var(--bg);
+    }
+
+    .dial-center strong, .stat-figure, .session-big, .donut-center strong {
+      display: block;
+      font-size: clamp(36px, 5vw, 64px);
+      line-height: 0.9;
+      color: var(--accent);
+      font-family: "Source Serif 4", "Noto Serif TC", serif;
+    }
+
+    .metrics {
+      display: grid;
+      gap: var(--space-3);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .metric {
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--line);
+    }
+
+    .hero-detail {
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .summary-list, .session-stack, .task-list, .projects-layout, .roadmap-stack {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .summary-item {
+      display: grid;
+      gap: var(--space-2);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-item:last-child { padding-bottom: 0; border-bottom: 0; }
+
+    .summary-head, .card-header, .task-main, .timeline-head, .projects-top, .chart-head {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      align-items: baseline;
+    }
+
+    .card-title, .task-id {
+      font-family: "Source Serif 4", "Noto Serif TC", serif;
+      font-size: 26px;
+      color: var(--ink);
+    }
+
+    .bar {
+      position: relative;
+      height: var(--bar-h);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: rgba(168, 154, 134, 0.08);
+    }
+
+    .bar > span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: calc(var(--value) * 100%);
+      background: var(--accent);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 560ms ease;
+    }
+
+    .bar.is-ready > span { transform: scaleX(1); }
+
+    .bar::after, .day-bar::after, .stack-segment::after {
+      content: attr(data-label);
+      position: absolute;
+      right: var(--space-2);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--bg);
+    }
+
+    .bar.empty::after, .day-bar.empty::after { color: var(--muted-ink); }
+    .bar.empty > span, .day-bar.empty > span { width: 0; }
+
+    .hero-sparkline {
+      height: 92px;
+      border-top: 1px solid var(--line);
+      padding-top: var(--space-3);
+    }
+
+    .sparkline-shell {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .sparkline-legend {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      color: var(--muted-ink);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sparkline-fill {
+      fill: rgba(184, 92, 56, 0.12);
+      transform-origin: left center;
+      transform: scaleY(0);
+      transition: transform 560ms ease;
+    }
+
+    .sparkline-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: var(--dash, 0);
+      stroke-dashoffset: var(--dash, 0);
+      transition: stroke-dashoffset 560ms ease;
+    }
+
+    .sparkline-line.is-ready,
+    .progress-stroke.is-ready {
+      stroke-dashoffset: calc(var(--dash, 0) * (1 - var(--progress, 0)));
+    }
+
+    .sparkline-fill.is-ready { transform: scaleY(1); }
+
+    .section-copy {
+      grid-column: span 4;
+      display: grid;
+      gap: var(--space-4);
+      align-content: start;
+    }
+
+    .section-content {
+      grid-column: span 8;
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .card {
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-3);
+      align-content: start;
+    }
+
+    .session-card-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 116px;
+      gap: var(--space-3);
+      align-items: start;
+    }
+
+    .session-mini {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .waffle {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      aspect-ratio: 1;
+      align-self: stretch;
+    }
+
+    .waffle span {
+      border: 1px solid var(--line);
+      background: rgba(168, 154, 134, 0.08);
+      transform: scale(0.8);
+      opacity: 0;
+      transition: transform 320ms ease, opacity 320ms ease, background 320ms ease;
+      transition-delay: calc(var(--i) * 6ms);
+    }
+
+    .waffle.is-ready span { transform: scale(1); opacity: 1; }
+    .waffle span.filled { background: var(--accent); border-color: var(--accent); }
+
+    .task-board {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .task-row {
+      padding: var(--space-3);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px;
+      gap: var(--space-4);
+      align-items: center;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      color: var(--muted-ink);
+      font-size: 15px;
+    }
+
+    .gantt {
+      border-top: 1px solid var(--line);
+      padding-top: var(--space-4);
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .gantt-grid {
+      display: grid;
+      grid-template-columns: 160px repeat(12, minmax(0, 1fr));
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .gantt-header {
+      color: var(--muted-ink);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .gantt-label {
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .gantt-track {
+      grid-column: 2 / -1;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--space-2);
+      position: relative;
+      min-height: 22px;
+    }
+
+    .gantt-track::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(to right, rgba(205, 191, 173, 0.8) 1px, transparent 1px);
+      background-size: calc((100% - 11 * var(--space-2)) / 12 + var(--space-2)) 100%;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .gantt-bar {
+      border: 1px solid var(--line);
+      background: rgba(168, 154, 134, 0.12);
+      grid-column: var(--start) / span var(--span);
+      position: relative;
+      min-height: 22px;
+      overflow: hidden;
+    }
+
+    .gantt-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 560ms ease;
+    }
+
+    .gantt-bar.is-ready::after { transform: scaleX(1); }
+
+    .timeline-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    .timeline-card {
+      display: grid;
+      gap: var(--space-4);
+      min-height: 640px;
+    }
+
+    .timeline-track {
+      position: relative;
+      padding-left: var(--space-5);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .timeline-track::before {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--line);
+    }
+
+    .timeline-event {
+      position: relative;
+      display: grid;
+      gap: var(--space-2);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline-event:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .timeline-event::before {
+      content: "";
+      position: absolute;
+      left: -31px;
+      top: 8px;
+      width: var(--space-3);
+      height: var(--space-3);
+      border: 1px solid var(--accent);
+      background: var(--bg);
+    }
+
+    .activity-chart {
+      display: flex;
+      align-items: end;
+      gap: var(--space-3);
+      min-height: 196px;
+    }
+
+    .day-column {
+      flex: 1;
+      display: grid;
+      gap: var(--space-2);
+      align-content: end;
+    }
+
+    .day-bar {
+      position: relative;
+      min-height: 160px;
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: end;
+      overflow: hidden;
+      background: rgba(168, 154, 134, 0.08);
+    }
+
+    .day-bar > span {
+      display: block;
+      width: 100%;
+      height: calc(var(--value) * 100%);
+      background: var(--accent);
+      transform-origin: bottom center;
+      transform: scaleY(0);
+      transition: transform 560ms ease;
+    }
+
+    .day-bar.is-ready > span { transform: scaleY(1); }
+
+    .day-label {
+      text-align: center;
+      color: var(--muted-ink);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .heatmap {
+      border-top: 1px solid var(--line);
+      padding-top: var(--space-4);
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: 48px repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      align-items: center;
+    }
+
+    .heat-label {
+      color: var(--muted-ink);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .heat-cell {
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      background: rgba(168, 154, 134, calc(0.08 + var(--level) * 0.14));
+      transform: scale(0.86);
+      opacity: 0;
+      transition: transform 320ms ease, opacity 320ms ease, background 320ms ease;
+      transition-delay: calc(var(--i) * 8ms);
+    }
+
+    .heat-cell.hot { background: rgba(184, 92, 56, calc(0.12 + var(--level) * 0.2)); }
+    .heatmap.is-ready .heat-cell { transform: scale(1); opacity: 1; }
+
+    .projects-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: var(--space-4);
+      align-items: center;
+      padding: var(--space-5);
+      border: 1px solid var(--line);
+      background: rgba(246, 240, 232, 0.92);
+    }
+
+    .projects-copy { display: grid; gap: var(--space-4); }
+
+    .stats-inline {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .donut {
+      width: 260px;
+      aspect-ratio: 1;
+      position: relative;
+      margin-left: auto;
+    }
+
+    .donut svg { display: block; width: 100%; height: 100%; }
+
+    .legend {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      color: var(--muted-ink);
+      font-size: 14px;
+    }
+
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: var(--space-2);
+      border: 1px solid var(--line);
+      background: var(--accent);
+      vertical-align: middle;
+    }
+
+    .legend span.neutral::before { background: var(--muted); }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: var(--space-4);
+    }
+
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .roadmap-card {
+      padding: var(--space-4);
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .stack-segment {
+      position: relative;
+      min-height: 72px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: rgba(168, 154, 134, 0.1);
+    }
+
+    .stack-segment > span {
+      position: absolute;
+      inset: 0;
+      width: calc(var(--value) * 100%);
+      background: var(--accent);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 560ms ease;
+    }
+
+    .stack-segment.is-ready > span { transform: scaleX(1); }
+
+    .stack-segment strong {
+      position: relative;
+      z-index: 1;
+      display: block;
+      padding: var(--space-3);
+      color: var(--bg);
+      letter-spacing: 0.04em;
+    }
+
+    .stack-segment.empty strong { color: var(--muted-ink); }
+
+    .radar {
+      aspect-ratio: 1;
+      padding: var(--space-4);
+      border: 1px solid var(--line);
+      background: rgba(246, 240, 232, 0.92);
+      display: grid;
+      gap: var(--space-3);
+      align-content: start;
+    }
+
+    .radar-labels {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2) var(--space-3);
+      font-size: 13px;
+      color: var(--muted-ink);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .radar-labels span::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 8px;
+      background: var(--accent);
+      border: 1px solid var(--line);
+    }
+
+    .progress-stroke {
+      stroke-dasharray: var(--dash, 0);
+      stroke-dashoffset: var(--dash, 0);
+      transition: stroke-dashoffset 560ms ease;
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 420ms ease, transform 420ms ease;
+    }
+
+    .fade-up.is-ready {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1180px) {
+      .hero-copy, .hero-dial-wrap, .section-copy, .section-content { grid-column: span 12; }
+      .hero-dial-wrap, .timeline-layout, .projects-hero, .projects-grid, .roadmap-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      section {
+        padding-left: var(--space-3);
+        padding-right: var(--space-3);
+      }
+
+      .page-nav {
+        left: var(--space-3);
+        right: var(--space-3);
+        top: var(--space-3);
+        max-width: none;
+      }
+
+      .cards, .metrics, .task-row, .session-card-grid, .gantt-grid { grid-template-columns: 1fr; }
+      .gantt-track { grid-column: 1; }
+      .projects-hero { padding: var(--space-4); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="page-nav" aria-label="Section navigation">
+    <a href="#hero">Hero</a>
+    <a href="#sessions">Sessions</a>
+    <a href="#tasks">Tasks</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#projects">Projects</a>
+  </nav>
+
+  <main>
+    <section id="hero">
+      <div class="frame grid">
+        <div class="hero-copy fade-up">
+          <div class="eyebrow">VM Dashboard / Visual Progress Mockup</div>
+          <h1>你不用看 log，先看弧線、折線、格子。</h1>
+          <p>這輪把每個 section 的圖表語言拉開。Hero 保留主 dial，但補一條最近 20 steps 的 trend，讓你先看 session 是否正在推進，而不是只看一個靜態 completion。</p>
+          <div class="metrics">
+            <div class="metric">
+              <div class="label">Active sessions</div>
+              <div class="stat-figure" id="hero-session-count">04</div>
+            </div>
+            <div class="metric">
+              <div class="label">Tasks with motion</div>
+              <div class="stat-figure" id="hero-task-count">10</div>
+            </div>
+            <div class="metric">
+              <div class="label">Shipped ratio</div>
+              <div class="stat-figure" id="hero-shipped-ratio">60%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-dial-wrap fade-up">
+          <div class="hero-dial-block">
+            <div class="hero-dial" id="hero-dial"></div>
+            <div class="hero-detail">
+              <div class="chart-head">
+                <div>
+                  <div class="label">Recent 20 steps</div>
+                  <div class="card-title">Session sparkline</div>
+                </div>
+                <div class="micro">momentum</div>
+              </div>
+              <div class="sparkline-shell">
+                <div class="hero-sparkline" id="hero-sparkline"></div>
+                <div class="sparkline-legend">
+                  <span>step 01</span>
+                  <span>step 20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-side">
+            <div class="summary-list" id="hero-summary"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sessions">
+      <div class="frame grid">
+        <div class="section-copy fade-up">
+          <div class="eyebrow">Sessions</div>
+          <h2>每張 session 卡不只給完成條，也給活動節奏和填滿感。</h2>
+          <p>這裡保留橫條當主讀法，再補 sparkline 跟 waffle。Sparkline 看 agent 近 24h 節奏，waffle 看 completion，兩者都比 ring chart 更容易橫向比較卡片之間的差異。</p>
+        </div>
+        <div class="section-content">
+          <div class="cards" id="session-cards"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tasks">
+      <div class="frame grid">
+        <div class="section-copy fade-up">
+          <div class="eyebrow">Tasks</div>
+          <h2>任務列尾保留 compact bar，再補一張全域 Gantt 看 overlap。</h2>
+          <p>這一區不做 burn-down。因為你要的是當前派工與衝突感，不是週期性 sprint 管理。Gantt 更適合看誰同時卡在同一時段，讀完就知道是不是 lane 太擠。</p>
+        </div>
+        <div class="section-content panel fade-up">
+          <div class="task-board">
+            <div class="task-list" id="task-list"></div>
+            <div class="gantt">
+              <div class="chart-head">
+                <div>
+                  <div class="label">Overlap view</div>
+                  <h3>Gantt timeline</h3>
+                </div>
+                <div class="micro">10 active tasks / 12h window</div>
+              </div>
+              <div class="gantt" id="gantt-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="timeline">
+      <div class="frame grid">
+        <div class="section-copy fade-up">
+          <div class="eyebrow">Timeline</div>
+          <h2>保留垂直事件流，再加一張 GitHub-style 熱度格。</h2>
+          <p>這裡不做 horizon chart。資料密度還不夠高，壓縮只會增加解碼成本。Heatmap 比月曆視角更俐落，能直接看最近幾週忙碌分布，和右上的 daily bar 分工清楚。</p>
+        </div>
+        <div class="section-content timeline-layout">
+          <div class="timeline-card fade-up">
+            <div class="timeline-head">
+              <div>
+                <div class="label">Recent activity</div>
+                <h3>Vertical timeline</h3>
+              </div>
+              <div class="session-big" id="timeline-total">76</div>
+            </div>
+            <div class="timeline-track" id="timeline-track"></div>
+          </div>
+          <div class="timeline-card fade-up">
+            <div class="chart-head">
+              <div>
+                <div class="label">Daily volume</div>
+                <h3>Bar + heatmap</h3>
+              </div>
+              <div class="micro">events / day</div>
+            </div>
+            <div class="activity-chart" id="activity-chart"></div>
+            <div class="heatmap" id="heatmap-chart"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <div class="frame grid">
+        <div class="section-copy fade-up">
+          <div class="eyebrow">Projects</div>
+          <h2>Donut 留給總比例，radar 給 agent 分工負擔。</h2>
+          <p>Projects 這裡的 radar 是合理的，因為它不是拿來比較很多維度的精確值，而是補足 donut 缺少的「誰在扛哪種工作量」。這區已經有總體量，也需要橫向角色結構。</p>
+        </div>
+        <div class="section-content projects-layout">
+          <div class="projects-hero fade-up">
+            <div class="projects-copy">
+              <div class="label">Project status</div>
+              <div class="stats-inline">
+                <div>
+                  <div class="stat-kicker">Backlog</div>
+                  <div class="stat-figure" id="backlog-count">16</div>
+                </div>
+                <div>
+                  <div class="stat-kicker">Shipped</div>
+                  <div class="stat-figure" id="shipped-count">24</div>
+                </div>
+                <div>
+                  <div class="stat-kicker">In progress</div>
+                  <div class="stat-figure" id="in-progress-count">03</div>
+                </div>
+              </div>
+              <div class="legend">
+                <span>Completed volume</span>
+                <span class="neutral">Remaining volume</span>
+              </div>
+            </div>
+            <div class="donut" id="project-donut"></div>
+          </div>
+
+          <div class="projects-grid">
+            <div class="roadmap-grid fade-up" id="roadmap-grid"></div>
+            <div class="radar fade-up">
+              <div class="chart-head">
+                <div>
+                  <div class="label">Team distribution</div>
+                  <h3>Agent radar</h3>
+                </div>
+                <div class="micro">task count / done / active / blocked</div>
+              </div>
+              <div id="project-radar"></div>
+              <div class="radar-labels">
+                <span>Codex</span>
+                <span>Claude</span>
+                <span>Qwen</span>
+                <span>Gemini</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const mockSessions = [
+      { id: "codex-01", agent: "CODEX", task: "infra-04 refactor", progress: 0.62, duration: "00:14:22", trend: [26, 30, 32, 31, 36, 40, 44, 42, 49, 52, 56, 58, 61, 59, 60, 63, 66, 68, 69, 72], load: 62 },
+      { id: "qwen-02", agent: "QWEN", task: "verification pass", progress: 1, duration: "00:08:15", trend: [12, 16, 17, 24, 28, 36, 44, 48, 52, 57, 63, 68, 74, 77, 81, 88, 91, 95, 98, 100], load: 100 },
+      { id: "claude-03", agent: "CLAUDE", task: "PM plan v2", progress: 0.3, duration: "00:02:08", trend: [10, 10, 12, 12, 16, 18, 19, 18, 20, 21, 23, 23, 24, 24, 27, 28, 29, 29, 30, 30], load: 30 },
+      { id: "gemini-04", agent: "GEMINI", task: "blind-spot review", progress: 0.18, duration: "00:01:14", trend: [4, 4, 6, 7, 7, 8, 8, 10, 9, 11, 12, 12, 14, 15, 15, 16, 17, 17, 18, 18], load: 18 }
+    ];
+
+    const mockTasks = [
+      { id: "infra-01", priority: "P0", title: "Knowledge API runtime", completion: 0.8, owner: "codex", start: 1, span: 5 },
+      { id: "infra-02", priority: "P0", title: "VM HTTPS + auth", completion: 1, owner: "codex", start: 2, span: 3 },
+      { id: "feat-02", priority: "P1", title: "News vs Events UI", completion: 1, owner: "codex", start: 3, span: 4 },
+      { id: "feat-03", priority: "P2", title: "權證 → 標的股 UI", completion: 0.2, owner: "codex", start: 6, span: 4 },
+      { id: "test-01", priority: "P2", title: "權證 enrichment 負測試", completion: 0, owner: "qwen", start: 5, span: 3 },
+      { id: "vm-dashboard", priority: "P1", title: "VM dashboard 重設計", completion: 0.45, owner: "codex", start: 4, span: 6 },
+      { id: "feat-04", priority: "P2", title: "Freshness noise audit", completion: 0.34, owner: "qwen", start: 7, span: 3 },
+      { id: "infra-03", priority: "P1", title: "Install LLM CLIs", completion: 0.56, owner: "qwen", start: 8, span: 4 },
+      { id: "infra-04", priority: "P0", title: "Frontend fetch VM API", completion: 0.12, owner: "codex", start: 9, span: 3 },
+      { id: "feat-06", priority: "P2", title: "Incremental reclassify", completion: 0.08, owner: "codex", start: 10, span: 2 }
+    ];
+
+    const mockProject = {
+      backlog: 16,
+      shipped: 24,
+      inProgress: 3,
+      roadmap: {
+        now: ["infra-01", "infra-04", "feat-02"],
+        next: ["infra-02", "infra-03", "feat-03", "feat-04"],
+        later: ["feat-05", "feat-06", "struct-01", "struct-02"]
+      },
+      agents: {
+        Codex: [9, 8, 6, 2],
+        Claude: [3, 2, 1, 0],
+        Qwen: [6, 4, 3, 1],
+        Gemini: [2, 1, 1, 0]
+      }
+    };
+
+    const mockTimeline = [
+      { date: "2026-04-16", events: 12 },
+      { date: "2026-04-15", events: 18 },
+      { date: "2026-04-14", events: 9 },
+      { date: "2026-04-13", events: 15 },
+      { date: "2026-04-12", events: 7 },
+      { date: "2026-04-11", events: 11 },
+      { date: "2026-04-10", events: 4 }
+    ];
+
+    const heatmapWeeks = [
+      [0.15, 0.2, 0.22, 0.35, 0.4, 0.28, 0.1, 0.18],
+      [0.22, 0.36, 0.45, 0.56, 0.62, 0.48, 0.22, 0.24],
+      [0.3, 0.38, 0.72, 0.82, 0.76, 0.42, 0.3, 0.2],
+      [0.16, 0.24, 0.34, 0.4, 0.55, 0.5, 0.18, 0.14],
+      [0.1, 0.14, 0.22, 0.28, 0.3, 0.2, 0.12, 0.08],
+      [0.06, 0.12, 0.18, 0.22, 0.24, 0.18, 0.1, 0.06],
+      [0.04, 0.1, 0.14, 0.18, 0.2, 0.14, 0.08, 0.04]
+    ];
+
+    const currentSession = mockSessions[0];
+    const maxTimeline = Math.max(...mockTimeline.map((item) => item.events));
+    const totalEvents = mockTimeline.reduce((sum, item) => sum + item.events, 0);
+    const shippedRatio = mockProject.shipped / (mockProject.shipped + mockProject.backlog);
+
+    const formatPct = (value) => `${Math.round(value * 100)}%`;
+    const pad = (value) => String(value).padStart(2, "0");
+
+    function polarToCartesian(cx, cy, r, angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+
+    function describeArc(cx, cy, r, startAngle, endAngle) {
+      const start = polarToCartesian(cx, cy, r, endAngle);
+      const end = polarToCartesian(cx, cy, r, startAngle);
+      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+      return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+    }
+
+    function pointsToPath(values, width, height, offsetX = 0, offsetY = 0) {
+      const max = Math.max(...values);
+      const min = Math.min(...values);
+      const range = max - min || 1;
+      return values.map((value, index) => {
+        const x = offsetX + (index / (values.length - 1)) * width;
+        const y = offsetY + height - ((value - min) / range) * height;
+        return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+      }).join(" ");
+    }
+
+    function areaPath(values, width, height, offsetX = 0, offsetY = 0) {
+      const line = pointsToPath(values, width, height, offsetX, offsetY);
+      const endX = offsetX + width;
+      const baseY = offsetY + height;
+      return `${line} L ${endX} ${baseY} L ${offsetX} ${baseY} Z`;
+    }
+
+    function makeStroke(path, progress = 1) {
+      const length = path.getTotalLength();
+      path.style.setProperty("--dash", length);
+      path.style.setProperty("--progress", progress);
+      requestAnimationFrame(() => path.classList.add("is-ready"));
+    }
+
+    function readyBars(root = document) {
+      requestAnimationFrame(() => {
+        root.querySelectorAll(".bar, .day-bar").forEach((el) => el.classList.add("is-ready"));
+        root.querySelectorAll(".stack-segment:not(.empty)").forEach((el) => el.classList.add("is-ready"));
+        root.querySelectorAll(".waffle, .heatmap, .gantt-bar, .fade-up").forEach((el) => el.classList.add("is-ready"));
+      });
+    }
+
+    function renderSparkline(target, values, labelLeft, labelRight) {
+      const width = 320;
+      const height = 72;
+      target.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" aria-hidden="true">
+          <path class="sparkline-fill" d="${areaPath(values, width - 8, height - 8, 4, 4)}"></path>
+          <path class="sparkline-line" d="${pointsToPath(values, width - 8, height - 8, 4, 4)}"></path>
+        </svg>
+      `;
+      const line = target.querySelector(".sparkline-line");
+      const fill = target.querySelector(".sparkline-fill");
+      makeStroke(line, 1);
+      requestAnimationFrame(() => fill.classList.add("is-ready"));
+      if (labelLeft && labelRight) {
+        const legend = target.parentElement?.querySelector(".sparkline-legend");
+        if (legend) legend.innerHTML = `<span>${labelLeft}</span><span>${labelRight}</span>`;
+      }
+    }
+
+    function renderHero() {
+      document.getElementById("hero-session-count").textContent = pad(mockSessions.length);
+      document.getElementById("hero-task-count").textContent = pad(mockTasks.length);
+      document.getElementById("hero-shipped-ratio").textContent = formatPct(shippedRatio);
+
+      const size = 360;
+      const center = size / 2;
+      const radius = 128;
+      const arcEnd = -180 + currentSession.progress * 360;
+      const ticks = mockSessions.map((session, index) => {
+        const angle = -180 + (index / mockSessions.length) * 360;
+        const outer = polarToCartesian(center, center, radius + 28, angle);
+        const inner = polarToCartesian(center, center, radius + 6, angle);
+        return `<line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}" stroke="#A89A86" stroke-width="4" />`;
+      }).join("");
+
+      document.getElementById("hero-dial").innerHTML = `
+        <svg viewBox="0 0 ${size} ${size}" aria-hidden="true">
+          <circle cx="${center}" cy="${center}" r="${radius + 34}" fill="none" stroke="#CDBFAD" stroke-width="1"></circle>
+          ${ticks}
+          <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#A89A86" stroke-width="16"></circle>
+          <path id="hero-arc" class="progress-stroke" d="${describeArc(center, center, radius, -180, arcEnd)}" fill="none" stroke="#B85C38" stroke-width="16" stroke-linecap="round"></path>
+          <circle cx="${center}" cy="${center}" r="${radius - 58}" fill="#F2EADF" stroke="#CDBFAD" stroke-width="1"></circle>
+        </svg>
+        <div class="dial-center">
+          <div>
+            <div class="label">Current session</div>
+            <strong>${formatPct(currentSession.progress)}</strong>
+            <div>${currentSession.agent} / ${currentSession.id}</div>
+          </div>
+        </div>
+      `;
+      makeStroke(document.getElementById("hero-arc"), 1);
+
+      renderSparkline(document.getElementById("hero-sparkline"), currentSession.trend, "step 01", "step 20");
+
+      document.getElementById("hero-summary").innerHTML = mockSessions.map((session) => `
+        <div class="summary-item">
+          <div class="summary-head">
+            <div>
+              <div class="label">${session.agent}</div>
+              <div class="card-title">${session.task}</div>
+            </div>
+            <div class="micro">${session.duration}</div>
+          </div>
+          <div class="bar ${session.progress === 0 ? "empty" : ""}" style="--value:${session.progress}" data-label="${formatPct(session.progress)}">
+            <span></span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderSessions() {
+      document.getElementById("session-cards").innerHTML = mockSessions.map((session) => {
+        const filled = Math.round(session.progress * 100);
+        const cells = Array.from({ length: 100 }, (_, index) => `<span class="${index < filled ? "filled" : ""}" style="--i:${index}"></span>`).join("");
+        return `
+          <article class="card fade-up">
+            <div class="bar ${session.progress === 0 ? "empty" : ""}" style="--value:${session.progress}" data-label="${formatPct(session.progress)}">
+              <span></span>
+            </div>
+            <div class="card-header">
+              <div>
+                <div class="label">${session.agent}</div>
+                <div class="card-title">${session.id}</div>
+              </div>
+              <div class="micro">${session.duration}</div>
+            </div>
+            <div class="session-card-grid">
+              <div class="session-mini">
+                <p>${session.task}</p>
+                <div>
+                  <div class="tiny">24h activity</div>
+                  <div class="hero-sparkline" id="spark-${session.id}"></div>
+                </div>
+              </div>
+              <div>
+                <div class="tiny">completion grid</div>
+                <div class="waffle" id="waffle-${session.id}">${cells}</div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      mockSessions.forEach((session) => {
+        renderSparkline(document.getElementById(`spark-${session.id}`), session.trend, "", "");
+        document.getElementById(`waffle-${session.id}`).classList.add("is-ready");
+      });
+    }
+
+    function renderTasks() {
+      document.getElementById("task-list").innerHTML = mockTasks.slice(0, 6).map((task) => `
+        <article class="task-row">
+          <div>
+            <div class="task-main">
+              <div class="task-id">${task.id}</div>
+              <div class="micro">${task.priority}</div>
+            </div>
+            <div class="task-meta">
+              <span>${task.title}</span>
+              <span>owner ${task.owner.toUpperCase()}</span>
+            </div>
+          </div>
+          <div class="bar ${task.completion === 0 ? "empty" : ""}" style="--value:${task.completion}" data-label="${formatPct(task.completion)}">
+            <span></span>
+          </div>
+        </article>
+      `).join("");
+
+      const ganttHeader = `
+        <div class="gantt-grid">
+          <div></div>
+          ${Array.from({ length: 12 }, (_, index) => `<div class="gantt-header">${index + 1}h</div>`).join("")}
+        </div>
+      `;
+      const ganttRows = mockTasks.map((task) => `
+        <div class="gantt-grid">
+          <div class="gantt-label">${task.id} / ${task.owner}</div>
+          <div class="gantt-track">
+            <div class="gantt-bar" style="--start:${task.start};--span:${task.span}"></div>
+          </div>
+        </div>
+      `).join("");
+      document.getElementById("gantt-chart").innerHTML = `${ganttHeader}${ganttRows}`;
+    }
+
+    function renderTimeline() {
+      document.getElementById("timeline-total").textContent = totalEvents;
+      document.getElementById("timeline-track").innerHTML = mockTimeline.map((item) => `
+        <article class="timeline-event">
+          <div class="timeline-head">
+            <div>
+              <div class="label">${item.date}</div>
+              <div class="card-title">${item.events} activity marks</div>
+            </div>
+            <div class="micro">${Math.round((item.events / totalEvents) * 100)}% share</div>
+          </div>
+          <div class="bar" style="--value:${item.events / maxTimeline}" data-label="${item.events}">
+            <span></span>
+          </div>
+        </article>
+      `).join("");
+
+      document.getElementById("activity-chart").innerHTML = mockTimeline.map((item) => `
+        <div class="day-column">
+          <div class="day-bar" style="--value:${item.events / maxTimeline}" data-label="${item.events}">
+            <span></span>
+          </div>
+          <div class="day-label">${item.date.slice(5)}</div>
+        </div>
+      `).join("");
+
+      const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const heatRows = weekdays.map((label, rowIndex) => `
+        <div class="heat-label">${label}</div>
+        ${heatmapWeeks[rowIndex].map((level, colIndex) => `
+          <div class="heat-cell ${level > 0.45 ? "hot" : ""}" style="--level:${level};--i:${rowIndex * 8 + colIndex}"></div>
+        `).join("")}
+      `).join("");
+      document.getElementById("heatmap-chart").innerHTML = `
+        <div class="chart-head">
+          <div>
+            <div class="label">Last 8 weeks</div>
+            <div class="card-title">Contribution heatmap</div>
+          </div>
+          <div class="micro">low to high density</div>
+        </div>
+        <div class="heatmap-grid">${heatRows}</div>
+      `;
+    }
+
+    function renderProjects() {
+      document.getElementById("backlog-count").textContent = mockProject.backlog;
+      document.getElementById("shipped-count").textContent = mockProject.shipped;
+      document.getElementById("in-progress-count").textContent = pad(mockProject.inProgress);
+
+      document.getElementById("project-donut").innerHTML = `
+        <svg viewBox="0 0 260 260" aria-hidden="true">
+          <circle cx="130" cy="130" r="92" fill="none" stroke="#A89A86" stroke-width="24"></circle>
+          <circle id="project-donut-ring" class="progress-stroke" cx="130" cy="130" r="92" fill="none" stroke="#B85C38" stroke-width="24" stroke-linecap="butt" transform="rotate(-90 130 130)"></circle>
+        </svg>
+        <div class="donut-center">
+          <div>
+            <strong>${formatPct(shippedRatio)}</strong>
+            <div class="label">shipped ratio</div>
+          </div>
+        </div>
+      `;
+      makeStroke(document.getElementById("project-donut-ring"), shippedRatio);
+
+      const roadmapOrder = ["now", "next", "later"];
+      const roadmapStrength = { now: 0.92, next: 0.68, later: 0.42 };
+      document.getElementById("roadmap-grid").innerHTML = roadmapOrder.map((key) => {
+        const items = mockProject.roadmap[key];
+        const max = Math.max(...roadmapOrder.map((name) => mockProject.roadmap[name].length));
+        return `
+          <article class="roadmap-card">
+            <div class="projects-top">
+              <div>
+                <div class="label">${key}</div>
+                <h3>${items.length} blocks</h3>
+              </div>
+              <div class="micro">${key === "now" ? "highest pressure" : key === "next" ? "queued" : "parked"}</div>
+            </div>
+            <div class="roadmap-stack">
+              ${items.map((item, index) => `
+                <div class="stack-segment" style="--value:${roadmapStrength[key] - index * 0.08}" data-label="${index + 1}">
+                  <span></span>
+                  <strong>${item}</strong>
+                </div>
+              `).join("")}
+              ${Array.from({ length: Math.max(0, max - items.length) }).map(() => `
+                <div class="stack-segment empty" style="--value:0" data-label="">
+                  <span></span>
+                  <strong>empty slot</strong>
+                </div>
+              `).join("")}
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      const radarAxes = ["Task count", "Completed", "In progress", "Blocked"];
+      const agentNames = Object.keys(mockProject.agents);
+      const agentValues = Object.values(mockProject.agents);
+      const maxByAxis = radarAxes.map((_, axisIndex) => Math.max(...agentValues.map((values) => values[axisIndex])));
+      const center = 170;
+      const radius = 120;
+
+      const gridPolygons = [0.25, 0.5, 0.75, 1].map((scale) => {
+        const points = radarAxes.map((_, index) => {
+          const angle = -90 + (360 / radarAxes.length) * index;
+          const p = polarToCartesian(center, center, radius * scale, angle);
+          return `${p.x},${p.y}`;
+        }).join(" ");
+        return `<polygon points="${points}" fill="none" stroke="#CDBFAD" stroke-width="1"></polygon>`;
+      }).join("");
+
+      const axisLines = radarAxes.map((label, index) => {
+        const angle = -90 + (360 / radarAxes.length) * index;
+        const p = polarToCartesian(center, center, radius, angle);
+        const text = polarToCartesian(center, center, radius + 26, angle);
+        return `
+          <line x1="${center}" y1="${center}" x2="${p.x}" y2="${p.y}" stroke="#CDBFAD" stroke-width="1"></line>
+          <text x="${text.x}" y="${text.y}" fill="#6E5B51" font-size="12" text-anchor="middle">${label}</text>
+        `;
+      }).join("");
+
+      const polygons = agentNames.map((name, agentIndex) => {
+        const points = mockProject.agents[name].map((value, axisIndex) => {
+          const angle = -90 + (360 / radarAxes.length) * axisIndex;
+          const scaled = maxByAxis[axisIndex] ? value / maxByAxis[axisIndex] : 0;
+          const p = polarToCartesian(center, center, radius * scaled, angle);
+          return `${p.x},${p.y}`;
+        }).join(" ");
+        const opacity = 0.18 + agentIndex * 0.08;
+        return `<polygon points="${points}" fill="rgba(184,92,56,${opacity})" stroke="#B85C38" stroke-width="2"></polygon>`;
+      }).join("");
+
+      document.getElementById("project-radar").innerHTML = `
+        <svg viewBox="0 0 340 340" aria-hidden="true">
+          ${gridPolygons}
+          ${axisLines}
+          ${polygons}
+        </svg>
+      `;
+    }
+
+    renderHero();
+    renderSessions();
+    renderTasks();
+    renderTimeline();
+    renderProjects();
+    readyBars();
+  </script>
+</body>
+</html>

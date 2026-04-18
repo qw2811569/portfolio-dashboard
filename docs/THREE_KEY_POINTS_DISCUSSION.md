@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為早期產品/付費 brainstorm 草案。最新產品方向請見 `docs/decisions/2026-04-16-product-stage-stability-first.md` 與 `docs/product/portfolio-dashboard-spec.md`。
+>
+> 保留理由：保留早期討論脈絡；其中付費/社交貨幣/商業化建議已被「先穩定再談錢」正式決議延後。
+
 # 三大關鍵點深度討論報告
 
 最後更新：2026-03-27

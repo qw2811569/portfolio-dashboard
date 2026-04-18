@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Journal Preview Round 49</title>
+  <link rel="stylesheet" href="../source-han-fonts.css">
+  <style>
+    :root{--ink:#0B120E;--charcoal:#2F3232;--iron:#838585;--bone:#E7E0D6;--bone-deep:#D9D3D1;--line:#BCB3AD;--warning:#F0A145;--warning-soft:rgba(240,161,69,.24);--positive:#EF7D2F;--cta:#EC662D;--hot:#FC6D2B;--hot-soft:rgba(252,109,43,.12);--negative:#3C3C3C;--down:var(--negative);--shadow:0 1px 0 rgba(23,23,23,.05),inset 0 1px 0 rgba(255,255,255,.72);--serif:"Source Han Serif TC","Noto Serif TC","Source Serif 4",serif;--sans:"Source Han Sans TC","Noto Sans TC","Source Sans 3",sans-serif;--mono:"IBM Plex Mono","SF Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+    *{box-sizing:border-box} body{margin:0;min-width:1600px;background:radial-gradient(circle at top left,rgba(168,181,154,.14),transparent 28%),radial-gradient(circle at bottom right,rgba(242,86,35,.06),transparent 24%),var(--bone-deep);color:var(--ink);font-family:var(--sans)} .screen{width:1600px;height:1200px;margin:0 auto;padding:22px;overflow:hidden;background:linear-gradient(180deg,var(--bone) 0%,#f6f1e8 100%)}
+    .topbar,.row,.hero-meta,.timeline-head,.trade-meta,.filters,.select,.result,.reflection-stat{display:flex;align-items:center;justify-content:space-between;gap:12px}.topbar{padding-bottom:12px;border-bottom:1px solid rgba(23,23,23,.08);margin-bottom:12px}
+    .eyebrow,.small,.note,.meta{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--charcoal)} [data-meta]{letter-spacing:-.04em}@media (max-width:768px){[data-meta]{letter-spacing:-.02em}} .section-title,.hero-title,.big-num,.trade-side-num,.card-title{font-family:var(--serif);margin:0;line-height:.92;font-weight:600}
+    .section-title{font-size:34px}.hero-title{max-width:760px;font-family:"Courier New",var(--mono);font-size:34px;line-height:1.16;letter-spacing:.12em;text-transform:uppercase}.big-num{font-size:118px;color:var(--hot)} .trade-side-num{font-size:38px;color:var(--iron)} .card-title{font-size:24px} h1,h2,h3{padding-block:8px 12px}.long-form{line-height:1.65}.mobile-sticky-meta,.mobile-sticky-section{position:static}
+    .chip,.tag,.button,.select{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.54);font-size:12px;font-weight:600}.chip.dark,.button,.tag.neutral,.tag.insider{background:var(--iron);border-color:var(--iron);color:var(--bone)} .chip.warning,.tag.warning{background:var(--warning-soft);border-color:rgba(240,161,69,.68)} .tag.neutral-soft{background:rgba(131,133,133,.16);border-color:rgba(131,133,133,.3)} .button{padding:10px 16px;border-radius:14px;cursor:pointer;transition:filter 140ms ease,transform 140ms ease,box-shadow 140ms ease}.button:hover{filter:brightness(.92)}.button:active{transform:scale(.98)}.button:focus-visible{outline:2px solid var(--cta);outline-offset:3px;box-shadow:0 0 0 5px rgba(236,102,45,.12)}
+    .hero{position:relative;display:grid;grid-template-columns:1.12fr .88fr;gap:16px;padding:18px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.42),rgba(255,255,255,0) 42%),linear-gradient(180deg,rgba(168,181,154,.12),rgba(168,181,154,.03)),var(--bone);box-shadow:var(--shadow);overflow:hidden}.hero:before{content:"";position:absolute;inset:0;opacity:.18;background-image:radial-gradient(rgba(23,23,23,.18) .7px,transparent .8px),radial-gradient(rgba(23,23,23,.08) .7px,transparent .8px);background-size:14px 14px,22px 22px;background-position:0 0,8px 10px}.hero>*{position:relative;z-index:1}.lede{max-width:680px;font-size:14px;line-height:1.62;color:var(--charcoal)} .hero-right{display:grid;justify-items:end;align-content:end;gap:8px;text-align:right}
+    .layout{display:grid;grid-template-columns:1.18fr .82fr;gap:12px;margin-top:12px}.timeline,.side{border:1px solid var(--line);background:rgba(255,255,255,.46);box-shadow:var(--shadow)} .timeline{padding:14px;display:grid;gap:10px;align-content:start}.side{padding:14px;display:grid;gap:12px;align-content:start}
+    .entry{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.88)} .entry-grid{display:grid;grid-template-columns:1.06fr .94fr;gap:10px;margin-top:8px}.left-copy,.memo,.result-box{padding:10px;border-radius:16px;border:1px solid rgba(23,23,23,.08);background:rgba(255,255,255,.7)} .memo{background:linear-gradient(180deg,rgba(212,196,160,.32),rgba(255,255,255,.5));border-color:rgba(212,196,160,.56)}
+    .ticker{font-size:12px;font-weight:700;letter-spacing:.12em}.verb{font-family:var(--serif);font-size:28px}.summary{font-size:13px;line-height:1.6;color:var(--charcoal);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.result-box.down{background:rgba(60,60,60,.08)} .result-box.up{background:rgba(239,125,47,.12)} .result strong{font-size:22px;font-family:var(--serif)} .downmark{color:var(--down)} .upmark{color:var(--positive)}
+    .insider-line{margin-top:8px}.reflection,.filter-card,.legend{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.84)} .reflection{background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(212,196,160,.14))}.reflection-stat strong{font-family:var(--serif);font-size:56px;line-height:.9;color:var(--hot)}
+    .one-thing{margin-top:10px;padding:10px 12px;border-radius:16px;border:1px solid rgba(242,86,35,.28);background:var(--hot-soft);font-size:12px;line-height:1.5}.filters{flex-wrap:wrap;justify-content:flex-start}.select{width:100%;justify-content:space-between;border-radius:14px;padding:9px 12px;background:rgba(255,255,255,.72)} .mono{font-family:var(--mono)}.empty-state-demo{padding:12px;border:1px dashed rgba(100,115,93,.36);background:rgba(255,255,255,.62);border-radius:18px;display:grid;justify-items:center;gap:10px;text-align:center}.empty-state-demo svg{width:52px;height:52px;stroke:var(--iron);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    @media (max-width:768px){:root{--space-3:16px;--section-gap:40px;--card-inner:24px;--timeline-gap:24px;--chapter-gap:64px}body{min-width:0}.screen{width:100%;height:auto;padding:var(--space-3);overflow:visible}.topbar,.row,.hero-meta,.timeline-head,.trade-meta,.filters,.select,.result,.reflection-stat{flex-wrap:wrap;align-items:flex-start}.hero,.layout,.entry-grid{grid-template-columns:1fr}.hero{padding:var(--card-inner)}.layout{margin-top:40px;gap:24px}.hero-title{font-size:22px;line-height:1.3;max-width:12ch}.section-title,.card-title{font-size:24px}.big-num{font-size:68px}.trade-side-num{font-size:28px}.lede,.summary,.one-thing{font-size:14px;line-height:1.56}.timeline,.side,.reflection,.filter-card,.legend{padding:var(--card-inner);background:var(--bone-deep);border-radius:12px}.entry{padding:16px;background:rgba(255,255,255,.52);border-radius:12px}.entry+.entry{margin-top:24px}.mobile-sticky-meta{position:sticky;top:0;z-index:20;padding:10px 0 12px;background:rgba(250,247,241,.92);backdrop-filter:blur(20px)}.mobile-sticky-section{position:sticky;top:56px;z-index:15;padding:8px 0 10px;background:rgba(250,247,241,.92);backdrop-filter:blur(20px)}}
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="topbar">
+      <div><div class="eyebrow">TRADE JOURNAL · DECISION LOG</div><h1 class="section-title">交易日誌</h1></div>
+      <div class="chip dark">本月 27 筆</div>
+    </div>
+    <section class="hero">
+      <div>
+        <div class="hero-meta"><span class="chip warning">交易紀錄已同步</span><span class="chip">決策品質檔案</span></div>
+        <div class="mobile-sticky-meta"><h2 class="hero-title">TRADE JOURNAL · W16 · 27 ENTRIES</h2></div>
+        <p class="lede long-form">hero 退成結構化標頭，月內成交數與下方 decision log 成為真正焦點。</p>
+      </div>
+      <div class="hero-right">
+        <div class="small">本月成交</div>
+        <div class="big-num">27</div>
+        <div class="note">fomo <strong>4</strong> · conviction <strong>18</strong> · hedge <strong>5</strong></div>
+      </div>
+    </section>
+    <section class="layout">
+      <section class="timeline">
+        <div class="timeline-head mobile-sticky-section"><div><div class="eyebrow">Timeline</div><h3 class="card-title">按日期倒序回看</h3></div><span class="small">動機 tag + 實際結果 同屏</span></div>
+        <article class="entry">
+          <div class="trade-meta"><div><div class="ticker">2026 / 04 / 17 · 2330 台積電</div><div class="verb">買 40 股 @ 912</div></div><div class="tag neutral-soft">conviction</div></div>
+          <div class="entry-grid">
+            <div class="left-copy"><div class="small">預期結果</div><div class="summary">法說後指引未降，預期兩季內 AI 伺服器鏈權重回到基準上方；加碼不是翻多，而是補回該有的尺寸。</div></div>
+            <div class="memo"><div class="small">memo 摘要</div><div class="summary">Trade 頁 QA：想把 thesis 寫成「量縮整理後的補倉」，不是追高。若量能沒回來，寧可等下一次。</div></div>
+          </div>
+          <div class="insider-line result-box up"><div class="result"><span class="small">實際結果</span><strong class="upmark">+3.8%</strong></div><div class="summary">兩日後量能回補，路徑接近原假設。</div></div>
+        </article>
+        <article class="entry">
+          <div class="trade-meta"><div><div class="ticker">2026 / 04 / 15 · 2603 長榮</div><div class="verb">賣 60 股 @ 228.5</div></div><div class="tag neutral-soft">trim</div></div>
+          <div class="entry-grid">
+            <div class="left-copy"><div class="small">預期結果</div><div class="summary">波段目標已到，先收回現金，保留 thesis 但降低週期波動曝險，等下一輪運價事件再回來。</div></div>
+            <div class="memo"><div class="small">memo 摘要</div><div class="summary">Trade 頁 QA：這筆不是看空，而是資金調度。若之後跌深但基本面沒壞，再用事件框架重開。</div></div>
+          </div>
+          <div class="insider-line result-box up"><div class="result"><span class="small">實際結果</span><strong class="upmark">+1.6%</strong></div><div class="summary">後續回落，trim 的風險回收有成立。</div></div>
+        </article>
+        <article class="entry">
+          <div class="trade-meta"><div><div class="ticker">2026 / 04 / 12 · 3017 奇鋐</div><div class="verb">買 20 股 @ 688</div></div><div class="tag warning">fomo</div></div>
+          <div class="entry-grid">
+            <div class="left-copy"><div class="small">預期結果</div><div class="summary">擔心錯過 AI 散熱行情，預期隔天續強直接脫離整理區，短期追價想搶 momentum。</div></div>
+            <div class="memo"><div class="small">memo 摘要</div><div class="summary">Trade 頁 QA：寫得很誠實，理由其實只有「不想錯過」。月底 reflection 會把這種動機單獨抓出來。</div></div>
+          </div>
+          <div class="insider-line result-box down"><div class="result"><span class="small">實際結果</span><strong class="downmark">▼ -4.7%</strong></div><div class="summary">三日內回測支撐，和「立即噴出」的原假設相反。</div></div>
+        </article>
+        <article class="entry">
+          <div class="trade-meta"><div><div class="ticker">2026 / 04 / 11 · 7865 金聯成 · jinliancheng</div><div class="verb">買 20 股 @ 38.2</div></div><div class="tag neutral">hedge</div></div>
+          <div class="entry-grid">
+            <div class="left-copy"><div class="small">預期結果</div><div class="summary">此筆不產生 thesis，只做持股事實與公開資訊同步，保留部位調整的法遵脈絡。</div></div>
+            <div class="memo"><div class="small">memo 摘要</div><div class="summary">Trade 頁 QA：董事部位調整只記錄，不包裝成「AI 覺得該買」。這筆不能刪，也必須被通報。</div></div>
+          </div>
+          <div class="insider-line"><span class="tag insider">👑 公司代表 · 內部人交易 · 強制通報</span></div>
+        </article>
+      </section>
+      <aside class="side">
+        <section class="reflection">
+          <div class="eyebrow mobile-sticky-section">Monthly Reflection</div>
+          <h3 class="card-title">本月回看</h3>
+          <div class="reflection-stat"><strong>4</strong><span class="summary">筆 fomo 動機，平均實際結果 <span class="downmark">-2.3%</span></span></div>
+          <div class="one-thing"><span class="small">One Thing</span><br>當 memo 只剩「怕錯過」卻沒有催化條件，先等 24 小時再下單。</div>
+        </section>
+        <section class="filter-card">
+          <div class="eyebrow mobile-sticky-section">Filter</div>
+          <div class="filters">
+            <div class="select"><span>情緒</span><span>全部 ▼</span></div>
+            <div class="select"><span>Ticker</span><span>全部 ▼</span></div>
+            <div class="select"><span>結果</span><span>全部 ▼</span></div>
+          </div>
+        </section>
+        <section class="legend">
+          <div class="eyebrow mobile-sticky-section">Export</div>
+          <h3 class="card-title">帶走 decision log</h3>
+          <div class="summary long-form">CSV 不是只有成交欄位，會一起導出動機、情緒、預期與實際結果，月底才有機會真的 review 決策品質。</div>
+          <button class="button" type="button">導出 CSV</button>
+          <div class="note mono">fomo / conviction / hedge / trim / panic</div>
+        </section>
+        <section class="empty-state-demo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/><path d="M9 9h6"/><path d="M9 13h6"/></svg>
+          <div class="eyebrow" data-meta>Empty state</div>
+          <h3>第一則交易之後會記在這裡</h3>
+          <p class="summary long-form">沒有交易時不顯示假資料，先把 filter、export 和規則說明收起來，只保留一個清楚起點。</p>
+          <button class="button" type="button">新增第一筆交易紀錄</button>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

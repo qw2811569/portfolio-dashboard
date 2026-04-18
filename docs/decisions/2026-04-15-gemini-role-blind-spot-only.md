@@ -34,5 +34,5 @@ Claude + Codex + Qwen 同訓練集 bias，容易集體認同彼此提案。Gemin
 
 ## 實作
 
-- `GEMINI.md` slim 版
+- Gemini role brief slim 版
 - `project-status.json` Gemini.focus 更新

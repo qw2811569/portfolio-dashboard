@@ -1,5 +1,7 @@
 # 持倉到深度分析架構共識報告
 
+> 📌 此檔為次讀文件 · 請先讀根目錄 `README.md`
+
 最後更新：2026-03-29  
 狀態：目前執行中版本的共識文件  
 適用對象：人類開發者、Codex、Claude、Qwen、Gemini 與其他接手 AI
@@ -651,7 +653,7 @@ holding dossier 是把單一標的需要的資訊打包成分析上下文。
 1. `docs/AI_COLLABORATION_GUIDE.md`
 2. 本文件
 3. `claude.md`
-4. `QWEN.md`
+4. `docs/status/PROJECT_ENTRY.md`
 
 ---
 

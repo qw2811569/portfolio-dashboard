@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Upload Preview Round 47</title>
+  <link rel="stylesheet" href="../source-han-fonts.css">
+  <style>
+    :root{--ink:#0B120E;--charcoal:#2F3232;--iron:#838585;--bone:#E7E0D6;--bone-deep:#D9D3D1;--line:#BCB3AD;--warning:#F0A145;--warning-soft:rgba(240,161,69,.24);--positive:#EF7D2F;--cta:#EC662D;--hot:#FC6D2B;--hot-soft:rgba(252,109,43,.12);--negative:#3C3C3C;--shadow:0 1px 0 rgba(23,23,23,.05),inset 0 1px 0 rgba(255,255,255,.72);--serif:"Source Han Serif TC","Noto Serif TC","Source Serif 4",serif;--sans:"Source Han Sans TC","Noto Sans TC","Source Sans 3",sans-serif;--mono:"IBM Plex Mono","SF Mono","Courier New",monospace;font-variant-numeric:tabular-nums}
+    *{box-sizing:border-box} body{margin:0;min-width:1600px;background:radial-gradient(circle at top left,rgba(168,181,154,.14),transparent 28%),radial-gradient(circle at bottom right,rgba(242,86,35,.06),transparent 22%),var(--bone-deep);color:var(--ink);font-family:var(--sans)} .screen{width:1600px;height:1200px;margin:0 auto;padding:20px;overflow:hidden;background:linear-gradient(180deg,var(--bone) 0%,#f6f1e8 100%)}
+    .topbar,.row,.head,.hero-meta,.history-item,.trade-top,.memo-chip-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.topbar{padding-bottom:10px;border-bottom:1px solid rgba(23,23,23,.08);margin-bottom:12px}
+    .eyebrow,.small,.meta-text,.delta-note,.history-time{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--charcoal)} [data-meta]{letter-spacing:-.04em}@media (max-width:768px){[data-meta]{letter-spacing:-.02em}} .chip,.pill,.cta,.select{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.54);font-size:12px;font-weight:600}.chip.dark,.cta{background:var(--cta);border-color:var(--cta);color:var(--bone)} .chip.warning{background:var(--warning-soft)} .chip.warn{background:var(--warning-soft);border-color:rgba(240,161,69,.32)} .dot{width:8px;height:8px;border-radius:50%;background:var(--warning);display:inline-block;flex:0 0 auto}
+    .title,.section-title,.card-title,.step-num,.hero-big,.trade-num{font-family:var(--serif);margin:0;line-height:.92;font-weight:600} h1,h2,h3{padding-block:8px 12px}.long-form{line-height:1.65}.section-title{font-size:34px}.title{max-width:720px;font-family:"Courier New",var(--mono);font-size:34px;line-height:1.16;letter-spacing:.12em;text-transform:uppercase}.hero{position:relative;display:grid;grid-template-columns:1.12fr .88fr;gap:14px;padding:16px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 42%),linear-gradient(180deg,rgba(168,181,154,.12),rgba(168,181,154,.03)),var(--bone);box-shadow:var(--shadow);overflow:hidden}
+    .hero:before{content:"";position:absolute;inset:0;opacity:.18;background-image:radial-gradient(rgba(23,23,23,.18) .7px,transparent .8px),radial-gradient(rgba(23,23,23,.08) .7px,transparent .8px);background-size:14px 14px,22px 22px;background-position:0 0,8px 10px}.hero>*{position:relative;z-index:1}.lede{max-width:660px;font-size:13px;line-height:1.5;color:var(--charcoal)} .hero-stat{display:grid;justify-items:end;align-content:end;gap:6px;text-align:right}.hero-big{font-size:96px;color:var(--hot)} .hero-note{max-width:250px;font-size:11px;line-height:1.45;color:var(--charcoal)}
+    .layout{display:grid;grid-template-columns:1.18fr .82fr;gap:12px;margin-top:12px}.main,.side{border:1px solid var(--line);background:rgba(255,255,255,.44);box-shadow:var(--shadow)} .main{padding:12px;display:grid;gap:12px}.side{padding:12px;display:grid;gap:12px;align-content:start}
+    .step{border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.86);padding:12px}.head-left{display:flex;align-items:flex-start;gap:12px}.step-num{font-size:26px;color:var(--iron)} .card-title{font-size:24px}
+    .dropzone{margin-top:8px;border:2px dashed rgba(100,115,93,.42);border-radius:18px;padding:12px;background:linear-gradient(180deg,rgba(168,181,154,.08),rgba(255,255,255,.5));display:grid;grid-template-columns:1.05fr .95fr;gap:10px;align-items:center}.dropzone.drag-active{border-color:var(--hot);background:linear-gradient(180deg,rgba(242,86,35,.12),rgba(255,255,255,.64));box-shadow:0 0 0 4px rgba(242,86,35,.12)}.illus{display:grid;justify-items:center;gap:4px;padding:2px 0}.stack{position:relative;width:108px;height:64px}.paper,.paper:before,.paper:after{position:absolute;inset:auto;width:72px;height:50px;border:1px solid rgba(23,23,23,.08);border-radius:14px;background:rgba(255,255,255,.8);box-shadow:var(--shadow);content:""}.paper{left:18px;top:8px}.paper:before{left:-10px;top:6px;background:rgba(243,237,228,.85)} .paper:after{left:10px;top:-6px;background:rgba(168,181,154,.12)} .drop-copy{display:grid;gap:6px}.select{justify-content:space-between;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.72);font-size:12px}
+    .empty-hint{padding:9px 11px;border-radius:14px;background:var(--warning-soft);font-size:11px;line-height:1.45;color:var(--charcoal)}
+    .trade-list{display:grid;gap:7px;margin-top:8px}.trade{padding:8px 10px;border:1px solid rgba(23,23,23,.08);background:rgba(255,255,255,.68)} .trade-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:8px}.ticker{font-size:12px;font-weight:700;letter-spacing:.12em}.trade-num{font-size:20px}.qty-line,.delta-copy,.memo-title,.history-copy,.stat-copy,.side-copy{font-size:11px;line-height:1.4;color:var(--charcoal)}
+    .delta-box{padding:8px;border-radius:14px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.92)} .memo-box{margin-top:10px;padding:12px;border:1px solid rgba(212,196,160,.58);background:linear-gradient(180deg,rgba(212,196,160,.32),rgba(255,255,255,.5));border-radius:14px}.memo-chip-row{justify-content:flex-start;flex-wrap:wrap;margin:5px 0 6px}.pill{padding:4px 8px;font-size:9px}
+    .warning{margin-top:7px;padding:7px 9px;border-radius:14px;border:1px solid rgba(242,86,35,.28);background:var(--hot-soft);display:flex;align-items:center;justify-content:space-between;gap:8px}.warning strong{font-size:11px}.warning span{font-size:10px;color:var(--charcoal)}
+    .cta-row{display:flex;justify-content:flex-end;margin-top:10px}.cta{padding:10px 16px;border-radius:14px;font-size:13px;cursor:pointer;transition:filter 140ms ease,transform 140ms ease,box-shadow 140ms ease}.cta:hover{filter:brightness(.92)}.cta:active{transform:translateY(1px) scale(.98)}.cta:focus-visible{outline:2px solid var(--hot);outline-offset:3px;box-shadow:0 0 0 5px rgba(242,86,35,.12)}.empty-state-demo{padding:12px;border:1px dashed rgba(100,115,93,.36);border-radius:18px;background:rgba(255,255,255,.56);display:grid;justify-items:center;gap:10px;text-align:center}.empty-state-demo svg{width:52px;height:52px;stroke:var(--iron);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .stat-box,.history,.legend{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.84)} .side-title{font-family:var(--serif);font-size:22px;margin:0 0 4px}.big-stat{font-family:var(--serif);font-size:72px;line-height:.85;color:var(--iron)} .history-list{display:grid;gap:8px}.history-item{align-items:flex-start;padding-top:8px;border-top:1px solid rgba(23,23,23,.08)}.history-item:first-child{padding-top:0;border-top:none}
+    .legend{background:linear-gradient(180deg,rgba(168,181,154,.12),rgba(255,255,255,.18))}.legend-grid{display:grid;gap:8px;margin-top:8px}.mono{font-family:var(--mono)}
+    @media (max-width:768px){:root{--space-3:16px;--section-gap:40px;--card-inner:24px;--timeline-gap:24px;--chapter-gap:64px}body{min-width:0}.screen{width:100%;height:auto;padding:var(--space-3);overflow:visible}.topbar,.row,.head,.hero-meta,.history-item,.trade-top,.memo-chip-row{flex-wrap:wrap;align-items:flex-start}.hero,.layout,.dropzone,.trade-grid{grid-template-columns:1fr}.hero{padding:var(--card-inner)}.title{font-size:22px;line-height:1.3;max-width:12ch}.section-title,.card-title{font-size:24px}.hero-big,.big-stat{font-size:62px}.lede,.qty-line,.delta-copy,.memo-title,.history-copy,.stat-copy,.side-copy,.hero-note,.warning span{font-size:14px;line-height:1.56}.step,.stat-box,.history,.legend,.main,.side{padding:var(--card-inner)}.step+.step{margin-top:32px}.dropzone{margin-bottom:24px;padding-bottom:24px}.dropzone::after{content:"";display:block;grid-column:1/-1;height:1px;background:rgba(168,181,154,.4);margin-top:24px}.trade-grid{gap:20px}.warning{display:grid;grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="topbar">
+      <div><div class="eyebrow">Trade Upload</div><h1 class="section-title">上傳成交</h1></div>
+      <div class="row"><span class="chip">TRADE UPLOAD</span><span class="chip dark">批次 3 檔</span></div>
+    </div>
+
+    <section class="hero">
+      <div>
+        <div class="hero-meta"><span class="chip warning">券商成交單 · CSV / Excel</span><span class="chip">memo required before apply</span></div>
+        <h2 class="title">TRADE UPLOAD · BATCH 3 · 2026-04-17</h2>
+        <p class="lede long-form">hero 改回結構化標頭；真正的敘事留在成交差異摘要、memo Q&amp;A 與 side summary。</p>
+      </div>
+      <div class="hero-stat">
+        <div class="small">待處理成交筆數</div>
+        <div class="hero-big">3</div>
+        <div class="hero-note">size = 0 後直接移出目前持股，不留已賣出幽靈。</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="main">
+        <section class="step">
+          <div class="head">
+            <div class="head-left"><div class="step-num">01</div><div><div class="eyebrow">Step 1</div><h3 class="card-title">上傳</h3></div></div>
+            <div class="select"><span>券商範本</span><span class="mono">富邦 / 元大 / 凱基</span></div>
+          </div>
+          <div class="dropzone drag-active">
+            <div class="illus">
+              <div class="stack"><div class="paper"></div></div>
+              <div class="card-title" style="font-size:22px">拖曳成交檔到這裡</div>
+              <div class="qty-line">支援 CSV / Excel，會先 parse 成批次檢查清單，不直接寫入。</div>
+            </div>
+            <div class="drop-copy">
+              <div class="empty-hint">沒有檔案時只留一個清楚入口。warning 提示先把「拖檔案到這裡」說清楚，不急著塞表單。</div>
+              <div class="select"><span>選擇匯入樣式</span><span>富邦 ▼</span></div>
+              <div class="select"><span>目前偵測</span><span>3 檔待解析</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="step">
+            <div class="head">
+            <div class="head-left"><div class="step-num">02</div><div><div class="eyebrow">Step 2</div><h3 class="card-title">成交差異摘要</h3></div></div>
+            <button class="cta" type="button">全部套用</button>
+          </div>
+
+          <div class="trade-list">
+            <article class="trade">
+              <div class="trade-top"><div><div class="ticker">2330 台積電</div><div class="trade-num">買</div></div><div class="qty-line">數量 40 股 · 成交價 912</div></div>
+              <div class="trade-grid">
+                <div class="delta-box"><div class="small">系統計算變化</div><div class="delta-copy">成本加權 <strong>+2.4%</strong></div><div class="delta-copy">部位 <strong>80 增加到 120</strong></div><div class="delta-note">holdings、tradeLog 與 target report 同步更新</div></div>
+                <div class="delta-box"><div class="small">memo Q&amp;A</div><div class="memo-title">為什麼買：法說後指引維持，想把 AI 伺服器鏈部位補回基準權重。</div><div class="memo-chip-row"><span class="pill">為什麼買</span><span class="pill">預期多久</span><span class="pill">加碼不是翻多</span></div><div class="qty-line">預期多久：2 季，等產能與毛利率驗證。</div></div>
+              </div>
+            </article>
+
+            <article class="trade">
+              <div class="trade-top"><div><div class="ticker">2603 長榮</div><div class="trade-num">賣</div></div><div class="qty-line">數量 60 股 · 成交價 228.5</div></div>
+              <div class="trade-grid">
+                <div class="delta-box"><div class="small">系統計算變化</div><div class="delta-copy">成本結清 <strong>-100%</strong></div><div class="delta-copy">部位 <strong>60 變成 0</strong></div><div class="delta-note">size = 0 後自動從目前持股移出</div></div>
+                <div class="delta-box"><div class="small">memo Q&amp;A</div><div class="memo-title">為什麼賣：運價 thesis 沒壞，但波段目標已到，先收回資金等下一輪事件。</div><div class="memo-chip-row"><span class="pill">先收資金</span><span class="pill">不是看空</span></div><div class="qty-line">Log 會直接吃這段 QA，形成賣出後的可回看理由。</div></div>
+              </div>
+            </article>
+
+            <article class="trade">
+              <div class="trade-top"><div><div class="ticker">7865 金聯成 · jinliancheng</div><div class="trade-num">買</div></div><div class="qty-line">數量 20 股 · 成交價 38.2</div></div>
+              <div class="trade-grid">
+                <div class="delta-box"><div class="small">系統計算變化</div><div class="delta-copy">成本加權 <strong>+1.1%</strong></div><div class="delta-copy">部位 <strong>140 增加到 160</strong></div><div class="delta-note">fundamentals 僅補公開數字，不生成建議口吻</div></div>
+                <div class="delta-box"><div class="small">memo Q&amp;A</div><div class="memo-title">為什麼買：董事部位調整先做紀錄，不把 insider 身分包裝成 thesis。</div><div class="memo-chip-row"><span class="pill">合規紀錄</span><span class="pill">公開資訊</span><span class="pill">預期多久</span></div><div class="qty-line">預期多久：長持，Log 只保留數字與通報脈絡。</div></div>
+              </div>
+              <div class="warning"><strong><span class="dot"></span> 內部人交易通報</strong><span>ticker=7865 且 portfolio=jinliancheng，改用 warning chip + 通報語意，不混成一般 confirm 狀態。</span></div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="stat-box">
+          <div class="eyebrow">Batch Summary</div>
+          <div class="big-stat">3</div>
+          <div class="stat-copy">1 筆加碼、1 筆全出、1 筆 insider 通報。完成後自動 `setTab('holdings')`。</div>
+        </section>
+
+        <section class="history">
+          <div class="eyebrow">Recent Uploads</div>
+          <h3 class="side-title">最近 5 次上傳</h3>
+          <div class="history-list">
+            <article class="history-item"><div><div>04/17 14:56</div><div class="history-copy">富邦 batch 3 檔</div></div><div class="history-time">holdings synced</div></article>
+            <article class="history-item"><div><div>04/16 09:21</div><div class="history-copy">元大單筆補登 2330</div></div><div class="history-time">memo saved</div></article>
+            <article class="history-item"><div><div>04/15 16:08</div><div class="history-copy">凱基批次 2 檔</div></div><div class="history-time">target updated</div></article>
+            <article class="history-item"><div><div>04/14 13:44</div><div class="history-copy">富邦賣出 2603</div></div><div class="history-time">size zero pruned</div></article>
+            <article class="history-item"><div><div>04/11 10:12</div><div class="history-copy">jinliancheng 7865</div></div><div class="history-time">insider flagged</div></article>
+          </div>
+        </section>
+
+        <section class="legend">
+          <div class="eyebrow" data-meta>Why This Read</div>
+          <h3 class="side-title">畫面判讀</h3>
+          <div class="legend-grid">
+            <div class="side-copy">memo Q&amp;A 用 warning 底，不跟 diff 搶主角，但仍明確告訴使用者「先寫理由再送資料」。</div>
+            <div class="side-copy">CTA 用 cta，warning 才給待補與通報狀態，避免整頁誤讀成高風險操作。</div>
+            <div class="side-copy">insider 警示在第三筆內直接成立，不需要等進 Log 才知道這是合規例外。</div>
+          </div>
+        </section>
+        <section class="empty-state-demo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5"/><path d="m8 9 4-4 4 4"/><path d="M4 17.5A3.5 3.5 0 0 0 7.5 21h9A3.5 3.5 0 0 0 20 17.5"/></svg>
+          <div class="eyebrow" data-meta>Empty state</div>
+          <h3>把成交檔拖進來，系統先幫你整理欄位</h3>
+          <p class="side-copy long-form">空態時直接示範 drag-active 視覺，先讓人知道入口與後續檢查節奏。</p>
+          <button class="cta" type="button">選擇成交檔</button>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events Preview Round 39</title>
+  <style>
+    :root {
+      --ui-ink: #171717;
+      --ui-ink-soft: #4d4d4d;
+      --ui-bone: #faf7f1;
+      --ui-bone-soft: #f3ede4;
+      --ui-sand: #d4c4a0;
+      --ui-sage: #a8b59a;
+      --ui-sage-deep: #64735d;
+      --ui-line: #d7d0c4;
+      --ui-tangerine: #f25623;
+      --ui-tangerine-soft: rgba(242, 86, 35, 0.1);
+      --ui-down-text: #241d19;
+      --ui-warn: #d94f23;
+      --serif: "Iowan Old Style", "Times New Roman", "Noto Serif TC", serif;
+      --sans: "Avenir Next", "Helvetica Neue", "Noto Sans TC", sans-serif;
+      --mono: "SF Mono", "IBM Plex Mono", monospace;
+      --shadow: 0 1px 0 rgba(23, 23, 23, 0.04), inset 0 1px 0 rgba(255,255,255,0.72);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 1600px;
+      background:
+        radial-gradient(circle at top left, rgba(168, 181, 154, 0.14), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(242, 86, 35, 0.08), transparent 20%),
+        var(--ui-bone-soft);
+      color: var(--ui-ink);
+      font-family: var(--sans);
+    }
+
+    .screen {
+      width: 1600px;
+      min-height: 1200px;
+      margin: 0 auto;
+      padding: 28px;
+      background: linear-gradient(180deg, var(--ui-bone) 0%, #f6f1e8 100%);
+    }
+
+    .topbar, .hero-meta, .event-top, .event-meta, .event-bottom, .panel-head, .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .topbar {
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+      margin-bottom: 18px;
+    }
+
+    .eyebrow, .small-label, .subcopy {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: var(--ui-ink-soft);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid var(--ui-line);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.46), rgba(255,255,255,0) 42%),
+        linear-gradient(180deg, rgba(168, 181, 154, 0.12), rgba(168, 181, 154, 0.02)),
+        var(--ui-bone);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.18;
+      background-image:
+        radial-gradient(rgba(23, 23, 23, 0.18) 0.7px, transparent 0.8px),
+        radial-gradient(rgba(23, 23, 23, 0.08) 0.7px, transparent 0.8px);
+      background-size: 14px 14px, 22px 22px;
+      background-position: 0 0, 8px 10px;
+      pointer-events: none;
+    }
+
+    .hero-copy, .hero-stat, .lane, .summary-card, .accuracy-card {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title, .section-title, .summary-title {
+      font-family: var(--serif);
+      margin: 0;
+      font-weight: 600;
+      line-height: 0.92;
+    }
+
+    .hero-title {
+      max-width: 760px;
+      font-family: "Courier New", var(--mono);
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1.16;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .section-title { font-size: 34px; }
+    .summary-title { font-size: 28px; }
+
+    .meta-chip, .type-chip, .state-chip, .countdown-chip, .count-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--ui-line);
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.5);
+    }
+
+    .meta-chip { color: var(--ui-ink-soft); }
+    .count-chip { background: var(--ui-ink); color: var(--ui-bone); border-color: var(--ui-ink); }
+    .type-chip, .state-chip.is-verified { background: var(--ui-sage-deep); color: var(--ui-bone); border-color: var(--ui-sage-deep); }
+    .state-chip.is-review { background: var(--ui-sand); color: var(--ui-ink); border-color: rgba(23, 23, 23, 0.08); }
+    .countdown-chip.is-overdue {
+      border: 1.5px solid var(--ui-tangerine);
+      color: var(--ui-ink);
+      background: rgba(255,255,255,0.42);
+    }
+
+    .warn-dot, .impact-dot, .bar-fill::after {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ui-tangerine);
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    .hero-stat {
+      display: grid;
+      align-content: end;
+      justify-items: end;
+      gap: 14px;
+      text-align: right;
+    }
+
+    .hero-big {
+      font-family: var(--serif);
+      font-size: 124px;
+      line-height: 0.84;
+      color: var(--ui-tangerine);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .lane, .summary-card, .accuracy-card {
+      border: 1px solid var(--ui-line);
+      background: rgba(255,255,255,0.42);
+      box-shadow: var(--shadow);
+    }
+
+    .lane {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+    }
+
+    .event-card {
+      position: relative;
+      padding: 16px 16px 16px 22px;
+      border: 1px solid rgba(23, 23, 23, 0.08);
+      background: rgba(250, 247, 241, 0.88);
+    }
+
+    .event-card::before {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 18px;
+      bottom: -14px;
+      width: 1px;
+      background: rgba(23, 23, 23, 0.12);
+    }
+
+    .event-card:last-child::before { bottom: 18px; }
+
+    .event-dot {
+      position: absolute;
+      left: 5px;
+      top: 22px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--ui-ink);
+      box-shadow: 0 0 0 3px rgba(250, 247, 241, 1);
+    }
+
+    .event-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .stock-line, .event-date, .side-note, .impact-row, .legend, .bar-labels, .hit-copy {
+      color: var(--ui-ink-soft);
+      font-size: 14px;
+    }
+
+    .stock-line strong {
+      letter-spacing: 0.08em;
+      margin-right: 8px;
+    }
+
+    .impact-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .impact-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(23, 23, 23, 0.08);
+      background: rgba(255,255,255,0.34);
+    }
+
+    .impact-pill.is-broken .impact-dot { background: var(--ui-tangerine); }
+    .impact-pill.is-holding .impact-dot { background: var(--ui-sage-deep); }
+
+    .down {
+      color: var(--ui-down-text);
+      font-weight: 600;
+    }
+
+    .summary-card, .accuracy-card {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-list, .mini-metrics {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-item {
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+    }
+
+    .summary-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .bar-track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(23, 23, 23, 0.07);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 68%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--ui-sage-deep) 0%, var(--ui-sage) 70%, var(--ui-tangerine) 100%);
+      position: relative;
+    }
+
+    .bar-fill::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      top: 3px;
+    }
+
+    .bar-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .event-bottom { flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <section class="topbar">
+      <div>
+        <div class="eyebrow">Events Catalyst · Validation</div>
+        <h1 class="section-title">催化驗證</h1>
+      </div>
+      <div class="count-chip">7 events this week</div>
+    </section>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="hero-meta"><span class="meta-chip">3-day validation gate</span><span class="meta-chip">workflow stable</span></div>
+        <h2 class="hero-title">EVENTS · CATALYST<br>VALIDATION · W16</h2>
+        <p class="side-note">平常日預設用 meta label；重大 catalyst 才條件改成事件標題。</p>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-big">03</div>
+        <div class="subcopy">need review before daily close analysis</div>
+      </div>
+    </section>
+
+    <section class="hero-grid">
+      <div class="lane">
+        <div class="panel-head">
+          <div>
+            <div class="small-label">Timeline</div>
+            <h3 class="section-title">本週時序</h3>
+          </div>
+          <div class="meta-chip">pending → tracking → validated</div>
+        </div>
+
+        <div class="timeline">
+          <article class="event-card">
+            <span class="event-dot"></span>
+            <div class="event-top">
+              <div class="stock-line"><strong>3661 世芯</strong><span class="type-chip">產業催化</span></div>
+              <span class="countdown-chip">D-1</span>
+            </div>
+            <div class="event-meta">
+              <h4 class="event-title">NVL72 出貨節點確認</h4>
+              <div class="event-date">04/18 Fri</div>
+            </div>
+            <div class="event-bottom">
+              <div class="impact-row">
+                <span class="impact-pill is-holding"><span class="impact-dot"></span>pillar impact 供應鏈 lead 持穩</span>
+              </div>
+              <span class="state-chip is-review">📋 待復盤</span>
+            </div>
+          </article>
+
+          <article class="event-card">
+            <span class="event-dot"></span>
+            <div class="event-top">
+              <div class="stock-line"><strong>3017 奇鋐</strong><span class="type-chip">公司法說</span></div>
+              <span class="countdown-chip is-overdue"><span class="warn-dot"></span>D+2 overdue</span>
+            </div>
+            <div class="event-meta">
+              <h4 class="event-title">液冷模組 ASP 是否延續</h4>
+              <div class="event-date">04/15 Tue</div>
+            </div>
+            <div class="event-bottom">
+              <div class="impact-row">
+                <span class="impact-pill is-broken"><span class="impact-dot"></span>pillar impact 毛利率假設 weakened</span>
+                <span class="down">▼ bearish revision risk</span>
+              </div>
+              <span class="state-chip is-review">📋 待復盤</span>
+            </div>
+          </article>
+
+          <article class="event-card">
+            <span class="event-dot"></span>
+            <div class="event-top">
+              <div class="stock-line"><strong>2308 台達電</strong><span class="type-chip">財報</span></div>
+              <span class="countdown-chip">+3d gate passed</span>
+            </div>
+            <div class="event-meta">
+              <h4 class="event-title">資料中心電源訂單驗證</h4>
+              <div class="event-date">04/11 Fri</div>
+            </div>
+            <div class="event-bottom">
+              <div class="impact-row">
+                <span class="impact-pill is-holding"><span class="impact-dot"></span>pillar impact 接單能見度 confirmed</span>
+              </div>
+              <span class="state-chip is-verified">已驗證</span>
+            </div>
+          </article>
+
+          <article class="event-card">
+            <span class="event-dot"></span>
+            <div class="event-top">
+              <div class="stock-line"><strong>2382 廣達</strong><span class="type-chip">總經</span></div>
+              <span class="countdown-chip">D+0</span>
+            </div>
+            <div class="event-meta">
+              <h4 class="event-title">美國雲端 capex 指引更新</h4>
+              <div class="event-date">04/17 Thu</div>
+            </div>
+            <div class="event-bottom">
+              <div class="impact-row">
+                <span class="impact-pill"><span class="impact-dot" style="background:#99948d"></span>pillar impact waiting market digestion</span>
+              </div>
+              <span class="state-chip is-review">📋 待復盤</span>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <aside style="display:grid; gap:18px;">
+        <section class="summary-card">
+          <div>
+            <div class="small-label">Weekly cadence</div>
+            <h3 class="summary-title">本週事件節奏</h3>
+          </div>
+          <div class="summary-list">
+            <div class="summary-item">
+              <div class="stat-row"><strong>Mon-Tue</strong><span class="side-note">財報 / 法說密集</span></div>
+              <div class="side-note">先集中在 margin 與 backlog 驗證，偏公司內生訊號。</div>
+            </div>
+            <div class="summary-item">
+              <div class="stat-row"><strong>Wed-Thu</strong><span class="side-note">macro overlay</span></div>
+              <div class="side-note">總經與雲端 capex 更新會放大個股方向差。</div>
+            </div>
+            <div class="summary-item">
+              <div class="stat-row"><strong>Fri</strong><span class="side-note">review window</span></div>
+              <div class="side-note">Daily analysis 之前先處理超期事件，避免舊催化殘留。</div>
+            </div>
+          </div>
+          <div class="count-chip" style="width:max-content;">需復盤 3</div>
+        </section>
+
+        <section class="accuracy-card">
+          <div>
+            <div class="small-label">Hit rate</div>
+            <h3 class="summary-title">預期 vs 實際命中率</h3>
+          </div>
+          <div class="mini-metrics">
+            <div class="stat-row">
+              <span class="hit-copy">confirmed / partial / refuted</span>
+              <strong style="font-family:var(--mono); font-size:28px;">68%</strong>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill"></div>
+            </div>
+            <div class="bar-labels">
+              <span>predicted 22</span>
+              <span>actual hit 15</span>
+              <span>miss 7</span>
+            </div>
+            <div class="legend">橘色只用在 miss edge 與 overdue warning，不把整頁拖成警報面板。</div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

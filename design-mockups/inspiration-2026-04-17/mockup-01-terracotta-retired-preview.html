@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview Preview Round 57</title>
+  <style>
+    :root{--ink:#202823;--bone:#eee7db;--bone-soft:#f4efe6;--line:#cfc6b8;--muted:#6f746b;--sage:#a8b59a;--sage-deep:#7b8e72;--up:#6f8568;--accent:#f25623;--font-head:"Source Serif 4","Iowan Old Style","Noto Serif TC",serif;--font-body:"Source Sans 3","Avenir Next","Noto Sans TC",sans-serif;--font-mono:"Courier New","IBM Plex Mono",monospace;--shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 0 rgba(32,40,35,.06)}
+    *{box-sizing:border-box} body{margin:0;padding:32px;background:radial-gradient(circle at top left,rgba(196,206,181,.18),transparent 32%),radial-gradient(circle at bottom right,rgba(242,86,35,.05),transparent 26%),var(--bone-soft);color:var(--ink);font-family:var(--font-body)}
+    .screen{width:2568px;min-height:2648px;margin:0 auto;border:1px solid var(--line);background:var(--bone);box-shadow:var(--shadow);padding:28px}
+    .topbar,.market-strip,.hero-grid,.row,.submetrics,.hero-foot{display:flex;gap:12px}.topbar,.row{justify-content:space-between;align-items:center}.topbar{padding-bottom:18px;border-bottom:1px solid rgba(111,116,107,.18);margin-bottom:18px}.hero-grid{align-items:flex-start}
+    .eyebrow,.label,.meta{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)} h1,h2,.feature-title,.summary-name{margin:0;font-family:var(--font-head)} h1{font-size:58px;line-height:.96}.hero-title{font-family:var(--font-mono);font-size:36px;line-height:1.18;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px}
+    .market-badge,.pill{border:1px solid var(--line);border-radius:999px;padding:10px 16px;background:rgba(244,239,230,.82);font-size:13px}.pill{padding:6px 12px}.pill.active{background:var(--sage-deep);color:var(--bone-soft)} .hero-panel,.stack-card,.kpi-card,.hero-note{border:1px solid var(--line);background:rgba(244,239,230,.82);box-shadow:var(--shadow)}
+    .hero-panel{flex:1.15;padding:34px 38px}.hero-copy{max-width:1320px}.hero-copy p,.summary-text{color:var(--muted)} .hero-copy p{font-size:24px;line-height:1.6;max-width:1120px}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin:24px 0}.kpi-card{padding:28px}.kpi-card .feature-title{font-size:26px}.big-num{font-family:var(--font-head);font-size:86px;line-height:.9;margin:18px 0 12px}.big-num.up{color:var(--up)}
+    .submetrics{padding:20px 0;border-top:1px solid rgba(111,116,107,.18);border-bottom:1px solid rgba(111,116,107,.18);justify-content:space-between}.metric{flex:1}.metric .value{font-family:var(--font-head);font-size:62px;line-height:.9;margin-top:18px}.metric .value.up{color:var(--up)}
+    .hero-foot{margin-top:28px}.hero-note{flex:1;padding:28px 30px}.feature-title{font-size:56px;line-height:.94}.summary-text{font-size:22px;line-height:1.6}.quote{font-size:42px;line-height:1.18;color:var(--ink);margin-top:18px;max-width:640px}.quote-author{font-size:18px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:16px}.context-line{margin-top:26px;padding-top:18px;border-top:1px solid rgba(111,116,107,.18);font-size:22px;line-height:1.5;color:var(--ink)}
+    .hero-stack{width:1020px;display:grid;gap:28px}.stack-card{padding:36px 46px}.summary-list,.focus-list{display:grid;gap:28px;margin-top:26px}.summary-name{font-size:52px;line-height:.94}.table-num{font-family:var(--font-head);font-size:58px}.focus-item .meta{margin-top:10px}.footer{display:flex;justify-content:space-between;margin-top:48px;padding-top:28px;border-top:1px solid rgba(111,116,107,.18);font-size:20px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <header class="topbar">
+      <div><div class="eyebrow">Portfolio dashboard styleguide v2</div><h1>持倉看板</h1></div>
+      <div class="market-strip"><div class="market-badge">TW market <strong>+0.31%</strong></div><div class="market-badge">更新時間 <strong>2026.04.16 15:40</strong></div></div>
+    </header>
+    <section class="hero-grid">
+      <article class="hero-panel">
+        <div class="hero-copy">
+          <div class="eyebrow">Overview / calm tactile dashboard</div>
+          <h2 class="hero-title">OVERVIEW · W16 · 2026-04-17<br>POST-CLOSE</h2>
+          <p>讓 hero 退回結構化 label，主焦點交還給右側與下方 KPI；平常日不再用情緒金句帶敘事。</p>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi-card"><div class="feature-title">總市值</div><div class="big-num">14,725,300</div><div class="summary-text">整體組合仍以成長股為主，但用低彩度語意色避免把市值做成刺激指標。</div></article>
+          <article class="kpi-card"><div class="feature-title">今日損益</div><div class="big-num up">+45,200</div><div class="summary-text">語意保留在深綠與赤陶紅，數字有力，但不搶標題。</div></article>
+          <article class="kpi-card"><div class="feature-title">持股檔數</div><div class="big-num">15 檔</div><div class="summary-text">檔數是節奏指標，不是越多越好。持股越多，注意力越稀釋。</div></article>
+        </div>
+        <div class="submetrics">
+          <div class="metric"><div class="label">Week</div><div class="value up">+2.14%</div></div>
+          <div class="metric"><div class="label">Month</div><div class="value up">+8.45%</div></div>
+          <div class="metric"><div class="label">需關注</div><div class="value">2 檔</div></div>
+          <div class="metric"><div class="label">資料需補</div><div class="value">4 檔</div></div>
+        </div>
+        <div class="hero-foot">
+          <div class="hero-note"><div class="row"><div class="feature-title">本日摘要</div><span class="pill active">Hold steady</span></div><div class="summary-text">台積電與昇達科推動組合市值續創短期高點，但藥華藥轉弱、兩檔小型題材股資料新鮮度偏舊，今日該做的是篩出「需要再補 thesis」的持股，而不是放大全部漲幅。</div></div>
+          <div class="hero-note"><div class="row"><div class="feature-title" style="font-size:30px">Daily Principle</div><span class="pill">Dashboard only</span></div><div class="quote">"Be fearful when others are greedy,<br>and greedy when others are fearful."</div><div class="quote-author">— Warren Buffett</div><div class="context-line">· 今日組合 +2.14% · 市場 HOLD STEADY</div></div>
+        </div>
+      </article>
+      <aside class="hero-stack">
+        <article class="stack-card"><div class="row"><div class="feature-title">持倉結構</div><span class="pill">15 holdings</span></div><div class="summary-list"><div><div class="row"><div class="summary-name">成長股</div><div class="table-num">56%</div></div><div class="summary-text">主軸仍在 AI 伺服器、CoWoS、CPO；高 beta，但 thesis 清楚。</div></div><div><div class="row"><div class="summary-name">事件驅動</div><div class="table-num">18%</div></div><div class="summary-text">需要更強的時點紀律，避免事件過後仍抱著敘事。</div></div><div><div class="row"><div class="summary-name">ETF / 防守</div><div class="table-num">14%</div></div><div class="summary-text">黃金 ETF 穩定波動，提供組合語氣上的休止點。</div></div><div><div class="row"><div class="summary-name">權證</div><div class="table-num">12%</div></div><div class="summary-text">用來放大已知 thesis，不應獨立脫離標的股解讀。</div></div></div></article>
+        <article class="stack-card"><div class="row"><div class="feature-title">今日焦點</div><span class="pill">2 items</span></div><div class="focus-list"><div class="focus-item"><div class="row"><div><div class="summary-name">3491 昇達科</div><div class="meta">CPO / 5G</div></div><div class="table-num" style="color:var(--up)">+12.0%</div></div><div class="summary-text">漲幅漂亮，但部位偏重。下一步不是追價，是檢查券商預估與產能敘事有沒有更新。</div></div><div class="focus-item"><div class="row"><div><div class="summary-name">6446 藥華藥</div><div class="meta">生技 / 事件驅動</div></div><div class="table-num">▼ -9.5%</div></div><div class="summary-text">財報前市場沒有給溢價，該重新檢視原 thesis 是否仍成立，而不是只等反彈。</div></div></div></article>
+      </aside>
+    </section>
+    <footer class="footer"><span>共用 token：ink / bone / line / muted / font families</span><span>accent 分家：持倉看板 = sage，不沿用 Agent Bridge clay</span></footer>
+  </main>
+</body>
+</html>

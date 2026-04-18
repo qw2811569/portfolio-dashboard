@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態請見 `claude.md`
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # PROJECT_ENTRY.md — 專案唯一入口
 
 最後更新：2026-04-03
@@ -84,7 +90,7 @@
 - 跑 build/lint/test 驗證
 - Production API 功能測試
 - 發現問題寫回報，不自己修
-- 詳細 QA 流程見 `QWEN.md`
+- 詳細 QA 流程見 `docs/AI_COLLABORATION_GUIDE.md` 與 `scripts/auto-loop.sh`
 
 ### Gemini
 
@@ -131,9 +137,7 @@
 ### 角色補充文件
 
 - `CLAUDE.md`
-- `CODEX.md`
-- `QWEN.md`
-- `GEMINI.md`
+- `docs/AI_COLLABORATION_GUIDE.md`
 
 ---
 

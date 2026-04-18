@@ -5,7 +5,9 @@
       "Bash(npx *)",
       "Bash(npm run *)",
       "Bash(git show *)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(curl *)",
+      "Bash(python3 *)"
     ]
   },
   "$version": 3

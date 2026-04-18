@@ -1,5 +1,7 @@
 # 快速參考指南
 
+> 📌 此檔為次讀文件 · 請先讀根目錄 `README.md`
+
 給接手 AI 與開發者的 1 分鐘版本
 
 ---
@@ -8,7 +10,7 @@
 
 ```bash
 npm install
-vercel dev
+vercel dev --listen 0.0.0.0:3002
 npm run verify:local
 ```
 
@@ -100,4 +102,4 @@ export function getHoldingMarketValue(item, overridePrice = null) {
 
 ---
 
-最後更新：2026-03-27
+最後更新：2026-04-18

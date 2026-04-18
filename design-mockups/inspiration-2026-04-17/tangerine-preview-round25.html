@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Round 25 Tangerine Preview</title>
+  <style>
+    :root {
+      --ink: #202823;
+      --ink-strong: #171717;
+      --bone: #eee7db;
+      --bone-soft: #f4efe6;
+      --line: #cfc6b8;
+      --muted: #6f746b;
+      --sage: #a8b59a;
+      --sage-deep: #7b8e72;
+      --up: #6f8568;
+      --danger: #b65a4d;
+      --tangerine: #f25623;
+      --tangerine-bg: rgba(242, 86, 35, 0.12);
+      --font-headline: "Source Serif 4", "Noto Serif TC", serif;
+      --font-body: "Source Sans 3", "Noto Sans TC", sans-serif;
+      --font-num: "Source Serif 4", "IBM Plex Mono", serif;
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 999px;
+      --shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 0 rgba(32,40,35,0.06);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      min-width: 1480px;
+      background:
+        radial-gradient(circle at top left, rgba(196, 206, 181, 0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(242, 86, 35, 0.05), transparent 26%),
+        var(--bone-soft);
+      color: var(--ink);
+      font-family: var(--font-body);
+      line-height: 1.45;
+    }
+    .screen {
+      width: 1840px;
+      min-height: 1240px;
+      margin: 0 auto 28px;
+      border: 1px solid var(--line);
+      background: var(--bone);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      overflow: hidden;
+    }
+    .topbar, .row-between, .chip-row, .filter-group, .target-row, .score-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .topbar {
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.18);
+      margin-bottom: 18px;
+    }
+    .eyebrow, .label, .meta, .table-head span {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    h1, h2, h3, .stock-title, .summary-name, .code-name strong, .feature-title {
+      margin: 0;
+      font-family: var(--font-headline);
+      color: var(--ink);
+    }
+    h1 { font-size: 58px; line-height: 0.96; }
+    .feature-title { font-size: 28px; }
+    .brand { display: grid; gap: 8px; }
+    .market-strip, .filter-group, .chip-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .market-badge, .filter-chip, .tag, .score-badge, .pill {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      background: rgba(244, 239, 230, 0.82);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+      font-size: 13px;
+    }
+    .filter-chip.is-active, .score-badge.is-sage, .tag.is-sage {
+      background: var(--sage-deep);
+      border-color: rgba(32, 40, 35, 0.12);
+      color: var(--bone-soft);
+    }
+    .tag.is-sage { font-weight: 600; }
+    .pill-v2 {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--tangerine);
+      padding: 6px 12px;
+      color: var(--ink-strong);
+      background: rgba(255,255,255,0.18);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .pill-v2.is-tight { padding: 5px 10px; }
+    .pill-v2 .warning-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--tangerine);
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+    .table-shell, .research-layout {
+      display: grid;
+      gap: 18px;
+    }
+    .table-shell { grid-template-rows: auto auto 1fr; }
+    .filter-bar, .table-card, .note-card, .detail-card, .target-panel, .stats-panel, .signal {
+      border: 1px solid var(--line);
+      background: rgba(244, 239, 230, 0.82);
+      box-shadow: var(--shadow);
+    }
+    .filter-bar { padding: 16px 18px; }
+    .insight-strip { display: flex; gap: 10px; flex-wrap: wrap; }
+    .table-layout {
+      display: grid;
+      grid-template-columns: 1.35fr 0.78fr;
+      gap: 18px;
+    }
+    .table-card { padding: 16px 18px 18px; }
+    .table-head, .table-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr 0.9fr 1.25fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .table-head {
+      padding: 0 12px 10px;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.18);
+    }
+    .table-row {
+      padding: 14px 12px;
+      border-radius: 14px;
+      margin-top: 4px;
+    }
+    .table-row:nth-child(even) { background: rgba(255,255,255,0.16); }
+    .table-row.is-gap {
+      position: relative;
+      background: rgba(242, 86, 35, 0.07);
+      border-left: 2px solid var(--tangerine);
+      padding-left: 10px;
+    }
+    .code-name { display: grid; gap: 4px; }
+    .code-name strong { font-size: 22px; line-height: 0.96; }
+    .theme-line, .leader-line, .summary-text, .target-copy, .metric-copy { color: var(--muted); }
+    .cell, .target-row { font-size: 15px; }
+    .table-number, .focus-price strong, .score-number, .stat-box strong { font-family: var(--font-num); }
+    .tone-up { color: var(--up); }
+    .tone-down { color: var(--danger); }
+    .note-card, .detail-card { padding: 22px; display: grid; gap: 16px; }
+    .principle-card {
+      padding: 14px 16px;
+      border: 1px dashed rgba(111, 116, 107, 0.35);
+      background: rgba(255,255,255,0.18);
+      display: grid;
+      gap: 8px;
+    }
+    .mini-list { display: grid; gap: 18px; }
+    .mini-row {
+      display: grid;
+      gap: 8px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.18);
+    }
+    .progress {
+      width: 100%;
+      height: 9px;
+      background: rgba(168, 181, 154, 0.18);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid rgba(111, 116, 107, 0.12);
+    }
+    .progress > span {
+      display: block;
+      width: 73%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--sage), var(--up));
+      border-radius: var(--radius-sm);
+    }
+    .research-layout {
+      grid-template-columns: 1.05fr 0.95fr;
+      min-height: 0;
+    }
+    .detail-card.is-focus {
+      background:
+        linear-gradient(180deg, rgba(168, 181, 154, 0.14), transparent 40%),
+        rgba(244, 239, 230, 0.92);
+    }
+    .research-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.18);
+      padding-bottom: 16px;
+    }
+    .stock-title { font-size: 52px; line-height: 0.94; }
+    .focus-price {
+      text-align: right;
+      display: grid;
+      gap: 6px;
+    }
+    .focus-price strong { font-size: 62px; line-height: 0.9; }
+    .research-summary {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 16px;
+    }
+    .summary-block { display: grid; gap: 12px; }
+    .summary-block p { margin: 0; font-size: 22px; color: var(--muted); }
+    .score-box {
+      display: grid;
+      gap: 10px;
+      padding: 14px 16px;
+      border: 1px solid rgba(111, 116, 107, 0.18);
+      background: rgba(255, 255, 255, 0.18);
+    }
+    .target-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .target-panel, .stats-panel { padding: 16px; display: grid; gap: 14px; }
+    .target-list { display: grid; gap: 8px; }
+    .target-row {
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.15);
+    }
+    .target-row:last-child { border-bottom: 0; }
+    .target-copy { font-size: 13px; }
+    .stats-grid, .signal-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .signal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat-box, .signal {
+      padding: 14px;
+      border: 1px solid rgba(111, 116, 107, 0.18);
+      background: rgba(255,255,255,0.18);
+      display: grid;
+      gap: 8px;
+    }
+    .stat-box strong { font-size: 28px; line-height: 0.94; }
+    .signal strong { font-size: 22px; }
+    .research-notes { display: grid; gap: 18px; }
+    .note-block {
+      display: grid;
+      gap: 10px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(111, 116, 107, 0.18);
+    }
+    .note-block:last-child { border-bottom: 0; }
+  </style>
+</head>
+<body>
+  <section class="screen" id="holdings">
+    <header class="topbar">
+      <div class="brand">
+        <div class="eyebrow">Holdings / table first</div>
+        <h1>持股列表</h1>
+      </div>
+      <div class="market-strip">
+        <div class="market-badge">策略占比 <strong>成長股 56%</strong></div>
+        <div class="market-badge">需補資料 <strong>4 檔</strong></div>
+      </div>
+    </header>
+    <div class="table-shell">
+      <div class="filter-bar row-between">
+        <div class="filter-group">
+          <span class="filter-chip is-active">全部 15</span>
+          <span class="filter-chip">成長股</span>
+          <span class="filter-chip">事件驅動</span>
+          <span class="filter-chip">ETF / 指數</span>
+          <span class="filter-chip">權證</span>
+        </div>
+        <div class="filter-group">
+          <span class="filter-chip">需關注 2</span>
+          <span class="filter-chip">資料需補 4</span>
+          <span class="filter-chip is-active">按今日損益</span>
+        </div>
+      </div>
+      <div class="insight-strip">
+        <span class="tag is-sage">細 border pill + sage active</span>
+        <span class="pill">muted column label</span>
+        <span class="pill">serif numeric emphasis</span>
+        <span class="pill-v2 is-tight">stale</span>
+      </div>
+      <div class="table-layout">
+        <article class="table-card">
+          <div class="table-head">
+            <span>名稱 / 主題</span>
+            <span>持股</span>
+            <span>成本</span>
+            <span>現價</span>
+            <span>報酬</span>
+            <span>今日損益</span>
+            <span>策略</span>
+          </div>
+          <div>
+            <div class="table-row">
+              <div class="code-name"><strong>2330 台積電</strong><span class="theme-line">AI伺服器 / CoWoS</span></div>
+              <div class="cell table-number">100</div><div class="cell table-number">950</div><div class="cell table-number">975</div>
+              <div class="cell tone-up table-number">+2.63%</div><div class="cell tone-up table-number">+2,500</div>
+              <div class="cell"><div class="tag is-sage">成長股</div><div class="leader-line">龍頭</div></div>
+            </div>
+            <div class="table-row">
+              <div class="code-name"><strong>3491 昇達科</strong><span class="theme-line">CPO / 5G</span></div>
+              <div class="cell table-number">1,000</div><div class="cell table-number">1500</div><div class="cell table-number">1680</div>
+              <div class="cell tone-up table-number">+12.00%</div><div class="cell tone-up table-number">+180,000</div>
+              <div class="cell"><div class="tag is-sage">成長股</div><div class="leader-line">中型</div></div>
+            </div>
+            <div class="table-row">
+              <div class="code-name"><strong>6446 藥華藥</strong><span class="theme-line">生技</span></div>
+              <div class="cell table-number">500</div><div class="cell table-number">420</div><div class="cell table-number">380</div>
+              <div class="cell tone-down table-number">-9.50%</div><div class="cell tone-down table-number">-20,000</div>
+              <div class="cell"><div class="tag">事件驅動</div><div class="leader-line">中型</div></div>
+            </div>
+            <div class="table-row">
+              <div class="code-name"><strong>053848 亞翔凱基5B購</strong><span class="theme-line">無明確題材</span></div>
+              <div class="cell table-number">8,000</div><div class="cell table-number">1.8</div><div class="cell table-number">2.1</div>
+              <div class="cell tone-up table-number">+16.70%</div><div class="cell tone-up table-number">+2,400</div>
+              <div class="cell"><div class="tag">權證</div><div class="leader-line">—</div></div>
+            </div>
+            <div class="table-row is-gap">
+              <div class="code-name">
+                <div class="row-between">
+                  <strong>資料缺口提醒</strong>
+                  <span class="pill-v2 is-tight">stale</span>
+                </div>
+                <span>2 檔小型題材股缺券商 target 與最新營收摘要</span>
+              </div>
+              <div class="cell">—</div><div class="cell">—</div><div class="cell">—</div>
+              <div class="cell tone-down table-number">stale</div><div class="cell">需補資料</div><div class="cell">watchlist</div>
+            </div>
+            <div class="table-row">
+              <div class="code-name"><strong>3231 緯創</strong><span class="theme-line">AI伺服器 / EMS</span></div>
+              <div class="cell table-number">500</div><div class="cell table-number">106</div><div class="cell table-number">112.5</div>
+              <div class="cell tone-up table-number">+6.13%</div><div class="cell tone-up table-number">+3,250</div>
+              <div class="cell"><div class="tag is-sage">成長股</div><div class="leader-line">大型</div></div>
+            </div>
+            <div class="table-row">
+              <div class="code-name"><strong>6805 富世達</strong><span class="theme-line">摺疊機 / 軸承</span></div>
+              <div class="cell table-number">90</div><div class="cell table-number">780</div><div class="cell table-number">742</div>
+              <div class="cell tone-down table-number">-4.87%</div><div class="cell tone-down table-number">-3,420</div>
+              <div class="cell"><div class="tag is-sage">成長股</div><div class="leader-line">中型</div></div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="note-card">
+          <div class="row-between">
+            <div class="feature-title">心法卡 preview</div>
+            <span class="score-badge is-sage">Preview</span>
+          </div>
+          <p class="summary-text">這區不是交易訊號，是給自己看的「判斷框架摘要」。桌上看板最有價值的，是讓你在情緒起來之前先看到自己的邏輯。</p>
+          <div class="principle-card">
+            <div class="label">Thesis guardrail</div>
+            <strong>漲很多 ≠ thesis 更對。先問市場現在在買什麼。</strong>
+          </div>
+          <div class="principle-card">
+            <div class="label">資料新鮮度</div>
+            <div class="row-between"><span>券商目標價更新</span><span class="meta">11 / 15 fresh</span></div>
+            <div class="progress"><span></span></div>
+          </div>
+          <div class="mini-list">
+            <div class="mini-row">
+              <div class="row-between">
+                <span class="summary-name">今天先做</span>
+                <span class="pill-v2">2 ITEMS</span>
+              </div>
+              <div class="summary-text">補齊 3491 券商 target、重寫 6446 事件假設。</div>
+            </div>
+            <div class="mini-row">
+              <div class="row-between">
+                <span class="summary-name">今天不做</span>
+                <span class="pill">discipline</span>
+              </div>
+              <div class="summary-text">不因為短線上漲就新增高相似度題材股，避免 thesis 重複曝險。</div>
+            </div>
+            <div class="mini-row">
+              <div class="row-between">
+                <span class="summary-name">風險提醒</span>
+                <span class="pill-v2 is-tight">stale</span>
+              </div>
+              <div class="summary-text">1 檔權證找不到近期研究來源，應退回標的股層級判讀。</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="research">
+    <header class="topbar">
+      <div class="brand">
+        <div class="eyebrow">Research detail / expanded panel</div>
+        <h1>單檔研究詳情</h1>
+      </div>
+      <div class="market-strip">
+        <div class="market-badge">標的 <strong>2330 台積電</strong></div>
+        <div class="market-badge">leader <strong>龍頭</strong></div>
+      </div>
+    </header>
+
+    <div class="research-layout">
+      <article class="detail-card is-focus">
+        <div class="research-header">
+          <div>
+            <div class="eyebrow">Position focus</div>
+            <div class="stock-title">2330 台積電</div>
+            <div class="chip-row" style="margin-top:10px">
+              <span class="tag is-sage">成長股</span>
+              <span class="tag is-sage">AI 伺服器</span>
+              <span class="tag is-sage">CoWoS</span>
+              <span class="tag">龍頭</span>
+            </div>
+          </div>
+          <div class="focus-price">
+            <div class="label">最新價</div>
+            <strong>975</strong>
+            <div class="tone-up">+2.63% vs cost</div>
+          </div>
+        </div>
+
+        <div class="research-summary">
+          <div class="summary-block">
+            <div class="feature-title">一句 thesis</div>
+            <p>市場給台積電的核心溢價仍在先進製程與 AI 供應鏈壟斷力。只要 CoWoS 產能擴充仍是 bottleneck 解法，資金願意繼續給評價。</p>
+            <div class="feature-title" style="margin-top:8px">這次要看的不是什麼</div>
+            <p>不是要猜明天會不會再漲，而是要確認目標價、營收與法說口徑，是否還在支持「長週期資本支出換高附加價值」這個框架。</p>
+          </div>
+
+          <div class="score-box">
+            <div class="score-line">
+              <span class="label">Confidence</span>
+              <span class="pill-v2"><span class="warning-dot"></span>0.4 / 10</span>
+            </div>
+            <div class="score-line">
+              <span>研究新鮮度</span>
+              <strong class="table-number">7 days</strong>
+            </div>
+            <div class="score-line">
+              <span>財報節奏</span>
+              <strong class="table-number">Q1 preview</strong>
+            </div>
+            <div class="score-line">
+              <span>需補欄位</span>
+              <strong class="table-number">1</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="target-grid">
+          <section class="target-panel">
+            <div class="row-between">
+              <div class="feature-title">目標價列表</div>
+              <span class="pill">fresh ≤ 7d</span>
+            </div>
+            <div class="target-list">
+              <div class="target-row">
+                <div><div><strong>1030</strong> 元</div><div class="target-copy">摩根士丹利 · 2026-04-11 · AI 需求維持強勁</div></div>
+                <span class="tone-up">+5.6%</span>
+              </div>
+              <div class="target-row">
+                <div><div><strong>1015</strong> 元</div><div class="target-copy">高盛 · 2026-04-10 · CoWoS 擴產可延續 ASP</div></div>
+                <span class="tone-up">+4.1%</span>
+              </div>
+              <div class="target-row">
+                <div><div><strong>980</strong> 元</div><div class="target-copy">花旗 · 2026-04-08 · 評價接近合理，但上修獲利預估</div></div>
+                <span>+0.5%</span>
+              </div>
+              <div class="target-row">
+                <div><div><strong>940</strong> 元</div><div class="target-copy">本土券商 · 2026-03-12 · 超過 30 天，僅作歷史參照</div></div>
+                <span class="pill-v2 is-tight">stale</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="stats-panel">
+            <div class="row-between">
+              <div class="feature-title">財報 stat</div>
+              <span class="pill">latest filing</span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-box"><div class="label">毛利率</div><strong>54.1%</strong><div class="meta">QoQ +0.8pt</div></div>
+              <div class="stat-box"><div class="label">營益率</div><strong>42.6%</strong><div class="meta">QoQ +0.5pt</div></div>
+              <div class="stat-box"><div class="label">EPS</div><strong>12.3</strong><div class="meta">YoY +18%</div></div>
+              <div class="stat-box"><div class="label">CapEx 指引</div><strong>$31B</strong><div class="meta">維持高檔</div></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="signal-grid">
+          <div class="signal"><div class="label">What changed</div><strong>AI demand</strong><div class="metric-copy">客戶端維持急單，供應鏈瓶頸仍由先進封裝承接。</div></div>
+          <div class="signal"><div class="label">What to verify</div><strong>Pricing power</strong><div class="metric-copy">法說若開始淡化 ASP 提升，評價擴張空間會縮。</div></div>
+          <div class="signal"><div class="label">What breaks thesis</div><strong>Capacity slip</strong><div class="metric-copy">CoWoS 與先進製程擴產不及預期，會先打到敘事可信度。</div></div>
+        </div>
+      </article>
+
+      <aside class="detail-card">
+        <div class="row-between">
+          <div class="feature-title">觀察筆記</div>
+          <span class="score-badge">Research panel</span>
+        </div>
+        <div class="principle-card" style="min-height:420px;">
+          <div class="label">判斷順序</div>
+          <strong style="font-size:30px; align-self:end;">先看 thesis 還有沒有被驗證，再看目標價有沒有被上修。</strong>
+        </div>
+        <div class="research-notes">
+          <div class="note-block">
+            <div class="row-between"><span class="summary-name">Entry basis</span><span class="meta">2026-03-28</span></div>
+            <div class="summary-text">基於 AI 需求延續、先進製程定價能力與 CoWoS 瓶頸優勢建立部位。</div>
+          </div>
+          <div class="note-block">
+            <div class="row-between"><span class="summary-name">Watch item</span><span class="pill-v2 is-tight">1 missing</span></div>
+            <div class="summary-text">需補最新法說逐字稿摘要，避免只靠二手報告轉述。</div>
+          </div>
+          <div class="note-block">
+            <div class="row-between"><span class="summary-name">Exit cue</span><span class="pill">discipline</span></div>
+            <div class="summary-text">若 ASP 論述消失、而市場開始只剩設備題材輪動，應降低權重而非繼續拉長期限。</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</body>
+</html>

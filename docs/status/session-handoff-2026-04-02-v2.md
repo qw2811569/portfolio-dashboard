@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態請見 `docs/status/current-work.md`
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # Session 交接 V2 — 2026-04-02 晚（歷史檔）
 
 > 狀態：**歷史參考文件，不是目前專案真相入口。**

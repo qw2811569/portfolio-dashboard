@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態請見 `docs/status/current-work.md`
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # 知識庫缺口分析報告
 
 > 生成日期：2026/4/3

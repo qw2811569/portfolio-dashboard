@@ -1,0 +1,24 @@
+:root {
+  --ink: #0B120E;
+  --charcoal: #2F3232;
+  --iron: #838585;
+  --bone-deep: #D9D3D1;
+  --bone: #E7E0D6;
+
+  --line: #BCB3AD;
+
+  --warning: #F0A145;
+  --warning-soft: rgba(240, 161, 69, 0.24);
+  --positive: #EF7D2F;
+  --cta: #EC662D;
+  --hot: #FC6D2B;
+  --hot-soft: rgba(252, 109, 43, 0.12);
+
+  --negative: #3C3C3C;
+
+  --up: var(--positive);
+  --down: var(--negative);
+  --serif: "Source Han Serif TC", "Noto Serif TC", "Source Serif 4", serif;
+  --sans: "Source Han Sans TC", "Noto Sans TC", "Source Sans 3", sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", "Courier New", monospace;
+}

@@ -37,7 +37,7 @@
 - Codex / Qwen / Gemini 的 brief
 - Commit message
 - docs 所有新寫的文件
-- CLAUDE.md / GEMINI.md / CODEX.md / QWEN.md
+- `CLAUDE.md` 與其他仍存活的 repo 規則文件
 - project-status.json / agent-bridge-tasks.json
 
 ## 既有文件不追溯

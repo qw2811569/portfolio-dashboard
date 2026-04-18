@@ -1,5 +1,7 @@
 # FinMind API 付費方案商業評估報告
 
+> ⚠️ 2026-04-18 update: 用戶已付費 FinMind · 原「需升 Backer」結論作廢 · 真因：我們 call method 錯 · 詳 `docs/status/kb-availability-2026-04-18.md`
+
 日期：2026-04-01
 作者：技術團隊（Claude 架構師）
 對象：決策者 / 預算審批

@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態請見 `coordination/llm-bus/board.md`
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # LLM Capability Review - 2026-04-03
 
 This report provides an overview of the capabilities, limitations, and best use cases for several prominent AI coding agents as of April 2026.

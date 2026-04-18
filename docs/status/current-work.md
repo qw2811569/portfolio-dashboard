@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-12 04:25
+Last updated: 2026-04-18 13:03 CST
 
 ## Management preferences
 
@@ -12,8 +12,16 @@ Last updated: 2026-04-12 04:25
 
 ## Start here
 
-- 第一入口：`docs/status/PROJECT_ENTRY.md`
+- 第一入口：`README.md`
+- 協作規則：`claude.md` + `docs/AI_COLLABORATION_GUIDE.md`
 - canonical 細節狀態：`docs/status/current-work.md`
+
+## R106 sweep note
+
+- `docs/status/PROJECT_ENTRY.md` 已在 2026-04-18 標為歷史入口，不再作首讀。
+- `docs/status/todo-live.md` 是 2026-04-16 loop snapshot，不再作 live board。
+- FinMind 目前以付費帳號 + `docs/status/kb-availability-2026-04-18.md` audit 為準，不再以「等待付費確認」當前提。
+- 進入 R107 Task 2 前，請先看 `docs/specs/2026-04-18-portfolio-dashboard-sa.md`、`docs/specs/2026-04-18-portfolio-dashboard-sd.md`、`docs/portfolio-spec-report/architecture.md`。
 
 ## Working loop
 
@@ -51,6 +59,7 @@ Last updated: 2026-04-12 04:25
 - `src/App.jsx`
 - `src/lib/eventUtils.js`
 - `src/lib/portfolioUtils.js`
+- `src/lib/contracts/` — Task 2 契約邊界預留目錄（R106 skeleton）
 - `src/lib/knowledgeBase.js` — 知識庫檢索+策略映射（Claude 最近修改）
 - `src/lib/knowledge-base/` — 7 分類 600 條（Claude 最近完成）
 - `src/lib/dossierUtils.js` — dossier 組裝，串接知識庫 context
@@ -60,19 +69,22 @@ Last updated: 2026-04-12 04:25
 - `src/main.jsx`
 - `scripts/healthcheck.sh`
 - `scripts/kb-experiment.sh` — autoresearch-style 實驗量測（Claude 新增）
-- `api/research.js` — candidate brain proposal 主流程（Codex 進行中）
-- `src/hooks/useResearchWorkflow.js` — research proposal 契約與提示訊息（Codex 進行中）
-- `src/components/research/ResearchPanel.jsx` — evolve UI 文案同步 proposal 語意（Codex 進行中）
+- `api/research.js` — research pipeline hot path
+- `src/hooks/useResearchWorkflow.js` — research proposal 契約與提示訊息
+- `src/components/research/ResearchPanel.jsx` — research proposal / UI 契約
+- `docs/specs/2026-04-18-portfolio-dashboard-sa.md` — Task 2 What
+- `docs/specs/2026-04-18-portfolio-dashboard-sd.md` — Task 2 How
+- `docs/portfolio-spec-report/architecture.md` — blocker / TODO 匯總
+- `docs/status/kb-availability-2026-04-18.md` — FinMind paid-token availability audit
+- `docs/known-bugs.md` — 已知資料與 period semantics 問題
 - `docs/AI_COLLABORATION_GUIDE.md` — §7 知識庫分工已更新
 - `docs/superpowers/kb-experiment-results.tsv` — 實驗帳本
 - `docs/status/current-work.md`
-- `CLAUDE.md`
-- `QWEN.md`
-- `GEMINI.md`
+- `claude.md`
 
 ## 當前任務（主線收斂）
 
-任務詳情仍可參考各 LLM 的 .md 檔，但本輪以主線為準，不再分散擴張。
+任務詳情以主線文件為準，不再分散到已刪除的 agent 角色卡。
 
 目前只盯 3 件事：
 
@@ -82,6 +94,19 @@ Last updated: 2026-04-12 04:25
 
 ## Latest checkpoint
 
+- `2026-04-16 21:57` Qwen：Regression 6: 828/828 pass, 4 risks found (2 MED, 2 LOW)
+- `2026-04-16 21:42` Qwen：Action Center QA: 5 bugs found (1 P0, 2 P1, 2 P2)
+- `2026-04-16 21:39` Qwen：Round 5 regression: 812/812 pass, 3 risks identified (git timeout, sparkline perf, mobile responsive)
+- `2026-04-16 21:35` Qwen：Persist live validate: 806/806 pass, bridge persist ✅, AbortController ✅, lint ✅
+- `2026-04-16 21:35` Qwen：Persist live validate: 806/806 pass, bridge persist ✅, AbortController ✅, lint ✅
+- `2026-04-16 20:13` Qwen：Final regression complete: 764 tests pass, build OK, lint 0 errors. Ship ready 8.5/10. Report: .tmp/regression-final/qwen-report.md
+- `2026-04-16 20:09` Qwen：cnyes coverage measurement: 5/11 → 7/11 (+19%), report saved to .tmp/coverage-measure/qwen-report.md
+- `2026-04-16 20:00` Qwen：TWSE Live Smoke: 4 endpoints verified (200 OK, 1.3MB+313KB+115KB), no rate limit (5/5 pass), found 5 bugs (P0: no timeout, P1: Content-Type mismatch + institutional endpoint risk, P2: no retry + date edge cases). FinMind overlap: TWSE can replace catalog/prices/valuation (60% call reduction). Report: .tmp/twse-live-smoke/qwen-report.md
+- `2026-04-16 19:54` Qwen：Regression: 752/752 pass, 3 P2 issues found
+- `2026-04-16 19:31` Qwen：Phase 2 落差審查完成：10 項承諾 4 項 render/2 項有感，推薦 B 方案（補內容架構）
+- `2026-04-16 17:07` Qwen：localhost QA: 10 issues found, report @ .tmp/localhost-qa/qwen-report.md
+- `2026-04-16 03:25` Qwen：研究完成：12 個台股資料源（含表格+推薦組合），報告存於 docs/research/taiwan-stock-data-sources-v2.md
+- `2026-04-16 00:22` Qwen：Regression sweep: 716 tests pass / 0 fail. Trade fix verified. Target-price quality improved. No user-facing drift.
 - `2026-04-12 04:25` Qwen：QA Round 3: FAIL — 待補資料 18 (ETFs/warrants have no FinMind fundamentals, backlog gate needs type filter). Code audit: 0 bugs in A1/A2 logic.
 - `2026-04-03 17:32` Qwen：任務 G：零波動修復 + 事件計數修復，build ✅ vitest 369/369 ✅ lint ✅
 - `2026-04-03 17:32` Qwen：任務 G 完成：G1 零波動修復（changePct null 處理 + UI 顯示 —）+ G2 事件計數修復（移除 >1% 嚴格過濾），build ✅ vitest 369/369 ✅ lint ✅
@@ -150,7 +175,7 @@ Last updated: 2026-04-12 04:25
   - next best step：直接在 production UI 驗證三件事：`收盤分析` 面板、`深度研究` 單股與組合模式、`事件面板` 是否穩定顯示 fixed + gemini 事件；若都正常，再回頭清掉 `useAutoEventCalendar.js` 的既有 unused warning
 
 - `2026-04-02 07:04` Codex：完成全面 Bug Sweep：research 500 已修，streaming/OCR/research 端到端結果已確認- `2026-04-02 07:04` Codex：完成全面 Bug Sweep，並修掉 production `research` serverless 啟動即 crash 的問題。
-  - done：依照 `CODEX.md` 的 5 項 sweep 完成 production 驗證。最新 production 已是 commit `939ca51`；Vercel deployment `dpl_EYZHzhbn3jTpdrMy1JfgZmy63GfP` build 綠燈。`/api/research` 原本 bare GET 與 POST 都是 `FUNCTION_INVOCATION_FAILED`，Vercel logs 顯示根因是 Node ESM 載入 `src/lib/knowledge-base/*.json` 缺少 import attribute；已在 `src/lib/knowledgeBase.js` 與 `src/lib/knowledgeEvolutionRuntime.js` 補上 `with { type: 'json' }`，修補後 production `GET /api/research` 已恢復 `200`，`POST /api/research` 會進到真正研究流程，不再 instant crash。
+  - done：依照當輪 Codex 5 項 bug sweep 完成 production 驗證。最新 production 已是 commit `939ca51`；Vercel deployment `dpl_EYZHzhbn3jTpdrMy1JfgZmy63GfP` build 綠燈。`/api/research` 原本 bare GET 與 POST 都是 `FUNCTION_INVOCATION_FAILED`，Vercel logs 顯示根因是 Node ESM 載入 `src/lib/knowledge-base/*.json` 缺少 import attribute；已在 `src/lib/knowledgeBase.js` 與 `src/lib/knowledgeEvolutionRuntime.js` 補上 `with { type: 'json' }`，修補後 production `GET /api/research` 已恢復 `200`，`POST /api/research` 會進到真正研究流程，不再 instant crash。
   - changed files：`src/lib/knowledgeBase.js`、`src/lib/knowledgeEvolutionRuntime.js`
   - validation：`vitest`（`knowledge-base + knowledgeEvolutionRuntime`）29 tests 通過；`npm run build` 通過；`npm run lint` 無 error，仍有既有 warnings。production sweep 結果：`GET /api/twse -> 400`、`GET /api/finmind -> 400`、`GET /api/event-calendar -> 200`、`GET /api/analyze -> 405`、`GET /api/research -> 200`、`GET /api/parse -> 405`、`GET /api/analyst-reports -> 405`、`GET /api/gemini-research -> 200`。
   - risks：Vercel CLI 目前只列出 `ANTHROPIC_API_KEY` 與 `PUB_BLOB_READ_WRITE_TOKEN`，看不到 `CRON_SECRET` / `FINMIND_TOKEN`；若不是 CLI 權限視角限制，代表至少其中兩個 env 尚未配置。streaming analyze 端到端通過，SSE 有 `meta + delta + done`，且正文是中文評論不是純 JSON。OCR 對正常尺寸 PNG 端到端通過（`200`），但 1x1 極小測試圖仍會回 `500 Could not process image`，表示 parse API 對不可處理圖片還沒有 graceful degrade。`/api/research` 單股 POST 目前不再 instant crash，但 production API 仍會在約 `60.9s` 被 Vercel 打成 `504 FUNCTION_INVOCATION_TIMEOUT`；用與前端同等的 `AbortSignal.timeout(55000)` 測試時，會在 `55.01s` 收到 `TimeoutError`，代表不會無限 hang，但研究 latency 仍是紅燈。
@@ -245,7 +270,7 @@ Last updated: 2026-04-12 04:25
   - Bug fix 2：`buildHoldingDossiers` 加入 `stockMeta` 傳遞，解決知識注入永遠拿到空物件的致命 bug
   - Bug fix 3：`usePortfolioDerivedData` + `usePortfolioPersistence` 傳入 `STOCK_META`
   - 演化方案：`docs/superpowers/specs/2026-03-31-kb-evolution-design.md`
-  - Qwen 交接：QWEN.md 更新 5 項待辦
+  - Qwen 交接：QA 待辦更新 5 項
   - 測試 **45/45 files, 217/217 tests 全過**
 - `2026-04-01 00:00` Claude：知識庫壓測 + 排序偏差修正 + 演化方案設計。
   - 壓測：34 檔持股 100% 覆蓋、6/7 策略相關性通過、檢索穩定
@@ -464,7 +489,7 @@ Last updated: 2026-04-12 04:25
 - `17:21` checkpoint meeting：暫不需要新 skill；當前最大缺口改為「事件復盤 / 真實 outcome 回寫 casebook」，以及月營收 / 法說 / 目標價節奏的台股特化補強
 - `17:42` Codex：完成 Gemini CLI 官方可行性確認；共識為「只加入公開資料 research scout，不碰最終真值層」
 - `17:49` Codex：已安裝 `Gemini CLI 0.35.0`
-- `17:57` Codex：新增 repo-local `GEMINI.md` 與兩條啟動腳本，並補進 VSCode tasks
+- `17:57` Codex：新增 repo-local Gemini 角色卡與兩條啟動腳本，並補進 VSCode tasks
 - `18:04` James + Curie：同意 Gemini 最佳位置是外部 research scout；不適合直接定 fundamentals / targets / strategyBrain
 - `13:52` Codex：確認 Gemini CLI 已是 `0.35.0`，不是版本太舊；`gemini-3.1-pro` 目前在此 key / 路徑下不可用，`gemini-2.5-pro` free-tier quota 為 0
 - `13:54` Codex：實測 `gemini-3-flash-preview` 與 `gemini-3.1-flash-lite-preview` 可用，已將 repo 預設 Gemini 模型切到 `gemini-3-flash-preview`

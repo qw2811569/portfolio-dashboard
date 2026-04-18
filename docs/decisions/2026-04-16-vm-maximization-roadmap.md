@@ -38,6 +38,10 @@ Vercel flakiness 確實多。**能搬 VM 就搬**。
 
 ## 工作清單（搬 / 新建，按優先序）
 
+## 例外
+
+Knowledge API 仍留 Blob，見 [`2026-04-15-knowledge-api-blob-not-vm.md`](./2026-04-15-knowledge-api-blob-not-vm.md)。VM 最大化不是全搬；read-heavy、write-rarely 的知識檔分發仍遵循 2026-04-15 決議。
+
 ### P0（本週要搬）
 
 | #   | 工作                      | 目前位置                            | 搬到                            | 解的痛                                |

@@ -1,3 +1,9 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為歷史參考 · 最新狀態請見 `docs/decisions/2026-04-15-gemini-role-blind-spot-only.md`
+>
+> 保留理由：被 `docs/product/portfolio-dashboard-spec.md` / 其他 spec 引用為歷史證據，刪除會斷脈絡。
+
+---
+
 # Gemini 不做資料蒐集
 
 **日期**：2026-04-15
@@ -19,7 +25,7 @@ Gemini 角色重定義為：
 
 ## 實作
 
-- 改寫 `GEMINI.md`（457 行 → 90 行）slim 為反駁角色
+- 改寫 Gemini role brief（457 行 → 90 行）slim 為反駁角色
 - 明確禁止：`google_web_search`、寫 `docs/gemini-research/*.json`、研究產品比較
 - 更新 `project-status.json` `Gemini.focus`
 

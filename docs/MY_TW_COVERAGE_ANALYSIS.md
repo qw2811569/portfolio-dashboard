@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為早期競品/資料策略分析。其可執行整合結論已收斂到 `docs/specs/2026-03-28-coverage-and-workflow-integration-design.md`。
+>
+> 保留理由：保留 My-TW-Coverage 初始研究脈絡；但不再作為 current plan / current recommendation 依據。
+
 # My-TW-Coverage 專案分析與我們的系統優化建議
 
 最後更新：2026-03-27

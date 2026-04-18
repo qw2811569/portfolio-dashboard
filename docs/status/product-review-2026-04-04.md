@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔為 2026-04-04 的 UX review snapshot；其中「已實施 / 進行中」狀態不再代表 current truth。
+>
+> 最新產品/設計真相請見 `docs/specs/2026-04-18-portfolio-dashboard-sa.md`、`docs/specs/2026-04-18-portfolio-dashboard-sd.md`、`docs/status/current-work.md`。
+
 # 產品經理 UX 審查 — 2026-04-04
 
 ## 核心價值主張

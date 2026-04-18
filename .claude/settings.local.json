@@ -7,7 +7,9 @@
       "Bash(gh api:*)",
       "Bash(python3 -c \"import weasyprint; print\\(''''weasyprint ok''''\\)\")",
       "Read(//Applications/**)",
-      "Bash(grep -E \"\\(^./docs/[^/]+\\\\.md$|current-work\\)\")"
+      "Bash(grep -E \"\\(^./docs/[^/]+\\\\.md$|current-work\\)\")",
+      "Bash(git stash:*)",
+      "Bash(awk '{print $1\" lines\"}')"
     ]
   }
 }

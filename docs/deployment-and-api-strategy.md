@@ -1,5 +1,9 @@
 # Vercel 部署策略 + Claude API 使用守則
 
+> ⚠️ **SUPERSEDED · 2026-04-18** · 此檔（2026-04-02）推 Turbo→Standard · 但 2026-04-16 調查發現真根因是 push 頻率  
+> 最新：`claude.md` Rule 4「一大輪才 push」+ `docs/research/vercel-cost-investigation.md`  
+> 保留作為 pricing reference（Turbo $0.126/min vs Standard $0.014/min 仍事實）· 但 action item 已作廢
+
 最後更新：2026-04-02
 作者：Claude（架構師）
 

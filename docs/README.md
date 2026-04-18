@@ -1,118 +1,37 @@
-# 文檔索引
+# docs/ 索引
 
-最後更新：2026-03-28
+> 📌 `docs/` 目錄索引。首讀仍是根目錄 `README.md`。
 
----
+最後更新：2026-04-18
 
-## 🚀 快速開始
+## 先讀順序
 
-### 新使用者
+1. [`../README.md`](../README.md) — 專案首讀、最短導航
+2. [`AI_COLLABORATION_GUIDE.md`](AI_COLLABORATION_GUIDE.md) — AI / 人類協作規則
+3. [`specs/2026-04-18-portfolio-dashboard-sa.md`](specs/2026-04-18-portfolio-dashboard-sa.md) — 系統分析（What）
+4. [`specs/2026-04-18-portfolio-dashboard-sd.md`](specs/2026-04-18-portfolio-dashboard-sd.md) — 系統設計（How）
+5. [`portfolio-spec-report/architecture.md`](portfolio-spec-report/architecture.md) — 架構 blocker / TODO
+6. [`decisions/index.md`](decisions/index.md) — 正式決議索引
+7. [`status/current-work.md`](status/current-work.md) — 只在接手 live work 時讀
 
-1. [使用者指南](USER_GUIDE_COMPLETE.md) - 完整功能說明
+## 文檔群組
 
-### 新開發者/AI
+- `docs/specs/`：主規格與 SA/SD
+- `docs/decisions/`：正式決議（有 override 關係時以這裡為準）
+- `docs/status/`：live 狀態與審計報告
+- `docs/research/`：研究與 feasibility brief
+- `docs/portfolio-spec-report/`：對外閱讀版報告與架構頁
+- `docs/testing/`：測試 / 驗證報告
 
-1. [AI 協作指南](AI_COLLABORATION_GUIDE.md) - 協作規則
-2. [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md) - 技術架構
-3. [當前工作](superpowers/status/current-work.md) - 進行中任務
+## 次讀文件
 
----
+- [`QUICK_START.md`](QUICK_START.md) — 1 分鐘接手版
+- [`SERVER_ACCESS_GUIDE.md`](SERVER_ACCESS_GUIDE.md) — 本地 / 遠端開發入口
+- [`finmind-api-reference.md`](finmind-api-reference.md) — FinMind 資料集與 repo-side caveat
+- [`known-bugs.md`](known-bugs.md) — 已知資料/邏輯坑
 
-## 📚 核心文檔（必讀）
+## 舊檔判讀
 
-| 文檔                                                     | 用途                   | 讀者            |
-| -------------------------------------------------------- | ---------------------- | --------------- |
-| [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | AI 協作規則、分工      | 所有 AI、開發者 |
-| [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md) | 技術架構、資料流       | 開發者、AI      |
-| [使用者指南](USER_GUIDE_COMPLETE.md)                     | 功能說明、操作指南     | 使用者          |
-| [當前工作](superpowers/status/current-work.md)           | 進行中任務、checkpoint | 開發者、AI      |
-
----
-
-## 📊 策略文檔
-
-| 文檔                                                 | 用途                       |
-| ---------------------------------------------------- | -------------------------- |
-| [選股策略完整規格](stock-selection-strategy.md)      | 選股引擎設計與問題分析     |
-| [付費/停損/籌碼討論](THREE_KEY_POINTS_DISCUSSION.md) | 付費機制、停損加倉、籌碼面 |
-| [競品分析](MY_TW_COVERAGE_ANALYSIS.md)               | My-TW-Coverage 分析與借鏡  |
-| [Phase 0 實作指南](phase0-implementation.md)         | 基礎建設實作總結           |
-
----
-
-## 📁 目錄結構
-
-```
-docs/
-├── README.md                          ← 你目前在這裡
-├── AI_COLLABORATION_GUIDE.md         ← AI 協作規則（唯一 canonical）
-├── PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md  ← 系統架構
-├── USER_GUIDE_COMPLETE.md            ← 使用者指南
-├── stock-selection-strategy.md       ← 選股策略
-├── phase0-implementation.md          ← Phase 0 實作
-├── THREE_KEY_POINTS_DISCUSSION.md    ← 策略討論
-├── MY_TW_COVERAGE_ANALYSIS.md        ← 競品分析
-│
-├── superpowers/
-│   ├── status/                       ← 狀態文件
-│   │   └── current-work.md           ← 當前工作
-│   ├── specs/                        ← 規格文件
-│   └── plans/                        ← 計畫文件
-│
-├── evals/                            ← 評估框架
-└── testing/                          ← 測試記錄
-```
-
----
-
-## 🔧 開發相關
-
-### 驗證命令
-
-```bash
-# 完整驗證
-npm run verify:local
-
-# 單項檢查
-npm run lint
-npm run build
-npm run test:run
-npm run healthcheck
-npm run smoke:ui
-```
-
-### 相關文檔
-
-- [快速開始](QUICK_START.md)
-- [伺服器訪問指南](SERVER_ACCESS_GUIDE.md)
-
----
-
-## 📞 問題排查
-
-**遇到問題？依序檢查：**
-
-| 問題類型          | 查看文檔                                                 | 章節                          |
-| ----------------- | -------------------------------------------------------- | ----------------------------- |
-| 白頁 / 無法啟動   | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
-| Fast Refresh 錯誤 | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
-| 測試失敗          | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
-| Lint / Typecheck  | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 問題排查指南             |
-| 策略大腦 / AI     | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 + docs/evals/program.md  |
-| 協作分工          | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §8 AI 分工與任務路由          |
-| Runtime 錯誤      | [AI 協作指南](AI_COLLABORATION_GUIDE.md)                 | §5.1 + §6 Runtime diagnostics |
-| 技術架構          | [系統架構](PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md) | 完整架構說明                  |
-| 進行中任務        | [當前工作](superpowers/status/current-work.md)           | 最新 checkpoint               |
-
-**快速命令：**
-
-```bash
-# 完整驗證
-npm run verify:local
-
-# 健康檢查
-npm run healthcheck
-
-# UI 白頁檢查
-npm run smoke:ui
-```
+- 檔頭有 `SUPERSEDED` 的，只保留歷史脈絡，不作 current action 依據
+- append-only round 文件若與 `docs/decisions/*.md` 或較新 round 衝突，以較新者為準
+- 若只想知道現在真相，不要從 `docs/status/todo-live.md` 或舊 review snapshot 開始

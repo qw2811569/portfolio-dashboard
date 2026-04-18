@@ -26,6 +26,10 @@
     --ok: #6F8D58;
     --warn: #C68642;
     --danger: #B04D3A;
+    --vm-accent: #A8B59A;
+    --vm-surface: rgba(232, 236, 226, 0.94);
+    --mac-accent: #B9853E;
+    --mac-surface: rgba(244, 235, 220, 0.96);
     --shadow: none;
     --space-1: 4px;
     --space-2: 8px;
@@ -313,6 +317,165 @@
     border-top: 1px solid var(--line);
   }
 
+  .action-center {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid rgba(168, 181, 154, 0.4);
+    background: rgba(196, 206, 181, 0.18);
+    border-radius: 4px;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .action-center.urgent {
+    border-color: rgba(185, 133, 62, 0.55);
+    background: rgba(243, 232, 215, 0.55);
+  }
+  .action-center.calm {
+    border-color: rgba(168, 181, 154, 0.3);
+    background: rgba(244, 239, 230, 0.6);
+  }
+  .action-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .action-headline {
+    font-family: var(--serif);
+    font-size: clamp(18px, 2vw, 22px);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .action-detail {
+    font-size: 13px;
+    color: #4a554c;
+    line-height: 1.55;
+  }
+  .action-buttons {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .action-buttons button {
+    padding: 6px 14px;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 150ms;
+  }
+  .action-buttons button.primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+  .action-buttons button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(32,40,35,0.12);
+  }
+
+  .today-timeline {
+    margin: var(--space-4) 0;
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    background: rgba(244, 239, 230, 0.5);
+    border-radius: 4px;
+  }
+  .timeline-list {
+    list-style: none;
+    margin: var(--space-2) 0 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .timeline-list li {
+    display: grid;
+    grid-template-columns: 56px 60px 1fr;
+    gap: var(--space-2);
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed rgba(207, 198, 184, 0.4);
+    align-items: baseline;
+  }
+  .timeline-list li:last-child { border-bottom: none; }
+  .timeline-list .ts {
+    font-family: var(--mono, monospace);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .timeline-list .hash {
+    font-family: var(--mono, monospace);
+    font-size: 10px;
+    color: var(--ink);
+    background: rgba(168, 181, 154, 0.18);
+    padding: 1px 5px;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .timeline-list .msg {
+    color: #2a3530;
+    line-height: 1.4;
+  }
+  .timeline-list .commit-stat {
+    margin-left: 8px;
+    font-family: var(--mono, monospace);
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .timeline-list .commit-stat .ins {
+    color: #6F8568;
+  }
+  .timeline-list .commit-stat .del {
+    color: #B65A4D;
+  }
+
+  .mac-message-details {
+    grid-column: 1 / -1;
+    margin: 4px 0;
+  }
+  .mac-message-summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink);
+    padding: 4px 0;
+    list-style: none;
+  }
+  .mac-message-summary::-webkit-details-marker { display: none; }
+  .mac-message-summary::before {
+    content: '▸ ';
+    color: var(--muted);
+  }
+  .mac-message-details[open] .mac-message-summary::before {
+    content: '▾ ';
+  }
+  .mac-message-pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: rgba(0,0,0,0.03);
+    padding: 8px 10px;
+    border-radius: 3px;
+    font-family: var(--mono, monospace);
+    font-size: 11px;
+    color: #2a3530;
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 6px 0 0 0;
+  }
+  .timeline-empty {
+    color: var(--muted);
+    font-style: italic;
+    grid-column: 1 / -1 !important;
+    text-align: center;
+    padding: 12px 0;
+  }
+
   .hero-side,
   .hero-dial-block,
   .summary-list,
@@ -488,6 +651,11 @@
     padding: var(--space-4);
   }
 
+  .session-card {
+    border-left: 6px solid var(--vm-accent);
+    background: var(--vm-surface);
+  }
+
   .session-card-grid {
     display: grid;
     gap: var(--space-4);
@@ -648,6 +816,7 @@
 
   .task-status.in_progress,
   .agent-load.running,
+  .status-badge.connecting { color: var(--muted); border-color: rgba(168, 154, 134, 0.5); }
   .status-badge.connected { color: var(--ok); border-color: rgba(111, 141, 88, 0.48); }
   .task-status.pending { color: var(--warn); }
   .task-status.blocked,
@@ -1065,6 +1234,23 @@
     padding: 12px;
     border: 1px solid var(--line);
     background: rgba(246, 240, 232, 0.68);
+    border-left: 6px solid var(--mac-accent);
+    background: var(--mac-surface);
+  }
+
+  .surface-prefix {
+    color: var(--muted-ink);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .surface-prefix.vm {
+    color: #6E7F62;
+  }
+
+  .surface-prefix.mac {
+    color: #9A6A2A;
   }
 
   .mac-agent-name {
@@ -1089,6 +1275,15 @@
     padding: var(--space-5);
     border: 1px dashed var(--line);
     color: var(--muted-ink);
+  }
+
+  .empty-state code,
+  .task-board-empty code {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--line);
+    background: rgba(251, 246, 240, 0.92);
+    color: var(--ink);
   }
 
   .modal-backdrop {
@@ -1209,20 +1404,49 @@
       <div class="page-grid">
         <div class="copy-block hero-copy">
           <div class="eyebrow">Hero</div>
-          <h1>你不用看 log，先看 session 是否真的在推進。</h1>
-          <p>Hero 保留主 dial，但補一條最近 20 steps 的 trend，讓你先看 session 是否正在推進，而不是只看一個靜態 completion。</p>
+          <h1 id="heroHeadline">你不用看 log，先看 session 是否真的在推進。</h1>
+          <p id="heroDescription">這裡看 LLM 在做什麼、已經做完什麼、需要你決定什麼。</p>
+
+          <!-- Action Center: 告訴你下一步該做什麼 -->
+          <div id="actionCenter" class="action-center">
+            <div class="action-eyebrow">🎯 現在你最該做的</div>
+            <div class="action-headline" id="actionHeadline">載入中…</div>
+            <div class="action-detail" id="actionDetail"></div>
+            <div class="action-buttons" id="actionButtons"></div>
+          </div>
+
+          <!-- Today Timeline: 今日做了什麼 -->
+          <div id="todayTimeline" class="today-timeline">
+            <div class="action-eyebrow">📜 今日故事（commit 倒敘）</div>
+            <ol id="todayTimelineList" class="timeline-list">
+              <li class="timeline-empty">載入中…</li>
+            </ol>
+          </div>
+
           <div class="metrics">
             <div class="metric">
-              <div class="label">Active sessions</div>
+              <div class="label">在跑的 LLM</div>
               <div class="stat-figure" id="heroSessionCount">00</div>
             </div>
             <div class="metric">
-              <div class="label">Tasks with motion</div>
-              <div class="stat-figure" id="heroTaskCount">00</div>
+              <div class="label">工作清單（進行/總數）</div>
+              <div class="stat-figure" id="heroTaskCount">0 / 0</div>
             </div>
             <div class="metric">
-              <div class="label">Shipped ratio</div>
+              <div class="label">完成率（已 ship/總計）</div>
               <div class="stat-figure" id="heroShippedRatio">0%</div>
+            </div>
+            <div class="metric">
+              <div class="label">三家 LLM 活動</div>
+              <div class="micro" id="heroAgentBreakdown">codex 0 · qwen 0 · gemini 0</div>
+            </div>
+            <div class="metric">
+              <div class="label">今日 commit 數</div>
+              <div class="stat-figure" id="heroTodayCommits">00</div>
+            </div>
+            <div class="metric">
+              <div class="label">等待 push</div>
+              <div class="stat-figure" id="heroPendingPush">00</div>
             </div>
           </div>
           <div class="session-strip">
@@ -1231,9 +1455,9 @@
                 <div class="label">Live sessions</div>
                 <div class="card-title">Session selector</div>
               </div>
-              <div id="statusBadge" class="status-badge disconnected">
+              <div id="statusBadge" class="status-badge connecting">
                 <span class="status-dot"></span>
-                <span id="statusText">連線中...</span>
+                <span id="statusText">連接中…</span>
               </div>
             </div>
             <div class="session-tabs" id="agentTabs"></div>
@@ -1293,15 +1517,15 @@
             <div class="mac-card-head">
               <div>
                 <div class="label">Mac ↔ VM dual track</div>
-                <div class="card-title">本機活動摘要</div>
+                <div class="card-title">💻 Mac 本地活動摘要</div>
               </div>
               <div class="micro">localActivity</div>
             </div>
             <div class="mac-activity-grid" id="macActivityGrid"></div>
             <div class="task-board-empty" id="macEmptyState" hidden>
               <div class="eyebrow">Mac activity</div>
-              <div class="card-title">目前沒有本機活動資料</div>
-              <div class="empty-copy">等 `/api/status` 回來後，這裡才會把 Mac 和 VM 的雙軌狀態補齊。</div>
+              <div class="card-title">📭 目前沒有 Mac 本地活動</div>
+              <div class="empty-copy">跑 <code>bash scripts/sync-todos-to-bridge.sh</code> 來測，這裡就會長出 Mac 卡片。</div>
             </div>
           </div>
         </div>
@@ -1570,12 +1794,14 @@ const state = {
   tasks: new Map(),
   dispatches: new Map(),
   projectData: null,
+  statusData: null,
   localActivity: [],
   activeSessionId: null,
   activeDispatchId: null,
   connected: false,
   reconnectTimer: null,
   heartbeatTimer: null,
+  connectTimeoutTimer: null,
   autoScroll: true,
   taskBoardCollapsed: false,
   architectureExpanded: false,
@@ -1725,6 +1951,112 @@ function makeStroke(path, progress = 1) {
   path.style.setProperty('--progress', progress);
 }
 
+function getTaskSummary() {
+  const summary = state.statusData?.tasks;
+  if (summary && typeof summary === 'object') {
+    return {
+      total: Number(summary.total) || 0,
+      active: Number(summary.active) || 0,
+      done: Number(summary.done) || 0,
+    };
+  }
+  const tasks = [...state.tasks.values()];
+  const done = tasks.filter((task) => task.status === 'completed').length;
+  return { total: tasks.length, active: Math.max(tasks.length - done, 0), done };
+}
+
+function getHeroHeadline(sessionCount, taskSummary) {
+  if (sessionCount > 0) return `${sessionCount} 個 agent 推進中`;
+  if (taskSummary.active > 0) return `${taskSummary.active} 個 task 待派`;
+  return '靜默中，下個 task 等待中';
+}
+
+function formatAgentBreakdown(breakdown = {}) {
+  return ['codex', 'qwen', 'gemini']
+    .map((agent) => `${agent} ${Number(breakdown?.[agent]) || 0}`)
+    .join(' · ');
+}
+
+function renderActionCenter(sessionCount, taskSummary, statusData) {
+  const center = document.getElementById('actionCenter');
+  const headline = document.getElementById('actionHeadline');
+  const detail = document.getElementById('actionDetail');
+  const buttons = document.getElementById('actionButtons');
+  if (!center || !headline) return;
+
+  const pendingPush = Number(statusData?.pendingPush) || 0;
+  const todayCommits = Number(statusData?.todayCommits) || 0;
+  const activeTasks = taskSummary?.active || 0;
+
+  // Order: 完工 > 有 LLM 在跑 > 累積過多 > 一般累積 > 有待辦 > 完全靜默
+  let level = 'calm';
+  let head = '進度正常';
+  let det = '今天暫無待辦動作。LLM 們會繼續推進工作清單。';
+  let btns = '';
+
+  if (sessionCount > 0) {
+    level = 'calm';
+    head = `🟢 ${sessionCount} 個 LLM 正在推進`;
+    det = `工作清單還有 ${activeTasks} 件待辦${pendingPush > 0 ? `，${pendingPush} 個 commit 待 push（先看完工再決定）` : ''}。`;
+  } else if (activeTasks === 0 && todayCommits > 0) {
+    level = 'calm';
+    head = `✅ 今日 ${todayCommits} 個改動完工`;
+    if (pendingPush > 0) {
+      det = `所有 LLM 完工。有 ${pendingPush} 個 commit 待 push，建議開 localhost 看完成果再決定 push 時機。`;
+      btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">👀 開 localhost 看完成果</button>`;
+    } else {
+      det = '所有 LLM 都閒著、沒待辦工作。可以休息或想新 feature。';
+    }
+  } else if (pendingPush >= 20) {
+    level = 'urgent';
+    head = `🚨 ${pendingPush} 個 commit 累積，建議今天決定 push`;
+    det = `今天做了 ${todayCommits} 個改動。LLM 還在跑 ${activeTasks} 件待辦。等告一段落，開 localhost 確認後 push。`;
+    btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">開 localhost 看看</button>`;
+  } else if (pendingPush >= 10) {
+    head = `📦 ${pendingPush} 個 commit 累積中`;
+    det = `今天做了 ${todayCommits} 個改動。可以開 localhost 看看，順手 push 也好、再累積也好。`;
+    btns = `<button onclick="window.open('http://127.0.0.1:5173/', '_blank')">開 localhost 看看</button>`;
+  } else if (activeTasks > 0) {
+    head = `📋 ${activeTasks} 件工作待派`;
+    det = '沒 LLM 在跑，但有待辦清單。Claude 下一輪 loop（5 分鐘內）會自動派工。';
+  } else {
+    // 全空：第一次來、或剛清完
+    head = '👋 歡迎打開 Bridge';
+    det = '目前沒 LLM 在跑、沒待辦工作、今日無改動。可以從工作清單頁加新 task，或等 Claude 接下指示。';
+  }
+
+  center.className = `action-center ${level}`;
+  headline.textContent = head;
+  detail.textContent = det;
+  buttons.innerHTML = btns;
+}
+
+function renderTodayTimeline(recentCommits) {
+  const list = document.getElementById('todayTimelineList');
+  if (!list) return;
+  if (!recentCommits || recentCommits.length === 0) {
+    list.innerHTML = '<li class="timeline-empty">今天還沒有 commit</li>';
+    return;
+  }
+  list.innerHTML = recentCommits
+    .map((c) => {
+      const t = c.time ? new Date(c.time) : null;
+      const ts = t
+        ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+        : '--:--';
+      const hash = (c.hash || '').slice(0, 7);
+      const msg = escapeHtml(c.message || '(no message)');
+      const filesChanged = Number(c.filesChanged) || 0;
+      const ins = Number(c.insertions) || 0;
+      const del = Number(c.deletions) || 0;
+      const stat = filesChanged > 0
+        ? `<span class="commit-stat">${filesChanged}檔 <span class="ins">+${ins}</span> <span class="del">-${del}</span></span>`
+        : '';
+      return `<li><span class="ts">${ts}</span><span class="hash">${hash}</span><span class="msg">${msg}${stat}</span></li>`;
+    })
+    .join('');
+}
+
 function readyBars(root = document) {
   requestAnimationFrame(() => {
     root.querySelectorAll('.bar, .day-bar').forEach((el) => el.classList.add('is-ready'));
@@ -1768,6 +2100,19 @@ function recordSessionActivity(sessionId, timestamp = Date.now()) {
   state.sessionActivity.set(sessionId, next);
 }
 
+function setConnectionStatus(status, text) {
+  statusBadge.className = `status-badge ${status}`;
+  statusText.textContent = text;
+}
+
+function startConnectTimeout() {
+  if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+  state.connectTimeoutTimer = setTimeout(() => {
+    if (state.connected) return;
+    setConnectionStatus('connecting', '等待 WebSocket…');
+  }, 5000);
+}
+
 setInterval(() => {
   for (const [sessionId, history] of state.sessionActivity.entries()) {
     const next = history.slice(1);
@@ -1778,15 +2123,17 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 function connect() {
-  const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${wsProtocol}//${location.host}/ws`;
+  const wsUrl = bridgeWebSocketUrl();
+  state.connected = false;
+  setConnectionStatus('connecting', '連接中…');
+  startConnectTimeout();
   const ws = new WebSocket(wsUrl);
   state.ws = ws;
 
   ws.onopen = () => {
     state.connected = true;
-    statusBadge.className = 'status-badge connected';
-    statusText.textContent = 'WebSocket connected';
+    if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+    setConnectionStatus('connected', 'WebSocket connected');
     if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
     if (state.heartbeatTimer) clearInterval(state.heartbeatTimer);
     state.heartbeatTimer = setInterval(() => {
@@ -1804,8 +2151,8 @@ function connect() {
 
   ws.onclose = () => {
     state.connected = false;
-    statusBadge.className = 'status-badge disconnected';
-    statusText.textContent = 'WebSocket disconnected';
+    if (state.connectTimeoutTimer) clearTimeout(state.connectTimeoutTimer);
+    setConnectionStatus('disconnected', 'WebSocket disconnected');
     if (state.heartbeatTimer) clearInterval(state.heartbeatTimer);
     state.reconnectTimer = setTimeout(connect, 3000);
   };
@@ -2207,14 +2554,21 @@ function renderHero() {
   const sessions = buildDerivedSessions();
   const current = sessions.find((session) => session.id === state.activeSessionId) || sessions[0];
   const activeSessions = sessions.filter((session) => session.isActive).length;
-  const movingTasks = [...state.tasks.values()].filter((task) => task.status === 'in_progress').length;
+  const taskSummary = getTaskSummary();
   const backlog = state.projectData?.improvements?.length || 0;
   const shipped = state.projectData?.completed?.length || 0;
   const shippedRatio = shipped + backlog > 0 ? shipped / (shipped + backlog) : 0;
 
+  $('heroHeadline').textContent = getHeroHeadline(activeSessions, taskSummary);
   $('heroSessionCount').textContent = pad(activeSessions);
-  $('heroTaskCount').textContent = pad(movingTasks);
+  $('heroTaskCount').textContent = `${taskSummary.active} / ${taskSummary.total}`;
   $('heroShippedRatio').textContent = formatPct(shippedRatio);
+  $('heroAgentBreakdown').textContent = formatAgentBreakdown(state.statusData?.agentBreakdown);
+  $('heroTodayCommits').textContent = pad(state.statusData?.todayCommits || 0);
+  $('heroPendingPush').textContent = pad(state.statusData?.pendingPush || 0);
+
+  renderActionCenter(activeSessions, taskSummary, state.statusData);
+  renderTodayTimeline(state.statusData?.recentCommits);
 
   if (!current) {
     $('heroDial').innerHTML = '<div class="task-board-empty"><div class="eyebrow">Hero</div><div class="card-title">還沒有 session</div></div>';
@@ -2288,7 +2642,7 @@ function renderSessions() {
   const sessions = buildDerivedSessions();
   const cards = $('sessionCards');
   if (!sessions.length) {
-    cards.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Sessions</div><div class="card-title">還沒有 session 資料</div><div class="empty-copy">WebSocket 或 `/api/sessions` 回來後，這裡會補卡片。</div></div>';
+    cards.innerHTML = '<div class="task-board-empty"><div class="eyebrow">VM sessions</div><div class="card-title">💤 目前沒有 VM session</div><div class="empty-copy">dispatch task 後會出現，資料來源是 <code>/api/sessions</code>。</div></div>';
     return;
   }
 
@@ -2296,14 +2650,14 @@ function renderSessions() {
     const filled = Math.round(session.progress * 100);
     const cells = Array.from({ length: 100 }, (_, index) => `<span class="${index < filled ? 'filled' : ''}" style="--i:${index}"></span>`).join('');
     return `
-      <article class="card">
+      <article class="card session-card">
         <div class="bar" style="--value:${session.progress}" data-label="${escapeHtml(formatPct(session.progress))}">
           <span></span>
         </div>
         <div class="card-head">
           <div>
-            <div class="label">${escapeHtml(session.agent.name)}</div>
-            <div class="card-title">${escapeHtml(session.terminalName)}</div>
+            <div class="label">🖥️ VM / ${escapeHtml(session.agent.name)}</div>
+            <div class="card-title">VM session · ${escapeHtml(session.terminalName)}</div>
           </div>
           <div class="micro">${escapeHtml(relativeTime(session.lastActivity))}</div>
         </div>
@@ -2344,14 +2698,15 @@ function renderTaskBoard() {
   });
 
   if (!tasks.length) {
-    taskBoardScroll.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Task board</div><div class="card-title">目前沒有待分派工作</div><div class="empty-copy">新的工作進來後，這裡會自動長出卡片；現在先把版面留給進度和整體地圖。</div></div>';
-    taskCount.textContent = '0';
+    taskBoardScroll.innerHTML = '<div class="task-board-empty"><div class="eyebrow">Task board</div><div class="card-title">✨ 目前沒有 task</div><div class="empty-copy">從 <code>coordination/llm-bus/agent-bridge-tasks.json</code> 加新項目，這裡就會同步出現。</div></div>';
+    taskCount.textContent = '0 active / 0 total';
     $('ganttChart').innerHTML = '';
     renderDispatchBoard();
     return;
   }
 
-  taskCount.textContent = String(tasks.filter((task) => task.status !== 'completed').length);
+  const taskSummary = getTaskSummary();
+  taskCount.textContent = `${taskSummary.active} active / ${taskSummary.total} total`;
   taskBoardScroll.classList.toggle('collapsed', state.taskBoardCollapsed);
 
   taskBoardScroll.innerHTML = tasks.map((task, index) => {
@@ -2787,14 +3142,29 @@ function renderMacActivity(entries) {
     return;
   }
   macEmptyState.hidden = true;
-  macActivityGrid.innerHTML = entries.map((entry) => `
-    <div class="mac-activity-card">
-      <span class="mac-agent-name">${escapeHtml(entry.agent)}</span>
-      <span class="mac-agent-status ${escapeHtml(entry.status || 'unknown')}">${escapeHtml(entry.status || 'unknown')}</span>
-      <span>${escapeHtml(entry.message || '')}</span>
-      <span class="micro">${escapeHtml(relativeTime(entry.timestamp))}</span>
-    </div>
-  `).join('');
+  macActivityGrid.innerHTML = entries.map((entry) => {
+    const fullMessage = String(entry.message || '');
+    // 抽 message 的第一行有意義內容當摘要，避免整片 markdown 把卡撐爆
+    const lines = fullMessage.split('\n').map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || '(無內容)';
+    const headline = firstLine.length > 80 ? firstLine.slice(0, 80) + '…' : firstLine;
+    const lineCount = lines.length;
+    const stat = lineCount > 1 ? ` · ${lineCount} 行 markdown` : '';
+    const safeHeadline = escapeHtml(headline);
+    const safeMessage = escapeHtml(fullMessage);
+    return `
+      <div class="mac-activity-card">
+        <span class="surface-prefix mac">💻 Mac local</span>
+        <span class="mac-agent-name">Mac · ${escapeHtml(entry.agent)}</span>
+        <span class="mac-agent-status ${escapeHtml(entry.status || 'unknown')}">${escapeHtml(entry.status || 'unknown')}</span>
+        <details class="mac-message-details">
+          <summary class="mac-message-summary">${safeHeadline}${stat}</summary>
+          <pre class="mac-message-pre">${safeMessage}</pre>
+        </details>
+        <span class="micro">${escapeHtml(relativeTime(entry.timestamp))}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderPages() {
@@ -2835,9 +3205,10 @@ async function fetchLocalActivity() {
     const res = await fetch(bridgeUrl('/api/status'));
     if (!res.ok) return;
     const data = await res.json();
+    state.statusData = data;
     state.localActivity = data.localActivity || [];
     renderMacActivity(state.localActivity);
-    renderTimeline();
+    renderAll();
   } catch (error) {
     console.warn('fetchLocalActivity failed', error);
   }

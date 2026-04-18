@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research Preview Round 45</title>
+  <style>
+    :root{--ink:#171717;--ink-soft:#5c564d;--bone:#faf7f1;--bone-deep:#f2ebdf;--sage:#a8b59a;--sage-deep:#64735d;--sage-pale:#e0e4df;--sand:#d4c4a0;--line:#d8cfbf;--tan:#f25623;--tan-soft:rgba(242,86,35,.12);--gold:#c8a35d;--shadow:0 1px 0 rgba(23,23,23,.05),inset 0 1px 0 rgba(255,255,255,.72);--serif:"Iowan Old Style","Times New Roman","Noto Serif TC",serif;--sans:"Avenir Next","Helvetica Neue","Noto Sans TC",sans-serif;--mono:"SF Mono","IBM Plex Mono",monospace}
+    *{box-sizing:border-box} body{margin:0;min-width:1600px;background:radial-gradient(circle at top left,rgba(168,181,154,.14),transparent 30%),radial-gradient(circle at bottom right,rgba(242,86,35,.06),transparent 26%),var(--bone-deep);color:var(--ink);font-family:var(--sans)}
+    .screen{width:1600px;height:1200px;margin:0 auto;padding:20px;background:linear-gradient(180deg,var(--bone) 0%,#f6f0e6 100%);overflow:hidden}
+    .topbar,.row,.hero-head,.chart-meta,.cta-row,.risk-item,.watch-row,.backlog-head,.donut-wrap,.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .topbar{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid rgba(23,23,23,.08)} .eyebrow,.small,.meta,.micro{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+    .section-title,.hero-title,.card-title,.report-number{font-family:var(--serif);margin:0;font-weight:600}.section-title{font-size:32px}.hero-title{max-width:650px;font-family:"Courier New",var(--mono);font-size:32px;line-height:1.16;letter-spacing:.12em;text-transform:uppercase}.card-title{font-size:24px;line-height:1.04}.report-number{font-size:68px;line-height:.88}
+    .chip,.focus{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.52);font-size:12px;font-weight:600}
+    .focus{padding:10px 14px;background:rgba(255,255,255,.64)} .focus .caret{font-size:12px;color:var(--ink-soft)} .chip.outline{border:1.5px solid var(--tan);background:rgba(255,255,255,.56)} .dot{width:8px;height:8px;border-radius:50%;background:var(--tan);display:inline-block;flex:0 0 auto}
+    .hero{position:relative;display:grid;grid-template-columns:1.03fr .97fr;gap:12px;padding:16px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.45),rgba(255,255,255,0) 38%),linear-gradient(180deg,rgba(168,181,154,.12),rgba(168,181,154,.03)),var(--bone);box-shadow:var(--shadow);overflow:hidden}
+    .hero:before{content:"";position:absolute;inset:0;opacity:.17;background-image:radial-gradient(rgba(23,23,23,.18) .7px,transparent .8px),radial-gradient(rgba(23,23,23,.08) .7px,transparent .8px);background-size:14px 14px,22px 22px;background-position:0 0,8px 10px}
+    .hero>*{position:relative;z-index:1}.lede{max-width:620px;margin:0;font-size:14px;line-height:1.64;color:var(--ink-soft)}
+    .hero-copy{display:grid;align-content:space-between;gap:14px}.hero-note{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-left:2px solid var(--tan);background:rgba(255,255,255,.38);max-width:500px}
+    .hero-chart{display:grid;gap:8px;align-content:end}.chart-card{padding:12px;border:1px solid rgba(23,23,23,.08);background:rgba(250,247,241,.7)} .chart-meta{margin-bottom:4px}
+    .chart{width:100%;height:178px;display:block;border:1px solid rgba(23,23,23,.08);background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,.26))}
+    .layout{display:grid;gap:12px;margin-top:12px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row2{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+    .card{padding:10px;border:1px solid var(--line);background:rgba(255,255,255,.46);box-shadow:var(--shadow);display:grid;gap:8px}
+    .list,.risk-list,.watch-list,.backlog-list{display:grid;gap:8px}.item,.risk-item,.watch-row,.backlog-item{padding-top:8px;border-top:1px solid rgba(23,23,23,.08)} .item:first-child,.risk-item:first-child,.watch-row:first-child,.backlog-item:first-child{padding-top:0;border-top:none}
+    .impact{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;background:var(--tan-soft);border:1px solid rgba(242,86,35,.24);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+    .item p,.watch-empty,.backlog-copy,.risk-copy{margin:0;font-size:12px;line-height:1.48;color:var(--ink-soft)} .item strong,.risk-copy strong{color:var(--ink)}
+    .donut-wrap{align-items:center;justify-content:flex-start}.donut{width:170px;height:170px;border-radius:50%;background:conic-gradient(var(--sage-deep) 0 34%, #8f9b83 34% 56%, var(--tan) 56% 74%, #d9dfd3 74% 100%);position:relative;box-shadow:inset 0 0 0 1px rgba(23,23,23,.08)}
+    .donut:after{content:"";position:absolute;inset:34px;border-radius:50%;background:var(--bone);box-shadow:inset 0 0 0 1px rgba(23,23,23,.06)}
+    .donut-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:1}.legend{display:grid;gap:8px;min-width:180px}.legend-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px}.swatch{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px}
+    .risk-rank{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--sage-pale);font-family:var(--mono);font-size:13px}
+    .warn-rank{background:var(--tan-soft);border:1px solid rgba(242,86,35,.24)} .watch-empty{padding:10px;border:1px dashed rgba(23,23,23,.12);background:rgba(250,247,241,.7)}
+    .backlog-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;background:rgba(212,196,160,.28);border:1px solid rgba(212,196,160,.56);font-size:12px;font-weight:700}
+    .fill-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;border:1px solid var(--sage-deep);background:var(--sage-deep);color:var(--bone);font-weight:700;font-size:12px}
+    .cta{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;border:1px solid rgba(200,163,93,.38);background:linear-gradient(135deg,rgba(200,163,93,.24),rgba(242,86,35,.96));color:#fff;box-shadow:var(--shadow)}
+    .cta p{margin:0;font-size:13px;line-height:1.5;max-width:760px;color:rgba(255,255,255,.9)} .cta-btn{padding:12px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.48);font-weight:800;letter-spacing:.04em;background:rgba(255,255,255,.12);color:#fff}
+  </style>
+</head>
+<body>
+  <main class="screen">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow">Cross-Portfolio Research</div>
+        <h1 class="section-title">全組合研究</h1>
+      </div>
+      <div class="focus">研究焦點 <span class="meta">組合趨勢 / 主題研究</span> <span class="caret">▾</span></div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="hero-head"><span class="chip">jinliancheng · 05:50 brief</span><span class="chip outline"><span class="dot"></span>confidence 0.66</span></div>
+        <h2 class="hero-title">RESEARCH · W16<br>· CHAIRWOMAN</h2>
+        <p class="lede">meta label 先交代切片與週別；組合 vs benchmark 的資訊主體回到右側圖表與下方 risk / policy 卡。</p>
+        <div class="hero-note">
+          <span class="dot"></span>
+          <div>
+            <div class="small">Slice note</div>
+            <div class="risk-copy">本頁預設用結構化 hero；若遇政策或法說大日，可條件切成對應 headline。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-chart">
+        <div class="chart-card">
+          <div class="chart-meta">
+            <div>
+              <div class="eyebrow">Portfolio vs Benchmark</div>
+              <div class="card-title">組合相對大盤</div>
+            </div>
+            <div style="text-align:right">
+              <div class="micro">週報酬</div>
+              <div class="report-number">+1.8%</div>
+            </div>
+          </div>
+          <svg class="chart" viewBox="0 0 560 220" preserveAspectRatio="none" aria-label="組合與大盤雙 Y 軸折線圖">
+            <g stroke="rgba(23,23,23,.08)" stroke-width="1">
+              <line x1="48" y1="26" x2="48" y2="188"></line><line x1="512" y1="26" x2="512" y2="188"></line>
+              <line x1="48" y1="50" x2="512" y2="50"></line><line x1="48" y1="92" x2="512" y2="92"></line><line x1="48" y1="134" x2="512" y2="134"></line><line x1="48" y1="176" x2="512" y2="176"></line>
+            </g>
+            <g fill="var(--ink-soft)" font-size="10" font-family="var(--sans)">
+              <text x="14" y="53">+3%</text><text x="14" y="95">+2%</text><text x="14" y="137">+1%</text><text x="14" y="179">0%</text>
+              <text x="518" y="53">104</text><text x="518" y="95">102</text><text x="518" y="137">100</text><text x="518" y="179">98</text>
+              <text x="54" y="206">Mon</text><text x="144" y="206">Tue</text><text x="234" y="206">Wed</text><text x="324" y="206">Thu</text><text x="414" y="206">Fri</text>
+            </g>
+            <path d="M48 148 C98 138, 122 126, 148 122 S206 118, 238 110 S294 88, 328 92 S396 82, 418 88 S474 74, 512 70" fill="none" stroke="var(--sage-deep)" stroke-width="4"></path>
+            <path d="M48 156 C96 152, 124 142, 148 136 S204 126, 238 124 S294 102, 328 106 S394 92, 418 96 S474 82, 512 78" fill="none" stroke="var(--tan)" stroke-width="3"></path>
+            <circle cx="418" cy="96" r="5" fill="var(--tan)"></circle>
+          </svg>
+          <div class="chart-meta">
+            <span class="small">sage = benchmark</span>
+            <span class="small">tangerine = portfolio · underperform gap Tue/Thu</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="row3">
+        <article class="card">
+          <div class="panel-head">
+            <div><div class="eyebrow">Policy Desk</div><h3 class="card-title">重要政策與法規動態</h3></div>
+            <span class="chip">3 updates</span>
+          </div>
+          <div class="list">
+            <div class="item">
+              <div class="row"><strong>金管會揭露規範再收緊</strong><span class="impact"><span class="dot"></span>高衝擊</span></div>
+              <p>董事與關係人持股揭露節奏更密，金融與高持股集中部位的內控壓力上升，對金聯成帳戶屬直接風險因子。</p>
+            </div>
+            <div class="item">
+              <div class="row"><strong>半導體補助條件偏向先進封裝</strong><span class="small">中衝擊</span></div>
+              <p>對供應鏈估值有支撐，但受惠速度慢於市場預期。若部位追價過深，應避免把政策 headline 誤讀成短期獲利保證。</p>
+            </div>
+            <div class="item">
+              <div class="row"><strong>ESG 揭露要求擴大</strong><span class="small">中衝擊</span></div>
+              <p>大型金融持股與傳產龍頭將面對更明確的治理檢核，董事視角下應提高對年報敘事與資本配置的敏感度。</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="panel-head">
+            <div><div class="eyebrow">Sector Rotation</div><h3 class="card-title">產業板塊輪動分析</h3></div>
+            <span class="chip">sage single-tone</span>
+          </div>
+          <div class="donut-wrap">
+            <div style="position:relative">
+              <div class="donut"></div>
+              <div class="donut-center">
+                <div class="small">最大板塊</div>
+                <div class="card-title" style="font-size:20px">金融</div>
+              </div>
+            </div>
+            <div class="legend">
+              <div class="legend-row"><span><span class="swatch" style="background:var(--sage-deep)"></span>金融</span><strong>34%</strong></div>
+              <div class="legend-row"><span><span class="swatch" style="background:#8f9b83"></span>半導體</span><strong>22%</strong></div>
+              <div class="legend-row"><span><span class="swatch" style="background:var(--tan)"></span>航運</span><strong>18%</strong></div>
+              <div class="legend-row"><span><span class="swatch" style="background:#d9dfd3"></span>其他</span><strong>26%</strong></div>
+            </div>
+          </div>
+          <p class="backlog-copy">本週輪動從 AI 硬體轉向防禦與高股息，最大變化不是「哪個漲最多」，而是資金願意承擔的波動下降。tangerine 只標示切換中的板塊，不把整張圖做成熱力警報。</p>
+        </article>
+
+        <article class="card">
+          <div class="panel-head">
+            <div><div class="eyebrow">Top Risks</div><h3 class="card-title">主要風險提示</h3></div>
+            <span class="chip outline"><span class="dot"></span>Top 3</span>
+          </div>
+          <div class="risk-list">
+            <div class="risk-item">
+              <div class="risk-rank warn-rank">01</div>
+              <div style="flex:1">
+                <div><strong>金融業集中度 45%</strong></div>
+                <p class="risk-copy">若利率預期轉向或監理消息升溫，組合波動會被放大，且董座視角更在意治理風險而非短線收益。</p>
+              </div>
+            </div>
+            <div class="risk-item">
+              <div class="risk-rank">02</div>
+              <div style="flex:1">
+                <div><strong>航運 beta 回落</strong></div>
+                <p class="risk-copy">近期反彈主要靠情緒修復，缺少新現金流證據。若下週量縮，組合相對報酬可能繼續落後大盤。</p>
+              </div>
+            </div>
+            <div class="risk-item">
+              <div class="risk-rank">03</div>
+              <div style="flex:1">
+                <div><strong>自家公司資訊邊界</strong></div>
+                <p class="risk-copy">金聯成屬 insider holding，研究只保留公開資訊與合規觀察，不對本體產生建議，避免角色混線。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="row2">
+        <article class="card">
+          <div class="panel-head">
+            <div><div class="eyebrow">Chairwoman Notes</div><h3 class="card-title">董座觀察列表</h3></div>
+            <span class="chip">watchlist</span>
+          </div>
+          <div class="watch-list">
+            <div class="watch-row">
+              <div style="flex:1">
+                <div><strong>金融股法說與監理訊號要分開讀</strong></div>
+                <p class="backlog-copy">先判斷監理風向，再看殖利率敘事。</p>
+              </div>
+              <span class="small">已加入</span>
+            </div>
+            <div class="watch-row">
+              <div style="flex:1">
+                <div><strong>金聯成只列公開公告節奏</strong></div>
+                <p class="backlog-copy">不把 insider 身分誤包裝成操作訊號。</p>
+              </div>
+              <span class="small">合規</span>
+            </div>
+            <div class="watch-empty">若 watchlist 為空，這裡應只留空態文案，不硬塞 generic 建議。</div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="backlog-head">
+            <div><div class="eyebrow">Data Refresh Center</div><h3 class="card-title">DataRefreshBacklog</h3></div>
+            <span class="backlog-chip">有 3 檔目標價待補</span>
+          </div>
+          <p class="backlog-copy">Research 先被 `dataRefreshRows` gate 住。2412 / 2882 / 2603 仍缺更新，先補資料才能深挖。</p>
+          <div class="backlog-list">
+            <div class="backlog-item"><strong>2412 中華電</strong><div class="small">target price stale 31d</div></div>
+            <div class="backlog-item"><strong>2882 國泰金</strong><div class="small">broker update missing</div></div>
+            <div class="backlog-item"><strong>2603 長榮</strong><div class="small">fundamental snapshot lagging</div></div>
+          </div>
+          <div class="cta-row">
+            <span class="chip">enrich → dossier</span>
+            <div class="fill-btn">補資料後再深挖</div>
+          </div>
+        </article>
+      </div>
+
+      <section class="cta">
+        <div>
+          <div class="eyebrow" style="color:rgba(255,255,255,.72)">Weekly Export</div>
+          <div class="card-title" style="color:#fff">下載本週報告</div>
+          <p>把組合相對大盤、政策法規、板塊輪動與 Top 3 風險整理成週報 PDF。暖金到 tangerine 的漸層只留在這個 CTA，確保全頁 accent 預算仍克制。</p>
+        </div>
+        <div class="cta-btn">下載本週報告</div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

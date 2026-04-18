@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Report Portal</title>
+    <link rel="stylesheet" href="./source-han-fonts.css" />
+    <style>
+      :root {
+        --ink: #0B120E;
+        --charcoal: #2F3232;
+        --iron: #838585;
+        --bone: #E7E0D6;
+        --bone-deep: #D9D3D1;
+        --line: #BCB3AD;
+        --warning: #F0A145;
+        --warning-soft: rgba(240, 161, 69, 0.24);
+        --positive: #EF7D2F;
+        --cta: #EC662D;
+        --hot: #FC6D2B;
+        --hot-soft: rgba(252, 109, 43, 0.12);
+        --negative: #3C3C3C;
+        --shadow: 0 1px 0 rgba(23, 23, 23, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+        --serif: "Source Han Serif TC", "Noto Serif TC", "Source Serif 4", serif;
+        --sans: "Source Han Sans TC", "Noto Sans TC", "Source Sans 3", sans-serif;
+        --mono: "IBM Plex Mono", "SF Mono", "Courier New", monospace;
+        --space-1: 8px;
+        --space-2: 14px;
+        --space-3: 22px;
+        --space-4: 32px;
+        --space-5: 48px;
+        --space-6: 72px;
+        --radius: 24px;
+        --radius-sm: 16px;
+        --max: 1240px;
+        --ease: 240ms ease;
+        font-variant-numeric: tabular-nums;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: var(--sans);
+        background:
+          radial-gradient(circle at top left, rgba(168, 181, 154, 0.18), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(242, 86, 35, 0.07), transparent 22%),
+          linear-gradient(180deg, var(--bone) 0%, var(--bone-deep) 100%);
+      }
+
+      .report-nav {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        backdrop-filter: blur(18px);
+        background: rgba(231, 224, 214, 0.86);
+        border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      .report-nav__inner {
+        width: min(calc(100% - 32px), var(--max));
+        margin: 0 auto;
+        min-height: 72px;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .report-nav__brand,
+      .report-nav__status {
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
+      .report-nav__brand strong {
+        font-size: 18px;
+      }
+
+      .report-nav__tabs {
+        display: inline-flex;
+        justify-self: center;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      .report-nav__tab {
+        padding: 12px 16px 10px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--charcoal);
+        border-bottom: 2px solid transparent;
+      }
+
+      .report-nav__tab.is-active {
+        color: var(--ink);
+        border-bottom-color: var(--cta);
+      }
+
+      .report-nav__status {
+        justify-self: end;
+        padding: 8px 12px;
+        border-radius: 999px;
+        color: var(--charcoal);
+        background: rgba(131, 133, 133, 0.14);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        width: min(calc(100% - 32px), var(--max));
+        margin: 0 auto;
+        padding: 28px 0 72px;
+      }
+
+      .meta-label,
+      .section-kicker,
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--charcoal);
+      }
+
+      [data-meta] {
+        letter-spacing: -0.04em;
+      }
+
+      .hero,
+      .panel,
+      .preview-card,
+      .nav-card,
+      .contract-card,
+      .consensus-card,
+      .ship-card,
+      .milestone-card {
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 38%),
+          rgba(250, 247, 241, 0.92);
+        box-shadow: var(--shadow);
+        border-radius: var(--radius);
+      }
+
+      .hero {
+        padding: 28px;
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 20px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: var(--serif);
+        font-weight: 600;
+        padding-block: 8px 12px;
+      }
+
+      h1 {
+        font-size: clamp(42px, 6vw, 76px);
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+      }
+
+      h2 {
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.02;
+      }
+
+      h3 {
+        font-size: 22px;
+        line-height: 1.15;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.65;
+        color: var(--charcoal);
+      }
+
+      .long-form {
+        line-height: 1.65;
+      }
+
+      .hero-copy {
+        display: grid;
+        gap: 18px;
+      }
+
+      .vision-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .vision-item {
+        padding: 16px 18px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.46);
+        border: 1px solid rgba(23, 23, 23, 0.07);
+      }
+
+      .vision-item strong {
+        display: block;
+        margin-bottom: 4px;
+        font-family: var(--serif);
+        color: var(--ink);
+        font-size: 24px;
+      }
+
+      .hero-aside {
+        display: grid;
+        gap: 16px;
+      }
+
+      .quote-box,
+      .score-box {
+        padding: 18px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(23, 23, 23, 0.07);
+      }
+
+      .quote-box blockquote {
+        margin: 10px 0 8px;
+        font-family: var(--serif);
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .score-big {
+        font-family: var(--serif);
+        font-size: 56px;
+        line-height: 1;
+      }
+
+      .section {
+        margin-top: var(--space-5);
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        margin-bottom: 18px;
+      }
+
+      .nav-grid,
+      .preview-grid,
+      .contract-grid,
+      .consensus-grid,
+      .milestone-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .tokens-grid,
+      .ship-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .nav-card,
+      .preview-card,
+      .contract-card,
+      .consensus-card,
+      .ship-card,
+      .milestone-card,
+      .panel {
+        padding: 18px;
+      }
+
+      .nav-card img,
+      .preview-card img {
+        width: 100%;
+        display: block;
+        border-radius: 16px;
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background: var(--bone-deep);
+      }
+
+      .card-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin: 12px 0 8px;
+      }
+
+      .pill-row,
+      .rule-list,
+      .inline-list {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .pill,
+      .swatch-label,
+      .motion-chip {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background: rgba(255, 255, 255, 0.56);
+        font-size: 12px;
+      }
+
+      .pill.active {
+        background: var(--iron);
+        color: var(--bone);
+        border-color: var(--iron);
+      }
+
+      .round-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.52);
+        box-shadow: var(--shadow);
+      }
+
+      .round-table th,
+      .round-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+        text-align: left;
+        vertical-align: top;
+        font-size: 14px;
+      }
+
+      .round-table th {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--charcoal);
+      }
+
+      .pill.warn {
+        border-color: var(--hot);
+        color: var(--ink);
+        background: var(--hot-soft);
+      }
+
+      .token-card {
+        padding: 18px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background: rgba(255, 255, 255, 0.48);
+        box-shadow: var(--shadow);
+      }
+
+      .swatch-row {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .swatch {
+        display: grid;
+        grid-template-columns: 88px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .swatch-color {
+        height: 48px;
+        border-radius: 14px;
+        border: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      .type-scale {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .type-line {
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      .type-line:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .type-line strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .space-bars {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .space-bar {
+        display: grid;
+        grid-template-columns: 82px 1fr 52px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .space-bar .bar {
+        height: 14px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--positive), var(--iron));
+      }
+
+      .motion-demo {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .motion-line {
+        overflow: hidden;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      .motion-line span {
+        display: inline-block;
+        animation: drift 4s ease-in-out infinite;
+      }
+
+      .state-grid,
+      .empty-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .state-card,
+      .empty-card {
+        padding: 18px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background: rgba(255, 255, 255, 0.52);
+        box-shadow: var(--shadow);
+        display: grid;
+        gap: 14px;
+      }
+
+      .state-row,
+      .field-grid,
+      .empty-demo,
+      .skeleton-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .button-row,
+      .field-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .demo-btn,
+      .demo-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 118px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        font: 600 13px var(--sans);
+        text-decoration: none;
+        border: 1px solid var(--iron);
+        background: var(--iron);
+        color: var(--bone);
+      }
+
+      .demo-btn.is-hover {
+        filter: brightness(0.92);
+      }
+
+      .demo-btn.is-pressed,
+      .demo-link.is-pressed {
+        transform: scale(0.98) translateY(1px);
+      }
+
+      .demo-btn.is-disabled {
+        opacity: 0.45;
+      }
+
+      .demo-btn.is-hot {
+        background: var(--hot);
+        border-color: var(--hot);
+      }
+
+      .demo-link {
+        background: rgba(255,255,255,0.12);
+        border: 1.5px solid var(--hot);
+        color: var(--ink);
+      }
+
+      .demo-input {
+        min-height: 48px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(23, 23, 23, 0.12);
+        background: rgba(255,255,255,0.72);
+        color: var(--charcoal);
+      }
+
+      .demo-input.is-focused {
+        border-color: var(--hot);
+        box-shadow: 0 0 0 5px rgba(242, 86, 35, 0.12);
+      }
+
+      .demo-input.is-error {
+        border-color: var(--iron);
+        background: rgba(242, 86, 35, 0.1);
+      }
+
+      .demo-input.is-disabled {
+        opacity: 0.5;
+      }
+
+      .empty-illus {
+        width: 52px;
+        height: 52px;
+        stroke: var(--iron);
+        stroke-width: 1.7;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .skeleton-pill,
+      .skeleton-line {
+        position: relative;
+        overflow: hidden;
+        background: rgba(168, 181, 154, 0.18);
+        border-radius: 999px;
+      }
+
+      .skeleton-pill {
+        width: 88px;
+        height: 28px;
+      }
+
+      .skeleton-line {
+        height: 14px;
+      }
+
+      .skeleton-pill::before,
+      .skeleton-line::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent);
+        animation: shimmer 1.6s infinite;
+      }
+
+      @keyframes shimmer {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .motion-line:nth-child(2) span {
+        animation-delay: 0.5s;
+      }
+
+      .motion-line:nth-child(3) span {
+        animation-delay: 1s;
+      }
+
+      @keyframes drift {
+        0%, 100% {
+          transform: translateY(0);
+          opacity: 0.72;
+        }
+        50% {
+          transform: translateY(-3px);
+          opacity: 1;
+        }
+      }
+
+      .preview-card {
+        display: grid;
+        gap: 14px;
+      }
+
+      .preview-switch {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 23, 23, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+        width: max-content;
+      }
+
+      .preview-tab {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: transparent;
+        color: var(--charcoal);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .preview-tab.active {
+        background: var(--iron);
+        color: var(--bone);
+      }
+
+      .preview-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .link-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--iron);
+        background: var(--iron);
+        color: var(--bone);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: transform var(--ease), opacity var(--ease);
+      }
+
+      .link-btn.alt {
+        background: transparent;
+        color: var(--ink);
+        border-color: rgba(23, 23, 23, 0.12);
+      }
+
+      .link-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .contract-card ul,
+      .ship-card ul {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: var(--charcoal);
+        line-height: 1.6;
+      }
+
+      .consensus-card .score-big {
+        font-size: 44px;
+      }
+
+      .consensus-card blockquote {
+        margin: 14px 0 0;
+        padding-left: 14px;
+        border-left: 2px solid var(--hot);
+        font-family: var(--serif);
+        color: var(--ink);
+      }
+
+      .ship-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .ship-hours {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--charcoal);
+      }
+
+      .milestone-card {
+        min-height: 166px;
+      }
+
+      .milestone-no {
+        font-family: var(--serif);
+        font-size: 34px;
+        color: var(--iron);
+      }
+
+      footer {
+        margin-top: var(--space-5);
+        padding: 16px 0 0;
+        border-top: 1px solid rgba(23, 23, 23, 0.08);
+      }
+
+      @media (max-width: 1024px) {
+        .hero,
+        .tokens-grid,
+        .ship-grid,
+        .nav-grid,
+        .preview-grid,
+        .contract-grid,
+        .consensus-grid,
+        .milestone-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .report-nav__inner {
+          grid-template-columns: 1fr;
+          padding: 12px 0;
+        }
+
+        .report-nav__tabs {
+          justify-self: start;
+          overflow-x: auto;
+          max-width: 100%;
+        }
+
+        .report-nav__status {
+          justify-self: start;
+        }
+
+        .shell {
+          width: min(calc(100% - 20px), var(--max));
+          padding-top: 14px;
+        }
+
+        .hero,
+        .nav-card,
+        .preview-card,
+        .contract-card,
+        .consensus-card,
+        .ship-card,
+        .milestone-card,
+        .panel,
+        .token-card {
+          padding: 16px;
+          border-radius: 18px;
+        }
+
+        .section-head,
+        .preview-actions,
+        .ship-top {
+          display: grid;
+          gap: 10px;
+        }
+
+        .swatch,
+        .space-bar {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="report-nav">
+      <div class="report-nav__inner">
+        <div class="report-nav__brand"><strong>持倉看板 · 2026-04-18</strong></div>
+        <div class="report-nav__tabs">
+          <a class="report-nav__tab is-active" href="./index.html">預覽 Report</a>
+          <a class="report-nav__tab" href="./sa.html">SA</a>
+          <a class="report-nav__tab" href="./sd.html">SD</a>
+          <a class="report-nav__tab" href="./architecture.html">架構</a>
+          <a class="report-nav__tab" href="./todo.html">TODO</a>
+        </div>
+        <div class="report-nav__status">Ship Ready</div>
+      </div>
+    </nav>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="meta-label">Round 67 · Report Portal</div>
+          <h1>持倉看板<br />Report Portal</h1>
+          <p>
+            用 R30+ bone / positive / hot tokens，把 spec、8 頁畫面、契約與 ship plan 壓成一個可分享、可部署、可直接打開的單頁門戶。
+          </p>
+          <div class="vision-list">
+            <div class="vision-item">
+              <strong>1. 收盤後唯一想打開</strong>
+              <span>不是頻繁刷盤，是盤後 one-time deep ritual。</span>
+            </div>
+            <div class="vision-item">
+              <strong>2. 視覺美得讓人想多停留</strong>
+              <span>Source Serif 4 headline + 極簡結構化標頭，服務第二 persona 的審美門檻。</span>
+            </div>
+            <div class="vision-item">
+              <strong>3. 分析準確度極高</strong>
+              <span>每個 AI block 要先過 Accuracy Gate，再進 UI。</span>
+            </div>
+            <div class="vision-item">
+              <strong>4. 資訊豐富到放下焦慮</strong>
+              <span>不是空心 dashboard，而是 filled confidence。</span>
+            </div>
+            <div class="vision-item">
+              <strong>5. 知道明天哪些股票開操作</strong>
+              <span>最後一定收斂成 ticker-level action，而不是漂亮摘要。</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <div class="quote-box">
+            <div class="eyebrow">Consensus Snapshot</div>
+            <blockquote>“Daily Principle Card 只放 Dashboard，不放 Daily。”</blockquote>
+            <p>R65 封掉最後一個 blocker，讓設計語氣更乾淨。</p>
+          </div>
+          <div class="score-box">
+            <div class="eyebrow">4 LLM Average</div>
+            <div class="score-big">9.25</div>
+            <p>R66：Codex 9.5 / Gemini 9.5 / Qwen 9.2 / Claude 8.8。</p>
+          </div>
+          <div class="score-box">
+            <div class="eyebrow">Serve Shape</div>
+            <p><strong>本地</strong> `docs/portfolio-spec-report/index.html`</p>
+            <p><strong>VM</strong> `/portfolio-report/` 靜態子目錄</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="nav">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Navigation</div>
+            <h2>8 頁畫面連結</h2>
+          </div>
+          <div class="pill-row">
+            <span class="pill active">8 route</span>
+            <span class="pill">PNG render</span>
+            <span class="pill">Interactive HTML</span>
+          </div>
+        </div>
+        <div class="nav-grid">
+          <a class="nav-card" href="#dashboard">
+            <img src="./assets/mockup-dashboard-preview.png" alt="Dashboard preview" />
+            <div class="card-meta"><h3>Dashboard</h3><span class="pill active">Overview</span></div>
+            <p>盤後入口、Daily Principle、Today in Markets、持倉快覽。</p>
+          </a>
+          <a class="nav-card" href="#holdings">
+            <img src="./assets/mockup-holdings-preview.png" alt="Holdings preview" />
+            <div class="card-meta"><h3>Holdings</h3><span class="pill active">15 positions</span></div>
+            <p>多組合、多層篩選、detail pane 與 stale rows。</p>
+          </a>
+          <a class="nav-card" href="#events">
+            <img src="./assets/mockup-events-preview.png" alt="Events preview" />
+            <div class="card-meta"><h3>Events</h3><span class="pill">Catalyst</span></div>
+            <p>催化驗證、到期復盤與命中率欄位。</p>
+          </a>
+          <a class="nav-card" href="#news">
+            <img src="./assets/mockup-news-preview.png" alt="News preview" />
+            <div class="card-meta"><h3>News</h3><span class="pill">Intelligence</span></div>
+            <p>Google News / FinMind headline intake，不在此頁直接下結論。</p>
+          </a>
+          <a class="nav-card" href="#daily">
+            <img src="./assets/mockup-daily-preview.png" alt="Daily preview" />
+            <div class="card-meta"><h3>Daily</h3><span class="pill">Post-close</span></div>
+            <p>Streaming analysis、三柱結構、明日操作收斂。</p>
+          </a>
+          <a class="nav-card" href="#research">
+            <img src="./assets/mockup-research-preview.png" alt="Research preview" />
+            <div class="card-meta"><h3>Research</h3><span class="pill">Cross-portfolio</span></div>
+            <p>董座 slice、四人格輸出、週報 PDF 的前台容器。</p>
+          </a>
+          <a class="nav-card" href="#trade">
+            <img src="./assets/mockup-trade-preview.png" alt="Trade preview" />
+            <div class="card-meta"><h3>Trade</h3><span class="pill">Upload</span></div>
+            <p>批次成交匯入、理由補寫、落 holdings 與 log。</p>
+          </a>
+          <a class="nav-card" href="#log">
+            <img src="./assets/mockup-log-preview.png" alt="Log preview" />
+            <div class="card-meta"><h3>Log</h3><span class="pill">Journal</span></div>
+            <p>交易紀錄、動機、復盤與不可刪 insider compliance 線。</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section" id="system">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Design System</div>
+            <h2>Tokens Rendered</h2>
+          </div>
+          <div class="pill-row">
+            <span class="pill">bone</span>
+            <span class="pill active">positive</span>
+            <span class="pill warn">hot</span>
+          </div>
+        </div>
+        <div class="tokens-grid">
+          <article class="token-card">
+            <div class="eyebrow">Color Swatch</div>
+            <div class="swatch-row">
+              <div class="swatch">
+                <div class="swatch-color" style="background:#faf7f1"></div>
+                <div><strong>Bone</strong><div class="swatch-label">#FAF7F1 · page paper</div></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#a8b59a"></div>
+                <div><strong>Positive</strong><div class="swatch-label">#EF7D2F · gains / good news</div></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#64735d"></div>
+                <div><strong>CTA</strong><div class="swatch-label">#EC662D · primary action</div></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#f25623"></div>
+                <div><strong>Hot/strong><div class="swatch-label">#F25623 · only for risk/accent</div></div>
+              </div>
+            </div>
+          </article>
+          <article class="token-card">
+            <div class="eyebrow">Typography 5 Levels</div>
+            <div class="type-scale">
+              <div class="type-line"><strong style="font:600 44px/1 var(--serif)">Display Serif</strong><span class="swatch-label">Hero / section open</span></div>
+              <div class="type-line"><strong style="font:600 30px/1.1 var(--serif)">Section Title</strong><span class="swatch-label">Editorial hierarchy</span></div>
+              <div class="type-line"><strong style="font:600 22px/1.2 var(--serif)">Card Title</strong><span class="swatch-label">Preview module head</span></div>
+              <div class="type-line"><strong style="font:600 15px/1.4 var(--sans)">Body Lead</strong><span class="swatch-label">Readable explanation</span></div>
+              <div class="type-line"><strong style="font:500 11px/1.4 var(--mono)">Meta Label</strong><span class="swatch-label">Minimal tracking</span></div>
+            </div>
+          </article>
+          <article class="token-card">
+            <div class="eyebrow">Spacing + Motion</div>
+            <div class="space-bars">
+              <div class="space-bar"><span class="swatch-label">8</span><div class="bar" style="width:12%"></div><span class="swatch-label">xs</span></div>
+              <div class="space-bar"><span class="swatch-label">14</span><div class="bar" style="width:24%"></div><span class="swatch-label">sm</span></div>
+              <div class="space-bar"><span class="swatch-label">22</span><div class="bar" style="width:38%"></div><span class="swatch-label">md</span></div>
+              <div class="space-bar"><span class="swatch-label">32</span><div class="bar" style="width:56%"></div><span class="swatch-label">lg</span></div>
+              <div class="space-bar"><span class="swatch-label">48</span><div class="bar" style="width:76%"></div><span class="swatch-label">xl</span></div>
+            </div>
+            <div class="motion-demo">
+              <div class="motion-line"><span>page-load: headline fade + slight rise</span></div>
+              <div class="motion-line"><span>card reveal: staggered by section, not every widget</span></div>
+              <div class="motion-line"><span>risk accent: hot outline only, never full-page panic</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Interactive States</div>
+            <h2>Interactive States Catalog</h2>
+          </div>
+          <p>把按鈕、欄位、hover、pressed、focus 直接示範在 portal，不再只靠口述。</p>
+        </div>
+        <div class="state-grid">
+          <article class="state-card">
+            <div class="eyebrow" data-meta>Buttons</div>
+            <h3>Primary / Hover / Pressed / Disabled</h3>
+            <div class="button-row">
+              <button class="demo-btn" type="button">Default</button>
+              <button class="demo-btn is-hover" type="button">Hover</button>
+              <button class="demo-btn is-pressed" type="button">Pressed</button>
+              <button class="demo-btn is-disabled" type="button">Disabled</button>
+            </div>
+            <div class="button-row">
+              <button class="demo-btn is-hot is-pressed" type="button">Hot CTA</button>
+              <a class="demo-link" href="./pages/news.html">Outline CTA</a>
+            </div>
+          </article>
+          <article class="state-card">
+            <div class="eyebrow" data-meta>Forms</div>
+            <h3>Field States</h3>
+            <div class="field-grid">
+              <div class="demo-input">空白欄位</div>
+              <div class="demo-input is-focused">聚焦中：hot outline + ring</div>
+              <div class="demo-input">已填寫：2330 台積電</div>
+              <div class="demo-input is-error">錯誤：請補交易理由</div>
+              <div class="demo-input is-disabled">停用中</div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Empty States</div>
+            <h2>Empty / Skeleton Catalog</h2>
+          </div>
+          <p>6 個空態與一組 shimmer，全部先在 portal 對齊語氣與插圖。</p>
+        </div>
+        <div class="empty-grid">
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+            <div class="eyebrow" data-meta>Holdings</div>
+            <p>還沒有持股，先匯入第一筆成交</p>
+          </article>
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4"/><path d="M17 3v4"/><path d="M4 8h16"/><rect x="4" y="5" width="16" height="15" rx="2"/></svg>
+            <div class="eyebrow" data-meta>Events</div>
+            <p>目前沒有待追蹤事件</p>
+          </article>
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v12H5z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+            <div class="eyebrow" data-meta>News</div>
+            <p>今天還沒有新情報進站</p>
+          </article>
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 1 1 3.2 3.2"/><path d="m14.5 14.5 4.5 4.5"/></svg>
+            <div class="eyebrow" data-meta>Research</div>
+            <p>先挑一檔股票</p>
+          </article>
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5"/><path d="m8 9 4-4 4 4"/><path d="M4 17.5A3.5 3.5 0 0 0 7.5 21h9A3.5 3.5 0 0 0 20 17.5"/></svg>
+            <div class="eyebrow" data-meta>Trade</div>
+            <p>把成交檔拖進來，系統先幫你整理欄位</p>
+          </article>
+          <article class="empty-card">
+            <svg class="empty-illus" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2Z"/><path d="M9 9h6"/></svg>
+            <div class="eyebrow" data-meta>Log + Skeleton</div>
+            <p>第一則交易之後會記；載入中只顯示骨架不顯示假內容。</p>
+            <div class="skeleton-stack">
+              <div class="skeleton-pill"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Page Boards</div>
+            <h2>8 Pages, One Contract</h2>
+          </div>
+          <p>PNG 只負責展示視覺；真正可點開的 HTML 在 `pages/`，保持檔案輕量與部署穩定。</p>
+        </div>
+        <div class="preview-grid">
+          <article class="preview-card" id="dashboard">
+            <div class="preview-switch" role="tablist" aria-label="Dashboard preview switch">
+              <button class="preview-tab active" type="button" data-target="dashboard" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="dashboard" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-dashboard-preview.png" data-desktop="./assets/mockup-dashboard-preview.png" data-mobile="./assets/mobile-dashboard-preview.png" alt="Dashboard preview image" />
+            <div class="card-meta"><h3>Dashboard / 首頁</h3><span class="pill active">唯一 editorial 入口</span></div>
+            <p>Daily Principle 只留在這裡，避免 Daily 頁過飽和。</p>
+            <p>盤後模式收斂 KPI、情緒與下一步，而不是讓人再滑 10 個 tab。</p>
+            <p>Overview 要讓使用者願意多停留，但停留是為了理解，不是為了裝飾。</p>
+            <div class="preview-actions"><span class="swatch-label">OVERVIEW · POST-CLOSE · W16</span><a class="link-btn" href="./pages/dashboard.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="holdings">
+            <div class="preview-switch" role="tablist" aria-label="Holdings preview switch">
+              <button class="preview-tab active" type="button" data-target="holdings" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="holdings" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-holdings-preview.png" data-desktop="./assets/mockup-holdings-preview.png" data-mobile="./assets/mobile-holdings-preview.png" alt="Holdings preview image" />
+            <div class="card-meta"><h3>Holdings / 持倉</h3><span class="pill active">multi-portfolio</span></div>
+            <p>表格不是終點，右側 detail pane 才是 dossier 閱讀器。</p>
+            <p>多層篩選、搜尋與 stale row 讓清單能快速收斂到可行動範圍。</p>
+            <p>數字用 serif 強調，但整頁仍保持 calm finance，而非交易員地獄。</p>
+            <div class="preview-actions"><span class="swatch-label">15 POSITIONS · DETAIL PANE</span><a class="link-btn" href="./pages/holdings.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="events">
+            <div class="preview-switch" role="tablist" aria-label="Events preview switch">
+              <button class="preview-tab active" type="button" data-target="events" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="events" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-events-preview.png" data-desktop="./assets/mockup-events-preview.png" data-mobile="./assets/mobile-events-preview.png" alt="Events preview image" />
+            <div class="card-meta"><h3>Events / 催化驗證</h3><span class="pill">validation</span></div>
+            <p>這頁只做催化與復盤，不偷做新聞頁或研究頁的工作。</p>
+            <p>命中率與 overdue 用 hot 點一下就夠，不把整個時間軸塗成警報。</p>
+            <p>event-to-thesis linkage 要回流到 scorecard，而不是停在漂亮卡片。</p>
+            <div class="preview-actions"><span class="swatch-label">CATALYST VALIDATION</span><a class="link-btn" href="./pages/events.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="news">
+            <div class="preview-switch" role="tablist" aria-label="News preview switch">
+              <button class="preview-tab active" type="button" data-target="news" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="news" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-news-preview.png" data-desktop="./assets/mockup-news-preview.png" data-mobile="./assets/mobile-news-preview.png" alt="News preview image" />
+            <div class="card-meta"><h3>News / 情報脈絡</h3><span class="pill">informational only</span></div>
+            <p>news 不等於 event，這是已決議事項，不再混用語氣與資料模型。</p>
+            <p>Headline 先 intake、去重、標來源與 ticker，再 handoff 到 Daily 判讀影響。</p>
+            <p>至少 2 個 source、至少 3 個 ticker，降低單點偏見。</p>
+            <div class="preview-actions"><span class="swatch-label">NEWS FEED · 24H</span><a class="link-btn" href="./pages/news.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="daily">
+            <div class="preview-switch" role="tablist" aria-label="Daily preview switch">
+              <button class="preview-tab active" type="button" data-target="daily" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="daily" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-daily-preview.png" data-desktop="./assets/mockup-daily-preview.png" data-mobile="./assets/mobile-daily-preview.png" alt="Daily preview image" />
+            <div class="card-meta"><h3>Daily / 收盤分析</h3><span class="pill active">streaming</span></div>
+            <p>Daily 是 post-close 的主工作台，不再擺 Daily Principle 卡。</p>
+            <p>三柱結構把摘要、風險與明日操作拆清楚，避免同一塊文案塞全部意思。</p>
+            <p>所有 AI 內容 pre-display 前都必須經過 Accuracy Gate。</p>
+            <div class="preview-actions"><span class="swatch-label">POST-CLOSE · 14:05</span><a class="link-btn" href="./pages/daily.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="research">
+            <div class="preview-switch" role="tablist" aria-label="Research preview switch">
+              <button class="preview-tab active" type="button" data-target="research" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="research" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-research-preview.png" data-desktop="./assets/mockup-research-preview.png" data-mobile="./assets/mobile-research-preview.png" alt="Research preview image" />
+            <div class="card-meta"><h3>Research / 全組合研究</h3><span class="pill">chairwoman slice</span></div>
+            <p>這頁是跨持股觀察，不是把 holdings 卡片做大版。</p>
+            <p>雙 persona slice 與週報 PDF 都以這裡為入口，語氣需兼顧 PM 與董座。</p>
+            <p>Hot 只用在 underperform gap 或切換中板塊，不搶走整頁主色。</p>
+            <div class="preview-actions"><span class="swatch-label">CROSS-PORTFOLIO · W16</span><a class="link-btn" href="./pages/research.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="trade">
+            <div class="preview-switch" role="tablist" aria-label="Trade preview switch">
+              <button class="preview-tab active" type="button" data-target="trade" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="trade" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-trade-preview.png" data-desktop="./assets/mockup-trade-preview.png" data-mobile="./assets/mobile-trade-preview.png" alt="Trade preview image" />
+            <div class="card-meta"><h3>Trade / 上傳成交</h3><span class="pill">batch upload</span></div>
+            <p>成交匯入不是孤島；完成後要同步回 holdings、tradeLog 與 fundamentals。</p>
+            <p>這頁負責 capture 與 mapping，不負責策略說服。</p>
+            <p>對 insider 相關交易要多一層 compliance 提示與欄位鎖定。</p>
+            <div class="preview-actions"><span class="swatch-label">BATCH 3 · 2026-04-17</span><a class="link-btn" href="./pages/trade.html">打開 interactive HTML</a></div>
+          </article>
+          <article class="preview-card" id="log">
+            <div class="preview-switch" role="tablist" aria-label="Log preview switch">
+              <button class="preview-tab active" type="button" data-target="log" data-mode="desktop">桌機</button>
+              <button class="preview-tab" type="button" data-target="log" data-mode="mobile">手機</button>
+            </div>
+            <img class="preview-image" src="./assets/mockup-log-preview.png" data-desktop="./assets/mockup-log-preview.png" data-mobile="./assets/mobile-log-preview.png" alt="Log preview image" />
+            <div class="card-meta"><h3>Log / 交易日誌</h3><span class="pill">journal</span></div>
+            <p>交易日誌保留理由、反省與回頭對照，不只是報表尾頁。</p>
+            <p>Trade 的資料流要在這裡留痕，否則明天不可能知道為什麼操作。</p>
+            <p>內部人交易必須顯示通報與不可刪約束，語氣轉為風險管理。</p>
+            <div class="preview-actions"><span class="swatch-label">27 ENTRIES · W16</span><a class="link-btn" href="./pages/log.html">打開 interactive HTML</a></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Contracts</div>
+            <h2>Insider / Hot / Accuracy Gate / News / Daily</h2>
+          </div>
+          <p>這些不是視覺備忘，而是跨頁產品契約。</p>
+        </div>
+        <div class="contract-grid">
+          <article class="contract-card">
+            <div class="eyebrow">Insider Holding</div>
+            <h3>7865 = 風險管理語氣</h3>
+            <ul>
+              <li>`meta.isInsider=true` 後，跳過一般 thesis 與 analyst-target scoring。</li>
+              <li>只記錄數字、事件、公告與 compliance 提示，不做鼓動性買賣語氣。</li>
+              <li>Trade / Log / Research / PDF 都要繼承這條規則。</li>
+            </ul>
+          </article>
+          <article class="contract-card">
+            <div class="eyebrow">Hot Rule</div>
+            <h3>暖色只能是 accent</h3>
+            <ul>
+              <li>hot 只用在 warning、risk node、underperform gap、single CTA。</li>
+              <li>不可整頁鋪滿，也不可和舊暖土語彙混打。</li>
+              <li>主體仍由 bone + iron 組成 calm finance 語氣。</li>
+            </ul>
+          </article>
+          <article class="contract-card">
+            <div class="eyebrow">Accuracy Gate</div>
+            <h3>AI 內容先過 5 條檢查</h3>
+            <ul>
+              <li>來源可追、日期正確、數字可解釋、語氣不超過證據、低信心要降級。</li>
+              <li>所有 AI badge pre-display 前必須先過 gate。</li>
+              <li>幻覺容忍度 = 0；錯一次，信任直接崩。</li>
+            </ul>
+          </article>
+          <article class="contract-card">
+            <div class="eyebrow">News Contract</div>
+            <h3>News 不是 Event</h3>
+            <ul>
+              <li>News 只做 intake / context / source labeling，不在此頁直接生成事件。</li>
+              <li>需要判斷影響時，handoff 到 Daily，不直接在 News 下結論。</li>
+              <li>`recordType` 分流已決議，不再回頭混用。</li>
+            </ul>
+          </article>
+          <article class="contract-card">
+            <div class="eyebrow">Daily Principle</div>
+            <h3>只放 Dashboard</h3>
+            <ul>
+              <li>R64/R65 定案：Daily Principle Card 只留 Dashboard。</li>
+              <li>格式：大字 serif 語錄 + 作者 + 今日 context line。</li>
+              <li>Daily 頁維持高密度分析，不再多塞 editorial 卡。</li>
+            </ul>
+          </article>
+          <article class="contract-card">
+            <div class="eyebrow">Runtime Contract</div>
+            <h3>Page UI 之前先有閉環</h3>
+            <ul>
+              <li>共享 state：portfolio、operatingContext、dossier、newsEvents、tradeLog、analysisHistory、researchHistory。</li>
+              <li>關鍵 handoff：events 交給 daily、trade 同步到 holdings 與 log、research 匯出 weekly PDF。</li>
+              <li>route shell 只算 migration preview，不是正式產品邊界。</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Consensus</div>
+            <h2>4 家 LLM 分數 + 金句</h2>
+          </div>
+          <p>R66 最終狀態：四家都無條件簽，平均 9.25。</p>
+        </div>
+        <div class="consensus-grid">
+          <article class="consensus-card">
+            <div class="eyebrow">Codex</div>
+            <div class="score-big">9.5</div>
+            <p>R57 / R60 / R65 連三輪無 blocker。</p>
+            <blockquote>“Daily preview 內容已飽和；保留 Dashboard 作唯一 editorial card 較乾淨。”</blockquote>
+          </article>
+          <article class="consensus-card">
+            <div class="eyebrow">Gemini</div>
+            <div class="score-big">9.5</div>
+            <p>R58 / R63b 連兩輪無條件簽。</p>
+            <blockquote>“B2 的三個契約是加分不是 blocker。”</blockquote>
+          </article>
+          <article class="consensus-card">
+            <div class="eyebrow">Qwen</div>
+            <div class="score-big">9.2</div>
+            <p>R61 / R63c 維持無條件簽。</p>
+            <blockquote>“輪替 day-of-year mod 10 聰明；這些是更好，不是必需。”</blockquote>
+          </article>
+          <article class="consensus-card">
+            <div class="eyebrow">Claude</div>
+            <div class="score-big">8.8</div>
+            <p>5 輪無 blocker，但相對保守。</p>
+            <blockquote>“剩 1 gate：使用者最終授權 ship。”</blockquote>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Phase 1 Ship</div>
+            <h2>10 項 Must + 工時</h2>
+          </div>
+          <p>R66 收斂版：總工時約 35-48h，4-6 工作日。</p>
+        </div>
+        <div class="ship-grid">
+          <article class="ship-card"><div class="ship-top"><h3>1. G1 KPI Cards fix</h3><span class="ship-hours">~0.5h</span></div><ul><li>patch ready，收斂 context contract。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>2. G2 coachLessons inject</h3><span class="ship-hours">4-6h</span></div><ul><li>research prompt 顯性吃 recentCoachLessons(last7days)。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>3. Legacy warm refs 清理</h3><span class="ship-hours">5h</span></div><ul><li>清 25+ refs，補 2-step danger modal。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>4. Dashboard 13:30 mode</h3><span class="ship-hours">4-6h</span></div><ul><li>盤後版切換，讓首頁真正變成 one-time ritual。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>5. 明日操作 editorial 卡</h3><span class="ship-hours">4-6h</span></div><ul><li>把 action items 壓成可讀 accordion。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>6. 焦慮指標 X1/X2</h3><span class="ship-hours">6-8h</span></div><ul><li>z-score badge + pillar chip，服務「放下焦慮」。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>7. Accuracy Gate guard</h3><span class="ship-hours">4-6h</span></div><ul><li>所有 AI pre-display 入口統一過濾。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>8. 美學 ship gate</h3><span class="ship-hours">6-8h</span></div><ul><li>Dashboard + Holdings 先驗到 8+1 條門檻。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>9. Daily Principle 輪替</h3><span class="ship-hours">1.5h</span></div><ul><li>10 條經典語錄、雙語意譯、只放 Dashboard。</li></ul></article>
+          <article class="ship-card"><div class="ship-top"><h3>10. News source/ticker floor</h3><span class="ship-hours">1h</span></div><ul><li>至少 2 source、至少 3 ticker，避免單點偏見。</li></ul></article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker">Compressed Timeline</div>
+            <h2>66 輪時序 · 8 個里程碑</h2>
+          </div>
+          <p>把漫長 loop 壓成能讀懂走勢的 milestone，而不是逐輪流水帳。</p>
+        </div>
+        <div class="milestone-grid">
+          <article class="milestone-card"><div class="milestone-no">R1-R7</div><h3>產品骨架成形</h3><p>從 vision、workflow objects、IA 到 first ship spec，先把產品不是單純 UI 這件事立住。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R7.5</div><h3>第二 persona 補正</h3><p>補回 6 頁真實 route 與金聯成董座 persona，讓美學成為 must。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R8-R12</div><h3>契約與反駁期</h3><p>把 runtime、handoff、insider UX、雙 persona slice 立成跨頁契約。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R15-R17</div><h3>共識門檻達標</h3><p>5 條 vision rubric 補齊後，設計與 ship 計畫第一次過 8.5。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R29-R36</div><h3>Legacy Warm 退場</h3><p>Gemini 拒簽促成 token 重整，bone + iron 取代舊暖土色主敘事。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R37-R50</div><h3>8 頁 preview 全補齊</h3><p>從 Dashboard 到 Log，八頁 preview 全部 render，形成完整 preview board。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R51-R62</div><h3>Qwen 加入、維持審查</h3><p>四家 LLM 全部進場，Events/News 等頁獲得更多可讀性與產品感驗證。</p></article>
+          <article class="milestone-card"><div class="milestone-no">R63-R66</div><h3>最後 blocker 解掉</h3><p>Daily Principle 卡只留 Dashboard，四家無條件簽，R66 宣告最終共識。</p></article>
+        </div>
+      </section>
+
+      <footer>
+        <section class="section" id="round-69">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Round 69</div>
+              <h2>## Round 69 · Codex · mobile preview · 2026-04-17 18:54 CST</h2>
+            </div>
+            <p>補上 iOS Safari first 的 8 頁手機 preview 與 portal 切換。</p>
+          </div>
+          <div class="contract-grid">
+            <article class="contract-card"><div class="eyebrow">A</div><h3>8 頁手機版 PNG</h3><p>`assets/mobile-*.png`，WebKit + `390×844` + `fullPage`。</p></article>
+            <article class="contract-card"><div class="eyebrow">B</div><h3>Responsive CSS 補齊</h3><p>8 頁都新增 `@media (max-width: 480px)`；Holdings 表格轉 card，其餘改單欄與 bottom section。</p></article>
+            <article class="contract-card"><div class="eyebrow">C</div><h3>Portal update</h3><p>每頁 preview card 新增「桌機 / 手機」tab toggle，預設桌機。</p></article>
+            <article class="contract-card"><div class="eyebrow">D</div><h3>Deploy note</h3><p>同步到 VM `dist/portfolio-report/` 後，`/portfolio-report/` 直接可切手機縮圖。</p></article>
+          </div>
+        </section>
+        <section class="section" id="round-70">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Round 70</div>
+              <h2>## Round 70 · Codex · mobile deploy + self-review · 2026-04-17 19:03 CST</h2>
+            </div>
+            <p>VM deploy 完成，手機切圖與 `dashboard.html` 響應式驗證已過。</p>
+          </div>
+          <div class="contract-grid">
+            <article class="contract-card"><div class="eyebrow">A. VM deploy</div><p>`ssh -i ~/.ssh/google_compute_engine -o IdentitiesOnly=yes chenkuichen@35.236.155.62` 成功；`scp index.html + pages/ + assets/` 覆蓋 `/var/www/app/current/dist/portfolio-report/`，遠端已有 8 張 `mobile-*.png`。</p></article>
+            <article class="contract-card"><div class="eyebrow">URL verify</div><p>`curl -I https://35.236.155.62.sslip.io/portfolio-report/` = HTTP 200；Playwright 實測 `#dashboard` 手機 tab 後，`src` 由桌機圖切到 `./assets/mobile-dashboard-preview.png`。</p></article>
+            <article class="contract-card"><div class="eyebrow">Responsive</div><p>`/pages/dashboard.html` 以 iPhone 12 `390×844` 載入，`documentElement.scrollWidth = 390`、`hasHOverflow = false`。</p></article>
+            <article class="contract-card"><div class="eyebrow">Consensus</div><p>同意度 `9.1/10`。新反駁：`news` 仍偏擁擠；`research` 的巨字焦點還不夠兇。</p></article>
+          </div>
+          <div class="section-head" style="margin-top:18px;">
+            <div><div class="section-kicker">B. Mobile DNA vs #3-#6</div></div>
+          </div>
+          <table class="round-table">
+            <thead><tr><th>頁</th><th>#3</th><th>#4</th><th>#5</th><th>#6</th><th>最弱點</th></tr></thead>
+            <tbody>
+              <tr><td>dashboard</td><td>高</td><td>中高</td><td>高</td><td>中高</td><td>Daily Principle 已接近 poster，但還能再更單點主角。</td></tr>
+              <tr><td>holdings</td><td>中高</td><td>中</td><td>中</td><td>中</td><td>首屏 chip 牆偏擁擠，離 #5 的低密度還有距離。</td></tr>
+              <tr><td>events</td><td>高</td><td>中高</td><td>中高</td><td>中高</td><td>hero 對了，下方 timeline 卡片的上下留白可再放大。</td></tr>
+              <tr><td>news</td><td>中</td><td>高</td><td>中低</td><td>中</td><td>headline、filter、CTA 同時搶焦點，最不像 #5 的極簡密度。</td></tr>
+              <tr><td>daily</td><td>高</td><td>高</td><td>中高</td><td>中高</td><td>大數字與 hot 焦點很準，但 summary 段還可再瘦。</td></tr>
+              <tr><td>research</td><td>中高</td><td>中高</td><td>中</td><td>中</td><td>主 headline 不夠壓前，圖表與 policy/risk 太早一起出場。</td></tr>
+              <tr><td>trade</td><td>高</td><td>中高</td><td>中</td><td>中高</td><td>step 架構清楚，但 preview diff 區塊仍稍滿。</td></tr>
+              <tr><td>log</td><td>高</td><td>中高</td><td>中</td><td>高</td><td>entry 節奏好；filter/export 可再往後收，讓大標更乾淨。</td></tr>
+            </tbody>
+          </table>
+          <div class="contract-grid" style="margin-top:18px;">
+            <article class="contract-card"><div class="eyebrow">C. 2 頁精修建議</div><p><strong>news</strong>：首屏只留 1 則巨字 headline，第二層 filter 改摺疊或延後到 fold 下，橘 CTA 只保留首卡。<br /><strong>research</strong>：hero 先只留單一判讀與主圖，policy/risk 往後推；把 `chairwoman` 週別做成更像 #6 的 day heading。</p></article>
+            <article class="contract-card"><div class="eyebrow">D. 共識</div><p>`9.1/10`<br />blocker: 無<br />VM deploy done? yes</p></article>
+          </div>
+        </section>
+        <section class="section" id="round-71">
+          <div class="section-head"><div><div class="section-kicker">Round 71</div><h2>## Round 71 · Codex · mobile fix · 2026-04-17 19:14 CST</h2></div><p>針對 Holdings / News / Research 三頁做 second-pass mobile 壓縮，聚焦首屏與 warm 預算。</p></div>
+          <div class="contract-grid">
+            <article class="contract-card"><div class="eyebrow">A. Holdings</div><p>- mobile ticker row 放大到 36px，接近 #6 的巨字感。<br>- 前 7 檔先露出，其餘收進 `顯示更多 (8)` collapse。<br>- filter chip 維持水平滾動，但字級縮到 10.8px。<br>- new PNG：`assets/mobile-holdings-preview.png`</p></article>
+            <article class="contract-card"><div class="eyebrow">B. News</div><p>- 首屏只保留 1 張 headline hero card。<br>- mobile filter 改成預設收合 accordion。<br>- 第 2-4 則 CTA 改深墨 text link，只留第 1 則橘色實心 CTA。<br>- new PNG：`assets/mobile-news-preview.png`</p></article>
+            <article class="contract-card"><div class="eyebrow">C. Research</div><p>- hero 首屏只留 meta、`+1.8%` 與 mini chart。<br>- mobile 隱藏 hero lede / note，讓政策、板塊、Top 3 風險自然落到第 2 屏。<br>- `CHAIRWOMAN` 放大到 33px，接近 day-heading。<br>- new PNG：`assets/mobile-research-preview.png`</p></article>
+            <article class="contract-card"><div class="eyebrow">D. VM redeploy</div><p>- 同步覆蓋 `/var/www/app/current/dist/portfolio-report/`。<br>- URL verify：`https://35.236.155.62.sslip.io/portfolio-report/` 與三個 `pages/*.html` 手機 viewport 實測。</p></article>
+            <article class="contract-card"><div class="eyebrow">E. 共識</div><p>- 我：`9.4/10`（R70 = 9.1）<br>- 新反駁：無</p></article>
+          </div>
+        </section>
+        <section class="section" id="round-78">
+          <div class="section-head">
+            <div><div class="section-kicker">Round 78</div><h2>## Round 78 · Codex · 9.5 target push · 2026-04-18 15:36 CST</h2></div>
+            <p>3 個 blind spots 全部從 spec 拉進 source 與 portal，並重跑桌機 / 手機 render。</p>
+          </div>
+          <div class="contract-grid">
+            <article class="contract-card"><div class="eyebrow">A. 語氣清理</div><p>移除 UI 可見的 backstage 語，全部改成前台語句與實際操作描述。</p></article>
+            <article class="contract-card"><div class="eyebrow">B. Interactive states</div><p>portal 新增 Interactive States Catalog；8 頁皆有真 hover / pressed / focus source，其中 News、Trade、Research、Daily、Dashboard 都改成實體 button 或 link。</p></article>
+            <article class="contract-card"><div class="eyebrow">C. Empty + skeleton</div><p>6 頁 HTML 新增 `empty-state-demo`；News 與 Research 補上 shimmer / loading 示範，插圖走 thin-stroke SVG。</p></article>
+            <article class="contract-card"><div class="eyebrow">D. Typography</div><p>8 頁加上 `font-variant-numeric: tabular-nums`、`[data-meta]` 負字距、`.long-form` 與 heading padding；長段落與 meta 重新對齊。</p></article>
+            <article class="contract-card"><div class="eyebrow">E. Mobile</div><p>Dashboard hero 補 breathing room + divider；Events timeline 改 1.5px iron 線與圓點；News CTA 改 hot outline；Trade dropzone 補 drag-active 示範。</p></article>
+            <article class="contract-card"><div class="eyebrow">F. 自評</div><p>設計師 `9.6` / PM `9.5` / 文案大師 `9.5`。剩餘風險不在 source，而在 render 與遠端同步是否完整覆蓋。</p></article>
+          </div>
+        </section>
+        <section class="section" id="round-92">
+          <div class="section-head">
+            <div><div class="section-kicker">Round 92</div><h2>## Round 92 · Codex · SA/SD 補 + HTML render + nav · 2026-04-18 02:56 CST</h2></div>
+            <p>補 SA/SD 缺口，新增可直接閱讀的 `sa.html` / `sd.html`，並讓 portal 三頁共用 sticky top nav。</p>
+          </div>
+          <div class="contract-grid">
+            <article class="contract-card"><div class="eyebrow">A. SA</div><p>新增 Fallback / Resilience Plan，涵蓋 FinMind、AI confidence、Trade parse、Blob、VM degraded mode。</p></article>
+            <article class="contract-card"><div class="eyebrow">B. SD</div><p>補齊 Phase 1 vs Phase 2 DoD、owner / due checklist template，以及 desktop / mobile navigation contract。</p></article>
+            <article class="contract-card"><div class="eyebrow">C. HTML</div><p>`sa.html` / `sd.html` 以 R88 tone render markdown，帶 sticky TOC、inline code highlight、iron zebra table。</p></article>
+            <article class="contract-card"><div class="eyebrow">D. Portal nav</div><p>`index.html`、`sa.html`、`sd.html` 共用 top nav：左 brand、中間三 tab、右側 `Ship Ready` badge。</p></article>
+          </div>
+        </section>
+        <div class="inline-list">
+          <span class="pill">Local: `open docs/portfolio-spec-report/index.html`</span>
+          <span class="pill">Assets: `./assets/*`</span>
+          <span class="pill">Interactive: `./pages/*.html`</span>
+          <span class="pill warn">VM target: `/portfolio-report/`</span>
+        </div>
+      </footer>
+    </div>
+    <script>
+      for (const button of document.querySelectorAll(".preview-tab")) {
+        button.addEventListener("click", () => {
+          const card = document.getElementById(button.dataset.target);
+          const image = card.querySelector(".preview-image");
+          const mode = button.dataset.mode;
+          image.src = image.dataset[mode];
+          image.alt = `${card.id} ${mode} preview`;
+          for (const sibling of card.querySelectorAll(".preview-tab")) {
+            sibling.classList.toggle("active", sibling === button);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

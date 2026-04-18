@@ -1,6 +1,6 @@
 # Claude Rules — Portfolio Dashboard
 
-**本檔是這個專案的唯一行為規則來源。** 其他 `.md` (SOUL/IDENTITY/USER/AGENTS/TOOLS/HEARTBEAT) 是別的工具的 scaffolding，**不適用於本專案**。
+**本檔是這個專案的唯一行為規則來源。** 其他外部工具 scaffolding 文件不適用於本專案。
 
 最後更新：2026-04-15
 
@@ -13,13 +13,37 @@
 3. **`docs/decisions/index.md` — 已決議事項索引（開新討論前必讀，防止重開舊題）**
 4. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
 
+## ⚠️ 寫 SA/SD / scope spec 前必做（2026-04-17 新紀律）
+
+**歷史教訓**：
+
+- Round 1 寫持倉看板 SA/SD 時漏了「多組合切換器」主 feature（已在 `docs/specs/2026-03-23-multi-portfolio-event-tracking-design.md` 且已 ship），用戶當場抓到（R6.9）
+- 緊接著又漏「多層次篩選 + 個股 detail pane」（mockup 02-holdings 有畫），用戶再抓（R6.10）
+- **R7.5 第三次漏提**：只扒 3 張 mockup 就寫 spec，漏 repo 真實 6 個 route pages（催化驗證 / 情報脈絡 / 收盤分析 / 全組合研究 / 上傳成交 / 交易日誌），**也漏第二位 user persona（金聯成董座 / 女性 / 愛美 / insider holder）**。用戶當場再抓
+
+**新規則（R7.5 升級）**：
+
+- 寫 product spec 前，必 `grep -rn "name:" src/lib/portfolio* src/seedData*` 找所有 portfolio accounts
+- 每個 account 背後**可能是獨立 user persona**，美學 / 語氣 / copy 要分別考慮
+- 必 `ls src/components/` + `ls src/hooks/useRoute*Page.js` 確認**真實頁面數量**，別只看 mockup
+
+**強制流程**：
+
+1. `ls docs/specs/ docs/plans/` 列現有設計文件
+2. `grep -l "<核心名詞>" docs/specs/ docs/plans/` 搜相關主題
+3. 寫新 spec 前**必須先引用**既有設計（「此 feature 已在 YYYY-MM-DD 設計文件」）
+4. **逐頁掃 mockup PNG，描述 implied behavior**（不能只看 01 首頁跳過 02/03/...；靜態截圖常隱含 click/hover/drawer 等互動 pattern）
+5. 配對 `.tmp/portfolio-styleguide-v2/round2-spec.md` / `docs/research/<spec>.md` 看互動描述
+6. Scope 章節寫完後自問：「repo 既有 `docs/specs/` + `docs/plans/` + 每張 mockup 還有哪些主 feature / 互動 pattern 我沒列？」
+7. 違反 = 嚴重漏提，Scorecard 必扣 0.3-0.5 分
+
 讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼、**哪些題目已經有 decision 不准重討論**。
 視覺版：https://35.236.155.62.sslip.io/（**Agent Bridge\*\*，VM 側 LLM 面板）
 持倉看板：https://jiucaivoice-dashboard.vercel.app/（Vercel 側產品，給投資人）
 
 **命名紀律**（2026-04-16）：只講「持倉看板」（Vercel）或「Agent Bridge」（VM）。不要混用 dashboard / VM dashboard / portfolio dashboard 等。詳 `docs/decisions/2026-04-16-naming-portfolio-vs-agent-bridge.md`
 
-**不要先讀 AGENTS.md / SOUL.md / IDENTITY.md / HEARTBEAT.md**（跟本專案無關）。
+**不要先讀外部工具 scaffolding 文件**（跟本專案無關）。
 
 ## ⚠️ 開新討論前必做
 
@@ -107,12 +131,17 @@ Fix-on-fix 第三次失敗就 STOP，從頭讀 code path 找根因。
 
 **歷史教訓**：禾伸堂 saga 改 5 次才發現根因是 STOCK_META 裡 hardcoded alert 字串。
 
-### 4. 一大輪才 push（不是每個 commit 都 push）
+### 4. 一大輪才 push（不是每個 commit 都 push）— **Vercel 成本紀律 2026-04-16**
 
-- 多個相關 task 合成一個完整變動 = 一輪
-- 開始前跟 Codex/Qwen 討論「這輪含哪些 task」
-- 完成 → Claude review → **Qwen QA** → 才 push
-- 文件/記憶體更新可直接 push
+- **預設：本地 dev 驗證（`npm run dev` → localhost:5173），不 push 到 Vercel**
+- **例外才 push 到 Vercel**（以下兩類，其他一律不准）：
+  1. **備份**：Git 遠端多地備份（但可先攢多個 commit 才 push，不要每次都推）
+  2. **VM 能用好**：VM 依賴 Vercel 的東西（Blob / env / Vercel → VM flow），且非 push 不能驗證
+- **每次要 push 前，跟用戶確認**「這輪為什麼必須 push」
+- 文件 / memory 更新可直接 push（不觸發 Vercel build，cost 為 0）
+- 歷史教訓：2026-04-16 一週 Vercel build 燒 $43，同天 25 個 commit 全 push，每個觸發 build
+
+**派工時必須寫進 brief**：「不 commit、不 push，只改檔 + `npm run dev` 驗」。違反 = 退回。
 
 ### 5. React/runtime/router 改動要瀏覽器驗證
 
@@ -224,6 +253,40 @@ risks: [有什麼可能壞的]
 next best step: [你覺得下一步該做什麼]
 
 我反駁 Claude 的地方：[至少 1 點]
+```
+
+---
+
+## 多 LLM 協作用「Shared Doc Append 模式」（2026-04-16 確立）
+
+**禁止每個 task 開新 brief 檔 + 各自 log 檔 → 30+ 個小檔案亂竄**。
+
+**改用 round-based append**：
+
+- 每個討論主題 = 一個 shared doc（例：`docs/product/portfolio-dashboard-spec.md`）
+- 每個 agent 讀全檔（看前面 round）→ append 自己那 round 在後面
+- **不刪別人段落**，只 append 自己的
+- Round header 格式：`## Round N · Agent · YYYY-MM-DD HH:MM`
+
+**好處**：
+
+- 零 persistent session token（每次 Codex exec 還是一次性）
+- 累積知識存 disk、可 grep / diff / version
+- Claude / Codex / Qwen / Gemini 都用同一份文件對話
+- 歷史審計清楚
+
+**派工 brief 必寫**：
+
+- 「讀 Round 1 後 append Round 2 在同檔」
+- 「禁止開新檔、禁止改 Round 1 內容」
+- 「用 Edit 或 `cat >>` append」
+
+**範本**（`.tmp/<topic>/brief.md` 簡化成）：
+
+```
+讀 docs/<topic>.md 最後一個 `---` 之前的內容，
+在 `_待填_` placeholder 寫你的 Round N（同意/反駁/補充）。
+不另開新檔。
 ```
 
 ---

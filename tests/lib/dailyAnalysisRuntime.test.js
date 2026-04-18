@@ -10,6 +10,7 @@ import {
   calculatePredictionScores,
   extractDailyBrainUpdate,
   extractDailyEventAssessments,
+  extractTomorrowActionCard,
   stripDailyAnalysisEmbeddedBlocks,
   buildTaiwanMarketSignals,
   formatTaiwanMarketSignals,
@@ -204,6 +205,16 @@ describe('lib/dailyAnalysisRuntime', () => {
         status: 'confirmed',
         pendingCodes: [],
       },
+      ritualMode: {
+        mode: 'post-close',
+        label: '收盤後儀式模式',
+        triggerSource: 'manual',
+      },
+      tomorrowActionCard: {
+        title: '明日動作卡',
+        immediateActions: ['2330 站回月線才加碼'],
+        watchlist: ['3443 等法說後再看'],
+      },
     })
 
     expect(request.systemPrompt).toContain('這是盲測')
@@ -246,6 +257,12 @@ describe('lib/dailyAnalysisRuntime', () => {
         expectedMarketDate: '2026-03-28',
         status: 'confirmed',
       }),
+      ritualMode: expect.objectContaining({
+        label: '收盤後儀式模式',
+      }),
+      tomorrowActionCard: expect.objectContaining({
+        title: '明日動作卡',
+      }),
     })
   })
 
@@ -266,5 +283,35 @@ describe('lib/dailyAnalysisRuntime', () => {
       rules: [{ text: '法說前兩週布局' }],
     })
     expect(stripDailyAnalysisEmbeddedBlocks(mixedInsight)).toBe('## 今日總結\n先看評論')
+  })
+
+  it('extracts a tomorrow action card from the ritual section', () => {
+    const insight = `## 今日總結
+今晚先守紀律。
+
+## 🎯 明日觀察與操作建議
+明日立即執行
+1. 2330 若站回 5 日線，先補回 1/3；如果我錯了：量縮跌破今日低點。
+2. 2317 開高不追，等拉回再看。
+觀察清單
+- 3443 等法說後再決定是否加碼。
+- 2454 只觀察法人續買。`
+
+    expect(extractTomorrowActionCard(insight)).toEqual({
+      title: '明日動作卡',
+      summary: '',
+      immediateActions: [
+        '2330 若站回 5 日線，先補回 1/3；如果我錯了：量縮跌破今日低點。',
+        '2317 開高不追，等拉回再看。',
+      ],
+      watchlist: ['3443 等法說後再決定是否加碼。', '2454 只觀察法人續買。'],
+      notes: [],
+      sourceSection: `明日立即執行
+1. 2330 若站回 5 日線，先補回 1/3；如果我錯了：量縮跌破今日低點。
+2. 2317 開高不追，等拉回再看。
+觀察清單
+- 3443 等法說後再決定是否加碼。
+- 2454 只觀察法人續買。`,
+    })
   })
 })

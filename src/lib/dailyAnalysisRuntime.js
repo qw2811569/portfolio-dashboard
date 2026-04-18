@@ -656,6 +656,110 @@ export function calculatePredictionScores(blindPredictions = [], changes = []) {
   return { details, accuracy, correctCount, total: details.length, weightedScore }
 }
 
+function extractSectionBody(displayText = '', headingPattern) {
+  const rawText = String(displayText || '').trim()
+  if (!rawText) return ''
+  const match = rawText.match(headingPattern)
+  return String(match?.[1] || '').trim()
+}
+
+function normalizeTomorrowLine(value = '') {
+  return String(value || '')
+    .replace(/^[-*•]\s*/, '')
+    .replace(/^\d+\.\s*/, '')
+    .replace(/^[（(]?\d+[）)]\s*/, '')
+    .trim()
+}
+
+function appendTomorrowCardItem(target, line) {
+  const normalized = normalizeTomorrowLine(line)
+  if (!normalized) return
+  target.push(normalized)
+}
+
+export function extractTomorrowActionCard(displayText = '') {
+  const sectionBody = extractSectionBody(
+    displayText,
+    /##\s*(?:🎯\s*)?明日觀察與操作建議\s*([\s\S]*?)(?:\n##\s|\n#\s|$)/i
+  )
+  if (!sectionBody) return null
+
+  const immediateActions = []
+  const watchlist = []
+  const notes = []
+  let bucket = 'immediate'
+  let lastBucket = 'immediate'
+
+  for (const rawLine of sectionBody.split('\n')) {
+    const line = String(rawLine || '').trim()
+    if (!line) continue
+
+    if (/^明日立即執行/.test(line) || /^立即執行/.test(line)) {
+      bucket = 'immediate'
+      continue
+    }
+    if (/^觀察清單/.test(line) || /^觀察重點/.test(line) || /^等待條件/.test(line)) {
+      bucket = 'watch'
+      continue
+    }
+
+    const normalized = normalizeTomorrowLine(line)
+    if (!normalized) continue
+
+    if (normalized.includes('如果我錯了')) {
+      if (lastBucket === 'watch' && watchlist.length > 0) {
+        watchlist[watchlist.length - 1] = `${watchlist[watchlist.length - 1]}；${normalized}`
+        continue
+      }
+      if (immediateActions.length > 0) {
+        immediateActions[immediateActions.length - 1] = `${
+          immediateActions[immediateActions.length - 1]
+        }；${normalized}`
+        continue
+      }
+    }
+
+    const isListLine = /^[-*•]/.test(line) || /^\d+\./.test(line) || /^[（(]?\d+[）)]/.test(line)
+    if (isListLine) {
+      if (bucket === 'watch') {
+        appendTomorrowCardItem(watchlist, line)
+        lastBucket = 'watch'
+      } else {
+        appendTomorrowCardItem(immediateActions, line)
+        lastBucket = 'immediate'
+      }
+      continue
+    }
+
+    if (bucket === 'watch') {
+      appendTomorrowCardItem(watchlist, line)
+      lastBucket = 'watch'
+      continue
+    }
+
+    if (immediateActions.length < 3) {
+      appendTomorrowCardItem(immediateActions, line)
+      lastBucket = 'immediate'
+      continue
+    }
+
+    notes.push(normalized)
+  }
+
+  if (immediateActions.length === 0 && watchlist.length === 0 && notes.length === 0) {
+    return null
+  }
+
+  return {
+    title: '明日動作卡',
+    summary: notes[0] || '',
+    immediateActions: immediateActions.slice(0, 3),
+    watchlist: watchlist.slice(0, 3),
+    notes: notes.slice(0, 2),
+    sourceSection: sectionBody,
+  }
+}
+
 export function buildDailyReport({
   today = '',
   totalTodayPnl = 0,
@@ -676,6 +780,8 @@ export function buildDailyReport({
   analysisVersion = 1,
   rerunReason = null,
   finmindConfirmation = null,
+  ritualMode = null,
+  tomorrowActionCard = null,
 }) {
   return {
     id: Date.now(),
@@ -702,6 +808,9 @@ export function buildDailyReport({
     rerunReason: rerunReason || null,
     finmindConfirmation:
       finmindConfirmation && typeof finmindConfirmation === 'object' ? finmindConfirmation : null,
+    ritualMode: ritualMode && typeof ritualMode === 'object' ? ritualMode : null,
+    tomorrowActionCard:
+      tomorrowActionCard && typeof tomorrowActionCard === 'object' ? tomorrowActionCard : null,
   }
 }
 

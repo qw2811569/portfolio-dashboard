@@ -24,6 +24,7 @@ import {
   calculatePredictionScores,
   extractDailyBrainUpdate,
   extractDailyEventAssessments,
+  extractTomorrowActionCard,
   stripDailyAnalysisEmbeddedBlocks,
   buildTaiwanMarketSignals,
   formatTaiwanMarketSignals,
@@ -109,6 +110,19 @@ function buildAutoConfirmProbeKey(report = null) {
     1,
     Number(report?.analysisVersion) || 1
   )}`
+}
+
+function buildPostCloseRitualMode({
+  triggerSource = 'manual',
+  analysisStage = 't0-preliminary',
+} = {}) {
+  return {
+    mode: 'post-close',
+    label: '收盤後儀式模式',
+    triggerSource,
+    status: analysisStage === 't1-confirmed' ? 'confirmed-rerun' : 'primary-pass',
+    checklist: ['同步收盤價', '回看今日偏差', '排定明日動作'],
+  }
 }
 
 export function useDailyAnalysisWorkflow({
@@ -236,6 +250,7 @@ export function useDailyAnalysisWorkflow({
           ? (existingTodayReport.analysisVersion || 1) + 1
           : 1
         let rerunReason = existingTodayReport ? 'manual-rerun' : null
+        let ritualMode = buildPostCloseRitualMode({ triggerSource, analysisStage })
 
         try {
           let promptDossierByCode = dossierByCode
@@ -286,6 +301,7 @@ export function useDailyAnalysisWorkflow({
                 ? 'finmind-auto-confirmed'
                 : 'finmind-confirmed'
               : 'manual-rerun'
+          ritualMode = buildPostCloseRitualMode({ triggerSource, analysisStage })
 
           // Calculate FinMind data count across all dossiers
           finmindDataCount = dailyDossiers.reduce((sum, dossier) => {
@@ -605,6 +621,7 @@ ${losers
             analysisVersion,
             rerunReason,
             finmindConfirmation,
+            ritualMode,
           }
           const taiwanMarketSignals = buildTaiwanMarketSignals({
             holdings,
@@ -678,13 +695,15 @@ ${losers
               setAnalyzeStep(APP_STATUS_MESSAGES.dailyAiStreaming)
             },
             onDelta: (fullText) => {
+              const previewInsight = stripDailyAnalysisEmbeddedBlocks(fullText)
               setDailyReport(
                 normalizeDailyReportEntry({
                   ...streamPreviewBase,
-                  aiInsight: stripDailyAnalysisEmbeddedBlocks(fullText),
+                  aiInsight: previewInsight,
                   aiError: null,
                   eventAssessments: [],
                   brainAudit: null,
+                  tomorrowActionCard: extractTomorrowActionCard(previewInsight),
                 })
               )
             },
@@ -737,6 +756,7 @@ ${losers
         }
 
         const predictionScores = calculatePredictionScores(blindPredictions, changes)
+        const tomorrowActionCard = extractTomorrowActionCard(aiInsight)
         const report = buildDailyReport({
           today,
           totalTodayPnl,
@@ -757,6 +777,8 @@ ${losers
           analysisVersion,
           rerunReason,
           finmindConfirmation,
+          ritualMode,
+          tomorrowActionCard,
         })
 
         setDailyReport(normalizeDailyReportEntry(report))

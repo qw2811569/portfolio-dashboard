@@ -34,7 +34,11 @@ describe('hooks/usePostCloseSilentSync.js', () => {
     })
 
     await waitFor(() => {
-      expect(syncPostClosePrices).toHaveBeenCalledWith({ silent: true })
+      expect(syncPostClosePrices).toHaveBeenCalledWith({
+        silent: true,
+        ritualMode: 'post-close',
+        reason: 'post-close-ritual',
+      })
     })
 
     rerender({
@@ -48,5 +52,41 @@ describe('hooks/usePostCloseSilentSync.js', () => {
     await waitFor(() => {
       expect(syncPostClosePrices).toHaveBeenCalledTimes(2)
     })
+  })
+
+  it('does not rerun the same post-close ritual twice on the same day', async () => {
+    const syncPostClosePrices = vi.fn().mockResolvedValue(undefined)
+
+    const { rerender } = renderHook((props) => usePostCloseSilentSync(props), {
+      initialProps: {
+        ready: true,
+        viewMode: 'portfolio',
+        portfolioViewMode: 'portfolio',
+        activePortfolioId: 'me',
+        syncPostClosePrices,
+      },
+    })
+
+    await waitFor(() => {
+      expect(syncPostClosePrices).toHaveBeenCalledTimes(1)
+    })
+
+    rerender({
+      ready: false,
+      viewMode: 'portfolio',
+      portfolioViewMode: 'portfolio',
+      activePortfolioId: 'me',
+      syncPostClosePrices,
+    })
+    rerender({
+      ready: true,
+      viewMode: 'portfolio',
+      portfolioViewMode: 'portfolio',
+      activePortfolioId: 'me',
+      syncPostClosePrices,
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(syncPostClosePrices).toHaveBeenCalledTimes(1)
   })
 })

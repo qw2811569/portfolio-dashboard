@@ -409,4 +409,80 @@ describe('hooks/usePortfolioPersistence.js', () => {
       expect.any(Number)
     )
   })
+
+  it('rejects oversized backup files before schemaVersion validation runs', async () => {
+    const requestConfirmation = vi.fn(async () => true)
+    const flashSaved = vi.fn()
+    const setPortfolios = vi.fn()
+    const applyPortfolioSnapshot = vi.fn()
+
+    const { result } = renderHook(() =>
+      useLocalBackupWorkflow({
+        portfolios: [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+        requestConfirmation,
+        flashSaved,
+        setPortfolios,
+        applyPortfolioSnapshot,
+      })
+    )
+
+    const oversizedBackup = new File(['x'.repeat(2 * 1024 * 1024 + 64)], 'oversized-backup.json', {
+      type: 'application/json',
+    })
+
+    await act(async () => {
+      await result.current.importLocalBackup({
+        target: {
+          files: [oversizedBackup],
+          value: 'picked',
+        },
+      })
+    })
+
+    expect(requestConfirmation).not.toHaveBeenCalled()
+    expect(setPortfolios).not.toHaveBeenCalled()
+    expect(applyPortfolioSnapshot).not.toHaveBeenCalled()
+    expect(flashSaved).toHaveBeenCalledWith(
+      expect.stringContaining('備份檔過大'),
+      expect.any(Number)
+    )
+  })
+
+  it('rejects corrupt backup JSON without mutating runtime state', async () => {
+    const requestConfirmation = vi.fn(async () => true)
+    const flashSaved = vi.fn()
+    const setPortfolios = vi.fn()
+    const applyPortfolioSnapshot = vi.fn()
+
+    const { result } = renderHook(() =>
+      useLocalBackupWorkflow({
+        portfolios: [{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-01' }],
+        requestConfirmation,
+        flashSaved,
+        setPortfolios,
+        applyPortfolioSnapshot,
+      })
+    )
+
+    const corruptBackup = new File(['{"storage": invalid-json'], 'corrupt-backup.json', {
+      type: 'application/json',
+    })
+
+    await act(async () => {
+      await result.current.importLocalBackup({
+        target: {
+          files: [corruptBackup],
+          value: 'picked',
+        },
+      })
+    })
+
+    expect(requestConfirmation).toHaveBeenCalledTimes(1)
+    expect(setPortfolios).not.toHaveBeenCalled()
+    expect(applyPortfolioSnapshot).not.toHaveBeenCalled()
+    expect(flashSaved).toHaveBeenCalledWith(
+      expect.stringContaining('JSON 格式不正確'),
+      expect.any(Number)
+    )
+  })
 })

@@ -29,6 +29,12 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
               text: `## 今日總結
 今天先看事件消化節奏。
 
+## 🎯 明日觀察與操作建議
+明日立即執行
+1. 2330 站回 5 日線再補回 1/3；如果我錯了：量縮跌破今日低點。
+觀察清單
+- 法說前不追價。
+
 ## 🧬 BRAIN_UPDATE
 \`\`\`json
 {"candidateRules":[{"text":"事件後量縮先減碼","when":"事件後量縮","action":"減碼1/3","confidence":7,"evidenceRefs":[{"type":"analysis","label":"今日收盤"}],"status":"candidate"}],"lessons":[{"date":"2026/04/02","text":"事件後別追價"}]}
@@ -53,6 +59,7 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
     const buildDailyHoldingDossierContext = vi.fn((dossier) =>
       dossier?.finmind?.revenue?.length ? 'finmind=ready' : 'finmind=missing'
     )
+    const setDailyReport = vi.fn()
     const setStrategyBrain = vi.fn()
     const mergeBrainWithAuditLifecycle = vi.fn((rawBrain) => ({
       rules: rawBrain.rules || [],
@@ -83,7 +90,13 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         newsEvents: [],
         defaultNewsEvents: [],
         analysisHistory: [],
-        strategyBrain: { rules: [], candidateRules: [], lessons: [], commonMistakes: [], stats: {} },
+        strategyBrain: {
+          rules: [],
+          candidateRules: [],
+          lessons: [],
+          commonMistakes: [],
+          stats: {},
+        },
         portfolioNotes: {},
         reversalConditions: {},
         reportRefreshMeta: {},
@@ -109,7 +122,7 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         ]),
         fetchStockDossierData,
         getMarketQuotesForCodes: async () => ({
-          '2330': { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
+          2330: { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
         }),
         resolveHoldingPrice: (holding) => holding.price,
         getHoldingUnrealizedPnl: (holding) => holding.pnl,
@@ -128,7 +141,7 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         normalizeHoldings: (rows) => rows,
         isClosedEvent: () => false,
         toSlashDate: () => '2026/04/02',
-        setDailyReport: vi.fn(),
+        setDailyReport,
         setAnalysisHistory: vi.fn(),
         setStrategyBrain,
         setBrainValidation: vi.fn(),
@@ -167,6 +180,24 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         candidateRules: [expect.objectContaining({ text: '事件後量縮先減碼' })],
       })
     )
+    const finalReport = setDailyReport.mock.calls.at(-1)[0]
+    expect(finalReport).toMatchObject({
+      ritualMode: expect.objectContaining({
+        label: '收盤後儀式模式',
+        triggerSource: 'manual',
+      }),
+      tomorrowActionCard: {
+        title: '明日動作卡',
+        summary: '',
+        immediateActions: ['2330 站回 5 日線再補回 1/3；如果我錯了：量縮跌破今日低點。'],
+        watchlist: ['法說前不追價。'],
+        notes: [],
+        sourceSection: `明日立即執行
+1. 2330 站回 5 日線再補回 1/3；如果我錯了：量縮跌破今日低點。
+觀察清單
+- 法說前不追價。`,
+      },
+    })
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
@@ -200,10 +231,15 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
     const fetchStockDossierData = vi.fn(async () => ({
       institutional: [{ date: '2026-04-11', foreign: 120, investment: 10 }],
       valuation: [{ date: '2026-04-11', per: 18.2, pbr: 3.1 }],
-      margin: [{ date: '2026-04-11', marginBalance: 1200 }, { date: '2026-04-10', marginBalance: 1180 }],
+      margin: [
+        { date: '2026-04-11', marginBalance: 1200 },
+        { date: '2026-04-10', marginBalance: 1180 },
+      ],
       revenue: [{ revenueMonth: '2026/03', revenueYoY: 12, revenueMoM: 3 }],
       balanceSheet: [{ date: '2025-12-31', totalAssets: 120000, totalLiabilities: 52000 }],
-      cashFlow: [{ date: '2025-12-31', operatingCF: 18000, investingCF: -3200, financingCF: -1400 }],
+      cashFlow: [
+        { date: '2025-12-31', operatingCF: 18000, investingCF: -3200, financingCF: -1400 },
+      ],
       shareholding: [
         { date: '2026-04-11', foreignShareRatio: 61.5 },
         { date: '2026-04-10', foreignShareRatio: 61.1 },
@@ -248,7 +284,13 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         newsEvents: [],
         defaultNewsEvents: [],
         analysisHistory: [existingTodayReport],
-        strategyBrain: { rules: [], candidateRules: [], lessons: [], commonMistakes: [], stats: {} },
+        strategyBrain: {
+          rules: [],
+          candidateRules: [],
+          lessons: [],
+          commonMistakes: [],
+          stats: {},
+        },
         portfolioNotes: {},
         reversalConditions: {},
         reportRefreshMeta: {},
@@ -274,7 +316,7 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         ]),
         fetchStockDossierData,
         getMarketQuotesForCodes: async () => ({
-          '2330': { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
+          2330: { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
         }),
         resolveHoldingPrice: (holding) => holding.price,
         getHoldingUnrealizedPnl: (holding) => holding.pnl,
@@ -316,6 +358,10 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
       analysisStageLabel: '資料確認版',
       analysisVersion: 2,
       rerunReason: 'finmind-confirmed',
+      ritualMode: expect.objectContaining({
+        triggerSource: 'manual',
+        status: 'confirmed-rerun',
+      }),
       finmindConfirmation: expect.objectContaining({
         expectedMarketDate: '2026-04-11',
         status: 'confirmed',
@@ -411,7 +457,13 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         newsEvents: [],
         defaultNewsEvents: [],
         analysisHistory: [existingTodayReport],
-        strategyBrain: { rules: [], candidateRules: [], lessons: [], commonMistakes: [], stats: {} },
+        strategyBrain: {
+          rules: [],
+          candidateRules: [],
+          lessons: [],
+          commonMistakes: [],
+          stats: {},
+        },
         portfolioNotes: {},
         reversalConditions: {},
         reportRefreshMeta: {},
@@ -437,7 +489,7 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         ]),
         fetchStockDossierData,
         getMarketQuotesForCodes: async () => ({
-          '2330': { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
+          2330: { price: 950, yesterday: 940, change: 10, changePct: 1.06 },
         }),
         resolveHoldingPrice: (holding) => holding.price,
         getHoldingUnrealizedPnl: (holding) => holding.pnl,
@@ -482,6 +534,10 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
       analysisStage: 't1-confirmed',
       analysisVersion: 2,
       rerunReason: 'finmind-auto-confirmed',
+      ritualMode: expect.objectContaining({
+        triggerSource: 'auto-confirm',
+        status: 'confirmed-rerun',
+      }),
     })
   })
 
@@ -518,7 +574,13 @@ describe('hooks/useDailyAnalysisWorkflow.js', () => {
         newsEvents: [],
         defaultNewsEvents: [],
         analysisHistory: [existingTodayReport],
-        strategyBrain: { rules: [], candidateRules: [], lessons: [], commonMistakes: [], stats: {} },
+        strategyBrain: {
+          rules: [],
+          candidateRules: [],
+          lessons: [],
+          commonMistakes: [],
+          stats: {},
+        },
         portfolioNotes: {},
         reversalConditions: {},
         reportRefreshMeta: {},

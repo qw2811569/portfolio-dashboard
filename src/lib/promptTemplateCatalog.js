@@ -177,6 +177,8 @@ ${JSON.stringify(currentBrain)}
 }
 
 export function buildWeeklyReportTemplate({
+  portfolioName = '主組合',
+  complianceMode = 'retail',
   today,
   holdings = [],
   watchlist = [],
@@ -197,6 +199,7 @@ export function buildWeeklyReportTemplate({
   const pendingEvents = newsEvents.filter((event) => !isClosedEvent(event))
   const hits = pastEvents.filter((event) => event.correct === true).length
   const total = pastEvents.filter((event) => event.correct !== null).length
+  const latestAnalysis = analysisHistory[0] || null
 
   const holdingLines = holdings
     .map((holding) =>
@@ -229,11 +232,46 @@ export function buildWeeklyReportTemplate({
     .join('\n')
 
   const brainSection = buildWeeklyReportBrainSection(strategyBrain, brainRuleSummary)
+  const narrativeLines = [
+    totalPnl > 0
+      ? '本週組合延續正報酬，主敘事應聚焦哪些持股已經把優勢守成、哪些只是被動跟漲。'
+      : totalPnl < 0
+        ? '本週組合承壓，narrative 需要先講清楚哪些 thesis 被市場推翻、哪些只是節奏延後。'
+        : '本週組合大致持平，narrative 重點是確認市場並沒有默默改寫原本的交易前提。',
+    total > 0
+      ? `事件驗證目前累積 ${hits}/${total} 命中，這會直接影響下週催化劑的優先順序。`
+      : '目前還沒有足夠的事件驗證樣本，下週不要把未驗證事件寫成既定利多。',
+    pendingEvents.length > 0
+      ? `下週先追蹤 ${pendingEvents
+          .slice(0, 2)
+          .map((event) => event.title)
+          .filter(Boolean)
+          .join('、')}，確認它們是在延續 thesis 還是在拖累節奏。`
+      : '目前沒有待結案事件，下週可把篇幅留給持倉強弱與部位紀律。',
+    latestAnalysis?.aiInsight
+      ? `最近一次收盤分析的主線是：${latestAnalysis.aiInsight.slice(0, 90)}${
+          latestAnalysis.aiInsight.length > 90 ? '...' : ''
+        }`
+      : '最近沒有可引用的收盤分析摘要，請用持倉 / 事件 / 規則三段式重建週報主線。',
+  ]
+  const insiderSection =
+    complianceMode === 'insider'
+      ? `
+## Insider Compliance Notes
+- compliance_mode: insider
+- 本章只保留事實摘要、風險揭露與待驗證事件，不提供買進 / 賣出 / 加碼 / 減碼指令。
+- 對外分享前需再次確認 recipient、privacy、residency 與 audit 留痕是否符合內部規範。
+`
+      : ''
 
   return `# 持倉看板週報素材
+組合：${portfolioName}
 生成日期：${today}
 總成本：${totalCost.toLocaleString()} | 總市值：${totalVal.toLocaleString()} | 損益：${formatSignedPrefix(totalPnl)}${totalPnl.toLocaleString()}（${formatSignedPrefix(retPct)}${retPct.toFixed(2)}%）
 持股數：${holdings.length} 檔 | 事件預測命中率：${total > 0 ? `${Math.round((hits / total) * 100)}%（${hits}/${total}）` : '尚無數據'}
+
+## Weekly Narrative
+${narrativeLines.map((line, index) => `${index + 1}. ${line}`).join('\n')}
 
 ## 持倉明細
 ${holdingLines}
@@ -248,6 +286,7 @@ ${eventLines || '無'}
 待處理（${pendingEvents.length} 筆）：
 ${pendingLines || '無'}
 ${brainSection}
+${insiderSection}
 
 ## 近 7 日收盤分析
 ${recentAnalyses || '尚無分析紀錄'}

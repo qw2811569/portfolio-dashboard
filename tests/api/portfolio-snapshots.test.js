@@ -132,6 +132,40 @@ describe('api/_lib/portfolio-snapshots', () => {
     expect(snapshots).toEqual([expect.objectContaining({ schemaVersion: 1, date: '2026-04-10' })])
   })
 
+  it('normalizes schemaVersion drift and invalid numerics on write', async () => {
+    const { writePortfolioSnapshot } = await import('../../api/_lib/portfolio-snapshots.js')
+
+    await writePortfolioSnapshot('me', {
+      schemaVersion: 'drifted',
+      date: '2026-04-16',
+      totalValue: 'bad-number',
+      totalCost: '90',
+      holdingsCount: '2.8',
+    })
+
+    const payload = JSON.parse(put.mock.calls.at(-1)[1])
+    expect(payload).toMatchObject({
+      schemaVersion: 1,
+      date: '2026-04-16',
+      totalValue: 0,
+      totalCost: 90,
+      holdingsCount: 2,
+    })
+  })
+
+  it('throws on corrupt snapshot payloads without an ISO date', async () => {
+    const { normalizePortfolioSnapshot } = await import('../../api/_lib/portfolio-snapshots.js')
+
+    expect(() =>
+      normalizePortfolioSnapshot({
+        schemaVersion: 1,
+        totalValue: 100,
+        totalCost: 90,
+        holdingsCount: 1,
+      })
+    ).toThrow('snapshot.date must be YYYY-MM-DD')
+  })
+
   it('reads a snapshot range and forward-fills missing dates', async () => {
     const { readPortfolioSnapshots } = await import('../../api/_lib/portfolio-snapshots.js')
 

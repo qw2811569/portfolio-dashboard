@@ -246,12 +246,11 @@ export function useLocalBackupWorkflow({
         )
       } catch (error) {
         console.error('匯入備份失敗:', error)
-        flashSaved(
-          APP_TOAST_MESSAGES.backupImportFailed(
-            error?.message || APP_ERROR_MESSAGES.backupInvalidJson
-          ),
-          STATUS_MESSAGE_TIMEOUT_MS.LONG
-        )
+        const detail =
+          error instanceof SyntaxError
+            ? APP_ERROR_MESSAGES.backupInvalidJson
+            : error?.message || APP_ERROR_MESSAGES.backupInvalidJson
+        flashSaved(APP_TOAST_MESSAGES.backupImportFailed(detail), STATUS_MESSAGE_TIMEOUT_MS.LONG)
       } finally {
         portfolioTransitionRef.current = {
           isHydrating: false,

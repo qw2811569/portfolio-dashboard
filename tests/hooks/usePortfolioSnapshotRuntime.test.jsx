@@ -180,4 +180,95 @@ describe('hooks/usePortfolioSnapshotRuntime.js', () => {
     expect(save).toHaveBeenCalledWith('pf-active-portfolio-v1', 'me')
     expect(save).toHaveBeenCalledWith('pf-view-mode-v1', 'portfolio')
   })
+
+  it('absorbs schema-drifted snapshot payloads through the provided normalizers', () => {
+    const setFundamentals = vi.fn()
+    const setWatchlist = vi.fn()
+    const setAnalysisHistory = vi.fn()
+    const setDailyReport = vi.fn()
+
+    const { result } = renderHook(() =>
+      usePortfolioSnapshotRuntime({
+        ready: true,
+        marketPriceCache: { prices: {} },
+        cloudSyncStateRef: { current: { enabled: false, syncedAt: 0 } },
+        portfolioSetterRef: { current: { setActivePortfolioId: vi.fn(), setViewMode: vi.fn() } },
+        setCloudSync: vi.fn(),
+        holdings: null,
+        tradeLog: null,
+        targets: null,
+        fundamentals: null,
+        watchlist: null,
+        analystReports: null,
+        reportRefreshMeta: null,
+        holdingDossiers: null,
+        newsEvents: null,
+        analysisHistory: null,
+        dailyReport: null,
+        reversalConditions: null,
+        strategyBrain: null,
+        brainValidation: null,
+        researchHistory: null,
+        portfolioNotes: null,
+        setHoldings: vi.fn(),
+        setTradeLog: vi.fn(),
+        setTargets: vi.fn(),
+        setFundamentals,
+        setWatchlist,
+        setAnalystReports: vi.fn(),
+        setReportRefreshMeta: vi.fn(),
+        setHoldingDossiers: vi.fn(),
+        setNewsEvents: vi.fn(),
+        setAnalysisHistory,
+        setReversalConditions: vi.fn(),
+        setStrategyBrain: vi.fn(),
+        setBrainValidation: vi.fn(),
+        setResearchHistory: vi.fn(),
+        setPortfolioNotes: vi.fn(),
+        setDailyReport,
+        normalizeAnalysisHistoryEntries: () => [],
+        applyMarketQuotesToHoldings: (rows) => rows || [],
+        normalizeFundamentalsStore: () => ({ repaired: true }),
+        normalizeWatchlist: () => [],
+        normalizeAnalystReportsStore: (value) => value,
+        normalizeReportRefreshMeta: (value) => value,
+        normalizeHoldingDossiers: (value) => value,
+        normalizeNewsEvents: (value) => value,
+        normalizeStrategyBrain: (value) => value,
+        normalizeBrainValidationStore: (value) => value,
+        normalizeDailyReportEntry: () => null,
+        clonePortfolioNotes: () => ({ summary: '' }),
+        loadPortfolioSnapshot: vi.fn(),
+        readSyncAt: vi.fn(() => 0),
+        save: vi.fn(),
+        savePortfolioData: vi.fn(),
+      })
+    )
+
+    act(() => {
+      result.current.applyPortfolioSnapshot({
+        holdings: [],
+        tradeLog: [],
+        targets: {},
+        fundamentals: 'schema-drift',
+        watchlist: 'schema-drift',
+        analystReports: {},
+        reportRefreshMeta: {},
+        holdingDossiers: {},
+        newsEvents: [],
+        analysisHistory: 'schema-drift',
+        dailyReport: { broken: true },
+        reversalConditions: {},
+        strategyBrain: {},
+        brainValidation: {},
+        researchHistory: [],
+        portfolioNotes: {},
+      })
+    })
+
+    expect(setFundamentals).toHaveBeenCalledWith({ repaired: true })
+    expect(setWatchlist).toHaveBeenCalledWith([])
+    expect(setAnalysisHistory).toHaveBeenCalledWith([])
+    expect(setDailyReport).toHaveBeenCalledWith(null)
+  })
 })

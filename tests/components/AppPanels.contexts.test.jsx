@@ -838,6 +838,96 @@ describe('components/AppPanels context wiring', () => {
     expect(screen.getByText('收合差異')).toBeInTheDocument()
   })
 
+  it('surfaces post-close ritual mode and the tomorrow-action card on the daily panel', () => {
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="daily"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            morningNote: null,
+            dailyReport: {
+              id: 'daily-ritual',
+              date: '2026/04/11',
+              time: '18:40',
+              totalTodayPnl: 28,
+              changes: [],
+              anomalies: [],
+              eventCorrelations: [],
+              eventAssessments: [],
+              needsReview: [],
+              aiInsight: '今晚重點先收斂成明日動作卡。',
+              analysisStage: 't1-confirmed',
+              analysisStageLabel: '資料確認版',
+              analysisVersion: 2,
+              finmindDataCount: 12,
+              ritualMode: {
+                mode: 'post-close',
+                label: '收盤後儀式模式',
+                triggerSource: 'manual',
+              },
+              tomorrowActionCard: {
+                title: '明日動作卡',
+                immediateActions: ['2330 站回 5 日線再補回 1/3。'],
+                watchlist: ['3443 等法說後再決定是否加碼。'],
+                notes: [],
+              },
+            },
+            analysisHistory: [],
+            analyzing: false,
+            analyzeStep: '',
+            stressResult: null,
+            stressTesting: false,
+            dailyExpanded: false,
+            newsEvents: [],
+            expandedStock: null,
+            strategyBrain: {},
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {
+            setDailyExpanded: vi.fn(),
+            runDailyAnalysis: vi.fn(),
+            runStressTest: vi.fn(),
+            closeStressResult: vi.fn(),
+            setTab: vi.fn(),
+            setExpandedNews: vi.fn(),
+            setExpandedStock: vi.fn(),
+          },
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(screen.getByText('收盤後儀式模式')).toBeInTheDocument()
+    expect(screen.getByText('明日立即執行')).toBeInTheDocument()
+    expect(screen.getByText(/2330 站回 5 日線再補回 1\/3/)).toBeInTheDocument()
+    expect(screen.getByText('週報匯出內容')).toBeInTheDocument()
+    expect(screen.getByText(/Weekly Narrative/i)).toBeInTheDocument()
+    expect(screen.getByText(/insider compliance notes/i)).toBeInTheDocument()
+  })
+
   it('hides the same-day diff card when only one report version exists', () => {
     renderWithPanelContexts(
       <AppPanels

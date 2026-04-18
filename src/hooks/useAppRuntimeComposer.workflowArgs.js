@@ -185,6 +185,8 @@ export function composeEventReviewWorkflowArgs({
 }
 
 export function composeWeeklyReportClipboardArgs({
+  activePortfolioId,
+  portfolios,
   holdings,
   watchlist,
   analysisHistory,
@@ -202,6 +204,8 @@ export function composeWeeklyReportClipboardArgs({
   flashSaved,
 }) {
   return {
+    activePortfolioId,
+    portfolios,
     holdings,
     watchlist,
     analysisHistory,

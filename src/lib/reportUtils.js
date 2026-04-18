@@ -9,6 +9,44 @@ function toSlashDate(date = new Date()) {
   return `${year}/${month}/${day}`
 }
 
+function normalizeRitualMode(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return {
+    ...value,
+    mode: String(value.mode || '').trim() || 'post-close',
+    label: String(value.label || '').trim() || '收盤後儀式模式',
+    triggerSource: String(value.triggerSource || '').trim() || 'manual',
+  }
+}
+
+function normalizeTomorrowActionCard(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return {
+    ...value,
+    title: String(value.title || '').trim() || '明日動作卡',
+    summary: String(value.summary || '').trim(),
+    immediateActions: Array.isArray(value.immediateActions)
+      ? value.immediateActions
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+          .slice(0, 3)
+      : [],
+    watchlist: Array.isArray(value.watchlist)
+      ? value.watchlist
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+          .slice(0, 3)
+      : [],
+    notes: Array.isArray(value.notes)
+      ? value.notes
+          .map((item) => String(item || '').trim())
+          .filter(Boolean)
+          .slice(0, 2)
+      : [],
+    sourceSection: String(value.sourceSection || '').trim(),
+  }
+}
+
 export function normalizeDailyReportEntry(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return value
   const analysisStage = ['t0-preliminary', 't1-confirmed', 'legacy'].includes(value.analysisStage)
@@ -36,6 +74,8 @@ export function normalizeDailyReportEntry(value) {
       value.finmindConfirmation && typeof value.finmindConfirmation === 'object'
         ? value.finmindConfirmation
         : null,
+    ritualMode: normalizeRitualMode(value.ritualMode),
+    tomorrowActionCard: normalizeTomorrowActionCard(value.tomorrowActionCard),
   }
 }
 

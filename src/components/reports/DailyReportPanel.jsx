@@ -474,6 +474,122 @@ export function AnalysisStageCard({ report }) {
   )
 }
 
+export function RitualModeCard({ report }) {
+  const ritualMode = report?.ritualMode
+  const card = report?.tomorrowActionCard
+  if (!ritualMode && !card) return null
+
+  const immediateActions = Array.isArray(card?.immediateActions) ? card.immediateActions : []
+  const watchlist = Array.isArray(card?.watchlist) ? card.watchlist : []
+  const notes = Array.isArray(card?.notes) ? card.notes : []
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.olive, '40')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 6,
+        },
+      },
+      h('div', { style: { ...lbl, color: C.olive } }, ritualMode?.label || '收盤後儀式模式'),
+      h(Badge, { color: 'olive' }, card?.title || '明日動作卡')
+    ),
+    h(
+      'div',
+      { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } },
+      '流程固定為：同步收盤價 -> 回看今日偏差 -> 排定明日動作，避免隔天開盤前又重新猜一次。'
+    ),
+    immediateActions.length > 0 &&
+      h(
+        'div',
+        { style: { marginBottom: watchlist.length > 0 || notes.length > 0 ? 8 : 0 } },
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '明日立即執行'
+        ),
+        immediateActions.map((item, index) =>
+          h(
+            'div',
+            {
+              key: `ritual-immediate-${index}`,
+              style: {
+                fontSize: 10,
+                color: C.text,
+                lineHeight: 1.7,
+                padding: '3px 0',
+              },
+            },
+            `${index + 1}. ${item}`
+          )
+        )
+      ),
+    watchlist.length > 0 &&
+      h(
+        'div',
+        { style: { marginBottom: notes.length > 0 ? 8 : 0 } },
+        h(
+          'div',
+          { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+          '觀察清單'
+        ),
+        watchlist.map((item, index) =>
+          h(
+            'div',
+            {
+              key: `ritual-watch-${index}`,
+              style: {
+                fontSize: 10,
+                color: C.text,
+                lineHeight: 1.7,
+                padding: '3px 0',
+              },
+            },
+            `- ${item}`
+          )
+        )
+      ),
+    (card?.summary || notes.length > 0) &&
+      h(
+        'div',
+        { style: { fontSize: 9, color: C.textMute, lineHeight: 1.7 } },
+        card?.summary || notes.join(' / ')
+      )
+  )
+}
+
+export function WeeklyExportNarrativeCard({ report }) {
+  if (!report) return null
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.blue } }, '週報匯出內容'),
+    h(
+      'div',
+      { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } },
+      '從 header 複製到 clipboard 的週報素材，現在會附帶 Weekly Narrative；若組合處於 insider 合規模式，也會自動加上 insider compliance notes。'
+    )
+  )
+}
+
 function DiffValue({ value, format = 'text' }) {
   if (format === 'markdown') {
     return h(
@@ -1582,8 +1698,10 @@ export function DailyReportPanel({
           }),
 
         h(AnalysisStageCard, { report: dailyReport }),
+        h(RitualModeCard, { report: dailyReport }),
         isPreliminaryReport && !analyzing && h(AutoConfirmCard, { state: autoConfirmState }),
         h(SameDayDiffCard, { report: dailyReport, analysisHistory }),
+        h(WeeklyExportNarrativeCard, { report: dailyReport }),
 
         h(DailyReportSummary, {
           report: dailyReport,

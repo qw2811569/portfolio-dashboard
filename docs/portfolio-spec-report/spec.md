@@ -671,3 +671,16 @@
 - `Q09`：新增 `tests/lib/accuracyGateEnforcement.test.js`，會用 `file:line` 報漏 gate 的 prompt builder；順手把 `api/parse.js` / `api/research-extract.js` 也補進 `Accuracy Gate`。
 - `T14/T15`：同日 staged close-analysis / diff / rerun cues 既有路徑在本輪修改後維持綠燈，未回退。
 - final verify：`15/15` targeted test files passed、`76/76` tests passed、`npm run build` passed；`security / insider / Accuracy Gate` 三條 grep 全過。
+
+## Round 126 · Codex · L5-L7 sixth wave · 2026-04-18 21:53:01 CST
+
+- `T04`：`usePostCloseSilentSync` 改成 per-portfolio / per-day ritual sync；daily report 新增 `ritualMode` + `tomorrowActionCard`，`DailyReportPanel` 直接顯示 `收盤後儀式模式` 與明日動作卡。
+- `T22`：weekly clipboard export 接上 active portfolio compliance mode，新增 `Weekly Narrative`，insider 組合會附 `Insider Compliance Notes`。
+- `T72a`：新增 `docs/release/internal-beta-checklist.md`，收口 disclaimer / privacy / residency / audit pack 與 blocked manual gates。
+- `Q05`：新增 `docs/runbooks/rbac-manual-verification.md`，列出 admin / user / 403 / per-portfolio manual evidence checklist。
+- `Q07`：新增 `docs/qa/accessibility-checklist.md` + `tests/components/accessibilitySmoke.test.jsx`，把 keyboard / contrast / screen reader smoke pack 落成可執行 artifact。
+- `Q12`：backup / snapshot 測試補齊 corrupt / oversized / schema-drift boundary；`useLocalBackupWorkflow` 對 corrupt JSON 改回 canonical `backupInvalidJson` copy。
+- manual blocked：
+  - `T64` restore drill / rollback / MDD recovery → blocked (`M-U2`)
+  - `Q06` real iOS Safari cross-browser matrix → blocked (`M-U3`)
+- final verify：T04 targeted vitest PASS、Q12 targeted vitest PASS、T22/T72a/Q05/Q07 grep PASS、shared `npm run build` PASS。

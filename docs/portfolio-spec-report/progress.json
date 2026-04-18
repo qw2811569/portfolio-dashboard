@@ -1,5 +1,5 @@
 {
-  "lastUpdatedAt": "2026-04-18T13:32:56.620Z",
+  "lastUpdatedAt": "2026-04-18T13:52:41.090Z",
   "totalItems": 89,
   "totalEstHours": 485,
   "trackedEstHours": 597,
@@ -8,9 +8,9 @@
       "track": "shipBefore",
       "label": "Ship-Before",
       "total": 30,
-      "done": 22,
+      "done": 25,
       "totalEstHours": 193,
-      "doneEstHours": 148
+      "doneEstHours": 173
     },
     "beta1": {
       "track": "beta1",
@@ -32,9 +32,9 @@
       "track": "qa",
       "label": "QA Supplement",
       "total": 12,
-      "done": 2,
+      "done": 5,
       "totalEstHours": 80,
-      "doneEstHours": 10
+      "doneEstHours": 26
     },
     "ops": {
       "track": "ops",
@@ -45,12 +45,12 @@
       "doneEstHours": 0
     }
   },
-  "completionPct": 76.68393782383419,
-  "fullProductCompletionPct": 38.76288659793815,
-  "trackedCompletionPct": 33.165829145728644,
-  "etaDaysToShipBefore": 6,
-  "etaDaysToFullProduct": 38,
-  "etaDaysToAllTracked": 50,
+  "completionPct": 89.63730569948186,
+  "fullProductCompletionPct": 43.91752577319588,
+  "trackedCompletionPct": 40.03350083752093,
+  "etaDaysToShipBefore": 3,
+  "etaDaysToFullProduct": 34,
+  "etaDaysToAllTracked": 45,
   "velocityHoursPerDay": 8,
   "items": [
     {
@@ -76,8 +76,8 @@
       "title": "Add post-close ritual mode + tomorrow-action editorial card",
       "track": "shipBefore",
       "estH": 8,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:51:59.295Z",
       "sortOrder": 3
     },
     {
@@ -85,8 +85,8 @@
       "title": "Deliver weekly export narrative + insider section; true PDF/cover later",
       "track": "shipBefore",
       "estH": 12,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:52:07.429Z",
       "sortOrder": 4
     },
     {
@@ -301,8 +301,8 @@
       "title": "Finish internal-beta minimal legal/docs pack: disclaimer, privacy-lite, data residency, audit schema, release checklist",
       "track": "shipBefore",
       "estH": 5,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:52:17.084Z",
       "sortOrder": 28
     },
     {
@@ -715,8 +715,8 @@
       "title": "RBAC manual verification script with 5 persona scenarios + evidence checklist",
       "track": "qa",
       "estH": 4,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:52:23.455Z",
       "sortOrder": 74
     },
     {
@@ -733,8 +733,8 @@
       "title": "WCAG AA test pass: keyboard flow, labels, contrast, color-blind cues",
       "track": "qa",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:52:31.372Z",
       "sortOrder": 76
     },
     {
@@ -778,8 +778,8 @@
       "title": "Backup import corrupt-file / schema-drift / oversized-file test suite",
       "track": "qa",
       "estH": 6,
-      "done": false,
-      "completedAt": null,
+      "done": true,
+      "completedAt": "2026-04-18T13:52:41.089Z",
       "sortOrder": 81
     },
     {

@@ -313,6 +313,8 @@ export function useAppRuntimeWorkflows({
   })
 
   const { copyWeeklyReport } = useAppWeeklyReportRuntime({
+    activePortfolioId,
+    portfolios,
     holdings: H,
     watchlist: W,
     analysisHistory,

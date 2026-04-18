@@ -3,6 +3,8 @@ import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
 import { buildWeeklyReportTemplate } from '../lib/promptTemplateCatalog.js'
 
 export function useWeeklyReportClipboard({
+  activePortfolioId = '',
+  portfolios = [],
   holdings = [],
   watchlist = [],
   analysisHistory = [],
@@ -20,9 +22,20 @@ export function useWeeklyReportClipboard({
   flashSaved = () => {},
   toDateLabel = () => new Date().toLocaleDateString('zh-TW'),
 }) {
+  const activePortfolio = (Array.isArray(portfolios) ? portfolios : []).find(
+    (portfolio) => portfolio?.id === activePortfolioId
+  )
+  const complianceMode = String(
+    activePortfolio?.compliance_mode || activePortfolio?.complianceMode || 'retail'
+  )
+    .trim()
+    .toLowerCase()
+
   const generateWeeklyReport = useCallback(
     () =>
       buildWeeklyReportTemplate({
+        portfolioName: activePortfolio?.name || activePortfolioId || '主組合',
+        complianceMode,
         today: toDateLabel(),
         holdings,
         watchlist,
@@ -40,8 +53,11 @@ export function useWeeklyReportClipboard({
         brainRuleSummary,
       }),
     [
+      activePortfolio?.name,
+      activePortfolioId,
       analysisHistory,
       brainRuleSummary,
+      complianceMode,
       getHoldingReturnPct,
       getHoldingUnrealizedPnl,
       holdings,

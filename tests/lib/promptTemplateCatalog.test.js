@@ -34,6 +34,8 @@ describe('lib/promptTemplateCatalog', () => {
 
   it('builds the weekly report template with portfolio and brain sections', () => {
     const report = buildWeeklyReportTemplate({
+      portfolioName: '主組合',
+      complianceMode: 'retail',
       today: '2026/03/28',
       holdings: [{ code: '2330', name: '台積電', cost: 900, qty: 1000, type: '股票', price: 950 }],
       watchlist: [{ code: '2454', name: '聯發科', price: 1180, target: 1300, status: '觀察中' }],
@@ -78,11 +80,39 @@ describe('lib/promptTemplateCatalog', () => {
     })
 
     expect(report).toContain('# 持倉看板週報素材')
+    expect(report).toContain('組合：主組合')
     expect(report).toContain('持股數：1 檔')
     expect(report).toContain('事件預測命中率：100%（1/1）')
+    expect(report).toContain('## Weekly Narrative')
     expect(report).toContain('台積電(2330)')
     expect(report).toContain('聯發科(2454)')
     expect(report).toContain('## 策略大腦')
     expect(report).toContain('先看量價')
+  })
+
+  it('adds an insider compliance section when the weekly export is insider-scoped', () => {
+    const report = buildWeeklyReportTemplate({
+      portfolioName: '金聯成',
+      complianceMode: 'insider',
+      today: '2026/03/28',
+      holdings: [],
+      watchlist: [],
+      analysisHistory: [],
+      newsEvents: [],
+      strategyBrain: null,
+      totalCost: 0,
+      totalVal: 0,
+      totalPnl: 0,
+      retPct: 0,
+      isClosedEvent: () => false,
+      resolveHoldingPrice: () => 0,
+      getHoldingUnrealizedPnl: () => 0,
+      getHoldingReturnPct: () => 0,
+      brainRuleSummary: () => '',
+    })
+
+    expect(report).toContain('## Insider Compliance Notes')
+    expect(report).toContain('compliance_mode: insider')
+    expect(report).toContain('不提供買進 / 賣出 / 加碼 / 減碼指令')
   })
 })

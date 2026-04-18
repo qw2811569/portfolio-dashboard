@@ -24,3 +24,6 @@ docs-site/current-work.md
 
 # Claude auto-memory (per-user, not tracked)
 memory/
+
+# Local Claude task lock
+.claude/scheduled_tasks.lock

@@ -150,6 +150,7 @@ export function useResearchWorkflow({
   researching = false,
   setResearching = () => {},
   setResearchTarget = () => {},
+  activePortfolioId = '',
   holdings = [],
   portfolioHoldings = [],
   dossierByCode = new Map(),
@@ -244,6 +245,7 @@ export function useResearchWorkflow({
         const { usageLog: knowledgeUsageLog, feedbackLog: knowledgeFeedbackLog } =
           readKnowledgeLogs(typeof globalThis !== 'undefined' ? globalThis.localStorage : null)
         const body = buildResearchRequestBody({
+          portfolioId: activePortfolioId,
           mode,
           stocks,
           holdings: portfolioHoldings,
@@ -322,6 +324,7 @@ export function useResearchWorkflow({
     },
     [
       analysisHistory,
+      activePortfolioId,
       canUseCloud,
       dossierByCode,
       emitSaved,

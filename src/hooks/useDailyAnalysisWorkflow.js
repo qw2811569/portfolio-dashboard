@@ -557,15 +557,16 @@ ${losers
             const blindResponse = await fetch('/api/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(
-                buildBlindPredictionRequest({
+              body: JSON.stringify({
+                ...buildBlindPredictionRequest({
                   today,
                   notesContext,
                   brainContext,
                   blindHoldingSummary,
                   eventSummary,
-                })
-              ),
+                }),
+                portfolioId: activePortfolioId,
+              }),
             })
             const blindData = await blindResponse.json()
             const blindText = blindData.content?.[0]?.text || ''
@@ -668,6 +669,7 @@ ${losers
             historicalAnalogs: formatHistoricalAnalogsForPrompt(historicalAnalogs),
             analysisFrameworkContext,
           })
+          analysisRequestBody.portfolioId = activePortfolioId
 
           const { rawText: rawInsight } = await requestAnalyzeWithFallback({
             requestBody: analysisRequestBody,
@@ -787,15 +789,16 @@ ${losers
             const brainResponse = await fetch('/api/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(
-                buildFallbackBrainUpdateRequest({
+              body: JSON.stringify({
+                ...buildFallbackBrainUpdateRequest({
                   aiInsight,
                   strategyBrain,
                   hits,
                   total,
                   totalTodayPnl,
-                })
-              ),
+                }),
+                portfolioId: activePortfolioId,
+              }),
             })
             const brainData = await brainResponse.json()
             const brainText = brainData.content?.[0]?.text || ''

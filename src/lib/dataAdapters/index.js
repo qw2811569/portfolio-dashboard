@@ -36,4 +36,11 @@ export {
   fetchShareholdingHistory,
   fetchStockNews,
   fetchStockDossierData,
+  fetchFinMindDataset,
+  fetchFinMindRawDataset,
+  fetchCustomFinMindRawDataset,
+  FINMIND_DATASET_REGISTRY,
+  FINMIND_DATASET_KEYS,
+  FINMIND_DOSSIER_DATASET_PLAN,
+  createFinMindMethodRegistry,
 } from './finmindAdapter.js'

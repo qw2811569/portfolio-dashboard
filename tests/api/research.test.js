@@ -29,6 +29,10 @@ vi.mock('../../src/lib/knowledgeEvolutionRuntime.js', () => ({
 
 const { default: handler } = await import('../../api/research.js')
 
+function encodeClaimCookie(claim) {
+  return `pf_auth_claim=${encodeURIComponent(JSON.stringify(claim))}`
+}
+
 function createMockResponse() {
   return {
     statusCode: 200,
@@ -242,8 +246,8 @@ describe('api/research', () => {
           },
         ],
         meta: {
-          '2308': { industry: '電源管理', position: '核心', strategy: '成長股' },
-          '2330': { industry: '半導體', position: '核心', strategy: '龍頭股' },
+          2308: { industry: '電源管理', position: '核心', strategy: '成長股' },
+          2330: { industry: '半導體', position: '核心', strategy: '龍頭股' },
         },
         persist: false,
       },
@@ -262,10 +266,83 @@ describe('api/research', () => {
         expect.objectContaining({ code: '2330', summary: expect.stringContaining('需求穩健') }),
       ]),
       rounds: expect.arrayContaining([
-        expect.objectContaining({ title: '個股快掃', content: expect.stringContaining('台達電(2308)') }),
+        expect.objectContaining({
+          title: '個股快掃',
+          content: expect.stringContaining('台達電(2308)'),
+        }),
         expect.objectContaining({ title: '系統診斷', content: 'diag 系統診斷' }),
         expect.objectContaining({ title: '進化建議 + 組合調整', content: 'advice 進化建議' }),
       ]),
     })
+  })
+
+  it('strips action language for insider portfolio research', async () => {
+    callAiText.mockResolvedValueOnce('single pass 結論')
+
+    const req = {
+      method: 'POST',
+      headers: {
+        cookie: encodeClaimCookie({ userId: 'jinliancheng-chairwoman', role: 'user' }),
+      },
+      body: {
+        portfolioId: 'jinliancheng',
+        target: {
+          code: '7865',
+          name: '金聯成',
+          price: 38.2,
+          cost: 35,
+          qty: 20,
+          pnl: 64,
+          pct: 9.1,
+        },
+        holdingDossiers: [
+          {
+            code: '7865',
+            name: '金聯成',
+            position: { qty: 20, cost: 35, price: 38.2, pnl: 64, pct: 9.1, type: 'stock' },
+            thesis: { summary: '公開資訊觀察' },
+          },
+        ],
+        persist: false,
+      },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(callAiText).toHaveBeenCalledTimes(1)
+    const [{ user }] = callAiText.mock.calls[0]
+    expect(user).toContain('公司代表 / 合規模式')
+    expect(user).not.toContain('操作建議')
+  })
+
+  it('rejects portfolio research when a user claim does not own the portfolio', async () => {
+    const req = {
+      method: 'POST',
+      headers: {
+        cookie: encodeClaimCookie({ userId: 'jinliancheng-chairwoman', role: 'user' }),
+      },
+      body: {
+        portfolioId: 'me',
+        target: {
+          code: '2308',
+          name: '台達電',
+          price: 380,
+          cost: 350,
+          qty: 10,
+          pnl: 300,
+          pct: 8.5,
+        },
+        persist: false,
+      },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.payload).toMatchObject({ error: 'Forbidden', code: 'portfolio_forbidden' })
+    expect(callAiText).not.toHaveBeenCalled()
   })
 })

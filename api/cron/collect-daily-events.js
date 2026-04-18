@@ -1,5 +1,6 @@
 import { put } from '@vercel/blob'
 import { loadGeminiCalendarEvents, dedupeCalendarEvents } from '../event-calendar.js'
+import { queryFinMindDataset } from '../_lib/finmind-governor.js'
 
 const CRON_TOKEN = process.env.CRON_SECRET
 const BLOB_TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
@@ -82,8 +83,7 @@ function formatDateForFinMind(d) {
 }
 
 async function fetchFinMindNewsEvents(stockCodes = []) {
-  const token = process.env.FINMIND_TOKEN || ''
-  if (!token || stockCodes.length === 0) return []
+  if (stockCodes.length === 0) return []
 
   const today = new Date()
   const startDate = new Date(today)
@@ -93,11 +93,9 @@ async function fetchFinMindNewsEvents(stockCodes = []) {
 
   for (const code of stockCodes) {
     try {
-      const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${startStr}&token=${token}`
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) continue
-      const json = await res.json()
-      for (const item of (json.data || []).slice(0, 5)) {
+      for (const item of (
+        await queryFinMindDataset('news', { code, startDate: startStr, timeoutMs: 5000 })
+      ).slice(0, 5)) {
         const title = String(item.title || '').trim()
         if (!title) continue
         events.push({

@@ -25,7 +25,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "infra-02": {
     "id": "infra-02",
@@ -53,7 +53,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "infra-03": {
     "id": "infra-03",
@@ -81,7 +81,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "infra-04": {
     "id": "infra-04",
@@ -109,7 +109,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "p0-01": {
     "id": "p0-01",
@@ -137,7 +137,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037523
   },
   "p0-02": {
     "id": "p0-02",
@@ -165,7 +165,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037523
   },
   "p0-03": {
     "id": "p0-03",
@@ -193,7 +193,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037523
   },
   "p0-04": {
     "id": "p0-04",
@@ -221,7 +221,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037523
   },
   "feat-01": {
     "id": "feat-01",
@@ -249,7 +249,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-02": {
     "id": "feat-02",
@@ -277,7 +277,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-03": {
     "id": "feat-03",
@@ -305,7 +305,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-04": {
     "id": "feat-04",
@@ -333,7 +333,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-05": {
     "id": "feat-05",
@@ -361,7 +361,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-06": {
     "id": "feat-06",
@@ -389,7 +389,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "test-01": {
     "id": "test-01",
@@ -417,7 +417,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "test-02": {
     "id": "test-02",
@@ -445,7 +445,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "test-03": {
     "id": "test-03",
@@ -473,7 +473,7 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776145142178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
   },
   "feat-07": {
     "id": "feat-07",
@@ -501,6 +501,423 @@
     "completedAt": null,
     "consensusState": "none",
     "createdAt": 1776231958178,
-    "updatedAt": 1776323778660
+    "updatedAt": 1776513037524
+  },
+  "r121-T27": {
+    "id": "r121-T27",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "T27 · FinMind 319 call-method-error 修",
+    "lane": "data",
+    "status": "completed",
+    "priority": "critical",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "dispatchPrompt": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "assignedSessionId": "r121-L0-autonomous",
+    "lastDispatchedAt": 1776510564007,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": ["audit: 319→0"],
+      "verificationRuns": ["kb availability 615/615"],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776511573308,
+    "consensusState": "none",
+    "createdAt": 1776510564007,
+    "updatedAt": 1776513037523
+  },
+  "r121-T46": {
+    "id": "r121-T46",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "T46 · API auth middleware + drop CORS:*",
+    "lane": "security",
+    "status": "completed",
+    "priority": "critical",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "dispatchPrompt": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "assignedSessionId": "r121-L0-autonomous",
+    "lastDispatchedAt": 1776510564007,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": ["api/_lib/auth-middleware.js", "21 handlers wrapped"],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776511573769,
+    "consensusState": "none",
+    "createdAt": 1776510564007,
+    "updatedAt": 1776513037523
+  },
+  "r121-T50": {
+    "id": "r121-T50",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "T50 · Zod contracts (HoldingDossier/OperatingContext/etc)",
+    "lane": "architecture",
+    "status": "completed",
+    "priority": "high",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "dispatchPrompt": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "assignedSessionId": "r121-L0-autonomous",
+    "lastDispatchedAt": 1776510564007,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": ["src/lib/contracts/index.js", "4 Zod schemas"],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776511574235,
+    "consensusState": "none",
+    "createdAt": 1776510564007,
+    "updatedAt": 1776513037523
+  },
+  "r121-T53": {
+    "id": "r121-T53",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "T53 · AppShell state-ownership ADR",
+    "lane": "architecture",
+    "status": "completed",
+    "priority": "high",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "dispatchPrompt": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "assignedSessionId": "r121-L0-autonomous",
+    "lastDispatchedAt": 1776510564007,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": ["docs/decisions/2026-04-18-appshell-state-ownership.md"],
+      "verificationRuns": [],
+      "risksNoted": [],
+      "nextStep": ""
+    },
+    "completedAt": 1776511574686,
+    "consensusState": "none",
+    "createdAt": 1776510564007,
+    "updatedAt": 1776513037523
+  },
+  "r121-M09": {
+    "id": "r121-M09",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "M09 · 2026-04-11 staged-daily → ADR",
+    "lane": "documentation",
+    "status": "completed",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "dispatchPrompt": "R121 L0 first wave · Codex 自動執行 · Claude 驗 acceptance",
+    "assignedSessionId": "r121-L0-autonomous",
+    "lastDispatchedAt": 1776510564007,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "docs/decisions/2026-04-11-staged-daily-analysis.md",
+        "docs/decisions/index.md"
+      ],
+      "verificationRuns": [],
+      "risksNoted": ["low"],
+      "nextStep": ""
+    },
+    "completedAt": 1776511575142,
+    "consensusState": "none",
+    "createdAt": 1776510564007,
+    "updatedAt": 1776513037523
+  },
+  "r122-T28": {
+    "id": "r122-T28",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T28",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T28",
+    "dispatchPrompt": "Autonomous task r122-T28",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512870915,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "src/lib/dataAdapters/finmindDatasetRegistry.js",
+        "src/lib/dataAdapters/finmindClient.js",
+        "src/lib/dataAdapters/finmindMethods.js",
+        "src/lib/dataAdapters/finmindAdapter.js",
+        "src/lib/dataAdapters/index.js",
+        "api/finmind.js",
+        "src/lib/backtestRuntime.js",
+        "tests/api/finmind.test.js",
+        "tests/lib/finmindAdapter.test.js",
+        "tests/lib/dataAdapters.test.js"
+      ],
+      "verificationRuns": [
+        "npx vitest run tests/api/finmind.test.js tests/lib/finmindAdapter.test.js tests/lib/dataAdapters.test.js tests/lib/backtestRuntime.test.js"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513313559,
+    "consensusState": "none",
+    "createdAt": 1776512870915,
+    "updatedAt": 1776513313559
+  },
+  "r122-T37": {
+    "id": "r122-T37",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T37",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T37",
+    "dispatchPrompt": "Autonomous task r122-T37",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512871354,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "src/lib/tradeAiResponse.js",
+        "api/analyze.js",
+        "api/analyst-reports.js",
+        "api/research.js",
+        "tests/lib/tradeAiResponse.test.js",
+        "tests/api/analyze.test.js",
+        "tests/api/analyst-reports.test.js",
+        "tests/api/research.test.js"
+      ],
+      "verificationRuns": [
+        "npx vitest run tests/api/analyze.test.js tests/api/analyst-reports.test.js tests/lib/tradeAiResponse.test.js tests/api/research.test.js",
+        "rg -q insider api src"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513303082,
+    "consensusState": "none",
+    "createdAt": 1776512871354,
+    "updatedAt": 1776513303082
+  },
+  "r122-T47": {
+    "id": "r122-T47",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T47",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T47",
+    "dispatchPrompt": "Autonomous task r122-T47",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512871812,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "api/_lib/portfolio-policy.js",
+        "api/_lib/require-portfolio.js",
+        "api/analyze.js",
+        "api/analyst-reports.js",
+        "api/research.js",
+        "tests/api/analyze.test.js",
+        "tests/api/research.test.js"
+      ],
+      "verificationRuns": [
+        "npx vitest run tests/api/analyze.test.js tests/api/research.test.js tests/api/analyst-reports.test.js",
+        "rg -q requirePortfolio api"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513308016,
+    "consensusState": "none",
+    "createdAt": 1776512871812,
+    "updatedAt": 1776513308016
+  },
+  "r122-T67": {
+    "id": "r122-T67",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T67",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T67",
+    "dispatchPrompt": "Autonomous task r122-T67",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512872317,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        ".env.example",
+        "scripts/launch-preflight.sh",
+        "scripts/launch-codex.sh",
+        "scripts/launch-gemini.sh",
+        "scripts/launch-gemini-research-scout.sh",
+        "scripts/launch-qwen.sh",
+        "scripts/git-checkpoint.sh",
+        "scripts/auto-loop.sh"
+      ],
+      "verificationRuns": [
+        "bash -n scripts/launch-preflight.sh scripts/launch-codex.sh scripts/launch-gemini.sh scripts/launch-gemini-research-scout.sh scripts/launch-qwen.sh scripts/git-checkpoint.sh scripts/auto-loop.sh",
+        "npm run check:runtime-entry",
+        "npm run check:fast-refresh"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513292994,
+    "consensusState": "none",
+    "createdAt": 1776512872317,
+    "updatedAt": 1776513292994
+  },
+  "r122-T51": {
+    "id": "r122-T51",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T51",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T51",
+    "dispatchPrompt": "Autonomous task r122-T51",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512872776,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": ["api/_lib/portfolio-snapshots.js", "tests/api/portfolio-snapshots.test.js"],
+      "verificationRuns": [
+        "npx vitest run tests/hooks/usePortfolioPersistence.test.jsx tests/hooks/usePortfolioSnapshotRuntime.test.jsx tests/api/portfolio-snapshots.test.js"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513297352,
+    "consensusState": "none",
+    "createdAt": 1776512872776,
+    "updatedAt": 1776513297352
+  },
+  "r122-T52": {
+    "id": "r122-T52",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T52",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T52",
+    "dispatchPrompt": "Autonomous task r122-T52",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512873247,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "api/_lib/finmind-governor.js",
+        "api/finmind.js",
+        "api/event-calendar.js",
+        "api/cron/collect-daily-events.js",
+        "eslint.config.js",
+        "src/lib/dataAdapters/finmindClient.js",
+        "src/lib/backtestRuntime.js",
+        "tests/api/finmind.test.js",
+        "tests/lib/finmindAdapter.test.js",
+        "tests/vercel-config.test.js"
+      ],
+      "verificationRuns": [
+        "npx vitest run tests/api/finmind.test.js tests/lib/finmindAdapter.test.js tests/vercel-config.test.js",
+        "npm run lint"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513319097,
+    "consensusState": "none",
+    "createdAt": 1776512873247,
+    "updatedAt": 1776513319097
+  },
+  "r122-T54": {
+    "id": "r122-T54",
+    "owner": "codex",
+    "requiresConsensus": false,
+    "consensusReviews": [],
+    "title": "r122-T54",
+    "lane": "autonomous",
+    "status": "done",
+    "priority": "medium",
+    "dependsOn": [],
+    "writeScope": [],
+    "sourcePlanRef": "docs/portfolio-spec-report/todo.md",
+    "summary": "Autonomous task r122-T54",
+    "dispatchPrompt": "Autonomous task r122-T54",
+    "assignedSessionId": "autonomous",
+    "lastDispatchedAt": 1776512873709,
+    "dispatchCount": 1,
+    "evidence": {
+      "changedFiles": [
+        "src/hooks/useAppRuntimeComposer.js",
+        "src/hooks/useAppRuntimeComposer.boot.js",
+        "src/hooks/useAppRuntimeComposer.inputs.js",
+        "src/hooks/useAppRuntimeComposer.derived.js",
+        "src/hooks/useAppRuntimeComposer.header.js",
+        "src/hooks/useAppRuntimeComposer.frame.js",
+        "src/hooks/useAppRuntimeComposer.workflowArgs.js",
+        "src/hooks/useAppRuntimeComposer.panels.js"
+      ],
+      "verificationRuns": [
+        "npx vitest run tests/hooks/useAppRuntimeComposer.test.jsx tests/hooks/useAppRuntimeState.test.jsx tests/lib/appShellRuntime.test.js",
+        "npm run lint",
+        "npm run check:fast-refresh"
+      ],
+      "risksNoted": [],
+      "nextStep": "done"
+    },
+    "completedAt": 1776513575995,
+    "consensusState": "none",
+    "createdAt": 1776512873709,
+    "updatedAt": 1776513575995
   }
 }

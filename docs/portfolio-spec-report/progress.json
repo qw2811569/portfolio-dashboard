@@ -1,0 +1,858 @@
+{
+  "lastUpdatedAt": "2026-04-18T11:59:27.792Z",
+  "totalItems": 89,
+  "totalEstHours": 485,
+  "trackedEstHours": 597,
+  "byStatus": {
+    "shipBefore": {
+      "track": "shipBefore",
+      "label": "Ship-Before",
+      "total": 30,
+      "done": 7,
+      "totalEstHours": 193,
+      "doneEstHours": 52
+    },
+    "beta1": {
+      "track": "beta1",
+      "label": "Beta+1",
+      "total": 20,
+      "done": 3,
+      "totalEstHours": 149,
+      "doneEstHours": 24
+    },
+    "backlog": {
+      "track": "backlog",
+      "label": "Backlog",
+      "total": 19,
+      "done": 1,
+      "totalEstHours": 143,
+      "doneEstHours": 2
+    },
+    "qa": {
+      "track": "qa",
+      "label": "QA Supplement",
+      "total": 12,
+      "done": 0,
+      "totalEstHours": 80,
+      "doneEstHours": 0
+    },
+    "ops": {
+      "track": "ops",
+      "label": "Ops Discipline",
+      "total": 8,
+      "done": 0,
+      "totalEstHours": 32,
+      "doneEstHours": 0
+    }
+  },
+  "completionPct": 26.94300518134715,
+  "fullProductCompletionPct": 16.082474226804123,
+  "trackedCompletionPct": 13.06532663316583,
+  "etaDaysToShipBefore": 18,
+  "etaDaysToFullProduct": 51,
+  "etaDaysToAllTracked": 65,
+  "velocityHoursPerDay": 8,
+  "items": [
+    {
+      "id": "T01",
+      "title": "Surface Morning Note on Dashboard with deep-links",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 1
+    },
+    {
+      "id": "T02",
+      "title": "Build Dashboard `Today in Markets` module",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 2
+    },
+    {
+      "id": "T04",
+      "title": "Add post-close ritual mode + tomorrow-action editorial card",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 3
+    },
+    {
+      "id": "T22",
+      "title": "Deliver weekly export narrative + insider section; true PDF/cover later",
+      "track": "shipBefore",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 4
+    },
+    {
+      "id": "T37",
+      "title": "Strip insider buy/sell language in analyze/brain/analyst-reports/research",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 5
+    },
+    {
+      "id": "T38",
+      "title": "Enforce Accuracy Gate in all prompt builders",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 6
+    },
+    {
+      "id": "T40",
+      "title": "Roll out `analysisStage` t0/t1 lifecycle and auto-confirm logic",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 7
+    },
+    {
+      "id": "T46",
+      "title": "Add shared API auth middleware, fail-closed defaults, remove open CORS",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": true,
+      "completedAt": "2026-04-18T11:16:08.789Z",
+      "sortOrder": 8
+    },
+    {
+      "id": "T47",
+      "title": "Add server-side `requirePortfolio` / RBAC authZ",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 9
+    },
+    {
+      "id": "T49",
+      "title": "Regrade Blob ACLs: private brain/research/snapshot, telemetry exception",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 10
+    },
+    {
+      "id": "T50",
+      "title": "Add canonical contracts in `src/lib/contracts` + parse boundaries",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": true,
+      "completedAt": "2026-04-18T11:09:39.118Z",
+      "sortOrder": 11
+    },
+    {
+      "id": "T57",
+      "title": "Add backup import trust boundary (allowlist/schema/confirm)",
+      "track": "shipBefore",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 12
+    },
+    {
+      "id": "T71",
+      "title": "Add CSP/security headers + XSS/prompt-injection review",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 13
+    },
+    {
+      "id": "M15",
+      "title": "Build shared `<StaleBadge>` component as the stale/freshness UI primitive",
+      "track": "shipBefore",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 14
+    },
+    {
+      "id": "T27",
+      "title": "Fix FinMind `319 call-method-error` availability gap",
+      "track": "shipBefore",
+      "estH": 10,
+      "done": true,
+      "completedAt": "2026-04-18T11:18:17.301Z",
+      "sortOrder": 15
+    },
+    {
+      "id": "T28",
+      "title": "Build authoritative FinMind dataset map + method registry",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 16
+    },
+    {
+      "id": "T30",
+      "title": "Correct monthly revenue announced-month semantics end-to-end",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 17
+    },
+    {
+      "id": "T31",
+      "title": "Correct quarter/H1/H2 financial semantics and derived standalone logic",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 18
+    },
+    {
+      "id": "T32",
+      "title": "Harden MOPS revenue/announcement ingestion and fallback contract",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 19
+    },
+    {
+      "id": "T33",
+      "title": "Add macro / 央行 / calendar feed for `Today in Markets`",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 20
+    },
+    {
+      "id": "T48",
+      "title": "Rotate secrets, add inventory, Secret Manager, and launch-script cleanup",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 21
+    },
+    {
+      "id": "T60",
+      "title": "Add cron last-success markers and lateness alerts",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 22
+    },
+    {
+      "id": "T62",
+      "title": "Extend checkpoint/backup contract to include localStorage",
+      "track": "shipBefore",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 23
+    },
+    {
+      "id": "T64",
+      "title": "Run restore drill, rollback test, and MDD recovery test",
+      "track": "shipBefore",
+      "estH": 5,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 24
+    },
+    {
+      "id": "M04",
+      "title": "Add Agent Bridge dashboard auth injection so T46 does not cause silent 401s",
+      "track": "shipBefore",
+      "estH": 3,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 25
+    },
+    {
+      "id": "T66",
+      "title": "Add GitHub CI workflow + `verify:local` gate",
+      "track": "shipBefore",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 26
+    },
+    {
+      "id": "T67",
+      "title": "Expand `.env.example`, clean launch scripts/inventory, add preflight, remove stale refs",
+      "track": "shipBefore",
+      "estH": 6,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 27
+    },
+    {
+      "id": "T72a",
+      "title": "Finish internal-beta minimal legal/docs pack: disclaimer, privacy-lite, data residency, audit schema, release checklist",
+      "track": "shipBefore",
+      "estH": 5,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 28
+    },
+    {
+      "id": "T72b",
+      "title": "Finish beta ship gate: smoke, owner signoff, demo path, invite/feedback readiness",
+      "track": "shipBefore",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 29
+    },
+    {
+      "id": "M09",
+      "title": "Promote the 2026-04-11 staged-daily consensus into ADR/index so onboarding sees the true runtime contract",
+      "track": "shipBefore",
+      "estH": 2,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 30
+    },
+    {
+      "id": "T03",
+      "title": "Upgrade Daily Principle card to contextual quote + copy/share",
+      "track": "beta1",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 31
+    },
+    {
+      "id": "T05",
+      "title": "Surface anxiety indicators X1-X5 across dashboard/holdings/detail",
+      "track": "beta1",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 32
+    },
+    {
+      "id": "T06",
+      "title": "Finish multi-portfolio switcher smoke + edge states",
+      "track": "beta1",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 33
+    },
+    {
+      "id": "T07",
+      "title": "Complete multi-level holdings filters",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 34
+    },
+    {
+      "id": "T08",
+      "title": "Rebuild holdings detail pane on canonical `HoldingDossier`",
+      "track": "beta1",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 35
+    },
+    {
+      "id": "T09",
+      "title": "Rewrite stale/data-gap UX in holdings rows and summaries",
+      "track": "beta1",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 36
+    },
+    {
+      "id": "T12",
+      "title": "Polish news filters, objective summaries, and source/time badges",
+      "track": "beta1",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 37
+    },
+    {
+      "id": "T14",
+      "title": "Finish streaming close-analysis UX and fallback states",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 38
+    },
+    {
+      "id": "T15",
+      "title": "Ship same-day fast/confirmed diff and rerun cues",
+      "track": "beta1",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 39
+    },
+    {
+      "id": "T16",
+      "title": "Apply Accuracy Gate UI to every AI surface",
+      "track": "beta1",
+      "estH": 10,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 40
+    },
+    {
+      "id": "T19",
+      "title": "Finish trade stepper/preview/apply + compliance memo UX",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 41
+    },
+    {
+      "id": "T21",
+      "title": "Complete `OperatingContext` on Trade/Log routes",
+      "track": "beta1",
+      "estH": 3,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 42
+    },
+    {
+      "id": "T23",
+      "title": "Establish insider persona/compliance copy system cross-route",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 43
+    },
+    {
+      "id": "T34",
+      "title": "Refine target-price lineage, freshness, and source labels",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 44
+    },
+    {
+      "id": "T35",
+      "title": "Expand supply-chain/theme/company-profile enrichment",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 45
+    },
+    {
+      "id": "T36",
+      "title": "Normalize Gemini grounding merge policy + citations",
+      "track": "beta1",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 46
+    },
+    {
+      "id": "T52",
+      "title": "Add FinMind governor, endpoint boundary, and lint guardrail",
+      "track": "beta1",
+      "estH": 8,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 47
+    },
+    {
+      "id": "T53",
+      "title": "Write AppShell state-ownership ADR/current-target matrix",
+      "track": "beta1",
+      "estH": 4,
+      "done": true,
+      "completedAt": "2026-04-18T11:12:32.186Z",
+      "sortOrder": 48
+    },
+    {
+      "id": "T54",
+      "title": "Split `useAppRuntime` / `useAppRuntimeComposer` into bounded slices + resolve half-dead store state",
+      "track": "beta1",
+      "estH": 12,
+      "done": true,
+      "completedAt": "2026-04-18T11:59:27.791Z",
+      "sortOrder": 49
+    },
+    {
+      "id": "T55",
+      "title": "Contain `useRoutePortfolioRuntime` and codify `/trade` write exception",
+      "track": "beta1",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 50
+    },
+    {
+      "id": "T11",
+      "title": "Complete events editorial hero/review queue + thesis/pillar feedback loop",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 51
+    },
+    {
+      "id": "T17",
+      "title": "Finish research backlog/data-gap center + explicit `coachLessons` injection",
+      "track": "backlog",
+      "estH": 10,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 52
+    },
+    {
+      "id": "T18",
+      "title": "Surface four-persona scoring and explanation in research",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 53
+    },
+    {
+      "id": "T20",
+      "title": "Finish log reflection stats/filter/export UX",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 54
+    },
+    {
+      "id": "T24",
+      "title": "Complete mobile IA and responsive behaviors across core 5 routes",
+      "track": "backlog",
+      "estH": 10,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 55
+    },
+    {
+      "id": "T25",
+      "title": "Fill empty/loading/error/skeleton states across core 5 routes",
+      "track": "backlog",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 56
+    },
+    {
+      "id": "T26",
+      "title": "Finish cross-page handoff contract in UI, incl. `News -> Events/Daily`",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 57
+    },
+    {
+      "id": "T29",
+      "title": "Normalize institutional labels end-to-end + regression",
+      "track": "backlog",
+      "estH": 3,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 58
+    },
+    {
+      "id": "T39",
+      "title": "Harden brain audit merge lifecycle and buckets",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 59
+    },
+    {
+      "id": "T42",
+      "title": "Integrate four-persona runtime scoring contract",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 60
+    },
+    {
+      "id": "T45",
+      "title": "Correct 600-rule knowledge base/provenance + clean live thesis narratives (6862 included)",
+      "track": "backlog",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 61
+    },
+    {
+      "id": "T51",
+      "title": "Add snapshot `schemaVersion` normalize-on-read/write",
+      "track": "backlog",
+      "estH": 2,
+      "done": true,
+      "completedAt": "2026-04-18T11:54:44.552Z",
+      "sortOrder": 62
+    },
+    {
+      "id": "T58",
+      "title": "Define service catalog, 3 SLOs, and incident thresholds",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 63
+    },
+    {
+      "id": "T59",
+      "title": "Add structured logging schema + telemetry taxonomy + alert sink",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 64
+    },
+    {
+      "id": "T61",
+      "title": "Instrument web RUM + API/cron APM",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 65
+    },
+    {
+      "id": "T63",
+      "title": "Add dataset fingerprint/manifest + replay diff tools",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 66
+    },
+    {
+      "id": "T68",
+      "title": "Expand coverage to pages/components/store direct tests + route-shell prod guard",
+      "track": "backlog",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 67
+    },
+    {
+      "id": "T69",
+      "title": "Add Playwright E2E for 3 golden flows + responsive smoke; visual suite later",
+      "track": "backlog",
+      "estH": 10,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 68
+    },
+    {
+      "id": "T70",
+      "title": "Add maxDuration / cron schedule / rate-limit recovery tests",
+      "track": "backlog",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 69
+    },
+    {
+      "id": "Q01",
+      "title": "Deep state coverage for holdings/news/events/dashboard/overview panels across 7 states",
+      "track": "qa",
+      "estH": 12,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 70
+    },
+    {
+      "id": "Q02",
+      "title": "Direct store unit tests for `brainStore` / `reportsStore` invariants",
+      "track": "qa",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 71
+    },
+    {
+      "id": "Q03",
+      "title": "Route-shell production guard runtime test under `NODE_ENV=production`",
+      "track": "qa",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 72
+    },
+    {
+      "id": "Q04",
+      "title": "Visual regression Playwright baseline for 8 pages + ship-before diff",
+      "track": "qa",
+      "estH": 10,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 73
+    },
+    {
+      "id": "Q05",
+      "title": "RBAC manual verification script with 5 persona scenarios + evidence checklist",
+      "track": "qa",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 74
+    },
+    {
+      "id": "Q06",
+      "title": "Cross-browser matrix with real iOS Safari priority",
+      "track": "qa",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 75
+    },
+    {
+      "id": "Q07",
+      "title": "WCAG AA test pass: keyboard flow, labels, contrast, color-blind cues",
+      "track": "qa",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 76
+    },
+    {
+      "id": "Q08",
+      "title": "Insider buy/sell prompt guard QA harness with mocked AI forbidden output",
+      "track": "qa",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 77
+    },
+    {
+      "id": "Q09",
+      "title": "Accuracy Gate 5-rule auto-tests across current AI entry points",
+      "track": "qa",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 78
+    },
+    {
+      "id": "Q10",
+      "title": "Performance regression gate for LCP/INP/CLS tied to `verify:local`",
+      "track": "qa",
+      "estH": 8,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 79
+    },
+    {
+      "id": "Q11",
+      "title": "Multi-portfolio fast-switch stress test for state leak / stale bleed",
+      "track": "qa",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 80
+    },
+    {
+      "id": "Q12",
+      "title": "Backup import corrupt-file / schema-drift / oversized-file test suite",
+      "track": "qa",
+      "estH": 6,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 81
+    },
+    {
+      "id": "O01",
+      "title": "Weekly `git status` + remote backup freshness check",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 82
+    },
+    {
+      "id": "O02",
+      "title": "FinMind quota usage report (`600/1600 hr`)",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 83
+    },
+    {
+      "id": "O03",
+      "title": "Restore drill rehearsal for A5/A6 lane",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 84
+    },
+    {
+      "id": "O04",
+      "title": "VM disk usage / SQLite-cache growth check",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 85
+    },
+    {
+      "id": "O05",
+      "title": "PNG preview rotation and artifact size review",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 86
+    },
+    {
+      "id": "O06",
+      "title": "Blob storage stale snapshot / research artifact cleanup",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 87
+    },
+    {
+      "id": "O07",
+      "title": "Vercel build minutes and deploy frequency review",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 88
+    },
+    {
+      "id": "O08",
+      "title": "Claude + Codex token usage audit",
+      "track": "ops",
+      "estH": 4,
+      "done": false,
+      "completedAt": null,
+      "sortOrder": 89
+    }
+  ]
+}

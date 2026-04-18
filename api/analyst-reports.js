@@ -1,3 +1,4 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 import { createHash } from 'crypto'
 import { list, put } from '@vercel/blob'
 import supplyChain from '../src/data/supplyChain.json' with { type: 'json' }
@@ -13,7 +14,9 @@ import {
   collectCmoneyNotes,
 } from './cmoney-notes.js'
 import { buildCnyesAggregateItem, fetchCnyesAggregate } from './_lib/cnyes-target-price.js'
+import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio.js'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../src/seedData.js'
+import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
 const ANALYST_REPORTS_BLOB_PREFIX = 'analyst-reports'
 const VM_ANALYST_REPORTS_PATH = '/internal/analyst-reports'
@@ -530,7 +533,7 @@ async function collectGeminiGroundedReports(stock) {
   }
 }
 
-async function collectRssReports(stock, knownHashes, maxItems, maxExtract) {
+async function collectRssReports(stock, knownHashes, maxItems, maxExtract, portfolio = null) {
   const rssUrls = buildRssUrls(stock.code, stock.name)
   const xmlPayloads = await fetchMultipleRss(rssUrls)
   const deduped = normalizeRssItems(xmlPayloads, { code: stock.code, name: stock.name })
@@ -542,7 +545,7 @@ async function collectRssReports(stock, knownHashes, maxItems, maxExtract) {
     Math.max(1, Number(maxItems) || 6)
   )
   const itemsForExtraction = newItems.slice(0, Math.max(1, Number(maxExtract) || 4))
-  const insights = await extractInsights(stock, itemsForExtraction)
+  const insights = await extractInsights(stock, itemsForExtraction, portfolio)
 
   const items = newItems.map((item) => {
     const insight = insights.get(item.id)
@@ -617,17 +620,10 @@ async function collectCnyesReports(stock) {
   }
 }
 
-async function extractInsights(stock, items) {
-  if (!Array.isArray(items) || items.length === 0) return new Map()
-  try {
-    ensureAiConfigured()
-  } catch {
-    return new Map()
-  }
-
-  try {
-    const data = await callAiRaw({
-      system: `你是台股公開報告索引整理器。你會從新聞標題與摘要中，抽出對持股 dossier 最有價值的結構化資訊。
+export function buildInsightExtractionPromptPayload(stock, items, portfolio = null) {
+  return {
+    system: stripBuySellForInsider(
+      `你是台股公開報告索引整理器。你會從新聞標題與摘要中，抽出對持股 dossier 最有價值的結構化資訊。
 只根據提供的標題與摘要判斷，不可編造全文內容。
 回傳純 JSON，不要 markdown。格式：
 {"items":[{"id":"原樣回傳","summary":"一句話摘要","target":數字或null,"targetType":"price-target/range/narrative/none","targetEvidence":"原文中的目標價短語或空字串","firm":"券商/來源或空字串","stance":"bullish/neutral/bearish/unknown","tags":["標籤1","標籤2"],"confidence":0到1}]}
@@ -639,14 +635,35 @@ async function extractInsights(stock, items) {
 - 若只是偏多/偏空但沒有目標價數字，targetType = "narrative" 或 "none"
 - firm 優先抽券商/研究機構，抓不到就留空
 - summary 必須短，聚焦這份報告/新聞對投資判斷的意義`,
+      portfolio
+    ),
+    user: stripBuySellForInsider(
+      `股票：${stock.name}(${stock.code})
+請整理以下公開報告索引：
+${items.map((item) => `- [${item.id}] ${item.title}\n  來源：${item.source || '未知'} | 日期：${item.publishedAt || '未知'}\n  摘要：${item.snippet || '無'}`).join('\n\n')}`,
+      portfolio
+    ),
+  }
+}
+
+async function extractInsights(stock, items, portfolio = null) {
+  if (!Array.isArray(items) || items.length === 0) return new Map()
+  try {
+    ensureAiConfigured()
+  } catch {
+    return new Map()
+  }
+
+  try {
+    const prompts = buildInsightExtractionPromptPayload(stock, items, portfolio)
+    const data = await callAiRaw({
+      system: prompts.system,
       allowThinking: false,
       maxTokens: 900,
       messages: [
         {
           role: 'user',
-          content: `股票：${stock.name}(${stock.code})
-請整理以下公開報告索引：
-${items.map((item) => `- [${item.id}] ${item.title}\n  來源：${item.source || '未知'} | 日期：${item.publishedAt || '未知'}\n  摘要：${item.snippet || '無'}`).join('\n\n')}`,
+          content: prompts.user,
         },
       ],
     })
@@ -717,7 +734,7 @@ function normalizeTargetDetails(item, insight) {
 
 export async function runAnalystReportsPipeline(input = {}) {
   const { code, name } = resolveStockInput(input)
-  const { knownHashes = [], maxItems = 6, maxExtract = 4 } = input || {}
+  const { knownHashes = [], maxItems = 6, maxExtract = 4, portfolio = null } = input || {}
   if (!code || !name) throw new Error('缺少 code 或 name')
 
   const stock = { code, name }
@@ -736,7 +753,7 @@ export async function runAnalystReportsPipeline(input = {}) {
 
   if (!geminiPayload || geminiPayload.targetPriceCount === 0) {
     try {
-      rssPayload = await collectRssReports(stock, knownHashes, maxItems, maxExtract)
+      rssPayload = await collectRssReports(stock, knownHashes, maxItems, maxExtract, portfolio)
     } catch {
       rssPayload = {
         query: { code: stock.code, name: stock.name, mode: 'rss' },
@@ -917,11 +934,7 @@ async function triggerVmRefresh(input = {}, { fetchImpl = fetch } = {}) {
   throw new Error('VM analyst-reports poll timeout')
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -949,12 +962,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '缺少 code 或 name' })
     }
 
+    let portfolio = null
+    try {
+      portfolio = requirePortfolio(req, input.portfolioId, { allowMissing: true })
+    } catch (error) {
+      if (error instanceof PortfolioAccessError) {
+        return res.status(error.status).json({ error: error.message, code: error.code })
+      }
+      throw error
+    }
+
     let payload = null
-    if (refresh) {
+    if (refresh && portfolio?.compliance_mode !== 'insider') {
       try {
         payload = await triggerVmRefresh({ ...input, code, name })
       } catch (vmError) {
-        payload = await runAnalystReportsPipeline({ ...input, code, name })
+        payload = await runAnalystReportsPipeline({ ...input, code, name, portfolio })
         try {
           await writeAnalystReportsSnapshot(code, payload)
         } catch {
@@ -964,7 +987,10 @@ export default async function handler(req, res) {
         res.setHeader('x-analyst-reports-vm-error', String(vmError?.message || 'unknown'))
       }
     } else {
-      payload = await runAnalystReportsPipeline({ ...input, code, name })
+      payload = await runAnalystReportsPipeline({ ...input, code, name, portfolio })
+      if (refresh && portfolio?.compliance_mode === 'insider') {
+        res.setHeader('x-analyst-reports-policy', 'insider-local')
+      }
     }
 
     res.setHeader('x-target-price-source', payload.targetPriceSource)
@@ -974,3 +1000,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: '公開報告索引抓取失敗', detail: err.message })
   }
 }
+
+export default withApiAuth(handler)

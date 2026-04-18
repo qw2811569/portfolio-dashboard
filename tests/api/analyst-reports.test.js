@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildInsightExtractionPromptPayload,
   buildGoogleNewsQueries,
   buildGeminiGroundingPrompt,
   dedupeLatestGeminiReports,
@@ -174,6 +175,25 @@ describe('api/analyst-reports helpers', () => {
     expect(prompt).toContain('近30天，3491 昇達科')
     expect(prompt).toContain('只輸出 JSON')
     expect(prompt).toContain('不要輸出 markdown')
+  })
+
+  it('adds insider compliance guardrails to AI extraction prompts', () => {
+    const payload = buildInsightExtractionPromptPayload(
+      { code: '7865', name: '金聯成' },
+      [
+        {
+          id: 'rss-1',
+          title: '金聯成法說摘要',
+          source: '經濟日報',
+          publishedAt: '2026-04-15',
+          snippet: '只有法說重點，沒有明確 target。',
+        },
+      ],
+      { compliance_mode: 'insider' }
+    )
+
+    expect(payload.system).toContain('公司代表 / 合規模式')
+    expect(payload.user).toContain('法規遵循觀察')
   })
 
   it('normalizes report dates from mixed source formats', () => {

@@ -205,7 +205,7 @@ run_qa() {
 
   # 寫 Qwen 任務檔
   cat > /tmp/auto-loop-qwen-task.md <<'QWENTASK'
-你是 QA 測試員。依 repo 內目前文件與腳本脈絡執行機械驗證，不假設有獨立角色卡。
+你是 QA 測試員。依 repo 內目前文件與腳本脈絡執行機械驗證，不假設額外的角色設定檔或 collateral。
 
 本地伺服器在 http://127.0.0.1:3002，請逐一檢查以下頁面和功能：
 

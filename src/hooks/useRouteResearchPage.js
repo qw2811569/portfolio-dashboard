@@ -24,6 +24,7 @@ function warnBlockedRouteWrite(actionName) {
 
 export function useRouteResearchPage() {
   const {
+    portfolioId = '',
     holdings = [],
     targets = {},
     fundamentals = {},
@@ -90,6 +91,7 @@ export function useRouteResearchPage() {
 
   const { reportRefreshing, reportRefreshStatus, enrichingResearchCode, enrichResearchToDossier } =
     useReportRefreshWorkflow({
+      activePortfolioId: portfolioId,
       holdings,
       dossierByCode,
       analystReports,
@@ -104,6 +106,7 @@ export function useRouteResearchPage() {
     })
 
   const { proposalActionId, proposalActionType } = useResearchWorkflow({
+    activePortfolioId: portfolioId,
     researching,
     setResearching,
     setResearchTarget,

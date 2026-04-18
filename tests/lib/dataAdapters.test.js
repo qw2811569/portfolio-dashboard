@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  FINMIND_DATASET_KEYS,
   getCompanyData,
   getSupplyChain,
   getThemes,
@@ -61,6 +62,24 @@ describe('dataAdapters', () => {
     })
     it('returns empty for unknown theme', () => {
       expect(getStocksInTheme('不存在')).toEqual([])
+    })
+  })
+
+  describe('FinMind registry', () => {
+    it('exports the authoritative dataset registry keys', () => {
+      expect(FINMIND_DATASET_KEYS).toEqual([
+        'institutional',
+        'margin',
+        'valuation',
+        'financials',
+        'balanceSheet',
+        'cashFlow',
+        'dividend',
+        'dividendResult',
+        'revenue',
+        'shareholding',
+        'news',
+      ])
     })
   })
 })

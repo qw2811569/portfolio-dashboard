@@ -12,6 +12,10 @@ vi.mock('../../api/_lib/ai-provider.js', () => ({
 
 const { default: handler } = await import('../../api/analyze.js')
 
+function encodeClaimCookie(claim) {
+  return `pf_auth_claim=${encodeURIComponent(JSON.stringify(claim))}`
+}
+
 function createMockResponse() {
   const headers = {}
   const writes = []
@@ -118,5 +122,57 @@ describe('api/analyze', () => {
     expect(streamText).toContain('event: done')
     expect(streamText).toContain('"text":"第一段第二段"')
     expect(res.ended).toBe(true)
+  })
+
+  it('strips buy/sell wording for insider portfolios before calling the model', async () => {
+    callAiRaw.mockResolvedValueOnce({
+      id: 'msg_3',
+      content: [{ type: 'text', text: '改成合規風險版' }],
+    })
+
+    const req = {
+      method: 'POST',
+      query: {},
+      headers: {
+        cookie: encodeClaimCookie({ userId: 'xiaokui', role: 'admin' }),
+      },
+      body: {
+        portfolioId: 'jinliancheng',
+        systemPrompt: '請給買進建議',
+        userPrompt: '1. 公司近況\n2. 操作建議：買進 / 賣出 / 加碼',
+      },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(callAiRaw).toHaveBeenCalledTimes(1)
+    const [payload] = callAiRaw.mock.calls[0]
+    expect(payload.system).toContain('公司代表 / 合規模式')
+    expect(payload.system).not.toContain('買進建議')
+    expect(payload.messages[0].content).not.toContain('操作建議')
+    expect(payload.messages[0].content).toContain('法規遵循觀察')
+  })
+
+  it('rejects user claims that access another owner portfolio', async () => {
+    const req = {
+      method: 'POST',
+      query: {},
+      headers: {
+        cookie: encodeClaimCookie({ userId: 'jinliancheng-chairwoman', role: 'user' }),
+      },
+      body: {
+        portfolioId: 'me',
+        systemPrompt: 'system',
+        userPrompt: 'user',
+      },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.payload).toMatchObject({ error: 'Forbidden', code: 'portfolio_forbidden' })
+    expect(callAiRaw).not.toHaveBeenCalled()
   })
 })

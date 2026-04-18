@@ -3,6 +3,11 @@ import { join } from 'node:path'
 import { INIT_HOLDINGS, STOCK_META } from '../seedData.js'
 import { buildDailyAnalysisRequest } from './dailyAnalysisRuntime.js'
 import { findHistoricalAnalogs } from './brainRuntime.js'
+import {
+  createFinMindMethodRegistry,
+  fetchCustomFinMindRawDataset,
+  fetchFinMindRawDataset,
+} from './dataAdapters/finmindAdapter.js'
 
 export const BACKTEST_DATES = [
   '2024-02-15',
@@ -27,7 +32,6 @@ export const BACKTEST_DATES = [
   '2026-02-15',
 ]
 
-const FINMIND_ENDPOINT = 'https://api.finmindtrade.com/api/v4/data'
 const DEFAULT_EMPTY_BRAIN = {
   version: 4,
   rules: [],
@@ -41,6 +45,8 @@ const DEFAULT_EMPTY_BRAIN = {
   evolution: '',
 }
 
+const finmindRawMethods = createFinMindMethodRegistry(fetchFinMindRawDataset)
+
 function addDays(dateText, days) {
   const d = new Date(dateText)
   d.setDate(d.getDate() + days)
@@ -49,19 +55,6 @@ function addDays(dateText, days) {
 
 function sum(values) {
   return values.reduce((acc, value) => acc + (Number(value) || 0), 0)
-}
-
-async function fetchFinMindRaw(dataset, code, startDate, endDate = '') {
-  const params = new URLSearchParams({ dataset, data_id: String(code), start_date: startDate })
-  const token = process.env.FINMIND_TOKEN || ''
-  if (endDate) params.set('end_date', endDate)
-  if (token) params.set('token', token)
-  const response = await fetch(`${FINMIND_ENDPOINT}?${params.toString()}`, {
-    signal: AbortSignal.timeout(15000),
-  })
-  if (!response.ok) throw new Error(`FinMind ${dataset} failed (${response.status})`)
-  const json = await response.json()
-  return Array.isArray(json?.data) ? json.data : []
 }
 
 function normalizeInstitutionalRows(rows = []) {
@@ -134,13 +127,12 @@ function loadStrategyBrainSnapshot() {
 
 export async function buildBacktestDossier(code, date) {
   const stockMeta = STOCK_META?.[code] || STOCK_META?.[String(code)] || {}
-  const start90 = addDays(date, -90)
   const endDate = date
   const [valuationRaw, institutionalRaw, marginRaw, revenueRaw] = await Promise.all([
-    fetchFinMindRaw('TaiwanStockPER', code, start90, endDate),
-    fetchFinMindRaw('TaiwanStockInstitutionalInvestorsBuySell', code, addDays(date, -20), endDate),
-    fetchFinMindRaw('TaiwanStockMarginPurchaseShortSale', code, addDays(date, -20), endDate),
-    fetchFinMindRaw('TaiwanStockMonthRevenue', code, addDays(date, -370), endDate),
+    finmindRawMethods.valuation(code, { days: 90, endDate }),
+    finmindRawMethods.institutional(code, { days: 20, endDate }),
+    finmindRawMethods.margin(code, { days: 20, endDate }),
+    finmindRawMethods.revenue(code, { months: 12, endDate }),
   ])
 
   const valuation = normalizeValuationRows(valuationRaw)
@@ -321,7 +313,11 @@ export function runBacktestAnalysis(dossier, date, framework = null) {
 }
 
 export async function evaluateResult(code, analysisDate, actualDate) {
-  const rows = await fetchFinMindRaw('TaiwanStockPrice', code, analysisDate, actualDate)
+  const rows = await fetchCustomFinMindRawDataset('TaiwanStockPrice', {
+    code,
+    startDate: analysisDate,
+    endDate: actualDate,
+  })
   const sorted = [...rows].sort((a, b) => String(a.date).localeCompare(String(b.date)))
   if (sorted.length < 2) {
     return {

@@ -181,6 +181,7 @@ export function useAppRuntimeWorkflows({
 
   const reportRuntime = useAppReportRuntime({
     reportArgs: {
+      activePortfolioId,
       holdings: H,
       dossierByCode,
       analystReports,
@@ -359,6 +360,7 @@ export function useAppRuntimeWorkflows({
     researching,
     setResearching,
     setResearchTarget,
+    activePortfolioId,
     holdings: H,
     dossierByCode,
     stockMeta,

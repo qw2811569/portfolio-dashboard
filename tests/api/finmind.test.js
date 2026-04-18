@@ -127,6 +127,27 @@ describe('api/finmind', () => {
     })
   })
 
+  it('rejects unsupported datasets before any upstream request fires', async () => {
+    global.fetch = vi.fn()
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'foo_bar', code: '2308' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toMatchObject({
+      error: '不支援的 dataset: foo_bar',
+    })
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
   it('aggregates English institutional participant labels into foreign/investment/dealer buckets', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

@@ -1,3 +1,5 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
+import { isFinMindRateLimitError, queryFinMindDataset } from './_lib/finmind-governor.js'
 // Vercel Serverless Function — FinMind 台股資料 API
 // 來源：https://finmindtrade.com
 // 免費使用，不需 API key（有 token 可提升 rate limit）
@@ -17,21 +19,10 @@
 //   news            — 個股新聞（提供 Qwen 建動態事件來源）
 
 import { normalizeFinancialStatementRows } from '../src/lib/finmindPeriodUtils.js'
-
-const FINMIND_BASE = 'https://api.finmindtrade.com/api/v4/data'
-const TOKEN = process.env.FINMIND_TOKEN || ''
-const FINMIND_RATE_LIMIT_COOLDOWN_MS = 5 * 60 * 1000
-let finmindRateLimitedUntil = 0
-
-class FinMindApiError extends Error {
-  constructor(message, { status = 500, code = 'unknown', body = '' } = {}) {
-    super(message)
-    this.name = 'FinMindApiError'
-    this.status = status
-    this.code = code
-    this.body = body
-  }
-}
+import {
+  FINMIND_DATASET_KEYS,
+  getFinMindDatasetConfig,
+} from '../src/lib/dataAdapters/finmindDatasetRegistry.js'
 
 function toNumber(value) {
   const number = Number(value)
@@ -65,70 +56,6 @@ function getInstitutionalBucket(name = '') {
     return 'dealer'
   }
   return null
-}
-
-async function queryFinMind(dataset, params = {}) {
-  if (Date.now() < finmindRateLimitedUntil) {
-    throw new FinMindApiError('FinMind requests temporarily rate limited', {
-      status: 402,
-      code: 'rate_limited_cached',
-    })
-  }
-
-  const searchParams = new URLSearchParams({
-    dataset,
-    ...Object.fromEntries(
-      Object.entries(params).filter(([, value]) => value != null && String(value).trim() !== '')
-    ),
-  })
-
-  const headers = { 'User-Agent': 'portfolio-dashboard/1.0' }
-  if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`
-
-  const res = await fetch(`${FINMIND_BASE}?${searchParams}`, {
-    headers,
-    signal: AbortSignal.timeout(8000),
-  })
-
-  if (!res.ok) {
-    const text = await res.text()
-    const snippet = text.slice(0, 160)
-
-    if (res.status === 402 && /upper limit/i.test(text)) {
-      finmindRateLimitedUntil = Date.now() + FINMIND_RATE_LIMIT_COOLDOWN_MS
-      throw new FinMindApiError(`FinMind ${dataset} requests reached upper limit`, {
-        status: 402,
-        code: 'rate_limited',
-        body: snippet,
-      })
-    }
-
-    throw new FinMindApiError(`FinMind ${dataset} failed (${res.status}): ${snippet}`, {
-      status: res.status,
-      code: 'upstream_error',
-      body: snippet,
-    })
-  }
-
-  const data = await res.json()
-  if (data.status !== 200 && data.msg !== 'success') {
-    if (Number(data.status) === 402 || /upper limit/i.test(String(data.msg || ''))) {
-      finmindRateLimitedUntil = Date.now() + FINMIND_RATE_LIMIT_COOLDOWN_MS
-      throw new FinMindApiError(`FinMind ${dataset} requests reached upper limit`, {
-        status: 402,
-        code: 'rate_limited',
-        body: String(data.msg || '').slice(0, 160),
-      })
-    }
-
-    throw new FinMindApiError(`FinMind ${dataset}: ${data.msg || 'unknown error'}`, {
-      status: Number(data.status) || 500,
-      code: 'upstream_payload_error',
-      body: String(data.msg || '').slice(0, 160),
-    })
-  }
-
-  return Array.isArray(data.data) ? data.data : []
 }
 
 function transformInstitutional(rows = []) {
@@ -278,74 +205,25 @@ function transformNews(rows = []) {
   )
 }
 
-const DATASET_MAP = {
-  institutional: {
-    finmindDataset: 'TaiwanStockInstitutionalInvestorsBuySell',
-    transform: transformInstitutional,
-    defaultWindowDays: 90,
-  },
-  margin: {
-    finmindDataset: 'TaiwanStockMarginPurchaseShortSale',
-    transform: transformMarginTrading,
-    defaultWindowDays: 90,
-  },
-  valuation: {
-    finmindDataset: 'TaiwanStockPER',
-    transform: transformValuation,
-    defaultWindowDays: 365,
-  },
-  financials: {
-    finmindDataset: 'TaiwanStockFinancialStatements',
-    transform: pivotStatementRows,
-    defaultWindowDays: 730,
-  },
-  balanceSheet: {
-    finmindDataset: 'TaiwanStockBalanceSheet',
-    transform: pivotStatementRows,
-    defaultWindowDays: 730,
-  },
-  cashFlow: {
-    finmindDataset: 'TaiwanStockCashFlowsStatement',
-    transform: pivotStatementRows,
-    defaultWindowDays: 730,
-  },
-  dividend: {
-    finmindDataset: 'TaiwanStockDividend',
-    transform: transformDividend,
-    defaultWindowDays: 1825,
-  },
-  dividendResult: {
-    finmindDataset: 'TaiwanStockDividendResult',
-    transform: transformDividendResult,
-    defaultWindowDays: 1825,
-  },
-  revenue: {
-    finmindDataset: 'TaiwanStockMonthRevenue',
-    transform: transformMonthlyRevenue,
-    defaultWindowDays: 365,
-  },
-  shareholding: {
-    finmindDataset: 'TaiwanStockShareholding',
-    transform: transformShareholding,
-    defaultWindowDays: 120,
-  },
-  news: {
-    finmindDataset: 'TaiwanStockNews',
-    transform: transformNews,
-    defaultWindowDays: 21,
-  },
+const DATASET_TRANSFORMS = {
+  institutional: transformInstitutional,
+  margin: transformMarginTrading,
+  valuation: transformValuation,
+  financials: pivotStatementRows,
+  balanceSheet: pivotStatementRows,
+  cashFlow: pivotStatementRows,
+  dividend: transformDividend,
+  dividendResult: transformDividendResult,
+  revenue: transformMonthlyRevenue,
+  shareholding: transformShareholding,
+  news: transformNews,
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const { dataset, code, start_date, end_date } = req.query
-  const available = Object.keys(DATASET_MAP)
+  const available = FINMIND_DATASET_KEYS
 
   if (!dataset || !code) {
     return res.status(400).json({
@@ -355,8 +233,9 @@ export default async function handler(req, res) {
     })
   }
 
-  const config = DATASET_MAP[dataset]
-  if (!config) {
+  const config = getFinMindDatasetConfig(dataset)
+  const transform = DATASET_TRANSFORMS[dataset]
+  if (!config || typeof transform !== 'function') {
     return res.status(400).json({
       error: `不支援的 dataset: ${dataset}`,
       available,
@@ -366,20 +245,16 @@ export default async function handler(req, res) {
   const startDate = start_date || defaultStartDate(config.defaultWindowDays)
 
   try {
-    const rows = await queryFinMind(config.finmindDataset, {
-      data_id: code,
-      start_date: startDate,
-      end_date,
-    })
+    const rows = await queryFinMindDataset(dataset, { code, startDate, endDate: end_date })
     let revenueRows = []
     if (dataset === 'financials') {
-      revenueRows = await queryFinMind(DATASET_MAP.revenue.finmindDataset, {
-        data_id: code,
-        start_date: startDate,
-        end_date,
+      revenueRows = await queryFinMindDataset('revenue', {
+        code,
+        startDate,
+        endDate: end_date,
       })
     }
-    const data = config.transform(rows, { revenueRows })
+    const data = transform(rows, { revenueRows })
 
     return res.status(200).json({
       success: true,
@@ -420,6 +295,4 @@ function defaultStartDate(days = 90) {
   return d.toISOString().slice(0, 10)
 }
 
-function isFinMindRateLimitError(error) {
-  return error instanceof FinMindApiError && String(error.code || '').startsWith('rate_limited')
-}
+export default withApiAuth(handler)

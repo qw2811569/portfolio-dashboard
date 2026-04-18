@@ -56,6 +56,7 @@ export function buildResearchDossiers({ stocks = [], dossierByCode = new Map() }
 }
 
 export function buildResearchRequestBody({
+  portfolioId = '',
   mode = 'single',
   stocks = [],
   holdings = [],
@@ -70,6 +71,7 @@ export function buildResearchRequestBody({
   knowledgeFeedbackLog = [],
 }) {
   const body = {
+    portfolioId,
     stocks,
     holdings,
     holdingDossiers: researchDossiers,
@@ -84,9 +86,8 @@ export function buildResearchRequestBody({
     body.events = (Array.isArray(newsEvents) ? newsEvents : []).slice(0, 20)
     body.analysisHistory = (Array.isArray(analysisHistory) ? analysisHistory : []).slice(0, 10)
     body.knowledgeUsageLog = (Array.isArray(knowledgeUsageLog) ? knowledgeUsageLog : []).slice(-500)
-    body.knowledgeFeedbackLog = (Array.isArray(knowledgeFeedbackLog)
-      ? knowledgeFeedbackLog
-      : []
+    body.knowledgeFeedbackLog = (
+      Array.isArray(knowledgeFeedbackLog) ? knowledgeFeedbackLog : []
     ).slice(-200)
   }
 
@@ -116,7 +117,9 @@ export function patchResearchProposalState(report, patch = {}) {
 
 export function updateResearchReportsProposalState(rows, targetTimestamp, patch = {}) {
   return (Array.isArray(rows) ? rows : []).map((report) =>
-    Number(report?.timestamp) === Number(targetTimestamp) ? patchResearchProposalState(report, patch) : report
+    Number(report?.timestamp) === Number(targetTimestamp)
+      ? patchResearchProposalState(report, patch)
+      : report
   )
 }
 

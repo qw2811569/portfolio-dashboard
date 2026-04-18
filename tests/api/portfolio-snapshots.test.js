@@ -73,6 +73,10 @@ describe('api/_lib/portfolio-snapshots', () => {
         contentType: 'application/json',
       })
     )
+    expect(JSON.parse(put.mock.calls[0][1])).toMatchObject({
+      schemaVersion: 1,
+      date: '2026-04-16',
+    })
   })
 
   it('upserts the same day snapshot with overwrite enabled', async () => {
@@ -93,7 +97,31 @@ describe('api/_lib/portfolio-snapshots', () => {
 
     expect(put).toHaveBeenCalledTimes(2)
     const latestPayload = JSON.parse(put.mock.calls[1][1])
+    expect(latestPayload.schemaVersion).toBe(1)
     expect(latestPayload.totalValue).toBe(105)
+  })
+
+  it('normalizes legacy snapshots without schemaVersion on read', async () => {
+    const { readPortfolioSnapshots } = await import('../../api/_lib/portfolio-snapshots.js')
+
+    list.mockResolvedValue({
+      blobs: [{ url: 'https://blob.example/legacy-2026-04-10' }],
+    })
+    global.fetch.mockResolvedValue(
+      createJsonResponse({
+        date: '2026-04-10',
+        totalValue: 100,
+        totalCost: 80,
+        holdingsCount: 1,
+      })
+    )
+
+    const snapshots = await readPortfolioSnapshots('me', {
+      fromDate: '2026-04-10',
+      toDate: '2026-04-10',
+    })
+
+    expect(snapshots).toEqual([expect.objectContaining({ schemaVersion: 1, date: '2026-04-10' })])
   })
 
   it('reads a snapshot range and forward-fills missing dates', async () => {

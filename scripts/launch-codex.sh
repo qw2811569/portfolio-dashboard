@@ -5,6 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_DEFAULT="${AGENT_BRIDGE_REMOTE_DEFAULT:-0}"
 USE_REMOTE=0
 
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/launch-preflight.sh"
+
 if [[ "$REMOTE_DEFAULT" == "1" ]]; then
   USE_REMOTE=1
 fi
@@ -48,9 +51,15 @@ fi
 
 if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${1:-}" != "-v" ]]; then
   if [[ "$USE_REMOTE" == "1" ]]; then
+    launch_preflight_require_command curl
+    launch_preflight_require_command node
+    launch_preflight_require_env AGENT_BRIDGE_REMOTE_URL "Set the VM bridge base URL before using --remote-vm."
+    launch_preflight_require_env AGENT_BRIDGE_REMOTE_TOKEN "Set the VM bridge bearer token before using --remote-vm."
     report_ai_start "Codex VM dispatch：$*"
     exec bash "$ROOT_DIR/scripts/bridge-remote-dispatch.sh" --agent codex "$@"
   fi
+
+  launch_preflight_require_command codex
 
   if [[ "$#" -eq 1 && -f "$1" && -r "$1" ]]; then
     report_ai_start "Codex CLI 啟動：brief 檔 $1"
@@ -64,4 +73,5 @@ if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${
   fi
 fi
 
+launch_preflight_require_command codex
 exec codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check "$@"

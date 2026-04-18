@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # shellcheck disable=SC1091
 source "$ROOT_DIR/scripts/ai-git-identity.sh"
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/launch-preflight.sh"
 
 source "$(dirname "$0")/gemini-common.sh"
 gemini_init_env
@@ -21,6 +23,9 @@ report_ai_start() {
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   exec gemini --help
 fi
+
+launch_preflight_require_command gemini
+launch_preflight_require_env GEMINI_API_KEY "Populate ~/.gemini/.env or export GEMINI_API_KEY before launching the scout."
 
 if [[ "$#" -gt 0 ]]; then
   USER_TASK="$*"

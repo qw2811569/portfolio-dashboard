@@ -9,6 +9,7 @@ export default [
   },
   {
     files: ['src/**/*.{js,jsx}'],
+    ignores: ['src/lib/dataAdapters/finmindClient.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -41,6 +42,14 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'warn',
       'no-var': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Literal[value='https://api.finmindtrade.com/api/v4/data']",
+          message:
+            'Route FinMind access through src/lib/dataAdapters/finmindAdapter.js or finmindClient.js boundary.',
+        },
+      ],
     },
   },
   {

@@ -5,6 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REMOTE_DEFAULT="${AGENT_BRIDGE_REMOTE_DEFAULT:-0}"
 USE_REMOTE=0
 
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/launch-preflight.sh"
+
 if [[ "$REMOTE_DEFAULT" == "1" ]]; then
   USE_REMOTE=1
 fi
@@ -88,10 +91,19 @@ collect_gemini_args() {
 
 if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${1:-}" != "-v" ]]; then
   if [[ "$USE_REMOTE" == "1" ]]; then
+    launch_preflight_require_command curl
+    launch_preflight_require_command node
+    launch_preflight_require_env AGENT_BRIDGE_REMOTE_URL "Set the VM bridge base URL before using --remote-vm."
+    launch_preflight_require_env AGENT_BRIDGE_REMOTE_TOKEN "Set the VM bridge bearer token before using --remote-vm."
     report_ai_start "Gemini VM dispatch：$*"
     exec bash "$ROOT_DIR/scripts/bridge-remote-dispatch.sh" --agent gemini "$@"
   fi
 
+  launch_preflight_require_command gemini
+  launch_preflight_require_env_or_file \
+    GEMINI_API_KEY \
+    "${GEMINI_KEY_FILE}" \
+    "Export GEMINI_API_KEY or populate .tmp/secrets/GEMINI_API_KEY.txt."
   load_gemini_api_key
   gemini_log_launch "interactive" "${DEFAULT_MODEL}" "general" "${PWD}"
   if [[ "$#" -gt 0 ]]; then
@@ -101,6 +113,7 @@ if [[ "${1:-}" != "--help" && "${1:-}" != "-h" && "${1:-}" != "--version" && "${
   fi
 fi
 
+launch_preflight_require_command gemini
 if [[ "$#" -eq 1 && -f "$1" && -r "$1" ]]; then
   collect_gemini_args -p "$(cat "$1")"
 else

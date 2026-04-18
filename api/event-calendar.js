@@ -1,3 +1,5 @@
+import { buildInternalAuthHeaders, withApiAuth } from './_lib/auth-middleware.js'
+import { queryFinMindDataset } from './_lib/finmind-governor.js'
 // Vercel Serverless Function — 自動事件行事曆 API
 // 整合多種來源產生投資事件：
 // 1. MOPS 重大訊息（法說會、股利、重訊）
@@ -8,12 +10,7 @@
 const FIXED_EVENT_LOOKAHEAD_DAYS = 45
 const GEMINI_EVENT_LOOKAHEAD_DAYS = 60
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const { codes, range = '30' } = req.query
@@ -292,7 +289,10 @@ async function fetchMopsConferenceEvents(today, rangeDays, stockCodes, req) {
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const host = req.headers.host || '127.0.0.1:3002'
       const mopsUrl = `${protocol}://${host}/api/mops-announcements?date=${dateStr}`
-      const mopsRes = await fetch(mopsUrl, { signal: AbortSignal.timeout(3000) })
+      const mopsRes = await fetch(mopsUrl, {
+        signal: AbortSignal.timeout(3000),
+        headers: buildInternalAuthHeaders(),
+      })
       if (!mopsRes.ok) continue
 
       const mopsData = await mopsRes.json()
@@ -357,7 +357,10 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
       const host = req.headers.host || '127.0.0.1:3002'
       const newsUrl = `${protocol}://${host}/api/finmind?dataset=news&code=${code}&start_date=${formatDateForFinMind(today)}`
 
-      const newsRes = await fetch(newsUrl, { signal: AbortSignal.timeout(5000) })
+      const newsRes = await fetch(newsUrl, {
+        signal: AbortSignal.timeout(5000),
+        headers: buildInternalAuthHeaders(),
+      })
       if (!newsRes.ok) continue
 
       const newsData = await newsRes.json()
@@ -520,12 +523,9 @@ function formatDateForFinMind(d) {
   return `${y}-${m}-${day}`
 }
 
-// ── 直接呼叫 FinMind 外部 API（不走 self-request，避免 deadlock）──
-// 取最近 3 天的持股新聞作為行事曆事件（需要 FINMIND_TOKEN）
+// ── 直接呼叫 FinMind governor 邊界 ──
+// 取最近 3 天的持股新聞作為行事曆事件
 async function fetchFinMindNewsDirectly(stockCodes) {
-  const token = process.env.FINMIND_TOKEN || ''
-  if (!token) return [] // 無 token 無法取得新聞
-
   const today = new Date()
   const startDate = new Date(today)
   startDate.setDate(startDate.getDate() - 3)
@@ -534,12 +534,13 @@ async function fetchFinMindNewsDirectly(stockCodes) {
 
   const perCodeTasks = limitedCodes.map(async (code) => {
     try {
-      const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=${code}&start_date=${startStr}&token=${token}`
-      const res = await fetch(url, { signal: AbortSignal.timeout(2500) })
-      if (!res.ok) return []
-
-      const json = await res.json()
-      return (json.data || [])
+      return (
+        await queryFinMindDataset('news', {
+          code,
+          startDate: startStr,
+          timeoutMs: 2500,
+        })
+      )
         .slice(0, 2) // 每檔最多 2 則最新，避免事件過多拖慢 response
         .map((item) => {
           const title = String(item.title || '')
@@ -569,3 +570,5 @@ async function fetchFinMindNewsDirectly(stockCodes) {
   const settled = await Promise.allSettled(perCodeTasks)
   return settled.flatMap((item) => (item.status === 'fulfilled' ? item.value : []))
 }
+
+export default withApiAuth(handler)

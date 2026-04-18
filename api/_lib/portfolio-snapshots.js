@@ -3,6 +3,7 @@ import { list, put } from '@vercel/blob'
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
 const DEFAULT_HISTORY_DAYS = 365
 const MIN_MDD_HISTORY_DAYS = 7
+const SNAPSHOT_SCHEMA_VERSION = 1
 
 function getBlobToken() {
   return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
@@ -50,6 +51,11 @@ function toNumberOrZero(value) {
   return Number.isFinite(numeric) ? numeric : 0
 }
 
+function normalizeSnapshotSchemaVersion(value) {
+  const numeric = Math.trunc(Number(value))
+  return numeric >= 1 ? numeric : SNAPSHOT_SCHEMA_VERSION
+}
+
 export function getPortfolioSnapshotKey(portfolioId, date) {
   return `portfolios/${assertPortfolioId(portfolioId)}/snapshots/${assertSnapshotDate(date)}.json`
 }
@@ -61,9 +67,11 @@ export function normalizePortfolioSnapshot(snapshot = {}) {
   const totalValue = toNumberOrZero(snapshot.totalValue)
   const totalCost = toNumberOrZero(snapshot.totalCost)
   const holdingsCount = Math.max(0, Math.trunc(toNumberOrZero(snapshot.holdingsCount)))
+  const schemaVersion = normalizeSnapshotSchemaVersion(snapshot.schemaVersion)
 
   return {
     ...snapshot,
+    schemaVersion,
     date,
     totalValue,
     totalCost,

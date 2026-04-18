@@ -16,6 +16,7 @@ import {
 import { fetchJsonWithTimeout } from '../lib/utils.js'
 
 export function useReportRefreshWorkflow({
+  activePortfolioId = '',
   holdings = [],
   dossierByCode = new Map(),
   analystReports = {},
@@ -181,6 +182,7 @@ export function useReportRefreshWorkflow({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                  portfolioId: activePortfolioId,
                   code: holding.code,
                   name: holding.name,
                   knownHashes,
@@ -237,6 +239,7 @@ export function useReportRefreshWorkflow({
     },
     [
       analystReports,
+      activePortfolioId,
       flashSaved,
       mergeAnalystReportBatch,
       reportRefreshCandidates,

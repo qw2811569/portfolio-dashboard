@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  FINMIND_DATASET_KEYS,
   fetchBalanceSheet,
   fetchCashFlowStatements,
   fetchDividendResults,
@@ -114,6 +115,7 @@ describe('lib/dataAdapters/finmindAdapter', () => {
     const result = await fetchStockDossierData('2330')
 
     expect(global.fetch).toHaveBeenCalledTimes(11)
+    expect(Object.keys(result)).toEqual(FINMIND_DATASET_KEYS)
     expect(result).toEqual({
       institutional: [{ dataset: 'institutional' }],
       margin: [{ dataset: 'margin' }],
@@ -150,6 +152,29 @@ describe('lib/dataAdapters/finmindAdapter', () => {
     expect(global.fetch).toHaveBeenCalledTimes(2)
     expect(getDatasetFromCall(0)).toBe('shareholding')
     expect(getDatasetFromCall(1)).toBe('shareholding')
+  })
+
+  it('keys cache entries by request range so distinct end dates do not collide', async () => {
+    const storage = new Map()
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key) => (storage.has(key) ? storage.get(key) : null)),
+      setItem: vi.fn((key, value) => storage.set(key, value)),
+      removeItem: vi.fn((key) => storage.delete(key)),
+      key: vi.fn((i) => Array.from(storage.keys())[i] || null),
+      get length() {
+        return storage.size
+      },
+    })
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ dataset: 'shareholding' }] }),
+    })
+
+    await fetchShareholdingHistory('2330', 60, { endDate: '2026-03-31' })
+    await fetchShareholdingHistory('2330', 60, { endDate: '2026-03-15' })
+
+    expect(global.fetch).toHaveBeenCalledTimes(2)
   })
 
   describe('evictEmptyFinMindCache module-load cleanup', () => {

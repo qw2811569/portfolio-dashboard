@@ -20,9 +20,7 @@ git add \
   package.json \
   package-lock.json \
   vite.config.js \
-  vercel.json \
-  claude.md \
-  CLAUDE.md
+  vercel.json
 
 if git diff --cached --quiet; then
   echo "No staged changes to commit."

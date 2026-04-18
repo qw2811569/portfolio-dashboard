@@ -1,3 +1,4 @@
+import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — AutoResearch 自主進化系統
 // 借鑒 karpathy/autoresearch：AI 自主多輪迭代，累積進化
 // 不只研究股票，而是審視整個投資系統並自我改善
@@ -5,6 +6,7 @@ import { put, list, del } from '@vercel/blob'
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
+import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
 import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
 import { buildCompactKnowledgeContext, buildKnowledgeContext } from '../src/lib/knowledgeBase.js'
@@ -21,6 +23,7 @@ import {
   summarizeResearchRequestInput,
   validateResearchRequestInput,
 } from '../src/lib/researchRequestRuntime.js'
+import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
 const TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
 const RESEARCH_INDEX_KEY = 'research-index.json'
@@ -85,8 +88,12 @@ async function write(key, data) {
   }
 }
 
-async function callClaude(system, user, maxTokens = 4000) {
-  return callAiText({ system, user, maxTokens })
+async function callClaude(system, user, maxTokens = 4000, portfolio = null) {
+  return callAiText({
+    system: stripBuySellForInsider(system, portfolio),
+    user: stripBuySellForInsider(user, portfolio),
+    maxTokens,
+  })
 }
 
 /**
@@ -542,11 +549,7 @@ function normalizePortfolioStockSummaries(rawText, universeStocks, dossierByCode
   })
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+async function handler(req, res) {
   try {
     ensureAiConfigured()
   } catch (err) {
@@ -592,6 +595,17 @@ export default async function handler(req, res) {
   }
 
   const normalizedRequest = normalizeResearchRequestInput(req.body || {})
+  let portfolio = null
+  try {
+    portfolio = requirePortfolio(req, normalizedRequest.portfolioId, { allowMissing: true })
+  } catch (error) {
+    if (error instanceof PortfolioAccessError) {
+      return res.status(error.status).json({ error: error.message, code: error.code })
+    }
+    throw error
+  }
+  const callPortfolioClaude = (system, user, maxTokens = 4000) =>
+    callClaude(system, user, maxTokens, portfolio)
   const {
     stocks,
     holdings,
@@ -664,7 +678,7 @@ export default async function handler(req, res) {
 
       if (researchRoundCount === 1) {
         const brainCtx = brain ? buildResearchBrainContext(brain) : ''
-        const singlePass = await callClaude(
+        const singlePass = await callPortfolioClaude(
           `你是專業的台股研究分析師兼持倉策略顧問。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做一輪完整深度研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
 產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}
@@ -716,7 +730,7 @@ ${brainCtx}
         }
         results.push(report)
       } else {
-        const round1 = await callClaude(
+        const round1 = await callPortfolioClaude(
           `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
 產業：${m.industry || '未分類'} | 策略：${m.strategy || '未分類'} | 產業地位：${m.leader || '未知'}
@@ -740,7 +754,7 @@ ${dossierContext}
 請用 dossier 內已有的具體數據和邏輯推演，不要空泛描述。`
         )
 
-        const round2 = await callClaude(
+        const round2 = await callPortfolioClaude(
           `你是台股風險評估專家，你的工作是挑戰 Round 1 的結論。
 如果 Round 1 看多，你要找出看空的理由；如果 Round 1 看空，你要找出被低估的可能。
 你的價值在於找到分析師遺漏的風險，而不是附和前一輪的結論。
@@ -759,7 +773,7 @@ ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
         )
 
         const brainCtx = brain ? buildResearchBrainContext(brain) : ''
-        const round3 = await callClaude(
+        const round3 = await callPortfolioClaude(
           `你是持倉策略顧問。綜合所有研究結果，給出明確的操作建議。
 
 ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
@@ -862,7 +876,7 @@ ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
             { maxChars: 12000, maxEntries: 25, joiner: '\n\n' }
           ).text || '目前沒有持股摘要。'
 
-        const stockScanText = await callClaude(
+        const stockScanText = await callPortfolioClaude(
           `你是台股組合研究員。請先讀完整個持股清單 dossier，再一次快掃所有持股。回傳純 JSON 陣列，不要 markdown。
 
 ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
@@ -900,7 +914,7 @@ ${portfolioScanContext}
           const m = meta?.[s.code] || {}
           const dossier = dossierByCode.get(s.code) || null
           const dossierContext = buildResearchDossierContext(dossier, { compact: true })
-          const summary = await callClaude(
+          const summary = await callPortfolioClaude(
             `你是台股分析師。先讀這檔持股的 dossier，再用 120 字內精要分析這檔持股的當前狀態和操作方向。
 
 ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
@@ -944,7 +958,7 @@ ${dossierContext}
       sendProgress(res, 'round', { round: 1, title: '個股快掃', done: true })
 
       // ── Round 2：系統診斷（由上往下，結合個股掃描結果）──
-      const diag = await callClaude(
+      const diag = await callPortfolioClaude(
         `你是投資系統架構師。基於個股研究結果和完整系統資料，診斷這個交易者的投資系統。`,
         `${notesContext}
 
@@ -982,7 +996,7 @@ ${histSummary || '（無紀錄）'}
       sendProgress(res, 'round', { round: 2, title: '系統診斷', done: true })
 
       // ── Round 3：進化建議 + 組合調整（合併策略建議與系統改善）──
-      const evolveAdvice = await callClaude(
+      const evolveAdvice = await callPortfolioClaude(
         `你是投資系統優化顧問兼組合管理專家。基於個股研究和系統診斷，提出完整的改善方案。`,
         `${notesContext}\n\n個股研究摘要：\n${stockSummaryText}\n\n系統診斷結果：\n${diag}\n\n請提出：
 
@@ -1003,7 +1017,7 @@ ${histSummary || '（無紀錄）'}
       sendProgress(res, 'round', { round: 3, title: '進化建議', done: true })
 
       // ── Round 4：生成候選策略提案（JSON output）──
-      const newBrainText = await callClaude(
+      const newBrainText = await callPortfolioClaude(
         `你是台股策略大腦進化引擎。根據研究結果輸出純 JSON（不要 markdown code fence）。
 
 重要限制：
@@ -1146,3 +1160,5 @@ JSON 結構：
     return res.status(500).json({ error: '研究失敗', detail: err.message })
   }
 }
+
+export default withApiAuth(handler)

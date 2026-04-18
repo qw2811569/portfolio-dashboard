@@ -73,20 +73,20 @@ def main():
     
     # 定義要掃描的文件和對應分類
     files_to_scan = [
-        ('MY_TW_COVERAGE_ANALYSIS.md', 'industry-trends'),
-        ('THREE_KEY_POINTS_DISCUSSION.md', 'chip-analysis'),
-        ('stock-selection-strategy.md', 'technical-analysis'),
+        ('archive/2026-Q2/root-history/MY_TW_COVERAGE_ANALYSIS.md', 'industry-trends'),
+        ('archive/2026-Q2/root-history/THREE_KEY_POINTS_DISCUSSION.md', 'chip-analysis'),
+        ('archive/2026-Q2/root-history/stock-selection-strategy.md', 'technical-analysis'),
     ]
     
     total_imported = 0
     
-    for filename, category in files_to_scan:
-        filepath = DOCS_DIR / filename
+    for relative_path, category in files_to_scan:
+        filepath = DOCS_DIR / relative_path
         if not filepath.exists():
-            print(f"⚠️  找不到文件：{filename}")
+            print(f"⚠️  找不到文件：{relative_path}")
             continue
         
-        print(f"📄 掃描：{filename} → {category}")
+        print(f"📄 掃描：{relative_path} → {category}")
         
         # 提取知識
         items = extract_from_file(filepath, category)

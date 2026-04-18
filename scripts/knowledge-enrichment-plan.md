@@ -127,9 +127,9 @@
 ## 📥 知識來源
 
 1. **現有文檔提取** (30%)
-   - `docs/MY_TW_COVERAGE_ANALYSIS.md`
-   - `docs/THREE_KEY_POINTS_DISCUSSION.md`
-   - `docs/stock-selection-strategy.md`
+   - `docs/archive/2026-Q2/root-history/MY_TW_COVERAGE_ANALYSIS.md`
+   - `docs/archive/2026-Q2/root-history/THREE_KEY_POINTS_DISCUSSION.md`
+   - `docs/archive/2026-Q2/root-history/stock-selection-strategy.md`
 
 2. **歷史交易記錄** (30%)
    - 持倉記錄

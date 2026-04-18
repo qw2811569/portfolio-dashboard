@@ -2,8 +2,8 @@
 
 **日期**：2026-04-16
 **作者**：Codex
-**狀態**：blocked
-**主題**：Phase 3 券商共識來源選型
+**狀態**：per-firm blocked · aggregate via CMoney phase 3 live（2026-04-16 接 CMoney notes pipeline）
+**主題**：Phase 3 券商目標價 / target price scraping source 選型
 
 ## 結論
 
@@ -73,6 +73,28 @@
 ## 決策
 
 **不實作三選一 scraping 版本**，因為無法達成驗收標準，硬上只會做出一個看起來有資料、但其實拿不到券商明細的假 solution。
+
+## 歷史脈絡（R135 merge）
+
+### 2026-03-23 已定下的底線
+
+- 目標價 lane 要維持 **全域 per-stock cache**，不是 per-user 現場重跑。
+- 必須有 **hard fallback chain**，避免 UI 出現看起來壞掉的空白欄位。
+- 權證最終要 map 回標的股，不能把 warrant 當成獨立 target-price truth。
+- 真正可持續的版本需要 **async / segmented batch**，而不是把所有來源壓進單一短任務。
+
+### 2026-04-15 已確認的 runtime 問題
+
+- Phase 1 的主要修復是 cron timeout、RSS query 過嚴、Blob 寫不進去、UI skip list 沒對齊。
+- 即使這些 plumbing 修完，覆蓋率仍停在 `4/11`，表示瓶頸已不是 parser 或排程，而是 **來源本身沒有足夠 firm-level target rows**。
+- 因此 4/15 的「換 provider / 擴資料源」只是排查方向，不再構成「公開來源裡一定找得到 per-firm 明細」的前提。
+
+### 本檔與歷史檔的關係
+
+- `2026-03-23-target-collection-strategy.md` 的 cache / fallback / async 原則保留。
+- `2026-04-15-target-price-pipeline-fix.md` 的 timeout / observability / skip-list 修復保留。
+- 但「公開來源可補齊 10+ 家投顧明細」這個假設，到 2026-04-16 為止已被正式關閉。
+- 目前 live lane 是：**per-firm public source blocked；aggregate 由 CMoney Phase 3 與 cnyes 類來源承接 fallback。**
 
 ## 建議下一步
 

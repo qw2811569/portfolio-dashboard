@@ -15,6 +15,16 @@ route-shell 已明講是 migration-only，但它仍持有一部分 route-local p
 
 本 ADR 的目標不是立刻重構，而是把「誰擁有哪一段 state」先寫死，讓後續拆 hook / cut mutation 時不再靠口頭共識。
 
+## 歷史基礎承接（R135 merge）
+
+這份 owner map 直接承接舊版 `Holding Dossier` 架構設計裡仍然成立的三條底線，避免 state ownership ADR 和資料層設計互相打架：
+
+- `HoldingDossier` 仍是 detail pane / daily / research 共用的 canonical object，不回到各頁各自拼 context。
+- stale-while-revalidate、partial success、timeout 仍是資料刷新規則；owner 變更不代表可以重新引入「等全部資料回來才分析」。
+- 收盤價同步仍維持「收盤後每日一次、全域快取」的上游紀律；route-shell 不應因局部 view state 重新發明抓價節奏。
+
+換句話說：舊設計裡的 **data shape / freshness discipline / workflow intent** 保留，這份 ADR 只正式推翻其中「owner boundary 還模糊」的部分。
+
 ## Owner Map
 
 | State bucket                                                                                                | Current owner                                                     | Target owner                                                   | Rule                                                               |

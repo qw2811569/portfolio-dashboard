@@ -331,7 +331,7 @@ Last updated: 2026-04-18 13:03 CST
 - `2026-03-30 03:51` Codex：已封存舊的 `state.json` 直接寫入路徑；[ai-state.sh](/scripts/ai-state.sh) 的寫入命令已停用，[ai-status.sh](/scripts/ai-status.sh) 與 [ai-handover.sh](/scripts/ai-handover.sh) 改成相容提示，避免其他 AI 再把 docs-site 狀態寫回舊格式
 - `2026-03-30 03:49` Codex：docs-site 狀態同步改為以 [current-work.md](/docs/status/current-work.md) 為唯一真相；新增 [build-docs-state.mjs](/scripts/build-docs-state.mjs)，由 [sync-state.sh](/scripts/sync-state.sh) 重新生成 [docs-site/state.json](/docs-site/state.json)
 - `2026-03-30 03:49` Codex：[docs-site/script.js](/docs-site/script.js) 已補 `state.json` cache-busting / no-store；同步更新 [AI_COLLABORATION_GUIDE.md](/docs/AI_COLLABORATION_GUIDE.md)、[AI_STATE_GUIDE.md](/docs-site/AI_STATE_GUIDE.md)、[DYNAMIC_GUIDE.md](/docs-site/DYNAMIC_GUIDE.md)、[AI_GUIDE.md](/docs-site/AI_GUIDE.md)，避免其他 AI 再把 `state.json` 當獨立黑板
-- `2026-03-30 03:35` Codex：補登狀態回報約定；日常進度與最新 checkpoint 一律先回寫 [current-work.md](/docs/status/current-work.md)，規則變更再同步 [AI_COLLABORATION_GUIDE.md](/docs/AI_COLLABORATION_GUIDE.md)，架構真相變更再同步 [PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md](/docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md)
+- `2026-03-30 03:35` Codex：補登狀態回報約定；日常進度與最新 checkpoint 一律先回寫 [current-work.md](/docs/status/current-work.md)，規則變更再同步 [AI_COLLABORATION_GUIDE.md](/docs/AI_COLLABORATION_GUIDE.md)，架構真相變更再同步 [CANONICAL-INDEX.md](/docs/CANONICAL-INDEX.md) 與 SA 主檔
 - `2026-03-30 03:35` Codex：確認 [App.jsx](/src/App.jsx) 已是薄入口，目前只負責呼叫 [useAppRuntime.js](/src/hooks/useAppRuntime.js) 並 render [AppShellFrame.jsx](/src/components/AppShellFrame.jsx)；目前除 bug 應優先閱讀 `useAppRuntime.js`，不用再從 `App.jsx` 大檔進場
 - `2026-03-30 03:35` Codex：最新已知完整綠燈基線仍是 `npm run verify:local` 通過，包含 `35 files / 167 tests`、`build`、`healthcheck` 與 `smoke:ui`
 - `2026-03-29 20:31` Codex：新增 [useAppRuntime.js](/src/hooks/useAppRuntime.js) 與 [AppShellFrame.jsx](/src/components/AppShellFrame.jsx)，把 [App.jsx](/src/App.jsx) 的頂層 state / workflow wiring 與 render shell 正式拆開
@@ -526,7 +526,7 @@ Last updated: 2026-04-18 13:03 CST
 - `15:29` Codex：台股 hard gates 已正式接進 daily / review verdict，`validatedRules / invalidatedRules` 若缺 fresh 月營收、法說、財報、目標價/報告支撐，會自動降回 `staleRules`
 - `15:31` Codex：多股票事件已新增 `stockOutcomes`，結案復盤後會逐檔記錄方向、漲跌幅、是否支持原 thesis
 - `15:34` Codex：`brain-validation-v1` case 已正式回填 `matchedDimensions / mismatchedDimensions`，策略大腦 UI 也開始顯示最近案例的相似 / 差異維度
-- `15:37` Codex：已建立 `docs/evals/program.md`、`evals/cases/*`、`scripts/eval_brain.mjs`，開始採用 autoresearch 風格的固定案例回放
+- `15:37` Codex：已建立固定案例回放與 `scripts/eval_brain.mjs`，開始採用 autoresearch 風格的 eval loop
 - `15:38` Codex：`node scripts/eval_brain.mjs` 初版結果 `3/3 passed · avg 100`
 - `15:40` Codex：`npm run build` 通過，最新 bundle `dist/assets/index-CvLP7CgH.js`
 - `17:34` Codex：Gemini CLI 不穩的主因已定位為舊 Node (`/usr/local/bin/node v15.7.0`)；wrapper 現已強制切到 `~/.nvm/versions/node/v24.13.1/bin/node`
@@ -636,7 +636,7 @@ Last updated: 2026-04-18 13:03 CST
 
 - `2026-03-30 07:00` Qwen：**P1 工作完成** - 1) 更新供應鏈 schema（增加 dependency、substituteRisk 欄位）2) 加入 usageTracking 機制到知識庫品質驗證框架 3) 實作知識淘汰 3 步驟流程。
 
-- `2026-03-30 07:30` Qwen：**P1 工作全部完成** - 已建立收盤分析 Prompt 模板（XML + few-shot + 驗證機制），存入 `docs/PROMPT_TEMPLATES.md`。
+- `2026-03-30 07:30` Qwen：**P1 工作全部完成** - 已建立收盤分析 Prompt 模板（XML + few-shot + 驗證機制），後續已轉入歷史 archive。
 
 - `2026-03-30 08:00` Qwen：**Claude 建議的全部工作已完成** - P0/P1/P2 共 7 項工作全部完成。準備更新 AI_COLLABORATION_DISCUSSION.md 標記所有問題已解決。
 

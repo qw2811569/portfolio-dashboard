@@ -3,6 +3,7 @@
 **日期**：2026-04-15
 **參與者**：Claude + Qwen + Codex（2 輪 consensus）
 **源頭**：`.tmp/infra-01-knowledge-api/brief-v2-blob.md`, `.tmp/infra-01-consensus/round2-blob-design.md`
+**主題**：Vercel blob access mode（public read / private write）與 Knowledge API 邊界
 
 ## 背景
 

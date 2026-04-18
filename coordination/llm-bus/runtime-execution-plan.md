@@ -225,7 +225,7 @@ Goal: turn Agent Bridge into a real orchestration layer for multi-LLM collaborat
 - ~~risks~~
 - ~~verification run~~
 - ~~next step~~
-  ~~5. Update `docs/vscode-agent-bridge/README.md` and related docs to reflect the dispatcher model instead of terminal-only control.~~
+  ~~5. Update the historical VS Code Agent Bridge docs to reflect the dispatcher model instead of terminal-only control.~~
 
 Definition of done:
 
@@ -248,8 +248,8 @@ Wave 5 progress:
 - both gates share the **`AGENT_BRIDGE_HARD_GATES`** env flag and **default OFF** — the existing soft `verificationState` chip derivation stays untouched; operator flips the env var to `1` to enable hardening after verifying nothing breaks
 - `GET /api/status` now includes `hardGates: { enabled, envVar }` so operators can see at a glance whether hardening is live
 - break-glass mechanism: unset the env var and restart the VS Code extension — no per-request bypass by design, so all overrides are auditable at the env layer
-- new smoke script `docs/vscode-agent-bridge/scripts/hard-gate-smoke.cjs` exercises the validator (empty evidence rejected, full evidence passed, consensus 'none' rejected, consensus 'approved' passed)
-- new end-to-end harness `docs/vscode-agent-bridge/scripts/hard-gate-e2e.cjs` boots the extension in a fake-vscode shim with `AGENT_BRIDGE_HARD_GATES=1`, starts the HTTP server on port 19527, and drives real HTTP requests through `/api/status`, `POST /api/tasks`, `POST /api/tasks/:id/complete`, `POST /api/tasks/:id/consensus` to assert end-to-end: `hardGates.enabled=true` surface, empty-evidence 400 with `missing[]`, full-evidence 200, consensus-required + not-approved 409 with `reason`, and approved + full-evidence 200 after the 2-reviewer quorum is met. Complements the unit-level `hard-gate-smoke.cjs` with integration coverage of the actual HTTP wiring.
+- new smoke script for the historical VS Code Agent Bridge extension exercised the validator (empty evidence rejected, full evidence passed, consensus 'none' rejected, consensus 'approved' passed)
+- new end-to-end harness for the historical VS Code Agent Bridge extension booted the fake-vscode shim with `AGENT_BRIDGE_HARD_GATES=1`, started the HTTP server on port 19527, and drove real HTTP requests through `/api/status`, `POST /api/tasks`, `POST /api/tasks/:id/complete`, `POST /api/tasks/:id/consensus` to assert end-to-end hard-gate behavior
 - extension's `README.md` now has a dedicated "Hard Gates（選用強制門檻）" section documenting the opt-in behavior, both error shapes, the `/api/status` surface, and the emergency escape hatch
 
 ## Consensus Protocol

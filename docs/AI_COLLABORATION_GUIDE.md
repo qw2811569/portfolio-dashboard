@@ -21,7 +21,7 @@
 
 1. `README.md`
 2. `docs/AI_COLLABORATION_GUIDE.md`
-3. `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
+3. `docs/CANONICAL-INDEX.md`
 4. `docs/status/current-work.md`（只有在接手進行中的工作時）
 
 狀態同步規則：
@@ -56,7 +56,8 @@
 
 更完整說明看：
 
-- `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md`
+- `docs/CANONICAL-INDEX.md`
+- `docs/specs/2026-04-18-portfolio-dashboard-sa.md`
 
 ### 台股分析底線
 
@@ -399,7 +400,7 @@ npm run build
 
 ### 策略大腦 / AI 相關問題
 
-1. 查看 `docs/evals/program.md` 了解 eval 流程
+1. 先看本章的 eval 規則與 `scripts/eval_brain.mjs`
 2. 跑 `node scripts/eval_brain.mjs` 回放測試案例
 3. 檢查資料新鮮度（`freshness-gating`）
 4. 確認逐檔 outcome（`per_stock_resolution`）
@@ -445,7 +446,7 @@ npm run build
 
 **多模型分工**：
 
-- `Gemini` — 外部公開資料 scout，不直接當真值層
+- `Gemini` — 用戶盲點審查 / multi-LLM 反駁，不直接當資料蒐集 lane
 - `Qwen` — 低風險 patch / test / helper
 - `Codex` — 最終裁決、修改策略邏輯、驗收分數、決定保留或回滾
 
@@ -531,7 +532,7 @@ Codex 提出的 autoresearch 借鑒方向，按優先序：
 2. **research run ledger**（研究實驗帳本）
    - 固定欄位：run_id, mode, prompt_version, input_snapshot, output_summary, score, keep/discard, reason
 3. **eval loop 接到 research 主流程**
-   - `docs/evals/program.md` 的 gate 接成可執行腳本
+   - 歷史 eval program 文件已歸檔；目前 gate 應直接接到可執行腳本與固定案例
    - research 產生候選 brain → 自動跑固定 cases → 未過 gate 不落盤
 4. **固定預算與停止條件**
    - 每次 evolve 最多 1-3 輪，沒有分數進步就停止

@@ -4,6 +4,10 @@
 
 最後更新：2026-04-18
 
+## 🔑 First · 任何問題先 grep `docs/CANONICAL-INDEX.md`
+
+找不到的題目，才去 `.tmp/` / `docs/research/` 翻。過去踩過的舊檔已經 archive 到 `docs/archive/2026-Q2/`。
+
 ## 先讀順序
 
 1. [`../README.md`](../README.md) — 專案首讀、最短導航

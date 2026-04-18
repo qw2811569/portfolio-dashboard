@@ -79,7 +79,7 @@ eventScore = upcomingRevenueScore + conferenceCallScore + analystUpgradeScore + 
 // 升級後（整合 thesis scorecard）
 brainValidationScore =
   ruleMatchScore * 0.3 + analogSupport * 0.2 + freshnessBonus * 0.1 + thesisIntegrity * 0.4 // 新增：thesis scorecard 完整性
-  // thesisIntegrity = pillars on_track 比例 × conviction 乘數 × risk 懲罰
+// thesisIntegrity = pillars on_track 比例 × conviction 乘數 × risk 懲罰
 ```
 
 ### 2. 資料結構

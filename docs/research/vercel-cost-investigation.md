@@ -1,7 +1,7 @@
 # Vercel Build Minutes 成本調查 — $43/週太貴
 
 > 最新執行規則已收斂到 `claude.md` §4「一大輪才 push（不是每個 commit 都 push）」。
-> 這份調查保留作為原因追查與成本證據；若要看當前 action，先讀 `claude.md` 與 `docs/deployment-and-api-strategy.md` 檔頭 warning。
+> 這份調查保留作為原因追查與成本證據；若要看當前 action，先讀 `claude.md`、`docs/CANONICAL-INDEX.md`，再進對應 current decision / audit。
 
 用戶回報 Vercel Build Minutes 一週花 $43 美金。調查為什麼 + 怎麼降。
 

@@ -530,6 +530,28 @@ Phase 1 的產品面交付，至少要完成以下事項：
 - 為什麼 Morning Note、Close Analysis、Weekly PDF 是主線
 - 為什麼 detail pane、Accuracy Gate、五個焦慮指標屬於 Phase 1 核心
 
+## 13. 歷史脈絡承接（R135 併入）
+
+這份 SA 不是從零開始重寫，而是正式承接早期「持倉 → 研究 → 復盤」架構共識中仍然成立的部分，避免後續又把歷史上已驗證的資料流與 workflow 忘掉。
+
+### 13.1 Runtime 與遷移現況
+
+- 穩定主線仍是 `src/main.jsx -> src/App.jsx`，route shell 是 migration line，不可誤讀成已完成切主入口。
+- 共享邏輯優先落在 `src/lib/*`、`src/hooks/*`、`src/components/*`，而不是再長第三套 runtime。
+- local-first、cloud 補缺、owner portfolio 才做雲端同步的原則仍然有效。
+
+### 13.2 Workflow 閉環
+
+- 產品核心仍是一條閉環：交易 / 持倉形成 → 市場資料同步 → 催化事件追蹤 → 收盤分析 → 深度研究 → 復盤與策略記憶。
+- `HoldingDossier` 仍是 Daily / Research / Detail Pane / 週報之間的共同資料橋樑，不應被各頁各自重拼。
+- 事件不是資訊牆；它的角色是把 thesis 驗證與 lessons 回寫串進 workflow。
+
+### 13.3 資料層底線
+
+- stale-while-revalidate、partial success、timeout 防停滯仍是上游資料契約。
+- 收盤價同步維持「收盤後每日一次、全域共用快取」的紀律，不回到切 tab / 切組合就亂抓價。
+- freshness、fallback、degraded state 必須顯性呈現，這不是 UI 點綴，而是 trust contract。
+
 ## Round 92 · Codex · SA/SD 補 + HTML render + nav · 2026-04-18 02:56 CST
 
 - 補上 `Fallback / Resilience Plan`，把 FinMind、AI confidence、Trade parse、Blob、VM 五條退化策略寫成前台 contract。

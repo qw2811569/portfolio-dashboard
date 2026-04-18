@@ -4,17 +4,18 @@
 
 ## Gemini
 
-- role: 公開資料蒐集員
+- role: 用戶盲點審查 / multi-LLM 反駁者
 - current status: CLI 可用；`gemini-2.5-flash` headless `plan` mode 今晚可用，`gemini-3.1-flash-lite-preview` 今晚命中 `429 MODEL_CAPACITY_EXHAUSTED`
 - best for:
-  - 新聞 / 公告 / 法說 / 公開報告索引
-  - citations / freshness / unresolved questions
-  - blind-spot review / 外部真值缺口提示
+  - blind-spot review / 反駁與質疑 current plan
+  - citations / freshness / unresolved questions 的二次查核
+  - 指出 repo / 人類 / Codex 可能忽略的外部真值缺口
 - limits:
+  - 不做 primary 資料蒐集 lane
   - 不是最終數字真值
   - 某些模型會先碰到 daily quota
   - consensus 任務要用短 prompt；長 prompt 較容易浪費 quota
-  - research scout wrapper 不適合精細控制 consensus flags
+  - 不適合精細控制 consensus flags 或穩定阻塞主線
 
 ## Qwen
 
@@ -30,7 +31,7 @@
 ## Active coordination rule
 
 - 高風險主線：Codex
-- 外部 research：Gemini
+- 外部 research / blind-spot review：Gemini（非 primary data lane）
 - 低風險 patch：Qwen
 
 ## Validation lane

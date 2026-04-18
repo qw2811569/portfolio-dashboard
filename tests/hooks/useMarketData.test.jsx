@@ -142,9 +142,9 @@ describe('useMarketData', () => {
       expect(result.current.priceSyncStatusLabel).toBe('未同步')
     })
 
-    it('priceSyncStatusTone defaults to "#888" when no sync state', () => {
+    it('priceSyncStatusTone defaults to the iron theme token when no sync state', () => {
       const { result } = renderHook(() => useMarketData(defaultProps()))
-      expect(result.current.priceSyncStatusTone).toBe('#888')
+      expect(result.current.priceSyncStatusTone).toBe('#838585')
     })
 
     it('priceSelfHealRef is a ref object', () => {

@@ -98,7 +98,7 @@ We needed the smallest Agent Bridge patch that would make task completion less h
 - added `POST /api/tasks/:id/complete` and matching WebSocket `task:complete`
 - dashboard now distinguishes open tasks from `草稿完成`, `待共識`, and `已驗證`
 - verification passed:
-  - `npm run compile` in `docs/vscode-agent-bridge`
+  - historical VS Code Agent Bridge extension compile check
   - `coordination/llm-bus/agent-bridge-tasks.json` parse check
 
 ## Active Decision: Wave 4 Startup Stabilization
@@ -486,7 +486,7 @@ We needed the smallest next AppShell coherence patch after the daily/research ha
   - `前往事件`
   - `前往焦點標的`
   - `前往收盤分析`
-  depending on the current shared runtime truth
+    depending on the current shared runtime truth
 - no new API work, stores, or route-shell logic were added
 - verification passed:
   - `bunx vitest run tests/components/Header.test.jsx tests/hooks/useAppRuntimeHeaderProps.test.js tests/hooks/useAppRuntimeComposer.test.jsx`
@@ -520,7 +520,7 @@ We needed the smallest patch that would turn `consensusState` from a writable la
   - `共識退回` when a review rejects the task
 - downstream task dispatch now stops if a dependency is completed but still waiting for consensus
 - verification passed:
-  - `npm run compile` in `docs/vscode-agent-bridge`
+  - historical VS Code Agent Bridge extension compile check
 
 ## Active Decision: Review Backlog Guard Before Daily Analysis
 

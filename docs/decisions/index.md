@@ -2,18 +2,22 @@
 
 **最後更新**：2026-04-18
 
-- 2026-04-18 · Round 97-98c · 40+ 檔深讀 + 9 blocker 收斂 + RBAC B6 獨立確認 → `docs/product/portfolio-dashboard-spec.md#round-98c`
+**用途**：防止每次 session 重開舊討論。凡多 LLM 討論過 + 用戶拍板的主題，應先從這份索引找。
+
+**規則**：
+
+- 開新討論前先搜這份索引。
+- 已有 decision 就優先遵循；若要推翻，必須新寫 decision 檔明示原因。
+- 歷史背景若已移到 `docs/archive/2026-Q2/`，只作考古，不作 current truth。
 
 ## 資料 Pipeline
 
-| Decision                                                                                | 日期       | 狀態            | 摘要                                                                                                                                          |
-| --------------------------------------------------------------------------------------- | ---------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [2026-03-23-target-collection-strategy](./2026-03-23-target-collection-strategy.md)     | 2026-03-23 | ✅ 決議         | 目標價採全域 per-stock cache + 硬 fallback chain + 權證 map 標的股 + async/segmented batch 避免 Vercel timeout                                |
-| [2026-03-25-targets-freshness](./2026-03-25-targets-freshness.md)                       | 2026-03-25 | ✅ 決議         | 目標價 freshness 7/30 天、fundamentals 用 entry.updatedAt、shared date parser 支援 YYYY/MM + ISO                                              |
-| [2026-04-15-target-price-pipeline-fix](./2026-04-15-target-price-pipeline-fix.md)       | 2026-04-15 | ✅ phase 1 完工 | 修 cron timeout (maxDuration=60) + RSS 3 條 query + backfill CLI；Phase 2 weekly + observability；Phase 3 AB test Gemini/Perplexity/Anthropic |
-| [2026-04-16-target-price-scraping-source](./2026-04-16-target-price-scraping-source.md) | 2026-04-16 | 🚫 blocked      | Goodinfo 路徑失效、Yahoo 對 AI bot 明文禁止、cnyes 只公開 aggregate consensus，無法達成 per-firm target 明細抓取                              |
-| [2026-04-16-cmoney-notes-as-phase3](./2026-04-16-cmoney-notes-as-phase3.md)             | 2026-04-16 | ✅ 實作完成     | CMoney `notes/?tag=78570` 進 target-price Phase 3：單券商抽 firm-level， 多券商保留 aggregate fallback                                        |
-| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md)   | 2026-04-15 | ✅ 決議         | Gemini 角色 = blind-spot only；不做資料蒐集，只做用戶盲點審查 + multi-LLM 反駁                                                                |
+| Decision                                                                                | 日期       | 狀態                | 摘要                                                                                                                           |
+| --------------------------------------------------------------------------------------- | ---------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [2026-03-25-targets-freshness](./2026-03-25-targets-freshness.md)                       | 2026-03-25 | ✅ 決議             | 目標價 freshness 7/30 天、fundamentals 用 entry.updatedAt、shared date parser 支援 YYYY/MM + ISO                               |
+| [2026-04-16-target-price-scraping-source](./2026-04-16-target-price-scraping-source.md) | 2026-04-16 | 🚫 per-firm blocked | 合併 3/23 與 4/15 歷史脈絡後的正式結論：public per-firm source 不成立；aggregate fallback 由 CMoney phase 3 / cnyes 類來源承接 |
+| [2026-04-16-cmoney-notes-as-phase3](./2026-04-16-cmoney-notes-as-phase3.md)             | 2026-04-16 | ✅ 實作完成         | CMoney `notes/?tag=78570` 進 target-price Phase 3：單券商抽 firm-level， 多券商保留 aggregate fallback                         |
+| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md)   | 2026-04-15 | ✅ 決議             | Gemini 角色 = blind-spot only；不做資料蒐集，只做用戶盲點審查 + multi-LLM 反駁                                                 |
 
 ## 架構
 
@@ -50,9 +54,9 @@
 
 以下主題曾討論，但還沒有正式 decision 文件：
 
-- 三層選股模型（量化 40% + 事件 30% + 大腦驗證 30%）— 見 `docs/stock-selection-strategy.md`
-- Multi-portfolio event tracking design — 見 `docs/specs/2026-03-23-multi-portfolio-event-tracking-design.md`
-- Coverage and workflow integration — 見 `docs/specs/2026-03-28-coverage-and-workflow-integration-design.md`
+- 三層選股模型（量化 40% + 事件 30% + 大腦驗證 30%）— 歷史脈絡見 `docs/archive/2026-Q2/root-history/stock-selection-strategy.md`
+- Multi-portfolio event tracking design — 歷史脈絡見 `docs/archive/2026-Q2/spec-history/2026-03-23-multi-portfolio-event-tracking-design.md`
+- Coverage and workflow integration — 歷史脈絡見 `docs/archive/2026-Q2/spec-history/2026-03-28-coverage-and-workflow-integration-design.md`
 
 ## 開新討論前必做
 

@@ -203,9 +203,9 @@ requirePortfolio(req, portfolioId)
 
 - [News vs Events 拆](../decisions/2026-04-15-news-vs-events-separation.md)：已決，後續只談 polish，不回到單一卡片模型。
 - [Knowledge API 留 Blob，不搬 VM](../decisions/2026-04-15-knowledge-api-blob-not-vm.md)：knowledge base 仍是 Blob 例外，不跟著大遷移。
-- [HoldingDossier 13 欄 schema](../specs/2026-03-24-holding-dossier-and-refresh-architecture.md)：缺的是 runtime contractization，不是 schema 不存在。
-- [Multi-portfolio v1 已 ship](../specs/2026-03-23-multi-portfolio-event-tracking-design.md)：現在補的是 authZ 與 pid-scoped correctness，不是回頭辯論要不要支援多組合。
-- [Streaming `/api/analyze?stream=1`](../specs/streaming-analysis-design.md)：已上線；本文只接它的 runtime contract 與 analysisStage 收口。
+- [HoldingDossier / freshness 歷史基礎](../decisions/2026-04-18-appshell-state-ownership.md)：schema 與 freshness 紀律已被併入 owner map 的歷史基礎段，不是 schema 不存在。
+- [Multi-portfolio v1 已 ship](../archive/2026-Q2/spec-history/2026-03-23-multi-portfolio-event-tracking-design.md)：現在補的是 authZ 與 pid-scoped correctness，不是回頭辯論要不要支援多組合。
+- [Streaming `/api/analyze?stream=1`](../archive/2026-Q2/spec-history/streaming-analysis-design.md)：已上線；本文只接它的 runtime contract 與 analysisStage 收口。
 - [Targets freshness 7d/30d](../decisions/2026-03-25-targets-freshness.md)：backend 已算，缺的是 lineage / label / UI contract。
 - [產品階段：stability-first](../decisions/2026-04-16-product-stage-stability-first.md)：prototype → internal beta；不開 multi-tenant / Stripe / public pricing。
 - Q1：**product completion = internal beta 可交付 + 不 P0 爆炸**；public launch 深水區留給 beta+1。

@@ -98,7 +98,8 @@ export function getHoldingMarketValue(item, overridePrice = null) {
 詳細說明請閱讀：
 
 - `docs/AI_COLLABORATION_GUIDE.md` - canonical 協作與驗證規則
-- `docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md` - 產品與資料流共識
+- `docs/CANONICAL-INDEX.md` - current truth 索引入口
+- `docs/specs/2026-04-18-portfolio-dashboard-sa.md` - 產品與資料流共識
 
 ---
 

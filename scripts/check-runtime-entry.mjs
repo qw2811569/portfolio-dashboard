@@ -6,13 +6,13 @@ const mainPath = resolve(repoRoot, 'src/main.jsx')
 const routeAppPath = resolve(repoRoot, 'src/App.routes.jsx')
 const routeLayoutPath = resolve(repoRoot, 'src/pages/PortfolioLayout.jsx')
 const quickStartPath = resolve(repoRoot, 'docs/QUICK_START.md')
-const architectureReportPath = resolve(repoRoot, 'docs/PORTFOLIO_TO_RESEARCH_ARCHITECTURE_REPORT.md')
+const systemAnalysisPath = resolve(repoRoot, 'docs/specs/2026-04-18-portfolio-dashboard-sa.md')
 
 const mainSource = readFileSync(mainPath, 'utf8')
 const routeAppSource = readFileSync(routeAppPath, 'utf8')
 const routeLayoutSource = readFileSync(routeLayoutPath, 'utf8')
 const quickStartSource = readFileSync(quickStartPath, 'utf8')
-const architectureReportSource = readFileSync(architectureReportPath, 'utf8')
+const systemAnalysisSource = readFileSync(systemAnalysisPath, 'utf8')
 
 if (!/import\s+App\s+from\s+['"]\.\/App\.jsx['"]/.test(mainSource)) {
   console.error('[check-runtime-entry] src/main.jsx no longer imports ./App.jsx as the app entry.')
@@ -43,9 +43,12 @@ if (
   process.exit(1)
 }
 
-if (!/`src\/App\.routes\.jsx`\s+存在，但不是目前瀏覽器載入的主入口/.test(architectureReportSource)) {
+if (
+  !systemAnalysisSource.includes('`src/main.jsx -> src/App.jsx`') ||
+  !systemAnalysisSource.includes('route shell 是 migration line')
+) {
   console.error(
-    '[check-runtime-entry] architecture report drifted away from the current truth about App.routes.jsx.'
+    '[check-runtime-entry] system analysis drifted away from the current truth about App.routes.jsx.'
   )
   process.exit(1)
 }

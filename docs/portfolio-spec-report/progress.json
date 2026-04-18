@@ -793,7 +793,7 @@
     },
     {
       "id": "O02",
-      "title": "FinMind quota usage report (`600/1600 hr`)",
+      "title": "Provider usage threshold report",
       "track": "ops",
       "estH": 4,
       "done": false,

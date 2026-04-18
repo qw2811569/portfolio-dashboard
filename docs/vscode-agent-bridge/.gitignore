@@ -1,6 +1,0 @@
-node_modules/
-out/
-*.vsix
-
-# BlamePrompt staging (auto-generated)
-.blameprompt/

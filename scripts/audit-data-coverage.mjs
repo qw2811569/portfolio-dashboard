@@ -7,8 +7,10 @@ import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 import { isSkippedInstrumentType, loadTrackedStocks } from '../api/cron/collect-target-prices.js'
 import { isCronTargetUsable } from '../src/lib/dataAdapters/cronTargetsAdapter.js'
 
-const AUDIT_THRESHOLD = 0.8
+const TARGET_PRICE_THRESHOLD = 0.8
+const VALUATION_THRESHOLD = 0.95
 const TARGET_PRICE_PREFIX = 'target-prices/'
+const VALUATION_PREFIX = 'valuation/'
 const STATUS_DIR = path.resolve('docs/status')
 const ALERTS_PATH = path.resolve('coordination/llm-bus/alerts.jsonl')
 
@@ -53,9 +55,9 @@ function readAggregate(snapshot) {
   return aggregateItem ? { source: aggregateItem.source || 'aggregate' } : null
 }
 
-function getSnapshotCoverage(snapshot) {
+function getTargetCoverage(snapshot) {
   if (!snapshot || typeof snapshot !== 'object') {
-    return { state: 'missing', stale: false, reportCount: 0, aggregate: null, updatedAt: null }
+    return { state: 'missing', stale: false, reportCount: 0, updatedAt: null }
   }
 
   const reports = Array.isArray(snapshot?.targets?.reports) ? snapshot.targets.reports : []
@@ -77,7 +79,6 @@ function getSnapshotCoverage(snapshot) {
       state: 'firm',
       stale,
       reportCount: reports.length,
-      aggregate,
       updatedAt,
     }
   }
@@ -87,22 +88,44 @@ function getSnapshotCoverage(snapshot) {
       state: 'aggregate-only',
       stale,
       reportCount: 0,
-      aggregate,
       updatedAt,
     }
   }
 
-  return { state: 'missing', stale: false, reportCount: 0, aggregate: null, updatedAt }
+  return { state: 'missing', stale: false, reportCount: 0, updatedAt }
 }
 
-async function readSnapshotMap(trackedStocks, token) {
+function getValuationCoverage(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object') {
+    return { state: 'missing', covered: false, updatedAt: null }
+  }
+
+  const method = String(snapshot?.method || '').trim()
+  const updatedAt = String(snapshot?.computedAt || '').trim() || null
+
+  if (method === 'historical-per-band') {
+    return { state: 'historical-per-band', covered: true, updatedAt }
+  }
+
+  if (method === 'eps-negative') {
+    return { state: 'eps-negative', covered: true, updatedAt }
+  }
+
+  if (method === 'insufficient-data') {
+    return { state: 'insufficient-data', covered: true, updatedAt }
+  }
+
+  return { state: 'missing', covered: false, updatedAt }
+}
+
+async function readSnapshotMap(trackedStocks, token, prefix) {
   const snapshotMap = new Map()
 
   for (const stock of trackedStocks) {
     const code = String(stock?.code || '').trim()
     if (!code) continue
 
-    const { blobs } = await list({ prefix: `${TARGET_PRICE_PREFIX}${code}.json`, limit: 1, token })
+    const { blobs } = await list({ prefix: `${prefix}${code}.json`, limit: 1, token })
     if (!Array.isArray(blobs) || blobs.length === 0) {
       snapshotMap.set(code, null)
       continue
@@ -124,12 +147,19 @@ async function readSnapshotMap(trackedStocks, token) {
   return snapshotMap
 }
 
-function renderMarkdownReport({ now, trackedSource, summary, rows, threshold = AUDIT_THRESHOLD }) {
+function renderMarkdownReport({
+  now,
+  trackedSource,
+  summary,
+  rows,
+  targetThreshold = TARGET_PRICE_THRESHOLD,
+  valuationThreshold = VALUATION_THRESHOLD,
+}) {
   const generatedAt = new Date(now).toISOString()
   const reportRows = rows
     .map(
       (row) =>
-        `| ${row.code} | ${row.name} | ${row.coverageState} | ${row.reportCount} | ${row.stale ? 'yes' : 'no'} | ${row.updatedAt || '-'} |`
+        `| ${row.code} | ${row.name} | ${row.targetCoverageState} | ${row.targetReportCount} | ${row.targetStale ? 'yes' : 'no'} | ${row.valuationState} | ${row.targetUpdatedAt || '-'} | ${row.valuationUpdatedAt || '-'} |`
     )
     .join('\n')
 
@@ -142,47 +172,50 @@ function renderMarkdownReport({ now, trackedSource, summary, rows, threshold = A
     '## Summary',
     '',
     `- Eligible stocks: ${summary.total}`,
-    `- Total coverage: ${summary.covered}/${summary.total} (${toPercent(summary.coverageRate)})`,
-    `- Firm-level coverage: ${summary.firmCovered}/${summary.total} (${toPercent(summary.firmCoverageRate)})`,
-    `- Aggregate-only coverage: ${summary.aggregateOnly}/${summary.total} (${toPercent(summary.aggregateCoverageRate)})`,
-    `- Missing coverage: ${summary.missing}/${summary.total} (${toPercent(summary.missingCoverageRate)})`,
-    `- Stale snapshots: ${summary.stale}/${summary.total} (${toPercent(summary.staleRate)})`,
-    `- Threshold: total coverage >= ${toPercent(threshold)}`,
-    `- Gate: ${summary.coverageRate >= threshold ? 'PASS' : 'FAIL'}`,
+    `- Target-price coverage: ${summary.target.covered}/${summary.total} (${toPercent(summary.target.coverageRate)})`,
+    `- Target-price firm-level: ${summary.target.firmCovered}/${summary.total} (${toPercent(summary.target.firmCoverageRate)})`,
+    `- Target-price aggregate-only: ${summary.target.aggregateOnly}/${summary.total} (${toPercent(summary.target.aggregateCoverageRate)})`,
+    `- Target-price missing: ${summary.target.missing}/${summary.total} (${toPercent(summary.target.missingCoverageRate)})`,
+    `- Target-price stale: ${summary.target.stale}/${summary.total} (${toPercent(summary.target.staleRate)})`,
+    `- Valuation coverage: ${summary.valuation.covered}/${summary.total} (${toPercent(summary.valuation.coverageRate)})`,
+    `- Valuation historical band: ${summary.valuation.historicalPerBand}/${summary.total} (${toPercent(summary.valuation.historicalPerBandRate)})`,
+    `- Valuation EPS negative: ${summary.valuation.epsNegative}/${summary.total} (${toPercent(summary.valuation.epsNegativeRate)})`,
+    `- Valuation insufficient data: ${summary.valuation.insufficientData}/${summary.total} (${toPercent(summary.valuation.insufficientDataRate)})`,
+    `- Valuation missing: ${summary.valuation.missing}/${summary.total} (${toPercent(summary.valuation.missingCoverageRate)})`,
+    `- Target gate: coverage >= ${toPercent(targetThreshold)} => ${summary.target.coverageRate >= targetThreshold ? 'PASS' : 'FAIL'}`,
+    `- Valuation gate: coverage >= ${toPercent(valuationThreshold)} => ${summary.valuation.coverageRate >= valuationThreshold ? 'PASS' : 'FAIL'}`,
+    `- Overall gate: ${summary.passed ? 'PASS' : 'FAIL'}`,
     '',
     '## Stocks',
     '',
-    '| Code | Name | Coverage | Reports | Stale | Updated At |',
-    '| --- | --- | --- | ---: | --- | --- |',
+    '| Code | Name | Target Coverage | Reports | Target Stale | Valuation | Target Updated At | Valuation Updated At |',
+    '| --- | --- | --- | ---: | --- | --- | --- | --- |',
     reportRows,
     '',
   ].join('\n')
 }
 
-function appendCoverageAlert({ now, trackedSource, summary, threshold = AUDIT_THRESHOLD }) {
+function appendCoverageAlert({ now, trackedSource, metric, threshold, actual, summary }) {
   mkdirSync(path.dirname(ALERTS_PATH), { recursive: true })
   const payload = {
     type: 'data-coverage-alert',
     source: 'audit-data-coverage',
     createdAt: new Date(now).toISOString(),
-    metric: 'target-price-coverage',
+    metric,
     threshold,
-    actual: Number(summary.coverageRate.toFixed(4)),
+    actual: Number(actual.toFixed(4)),
     trackedSource,
-    summary: {
-      total: summary.total,
-      covered: summary.covered,
-      firmCovered: summary.firmCovered,
-      aggregateOnly: summary.aggregateOnly,
-      missing: summary.missing,
-      stale: summary.stale,
-    },
+    summary,
   }
 
   appendFileSync(ALERTS_PATH, `${JSON.stringify(payload)}\n`, 'utf8')
 }
 
-export async function auditDataCoverage({ now = new Date(), threshold = AUDIT_THRESHOLD } = {}) {
+export async function auditDataCoverage({
+  now = new Date(),
+  targetThreshold = TARGET_PRICE_THRESHOLD,
+  valuationThreshold = VALUATION_THRESHOLD,
+} = {}) {
   loadLocalEnvIfPresent()
 
   const token = String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
@@ -195,49 +228,78 @@ export async function auditDataCoverage({ now = new Date(), threshold = AUDIT_TH
     logger: { info() {}, warn() {}, error() {} },
   })
   const eligibleStocks = trackedStocks.filter((stock) => !isSkippedInstrumentType(stock.type))
-  const snapshotMap = await readSnapshotMap(eligibleStocks, token)
+  const [targetSnapshotMap, valuationSnapshotMap] = await Promise.all([
+    readSnapshotMap(eligibleStocks, token, TARGET_PRICE_PREFIX),
+    readSnapshotMap(eligibleStocks, token, VALUATION_PREFIX),
+  ])
 
   const rows = eligibleStocks
     .map((stock) => {
-      const snapshot = snapshotMap.get(stock.code) || null
-      const coverage = getSnapshotCoverage(snapshot)
+      const targetCoverage = getTargetCoverage(targetSnapshotMap.get(stock.code) || null)
+      const valuationCoverage = getValuationCoverage(valuationSnapshotMap.get(stock.code) || null)
+
       return {
         code: stock.code,
         name: stock.name,
-        coverageState: coverage.state,
-        reportCount: coverage.reportCount,
-        stale: coverage.stale,
-        updatedAt: coverage.updatedAt,
+        targetCoverageState: targetCoverage.state,
+        targetReportCount: targetCoverage.reportCount,
+        targetStale: targetCoverage.stale,
+        targetUpdatedAt: targetCoverage.updatedAt,
+        valuationState: valuationCoverage.state,
+        valuationUpdatedAt: valuationCoverage.updatedAt,
       }
     })
     .sort((a, b) => a.code.localeCompare(b.code, 'en'))
 
   const total = rows.length
-  const firmCovered = rows.filter((row) => row.coverageState === 'firm').length
-  const aggregateOnly = rows.filter((row) => row.coverageState === 'aggregate-only').length
-  const covered = firmCovered + aggregateOnly
-  const missing = rows.filter((row) => row.coverageState === 'missing').length
-  const stale = rows.filter((row) => row.stale).length
   const safeTotal = total || 1
+
+  const target = {
+    firmCovered: rows.filter((row) => row.targetCoverageState === 'firm').length,
+    aggregateOnly: rows.filter((row) => row.targetCoverageState === 'aggregate-only').length,
+    missing: rows.filter((row) => row.targetCoverageState === 'missing').length,
+    stale: rows.filter((row) => row.targetStale).length,
+  }
+  target.covered = target.firmCovered + target.aggregateOnly
+  target.coverageRate = target.covered / safeTotal
+  target.firmCoverageRate = target.firmCovered / safeTotal
+  target.aggregateCoverageRate = target.aggregateOnly / safeTotal
+  target.missingCoverageRate = target.missing / safeTotal
+  target.staleRate = target.stale / safeTotal
+
+  const valuation = {
+    historicalPerBand: rows.filter((row) => row.valuationState === 'historical-per-band').length,
+    epsNegative: rows.filter((row) => row.valuationState === 'eps-negative').length,
+    insufficientData: rows.filter((row) => row.valuationState === 'insufficient-data').length,
+    missing: rows.filter((row) => row.valuationState === 'missing').length,
+  }
+  valuation.covered =
+    valuation.historicalPerBand + valuation.epsNegative + valuation.insufficientData
+  valuation.coverageRate = valuation.covered / safeTotal
+  valuation.historicalPerBandRate = valuation.historicalPerBand / safeTotal
+  valuation.epsNegativeRate = valuation.epsNegative / safeTotal
+  valuation.insufficientDataRate = valuation.insufficientData / safeTotal
+  valuation.missingCoverageRate = valuation.missing / safeTotal
+
   const summary = {
     total,
-    covered,
-    firmCovered,
-    aggregateOnly,
-    missing,
-    stale,
-    coverageRate: covered / safeTotal,
-    firmCoverageRate: firmCovered / safeTotal,
-    aggregateCoverageRate: aggregateOnly / safeTotal,
-    missingCoverageRate: missing / safeTotal,
-    staleRate: stale / safeTotal,
+    target,
+    valuation,
+    passed: target.coverageRate >= targetThreshold && valuation.coverageRate >= valuationThreshold,
   }
 
   mkdirSync(STATUS_DIR, { recursive: true })
   const reportPath = path.join(STATUS_DIR, `data-coverage-${toMarketDate(now)}.md`)
   writeFileSync(
     reportPath,
-    renderMarkdownReport({ now, trackedSource, summary, rows, threshold }),
+    renderMarkdownReport({
+      now,
+      trackedSource,
+      summary,
+      rows,
+      targetThreshold,
+      valuationThreshold,
+    }),
     'utf8'
   )
 
@@ -253,7 +315,7 @@ if (isMain) {
     console.log(
       JSON.stringify(
         {
-          ok: result.summary.coverageRate >= AUDIT_THRESHOLD,
+          ok: result.summary.passed,
           trackedSource: result.trackedSource,
           summary: result.summary,
           reportPath: result.reportPath,
@@ -263,11 +325,40 @@ if (isMain) {
       )
     )
 
-    if (result.summary.coverageRate < AUDIT_THRESHOLD) {
+    if (result.summary.target.coverageRate < TARGET_PRICE_THRESHOLD) {
       appendCoverageAlert({
         now: new Date(),
         trackedSource: result.trackedSource,
-        summary: result.summary,
+        metric: 'target-price-coverage',
+        threshold: TARGET_PRICE_THRESHOLD,
+        actual: result.summary.target.coverageRate,
+        summary: {
+          total: result.summary.total,
+          covered: result.summary.target.covered,
+          firmCovered: result.summary.target.firmCovered,
+          aggregateOnly: result.summary.target.aggregateOnly,
+          missing: result.summary.target.missing,
+          stale: result.summary.target.stale,
+        },
+      })
+      process.exitCode = 1
+    }
+
+    if (result.summary.valuation.coverageRate < VALUATION_THRESHOLD) {
+      appendCoverageAlert({
+        now: new Date(),
+        trackedSource: result.trackedSource,
+        metric: 'valuation-coverage',
+        threshold: VALUATION_THRESHOLD,
+        actual: result.summary.valuation.coverageRate,
+        summary: {
+          total: result.summary.total,
+          covered: result.summary.valuation.covered,
+          historicalPerBand: result.summary.valuation.historicalPerBand,
+          epsNegative: result.summary.valuation.epsNegative,
+          insufficientData: result.summary.valuation.insufficientData,
+          missing: result.summary.valuation.missing,
+        },
       })
       process.exitCode = 1
     }

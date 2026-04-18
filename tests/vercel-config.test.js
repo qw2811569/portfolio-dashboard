@@ -41,11 +41,32 @@ describe('vercel.json', () => {
     )
   })
 
+  it('contains the valuation cron entry at 22:00 UTC for 06:00 Asia/Taipei', () => {
+    const vercelConfig = JSON.parse(readFileSync(join(process.cwd(), 'vercel.json'), 'utf-8'))
+
+    expect(vercelConfig.crons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/api/cron/compute-valuations',
+          schedule: '0 22 * * *',
+        }),
+      ])
+    )
+  })
+
   it('pins target-price cron maxDuration to 60 seconds', () => {
     const vercelConfig = JSON.parse(readFileSync(join(process.cwd(), 'vercel.json'), 'utf-8'))
 
     expect(vercelConfig.functions['api/cron/collect-target-prices.js']).toEqual({
       maxDuration: 60,
+    })
+  })
+
+  it('pins valuation cron maxDuration to 300 seconds', () => {
+    const vercelConfig = JSON.parse(readFileSync(join(process.cwd(), 'vercel.json'), 'utf-8'))
+
+    expect(vercelConfig.functions['api/cron/compute-valuations.js']).toEqual({
+      maxDuration: 300,
     })
   })
 

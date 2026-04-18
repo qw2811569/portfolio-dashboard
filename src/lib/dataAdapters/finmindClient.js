@@ -158,11 +158,14 @@ async function fetchFinMindWithBoundary(
     scope === 'upstream'
       ? buildUpstreamUrl({ finmindDataset, code, startDate, endDate })
       : buildRouteUrl({ datasetKey, code, startDate, endDate })
+  const requestedTimeoutMs = Number(options?.timeoutMs)
+  const timeoutMs =
+    Number.isFinite(requestedTimeoutMs) && requestedTimeoutMs > 0 ? requestedTimeoutMs : 10000
 
   await acquireFinMindSlot()
   try {
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(timeoutMs),
     })
 
     if (!response.ok) {
@@ -204,6 +207,9 @@ export async function fetchCustomFinMindRawDataset(
   const forceFresh = options?.forceFresh === true
   const cached = forceFresh ? null : readCache(cacheKey)
   if (cached) return cached
+  const requestedTimeoutMs = Number(options?.timeoutMs)
+  const timeoutMs =
+    Number.isFinite(requestedTimeoutMs) && requestedTimeoutMs > 0 ? requestedTimeoutMs : 10000
 
   await acquireFinMindSlot()
   try {
@@ -215,7 +221,7 @@ export async function fetchCustomFinMindRawDataset(
         endDate,
       }),
       {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(timeoutMs),
       }
     )
 

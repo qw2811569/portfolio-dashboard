@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { createDefaultReviewForm as createDefaultReviewFormFallback } from '../lib/eventUtils.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function warnBlockedRouteWrite(actionName) {
   if (process.env.NODE_ENV !== 'production') {
@@ -11,12 +12,19 @@ function warnBlockedRouteWrite(actionName) {
 }
 
 export function useRouteNewsPage() {
-  const { newsEvents = [], createDefaultReviewForm = createDefaultReviewFormFallback } =
-    usePortfolioRouteContext()
+  const {
+    portfolioId = 'me',
+    newsEvents = [],
+    createDefaultReviewForm = createDefaultReviewFormFallback,
+  } = usePortfolioRouteContext()
 
   const [reviewingEvent, setReviewingEvent] = useState(null)
   const [reviewForm, setReviewForm] = useState(() => createDefaultReviewForm())
   const [expandedNews, setExpandedNews] = useState(() => new Set())
+  const viewMode = resolveViewMode({
+    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    currentUser: 'me',
+  })
 
   const resetReview = useCallback(() => {
     setReviewingEvent(null)
@@ -44,6 +52,7 @@ export function useRouteNewsPage() {
       expandedNews,
       setReviewingEvent,
       createDefaultReviewForm,
+      viewMode,
     }),
     [
       cancelReview,
@@ -53,6 +62,7 @@ export function useRouteNewsPage() {
       reviewForm,
       reviewingEvent,
       submitReview,
+      viewMode,
     ]
   )
 }

@@ -13,6 +13,7 @@ import { IND_COLOR, STOCK_META } from '../seedData.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 import { useReportRefreshWorkflow } from './useReportRefreshWorkflow.js'
 import { useResearchWorkflow } from './useResearchWorkflow.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function warnBlockedRouteWrite(actionName) {
   if (process.env.NODE_ENV !== 'production') {
@@ -54,6 +55,10 @@ export function useRouteResearchPage() {
   const setResearching = ctxSetResearching ?? setFallbackResearching
   const researchTarget = ctxResearchTarget ?? fallbackResearchTarget
   const setResearchTarget = ctxSetResearchTarget ?? setFallbackResearchTarget
+  const viewMode = resolveViewMode({
+    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    currentUser: 'me',
+  })
   const [researchResults, setResearchResults] = useState(null)
   const [reportRefreshMeta, setReportRefreshMeta] = useState({})
 
@@ -166,6 +171,7 @@ export function useRouteResearchPage() {
       proposalActionType,
       STOCK_META,
       IND_COLOR,
+      viewMode,
       onEvolve: () => blockRunResearch('evolve'),
       onRefresh: blockRefreshAnalystReports,
       onResearch: blockRunResearch,
@@ -193,6 +199,7 @@ export function useRouteResearchPage() {
       proposalActionId,
       proposalActionType,
       setResearchResults,
+      viewMode,
     ]
   )
 }

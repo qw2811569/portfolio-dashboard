@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useRunStressTest } from './api/useAnalysis.js'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function warnBlockedRouteWrite(actionName) {
   if (process.env.NODE_ENV !== 'production') {
@@ -29,6 +30,10 @@ export function useRouteDailyPage() {
 
   const analyzing = ctxAnalyzing ?? false
   const analyzeStep = ctxAnalyzeStep ?? ''
+  const viewMode = resolveViewMode({
+    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    currentUser: 'me',
+  })
 
   const [dailyExpanded, setDailyExpanded] = useState(false)
   const [stressResult, setStressResult] = useState(null)
@@ -78,6 +83,7 @@ export function useRouteDailyPage() {
       staleStatus,
       operatingContext,
       maybeAutoConfirmDailyReport,
+      viewMode,
     }),
     [
       analysisHistory,
@@ -99,6 +105,7 @@ export function useRouteDailyPage() {
       strategyBrain,
       stressResult,
       stressTesting,
+      viewMode,
     ]
   )
 }

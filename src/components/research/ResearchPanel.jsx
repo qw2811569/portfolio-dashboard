@@ -3,6 +3,7 @@ import { C, alpha } from '../../theme.js'
 import { Card, Button, DataSourceBadge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
 import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
+import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
   fontSize: 10,
@@ -24,6 +25,103 @@ function describeStatus(kind, status) {
   if (status === 'aging') return '財報資料有點舊了'
   if (status === 'stale') return '財報資料太久沒更新'
   return '還沒有財報資料'
+}
+
+function ViewModeNotice({ note }) {
+  if (!note) return null
+
+  return h(
+    Card,
+    {
+      style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
+    },
+    h('div', { style: { ...lbl, color: C.textSec } }, '合規顯示模式'),
+    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, note)
+  )
+}
+
+function buildCompressedResearchNarrative(results) {
+  const summary = String(results?.summary || '').trim()
+  if (summary) return summary
+
+  const firstRound = String(results?.rounds?.[0]?.content || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (firstRound) {
+    return firstRound.length > 180 ? `${firstRound.slice(0, 180)}...` : firstRound
+  }
+
+  return '研究結果已壓縮為組合層級 narrative，不顯示 thesis diff 與逐檔追蹤細節。'
+}
+
+function CompressedResearchResults({ results }) {
+  if (!results) return null
+
+  const proposalCount = [results?.brainProposal, results?.knowledgeProposal].filter(Boolean).length
+  const roundsCount = Array.isArray(results?.rounds) ? results.rounds.length : 0
+
+  return h(
+    Card,
+    {
+      'data-testid': 'compressed-research-results',
+      style: {
+        marginBottom: 10,
+        borderLeft: `3px solid ${alpha(C.amber, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.textSec } }, '研究摘要 · aggregate only'),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 11,
+          color: C.textSec,
+          lineHeight: 1.8,
+          marginBottom: 8,
+        },
+      },
+      buildCompressedResearchNarrative(results)
+    ),
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          gap: 6,
+          flexWrap: 'wrap',
+        },
+      },
+      h(
+        'span',
+        {
+          style: {
+            fontSize: 9,
+            padding: '4px 8px',
+            borderRadius: 999,
+            background: alpha(C.amber, '14'),
+            border: `1px solid ${alpha(C.amber, '22')}`,
+            color: C.textSec,
+          },
+        },
+        `${roundsCount} 輪研究已壓縮`
+      ),
+      proposalCount > 0 &&
+        h(
+          'span',
+          {
+            style: {
+              fontSize: 9,
+              padding: '4px 8px',
+              borderRadius: 999,
+              background: alpha(C.teal, '12'),
+              border: `1px solid ${alpha(C.teal, '22')}`,
+              color: C.textSec,
+            },
+          },
+          `${proposalCount} 個提案已改為摘要`
+        )
+    )
+  )
 }
 
 /**
@@ -1009,8 +1107,12 @@ export function ResearchResults({
   onDiscardProposal,
   proposalActionId,
   proposalActionType,
+  viewMode = 'retail',
 }) {
   if (!results) return null
+  if (!isViewModeEnabled('showResearchDiff', viewMode)) {
+    return h(CompressedResearchResults, { results })
+  }
 
   return h(
     'div',
@@ -1177,6 +1279,7 @@ export function ResearchPanel({
   STOCK_META,
   IND_COLOR,
   operatingContext,
+  viewMode = 'retail',
   onEvolve,
   onRefresh,
   onResearch,
@@ -1185,10 +1288,14 @@ export function ResearchPanel({
   onDiscardProposal,
   onSelectHistory,
 }) {
+  const complianceNote = getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel)
+
   return h(
     'div',
     { 'data-testid': 'research-panel' },
     h(OperatingContextCard, { context: operatingContext }),
+    isViewModeEnabled('showComplianceNote', viewMode) &&
+      h(ViewModeNotice, { note: complianceNote }),
     h(ResearchHeader, {
       onEvolve,
       onRefresh,
@@ -1231,6 +1338,7 @@ export function ResearchPanel({
       onDiscardProposal,
       proposalActionId,
       proposalActionType,
+      viewMode,
     }),
     !researchResults &&
       !researching &&

@@ -47,6 +47,7 @@ export function usePortfolioPanelsContextComposer({
   dailyExpanded,
   newsEvents,
   strategyBrain,
+  renderViewMode = 'retail',
   researching,
   researchTarget,
   reportRefreshing,
@@ -138,9 +139,9 @@ export function usePortfolioPanelsContextComposer({
   const dashboardHeadline = useMemo(
     () =>
       buildDashboardHeadline(safeHoldingDossiers, {
-        viewMode: activePortfolioId === 'me' ? 'retail' : 'insider-compressed',
+        viewMode: renderViewMode,
       }),
-    [activePortfolioId, safeHoldingDossiers]
+    [renderViewMode, safeHoldingDossiers]
   )
 
   const operatingContext = useMemo(() => {
@@ -271,6 +272,7 @@ export function usePortfolioPanelsContextComposer({
         expandedStock,
         dossierByCode,
         staleStatus: sharedStaleStatus,
+        viewMode: renderViewMode,
       },
       watchlist: {
         watchlistFocus,
@@ -302,6 +304,7 @@ export function usePortfolioPanelsContextComposer({
         staleStatus: sharedStaleStatus,
         operatingContext,
         maybeAutoConfirmDailyReport,
+        viewMode: renderViewMode,
       },
       research: {
         holdings: safeHoldings,
@@ -319,6 +322,7 @@ export function usePortfolioPanelsContextComposer({
         STOCK_META: stockMeta,
         IND_COLOR: indColor,
         operatingContext,
+        viewMode: renderViewMode,
       },
       trade: {
         ...tradeCapture,
@@ -333,6 +337,7 @@ export function usePortfolioPanelsContextComposer({
         expandedNews,
         operatingContext,
         holdingCodes: safeHoldings.map((h) => h.code).filter(Boolean),
+        viewMode: renderViewMode,
       },
     }),
     [
@@ -359,6 +364,7 @@ export function usePortfolioPanelsContextComposer({
       morningNote,
       safeNewsEvents,
       operatingContext,
+      renderViewMode,
       safeOverviewDuplicateHoldings,
       safeOverviewPendingItems,
       safeOverviewPortfolios,

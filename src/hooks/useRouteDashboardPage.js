@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { buildResearchRefreshRows } from '../lib/routeRuntime.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 export function useRouteDashboardPage() {
   const {
@@ -50,7 +51,10 @@ export function useRouteDashboardPage() {
       todayAlertSummary,
       portfolioId,
       portfolioName,
-      viewMode: portfolioId === 'me' ? 'retail' : 'insider-compressed',
+      viewMode: resolveViewMode({
+        portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+        currentUser: 'me',
+      }),
     }
   }, [
     holdings,

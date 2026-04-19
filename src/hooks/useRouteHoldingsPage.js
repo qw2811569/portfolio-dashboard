@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function warnBlockedRouteWrite(actionName) {
   if (process.env.NODE_ENV !== 'production') {
@@ -21,6 +22,10 @@ export function useRouteHoldingsPage() {
 
   const expandedStock = useBrainStore((state) => state.expandedStock)
   const setExpandedStock = useBrainStore((state) => state.setExpandedStock)
+  const viewMode = resolveViewMode({
+    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    currentUser: 'me',
+  })
 
   return useMemo(() => {
     const blockUpdateTargetPrice = (..._args) => {
@@ -78,6 +83,7 @@ export function useRouteHoldingsPage() {
         setExpandedStock,
         onUpdateTarget: blockUpdateTargetPrice,
         onUpdateAlert: blockUpdateAlert,
+        viewMode,
       },
     }
   }, [
@@ -88,5 +94,6 @@ export function useRouteHoldingsPage() {
     todayTotalPnl,
     reversalConditions,
     setExpandedStock,
+    viewMode,
   ])
 }

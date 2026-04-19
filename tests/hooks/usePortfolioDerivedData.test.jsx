@@ -189,6 +189,8 @@ describe('usePortfolioDerivedData', () => {
         'overviewPendingItems',
         'urgentCount',
         'todayAlertSummary',
+        'viewMode',
+        'coverageState',
         'watchlistRows',
         'watchlistFocus',
         'showRelayPlan',
@@ -258,6 +260,28 @@ describe('usePortfolioDerivedData', () => {
         usePortfolioDerivedData(defaultProps({ viewMode: 'overview' }))
       )
       expect(result.current.displayedTotalPnl).toBe(result.current.overviewTotalPnl)
+    })
+  })
+
+  describe('resolved render view mode', () => {
+    it('returns owner mode for the default me portfolio context', () => {
+      const { result } = renderHook(() => usePortfolioDerivedData(defaultProps()))
+      expect(result.current.viewMode).toBe('owner')
+      expect(result.current.coverageState).toBe('full')
+    })
+
+    it('returns insider-compressed coverage for insider portfolio ids', () => {
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            activePortfolioId: '7865',
+            portfolioSummaries: [{ id: '7865', name: '金聯成', isOwner: false }],
+          })
+        )
+      )
+
+      expect(result.current.viewMode).toBe('insider-compressed')
+      expect(result.current.coverageState).toBe('aggregate-only')
     })
   })
 

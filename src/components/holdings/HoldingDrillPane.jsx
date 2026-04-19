@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { SoftMessage, StaleBadge } from '../common/index.js'
+import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const valuationCache = new Map()
 
@@ -626,7 +627,76 @@ function FreshnessCard({ dossier, holding }) {
   )
 }
 
-export default function HoldingDrillPane({ holding, dossier = null }) {
+function CompressedHoldingPane({ holding, dossier, viewMode }) {
+  const pillars = Array.isArray(dossier?.thesis?.pillars) ? dossier.thesis.pillars : []
+  const intactCount = pillars.filter(
+    (pillar) => normalizePillarStatus(pillar?.status) === 'intact'
+  ).length
+  const weakenedCount = pillars.filter(
+    (pillar) => normalizePillarStatus(pillar?.status) === 'weakened'
+  ).length
+  const brokenCount = pillars.filter(
+    (pillar) => normalizePillarStatus(pillar?.status) === 'broken'
+  ).length
+  const complianceNote = getViewModeComplianceMessage(viewMode)
+  const holdingType = String(holding?.type || dossier?.position?.type || '').trim()
+
+  return (
+    <div style={{ ...panelCard, minHeight: 0 }}>
+      <div style={eyebrow}>持股 aggregate status</div>
+      <div style={{ color: C.textSec, fontSize: 10, lineHeight: 1.7, marginBottom: 10 }}>
+        {complianceNote || 'insider-compressed 僅顯示組合層級摘要。'}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+        {pillars.length > 0 ? <TonePill tone="muted">pillar {pillars.length} 項</TonePill> : null}
+        {intactCount > 0 ? <TonePill tone="positive">維持 {intactCount}</TonePill> : null}
+        {weakenedCount > 0 ? <TonePill tone="warning">轉弱 {weakenedCount}</TonePill> : null}
+        {brokenCount > 0 ? <TonePill tone="negative">失真 {brokenCount}</TonePill> : null}
+        {holdingType ? <TonePill tone="muted">{holdingType}</TonePill> : null}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <StaleBadge
+          dossier={dossier}
+          field="targets"
+          label="目標價"
+          title="目標價 freshness"
+          style={{ textTransform: 'none' }}
+        />
+        <StaleBadge
+          dossier={dossier}
+          field="fundamentals"
+          label="財報"
+          title="fundamentals freshness"
+          style={{ textTransform: 'none' }}
+        />
+      </div>
+      {!pillars.length && !holdingType ? (
+        <SoftMessage style={{ marginTop: 10 }}>
+          這檔目前只保留資料新鮮度與 aggregate 追蹤狀態。
+        </SoftMessage>
+      ) : null}
+    </div>
+  )
+}
+
+export default function HoldingDrillPane({ holding, dossier = null, viewMode = 'retail' }) {
+  const showPillarDiff = isViewModeEnabled('showPillarDiff', viewMode)
+  const showValuationDetail = isViewModeEnabled('showValuationDetail', viewMode)
+
+  if (!showPillarDiff || !showValuationDetail) {
+    return (
+      <div
+        data-testid={`holding-drill-${holding?.code || 'unknown'}`}
+        style={{
+          display: 'grid',
+          gap: 8,
+        }}
+      >
+        <CompressedHoldingPane holding={holding} dossier={dossier} viewMode={viewMode} />
+      </div>
+    )
+  }
+
   return (
     <div
       data-testid={`holding-drill-${holding?.code || 'unknown'}`}

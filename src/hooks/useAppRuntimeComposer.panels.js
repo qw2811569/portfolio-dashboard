@@ -49,6 +49,7 @@ export function composePortfolioPanelsContextInput({
     dailyExpanded: ui.dailyExpanded,
     newsEvents: data.newsEvents,
     strategyBrain: data.strategyBrain,
+    renderViewMode: data.renderViewMode,
     researching: asyncState.researching,
     researchTarget: ui.researchTarget,
     reportRefreshing: asyncState.reportRefreshing,

@@ -12,6 +12,7 @@ import {
   getHoldingReturnPct,
   getHoldingUnrealizedPnl,
 } from '../../lib/holdings.js'
+import { isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const card = {
   background: `linear-gradient(180deg, ${C.card}, ${C.subtle})`,
@@ -70,6 +71,7 @@ export function HoldingRow({
   onToggle = () => {},
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
+  viewMode = 'retail',
 }) {
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
@@ -81,6 +83,7 @@ export function HoldingRow({
     : Array.isArray(holding.dailyHistory)
       ? holding.dailyHistory
       : []
+  const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
 
   return h(
     'div',
@@ -298,65 +301,66 @@ export function HoldingRow({
               )
             : null
         })(),
-        h(HoldingDrillPane, { holding, dossier }),
-        h(
-          'div',
-          {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-              marginTop: 8,
-              paddingTop: 8,
-              borderTop: `1px solid ${C.borderSub}`,
+        h(HoldingDrillPane, { holding, dossier, viewMode }),
+        showPerStockDiff &&
+          h(
+            'div',
+            {
+              style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+                marginTop: 8,
+                paddingTop: 8,
+                borderTop: `1px solid ${C.borderSub}`,
+              },
             },
-          },
-          // Target price
-          h(
-            'div',
-            null,
-            h('div', { style: { ...lbl, marginBottom: 3 } }, '手動目標價'),
-            h('input', {
-              type: 'number',
-              value: holding.targetPrice || '',
-              onChange: (e) =>
-                onUpdateTarget(holding.code, e.target.value ? Number(e.target.value) : null),
-              placeholder: '輸入目標價',
-              style: {
-                width: '100%',
-                background: C.subtle,
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                padding: '6px 8px',
-                color: C.text,
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-              },
-            })
-          ),
+            // Target price
+            h(
+              'div',
+              null,
+              h('div', { style: { ...lbl, marginBottom: 3 } }, '手動目標價'),
+              h('input', {
+                type: 'number',
+                value: holding.targetPrice || '',
+                onChange: (e) =>
+                  onUpdateTarget(holding.code, e.target.value ? Number(e.target.value) : null),
+                placeholder: '輸入目標價',
+                style: {
+                  width: '100%',
+                  background: C.subtle,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: '6px 8px',
+                  color: C.text,
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                },
+              })
+            ),
 
-          // Alert
-          h(
-            'div',
-            null,
-            h('div', { style: { ...lbl, marginBottom: 3 } }, '提醒筆記'),
-            h('input', {
-              type: 'text',
-              value: holding.alert || '',
-              onChange: (e) => onUpdateAlert(holding.code, e.target.value),
-              placeholder: '如：跌破月線',
-              style: {
-                width: '100%',
-                background: C.subtle,
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                padding: '6px 8px',
-                color: C.text,
-                fontSize: 11,
-              },
-            })
-          )
-        ),
+            // Alert
+            h(
+              'div',
+              null,
+              h('div', { style: { ...lbl, marginBottom: 3 } }, '提醒筆記'),
+              h('input', {
+                type: 'text',
+                value: holding.alert || '',
+                onChange: (e) => onUpdateAlert(holding.code, e.target.value),
+                placeholder: '如：跌破月線',
+                style: {
+                  width: '100%',
+                  background: C.subtle,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: '6px 8px',
+                  color: C.text,
+                  fontSize: 11,
+                },
+              })
+            )
+          ),
 
         // Supply chain view
         h(SupplyChainView, { code: holding.code, name: holding.name }),
@@ -421,6 +425,7 @@ export function HoldingsTable({
   staleStatus = 'fresh',
   sortBy = 'code',
   sortDir = 'asc',
+  viewMode = 'retail',
 }) {
   if (!holdings || holdings.length === 0) {
     return h(
@@ -525,6 +530,7 @@ export function HoldingsTable({
           onToggle: () => setExpandedStock(expandedStock === holding.code ? null : holding.code),
           onUpdateTarget,
           onUpdateAlert,
+          viewMode,
         })
       )
     )

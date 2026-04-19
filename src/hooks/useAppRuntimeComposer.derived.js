@@ -25,6 +25,7 @@ export function composePortfolioDerivedDataInput({ data, helperFns, constants })
     activePortfolioId: data.activePortfolioId,
     portfolioSummaries: data.portfolioSummaries,
     viewMode: data.viewMode,
+    currentUser: data.currentUser,
     portfolioNotes: data.portfolioNotes,
     reportRefreshMeta: data.reportRefreshMeta,
     helpers: {

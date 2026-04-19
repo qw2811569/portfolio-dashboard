@@ -2,6 +2,7 @@ import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, TOKENS, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard } from '../common'
+import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
   fontSize: 10,
@@ -128,6 +129,51 @@ function buildTrendSummary(items) {
   if (negatives > positives)
     return '負面訊號來自短期遞延與報價整理，今晚重點是確認是否只是節奏放慢。'
   return '目前 headline 偏整理盤語氣，多數新聞更適合進 Daily 做脈絡判讀，而不是直接升格成事件。'
+}
+
+function buildAggregateNewsClusters(items = []) {
+  const safeItems = Array.isArray(items) ? items : []
+  const impactCounts = safeItems.reduce(
+    (counts, item) => {
+      counts[inferImpact(item)] += 1
+      return counts
+    },
+    { positive: 0, negative: 0, neutral: 0 }
+  )
+  const sourceCounts = safeItems.reduce((counts, item) => {
+    const label = normalizeSourceLabel(item?.source)
+    counts.set(label, (counts.get(label) || 0) + 1)
+    return counts
+  }, new Map())
+  const leadingSource = Array.from(sourceCounts.entries()).sort((a, b) => b[1] - a[1])[0] || null
+  const relatedStockCount = new Set(
+    safeItems.flatMap((item) => (item.relatedStocks || []).map((stock) => stock?.code))
+  ).size
+
+  return [
+    relatedStockCount > 0 ? `${relatedStockCount} 檔持股訊號已壓縮為組合層級觀察。` : null,
+    impactCounts.positive > 0 ? `利多 headline ${impactCounts.positive} 則` : null,
+    impactCounts.negative > 0 ? `利空 headline ${impactCounts.negative} 則` : null,
+    impactCounts.neutral > 0 ? `中性 headline ${impactCounts.neutral} 則` : null,
+    leadingSource ? `主來源 ${leadingSource[0]} · ${leadingSource[1]} 則` : null,
+  ].filter(Boolean)
+}
+
+function ViewModeNotice({ note }) {
+  if (!note) return null
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 14,
+        borderRadius: 28,
+        borderLeft: `3px solid ${alpha(PAPER.tangerine, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: PAPER.muted } }, '合規顯示模式'),
+    h('div', { style: { fontSize: 12, color: PAPER.ink, lineHeight: 1.7 } }, note)
+  )
 }
 
 function renderChip(text, style = {}, key = text) {
@@ -357,7 +403,11 @@ function NewsFeedCard({
 /**
  * Section that fetches and displays news feed from /api/news-feed
  */
-export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} }) {
+export function NewsFeedSection({
+  holdingCodes = [],
+  onNavigateDaily = () => {},
+  viewMode = 'retail',
+}) {
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
 
   const [items, setItems] = useState([])
@@ -428,6 +478,8 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
   const unreadCount = filteredItems.filter(
     (item, index) => !readIds.has(getItemId(item, index))
   ).length
+  const showTickerSideNotes = isViewModeEnabled('showTickerSideNotes', viewMode)
+  const aggregateClusters = buildAggregateNewsClusters(filteredItems)
 
   const handleToggleRead = (item, index) => {
     const itemId = getItemId(item, index)
@@ -643,33 +695,59 @@ export function NewsFeedSection({ holdingCodes = [], onNavigateDaily = () => {} 
             h(
               'div',
               { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
-              '依 ticker'
+              showTickerSideNotes ? '依 ticker' : 'Aggregate clusters'
             ),
-            h(
-              'div',
-              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-              ...tickers.map((option) =>
-                h(
-                  'button',
-                  {
-                    key: option,
-                    type: 'button',
-                    onClick: () => setTickerFilter(option),
-                    style: {
-                      borderRadius: 999,
-                      border: `1px solid ${tickerFilter === option ? alpha(PAPER.accentStrong, '28') : PAPER.lineSoft}`,
-                      background:
-                        tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
-                      color: PAPER.ink,
-                      padding: '6px 10px',
-                      fontSize: 11,
-                      cursor: 'pointer',
-                    },
-                  },
-                  option
+            showTickerSideNotes
+              ? h(
+                  'div',
+                  { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+                  ...tickers.map((option) =>
+                    h(
+                      'button',
+                      {
+                        key: option,
+                        type: 'button',
+                        onClick: () => setTickerFilter(option),
+                        style: {
+                          borderRadius: 999,
+                          border: `1px solid ${tickerFilter === option ? alpha(PAPER.accentStrong, '28') : PAPER.lineSoft}`,
+                          background:
+                            tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
+                          color: PAPER.ink,
+                          padding: '6px 10px',
+                          fontSize: 11,
+                          cursor: 'pointer',
+                        },
+                      },
+                      option
+                    )
+                  )
                 )
-              )
-            )
+              : h(
+                  'div',
+                  {
+                    'data-testid': 'news-aggregate-clusters',
+                    style: { display: 'grid', gap: 8 },
+                  },
+                  ...aggregateClusters.map((cluster) =>
+                    h(
+                      'div',
+                      {
+                        key: cluster,
+                        style: {
+                          borderRadius: 18,
+                          border: `1px solid ${PAPER.lineSoft}`,
+                          background: alpha(PAPER.accentStrong, '10'),
+                          padding: '10px 12px',
+                          fontSize: 11,
+                          color: PAPER.ink,
+                          lineHeight: 1.6,
+                        },
+                      },
+                      cluster
+                    )
+                  )
+                )
           ),
           h(
             'div',
@@ -801,15 +879,21 @@ export function NewsAnalysisPanel({
   operatingContext = null,
   onNavigateDaily = () => {},
   holdingCodes = [],
+  viewMode = 'retail',
 }) {
+  const complianceNote = getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel)
+
   return h(
     'div',
     { 'data-testid': 'news-panel' },
     h(OperatingContextCard, { context: operatingContext }),
+    isViewModeEnabled('showComplianceNote', viewMode) &&
+      h(ViewModeNotice, { note: complianceNote }),
     holdingCodes.length > 0 &&
       h(NewsFeedSection, {
         holdingCodes,
         onNavigateDaily,
+        viewMode,
       }),
     holdingCodes.length === 0 &&
       h(

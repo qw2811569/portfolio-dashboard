@@ -109,6 +109,8 @@ export function useAppRuntimeWorkflowArgs({
       watchlistFocus: derived.watchlistFocus,
       watchlistRows: derived.watchlistRows,
       showRelayPlan: derived.showRelayPlan,
+      renderViewMode: derived.renderViewMode,
+      coverageState: derived.coverageState,
     },
     ui: {
       tab: ui.tab,

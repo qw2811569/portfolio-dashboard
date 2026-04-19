@@ -7,6 +7,7 @@ import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/date
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import { classifyStock, mergeClassification } from '../lib/stockClassifier.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
+import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function buildAggregateConsensusTargets(snapshot) {
   const aggregate =
@@ -59,7 +60,8 @@ export function usePortfolioDerivedData({
   marketPriceSync,
   activePortfolioId,
   portfolioSummaries,
-  viewMode,
+  viewMode: appViewMode,
+  currentUser,
   portfolioNotes,
   reportRefreshMeta,
   helpers,
@@ -95,8 +97,21 @@ export function usePortfolioDerivedData({
     STOCK_META,
     C,
   } = constants
+  const effectiveCurrentUser = currentUser || OWNER_PORTFOLIO_ID
 
   const H = useMemo(() => (Array.isArray(holdings) ? holdings : []), [holdings])
+  const activePortfolio = useMemo(
+    () =>
+      (Array.isArray(portfolioSummaries) ? portfolioSummaries : []).find(
+        (portfolio) => portfolio?.id === activePortfolioId
+      ) || { id: activePortfolioId, isOwner: activePortfolioId === OWNER_PORTFOLIO_ID },
+    [portfolioSummaries, activePortfolioId, OWNER_PORTFOLIO_ID]
+  )
+  const viewMode = useMemo(
+    () => resolveViewMode({ portfolio: activePortfolio, currentUser: effectiveCurrentUser }),
+    [activePortfolio, effectiveCurrentUser]
+  )
+  const coverageState = viewMode === 'insider-compressed' ? 'aggregate-only' : 'full'
   const thesisByCode = useMemo(
     () =>
       new Map(
@@ -455,7 +470,7 @@ export function usePortfolioDerivedData({
 
   const overviewPortfolios = useMemo(() => {
     const getPortfolioSnapshot = (portfolioId) => {
-      const useLiveState = viewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId
+      const useLiveState = appViewMode === PORTFOLIO_VIEW_MODE && portfolioId === activePortfolioId
       const holdingsValue = useLiveState ? H : readStorageValue(pfKey(portfolioId, 'holdings-v2'))
       const eventsValue = useLiveState
         ? currentNewsEvents
@@ -495,7 +510,7 @@ export function usePortfolioDerivedData({
     })
   }, [
     portfolioSummaries,
-    viewMode,
+    appViewMode,
     PORTFOLIO_VIEW_MODE,
     activePortfolioId,
     H,
@@ -528,8 +543,8 @@ export function usePortfolioDerivedData({
     [overviewPortfolios]
   )
   const overviewRetPct = overviewTotalCost > 0 ? (overviewTotalPnl / overviewTotalCost) * 100 : 0
-  const displayedTotalPnl = viewMode === OVERVIEW_VIEW_MODE ? overviewTotalPnl : totalPnl
-  const displayedRetPct = viewMode === OVERVIEW_VIEW_MODE ? overviewRetPct : retPct
+  const displayedTotalPnl = appViewMode === OVERVIEW_VIEW_MODE ? overviewTotalPnl : totalPnl
+  const displayedRetPct = appViewMode === OVERVIEW_VIEW_MODE ? overviewRetPct : retPct
 
   const overviewDuplicateHoldings = useMemo(() => {
     const byCode = new Map()
@@ -846,6 +861,8 @@ export function usePortfolioDerivedData({
     overviewPendingItems,
     urgentCount,
     todayAlertSummary,
+    viewMode,
+    coverageState,
     watchlistRows,
     watchlistFocus,
     showRelayPlan,

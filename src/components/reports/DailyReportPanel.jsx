@@ -5,6 +5,7 @@ import Md from '../Md.jsx'
 import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
 import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
 import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
+import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
   fontSize: 10,
@@ -35,6 +36,175 @@ function appendKnowledgeFeedback({ analysisId, signal, date, injectedKnowledgeId
   })
   if (log.length > 200) log.splice(0, log.length - 200)
   localStorage.setItem('kb-feedback-log', JSON.stringify(log))
+}
+
+function classifyHoldingHealth(item = null) {
+  const summary = String(item?.pillarSummary || '')
+    .trim()
+    .toLowerCase()
+
+  if (/broken|invalidated/.test(summary)) return 'broken'
+  if (/watch|behind|weakened/.test(summary)) return 'weakened'
+  return 'intact'
+}
+
+function summarizeHoldingStatus(items = []) {
+  return (Array.isArray(items) ? items : []).reduce(
+    (summary, item) => {
+      summary.totalStocks += 1
+      const tone = classifyHoldingHealth(item)
+      if (tone === 'broken') summary.brokenCount += 1
+      else if (tone === 'weakened') summary.weakenedCount += 1
+      else summary.intactCount += 1
+      return summary
+    },
+    {
+      totalStocks: 0,
+      intactCount: 0,
+      weakenedCount: 0,
+      brokenCount: 0,
+    }
+  )
+}
+
+function summarizeDailyChanges(changes = []) {
+  return (Array.isArray(changes) ? changes : []).reduce(
+    (summary, change) => {
+      summary.totalStocks += 1
+      const pnl = Number(change?.todayPnl) || 0
+      const changePct = Number(change?.changePct)
+      summary.totalTodayPnl += pnl
+      if (Number.isFinite(changePct) && changePct < 0) summary.negativeCount += 1
+      else if (Number.isFinite(changePct) && changePct > 0) summary.positiveCount += 1
+      else summary.flatCount += 1
+      return summary
+    },
+    {
+      totalStocks: 0,
+      positiveCount: 0,
+      negativeCount: 0,
+      flatCount: 0,
+      totalTodayPnl: 0,
+    }
+  )
+}
+
+function ComplianceNoteCard({ note }) {
+  if (!note) return null
+
+  return h(
+    Card,
+    {
+      'data-testid': 'viewmode-compliance-note',
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.amber, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.textSec } }, '合規顯示模式'),
+    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, note)
+  )
+}
+
+function AggregateDailySummary({
+  title = '組合摘要',
+  subtitle = '',
+  totalStocks = 0,
+  intactCount = 0,
+  weakenedCount = 0,
+  brokenCount = 0,
+  positiveCount = 0,
+  negativeCount = 0,
+  flatCount = 0,
+  totalTodayPnl = null,
+  compact = false,
+  testId = 'aggregate-daily-summary',
+}) {
+  const Container = compact ? 'div' : Card
+  const containerStyle = compact
+    ? {
+        padding: '8px 10px',
+        borderRadius: 8,
+        background: C.subtle,
+        border: `1px solid ${C.borderSub}`,
+      }
+    : {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.amber, '40')}`,
+      }
+  const statItems = [
+    totalStocks > 0 ? `追蹤 ${totalStocks} 檔` : null,
+    intactCount > 0 ? `維持 ${intactCount}` : null,
+    weakenedCount > 0 ? `轉弱 ${weakenedCount}` : null,
+    brokenCount > 0 ? `失真 ${brokenCount}` : null,
+    positiveCount > 0 ? `上漲 ${positiveCount}` : null,
+    negativeCount > 0 ? `下跌 ${negativeCount}` : null,
+    flatCount > 0 ? `持平 ${flatCount}` : null,
+  ].filter(Boolean)
+
+  return h(
+    Container,
+    {
+      'data-testid': testId,
+      style: containerStyle,
+    },
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 6 } }, title),
+    subtitle &&
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 10,
+            color: C.textSec,
+            lineHeight: 1.7,
+            marginBottom: statItems.length > 0 || totalTodayPnl != null ? 8 : 0,
+          },
+        },
+        subtitle
+      ),
+    statItems.length > 0 &&
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            gap: 6,
+            flexWrap: 'wrap',
+            marginBottom: totalTodayPnl != null ? 8 : 0,
+          },
+        },
+        ...statItems.map((item) =>
+          h(
+            'span',
+            {
+              key: item,
+              style: {
+                fontSize: 9,
+                padding: '3px 7px',
+                borderRadius: 999,
+                background: alpha(C.amber, '12'),
+                border: `1px solid ${alpha(C.amber, '20')}`,
+                color: C.textSec,
+              },
+            },
+            item
+          )
+        )
+      ),
+    totalTodayPnl != null &&
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 10,
+            color: pc(totalTodayPnl),
+            fontWeight: 600,
+            fontFamily: 'var(--font-num)',
+          },
+        },
+        `組合今日損益 ${totalTodayPnl >= 0 ? '+' : ''}${totalTodayPnl.toLocaleString()}`
+      )
+  )
 }
 
 function buildDailyStageMeta(report = null) {
@@ -829,7 +999,18 @@ function AutoConfirmCard({ state = null }) {
 /**
  * Holdings Changes Table
  */
-export function HoldingsChanges({ changes }) {
+export function HoldingsChanges({ changes, viewMode = 'retail' }) {
+  const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
+  if (!showPerStockDiff) {
+    const summary = summarizeDailyChanges(changes)
+    return h(AggregateDailySummary, {
+      title: '持倉今日變化',
+      subtitle: 'insider-compressed 僅保留組合層級漲跌摘要。',
+      ...summary,
+      totalTodayPnl: summary.totalTodayPnl,
+    })
+  }
+
   return h(
     Card,
     { style: { marginBottom: 8 } },
@@ -908,8 +1089,18 @@ export function HoldingsChanges({ changes }) {
 /**
  * Anomalies Section
  */
-export function AnomaliesSection({ anomalies }) {
+export function AnomaliesSection({ anomalies, viewMode = 'retail' }) {
   if (!anomalies || anomalies.length === 0) return null
+  if (!isViewModeEnabled('showPerStockDiff', viewMode)) {
+    return h(AggregateDailySummary, {
+      title: '異常波動',
+      subtitle: '個股異常已壓縮為組合層級統計。',
+      totalStocks: anomalies.length,
+      positiveCount: anomalies.filter((item) => (item?.changePct || 0) > 0).length,
+      negativeCount: anomalies.filter((item) => (item?.changePct || 0) < 0).length,
+      flatCount: anomalies.filter((item) => !Number(item?.changePct)).length,
+    })
+  }
 
   return h(
     Card,
@@ -940,8 +1131,27 @@ export function AnomaliesSection({ anomalies }) {
 /**
  * Event Correlations Section
  */
-export function EventCorrelations({ correlations }) {
+export function EventCorrelations({ correlations, viewMode = 'retail' }) {
   if (!correlations || correlations.length === 0) return null
+  if (!isViewModeEnabled('showPerStockDiff', viewMode)) {
+    const relatedStocks = new Set(
+      correlations.flatMap((item) =>
+        Array.isArray(item?.relatedStocks) ? item.relatedStocks.map((stock) => stock?.code) : []
+      )
+    )
+    return h(AggregateDailySummary, {
+      title: '事件連動分析',
+      subtitle: '事件關聯已壓縮為組合層級摘要。',
+      totalStocks: relatedStocks.size,
+      positiveCount: correlations.filter((item) =>
+        (item?.relatedStocks || []).some((stock) => (stock?.changePct || 0) > 0)
+      ).length,
+      negativeCount: correlations.filter((item) =>
+        (item?.relatedStocks || []).some((stock) => (stock?.changePct || 0) < 0)
+      ).length,
+      flatCount: correlations.length,
+    })
+  }
 
   return h(
     Card,
@@ -1374,9 +1584,10 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
 /**
  * Morning Note Section — auto-assembled daily trading memo
  */
-export function MorningNoteSection({ morningNote }) {
+export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
   if (!morningNote) return null
   const { sections } = morningNote
+  const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
 
   const hasContent =
     sections.todayEvents?.length > 0 ||
@@ -1474,38 +1685,46 @@ export function MorningNoteSection({ morningNote }) {
           { style: { fontSize: 10, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
           '持倉概況'
         ),
-        sections.holdingStatus.map((s) =>
-          h(
-            'div',
-            {
-              key: s.code,
-              style: {
-                fontSize: 11,
-                color: C.text,
-                padding: '3px 0',
-                display: 'flex',
-                justifyContent: 'space-between',
-              },
-            },
-            h(
-              'span',
-              null,
-              `${s.name} `,
-              s.conviction &&
+        showPerStockDiff
+          ? sections.holdingStatus.map((s) =>
+              h(
+                'div',
+                {
+                  key: s.code,
+                  'data-testid': `morning-note-holding-${s.code}`,
+                  style: {
+                    fontSize: 11,
+                    color: C.text,
+                    padding: '3px 0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  },
+                },
                 h(
                   'span',
-                  { style: { fontSize: 9, color: C.textSec, fontWeight: 600 } },
-                  s.conviction.toUpperCase()
+                  null,
+                  `${s.name} `,
+                  s.conviction &&
+                    h(
+                      'span',
+                      { style: { fontSize: 9, color: C.textSec, fontWeight: 600 } },
+                      s.conviction.toUpperCase()
+                    )
+                ),
+                h(
+                  'span',
+                  { style: { fontSize: 10, color: C.textMute } },
+                  s.pillarSummary || '',
+                  s.stopLossDistance != null && ` 距停損 +${s.stopLossDistance.toFixed(1)}%`
                 )
-            ),
-            h(
-              'span',
-              { style: { fontSize: 10, color: C.textMute } },
-              s.pillarSummary || '',
-              s.stopLossDistance != null && ` 距停損 +${s.stopLossDistance.toFixed(1)}%`
+              )
             )
-          )
-        )
+          : h(AggregateDailySummary, {
+              compact: true,
+              title: '持倉概況',
+              subtitle: 'insider-compressed 僅保留 aggregate status。',
+              ...summarizeHoldingStatus(sections.holdingStatus),
+            })
       ),
 
     // Watchlist alerts
@@ -1573,8 +1792,13 @@ export function DailyReportPanel({
   strategyBrain: _strategyBrain,
   staleStatus = 'fresh',
   operatingContext = null,
+  viewMode = 'retail',
 }) {
   const [autoConfirmState, setAutoConfirmState] = useState(null)
+  const complianceNote = getViewModeComplianceMessage(
+    viewMode,
+    operatingContext?.portfolioLabel || ''
+  )
 
   // Feedback handler - stores to localStorage
   function handleFeedback(signal) {
@@ -1648,6 +1872,8 @@ export function DailyReportPanel({
     'div',
     { 'data-testid': 'daily-panel' },
     h(OperatingContextCard, { context: operatingContext }),
+    isViewModeEnabled('showComplianceNote', viewMode) &&
+      h(ComplianceNoteCard, { note: complianceNote }),
     h(
       'div',
       {
@@ -1657,7 +1883,7 @@ export function DailyReportPanel({
       h(StaleBadge, { status: staleStatus, title: 'daily panel freshness' })
     ),
     // Morning note (always shown when available)
-    h(MorningNoteSection, { morningNote }),
+    h(MorningNoteSection, { morningNote, viewMode }),
 
     // Empty state
     !dailyReport &&
@@ -1767,9 +1993,9 @@ export function DailyReportPanel({
           h(
             'div',
             null,
-            h(HoldingsChanges, { changes: dailyReport.changes }),
-            h(AnomaliesSection, { anomalies: dailyReport.anomalies }),
-            h(EventCorrelations, { correlations: dailyReport.eventCorrelations }),
+            h(HoldingsChanges, { changes: dailyReport.changes, viewMode }),
+            h(AnomaliesSection, { anomalies: dailyReport.anomalies, viewMode }),
+            h(EventCorrelations, { correlations: dailyReport.eventCorrelations, viewMode }),
             h(EventAssessments, {
               assessments: dailyReport.eventAssessments,
               newsEvents,

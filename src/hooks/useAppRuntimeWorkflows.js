@@ -75,6 +75,7 @@ export function useAppRuntimeWorkflows({
     watchlistFocus,
     watchlistRows,
     showRelayPlan,
+    renderViewMode,
   } = derived
 
   const {
@@ -428,6 +429,7 @@ export function useAppRuntimeWorkflows({
       dataRefreshRows,
       researchHistory,
       tradeLog,
+      renderViewMode,
     },
     ui: {
       showReversal,

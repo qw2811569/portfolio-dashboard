@@ -40,36 +40,55 @@ describe('components/ResearchPanel', () => {
     vi.unstubAllGlobals()
   })
 
-  // The empty-state hint lives in a div mixed with <br/> and a second text node,
-  // so RTL's exact-match getByText fails. Use container.textContent instead.
-  const EMPTY_HINT = '點擊上方按鈕開始第一次深度研究'
-
-  it('shows the first-research hint when there is nothing to show yet', () => {
+  it('shows holdings onboarding when the research tab has no holdings yet', () => {
     const { container } = render(<ResearchPanel {...buildProps()} />)
-    expect(container.textContent).toContain(EMPTY_HINT)
+    expect(container.querySelector('[data-empty-state="holdings"]')).toBeTruthy()
+    expect(container.textContent).toContain('還沒加股')
   })
 
-  it('hides the first-research hint once researchResults exists', () => {
+  it('shows research empty state once holdings exist but no research has run yet', () => {
+    const { container } = render(
+      <ResearchPanel {...buildProps({ holdings: [{ code: '2330', name: '台積電' }] })} />
+    )
+    expect(container.querySelector('[data-empty-state="research"]')).toBeTruthy()
+    expect(container.textContent).toContain('此股暫無深度研究')
+  })
+
+  it('shows skeleton loading while research history is still hydrating', () => {
+    const { container } = render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          researchHistory: null,
+        })}
+      />
+    )
+
+    expect(container.querySelector('[data-skeleton]')).toBeTruthy()
+    expect(container.textContent).toContain('研究資料整理中')
+  })
+
+  it('hides the research empty state once researchResults exists', () => {
     const results = {
       timestamp: 1,
       summary: 'AI 深度研究摘要',
       stocks: [],
     }
     const { container } = render(<ResearchPanel {...buildProps({ researchResults: results })} />)
-    expect(container.textContent).not.toContain(EMPTY_HINT)
+    expect(container.querySelector('[data-empty-state="research"]')).toBeFalsy()
   })
 
-  it('hides the first-research hint if history has entries even without live results', () => {
+  it('hides the research empty state if history has entries even without live results', () => {
     const history = [{ timestamp: 100, summary: 'old run', stocks: [] }]
     const { container } = render(<ResearchPanel {...buildProps({ researchHistory: history })} />)
-    expect(container.textContent).not.toContain(EMPTY_HINT)
+    expect(container.querySelector('[data-empty-state="research"]')).toBeFalsy()
   })
 
-  it('hides the first-research hint while researching is in progress', () => {
+  it('shows skeleton progress while researching is in progress', () => {
     const { container } = render(
       <ResearchPanel {...buildProps({ researching: true, researchTarget: '2330' })} />
     )
-    expect(container.textContent).not.toContain(EMPTY_HINT)
+    expect(container.querySelector('[data-skeleton]')).toBeTruthy()
   })
 
   it('renders the cnyes aggregate consensus card when aggregate payload exists', () => {

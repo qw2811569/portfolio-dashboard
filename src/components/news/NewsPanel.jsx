@@ -2,6 +2,7 @@ import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { TOKENS, alpha } from '../../theme.js'
 import { Card, Button, DataError, OperatingContextCard } from '../common'
+import { Skeleton } from '../common/Skeleton.jsx'
 import { normalizeDataError } from '../../lib/dataError.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
@@ -444,8 +445,9 @@ export function NewsFeedSection({
   if (loading) {
     return h(
       Card,
-      { style: { padding: '16px 12px', textAlign: 'center' } },
-      h('div', { style: { fontSize: 11, color: TOKENS.iron } }, '載入新聞中...')
+      { style: { padding: '20px 16px' } },
+      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 12 } }, '新聞脈絡整理中'),
+      h(Skeleton, { variant: 'card', count: 2 })
     )
   }
 

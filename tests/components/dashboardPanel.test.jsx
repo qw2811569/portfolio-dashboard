@@ -29,6 +29,7 @@ describe('components/DashboardPanel', () => {
   it('renders without crashing when given empty data', () => {
     const { container } = render(<DashboardPanel {...buildProps()} />)
     expect(container.firstChild).toBeTruthy()
+    expect(container.querySelector('[data-empty-state="holdings"]')).toBeTruthy()
   })
 
   it('shows the today pnl hero value when todayTotalPnl is provided', () => {
@@ -41,6 +42,10 @@ describe('components/DashboardPanel', () => {
     render(
       <DashboardPanel
         {...buildProps({
+          holdings: [
+            { code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 },
+            { code: '2454', name: '聯發科', qty: 1, cost: 1400, price: 1460 },
+          ],
           holdingDossiers: [
             {
               code: '2330',
@@ -83,6 +88,7 @@ describe('components/DashboardPanel', () => {
     const { container } = render(
       <DashboardPanel
         {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
           urgentCount: 3,
           todayAlertSummary: '今日有 3 檔需要關注',
           newsEvents: [{ id: 1, title: 'test', status: 'tracking' }],
@@ -146,6 +152,7 @@ describe('components/DashboardPanel', () => {
     render(
       <DashboardPanel
         {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
           onNavigate,
           morningNote: {
             date: '2026/04/18',

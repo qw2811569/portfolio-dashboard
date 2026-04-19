@@ -1,6 +1,8 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, DataError, DataSourceBadge, OperatingContextCard } from '../common'
+import { EmptyState } from '../common/EmptyState.jsx'
+import { Skeleton } from '../common/Skeleton.jsx'
 import Md from '../Md.jsx'
 import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
@@ -435,23 +437,10 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
     {
       style: {
         marginBottom: 8,
-        textAlign: 'center',
-        padding: '32px 16px',
+        padding: '24px 16px',
         background: `linear-gradient(135deg, ${alpha(C.teal, '08')}, ${alpha(C.olive, '08')})`,
       },
     },
-    // Spinning loader
-    h('div', {
-      style: {
-        width: 36,
-        height: 36,
-        margin: '0 auto 16px',
-        border: `3px solid ${alpha(C.teal, '20')}`,
-        borderTop: `3px solid ${C.teal}`,
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-      },
-    }),
     h(
       'div',
       {
@@ -473,29 +462,7 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
           ? '逐一分析持股 + 組合策略 + AI 建議，預計 1-2 分鐘'
           : '3 輪迭代研究：基本面 → 風險催化 → 策略建議，預計 30 秒'
     ),
-    // Progress bar
-    h(
-      'div',
-      {
-        style: {
-          maxWidth: 240,
-          margin: '0 auto',
-          height: 4,
-          background: C.subtle,
-          borderRadius: 2,
-          overflow: 'hidden',
-        },
-      },
-      h('div', {
-        style: {
-          height: '100%',
-          width: '60%',
-          background: `linear-gradient(90deg, ${C.teal}, ${C.olive})`,
-          borderRadius: 2,
-          animation: 'indeterminate 1.8s ease-in-out infinite',
-        },
-      })
-    )
+    h(Skeleton, { variant: 'card', count: isPortfolio ? 2 : 1 })
   )
 }
 
@@ -1318,6 +1285,14 @@ export function ResearchPanel({
 }) {
   const complianceNote = getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel)
   const reportRefreshError = getReportRefreshError(holdings, reportRefreshMeta)
+  const hasHoldings = Array.isArray(holdings) && holdings.length > 0
+  const isResearchHistoryLoading =
+    researchHistory == null && hasHoldings && !researchResults && !researching
+  const showResearchEmpty =
+    !researching &&
+    !researchResults &&
+    ((Array.isArray(researchHistory) && researchHistory.length === 0) ||
+      (!hasHoldings && researchHistory == null))
 
   return h(
     'div',
@@ -1366,6 +1341,23 @@ export function ResearchPanel({
       researchTarget,
       holdings,
     }),
+    isResearchHistoryLoading &&
+      h(
+        Card,
+        {
+          style: {
+            marginBottom: 8,
+            padding: '20px 16px',
+          },
+        },
+        h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '研究資料整理中'),
+        h(
+          'div',
+          { style: { fontSize: 12, color: C.textMute, lineHeight: 1.7, marginBottom: 12 } },
+          '先把公開報告索引與研究歷史接回來，畫面不會先掉進空白。'
+        ),
+        h(Skeleton, { variant: 'card', count: 1 })
+      ),
     h(ConsensusHighlights, {
       holdings,
       analystReports,
@@ -1387,22 +1379,10 @@ export function ResearchPanel({
       proposalActionType,
       viewMode,
     }),
-    !researchResults &&
-      !researching &&
-      (!researchHistory || researchHistory.length === 0) &&
-      h(
-        Card,
-        {
-          style: { textAlign: 'center', padding: '24px' },
-        },
-        h(
-          'div',
-          { style: { fontSize: 11, color: C.textMute, lineHeight: 1.8 } },
-          '點擊上方按鈕開始第一次深度研究。',
-          h('br'),
-          'AI 將自主進行多輪迭代分析，像研究員一樣逐步深入。'
-        )
-      ),
+    showResearchEmpty &&
+      h(EmptyState, {
+        resource: hasHoldings ? 'research' : 'holdings',
+      }),
     h(ResearchHistory, {
       history: researchHistory,
       onSelect: onSelectHistory,

@@ -1085,7 +1085,7 @@ describe('components/AppPanels context wiring', () => {
     expect(screen.getByText('自動資料確認')).toBeInTheDocument()
   })
 
-  it('routes events empty-state CTA into the daily analysis flow without auto-running API work', async () => {
+  it('renders the quiet-window events empty state without auto-routing into daily analysis', async () => {
     const setTab = vi.fn()
 
     renderWithPanelContexts(
@@ -1144,8 +1144,10 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
-    fireEvent.click(await screen.findByText('🔍 前往收盤分析'))
-    expect(setTab).toHaveBeenCalledWith('daily')
+    expect(await screen.findByText('未來 30 天無重大事件')).toBeInTheDocument()
+    expect(document.querySelector('[data-empty-state="events"]')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /前往收盤分析/i })).not.toBeInTheDocument()
+    expect(setTab).not.toHaveBeenCalled()
   })
 
   it('propagates daily analysis insight into holdings and research operating context through shared runtime data', async () => {

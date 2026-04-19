@@ -5,6 +5,7 @@ import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { Button, Card } from '../common'
+import { EmptyState } from '../common/EmptyState.jsx'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
@@ -1234,6 +1235,26 @@ export function DashboardPanel({
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
     [holdingDossiers, viewMode]
   )
+  const showHoldingsEmptyState =
+    holdings.length === 0 && totalVal === 0 && totalCost === 0 && todayTotalPnl === 0
+
+  if (showHoldingsEmptyState) {
+    return h(
+      'div',
+      null,
+      h(EmptyState, {
+        resource: 'holdings',
+        onAction:
+          typeof onNavigate === 'function'
+            ? () => {
+                onNavigate('trade')
+              }
+            : null,
+      }),
+      h(PrincipleCards),
+      h(TodayInMarketsCard, { newsEvents })
+    )
+  }
 
   return h(
     'div',

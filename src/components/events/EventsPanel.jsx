@@ -2,6 +2,7 @@ import { createElement as h } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard, StaleBadge } from '../common'
+import { EmptyState } from '../common/EmptyState.jsx'
 import { RELAY_PLAN } from '../../seedDataEvents.js'
 import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
@@ -727,7 +728,6 @@ export function EventsPanel({
   setCatalystFilter,
   staleStatus = 'fresh',
   operatingContext = null,
-  onNavigateDaily = () => {},
 }) {
   const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
     (event) => event?.recordType !== 'news'
@@ -761,60 +761,7 @@ export function EventsPanel({
     h(EventsTimeline, { events: eventCards }),
 
     // Events list — empty state
-    eventCards.length === 0 &&
-      h(
-        Card,
-        {
-          style: {
-            textAlign: 'center',
-            padding: '48px 16px',
-          },
-        },
-        h('div', { style: { fontSize: 40, marginBottom: 12, opacity: 0.5 } }, '📅'),
-        h(
-          'div',
-          {
-            style: {
-              fontSize: 16,
-              fontWeight: 600,
-              color: C.text,
-              marginBottom: 8,
-            },
-          },
-          '歡迎來到事件行事曆'
-        ),
-        h(
-          'div',
-          {
-            style: {
-              fontSize: 12,
-              color: C.textSec,
-              lineHeight: 1.7,
-              maxWidth: 320,
-              margin: '0 auto 16px',
-            },
-          },
-          '這裡會顯示影響你持股的重要事件，包括法說會、財報公布、產業動態等。'
-        ),
-        h(
-          Button,
-          {
-            onClick: onNavigateDaily,
-            style: {
-              padding: '8px 24px',
-              borderRadius: 8,
-              border: 'none',
-              background: C.cardBlue,
-              color: C.text,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: C.shadow,
-            },
-          },
-          '🔍 前往收盤分析'
-        )
-      ),
+    eventCards.length === 0 && h(EmptyState, { resource: 'events' }),
 
     // Events list
     eventCards.map((event, index) =>

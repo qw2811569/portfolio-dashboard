@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EventsPanel } from '../../src/components/events/EventsPanel.jsx'
 
@@ -30,22 +30,13 @@ describe('components/EventsPanel', () => {
   it('shows the empty-state welcome card when no events are filtered in', () => {
     render(<EventsPanel {...buildProps()} />)
 
-    expect(screen.getByText('歡迎來到事件行事曆')).toBeInTheDocument()
-    expect(screen.getByText('🔍 前往收盤分析')).toBeInTheDocument()
+    expect(screen.getByText('未來 30 天無重大事件')).toBeInTheDocument()
+    expect(document.querySelector('[data-empty-state="events"]')).toBeTruthy()
   })
 
-  it('fires onNavigateDaily when the empty-state CTA is clicked and does not mutate filter state', () => {
-    const onNavigateDaily = vi.fn()
-    const setFilterType = vi.fn()
-    const setCatalystFilter = vi.fn()
-
-    render(<EventsPanel {...buildProps({ onNavigateDaily, setFilterType, setCatalystFilter })} />)
-
-    fireEvent.click(screen.getByText('🔍 前往收盤分析'))
-
-    expect(onNavigateDaily).toHaveBeenCalledTimes(1)
-    expect(setFilterType).not.toHaveBeenCalled()
-    expect(setCatalystFilter).not.toHaveBeenCalled()
+  it('does not render a manual CTA in the quiet-window empty state', () => {
+    render(<EventsPanel {...buildProps()} />)
+    expect(screen.queryByRole('button', { name: /前往收盤分析/i })).not.toBeInTheDocument()
   })
 
   it('renders the relay plan card only when showRelayPlan is true', () => {
@@ -69,7 +60,7 @@ describe('components/EventsPanel', () => {
 
     render(<EventsPanel {...buildProps({ filteredEvents: events })} />)
 
-    expect(screen.queryByText('歡迎來到事件行事曆')).not.toBeInTheDocument()
+    expect(screen.queryByText('未來 30 天無重大事件')).not.toBeInTheDocument()
     expect(screen.getByText('台積電法說會')).toBeInTheDocument()
   })
 

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { C } from '../theme.js'
 import AppPanels from './AppPanels.jsx'
 import { ConfirmDialog } from './common/index.js'
+import { Skeleton } from './common/Skeleton.jsx'
 import CmdKPalette from './common/CmdKPalette.jsx'
 import Header from './Header.jsx'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
@@ -142,25 +143,9 @@ export default function AppShellFrame({
               {detail}
             </div>
 
-            <div
-              aria-hidden="true"
-              style={{
-                height: 6,
-                borderRadius: 999,
-                background: C.subtleElev,
-                overflow: 'hidden',
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  width: '42%',
-                  height: '100%',
-                  borderRadius: 999,
-                  background: `linear-gradient(90deg, ${C.cyan}, ${C.blue}, ${C.teal})`,
-                  animation: 'app-shell-boot-indeterminate 1.8s ease-in-out infinite',
-                }}
-              />
+            <div data-skeleton="boot-shell" style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
+              <Skeleton variant="text" count={1} />
+              <Skeleton variant="row" count={3} />
             </div>
 
             <div style={{ fontSize: 11, color: C.textMute, lineHeight: 1.7 }}>

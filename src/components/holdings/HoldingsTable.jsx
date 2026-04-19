@@ -1,6 +1,8 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, StaleBadge } from '../common'
+import { EmptyState } from '../common/EmptyState.jsx'
+import { Skeleton } from '../common/Skeleton.jsx'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { buildPriceDeviationBadgeMeta } from '../../lib/priceDeviation.js'
 import { PeerRankingBadge } from './PeerRankingBadge.jsx'
@@ -13,14 +15,6 @@ import {
   getHoldingUnrealizedPnl,
 } from '../../lib/holdings.js'
 import { isViewModeEnabled } from '../../lib/viewModeContract.js'
-
-const card = {
-  background: `linear-gradient(180deg, ${C.card}, ${C.subtle})`,
-  border: `1px solid ${C.border}`,
-  borderRadius: 14,
-  padding: '12px 12px',
-  boxShadow: `${C.insetLine}, ${C.shadow}`,
-}
 
 const lbl = {
   fontSize: 12,
@@ -428,6 +422,7 @@ export function HoldingRow({
  */
 export function HoldingsTable({
   holdings = [],
+  loading = false,
   dossierByCode = new Map(),
   expandedStock = null,
   setExpandedStock = () => {},
@@ -437,19 +432,33 @@ export function HoldingsTable({
   sortBy = 'code',
   sortDir = 'asc',
   viewMode = 'retail',
+  onAddHoldings = null,
 }) {
-  if (!holdings || holdings.length === 0) {
+  if (loading) {
     return h(
-      'div',
-      { style: { ...card, textAlign: 'center', padding: '32px 16px' } },
-      h('div', { style: { fontSize: 28, marginBottom: 8, opacity: 0.6 } }, '∅'),
-      h('div', { style: { fontSize: 11, color: C.textSec, fontWeight: 600 } }, '尚無持股'),
+      Card,
+      null,
       h(
         'div',
-        { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
-        '上傳成交記錄或手動新增持股'
-      )
+        {
+          style: {
+            ...lbl,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        '持股明細 · 載入中',
+        h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
+      ),
+      h(Skeleton, { variant: 'row', count: 5 })
     )
+  }
+
+  if (!holdings || holdings.length === 0) {
+    return h(EmptyState, { resource: 'holdings', onAction: onAddHoldings })
   }
 
   // Sort holdings

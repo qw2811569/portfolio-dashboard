@@ -152,16 +152,12 @@ describe('components/NewsFeedSection', () => {
   })
 
   it('shows loading state during fetch', () => {
-    let resolvePromise
-    vi.spyOn(globalThis, 'fetch').mockReturnValueOnce(
-      new Promise((resolve) => {
-        resolvePromise = resolve
-      })
-    )
+    vi.spyOn(globalThis, 'fetch').mockReturnValueOnce(new Promise(() => {}))
 
     render(<NewsFeedSection holdingCodes={['2330']} />)
 
-    expect(screen.getByText('載入新聞中...')).toBeInTheDocument()
+    expect(screen.getByText('新聞脈絡整理中')).toBeInTheDocument()
+    expect(document.querySelector('[data-skeleton]')).toBeTruthy()
   })
 
   it('shows fallback notice when fetch fails', async () => {

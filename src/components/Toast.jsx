@@ -112,7 +112,7 @@ export function ToastContainer({ toasts, remove }) {
             boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
+            gap: 8,
             animation: 'slideIn 0.3s ease-out',
           },
         },

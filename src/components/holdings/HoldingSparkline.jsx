@@ -60,7 +60,7 @@ export default function HoldingSparkline({ history = [], color = 'var(--up)' }) 
         h(Tooltip, {
           formatter: (value) => [value, '收盤'],
           labelFormatter: (label) => label,
-          contentStyle: { fontSize: 10, padding: '4px 6px' },
+          contentStyle: { fontSize: 10, padding: '4px 8px' },
         }),
         h(Line, {
           type: 'monotone',

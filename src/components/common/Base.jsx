@@ -7,7 +7,7 @@ export function Card({ children, style = {}, highlighted = false, color = null, 
     background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
     border: `1px solid ${C.border}`,
     borderRadius: 22,
-    padding: '16px 18px',
+    padding: '16px 16px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
     ...(highlighted
       ? {
@@ -38,7 +38,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
         background: C.shell,
         border: `1px solid ${C.border}`,
         borderRadius: 16,
-        padding: '10px 12px',
+        padding: '8px 12px',
         boxShadow: `${C.insetLine}, ${C.shadow}`,
         ...style,
       },
@@ -90,9 +90,9 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
   }
 
   const sizes = {
-    xs: { padding: '3px 7px', fontSize: 9 },
-    sm: { padding: '5px 9px', fontSize: 10 },
-    md: { padding: '6px 11px', fontSize: 11 },
+    xs: { padding: '4px 8px', fontSize: 9 },
+    sm: { padding: '4px 8px', fontSize: 10 },
+    md: { padding: '4px 8px', fontSize: 11 },
   }
 
   const selectedColor = colors[color] || colors.default
@@ -160,10 +160,10 @@ export function Button({
   }
 
   const sizes = {
-    xs: { padding: '8px 10px', fontSize: 9 },
-    sm: { padding: '10px 12px', fontSize: 10 },
-    md: { padding: '10px 16px', fontSize: 11 },
-    lg: { padding: '12px 18px', fontSize: 12 },
+    xs: { padding: '8px 8px', fontSize: 9 },
+    sm: { padding: '8px 12px', fontSize: 10 },
+    md: { padding: '8px 16px', fontSize: 11 },
+    lg: { padding: '12px 16px', fontSize: 12 },
   }
 
   const selectedVariant = variants[variant]?.[color] || variants.ghost.default
@@ -209,7 +209,7 @@ export function SectionHeader({ title, description, action, style = {} }) {
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
     fontWeight: 500,
-    marginBottom: 5,
+    marginBottom: 4,
   }
 
   return h(
@@ -220,7 +220,7 @@ export function SectionHeader({ title, description, action, style = {} }) {
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         gap: 8,
-        marginBottom: 10,
+        marginBottom: 8,
         flexWrap: 'wrap',
         ...style,
       },
@@ -254,7 +254,7 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
     {
       style: {
         textAlign: 'center',
-        padding: '36px 18px',
+        padding: '32px 16px',
         color: C.textMute,
         background: `linear-gradient(180deg, ${alpha(C.subtle, 'fc')}, ${alpha(C.card, 'f2')})`,
         border: `1px dashed ${C.border}`,
@@ -271,7 +271,7 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
             fontSize: 20,
             fontWeight: 600,
             color: C.text,
-            marginBottom: 6,
+            marginBottom: 4,
             fontFamily: 'var(--font-headline)',
           },
         },

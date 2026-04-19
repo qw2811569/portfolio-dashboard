@@ -178,7 +178,7 @@ function KpiCard({
       style: {
         background: `linear-gradient(180deg, ${alpha(C.cardBlue, 'c8')}, ${alpha(C.subtle, 'f4')})`,
         border: `1px solid ${alpha(C.blue, disabled ? '24' : '40')}`,
-        padding: '16px 18px',
+        padding: '16px 16px',
         minHeight: 126,
         opacity: disabled ? 0.82 : 1,
       },
@@ -206,7 +206,7 @@ function KpiCard({
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               fontWeight: 600,
-              marginBottom: 10,
+              marginBottom: 8,
             },
           },
           label
@@ -218,7 +218,7 @@ function KpiCard({
                 'aria-label': `${label}-loading`,
                 style: {
                   display: 'grid',
-                  gap: 10,
+                  gap: 8,
                 },
               },
               h('div', {

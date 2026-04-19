@@ -157,7 +157,7 @@ export default function CmdKPalette({
           >
             <div
               style={{
-                padding: isMobile ? '18px 16px 14px' : '18px 20px 14px',
+                padding: isMobile ? '16px 16px 12px' : '16px 16px 12px',
                 borderBottom: `1px solid ${C.borderSub}`,
                 background: `linear-gradient(180deg, ${alpha(C.cardBlue, '8c')} 0%, ${alpha(C.card, '10')} 100%)`,
               }}
@@ -166,11 +166,11 @@ export default function CmdKPalette({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: 8,
                   borderRadius: 16,
                   border: `1px solid ${C.borderStrong}`,
                   background: alpha(C.bg, '30'),
-                  padding: isMobile ? '14px 16px' : '12px 14px',
+                  padding: isMobile ? '12px 16px' : '12px 12px',
                 }}
               >
                 <span style={{ color: C.textMute, fontSize: 14 }}>{isMobile ? '搜尋' : '⌘K'}</span>
@@ -192,7 +192,7 @@ export default function CmdKPalette({
                   }}
                 />
               </div>
-              <div style={{ marginTop: 10, fontSize: 11, color: C.textMute }}>
+              <div style={{ marginTop: 8, fontSize: 11, color: C.textMute }}>
                 {isMobile
                   ? '點一下結果即可跳轉 · 可用 Esc 關閉'
                   : '`Enter` 跳轉 · `↑↓` 選擇 · `Esc` 關閉'}
@@ -212,7 +212,7 @@ export default function CmdKPalette({
               {results.length === 0 ? (
                 <div
                   style={{
-                    padding: isMobile ? '40px 22px' : '32px 18px',
+                    padding: isMobile ? '48px 24px' : '32px 16px',
                     textAlign: 'center',
                     color: C.textMute,
                     fontSize: 13,
@@ -226,11 +226,11 @@ export default function CmdKPalette({
                   <section
                     key={groupName}
                     aria-label={`${groupName}結果`}
-                    style={{ marginBottom: 10 }}
+                    style={{ marginBottom: 8 }}
                   >
                     <div
                       style={{
-                        padding: isMobile ? '10px 12px 8px' : '8px 10px 6px',
+                        padding: isMobile ? '8px 12px 8px' : '8px 8px 4px',
                         fontSize: 10,
                         fontWeight: 700,
                         letterSpacing: '0.12em',
@@ -280,7 +280,7 @@ export default function CmdKPalette({
                               style={{
                                 fontSize: isMobile ? 12 : 11,
                                 color: C.textMute,
-                                marginTop: 3,
+                                marginTop: 4,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -295,7 +295,7 @@ export default function CmdKPalette({
                               color: selected ? C.text : C.textMute,
                               borderRadius: 999,
                               border: `1px solid ${selected ? alpha(C.teal, '30') : C.borderSub}`,
-                              padding: isMobile ? '5px 10px' : '4px 8px',
+                              padding: isMobile ? '4px 8px' : '4px 8px',
                               flexShrink: 0,
                             }}
                           >

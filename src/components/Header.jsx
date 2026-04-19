@@ -85,7 +85,7 @@ export default function Header(props) {
     background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.subtle, 'f4')})`,
     border: `1px solid ${C.border}`,
     borderRadius: 14,
-    padding: '12px 14px',
+    padding: '12px 12px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
   }
   const lbl = {
@@ -93,7 +93,7 @@ export default function Header(props) {
     color: C.textMute,
     letterSpacing: '0.08em',
     fontWeight: 500,
-    marginBottom: 5,
+    marginBottom: 4,
   }
   const hasHeaderNotice = viewMode !== OVERVIEW_VIEW_MODE && workflowCue?.kind === 'data-refresh'
   const noticeItems = Array.isArray(workflowCue?.items) ? workflowCue.items : []
@@ -105,7 +105,7 @@ export default function Header(props) {
       style: {
         background: `linear-gradient(180deg, ${alpha(C.shell, 'f4')} 0%, ${alpha(C.subtleElev, 'ea')} 100%)`,
         borderBottom: `1px solid ${C.borderSoft}`,
-        padding: '10px 14px 0',
+        padding: '8px 12px 0',
         position: 'sticky',
         top: 0,
         zIndex: 10,
@@ -244,7 +244,7 @@ export default function Header(props) {
           style: {
             display: 'flex',
             alignItems: 'flex-start',
-            gap: 10,
+            gap: 8,
             flexShrink: 0,
             paddingLeft: 8,
             position: 'relative',
@@ -284,7 +284,7 @@ export default function Header(props) {
                     minWidth: 18,
                     textAlign: 'center',
                     borderRadius: 999,
-                    padding: '2px 6px',
+                    padding: '4px 8px',
                     background: alpha(C.amber, '18'),
                     border: `1px solid ${alpha(C.amber, '24')}`,
                     color: C.text,
@@ -304,7 +304,7 @@ export default function Header(props) {
                     right: 0,
                     width: 'min(340px, calc(100vw - 28px))',
                     ...card,
-                    padding: '12px 12px 10px',
+                    padding: '12px 12px 8px',
                     zIndex: 12,
                   },
                 },
@@ -331,7 +331,7 @@ export default function Header(props) {
                         fontSize: 9,
                         color: C.textMute,
                         borderRadius: 999,
-                        padding: '3px 7px',
+                        padding: '4px 8px',
                         background: C.subtle,
                         border: `1px solid ${C.border}`,
                       },
@@ -347,7 +347,7 @@ export default function Header(props) {
                         fontSize: 10,
                         color: C.textSec,
                         lineHeight: 1.7,
-                        marginBottom: noticeItems.length > 0 ? 8 : 10,
+                        marginBottom: 8,
                       },
                     },
                     workflowCue.reason
@@ -355,7 +355,7 @@ export default function Header(props) {
                 noticeItems.length > 0 &&
                   h(
                     'div',
-                    { style: { display: 'grid', gap: 6, marginBottom: 10 } },
+                    { style: { display: 'grid', gap: 4, marginBottom: 8 } },
                     noticeItems.map((item) =>
                       h(
                         'div',
@@ -365,7 +365,7 @@ export default function Header(props) {
                             borderRadius: 10,
                             border: `1px solid ${C.borderSub}`,
                             background: C.subtle,
-                            padding: '8px 9px',
+                            padding: '8px 8px',
                           },
                         },
                         h(
@@ -375,7 +375,7 @@ export default function Header(props) {
                               fontSize: 11,
                               color: C.text,
                               fontWeight: 600,
-                              marginBottom: 3,
+                              marginBottom: 4,
                             },
                           },
                           `${item.name} (${item.code})`
@@ -497,7 +497,7 @@ export default function Header(props) {
             border: `1px solid ${C.border}`,
             borderRadius: 10,
             minHeight: 44,
-            padding: '10px 12px',
+            padding: '8px 12px',
             fontSize: 11,
             outline: 'none',
             cursor: portfolioSwitching ? 'progress' : 'pointer',
@@ -593,14 +593,14 @@ export default function Header(props) {
               justifyContent: 'space-between',
               alignItems: 'center',
               gap: 8,
-              marginBottom: 10,
+              marginBottom: 8,
               flexWrap: 'wrap',
             },
           },
           h(
             'div',
             null,
-            h('div', { style: { ...lbl, color: C.lavender, marginBottom: 3 } }, '組合管理'),
+            h('div', { style: { ...lbl, color: C.lavender, marginBottom: 4 } }, '組合管理'),
             h(
               'div',
               { style: { fontSize: 11, color: C.textSec } },
@@ -615,7 +615,7 @@ export default function Header(props) {
         ),
         h(
           'div',
-          { style: { display: 'grid', gap: 7 } },
+          { style: { display: 'grid', gap: 8 } },
           safePortfolioSummaries.map((portfolio) =>
             h(
               'div',
@@ -628,7 +628,7 @@ export default function Header(props) {
                       : C.subtle,
                   border: `1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
                   borderRadius: 8,
-                  padding: '10px 12px',
+                  padding: '8px 12px',
                 },
               },
               h(
@@ -638,7 +638,7 @@ export default function Header(props) {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
-                    gap: 10,
+                    gap: 8,
                     flexWrap: 'wrap',
                   },
                 },
@@ -652,25 +652,25 @@ export default function Header(props) {
                     portfolio.id === OWNER_PORTFOLIO_ID &&
                       h(
                         'span',
-                        { style: { fontSize: 9, color: C.textMute, marginLeft: 6 } },
+                        { style: { fontSize: 9, color: C.textMute, marginLeft: 4 } },
                         'owner'
                       ),
                     portfolio.id === activePortfolioId &&
                       h(
                         'span',
-                        { style: { fontSize: 9, color: C.lavender, marginLeft: 6 } },
+                        { style: { fontSize: 9, color: C.lavender, marginLeft: 4 } },
                         '目前'
                       )
                   ),
                   h(
                     'div',
-                    { style: { fontSize: 10, color: C.textMute, marginTop: 3 } },
+                    { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
                     `${portfolio.holdingCount} 檔 · 近期事件 ${portfolio.pendingEvents?.length || 0} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
                   )
                 ),
                 h(
                   'div',
-                  { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
+                  { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
                   (portfolio.id !== activePortfolioId || viewMode === OVERVIEW_VIEW_MODE) &&
                     h(
                       'button',
@@ -746,7 +746,7 @@ export default function Header(props) {
                   null,
                   h(
                     'div',
-                    { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } },
+                    { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
                     '風險屬性'
                   ),
                   h('input', {
@@ -759,7 +759,7 @@ export default function Header(props) {
                       background: C.subtle,
                       border: `1px solid ${C.border}`,
                       borderRadius: 7,
-                      padding: '8px 10px',
+                      padding: '8px 8px',
                       color: C.text,
                       fontSize: 11,
                       outline: 'none',
@@ -772,7 +772,7 @@ export default function Header(props) {
                   null,
                   h(
                     'div',
-                    { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } },
+                    { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
                     '操作偏好'
                   ),
                   h('input', {
@@ -785,7 +785,7 @@ export default function Header(props) {
                       background: C.subtle,
                       border: `1px solid ${C.border}`,
                       borderRadius: 7,
-                      padding: '8px 10px',
+                      padding: '8px 8px',
                       color: C.text,
                       fontSize: 11,
                       outline: 'none',
@@ -799,7 +799,7 @@ export default function Header(props) {
                 null,
                 h(
                   'div',
-                  { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } },
+                  { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
                   '自訂備註'
                 ),
                 h('textarea', {
@@ -834,7 +834,7 @@ export default function Header(props) {
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '8px 10px',
+                  padding: '8px 8px',
                   lineHeight: 1.7,
                 },
               },
@@ -853,7 +853,7 @@ export default function Header(props) {
             border: `1px solid ${alpha(C.up, A.line)}`,
             borderLeft: `3px solid ${C.up}`,
             borderRadius: 6,
-            padding: '5px 10px',
+            padding: '4px 8px',
             marginBottom: 8,
             fontSize: 10,
             color: C.textSec,
@@ -873,8 +873,8 @@ export default function Header(props) {
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 10,
-              padding: '8px 10px',
-              marginBottom: 6,
+              padding: '8px 8px',
+              marginBottom: 4,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -906,7 +906,7 @@ export default function Header(props) {
           'div',
           {
             className: 'seg',
-            style: { display: 'flex', gap: 6, overflowX: 'auto', padding: '2px 0 6px' },
+            style: { display: 'flex', gap: 4, overflowX: 'auto', padding: '4px 0 4px' },
           },
           tabs.map((t) =>
             h(
@@ -926,7 +926,7 @@ export default function Header(props) {
                   boxShadow: tab === t.k ? `0 0 0 1px ${alpha(C.blue, '10')}` : 'none',
                   borderRadius: 999,
                   minHeight: 44,
-                  padding: '10px 12px',
+                  padding: '8px 12px',
                   fontSize: 11,
                   fontWeight: tab === t.k ? 700 : 500,
                   cursor: 'pointer',

@@ -42,7 +42,7 @@ export class ErrorBoundary extends Component {
     const description = this.props.description || '這個區塊暫時發生錯誤，其他功能仍可繼續使用。'
     const actionLabel = this.props.actionLabel || '重試區塊'
     const containerStyle = {
-      padding: '20px',
+      padding: '16px',
       background: C.card,
       border: `2px solid ${C.down}`,
       borderRadius: 10,
@@ -53,12 +53,12 @@ export class ErrorBoundary extends Component {
     return h(
       'div',
       { style: containerStyle },
-      h('h2', { style: { color: C.down, marginBottom: 10 } }, `${title} 發生錯誤`),
-      h('p', { style: { color: C.text, marginBottom: 10 } }, description),
+      h('h2', { style: { color: C.down, marginBottom: 8 } }, `${title} 發生錯誤`),
+      h('p', { style: { color: C.text, marginBottom: 8 } }, description),
       h(
         'details',
         { style: { color: C.textMute, fontSize: 10, whiteSpace: 'pre-wrap' } },
-        h('summary', { style: { cursor: 'pointer', marginBottom: 5 } }, '查看錯誤詳情'),
+        h('summary', { style: { cursor: 'pointer', marginBottom: 4 } }, '查看錯誤詳情'),
         h(
           'div',
           null,
@@ -73,8 +73,8 @@ export class ErrorBoundary extends Component {
         {
           onClick: this.handleReset,
           style: {
-            marginTop: 15,
-            padding: '10px 20px',
+            marginTop: 12,
+            padding: '8px 16px',
             background: C.blue,
             color: '#fff',
             border: 'none',

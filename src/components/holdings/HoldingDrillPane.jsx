@@ -10,7 +10,7 @@ const panelCard = {
   background: `linear-gradient(180deg, ${C.card}, ${alpha(C.subtle, 'f6')})`,
   border: `1px solid ${C.border}`,
   borderRadius: 12,
-  padding: '12px 12px 11px',
+  padding: '12px 12px 8px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
   minHeight: 122,
 }
@@ -246,8 +246,8 @@ function TonePill({ tone = 'muted', children }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 5,
-        padding: '3px 7px',
+        gap: 4,
+        padding: '4px 8px',
         borderRadius: 999,
         border: `1px solid ${meta.border}`,
         background: meta.background,
@@ -329,8 +329,8 @@ function ThesisCard({ dossier }) {
         <div
           style={{
             display: 'grid',
-            gap: 7,
-            marginTop: statement ? 10 : 8,
+            gap: 8,
+            marginTop: 8,
           }}
         >
           {pillars.map((pillar) => {
@@ -363,7 +363,7 @@ function ThesisCard({ dossier }) {
           })}
         </div>
       ) : statement ? (
-        <SoftMessage style={{ marginTop: 10 }}>
+        <SoftMessage style={{ marginTop: 8 }}>
           pillar 追蹤點還沒拆開，先用一句 thesis 扛著看。
         </SoftMessage>
       ) : null}
@@ -485,26 +485,26 @@ function ValuationCard({ holding, dossier }) {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 6,
-          marginTop: 9,
+          gap: 4,
+          marginTop: 8,
           fontSize: 9,
         }}
       >
         <div style={{ color: C.textMute }}>
           低標
-          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 2 }}>
+          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 4 }}>
             {formatCurrency(lowerBound)}
           </div>
         </div>
         <div style={{ color: C.textMute }}>
           中位
-          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 2 }}>
+          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 4 }}>
             {formatCurrency(midPoint)}
           </div>
         </div>
         <div style={{ color: C.textMute }}>
           現價
-          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 2 }}>
+          <div style={{ color: C.text, fontFamily: 'var(--font-num)', marginTop: 4 }}>
             {formatCurrency(currentPrice)}
           </div>
         </div>
@@ -592,7 +592,7 @@ function TargetCard({ holding, dossier }) {
         {target.reportsCount && target.reportsCount > 1 ? ` · ${target.reportsCount} 筆` : ''}
         {target.date ? ` · ${formatDateLabel(target.date)}` : ''}
       </div>
-      <div style={{ color: C.textMute, fontSize: 9, lineHeight: 1.6, marginTop: 6 }}>
+      <div style={{ color: C.textMute, fontSize: 9, lineHeight: 1.6, marginTop: 4 }}>
         {upside == null
           ? '現價還沒跟上來時，先把這個價位當成錨。'
           : upside >= 0
@@ -612,7 +612,7 @@ function FreshnessCard({ dossier, holding }) {
   return (
     <div style={panelCard}>
       <div style={eyebrow}>資料新鮮度</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         <StaleBadge
           dossier={dossier}
           field="targets"
@@ -628,7 +628,7 @@ function FreshnessCard({ dossier, holding }) {
           style={{ textTransform: 'none' }}
         />
       </div>
-      <div style={{ display: 'grid', gap: 4, marginTop: 9, fontSize: 9, lineHeight: 1.6 }}>
+      <div style={{ display: 'grid', gap: 4, marginTop: 8, fontSize: 9, lineHeight: 1.6 }}>
         {targetSourceLabel ? (
           <div style={{ color: C.text }}>目標來源 · {targetSourceLabel}</div>
         ) : null}
@@ -640,7 +640,7 @@ function FreshnessCard({ dossier, holding }) {
         ) : null}
         {holdingType ? <div style={{ color: C.textMute }}>部位類型 · {holdingType}</div> : null}
         {!targetSourceLabel && !fundamentalsUpdatedAt && !thesisUpdatedAt && !holdingType ? (
-          <SoftMessage style={{ marginTop: 2 }}>
+          <SoftMessage style={{ marginTop: 4 }}>
             這檔的 metadata 還在慢慢補，先把已知資訊擺在前面。
           </SoftMessage>
         ) : null}
@@ -666,17 +666,17 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
   return (
     <div style={{ ...panelCard, minHeight: 0 }}>
       <div style={eyebrow}>持股 aggregate status</div>
-      <div style={{ color: C.textSec, fontSize: 10, lineHeight: 1.7, marginBottom: 10 }}>
+      <div style={{ color: C.textSec, fontSize: 10, lineHeight: 1.7, marginBottom: 8 }}>
         {complianceNote || 'insider-compressed 僅顯示組合層級摘要。'}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
         {pillars.length > 0 ? <TonePill tone="muted">pillar {pillars.length} 項</TonePill> : null}
         {intactCount > 0 ? <TonePill tone="positive">維持 {intactCount}</TonePill> : null}
         {weakenedCount > 0 ? <TonePill tone="warning">轉弱 {weakenedCount}</TonePill> : null}
         {brokenCount > 0 ? <TonePill tone="negative">失真 {brokenCount}</TonePill> : null}
         {holdingType ? <TonePill tone="muted">{holdingType}</TonePill> : null}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         <StaleBadge
           dossier={dossier}
           field="targets"
@@ -693,7 +693,7 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
         />
       </div>
       {!pillars.length && !holdingType ? (
-        <SoftMessage style={{ marginTop: 10 }}>
+        <SoftMessage style={{ marginTop: 8 }}>
           這檔目前只保留資料新鮮度與 aggregate 追蹤狀態。
         </SoftMessage>
       ) : null}

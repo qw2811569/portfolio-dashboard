@@ -18,7 +18,7 @@ const card = {
   background: `linear-gradient(180deg, ${C.card}, ${C.subtle})`,
   border: `1px solid ${C.border}`,
   borderRadius: 14,
-  padding: '12px 14px',
+  padding: '12px 12px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
 
@@ -27,7 +27,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 500,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
@@ -104,7 +104,7 @@ export function HoldingRow({
             : `linear-gradient(90deg, ${C.card}, ${alpha(C.subtle, 'f4')})`,
           border: `1px solid ${C.border}`,
           borderRadius: 10,
-          marginBottom: expanded ? 0 : 6,
+          marginBottom: expanded ? 0 : 4,
           transition: 'background 0.1s ease',
         },
       },
@@ -141,9 +141,9 @@ export function HoldingRow({
               style: {
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 4,
                 flexWrap: 'wrap',
-                marginTop: 2,
+                marginTop: 4,
               },
             },
             h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code),
@@ -171,7 +171,7 @@ export function HoldingRow({
                     fontSize: 9,
                     lineHeight: 1.2,
                     fontWeight: 600,
-                    padding: '3px 7px',
+                    padding: '4px 8px',
                     borderRadius: 999,
                     border: `1px solid ${badgeTone.borderColor}`,
                     background: badgeTone.background,
@@ -281,8 +281,8 @@ export function HoldingRow({
             border: `1px solid ${C.border}`,
             borderTop: 'none',
             borderRadius: '0 0 10px 10px',
-            padding: '10px 12px',
-            marginBottom: 6,
+            padding: '8px 12px',
+            marginBottom: 4,
           },
         },
         // 主題 chips
@@ -299,7 +299,7 @@ export function HoldingRow({
                       key: c.theme,
                       style: {
                         fontSize: 9,
-                        padding: '2px 6px',
+                        padding: '4px 8px',
                         background: alpha(C.lavender, '12'),
                         color: C.text,
                         border: `1px solid ${alpha(C.lavender, '24')}`,
@@ -330,7 +330,7 @@ export function HoldingRow({
             h(
               'div',
               null,
-              h('div', { style: { ...lbl, marginBottom: 3 } }, '手動目標價'),
+              h('div', { style: { ...lbl, marginBottom: 4 } }, '手動目標價'),
               h('input', {
                 type: 'number',
                 value: holding.targetPrice || '',
@@ -342,7 +342,7 @@ export function HoldingRow({
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '6px 8px',
+                  padding: '4px 8px',
                   color: C.text,
                   fontSize: 11,
                   fontFamily: 'var(--font-mono)',
@@ -354,7 +354,7 @@ export function HoldingRow({
             h(
               'div',
               null,
-              h('div', { style: { ...lbl, marginBottom: 3 } }, '提醒筆記'),
+              h('div', { style: { ...lbl, marginBottom: 4 } }, '提醒筆記'),
               h('input', {
                 type: 'text',
                 value: holding.alert || '',
@@ -365,7 +365,7 @@ export function HoldingRow({
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '6px 8px',
+                  padding: '4px 8px',
                   color: C.text,
                   fontSize: 11,
                 },
@@ -382,12 +382,12 @@ export function HoldingRow({
             'div',
             {
               style: {
-                marginTop: 10,
-                paddingTop: 10,
+                marginTop: 8,
+                paddingTop: 8,
                 borderTop: `1px solid ${C.border}`,
               },
             },
-            h('div', { style: { ...lbl, marginBottom: 6 } }, '最近抓到的補充資料'),
+            h('div', { style: { ...lbl, marginBottom: 4 } }, '最近抓到的補充資料'),
             (() => {
               const finmindText = buildFinMindChipContext(holding.finmind)
               return finmindText

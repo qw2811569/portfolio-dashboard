@@ -14,14 +14,14 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 500,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const metricCard = {
   background: `linear-gradient(180deg, ${alpha(C.card, 'f0')}, ${alpha(C.subtle, 'f6')})`,
   border: `1px solid ${C.border}`,
   borderRadius: 12,
-  padding: '8px 11px',
+  padding: '8px 8px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
 
@@ -173,7 +173,7 @@ function TodayPnlHero({
         {
           style: {
             display: 'grid',
-            gap: 18,
+            gap: 16,
           },
         },
         h(
@@ -214,7 +214,7 @@ function TodayPnlHero({
                     title: `${safeRefreshRows.length} 檔資料待補齊`,
                     style: {
                       borderRadius: 999,
-                      padding: '4px 10px',
+                      padding: '4px 8px',
                       border: `1px solid ${alpha(C.amber, '24')}`,
                       background: alpha(C.amber, '10'),
                       color: C.textSec,
@@ -231,7 +231,7 @@ function TodayPnlHero({
                     {
                       style: {
                         borderRadius: 999,
-                        padding: '2px 6px',
+                        padding: '4px 8px',
                         border: `1px solid ${alpha(C.amber, '26')}`,
                         background: alpha(C.amber, '18'),
                         color: C.text,
@@ -281,7 +281,7 @@ function TodayPnlHero({
                     ),
                     h(
                       'div',
-                      { style: { display: 'grid', gap: 6, marginBottom: 10 } },
+                      { style: { display: 'grid', gap: 4, marginBottom: 8 } },
                       safeRefreshRows.slice(0, 5).map((item) =>
                         h(
                           'div',
@@ -291,7 +291,7 @@ function TodayPnlHero({
                               background: C.subtle,
                               border: `1px solid ${C.borderSub}`,
                               borderRadius: 10,
-                              padding: '8px 9px',
+                              padding: '8px 8px',
                             },
                           },
                           h(
@@ -301,7 +301,7 @@ function TodayPnlHero({
                                 fontSize: 11,
                                 color: C.text,
                                 fontWeight: 600,
-                                marginBottom: 3,
+                                marginBottom: 4,
                               },
                             },
                             `${item.name} (${item.code})`
@@ -333,7 +333,7 @@ function TodayPnlHero({
                               setIsReminderOpen(false)
                             },
                             style: {
-                              padding: '7px 12px',
+                              padding: '8px 12px',
                               borderRadius: 999,
                               border: `1px solid ${C.border}`,
                               background: C.subtle,
@@ -353,7 +353,7 @@ function TodayPnlHero({
                               setIsReminderOpen(false)
                             },
                             style: {
-                              padding: '7px 12px',
+                              padding: '8px 12px',
                               borderRadius: 999,
                               border: `1px solid ${alpha(C.blue, '32')}`,
                               background: alpha(C.blue, '10'),
@@ -384,7 +384,7 @@ function TodayPnlHero({
                 style: {
                   fontSize: 11,
                   color: C.textSec,
-                  padding: '4px 10px',
+                  padding: '4px 8px',
                   borderRadius: 999,
                   background: alpha(C.blue, '18'),
                   border: `1px solid ${C.borderStrong}`,
@@ -659,7 +659,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
     todayEvents.length > 0 &&
       h(
         'div',
-        { style: { display: 'grid', gap: 6, marginBottom: 8 } },
+        { style: { display: 'grid', gap: 4, marginBottom: 8 } },
         todayEvents.map((event) =>
           h(
             'div',
@@ -688,7 +688,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               { style: { fontSize: 11, color: C.text, lineHeight: 1.7 } },
               event.title,
               event.relatedPillars?.length > 0 &&
-                h('span', { style: { fontSize: 9, color: C.textSec, marginLeft: 6 } }, '主軸驗證')
+                h('span', { style: { fontSize: 9, color: C.textSec, marginLeft: 4 } }, '主軸驗證')
             )
           )
         )
@@ -741,7 +741,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                 color: C.textSec,
                 background: alpha(C.up, '12'),
                 borderRadius: 999,
-                padding: '3px 8px',
+                padding: '4px 8px',
               },
             },
             `觀察股 ${watchlistAlerts.length} 檔接近進場價`
@@ -755,7 +755,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                 color: C.textSec,
                 background: alpha(C.blue, '12'),
                 borderRadius: 999,
-                padding: '3px 8px',
+                padding: '4px 8px',
               },
             },
             `重大訊息 ${announcements.length} 則`
@@ -777,7 +777,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             key: item.key,
             onClick: () => typeof onNavigate === 'function' && onNavigate(item.target),
             style: {
-              padding: '7px 12px',
+              padding: '8px 12px',
               borderRadius: 999,
               border: `1px solid ${alpha(C.teal, '32')}`,
               background: alpha(C.teal, '10'),
@@ -839,16 +839,17 @@ function TodayInMarketsCard({ newsEvents = [] }) {
       : h(
           'div',
           { style: { display: 'grid', gap: 8, marginTop: 8 } },
-          items.map((item, index) =>
-            h(
+          items.map((item, index) => {
+            const hasDivider = index < items.length - 1
+            return h(
               'div',
               {
                 key: item.id,
                 style: {
                   display: 'grid',
                   gap: 4,
-                  paddingBottom: index < items.length - 1 ? 8 : 0,
-                  borderBottom: index < items.length - 1 ? `1px solid ${C.border}` : 'none',
+                  paddingBottom: hasDivider ? 8 : 0,
+                  borderBottom: hasDivider ? `1px solid ${C.border}` : 'none',
                 },
               },
               h(
@@ -876,7 +877,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                       display: item.link ? 'inline-flex' : 'block',
                       alignItems: item.link ? 'center' : undefined,
                       minHeight: item.link ? 44 : undefined,
-                      padding: item.link ? '6px 4px' : undefined,
+                      padding: item.link ? '4px 8px' : undefined,
                       fontSize: 11,
                       color: item.link ? C.blue : C.text,
                       fontWeight: 500,
@@ -912,7 +913,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                   item.detail
                 )
             )
-          )
+          })
         )
   )
 }
@@ -959,7 +960,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
               background: C.amberBg,
               border: `1px solid ${alpha(C.amber, '20')}`,
               borderRadius: 999,
-              padding: '2px 8px',
+              padding: '4px 8px',
             },
           },
           `${urgentCount} 件緊急`
@@ -972,7 +973,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
           style: {
             fontSize: 10,
             color: C.textSec,
-            marginTop: 6,
+            marginTop: 4,
             lineHeight: 1.7,
           },
         },
@@ -981,13 +982,13 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
     !hasContent &&
       h(
         'div',
-        { style: { fontSize: 11, color: C.textMute, marginTop: 6 } },
+        { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
         '今明兩日沒有待處理事件。'
       ),
     upcoming.length > 0 &&
       h(
         'div',
-        { style: { display: 'grid', gap: 6, marginTop: 8 } },
+        { style: { display: 'grid', gap: 4, marginTop: 8 } },
         upcoming.slice(0, 8).map((event, i) => {
           const d = String(event.eventDate || event.date || '')
             .replace(/\//g, '-')
@@ -1003,7 +1004,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
                 borderRadius: 10,
-                padding: '6px 10px',
+                padding: '4px 8px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -1030,7 +1031,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
               codes.length > 0 &&
                 h(
                   'div',
-                  { style: { fontSize: 9, color: C.textMute, marginTop: 2 } },
+                  { style: { fontSize: 9, color: C.textMute, marginTop: 4 } },
                   codes.join('、')
                 )
             ),
@@ -1043,7 +1044,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
                   color: isToday ? C.amber : C.textMute,
                   background: isToday ? alpha(C.amber, '10') : 'transparent',
                   borderRadius: 999,
-                  padding: isToday ? '2px 8px' : 0,
+                  padding: isToday ? '4px 8px' : 0,
                   flexShrink: 0,
                 },
               },
@@ -1082,7 +1083,7 @@ function PortfolioHealthCard({
     h(
       'div',
       {
-        style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 },
+        style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, marginBottom: 8 },
       },
       h(
         'div',
@@ -1096,7 +1097,7 @@ function PortfolioHealthCard({
               fontSize: 14,
               fontWeight: 600,
               color: C.text,
-              marginTop: 2,
+              marginTop: 4,
               fontFamily: 'var(--font-num)',
             },
           },
@@ -1115,7 +1116,7 @@ function PortfolioHealthCard({
               fontSize: 14,
               fontWeight: 600,
               color: C.down,
-              marginTop: 2,
+              marginTop: 4,
               fontFamily: 'var(--font-num)',
             },
           },
@@ -1134,7 +1135,7 @@ function PortfolioHealthCard({
               fontSize: 14,
               fontWeight: 600,
               color: C.textSec,
-              marginTop: 2,
+              marginTop: 4,
               fontFamily: 'var(--font-num)',
             },
           },
@@ -1157,7 +1158,7 @@ function PortfolioHealthCard({
               fontSize: 14,
               fontWeight: 600,
               color: returnColor,
-              marginTop: 2,
+              marginTop: 4,
               fontFamily: 'var(--font-num)',
             },
           },

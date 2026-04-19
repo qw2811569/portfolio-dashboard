@@ -5,7 +5,7 @@ import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
 const bgTints = [C.card, C.cardBlue, C.cardAmber]
 const inputStyle = {
   width: '100%',
-  padding: '9px 10px',
+  padding: '8px 8px',
   borderRadius: 8,
   border: `1px solid ${C.border}`,
   background: C.bg,
@@ -49,7 +49,7 @@ export function WatchlistFocus({ focus }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 10,
+          gap: 8,
           flexWrap: 'wrap',
         },
       },
@@ -76,9 +76,9 @@ export function WatchlistFocus({ focus }) {
               fontSize: 15,
               fontWeight: 600,
               color: C.text,
-              marginTop: 3,
+              marginTop: 4,
               display: 'flex',
-              gap: 6,
+              gap: 4,
               alignItems: 'center',
               flexWrap: 'wrap',
             },
@@ -89,7 +89,7 @@ export function WatchlistFocus({ focus }) {
             {
               style: {
                 fontSize: 9,
-                padding: '2px 7px',
+                padding: '4px 8px',
                 borderRadius: 20,
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
@@ -101,18 +101,18 @@ export function WatchlistFocus({ focus }) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textSec, marginTop: 5, lineHeight: 1.7 } },
+          { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
           focus.summary
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 5, lineHeight: 1.7 } },
+          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.7 } },
           focus.action
         )
       ),
       h(
         'div',
-        { style: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
+        { style: { display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' } },
         h(
           'span',
           {
@@ -203,7 +203,7 @@ export function WatchlistRow({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            gap: 10,
+            gap: 8,
           },
         },
         h(
@@ -216,7 +216,7 @@ export function WatchlistRow({
             h(
               'span',
               {
-                style: { fontSize: 10, color: C.textMute, fontWeight: 400, marginLeft: 6 },
+                style: { fontSize: 10, color: C.textMute, fontWeight: 400, marginLeft: 4 },
               },
               w.code
             ),
@@ -226,9 +226,9 @@ export function WatchlistRow({
                 {
                   style: {
                     fontSize: 9,
-                    padding: '1px 6px',
+                    padding: '4px 8px',
                     borderRadius: 3,
-                    marginLeft: 6,
+                    marginLeft: 4,
                     background: C.lavBg,
                     color: C.lavender,
                     fontWeight: 500,
@@ -243,7 +243,7 @@ export function WatchlistRow({
           h(
             'div',
             {
-              style: { fontSize: 10, color: C.textMute, marginTop: 2, lineHeight: 1.6 },
+              style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 },
             },
             w.catalyst || '尚未補上催化劑',
             h('span', { style: { fontSize: 9 } }, isWExp ? '▲' : '▼')
@@ -251,7 +251,7 @@ export function WatchlistRow({
         ),
         h(
           'div',
-          { style: { display: 'flex', gap: 6, alignItems: 'center' } },
+          { style: { display: 'flex', gap: 4, alignItems: 'center' } },
           h(
             Button,
             {
@@ -300,7 +300,7 @@ export function WatchlistRow({
               fontSize: 10,
               fontWeight: 500,
               border: `1px solid ${C.border}`,
-              padding: '3px 11px',
+              padding: '4px 8px',
               borderRadius: 20,
               flexShrink: 0,
             },
@@ -316,7 +316,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '現價'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '現價'),
           h(
             'div',
             { style: { fontSize: 17, fontWeight: 600, color: C.text } },
@@ -326,7 +326,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '目標價'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '目標價'),
           h(
             'div',
             { style: { fontSize: 17, fontWeight: 600, color: C.textSec } },
@@ -336,7 +336,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '潛在漲幅'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '潛在漲幅'),
           h('div', { style: { fontSize: 17, fontWeight: 600, color: C.text } }, upsideText)
         )
       ),
@@ -359,7 +359,7 @@ export function WatchlistRow({
       h(
         'div',
         {
-          style: { fontSize: 10, color: C.textMute, marginTop: 9, lineHeight: 1.7 },
+          style: { fontSize: 10, color: C.textMute, marginTop: 8, lineHeight: 1.7 },
         },
         w.note || '尚未補上觀察重點。'
       )
@@ -371,8 +371,8 @@ export function WatchlistRow({
         'div',
         {
           style: {
-            marginTop: 10,
-            padding: '10px 12px',
+            marginTop: 8,
+            padding: '8px 12px',
             background: C.bg,
             borderRadius: 10,
           },
@@ -455,7 +455,7 @@ export function WatchlistRow({
                         { style: { fontSize: 11, fontWeight: 500, color: C.text } },
                         e.title
                       ),
-                      h('div', { style: { fontSize: 9, color: C.textMute, marginTop: 2 } }, e.date)
+                      h('div', { style: { fontSize: 9, color: C.textMute, marginTop: 4 } }, e.date)
                     ),
                     h(
                       'div',
@@ -467,7 +467,7 @@ export function WatchlistRow({
                         {
                           style: {
                             fontSize: 9,
-                            padding: '2px 6px',
+                            padding: '4px 8px',
                             borderRadius: 3,
                             background:
                               e.pred === 'up' ? C.upBg : e.pred === 'down' ? C.downBg : C.blueBg,
@@ -482,7 +482,7 @@ export function WatchlistRow({
                           {
                             style: {
                               fontSize: 9,
-                              padding: '2px 6px',
+                              padding: '4px 8px',
                               borderRadius: 3,
                               background: C.oliveBg,
                               color: C.textSec,
@@ -497,7 +497,7 @@ export function WatchlistRow({
                           {
                             style: {
                               fontSize: 9,
-                              padding: '2px 6px',
+                              padding: '4px 8px',
                               borderRadius: 3,
                               background: C.upBg,
                               color: C.textSec,
@@ -513,7 +513,7 @@ export function WatchlistRow({
                           {
                             style: {
                               fontSize: 9,
-                              padding: '2px 6px',
+                              padding: '4px 8px',
                               borderRadius: 3,
                               background: C.blueBg,
                               color: C.textSec,
@@ -528,7 +528,7 @@ export function WatchlistRow({
                           {
                             style: {
                               fontSize: 9,
-                              padding: '2px 6px',
+                              padding: '4px 8px',
                               borderRadius: 3,
                               background: C.blueBg,
                               color: C.textSec,
@@ -552,7 +552,7 @@ export function WatchlistRow({
                         style: {
                           fontSize: 10,
                           color: C.textSec,
-                          marginTop: 3,
+                          marginTop: 4,
                           lineHeight: 1.6,
                           borderLeft: `2px solid ${alpha(e.correct ? C.olive : C.up, '40')}`,
                           paddingLeft: 8,
@@ -579,7 +579,7 @@ export function WatchlistRow({
                     h(
                       'div',
                       {
-                        style: { fontSize: 10, color: C.textSec, marginTop: 3, lineHeight: 1.6 },
+                        style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.6 },
                       },
                       `教訓：${e.lessons}`
                     )
@@ -622,7 +622,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           width: 'min(560px, 100%)',
           maxHeight: 'calc(100vh - 32px)',
           overflow: 'auto',
-          padding: '16px 18px',
+          padding: '16px 16px',
         },
       },
       h(
@@ -632,8 +632,8 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            gap: 10,
-            marginBottom: 14,
+            gap: 8,
+            marginBottom: 12,
           },
         },
         h(
@@ -661,7 +661,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           Button,
           {
             onClick: onClose,
-            style: { padding: '4px 10px' },
+            style: { padding: '4px 8px' },
           },
           '關閉'
         )
@@ -672,7 +672,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           style: {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: 10,
+            gap: 8,
           },
         },
         h(
@@ -753,7 +753,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
       ),
       h(
         'label',
-        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 10 } },
+        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 8 } },
         '催化劑',
         h('textarea', {
           value: form.catalyst,
@@ -765,7 +765,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
       ),
       h(
         'label',
-        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 10 } },
+        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 8 } },
         '補充備註',
         h('textarea', {
           value: form.note,
@@ -782,7 +782,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 8,
-            marginTop: 14,
+            marginTop: 12,
             flexWrap: 'wrap',
           },
         },
@@ -790,7 +790,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           Button,
           {
             onClick: onClose,
-            style: { padding: '6px 12px' },
+            style: { padding: '4px 12px' },
           },
           '取消'
         ),
@@ -800,7 +800,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
             variant: 'filled',
             color: 'blue',
             onClick: onSubmit,
-            style: { padding: '6px 14px' },
+            style: { padding: '4px 12px' },
           },
           editingItem ? '儲存變更' : '加入觀察'
         )
@@ -890,9 +890,9 @@ export function WatchlistPanel({
       ? h(
           Card,
           {
-            style: { textAlign: 'center', padding: '24px 14px' },
+            style: { textAlign: 'center', padding: '24px 12px' },
           },
-          h('div', { style: { fontSize: 20, marginBottom: 6, opacity: 0.3 } }, '◌'),
+          h('div', { style: { fontSize: 20, marginBottom: 4, opacity: 0.3 } }, '◌'),
           h(
             'div',
             {
@@ -927,7 +927,7 @@ export function WatchlistPanel({
             {
               onClick: openAddModal,
               style: {
-                padding: '6px 12px',
+                padding: '4px 12px',
                 background: C.teal,
                 color: 'white',
                 border: 'none',

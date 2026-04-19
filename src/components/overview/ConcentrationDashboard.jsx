@@ -25,7 +25,7 @@ function WeightBar({ label, value, tone = C.blue, solid = false }) {
       style: {
         display: 'grid',
         gridTemplateColumns: '56px minmax(0, 1fr) 40px',
-        gap: 10,
+        gap: 8,
         alignItems: 'center',
       },
     },
@@ -152,7 +152,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
           style: {
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 1fr) auto',
-            gap: 10,
+            gap: 8,
             alignItems: 'end',
           },
         },
@@ -168,7 +168,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
                 fontWeight: 600,
-                marginBottom: 6,
+                marginBottom: 4,
               },
             },
             'HHI'
@@ -209,7 +209,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
         {
           style: {
             display: 'grid',
-            gap: 10,
+            gap: 8,
           },
         },
         h(WeightBar, { label: 'Top 1', value: concentration.top1Weight }),
@@ -221,7 +221,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
         {
           style: {
             display: 'grid',
-            gap: 10,
+            gap: 8,
           },
         },
         h(
@@ -255,8 +255,8 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
           {
             style: {
               display: 'grid',
-              gap: 6,
-              padding: '12px 14px',
+              gap: 4,
+              padding: '12px 12px',
               borderRadius: 16,
               background: alpha(C.amber, '10'),
               border: `1px solid ${alpha(C.amber, '22')}`,

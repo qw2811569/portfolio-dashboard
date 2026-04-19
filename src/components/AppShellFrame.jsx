@@ -53,7 +53,7 @@ export default function AppShellFrame({
           justifyContent: 'center',
           color: C.text,
           fontFamily: 'var(--font-body)',
-          padding: '24px 18px',
+          padding: '24px 16px',
         }}
       >
         <div
@@ -75,7 +75,7 @@ export default function AppShellFrame({
           `}</style>
           <div
             style={{
-              padding: '14px 18px',
+              padding: '12px 16px',
               borderBottom: `1px solid ${C.borderSub}`,
               display: 'flex',
               justifyContent: 'space-between',
@@ -100,12 +100,12 @@ export default function AppShellFrame({
             </div>
           </div>
 
-          <div style={{ padding: '22px 18px 18px' }}>
+          <div style={{ padding: '24px 16px 16px' }}>
             <div
               style={{
                 display: 'flex',
                 gap: 8,
-                marginBottom: 18,
+                marginBottom: 16,
                 flexWrap: 'wrap',
               }}
             >
@@ -114,7 +114,7 @@ export default function AppShellFrame({
                   key={item}
                   style={{
                     borderRadius: 999,
-                    padding: '6px 10px',
+                    padding: '4px 8px',
                     fontSize: 10,
                     fontWeight: 500,
                     color: C.textMute,
@@ -138,7 +138,7 @@ export default function AppShellFrame({
             >
               {title}
             </div>
-            <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.8, marginBottom: 18 }}>
+            <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.8, marginBottom: 16 }}>
               {detail}
             </div>
 
@@ -179,7 +179,7 @@ export default function AppShellFrame({
         minHeight: '100vh',
         color: C.text,
         fontFamily: 'var(--font-body)',
-        paddingBottom: 40,
+        paddingBottom: 48,
       }}
     >
       <style>{`
@@ -199,7 +199,7 @@ export default function AppShellFrame({
         <Header {...headerProps} />
       </ErrorBoundary>
 
-      <div className="app-shell" style={{ padding: '10px 14px' }}>
+      <div className="app-shell" style={{ padding: '8px 12px' }}>
         <div ref={panelRootRef}>
           <PortfolioPanelsProvider data={panelsData} actions={panelsActions}>
             <AppPanels {...panelsProps} />

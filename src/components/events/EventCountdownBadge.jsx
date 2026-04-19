@@ -50,7 +50,7 @@ export function EventCountdownBadge({ event, now }) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
-        padding: '3px 8px',
+        padding: '4px 8px',
         borderRadius: 999,
         fontSize: 9,
         lineHeight: 1.2,

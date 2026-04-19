@@ -184,8 +184,8 @@ function EmptyTimelineState() {
     Card,
     {
       style: {
-        marginBottom: 10,
-        padding: '18px 18px 16px',
+        marginBottom: 8,
+        padding: '16px 16px 16px',
         background: `linear-gradient(135deg, ${alpha(C.textMute, '06')} 0%, ${alpha(C.olive, '08')} 100%)`,
         border: `1px solid ${C.borderSub}`,
       },
@@ -227,8 +227,8 @@ export function EventsTimeline({ events = [] }) {
     Card,
     {
       style: {
-        marginBottom: 10,
-        padding: '16px 16px 14px',
+        marginBottom: 8,
+        padding: '16px 16px 12px',
         background: `linear-gradient(180deg, ${alpha(C.cardBlue, '82')} 0%, ${alpha(C.bg, '96')} 100%)`,
         overflow: 'hidden',
       },
@@ -241,8 +241,8 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .events-timeline__title{font-size:12px;font-weight:700;color:${C.text};letter-spacing:.04em}
 .events-timeline__sub{font-size:10px;color:${C.textSec};margin-top:3px;line-height:1.6}
-.events-timeline__legend{display:flex;gap:10px;flex-wrap:wrap;font-size:9px;color:${C.textMute}}
-.events-timeline__legend-item{display:inline-flex;align-items:center;gap:5px}
+.events-timeline__legend{display:flex;gap:8px;flex-wrap:wrap;font-size:9px;color:${C.textMute}}
+.events-timeline__legend-item{display:inline-flex;align-items:center;gap:4px}
 .events-timeline__legend-dot{width:8px;height:8px;border-radius:999px;display:inline-block}
 .events-timeline__desktop{position:relative;height:180px;margin-top:14px}
 .events-timeline__axis{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:linear-gradient(90deg,var(--muted, ${C.textMute}) 0%,var(--muted, ${C.textMute}) 49.2%,var(--up, ${C.up}) 49.2%,var(--up, ${C.up}) 50.8%,var(--positive, ${C.up}) 50.8%,var(--positive, ${C.up}) 100%);border-radius:999px;box-shadow:inset 0 0 0 1px ${alpha(C.borderStrong, '25')}}
@@ -250,7 +250,7 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__tick--today{width:4px;height:34px;background:var(--up, ${C.up});border-radius:999px}
 .events-timeline__tick-label{position:absolute;top:calc(50% + 18px);transform:translateX(-50%);font-size:9px;color:${C.textMute};white-space:nowrap}
 .events-timeline__tick-label--today{color:var(--up, ${C.up});font-weight:700}
-.events-timeline__marker{position:absolute;left:0;transform:translateX(-50%);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:132px;border:none;border-radius:14px;background:transparent;padding:6px;cursor:pointer;text-align:center;color:var(--marker-text)}
+.events-timeline__marker{position:absolute;left:0;transform:translateX(-50%);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:132px;border:none;border-radius:14px;background:transparent;padding:4px;cursor:pointer;text-align:center;color:var(--marker-text)}
 .events-timeline__marker--top{top:18px}
 .events-timeline__marker--bottom{bottom:20px}
 .events-timeline__marker--top .events-timeline__label{margin-top:8px}
@@ -261,7 +261,7 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__label{display:block;font-size:10px;line-height:1.45;color:var(--marker-text)}
 .events-timeline__label-type{color:${C.text}}
 .events-timeline__label-date{color:${C.textMute};font-weight:500}
-.events-timeline__tooltip{margin-top:12px;padding:10px 12px;border-radius:10px;background:${alpha(C.bg, '96')};border:1px solid ${C.borderSub};font-size:10px;color:${C.textSec};line-height:1.7}
+.events-timeline__tooltip{margin-top:12px;padding:8px 12px;border-radius:10px;background:${alpha(C.bg, '96')};border:1px solid ${C.borderSub};font-size:10px;color:${C.textSec};line-height:1.7}
 .events-timeline__tooltip-title{font-size:11px;font-weight:700;color:${C.text}}
 .events-timeline__tooltip-meta{color:${C.textMute};margin-top:2px}
 .events-timeline__mobile{display:none;margin-top:12px}

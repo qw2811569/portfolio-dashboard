@@ -60,11 +60,11 @@ export function PeerRankingBadge({ holding }) {
           style: {
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 4,
             fontSize: 9,
             lineHeight: 1.2,
             fontWeight: 600,
-            padding: '3px 7px',
+            padding: '4px 8px',
             borderRadius: 999,
             border: `1px solid ${tone.borderColor}`,
             background: tone.background,

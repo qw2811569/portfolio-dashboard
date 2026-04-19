@@ -8,7 +8,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 function truncate(text, max = 120) {
@@ -68,7 +68,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
       Card,
       {
         style: {
-          marginBottom: 10,
+          marginBottom: 8,
           background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
           border: `1px solid ${C.border}`,
         },
@@ -78,7 +78,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         {
           style: {
             display: 'grid',
-            gap: 10,
+            gap: 8,
           },
         },
         h(
@@ -88,7 +88,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-start',
-              gap: 10,
+              gap: 8,
               flexWrap: 'wrap',
             },
           },
@@ -119,7 +119,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                     fontSize: 11,
                     color: C.textSec,
                     lineHeight: 1.7,
-                    marginTop: 6,
+                    marginTop: 4,
                   },
                 },
                 truncate(supportingText, 140)
@@ -130,7 +130,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             {
               style: {
                 display: 'flex',
-                gap: 6,
+                gap: 4,
                 flexWrap: 'wrap',
                 justifyContent: 'flex-end',
               },
@@ -149,7 +149,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             'div',
             {
               style: {
-                padding: '8px 10px',
+                padding: '8px 8px',
                 borderRadius: 10,
                 background: C.subtle,
                 border: `1px solid ${C.borderSub}`,
@@ -213,7 +213,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
     Card,
     {
       style: {
-        marginBottom: 10,
+        marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.teal, '40')}`,
         background: alpha(C.teal, '08'),
       },
@@ -225,7 +225,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 10,
+          gap: 8,
           flexWrap: 'wrap',
           marginBottom: 8,
         },
@@ -266,7 +266,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         {
           style: {
             display: 'flex',
-            gap: 6,
+            gap: 4,
             flexWrap: 'wrap',
             justifyContent: 'flex-end',
           },
@@ -288,7 +288,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         {
           style: {
             marginBottom: latestInsightSummary ? 8 : 0,
-            padding: '8px 10px',
+            padding: '8px 8px',
             borderRadius: 8,
             background: C.card,
             border: `1px solid ${C.borderSub}`,

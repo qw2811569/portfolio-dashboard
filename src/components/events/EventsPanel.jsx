@@ -97,7 +97,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 10,
+          gap: 8,
           flexWrap: 'wrap',
         },
       },
@@ -119,7 +119,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
         ),
         h(
           'div',
-          { style: { fontSize: 15, fontWeight: 600, color: C.text, marginTop: 3 } },
+          { style: { fontSize: 15, fontWeight: 600, color: C.text, marginTop: 4 } },
           RELAY_PLAN.title
         ),
         h(
@@ -134,7 +134,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           onClick: onToggle,
           style: {
             borderRadius: 20,
-            padding: '4px 11px',
+            padding: '4px 8px',
             fontSize: 9,
             fontWeight: 500,
             cursor: 'pointer',
@@ -152,7 +152,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
     // Quick states
     h(
       'div',
-      { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 } },
+      { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 } },
       RELAY_PLAN.quickStates.map((item) =>
         h(
           'span',
@@ -180,7 +180,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(168px, 1fr))',
           gap: 8,
-          marginTop: 10,
+          marginTop: 8,
         },
       },
       RELAY_PLAN.legs.map((leg) =>
@@ -193,7 +193,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               border: `1px solid ${C.border}`,
               borderLeft: `2px solid ${alpha(C[leg.tone] || C.text, '40')}`,
               borderRadius: 9,
-              padding: '10px 11px',
+              padding: '8px 8px',
             },
           },
           h(
@@ -221,7 +221,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               ),
               h(
                 'div',
-                { style: { fontSize: 9, color: C.textMute, marginTop: 2 } },
+                { style: { fontSize: 9, color: C.textMute, marginTop: 4 } },
                 `${leg.role} · ${leg.window}`
               )
             ),
@@ -230,7 +230,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               {
                 style: {
                   fontSize: 9,
-                  padding: '2px 7px',
+                  padding: '4px 8px',
                   borderRadius: 20,
                   background: alpha(C[leg.tone] || C.text, '15'),
                   color: C.textSec,
@@ -245,7 +245,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               style: {
                 fontSize: 11,
                 color: C.text,
-                marginTop: 9,
+                marginTop: 8,
                 fontWeight: 500,
                 lineHeight: 1.6,
               },
@@ -255,7 +255,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           h(
             'div',
             {
-              style: { fontSize: 10, color: C.textSec, marginTop: 6, lineHeight: 1.7 },
+              style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 },
             },
             `觸發：${leg.trigger}`,
             h('br'),
@@ -271,19 +271,19 @@ export function RelayPlanCard({ expanded, onToggle }) {
         'div',
         {
           style: {
-            marginTop: 10,
-            paddingTop: 10,
+            marginTop: 8,
+            paddingTop: 8,
             borderTop: `1px solid ${C.borderSub}`,
           },
         },
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, fontWeight: 600, marginBottom: 6 } },
+          { style: { fontSize: 10, color: C.textMute, fontWeight: 600, marginBottom: 4 } },
           '核心邏輯'
         ),
         h(
           'div',
-          { style: { display: 'grid', gap: 6 } },
+          { style: { display: 'grid', gap: 4 } },
           RELAY_PLAN.thesis.map((item) =>
             h(
               'div',
@@ -296,7 +296,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   background: C.subtle,
                   border: `1px solid ${C.borderSub}`,
                   borderRadius: 8,
-                  padding: '8px 10px',
+                  padding: '8px 8px',
                 },
               },
               item
@@ -311,15 +311,15 @@ export function RelayPlanCard({ expanded, onToggle }) {
               fontSize: 10,
               color: C.textMute,
               fontWeight: 600,
-              marginTop: 10,
-              marginBottom: 6,
+              marginTop: 8,
+              marginBottom: 4,
             },
           },
           '關鍵觀察'
         ),
         h(
           'div',
-          { style: { display: 'grid', gap: 6 } },
+          { style: { display: 'grid', gap: 4 } },
           RELAY_PLAN.indicators.map((item) =>
             h(
               'div',
@@ -329,7 +329,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   background: C.subtle,
                   border: `1px solid ${C.borderSub}`,
                   borderRadius: 8,
-                  padding: '8px 10px',
+                  padding: '8px 8px',
                 },
               },
               h(
@@ -339,7 +339,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               ),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 3, lineHeight: 1.7 } },
+                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.what
               )
             )
@@ -353,15 +353,15 @@ export function RelayPlanCard({ expanded, onToggle }) {
               fontSize: 10,
               color: C.textMute,
               fontWeight: 600,
-              marginTop: 10,
-              marginBottom: 6,
+              marginTop: 8,
+              marginBottom: 4,
             },
           },
           '情境矩陣'
         ),
         h(
           'div',
-          { style: { display: 'grid', gap: 6 } },
+          { style: { display: 'grid', gap: 4 } },
           RELAY_PLAN.riskMatrix.map((item) =>
             h(
               'div',
@@ -371,13 +371,13 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   background: C.subtle,
                   border: `1px solid ${C.borderSub}`,
                   borderRadius: 8,
-                  padding: '8px 10px',
+                  padding: '8px 8px',
                 },
               },
               h('div', { style: { fontSize: 10, color: C.text, fontWeight: 500 } }, item.scenario),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 3, lineHeight: 1.7 } },
+                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.action
               )
             )
@@ -391,15 +391,15 @@ export function RelayPlanCard({ expanded, onToggle }) {
               fontSize: 10,
               color: C.textMute,
               fontWeight: 600,
-              marginTop: 10,
-              marginBottom: 6,
+              marginTop: 8,
+              marginBottom: 4,
             },
           },
           '資金配置'
         ),
         h(
           'div',
-          { style: { display: 'grid', gap: 6 } },
+          { style: { display: 'grid', gap: 4 } },
           RELAY_PLAN.allocations.map((item) =>
             h(
               'div',
@@ -409,7 +409,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   background: C.subtle,
                   border: `1px solid ${C.borderSub}`,
                   borderRadius: 8,
-                  padding: '8px 10px',
+                  padding: '8px 8px',
                 },
               },
               h(
@@ -419,7 +419,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               ),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 3, lineHeight: 1.7 } },
+                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.plan
               )
             )
@@ -443,7 +443,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
     Card,
     {
       style: {
-        marginBottom: 7,
+        marginBottom: 8,
         borderLeft: `2px solid ${event.urgent ? C.up : alpha(impactMeta.color || typeColor, '40')}`,
         cursor: onToggle ? 'pointer' : 'default',
       },
@@ -452,7 +452,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
     h(
       'div',
       {
-        style: { display: 'flex', gap: 10, alignItems: 'flex-start' },
+        style: { display: 'flex', gap: 8, alignItems: 'flex-start' },
       },
       h(
         'div',
@@ -465,10 +465,10 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               color: C.textSec,
               fontSize: 9,
               fontWeight: 600,
-              padding: '2px 5px',
+              padding: '4px 8px',
               borderRadius: 4,
               textAlign: 'center',
-              marginBottom: 3,
+              marginBottom: 4,
             },
           },
           event.type
@@ -499,7 +499,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
         subtitle
           ? h(
               'div',
-              { style: { fontSize: 10, color: C.textMute, marginTop: 3, lineHeight: 1.6 } },
+              { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
               subtitle
             )
           : null,
@@ -508,9 +508,9 @@ export function NewsEventCard({ event, onReview, onToggle }) {
           {
             style: {
               display: 'flex',
-              gap: 6,
+              gap: 4,
               flexWrap: 'wrap',
-              marginTop: 6,
+              marginTop: 4,
               alignItems: 'center',
             },
           },
@@ -519,7 +519,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             {
               style: {
                 fontSize: 9,
-                padding: '2px 6px',
+                padding: '4px 8px',
                 borderRadius: 999,
                 background: impactMeta.bg,
                 color: impactMeta.color,
@@ -534,7 +534,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               {
                 style: {
                   fontSize: 9,
-                  padding: '2px 6px',
+                  padding: '4px 8px',
                   borderRadius: 999,
                   background: predictionMeta.bg,
                   color: predictionMeta.color,
@@ -548,7 +548,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             {
               style: {
                 fontSize: 9,
-                padding: '2px 6px',
+                padding: '4px 8px',
                 borderRadius: 999,
                 background: reviewMeta.bg,
                 color: reviewMeta.color,
@@ -563,7 +563,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               {
                 style: {
                   fontSize: 9,
-                  padding: '2px 6px',
+                  padding: '4px 8px',
                   borderRadius: 999,
                   background: alpha(C.choco, '12'),
                   color: C.choco,
@@ -577,7 +577,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             {
               style: {
                 fontSize: 9,
-                padding: '2px 6px',
+                padding: '4px 8px',
                 borderRadius: 999,
                 background: alpha(C.textMute, '12'),
                 color: C.textMute,
@@ -593,7 +593,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             {
               style: {
                 marginTop: 8,
-                padding: '8px 10px',
+                padding: '8px 8px',
                 borderRadius: 8,
                 background: alpha(predictionMeta.color, '08'),
                 border: `1px solid ${alpha(predictionMeta.color, '18')}`,
@@ -611,7 +611,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             {
               style: {
                 marginTop: 8,
-                padding: '8px 10px',
+                padding: '8px 8px',
                 borderRadius: 8,
                 background: C.subtle,
                 border: `1px solid ${C.borderSub}`,
@@ -631,8 +631,8 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 onReview(event)
               },
               style: {
-                marginTop: 6,
-                padding: '4px 10px',
+                marginTop: 4,
+                padding: '4px 8px',
                 borderRadius: 5,
                 border: `1px solid ${alpha(C.olive, '2a')}`,
                 background: 'transparent',
@@ -659,7 +659,7 @@ export const EventCard = NewsEventCard
 export function EventsFilter({ filterType, setFilterType }) {
   return h(
     'div',
-    { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 } },
+    { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 } },
     ['全部', ...Object.keys(TYPE_COLOR)].map((t) =>
       h(
         Button,
@@ -671,7 +671,7 @@ export function EventsFilter({ filterType, setFilterType }) {
             color: filterType === t ? C.text : C.textMute,
             border: `1px solid ${filterType === t ? C.borderStrong : C.border}`,
             borderRadius: 20,
-            padding: '3px 11px',
+            padding: '4px 8px',
             fontSize: 10,
             fontWeight: 500,
             cursor: 'pointer',
@@ -689,7 +689,7 @@ export function EventsFilter({ filterType, setFilterType }) {
 export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
   return h(
     'div',
-    { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 } },
+    { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 } },
     ['全部', ...Object.keys(CATALYST_LABELS)].map((t) =>
       h(
         Button,
@@ -701,7 +701,7 @@ export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
             color: catalystFilter === t ? C.text : C.textSec,
             border: `1px solid ${catalystFilter === t ? C.borderStrong : C.border}`,
             borderRadius: 20,
-            padding: '3px 11px',
+            padding: '4px 8px',
             fontSize: 10,
             fontWeight: 500,
             cursor: 'pointer',
@@ -767,7 +767,7 @@ export function EventsPanel({
         {
           style: {
             textAlign: 'center',
-            padding: '40px 20px',
+            padding: '48px 16px',
           },
         },
         h('div', { style: { fontSize: 40, marginBottom: 12, opacity: 0.5 } }, '📅'),
@@ -801,7 +801,7 @@ export function EventsPanel({
           {
             onClick: onNavigateDaily,
             style: {
-              padding: '10px 24px',
+              padding: '8px 24px',
               borderRadius: 8,
               border: 'none',
               background: C.cardBlue,

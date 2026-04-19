@@ -3,7 +3,7 @@ import { C } from '../../theme.js'
 import { Card, Button } from '../common'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -108,13 +108,13 @@ function ResearchFileItem({ file, onClick }) {
       'div',
       { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
       h('div', { style: { fontSize: 11, fontWeight: 600, color: C.text } }, file.displayName),
-      h('span', { style: { fontSize: 9, color: freshnessColor } }, freshness)
+      h('span', { style: { fontSize: 11, color: freshnessColor } }, freshness)
     ),
-    h('div', { style: { fontSize: 9, color: C.textMute, marginTop: 4 } }, file.type),
+    h('div', { style: { fontSize: 11, color: C.textMute, marginTop: 4 } }, file.type),
     file.itemCount &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textSec, marginTop: 4 } },
+        { style: { fontSize: 11, color: C.textSec, marginTop: 4 } },
         `${file.itemCount} 筆資料`
       )
   )
@@ -169,7 +169,7 @@ function ResearchFileDetail({ file, onBack }) {
     ),
     h(
       'div',
-      { style: { fontSize: 9, color: C.textMute, marginBottom: 12 } },
+      { style: { fontSize: 11, color: C.textMute, marginBottom: 12 } },
       `蒐集日期：${file.date}`
     ),
 
@@ -203,7 +203,7 @@ function ResearchFileDetail({ file, onBack }) {
                   alignItems: 'center',
                   minHeight: 44,
                   padding: '4px 8px',
-                  fontSize: 9,
+                  fontSize: 11,
                   color: C.info,
                   textDecoration: 'underline',
                   wordBreak: 'break-all',
@@ -219,7 +219,7 @@ function ResearchFileDetail({ file, onBack }) {
     content?.freshness &&
       h(
         'div',
-        { style: { marginTop: 12, fontSize: 9, color: C.textMute } },
+        { style: { marginTop: 12, fontSize: 11, color: C.textMute } },
         `新鮮度：${content.freshness}`
       )
   )
@@ -259,7 +259,7 @@ function FactItem({ fact, type: _type }) {
     (fact.code || fact.date) &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textSec, marginBottom: 4 } },
+        { style: { fontSize: 11, color: C.textSec, marginBottom: 4 } },
         [fact.code, fact.date].filter(Boolean).join(' | ')
       ),
 
@@ -267,7 +267,7 @@ function FactItem({ fact, type: _type }) {
     (fact.summary || fact.description) &&
       h(
         'div',
-        { style: { fontSize: 10, color: C.textSec, lineHeight: 1.6 } },
+        { style: { fontSize: 12, color: C.textSec, lineHeight: 1.6 } },
         fact.summary || fact.description
       ),
 
@@ -277,7 +277,7 @@ function FactItem({ fact, type: _type }) {
         'span',
         {
           style: {
-            fontSize: 9,
+            fontSize: 11,
             padding: '4px 8px',
             background: impactColor + '20',
             color: impactColor,
@@ -291,7 +291,7 @@ function FactItem({ fact, type: _type }) {
 
     // Target price (for target-price type)
     fact.target &&
-      h('div', { style: { fontSize: 10, color: C.info, marginTop: 4 } }, `目標價：${fact.target}`),
+      h('div', { style: { fontSize: 12, color: C.info, marginTop: 4 } }, `目標價：${fact.target}`),
 
     // Stocks (for news type)
     fact.stocks &&
@@ -304,7 +304,7 @@ function FactItem({ fact, type: _type }) {
             {
               key: code,
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 background: C.fillPrimary,
                 borderRadius: 4,

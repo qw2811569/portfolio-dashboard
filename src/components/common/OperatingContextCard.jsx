@@ -4,7 +4,7 @@ import { C, alpha } from '../../theme.js'
 import { Badge, Card } from './Base.jsx'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -176,7 +176,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                   'span',
                   {
                     style: {
-                      fontSize: 10,
+                      fontSize: 12,
                       color: C.textSec,
                       fontWeight: 600,
                     },
@@ -187,7 +187,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             focus.summary &&
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 truncate(focus.summary, 96)
               )
           ),
@@ -198,7 +198,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             'div',
             {
               style: {
-                fontSize: 10,
+                fontSize: 12,
                 color: C.textMute,
                 lineHeight: 1.7,
               },
@@ -315,7 +315,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
               'span',
               {
                 style: {
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.textSec,
                   fontWeight: 600,
                 },
@@ -326,7 +326,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         focus.summary &&
           h(
             'div',
-            { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+            { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
             truncate(focus.summary, 90)
           )
       ),
@@ -335,7 +335,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         'div',
         {
           style: {
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
             lineHeight: 1.7,
           },

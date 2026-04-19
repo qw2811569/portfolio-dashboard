@@ -4,7 +4,7 @@ import { Card, Button, TextFieldDialog } from '../common'
 import { assessTradeParseQuality, summarizeTradeBatch } from '../../lib/tradeParseUtils.js'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -194,7 +194,7 @@ export function UploadDropzone({
                     background: 'transparent',
                     color: isActive ? C.text : C.textSec,
                     cursor: 'pointer',
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: isActive ? 600 : 500,
                   },
                 },
@@ -202,7 +202,7 @@ export function UploadDropzone({
               ),
               h(
                 'span',
-                { style: { fontSize: 9, color: upload.parseErr ? C.textSec : C.textMute } },
+                { style: { fontSize: 11, color: upload.parseErr ? C.textSec : C.textMute } },
                 statusLabel
               ),
               h(
@@ -215,7 +215,7 @@ export function UploadDropzone({
                     background: 'transparent',
                     color: C.textMute,
                     cursor: 'pointer',
-                    fontSize: 10,
+                    fontSize: 12,
                   },
                   'aria-label': `移除 ${upload.name}`,
                 },
@@ -375,13 +375,13 @@ export function ParseResults({
           h('div', { style: lbl }, '解析結果'),
           h(
             'div',
-            { style: { fontSize: 10, color: C.textMute } },
+            { style: { fontSize: 12, color: C.textMute } },
             uploadCount > 1
               ? `目前是第 ${activeUploadIndex + 1} / ${uploadCount} 張，完成後會自動跳到下一張`
               : '點擊欄位可修正 OCR，完成後會直接寫入交易日誌與持倉'
           )
         ),
-        h('span', { style: { fontSize: 9, color: C.textMute } }, '點擊可修正')
+        h('span', { style: { fontSize: 11, color: C.textMute } }, '點擊可修正')
       ),
       h(
         'div',
@@ -397,7 +397,7 @@ export function ParseResults({
         h(
           'label',
           { style: { display: 'grid', gap: 4 } },
-          h('span', { style: { fontSize: 9, color: C.textMute } }, '成交日期'),
+          h('span', { style: { fontSize: 11, color: C.textMute } }, '成交日期'),
           h('input', {
             'data-testid': 'trade-date-input',
             value: tradeDate || '',
@@ -420,7 +420,7 @@ export function ParseResults({
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: memoBatchMode === '混合' ? C.amber : C.textMute,
               background: memoBatchMode === '混合' ? C.amberBg : C.subtle,
               border: `1px solid ${memoBatchMode === '混合' ? alpha(C.amber, '25') : C.border}`,
@@ -454,7 +454,7 @@ export function ParseResults({
               padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '批次摘要'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '批次摘要'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -471,7 +471,7 @@ export function ParseResults({
               padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '買 / 賣分布'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '買 / 賣分布'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -488,7 +488,7 @@ export function ParseResults({
               padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '估計成交金額'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '估計成交金額'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -505,7 +505,7 @@ export function ParseResults({
               padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '涉及標的'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '涉及標的'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -529,7 +529,7 @@ export function ParseResults({
             'div',
             {
               style: {
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 700,
                 color: quality.confidence === 'low' ? C.up : C.amber,
                 marginBottom: 4,
@@ -564,7 +564,7 @@ export function ParseResults({
                   {
                     key: `row-warning-${warning.index}`,
                     style: {
-                      fontSize: 10,
+                      fontSize: 12,
                       color: C.textSec,
                       background: C.card,
                       border: `1px solid ${C.border}`,
@@ -605,7 +605,7 @@ export function ParseResults({
                 style: {
                   background: t.action === '買進' ? C.upBg : C.downBg,
                   color: t.action === '買進' ? C.up : C.down,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: 600,
                   padding: '4px 8px',
                   borderRadius: 4,
@@ -627,7 +627,7 @@ export function ParseResults({
               'span',
               {
                 onClick: () => openFieldEditor(i, 'code', t.code),
-                style: { fontSize: 10, color: C.textMute, cursor: 'pointer' },
+                style: { fontSize: 12, color: C.textMute, cursor: 'pointer' },
               },
               t.code
             )
@@ -669,7 +669,7 @@ export function ParseResults({
               {
                 style: {
                   marginTop: 4,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.textSec,
                   background: C.amberBg,
                   border: `1px solid ${alpha(C.amber, '20')}`,
@@ -682,7 +682,7 @@ export function ParseResults({
         )
       }),
       parsed.note &&
-        h('div', { style: { fontSize: 10, color: C.textMute, marginTop: 8 } }, parsed.note),
+        h('div', { style: { fontSize: 12, color: C.textMute, marginTop: 8 } }, parsed.note),
       parsed.targetPriceUpdates?.length > 0 &&
         h(
           'div',
@@ -697,7 +697,7 @@ export function ParseResults({
           },
           h(
             'div',
-            { style: { fontSize: 9, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
+            { style: { fontSize: 11, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
             '偵測到目標價更新'
           ),
           parsed.targetPriceUpdates.map((u, i) =>
@@ -720,7 +720,7 @@ export function ParseResults({
           { key: i, style: { marginBottom: 12 } },
           h(
             'div',
-            { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } },
+            { style: { fontSize: 12, color: C.textMute, marginBottom: 4 } },
             `Q${i + 1}. ${qs[i]}`
           ),
           h(
@@ -984,7 +984,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
           h('input', {
             value: tpCode,
             onChange: (e) => setTpCode(e.target.value),
@@ -1005,7 +1005,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '目標價（元）'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '目標價（元）'),
           h('input', {
             value: tpVal,
             onChange: (e) => setTpVal(e.target.value),
@@ -1028,7 +1028,7 @@ export function ManualUpdateForms({
       h(
         'div',
         { style: { marginBottom: 8 } },
-        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '券商 / 來源'),
+        h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '券商 / 來源'),
         h('input', {
           value: tpFirm,
           onChange: (e) => setTpFirm(e.target.value),
@@ -1082,7 +1082,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
           h('input', {
             value: fundamentalDraft.code,
             onChange: (e) => setFundamentalDraft((prev) => ({ ...prev, code: e.target.value })),
@@ -1103,7 +1103,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '資料日期'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '資料日期'),
           h('input', {
             value: fundamentalDraft.updatedAt,
             onChange: (e) =>

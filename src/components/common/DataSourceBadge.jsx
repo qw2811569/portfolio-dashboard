@@ -52,7 +52,7 @@ export function DataSourceBadge({ source, style = {} }) {
         alignItems: 'center',
         borderRadius: 999,
         padding: '4px 8px',
-        fontSize: 10,
+        fontSize: 12,
         lineHeight: 1.2,
         fontWeight: 700,
         letterSpacing: '0.01em',

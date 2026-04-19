@@ -108,7 +108,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           'div',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               color: C.textSec,
               fontWeight: 600,
               letterSpacing: '0.1em',
@@ -124,7 +124,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+          { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
           RELAY_PLAN.summary
         )
       ),
@@ -135,7 +135,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           style: {
             borderRadius: 20,
             padding: '4px 8px',
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: 500,
             cursor: 'pointer',
             whiteSpace: 'nowrap',
@@ -159,7 +159,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           {
             key: item.label,
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
               background: alpha(C[item.tone] || C.text, '15'),
@@ -215,13 +215,13 @@ export function RelayPlanCard({ expanded, onToggle }) {
                 leg.name,
                 h(
                   'span',
-                  { style: { fontSize: 9, color: C.textMute, fontWeight: 400 } },
+                  { style: { fontSize: 11, color: C.textMute, fontWeight: 400 } },
                   ` ${leg.code}`
                 )
               ),
               h(
                 'div',
-                { style: { fontSize: 9, color: C.textMute, marginTop: 4 } },
+                { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
                 `${leg.role} · ${leg.window}`
               )
             ),
@@ -229,7 +229,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               'span',
               {
                 style: {
-                  fontSize: 9,
+                  fontSize: 11,
                   padding: '4px 8px',
                   borderRadius: 20,
                   background: alpha(C[leg.tone] || C.text, '15'),
@@ -255,7 +255,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           h(
             'div',
             {
-              style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 },
+              style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 },
             },
             `觸發：${leg.trigger}`,
             h('br'),
@@ -278,7 +278,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
         },
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, fontWeight: 600, marginBottom: 4 } },
+          { style: { fontSize: 12, color: C.textMute, fontWeight: 600, marginBottom: 4 } },
           '核心邏輯'
         ),
         h(
@@ -290,7 +290,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               {
                 key: item,
                 style: {
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.textSec,
                   lineHeight: 1.7,
                   background: C.subtle,
@@ -308,7 +308,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textMute,
               fontWeight: 600,
               marginTop: 8,
@@ -334,12 +334,12 @@ export function RelayPlanCard({ expanded, onToggle }) {
               },
               h(
                 'div',
-                { style: { fontSize: 10, color: C.text, fontWeight: 500 } },
+                { style: { fontSize: 12, color: C.text, fontWeight: 500 } },
                 `${item.name} · ${item.when}`
               ),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.what
               )
             )
@@ -350,7 +350,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textMute,
               fontWeight: 600,
               marginTop: 8,
@@ -374,10 +374,10 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   padding: '8px 8px',
                 },
               },
-              h('div', { style: { fontSize: 10, color: C.text, fontWeight: 500 } }, item.scenario),
+              h('div', { style: { fontSize: 12, color: C.text, fontWeight: 500 } }, item.scenario),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.action
               )
             )
@@ -388,7 +388,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textMute,
               fontWeight: 600,
               marginTop: 8,
@@ -414,12 +414,12 @@ export function RelayPlanCard({ expanded, onToggle }) {
               },
               h(
                 'div',
-                { style: { fontSize: 10, color: C.text, fontWeight: 500 } },
+                { style: { fontSize: 12, color: C.text, fontWeight: 500 } },
                 `${item.phase} · ${item.target}`
               ),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                 item.plan
               )
             )
@@ -463,7 +463,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             style: {
               background: event.urgent ? C.upBg : alpha(typeColor, '15'),
               color: C.textSec,
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: 600,
               padding: '4px 8px',
               borderRadius: 4,
@@ -475,7 +475,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
         ),
         h(
           'div',
-          { style: { fontSize: 9, color: C.textMute, textAlign: 'center', lineHeight: 1.4 } },
+          { style: { fontSize: 11, color: C.textMute, textAlign: 'center', lineHeight: 1.4 } },
           event.date
         )
       ),
@@ -499,7 +499,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
         subtitle
           ? h(
               'div',
-              { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+              { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
               subtitle
             )
           : null,
@@ -518,7 +518,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 999,
                 background: impactMeta.bg,
@@ -533,7 +533,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               'span',
               {
                 style: {
-                  fontSize: 9,
+                  fontSize: 11,
                   padding: '4px 8px',
                   borderRadius: 999,
                   background: predictionMeta.bg,
@@ -547,7 +547,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 999,
                 background: reviewMeta.bg,
@@ -562,7 +562,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               'span',
               {
                 style: {
-                  fontSize: 9,
+                  fontSize: 11,
                   padding: '4px 8px',
                   borderRadius: 999,
                   background: alpha(C.choco, '12'),
@@ -576,7 +576,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 999,
                 background: alpha(C.textMute, '12'),
@@ -597,7 +597,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 borderRadius: 8,
                 background: alpha(predictionMeta.color, '08'),
                 border: `1px solid ${alpha(predictionMeta.color, '18')}`,
-                fontSize: 10,
+                fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.6,
               },
@@ -615,7 +615,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 borderRadius: 8,
                 background: C.subtle,
                 border: `1px solid ${C.borderSub}`,
-                fontSize: 10,
+                fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.6,
               },
@@ -637,7 +637,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 border: `1px solid ${alpha(C.olive, '2a')}`,
                 background: 'transparent',
                 color: C.textSec,
-                fontSize: 10,
+                fontSize: 12,
                 cursor: 'pointer',
               },
             },
@@ -672,7 +672,7 @@ export function EventsFilter({ filterType, setFilterType }) {
             border: `1px solid ${filterType === t ? C.borderStrong : C.border}`,
             borderRadius: 20,
             padding: '4px 8px',
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
           },
@@ -702,7 +702,7 @@ export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
             border: `1px solid ${catalystFilter === t ? C.borderStrong : C.border}`,
             borderRadius: 20,
             padding: '4px 8px',
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             cursor: 'pointer',
           },
@@ -742,7 +742,7 @@ export function EventsPanel({
       {
         style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
       },
-      h('div', { style: { fontSize: 10, color: C.textMute, fontWeight: 600 } }, '資料狀態'),
+      h('div', { style: { fontSize: 12, color: C.textMute, fontWeight: 600 } }, '資料狀態'),
       h(StaleBadge, { status: staleStatus, title: 'events panel freshness' })
     ),
     // Relay Plan

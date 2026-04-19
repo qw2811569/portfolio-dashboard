@@ -231,7 +231,7 @@ export default function CmdKPalette({
                     <div
                       style={{
                         padding: isMobile ? '8px 12px 8px' : '8px 8px 4px',
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 700,
                         letterSpacing: '0.12em',
                         color: C.textMute,
@@ -291,7 +291,7 @@ export default function CmdKPalette({
                           </div>
                           <span
                             style={{
-                              fontSize: 10,
+                              fontSize: 12,
                               color: selected ? C.text : C.textMute,
                               borderRadius: 999,
                               border: `1px solid ${selected ? alpha(C.teal, '30') : C.borderSub}`,

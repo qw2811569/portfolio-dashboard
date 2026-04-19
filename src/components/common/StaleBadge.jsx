@@ -75,7 +75,7 @@ export function StaleBadge({
         border: `1px solid ${meta.border}`,
         background: meta.background,
         color: meta.color,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 600,
         lineHeight: 1.2,
         textTransform: 'lowercase',

@@ -69,7 +69,7 @@ export default function Header(props) {
   const ghostBtn = {
     borderRadius: 999,
     padding: '8px 12px',
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: 500,
     minHeight: 44,
     minWidth: 44,
@@ -89,7 +89,7 @@ export default function Header(props) {
     boxShadow: `${C.insetLine}, ${C.shadow}`,
   }
   const lbl = {
-    fontSize: 10,
+    fontSize: 12,
     color: C.textMute,
     letterSpacing: '0.08em',
     fontWeight: 500,
@@ -139,7 +139,7 @@ export default function Header(props) {
             flexWrap: 'wrap',
           },
         },
-        h('span', { style: { color: C.textSec, fontSize: 9 } }, cloudSync ? '☁' : '⚡'),
+        h('span', { style: { color: C.textSec, fontSize: 11 } }, cloudSync ? '☁' : '⚡'),
         h(
           'span',
           {
@@ -153,7 +153,7 @@ export default function Header(props) {
           },
           '持倉看板'
         ),
-        saved && h('span', { style: { color: C.textSec, fontSize: 9, fontWeight: 500 } }, saved),
+        saved && h('span', { style: { color: C.textSec, fontSize: 11, fontWeight: 500 } }, saved),
         h(
           'button',
           {
@@ -224,7 +224,7 @@ export default function Header(props) {
         }),
         h(
           'span',
-          { style: { fontSize: 9, color: priceSyncStatusTone, fontWeight: 600 } },
+          { style: { fontSize: 11, color: priceSyncStatusTone, fontWeight: 600 } },
           priceSyncStatusLabel,
           activePriceSyncAt
             ? ` · ${activePriceSyncAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`
@@ -234,7 +234,7 @@ export default function Header(props) {
           !refreshing &&
           h(
             'span',
-            { style: { fontSize: 9, color: C.textMute } },
+            { style: { fontSize: 11, color: C.textMute } },
             `更新 ${lastUpdate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}`
           )
       ),
@@ -279,7 +279,7 @@ export default function Header(props) {
                 'span',
                 {
                   style: {
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: 700,
                     minWidth: 18,
                     textAlign: 'center',
@@ -328,7 +328,7 @@ export default function Header(props) {
                     'span',
                     {
                       style: {
-                        fontSize: 9,
+                        fontSize: 11,
                         color: C.textMute,
                         borderRadius: 999,
                         padding: '4px 8px',
@@ -344,7 +344,7 @@ export default function Header(props) {
                     'div',
                     {
                       style: {
-                        fontSize: 10,
+                        fontSize: 12,
                         color: C.textSec,
                         lineHeight: 1.7,
                         marginBottom: 8,
@@ -382,7 +382,7 @@ export default function Header(props) {
                         ),
                         h(
                           'div',
-                          { style: { fontSize: 10, color: C.textSec, lineHeight: 1.6 } },
+                          { style: { fontSize: 12, color: C.textSec, lineHeight: 1.6 } },
                           item.targetLabel || item.classificationNote || '資料還在補齊中'
                         )
                       )
@@ -460,7 +460,7 @@ export default function Header(props) {
             'div',
             {
               style: {
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 600,
                 color: displayedRetPct >= 0 ? C.textSec : pc(displayedRetPct),
                 fontFamily: 'var(--font-num)',
@@ -480,7 +480,7 @@ export default function Header(props) {
       },
       h(
         'span',
-        { style: { fontSize: 9, color: C.textMute, fontWeight: 600, letterSpacing: '0.05em' } },
+        { style: { fontSize: 11, color: C.textMute, fontWeight: 600, letterSpacing: '0.05em' } },
         '目前組合'
       ),
       h(
@@ -565,7 +565,7 @@ export default function Header(props) {
           'span',
           {
             'data-testid': 'portfolio-context-label',
-            style: { fontSize: 10, color: C.textSec },
+            style: { fontSize: 12, color: C.textSec },
           },
           viewMode === OVERVIEW_VIEW_MODE
             ? `全部總覽 · ${safePortfolioSummaries.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
@@ -609,7 +609,7 @@ export default function Header(props) {
           ),
           h(
             'span',
-            { style: { fontSize: 9, color: C.textMute } },
+            { style: { fontSize: 11, color: C.textMute } },
             '總覽模式唯讀；切回單一組合才會寫入 notes。'
           )
         ),
@@ -652,19 +652,19 @@ export default function Header(props) {
                     portfolio.id === OWNER_PORTFOLIO_ID &&
                       h(
                         'span',
-                        { style: { fontSize: 9, color: C.textMute, marginLeft: 4 } },
+                        { style: { fontSize: 11, color: C.textMute, marginLeft: 4 } },
                         'owner'
                       ),
                     portfolio.id === activePortfolioId &&
                       h(
                         'span',
-                        { style: { fontSize: 9, color: C.lavender, marginLeft: 4 } },
+                        { style: { fontSize: 11, color: C.lavender, marginLeft: 4 } },
                         '目前'
                       )
                   ),
                   h(
                     'div',
-                    { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
+                    { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
                     `${portfolio.holdingCount} 檔 · 近期事件 ${portfolio.pendingEvents?.length || 0} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
                   )
                 ),
@@ -746,7 +746,7 @@ export default function Header(props) {
                   null,
                   h(
                     'div',
-                    { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
+                    { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } },
                     '風險屬性'
                   ),
                   h('input', {
@@ -772,7 +772,7 @@ export default function Header(props) {
                   null,
                   h(
                     'div',
-                    { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
+                    { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } },
                     '操作偏好'
                   ),
                   h('input', {
@@ -799,7 +799,7 @@ export default function Header(props) {
                 null,
                 h(
                   'div',
-                  { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } },
+                  { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } },
                   '自訂備註'
                 ),
                 h('textarea', {
@@ -829,7 +829,7 @@ export default function Header(props) {
               {
                 style: {
                   marginTop: 12,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.textMute,
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
@@ -855,7 +855,7 @@ export default function Header(props) {
             borderRadius: 6,
             padding: '4px 8px',
             marginBottom: 8,
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
             lineHeight: 1.6,
             fontWeight: 500,
@@ -884,7 +884,7 @@ export default function Header(props) {
           },
           h(
             'span',
-            { style: { fontSize: 10, color: C.textSec } },
+            { style: { fontSize: 12, color: C.textSec } },
             '全部總覽模式只讀，不會寫本機資料，也不會同步雲端。'
           ),
           h(

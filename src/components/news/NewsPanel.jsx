@@ -6,7 +6,7 @@ import { normalizeDataError } from '../../lib/dataError.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -638,8 +638,8 @@ export function NewsFeedSection({
               {
                 style: {
                   fontFamily: 'var(--font-headline)',
-                  fontSize: 104,
-                  lineHeight: 0.82,
+                  fontSize: 56,
+                  lineHeight: 1,
                   color: PAPER.ink,
                 },
               },

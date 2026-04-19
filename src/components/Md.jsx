@@ -105,7 +105,7 @@ export default function Md({ text, color }) {
           },
           h(
             'span',
-            { style: { position: 'absolute', left: 0, color: C.textMute, fontSize: 10 } },
+            { style: { position: 'absolute', left: 0, color: C.textMute, fontSize: 12 } },
             `${num}.`
           ),
           renderInline(txt)

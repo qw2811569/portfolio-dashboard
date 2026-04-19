@@ -61,7 +61,7 @@ export function PeerRankingBadge({ holding }) {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 4,
-            fontSize: 9,
+            fontSize: 11,
             lineHeight: 1.2,
             fontWeight: 600,
             padding: '4px 8px',

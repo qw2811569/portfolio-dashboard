@@ -106,7 +106,7 @@ export function DataError({
             boxShadow: `0 0 0 3px ${alpha(tone.dot, '18')}`,
           }}
         />
-        <span style={{ color: tone.color, fontSize: 10, lineHeight: 1.7, fontWeight: 600 }}>
+        <span style={{ color: tone.color, fontSize: 12, lineHeight: 1.7, fontWeight: 600 }}>
           {copy}
         </span>
       </div>
@@ -130,7 +130,7 @@ export function DataError({
                   border: `1px solid ${alpha(C.amber, '2a')}`,
                   background: alpha(C.amber, '12'),
                   color: C.textSec,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: 600,
                   letterSpacing: '0.08em',
                   textDecoration: 'none',

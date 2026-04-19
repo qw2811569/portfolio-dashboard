@@ -16,7 +16,7 @@ export function LogPanel({ tradeLog }) {
         { style: { fontSize: 12, color: C.textMute, fontWeight: 400 } },
         '還沒有交易記錄',
         h('br'),
-        h('span', { style: { fontSize: 10 } }, '上傳成交截圖後自動記錄在這裡')
+        h('span', { style: { fontSize: 12 } }, '上傳成交截圖後自動記錄在這裡')
       )
     )
   }
@@ -48,7 +48,7 @@ export function LogPanel({ tradeLog }) {
                   style: {
                     background: log.action === '買進' ? C.upBg : C.downBg,
                     color: log.action === '買進' ? C.up : C.down,
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: 600,
                     padding: '4px 8px',
                     borderRadius: 4,
@@ -57,9 +57,9 @@ export function LogPanel({ tradeLog }) {
                 log.action
               ),
               h('span', { style: { fontSize: 14, fontWeight: 600, color: C.text } }, log.name),
-              h('span', { style: { fontSize: 10, color: C.textMute } }, log.code)
+              h('span', { style: { fontSize: 12, color: C.textMute } }, log.code)
             ),
-            h('div', { style: { fontSize: 10, color: C.textMute } }, `${log.date} ${log.time}`)
+            h('div', { style: { fontSize: 12, color: C.textMute } }, `${log.date} ${log.time}`)
           ),
           h(
             'div',
@@ -70,7 +70,7 @@ export function LogPanel({ tradeLog }) {
             h(
               'div',
               { key: i, style: { marginBottom: 8 } },
-              h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, item.q),
+              h('div', { style: { fontSize: 12, color: C.textMute, marginBottom: 4 } }, item.q),
               h(
                 'div',
                 {

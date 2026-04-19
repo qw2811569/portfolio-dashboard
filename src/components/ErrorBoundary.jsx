@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component {
       h('p', { style: { color: C.text, marginBottom: 8 } }, description),
       h(
         'details',
-        { style: { color: C.textMute, fontSize: 10, whiteSpace: 'pre-wrap' } },
+        { style: { color: C.textMute, fontSize: 12, whiteSpace: 'pre-wrap' } },
         h('summary', { style: { cursor: 'pointer', marginBottom: 4 } }, '查看錯誤詳情'),
         h(
           'div',

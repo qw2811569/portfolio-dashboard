@@ -36,7 +36,7 @@ export default function HoldingSparkline({ history = [], color = 'var(--up)' }) 
   if (!trend) {
     return h(
       'span',
-      { style: { fontSize: 10, color: 'var(--text-sec, var(--charcoal, #2f3232))' } },
+      { style: { fontSize: 12, color: 'var(--text-sec, var(--charcoal, #2f3232))' } },
       '—'
     )
   }
@@ -60,7 +60,7 @@ export default function HoldingSparkline({ history = [], color = 'var(--up)' }) 
         h(Tooltip, {
           formatter: (value) => [value, '收盤'],
           labelFormatter: (label) => label,
-          contentStyle: { fontSize: 10, padding: '4px 8px' },
+          contentStyle: { fontSize: 12, padding: '4px 8px' },
         }),
         h(Line, {
           type: 'monotone',

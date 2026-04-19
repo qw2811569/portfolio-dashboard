@@ -3,7 +3,7 @@ import { C, alpha } from '../../theme.js'
 import { Card } from '../common'
 
 const CARD_LABEL_STYLE = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 500,

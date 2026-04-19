@@ -10,7 +10,7 @@ import HoldingsRing from './HoldingsRing.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 500,
@@ -218,7 +218,7 @@ function TodayPnlHero({
                       border: `1px solid ${alpha(C.amber, '24')}`,
                       background: alpha(C.amber, '10'),
                       color: C.textSec,
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: 600,
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -271,7 +271,7 @@ function TodayPnlHero({
                       'div',
                       {
                         style: {
-                          fontSize: 10,
+                          fontSize: 12,
                           color: C.textSec,
                           lineHeight: 1.7,
                           marginBottom: 8,
@@ -308,7 +308,7 @@ function TodayPnlHero({
                           ),
                           h(
                             'div',
-                            { style: { fontSize: 10, color: C.textSec, lineHeight: 1.6 } },
+                            { style: { fontSize: 12, color: C.textSec, lineHeight: 1.6 } },
                             item.targetLabel || item.classificationNote || '資料還在補齊中'
                           )
                         )
@@ -338,7 +338,7 @@ function TodayPnlHero({
                               border: `1px solid ${C.border}`,
                               background: C.subtle,
                               color: C.textSec,
-                              fontSize: 10,
+                              fontSize: 12,
                               fontWeight: 600,
                             },
                           },
@@ -358,7 +358,7 @@ function TodayPnlHero({
                               border: `1px solid ${alpha(C.blue, '32')}`,
                               background: alpha(C.blue, '10'),
                               color: C.textSec,
-                              fontSize: 10,
+                              fontSize: 12,
                               fontWeight: 600,
                             },
                           },
@@ -415,12 +415,12 @@ function TodayPnlHero({
           {
             className: 'tn',
             style: {
-              fontSize: 'clamp(48px, 7vw, 72px)',
+              fontSize: 'clamp(40px, 6vw, 56px)',
               fontWeight: 600,
               color: C.text,
               fontFamily: 'var(--font-num)',
               letterSpacing: '-0.02em',
-              lineHeight: 0.95,
+              lineHeight: 1.02,
             },
           },
           totalText
@@ -440,7 +440,7 @@ function TodayPnlHero({
               { key: metric.label, style: metricCard },
               h(
                 'div',
-                { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } },
+                { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } },
                 metric.label
               ),
               h(
@@ -654,7 +654,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
         },
       },
       h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Morning Note'),
-      h('span', { style: { fontSize: 9, color: C.textMute } }, morningNote.date || '')
+      h('span', { style: { fontSize: 11, color: C.textMute } }, morningNote.date || '')
     ),
     todayEvents.length > 0 &&
       h(
@@ -675,7 +675,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               'span',
               {
                 style: {
-                  fontSize: 9,
+                  fontSize: 11,
                   color: event.impactLabel === 'HIGH' ? C.down : C.teal,
                   fontWeight: 600,
                   flexShrink: 0,
@@ -688,7 +688,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               { style: { fontSize: 11, color: C.text, lineHeight: 1.7 } },
               event.title,
               event.relatedPillars?.length > 0 &&
-                h('span', { style: { fontSize: 9, color: C.textSec, marginLeft: 4 } }, '主軸驗證')
+                h('span', { style: { fontSize: 11, color: C.textSec, marginLeft: 4 } }, '主軸驗證')
             )
           )
         )
@@ -707,7 +707,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                 justifyContent: 'space-between',
                 gap: 12,
                 flexWrap: 'wrap',
-                fontSize: 10,
+                fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.7,
               },
@@ -737,7 +737,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 color: C.textSec,
                 background: alpha(C.up, '12'),
                 borderRadius: 999,
@@ -751,7 +751,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 color: C.textSec,
                 background: alpha(C.blue, '12'),
                 borderRadius: 999,
@@ -782,7 +782,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               border: `1px solid ${alpha(C.teal, '32')}`,
               background: alpha(C.teal, '10'),
               color: C.textSec,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
             },
@@ -820,7 +820,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
       h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Today in Markets'),
       h(
         'span',
-        { style: { fontSize: 9, color: C.textMute } },
+        { style: { fontSize: 11, color: C.textMute } },
         items.length > 0 ? `${items.length} 則` : 'v1'
       )
     ),
@@ -892,7 +892,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                     'span',
                     {
                       style: {
-                        fontSize: 9,
+                        fontSize: 11,
                         color: C.textMute,
                         flexShrink: 0,
                       },
@@ -905,7 +905,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                   'div',
                   {
                     style: {
-                      fontSize: 10,
+                      fontSize: 12,
                       color: C.textSec,
                       lineHeight: 1.7,
                     },
@@ -954,7 +954,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
           'span',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               fontWeight: 600,
               color: C.textSec,
               background: C.amberBg,
@@ -971,7 +971,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
         'div',
         {
           style: {
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
             marginTop: 4,
             lineHeight: 1.7,
@@ -1031,7 +1031,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
               codes.length > 0 &&
                 h(
                   'div',
-                  { style: { fontSize: 9, color: C.textMute, marginTop: 4 } },
+                  { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
                   codes.join('、')
                 )
             ),
@@ -1039,7 +1039,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
               'span',
               {
                 style: {
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: 600,
                   color: isToday ? C.amber : C.textMute,
                   background: isToday ? alpha(C.amber, '10') : 'transparent',
@@ -1056,7 +1056,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
     upcoming.length > 8 &&
       h(
         'div',
-        { style: { fontSize: 10, color: C.textMute, marginTop: 4, textAlign: 'right' } },
+        { style: { fontSize: 12, color: C.textMute, marginTop: 4, textAlign: 'right' } },
         `...還有 ${upcoming.length - 8} 件`
       )
   )
@@ -1088,7 +1088,7 @@ function PortfolioHealthCard({
       h(
         'div',
         { style: metricCard },
-        h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '獲利'),
+        h('div', { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } }, '獲利'),
         h(
           'div',
           {
@@ -1107,7 +1107,7 @@ function PortfolioHealthCard({
       h(
         'div',
         { style: metricCard },
-        h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '虧損'),
+        h('div', { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } }, '虧損'),
         h(
           'div',
           {
@@ -1126,7 +1126,7 @@ function PortfolioHealthCard({
       h(
         'div',
         { style: metricCard },
-        h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, '持平'),
+        h('div', { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } }, '持平'),
         h(
           'div',
           {
@@ -1147,7 +1147,7 @@ function PortfolioHealthCard({
         { style: metricCard },
         h(
           'div',
-          { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } },
+          { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } },
           '整體報酬'
         ),
         h(

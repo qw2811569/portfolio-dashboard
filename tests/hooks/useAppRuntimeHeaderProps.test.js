@@ -45,8 +45,11 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
         tab: 'holdings',
         setTab: vi.fn(),
         workflowCue: {
-          label: '先補齊資料，再做深度研究',
+          kind: 'data-refresh',
+          label: '資料補齊中',
           reason: '公開報告與財報資料仍需刷新。',
+          count: 1,
+          items: [{ code: '2330', name: '台積電' }],
           targetTab: 'research',
           actionLabel: '前往補資料',
         },

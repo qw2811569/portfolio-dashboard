@@ -183,6 +183,7 @@ export function useAppRuntimeWorkflowArgs({
       researchResults: resources.researchResults,
       stockMeta: resources.stockMeta,
       indColor: resources.indColor,
+      theses: resources.theses,
     },
     runtime: {
       flashSaved: runtime.flashSaved,

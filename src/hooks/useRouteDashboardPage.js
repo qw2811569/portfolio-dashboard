@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
+import { buildResearchRefreshRows } from '../lib/routeRuntime.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 
 export function useRouteDashboardPage() {
   const {
     holdings = [],
     watchlist = [],
+    holdingDossiers = [],
+    targets = {},
+    fundamentals = {},
     todayTotalPnl = 0,
     newsEvents = [],
     dailyReport,
@@ -28,10 +32,13 @@ export function useRouteDashboardPage() {
       .sort((a, b) => (a.pct || 0) - (b.pct || 0))
 
     const latestInsight = dailyReport?.insight || dailyReport?.aiInsight || null
+    const dataRefreshRows = buildResearchRefreshRows({ holdings, targets, fundamentals })
 
     return {
       holdings,
       watchlist,
+      holdingDossiers,
+      dataRefreshRows,
       todayTotalPnl,
       totalVal,
       totalCost,
@@ -43,10 +50,14 @@ export function useRouteDashboardPage() {
       todayAlertSummary,
       portfolioId,
       portfolioName,
+      viewMode: portfolioId === 'me' ? 'retail' : 'insider-compressed',
     }
   }, [
     holdings,
     watchlist,
+    holdingDossiers,
+    targets,
+    fundamentals,
     todayTotalPnl,
     newsEvents,
     dailyReport,

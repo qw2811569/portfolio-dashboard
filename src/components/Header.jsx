@@ -1,4 +1,4 @@
-import { createElement as h } from 'react'
+import { createElement as h, useState } from 'react'
 import { C, A, alpha } from '../theme.js'
 import { ConfirmDialog, TextFieldDialog } from './common/index.js'
 
@@ -10,7 +10,6 @@ export default function Header(props) {
     refreshing,
     copyWeeklyReport,
     exportLocalBackup,
-    backupFileInputRef,
     importLocalBackup,
     priceSyncStatusTone,
     priceSyncStatusLabel,
@@ -47,9 +46,11 @@ export default function Header(props) {
     portfolioEditor,
     portfolioDeleteDialog,
   } = props
+  const backupInputId = 'header-backup-file-input'
   const tabs = Array.isArray(TABS) ? TABS : []
   const editor = portfolioEditor || null
   const deleteDialog = portfolioDeleteDialog || null
+  const [isNoticeOpen, setIsNoticeOpen] = useState(false)
   const navigateToTab = (nextTab) => {
     if (!nextTab || typeof setTab !== 'function') return
     setTab(nextTab)
@@ -81,6 +82,8 @@ export default function Header(props) {
     fontWeight: 500,
     marginBottom: 5,
   }
+  const hasHeaderNotice = viewMode !== OVERVIEW_VIEW_MODE && workflowCue?.kind === 'data-refresh'
+  const noticeItems = Array.isArray(workflowCue?.items) ? workflowCue.items : []
 
   return h(
     'div',
@@ -172,21 +175,24 @@ export default function Header(props) {
           '備份'
         ),
         h(
-          'button',
+          'label',
           {
+            htmlFor: backupInputId,
             className: 'ui-btn',
-            onClick: () => backupFileInputRef?.current?.click(),
             style: {
               background: C.subtle,
               color: C.textSec,
               border: `1px solid ${C.border}`,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
               ...ghostBtn,
             },
           },
           '匯入'
         ),
         h('input', {
-          ref: backupFileInputRef,
+          id: backupInputId,
           type: 'file',
           accept: 'application/json,.json',
           onChange: importLocalBackup,
@@ -210,32 +216,234 @@ export default function Header(props) {
       ),
       h(
         'div',
-        { className: 'tn', style: { textAlign: 'right', flexShrink: 0, paddingLeft: 8 } },
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            flexShrink: 0,
+            paddingLeft: 8,
+            position: 'relative',
+          },
+        },
+        hasHeaderNotice &&
+          h(
+            'div',
+            { style: { position: 'relative' } },
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'ui-btn',
+                'data-testid': 'header-notice-toggle',
+                'aria-label': workflowCue.label || '查看資料補齊提醒',
+                onClick: () => setIsNoticeOpen((open) => !open),
+                style: {
+                  ...ghostBtn,
+                  padding: '7px 10px',
+                  border: `1px solid ${alpha(C.amber, '26')}`,
+                  background: alpha(C.amber, '10'),
+                  color: C.textSec,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                },
+                title: workflowCue.reason || workflowCue.label || '',
+              },
+              h('span', { 'aria-hidden': 'true', style: { fontSize: 12 } }, '🔔'),
+              h(
+                'span',
+                {
+                  style: {
+                    fontSize: 10,
+                    fontWeight: 700,
+                    minWidth: 18,
+                    textAlign: 'center',
+                    borderRadius: 999,
+                    padding: '2px 6px',
+                    background: alpha(C.amber, '18'),
+                    border: `1px solid ${alpha(C.amber, '24')}`,
+                    color: C.text,
+                  },
+                },
+                `${workflowCue.count || noticeItems.length || 0}`
+              )
+            ),
+            isNoticeOpen &&
+              h(
+                'div',
+                {
+                  'data-testid': 'header-notice-drawer',
+                  style: {
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: 'min(340px, calc(100vw - 28px))',
+                    ...card,
+                    padding: '12px 12px 10px',
+                    zIndex: 12,
+                  },
+                },
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginBottom: 8,
+                    },
+                  },
+                  h(
+                    'div',
+                    { style: { fontSize: 11, fontWeight: 700, color: C.textSec } },
+                    '資料補齊提醒'
+                  ),
+                  h(
+                    'span',
+                    {
+                      style: {
+                        fontSize: 9,
+                        color: C.textMute,
+                        borderRadius: 999,
+                        padding: '3px 7px',
+                        background: C.subtle,
+                        border: `1px solid ${C.border}`,
+                      },
+                    },
+                    workflowCue.label || ''
+                  )
+                ),
+                workflowCue.reason &&
+                  h(
+                    'div',
+                    {
+                      style: {
+                        fontSize: 10,
+                        color: C.textSec,
+                        lineHeight: 1.7,
+                        marginBottom: noticeItems.length > 0 ? 8 : 10,
+                      },
+                    },
+                    workflowCue.reason
+                  ),
+                noticeItems.length > 0 &&
+                  h(
+                    'div',
+                    { style: { display: 'grid', gap: 6, marginBottom: 10 } },
+                    noticeItems.map((item) =>
+                      h(
+                        'div',
+                        {
+                          key: `${item.code}-${item.name}`,
+                          style: {
+                            borderRadius: 10,
+                            border: `1px solid ${C.borderSub}`,
+                            background: C.subtle,
+                            padding: '8px 9px',
+                          },
+                        },
+                        h(
+                          'div',
+                          {
+                            style: {
+                              fontSize: 11,
+                              color: C.text,
+                              fontWeight: 600,
+                              marginBottom: 3,
+                            },
+                          },
+                          `${item.name} (${item.code})`
+                        ),
+                        h(
+                          'div',
+                          { style: { fontSize: 10, color: C.textSec, lineHeight: 1.6 } },
+                          item.targetLabel || item.classificationNote || '資料還在補齊中'
+                        )
+                      )
+                    )
+                  ),
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    },
+                  },
+                  typeof workflowCue.onRefresh === 'function' &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'ui-btn',
+                        onClick: () => {
+                          workflowCue.onRefresh()
+                          setIsNoticeOpen(false)
+                        },
+                        style: {
+                          ...ghostBtn,
+                          background: C.subtle,
+                          color: C.textSec,
+                          border: `1px solid ${C.border}`,
+                        },
+                      },
+                      '重新整理'
+                    ),
+                  workflowCue.targetTab &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'ui-btn',
+                        onClick: () => {
+                          navigateToTab(workflowCue.targetTab)
+                          setIsNoticeOpen(false)
+                        },
+                        style: {
+                          ...ghostBtn,
+                          background: alpha(C.blue, '10'),
+                          color: C.textSec,
+                          border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+                        },
+                      },
+                      workflowCue.actionLabel || '查看詳情'
+                    )
+                )
+              )
+          ),
         h(
           'div',
-          {
-            style: {
-              fontSize: 20,
-              fontWeight: 700,
-              color: displayedTotalPnl >= 0 ? C.text : pc(displayedTotalPnl),
-              fontFamily: 'var(--font-num)',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.1,
+          { className: 'tn', style: { textAlign: 'right' } },
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 20,
+                fontWeight: 700,
+                color: displayedTotalPnl >= 0 ? C.text : pc(displayedTotalPnl),
+                fontFamily: 'var(--font-num)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+              },
             },
-          },
-          `${displayedTotalPnl >= 0 ? '+' : ''}${Math.round(displayedTotalPnl).toLocaleString()}`
-        ),
-        h(
-          'div',
-          {
-            style: {
-              fontSize: 10,
-              fontWeight: 600,
-              color: displayedRetPct >= 0 ? C.textSec : pc(displayedRetPct),
-              fontFamily: 'var(--font-num)',
+            `${displayedTotalPnl >= 0 ? '+' : ''}${Math.round(displayedTotalPnl).toLocaleString()}`
+          ),
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 10,
+                fontWeight: 600,
+                color: displayedRetPct >= 0 ? C.textSec : pc(displayedRetPct),
+                fontFamily: 'var(--font-num)',
+              },
             },
-          },
-          `${displayedRetPct >= 0 ? '+' : ''}${displayedRetPct.toFixed(2)}%`
+            `${displayedRetPct >= 0 ? '+' : ''}${displayedRetPct.toFixed(2)}%`
+          )
         )
       )
     ),
@@ -629,77 +837,6 @@ export default function Header(props) {
           },
         },
         `今日 · ${todayAlertSummary}`
-      ),
-
-    viewMode !== OVERVIEW_VIEW_MODE &&
-      workflowCue &&
-      h(
-        'div',
-        {
-          style: {
-            background: `linear-gradient(90deg, ${alpha(C.blue, '10')}, ${alpha(C.lavender, '10')})`,
-            border: `1px solid ${alpha(C.blue, A.line)}`,
-            borderLeft: `3px solid ${C.blue}`,
-            borderRadius: 8,
-            padding: '8px 10px',
-            marginBottom: 8,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-          },
-        },
-        h(
-          'div',
-          { style: { minWidth: 0, flex: 1 } },
-          h(
-            'div',
-            { style: { fontSize: 9, color: C.textSec, fontWeight: 700, letterSpacing: '0.08em' } },
-            'WORKFLOW CUE'
-          ),
-          h(
-            'div',
-            {
-              style: {
-                fontSize: 11,
-                color: C.text,
-                fontWeight: 600,
-                lineHeight: 1.6,
-                marginTop: 3,
-              },
-            },
-            workflowCue.label
-          ),
-          workflowCue.reason &&
-            h(
-              'div',
-              {
-                style: {
-                  fontSize: 10,
-                  color: C.textSec,
-                  lineHeight: 1.7,
-                  marginTop: 4,
-                },
-              },
-              workflowCue.reason
-            )
-        ),
-        workflowCue.targetTab &&
-          h(
-            'button',
-            {
-              className: 'ui-btn',
-              onClick: () => navigateToTab(workflowCue.targetTab),
-              style: {
-                background: alpha(C.blue, '10'),
-                color: C.textSec,
-                border: `1px solid ${alpha(C.blue, A.strongLine)}`,
-                ...ghostBtn,
-              },
-            },
-            workflowCue.actionLabel || '前往查看'
-          )
       ),
 
     // Overview mode notice or tabs

@@ -516,7 +516,7 @@ export function HoldingsPanel({
   return h(
     'div',
     { 'data-testid': 'holdings-panel' },
-    h(OperatingContextCard, { context: operatingContext }),
+    h(OperatingContextCard, { context: operatingContext, variant: 'home' }),
     h(
       'div',
       {

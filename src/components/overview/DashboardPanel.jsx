@@ -1,5 +1,6 @@
-import { createElement as h } from 'react'
+import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { Button, Card } from '../common'
@@ -131,13 +132,23 @@ function TodayPnlHero({
   holdings = [],
   watchlist = [],
   portfolioName = '',
+  headline = '',
+  headlineTone = 'calm',
+  dataRefreshRows = [],
+  onRefreshReminder = null,
+  onNavigate = null,
 }) {
+  const [isReminderOpen, setIsReminderOpen] = useState(false)
   const color = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
   const sign = todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
   const pnlText = `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
   const submetrics = buildSubmetrics({ holdings, watchlist })
   const portfolioLabel = portfolioName || '目前組合'
+  const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
+  const headlineText = String(headline || '').trim() || '今日持倉 overview'
+  const headlineColor =
+    headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
 
   return h(
     Card,
@@ -185,8 +196,176 @@ function TodayPnlHero({
                 gap: 8,
                 flexWrap: 'wrap',
                 justifyContent: 'flex-end',
+                position: 'relative',
               },
             },
+            safeRefreshRows.length > 0 &&
+              h(
+                'div',
+                { style: { position: 'relative' } },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'ui-btn',
+                    'data-testid': 'dashboard-reminder-toggle',
+                    onClick: () => setIsReminderOpen((open) => !open),
+                    title: `${safeRefreshRows.length} 檔資料待補齊`,
+                    style: {
+                      borderRadius: 999,
+                      padding: '4px 10px',
+                      border: `1px solid ${alpha(C.amber, '24')}`,
+                      background: alpha(C.amber, '10'),
+                      color: C.textSec,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    },
+                  },
+                  h('span', { 'aria-hidden': 'true', style: { fontSize: 11 } }, '🔔'),
+                  h(
+                    'span',
+                    {
+                      style: {
+                        borderRadius: 999,
+                        padding: '2px 6px',
+                        border: `1px solid ${alpha(C.amber, '26')}`,
+                        background: alpha(C.amber, '18'),
+                        color: C.text,
+                        minWidth: 18,
+                        textAlign: 'center',
+                      },
+                    },
+                    `${safeRefreshRows.length}`
+                  )
+                ),
+                isReminderOpen &&
+                  h(
+                    'div',
+                    {
+                      'data-testid': 'dashboard-reminder-drawer',
+                      style: {
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        width: 'min(320px, calc(100vw - 48px))',
+                        borderRadius: 14,
+                        border: `1px solid ${C.border}`,
+                        background: C.card,
+                        boxShadow: `${C.insetLine}, ${C.shadow}`,
+                        padding: '12px',
+                        zIndex: 2,
+                      },
+                    },
+                    h(
+                      'div',
+                      {
+                        style: { fontSize: 11, fontWeight: 700, color: C.textSec, marginBottom: 8 },
+                      },
+                      '資料補齊提醒'
+                    ),
+                    h(
+                      'div',
+                      {
+                        style: {
+                          fontSize: 10,
+                          color: C.textSec,
+                          lineHeight: 1.7,
+                          marginBottom: 8,
+                        },
+                      },
+                      `目前有 ${safeRefreshRows.length} 檔資料還在更新中。`
+                    ),
+                    h(
+                      'div',
+                      { style: { display: 'grid', gap: 6, marginBottom: 10 } },
+                      safeRefreshRows.slice(0, 5).map((item) =>
+                        h(
+                          'div',
+                          {
+                            key: item.code,
+                            style: {
+                              background: C.subtle,
+                              border: `1px solid ${C.borderSub}`,
+                              borderRadius: 10,
+                              padding: '8px 9px',
+                            },
+                          },
+                          h(
+                            'div',
+                            {
+                              style: {
+                                fontSize: 11,
+                                color: C.text,
+                                fontWeight: 600,
+                                marginBottom: 3,
+                              },
+                            },
+                            `${item.name} (${item.code})`
+                          ),
+                          h(
+                            'div',
+                            { style: { fontSize: 10, color: C.textSec, lineHeight: 1.6 } },
+                            item.targetLabel || item.classificationNote || '資料還在補齊中'
+                          )
+                        )
+                      )
+                    ),
+                    h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                        },
+                      },
+                      typeof onRefreshReminder === 'function' &&
+                        h(
+                          Button,
+                          {
+                            onClick: () => {
+                              onRefreshReminder()
+                              setIsReminderOpen(false)
+                            },
+                            style: {
+                              padding: '7px 12px',
+                              borderRadius: 999,
+                              border: `1px solid ${C.border}`,
+                              background: C.subtle,
+                              color: C.textSec,
+                              fontSize: 10,
+                              fontWeight: 600,
+                            },
+                          },
+                          '重新整理'
+                        ),
+                      typeof onNavigate === 'function' &&
+                        h(
+                          Button,
+                          {
+                            onClick: () => {
+                              onNavigate('research')
+                              setIsReminderOpen(false)
+                            },
+                            style: {
+                              padding: '7px 12px',
+                              borderRadius: 999,
+                              border: `1px solid ${alpha(C.blue, '32')}`,
+                              background: alpha(C.blue, '10'),
+                              color: C.textSec,
+                              fontSize: 10,
+                              fontWeight: 600,
+                            },
+                          },
+                          '查看研究'
+                        )
+                    )
+                  )
+              ),
             h(
               'span',
               {
@@ -213,6 +392,21 @@ function TodayPnlHero({
               portfolioLabel
             )
           )
+        ),
+        h(
+          'div',
+          {
+            'data-testid': 'dashboard-headline',
+            style: {
+              fontSize: 'clamp(22px, 3.2vw, 32px)',
+              fontWeight: 700,
+              color: headlineColor,
+              fontFamily: 'var(--font-headline)',
+              lineHeight: 1.28,
+              letterSpacing: '-0.02em',
+            },
+          },
+          headlineText
         ),
         h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
         h(
@@ -1012,6 +1206,8 @@ function PortfolioHealthCard({
 export function DashboardPanel({
   holdings = [],
   watchlist = [],
+  holdingDossiers = [],
+  dataRefreshRows = [],
   morningNote = null,
   todayTotalPnl = 0,
   totalVal = 0,
@@ -1024,8 +1220,15 @@ export function DashboardPanel({
   todayAlertSummary = '',
   portfolioName = '',
   portfolioId = '',
+  viewMode = 'retail',
+  onRefreshReminder = null,
   onNavigate = null,
 }) {
+  const dashboardHeadline = useMemo(
+    () => buildDashboardHeadline(holdingDossiers, { viewMode }),
+    [holdingDossiers, viewMode]
+  )
+
   return h(
     'div',
     null,
@@ -1038,6 +1241,11 @@ export function DashboardPanel({
         h(TodayPnlHero, {
           holdings,
           watchlist,
+          headline: dashboardHeadline.headline,
+          headlineTone: dashboardHeadline.tone,
+          dataRefreshRows,
+          onRefreshReminder,
+          onNavigate,
           totalVal,
           todayTotalPnl,
           portfolioName: portfolioName || portfolioId,

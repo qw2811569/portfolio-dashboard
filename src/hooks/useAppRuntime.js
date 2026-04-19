@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { C } from '../theme.js'
 import { IND_COLOR, STOCK_META } from '../seedData.js'
 import { NEWS_EVENTS, RELAY_PLAN_CODES } from '../seedDataEvents.js'
@@ -5,12 +6,7 @@ import { useAppConfirmationDialog } from './useAppConfirmationDialog.js'
 import { useSavedToast } from './useSavedToast.js'
 import { useAppShellUiState } from './useAppShellUiState.js'
 import { useCanonicalLocalhostRedirect } from './useCanonicalLocalhostRedirect.js'
-import {
-  pickPnlTone,
-  composeAppShellFrameRuntime,
-  composeAppRuntimeWorkflowInput,
-  composeAppRuntimeHeaderInput,
-} from './useAppRuntimeComposer.js'
+import { pickPnlTone, composeAppShellFrameRuntime } from './useAppRuntimeComposer.js'
 import { useThesisTracking } from './useThesisTracking.js'
 import { useAppRuntimeWorkflows } from './useAppRuntimeWorkflows.js'
 import { usePostCloseSilentSync } from './usePostCloseSilentSync.js'
@@ -96,53 +92,19 @@ const pickHeaderPnlTone = (value) => pickPnlTone(value, C)
 function buildHeaderWorkflowCue(context) {
   if (!context || typeof context !== 'object') return null
 
-  const label = typeof context.nextActionLabel === 'string' ? context.nextActionLabel.trim() : ''
-  if (!label) return null
-
-  const reason =
-    typeof context.nextActionReason === 'string' ? context.nextActionReason.trim() : ''
-
-  if ((context.refreshBacklogCount ?? 0) > 0) {
-    return {
-      label,
-      reason,
-      targetTab: 'research',
-      actionLabel: '前往補資料',
-    }
-  }
-
-  if ((context.pendingCount ?? 0) > 0 || (context.activeEventCount ?? 0) > 0) {
-    return {
-      label,
-      reason,
-      targetTab: 'events',
-      actionLabel: '前往事件',
-    }
-  }
-
-  if (context.focus) {
-    return {
-      label,
-      reason,
-      targetTab: 'watchlist',
-      actionLabel: '前往焦點標的',
-    }
-  }
-
-  if (context.latestInsightSummary) {
-    return {
-      label,
-      reason,
-      targetTab: 'daily',
-      actionLabel: '前往收盤分析',
-    }
-  }
+  const count = Number(context.refreshBacklogCount) || 0
+  if (count <= 0) return null
 
   return {
-    label,
-    reason,
-    targetTab: 'holdings',
-    actionLabel: '回到持倉',
+    kind: 'data-refresh',
+    label: count === 1 ? '1 檔資料待補齊' : `${count} 檔資料待補齊`,
+    reason: '目標價與財報資料還在更新中，補齊後首頁結論會跟著刷新。',
+    count,
+    items: Array.isArray(context.refreshBacklogItems)
+      ? context.refreshBacklogItems.slice(0, 6)
+      : [],
+    targetTab: 'research',
+    actionLabel: '查看補齊細節',
   }
 }
 
@@ -333,170 +295,215 @@ export function useAppRuntime() {
     constants: PORTFOLIO_DERIVED_CONSTANTS,
   })
 
-  const workflowArgs = useAppRuntimeWorkflowArgs(
-    composeAppRuntimeWorkflowInput({
-      runtimeState,
-      runtimeSetters,
-      coreLifecycle: {
-        viewMode,
-        activePortfolioId,
-        canUseCloud,
-        marketPriceCache,
-        portfolios,
-        setLastUpdate,
-        setPortfolios,
-        setActivePortfolioId,
-        setViewMode,
-        upsertTargetReport,
-        upsertFundamentalsEntry,
-        updateReversal,
-        updateTargetPrice,
-        updateAlert,
-        handleWatchlistUpsert,
-        handleWatchlistDelete,
-        cancelReview,
-        switchPortfolio,
-        exitOverview,
-        getMarketQuotesForCodes,
-      },
-      portfolioDerived: {
-        H,
-        W,
-        dossierByCode,
-        totalVal,
-        totalCost,
-        totalPnl,
-        retPct,
-        todayMarketClock,
-        holdingsIntegrityIssues,
-        shouldTriggerPostCloseSelfHeal,
-        overviewPortfolios,
-        overviewTotalValue,
-        overviewTotalPnl,
-        overviewDuplicateHoldings,
-        overviewPendingItems,
-        winners,
-        losers,
-        top5,
-        attentionCount,
-        pendingCount,
-        targetUpdateCount,
-        dataRefreshRows,
-        todayRefreshKey,
-        reportRefreshCandidates,
-        watchlistRows,
-        watchlistFocus,
-        showRelayPlan,
-      },
-      uiState: appUiState,
-      asyncState: {
-        analyzing,
-        setAnalyzing,
-        analyzeStep,
-        setAnalyzeStep,
-        researching,
-        setResearching,
-      },
-      runtime: {
-        flashSaved,
-        requestAppConfirmation,
-      },
-      refs: {
-        priceSelfHealRef,
-        syncPostClosePrices,
-        refreshAnalystReportsRef,
-        resetTradeCaptureRef,
-        applyPortfolioSnapshot,
-        portfolioTransitionRef,
-        cloudSyncStateRef,
-        livePortfolioSnapshot,
-      },
-      helpers: APP_RUNTIME_WORKFLOW_HELPERS,
-      resources: {
-        defaultNewsEvents: NEWS_EVENTS,
-        stockMeta: STOCK_META,
-        indColor: IND_COLOR,
-        morningNote,
-      },
+  const workflowArgs = useAppRuntimeWorkflowArgs({
+    state: {
+      ...runtimeState,
+      viewMode,
       portfolioViewMode: PORTFOLIO_VIEW_MODE,
-    })
-  )
+      activePortfolioId,
+      canUseCloud,
+      marketPriceCache,
+      portfolios,
+      morningNote,
+    },
+    derived: {
+      H,
+      W,
+      dossierByCode,
+      totalVal,
+      totalCost,
+      totalPnl,
+      retPct,
+      todayMarketClock,
+      holdingsIntegrityIssues,
+      shouldTriggerPostCloseSelfHeal,
+      overviewPortfolios,
+      overviewTotalValue,
+      overviewTotalPnl,
+      overviewDuplicateHoldings,
+      overviewPendingItems,
+      winners,
+      losers,
+      top5,
+      attentionCount,
+      pendingCount,
+      targetUpdateCount,
+      dataRefreshRows,
+      todayRefreshKey,
+      reportRefreshCandidates,
+      watchlistRows,
+      watchlistFocus,
+      showRelayPlan,
+    },
+    ui: {
+      tab: appUiState.tab,
+      filterType: appUiState.filterType,
+      catalystFilter: appUiState.catalystFilter,
+      scanQuery: appUiState.scanQuery,
+      scanFilter: appUiState.scanFilter,
+      sortBy: appUiState.sortBy,
+      showReversal: appUiState.showReversal,
+      expandedStock: appUiState.expandedStock,
+      relayPlanExpanded: appUiState.relayPlanExpanded,
+      dailyExpanded: appUiState.dailyExpanded,
+      researchTarget: appUiState.researchTarget,
+      reviewForm: appUiState.reviewForm,
+      reviewingEvent: appUiState.reviewingEvent,
+      expandedNews: appUiState.expandedNews,
+    },
+    asyncState: {
+      analyzing,
+      setAnalyzing,
+      analyzeStep,
+      setAnalyzeStep,
+      researching,
+      setResearching,
+    },
+    actions: {
+      upsertTargetReport,
+      upsertFundamentalsEntry,
+      updateReversal,
+      updateTargetPrice,
+      updateAlert,
+      handleWatchlistUpsert,
+      handleWatchlistDelete,
+      cancelReview,
+      switchPortfolio,
+      exitOverview,
+    },
+    setters: {
+      ...runtimeSetters,
+      setLastUpdate,
+      setPortfolios,
+      setActivePortfolioId,
+      setViewMode,
+      setShowReversal: appUiState.setShowReversal,
+      setScanQuery: appUiState.setScanQuery,
+      setScanFilter: appUiState.setScanFilter,
+      setSortBy: appUiState.setSortBy,
+      setExpandedStock: appUiState.setExpandedStock,
+      setRelayPlanExpanded: appUiState.setRelayPlanExpanded,
+      setFilterType: appUiState.setFilterType,
+      setCatalystFilter: appUiState.setCatalystFilter,
+      setDailyExpanded: appUiState.setDailyExpanded,
+      setTab: appUiState.setTab,
+      setExpandedNews: appUiState.setExpandedNews,
+      setResearchTarget: appUiState.setResearchTarget,
+      setResearchResults: appUiState.setResearchResults,
+      setReviewForm: appUiState.setReviewForm,
+      setReviewingEvent: appUiState.setReviewingEvent,
+    },
+    resources: {
+      defaultNewsEvents: NEWS_EVENTS,
+      researchResults: appUiState.researchResults,
+      stockMeta: STOCK_META,
+      indColor: IND_COLOR,
+      theses,
+    },
+    runtime: {
+      flashSaved,
+      requestAppConfirmation,
+    },
+    refs: {
+      priceSelfHealRef,
+      syncPostClosePrices,
+      refreshAnalystReportsRef,
+      resetTradeCaptureRef,
+      applyPortfolioSnapshot,
+      portfolioTransitionRef,
+      cloudSyncStateRef,
+      livePortfolioSnapshot,
+    },
+    helpers: {
+      ...APP_RUNTIME_WORKFLOW_HELPERS,
+      getMarketQuotesForCodes,
+    },
+  })
 
   const {
     copyWeeklyReport,
-    backupFileInputRef,
     exportLocalBackup,
     importLocalBackup,
     portfolioPanelsData,
     portfolioPanelsActions,
   } = useAppRuntimeWorkflows(workflowArgs)
 
-  const workflowCue = buildHeaderWorkflowCue(portfolioPanelsData?.holdings?.operatingContext)
-
-  const headerProps = useAppRuntimeHeaderProps(
-    composeAppRuntimeHeaderInput({
-      theme: {
-        C,
-        pc: pickHeaderPnlTone,
-      },
-      sync: {
-        cloudSync,
-        saved,
-        copyWeeklyReport,
-        exportLocalBackup,
-        backupFileInputRef,
-        importLocalBackup,
-      },
-      coreLifecycle: {
-        refreshPrices,
-        refreshing,
-        priceSyncStatusTone,
-        priceSyncStatusLabel,
-        activePriceSyncAt,
-        lastUpdate,
-        activePortfolioId,
-        switchPortfolio,
-        portfolioSwitching,
-        portfolioSummaries,
-        createPortfolio,
-        viewMode,
-        exitOverview,
-        openOverview,
-        showPortfolioManager,
-        setShowPortfolioManager,
-        renamePortfolio,
-        deletePortfolio,
-        portfolioEditor,
-        portfolioDeleteDialog,
-      },
-      portfolioDerived: {
-        displayedTotalPnl,
-        displayedRetPct,
-        overviewTotalValue,
-        urgentCount,
-        todayAlertSummary,
-      },
-      notes: {
-        portfolioNotes,
-        setPortfolioNotes: runtimeSetters.setPortfolioNotes,
-      },
-      asyncState: {
-        analyzing,
-        researching,
-      },
-      tabs: {
-        tab,
-        setTab,
-        workflowCue,
-      },
-      constants: {
-        OWNER_PORTFOLIO_ID,
-        PORTFOLIO_VIEW_MODE,
-        OVERVIEW_VIEW_MODE,
-      },
-      ready,
-    })
+  const triggerDataRefresh = useCallback(
+    (options = {}) => refreshAnalystReportsRef.current?.({ force: true, ...options }),
+    [refreshAnalystReportsRef]
   )
+  const workflowCueBase = buildHeaderWorkflowCue(portfolioPanelsData?.holdings?.operatingContext)
+  const workflowCue =
+    workflowCueBase && workflowCueBase.kind === 'data-refresh'
+      ? {
+          ...workflowCueBase,
+          onRefresh: triggerDataRefresh,
+        }
+      : workflowCueBase
+
+  const headerProps = useAppRuntimeHeaderProps({
+    theme: {
+      C,
+      pc: pickHeaderPnlTone,
+    },
+    sync: {
+      cloudSync,
+      saved,
+      refreshPrices,
+      refreshing,
+      copyWeeklyReport,
+      exportLocalBackup,
+      importLocalBackup,
+      priceSyncStatusTone,
+      priceSyncStatusLabel,
+      activePriceSyncAt,
+      lastUpdate,
+    },
+    pnl: {
+      displayedTotalPnl,
+      displayedRetPct,
+    },
+    portfolio: {
+      activePortfolioId,
+      switchPortfolio,
+      ready,
+      portfolioSwitching,
+      portfolioSummaries,
+      createPortfolio,
+      viewMode,
+      exitOverview,
+      openOverview,
+      showPortfolioManager,
+      setShowPortfolioManager,
+      renamePortfolio,
+      deletePortfolio,
+    },
+    overview: {
+      overviewTotalValue,
+    },
+    notes: {
+      portfolioNotes,
+      setPortfolioNotes: runtimeSetters.setPortfolioNotes,
+    },
+    tabs: {
+      urgentCount,
+      todayAlertSummary,
+      analyzing,
+      researching,
+      tab,
+      setTab,
+      workflowCue,
+    },
+    dialogs: {
+      portfolioEditor,
+      portfolioDeleteDialog,
+    },
+    constants: {
+      OWNER_PORTFOLIO_ID,
+      PORTFOLIO_VIEW_MODE,
+      OVERVIEW_VIEW_MODE,
+    },
+  })
 
   return composeAppShellFrameRuntime({
     ready,

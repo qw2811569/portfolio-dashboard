@@ -54,6 +54,7 @@ export function composePortfolioPanelsContextInput({
     researchTarget: ui.researchTarget,
     reportRefreshing: asyncState.reportRefreshing,
     reportRefreshStatus: asyncState.reportRefreshStatus,
+    reportRefreshMeta: data.reportRefreshMeta,
     dataRefreshRows: data.dataRefreshRows,
     researchResults: resources.researchResults,
     researchHistory: data.researchHistory,

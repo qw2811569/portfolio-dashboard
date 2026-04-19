@@ -1,7 +1,8 @@
 import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, TOKENS, alpha } from '../../theme.js'
-import { Card, Button, OperatingContextCard } from '../common'
+import { Card, Button, DataError, OperatingContextCard } from '../common'
+import { normalizeDataError } from '../../lib/dataError.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
@@ -414,11 +415,16 @@ export function NewsFeedSection({
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(() => codesKey.length > 0)
   const [error, setError] = useState(null)
+  const [requestNonce, setRequestNonce] = useState(0)
   const [sourceFilter, setSourceFilter] = useState('全部來源')
   const [impactFilter, setImpactFilter] = useState('全部影響')
   const [tickerFilter, setTickerFilter] = useState('全部持股')
   const [readIds, setReadIds] = useState(() => new Set())
   const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    fetchedRef.current = false
+  }, [codesKey, requestNonce])
 
   useEffect(() => {
     if (!codesKey || fetchedRef.current) return
@@ -437,13 +443,13 @@ export function NewsFeedSection({
         setItems(remoteItems.length ? remoteItems : buildPreviewNewsItems(holdingCodes))
       })
       .catch((err) => {
-        setError(err.message || 'fetch failed')
+        setError(normalizeDataError(err, { resource: 'news' }))
         setItems(buildPreviewNewsItems(holdingCodes))
       })
       .finally(() => {
         setLoading(false)
       })
-  }, [codesKey, holdingCodes])
+  }, [codesKey, holdingCodes, requestNonce])
 
   if (loading) {
     return h(
@@ -507,6 +513,17 @@ export function NewsFeedSection({
     h(
       'div',
       null,
+      error &&
+        h(DataError, {
+          status: error.status,
+          resource: 'news',
+          onRetry: () => {
+            setLoading(true)
+            setError(null)
+            setRequestNonce((current) => current + 1)
+          },
+          style: { marginBottom: 12 },
+        }),
       h(
         Card,
         {
@@ -651,7 +668,7 @@ export function NewsFeedSection({
               color: PAPER.mutedSoft,
             },
           },
-          `新聞源暫時打不開，以下改用 preview fallback：${error}`
+          '新聞源暫時打不開，以下先用 preview fallback 撐住畫面。'
         ),
       filteredItems.map((item, i) =>
         h(NewsFeedCard, {

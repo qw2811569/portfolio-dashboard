@@ -12,11 +12,17 @@
  *   }
  */
 
+import { createDataError } from '../dataError.js'
+
 const CRON_TARGET_MAX_AGE_DAYS = 30
 
 export async function fetchCronTargets(code) {
   const res = await fetch(`/api/target-prices?code=${encodeURIComponent(code)}`)
-  if (!res.ok) return null
+  if (!res.ok) {
+    throw createDataError(res.status, `target-prices fetch failed (${res.status})`, {
+      resource: 'target-prices',
+    })
+  }
   const snapshot = await res.json()
   const reportCount = Array.isArray(snapshot?.targets?.reports)
     ? snapshot.targets.reports.length

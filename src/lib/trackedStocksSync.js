@@ -65,6 +65,10 @@ export function normalizeTrackedStocksSyncState(value, portfolioId = '') {
     totalTracked: Math.max(0, Number(value?.totalTracked) || 0),
     source: normalizeText(value?.source) || '',
     lastError: normalizeText(value?.lastError) || '',
+    errorStatus:
+      value?.errorStatus === 'offline' || value?.errorStatus === '5xx'
+        ? value.errorStatus
+        : Number(value?.errorStatus) || null,
   }
 }
 

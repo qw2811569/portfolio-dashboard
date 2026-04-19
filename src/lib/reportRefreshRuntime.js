@@ -135,6 +135,7 @@ export function mergeReportRefreshMetaStore(
     fetchedAt = new Date().toISOString(),
     changed = false,
     errorMessage = '',
+    errorStatus = null,
     items = [],
     newCount = 0,
   } = {}
@@ -164,6 +165,7 @@ export function mergeReportRefreshMetaStore(
         (changed
           ? APP_STATUS_MESSAGES.reportRefreshUpdated(newCount)
           : APP_STATUS_MESSAGES.reportRefreshNoChanges),
+      errorStatus,
       lastHashes: Array.isArray(items)
         ? items.map((item) => item.id || item.hash).filter(Boolean)
         : current[normalizedCode]?.lastHashes || [],

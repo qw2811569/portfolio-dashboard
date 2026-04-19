@@ -87,6 +87,7 @@ export function HoldingRow({
       'div',
       {
         className: expanded ? 'holding-row holding-row-expanded' : 'holding-row',
+        'data-holding-code': holding.code,
         style: {
           display: 'grid',
           gridTemplateColumns: '2fr 1fr 1fr 1fr 44px',

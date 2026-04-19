@@ -1,4 +1,5 @@
-// ── 金聯成 組合初始持倉 ──────────────────────────────────────────
+// Persona B · 金聯成 / 7865 · insider-compressed seed holdings
+// Canonical holdings contract lives in tests/e2e/persona-canonical.json.
 export const INIT_HOLDINGS_JINLIANCHENG = [
   {
     code: '0050',

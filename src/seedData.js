@@ -412,6 +412,8 @@ export const IND_COLOR = {
 }
 
 // ── 初始持倉 ────────────────────────────────────────────────────
+// Persona A · 小奎主要投資 · owner/retail seed holdings
+// Canonical holdings contract lives in tests/e2e/persona-canonical.json.
 export const INIT_HOLDINGS = [
   {
     code: '00637L',

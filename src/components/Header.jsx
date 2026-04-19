@@ -1,4 +1,5 @@
 import { createElement as h, useState } from 'react'
+import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { C, A, alpha } from '../theme.js'
 import { ConfirmDialog, TextFieldDialog } from './common/index.js'
 
@@ -48,9 +49,15 @@ export default function Header(props) {
   } = props
   const backupInputId = 'header-backup-file-input'
   const tabs = Array.isArray(TABS) ? TABS : []
+  const safePortfolioSummaries = Array.isArray(portfolioSummaries) ? portfolioSummaries : []
   const editor = portfolioEditor || null
   const deleteDialog = portfolioDeleteDialog || null
   const [isNoticeOpen, setIsNoticeOpen] = useState(false)
+  const activePortfolioSummary =
+    safePortfolioSummaries.find((portfolio) => portfolio.id === activePortfolioId) || null
+  const activePortfolioLabel = displayPortfolioName(
+    activePortfolioSummary || { id: activePortfolioId }
+  )
   const navigateToTab = (nextTab) => {
     if (!nextTab || typeof setTab !== 'function') return
     setTab(nextTab)
@@ -478,11 +485,11 @@ export default function Header(props) {
             cursor: portfolioSwitching ? 'progress' : 'pointer',
           },
         },
-        portfolioSummaries.map((portfolio) =>
+        safePortfolioSummaries.map((portfolio) =>
           h(
             'option',
             { key: portfolio.id, value: portfolio.id },
-            `${portfolio.name} · ${portfolio.holdingCount}檔 · ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
+            `${displayPortfolioName(portfolio)} · ${portfolio.holdingCount}檔 · ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
           )
         )
       ),
@@ -543,8 +550,8 @@ export default function Header(props) {
             style: { fontSize: 10, color: C.textSec },
           },
           viewMode === OVERVIEW_VIEW_MODE
-            ? `全部總覽 · ${portfolioSummaries.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
-            : `${portfolioSummaries.find((p) => p.id === activePortfolioId)?.name || ''} · ${portfolioSummaries.find((p) => p.id === activePortfolioId)?.holdingCount || 0} 檔 · 損益 ${portfolioSummaries.find((p) => p.id === activePortfolioId)?.totalPnl >= 0 ? '+' : ''}${Math.round(portfolioSummaries.find((p) => p.id === activePortfolioId)?.totalPnl || 0).toLocaleString()}`
+            ? `全部總覽 · ${safePortfolioSummaries.length} 組合 · 總市值 ${Math.round(overviewTotalValue).toLocaleString()}`
+            : `${activePortfolioLabel} · ${activePortfolioSummary?.holdingCount || 0} 檔 · 損益 ${activePortfolioSummary?.totalPnl >= 0 ? '+' : ''}${Math.round(activePortfolioSummary?.totalPnl || 0).toLocaleString()}`
         )
     ),
 
@@ -591,7 +598,7 @@ export default function Header(props) {
         h(
           'div',
           { style: { display: 'grid', gap: 7 } },
-          portfolioSummaries.map((portfolio) =>
+          safePortfolioSummaries.map((portfolio) =>
             h(
               'div',
               {
@@ -623,7 +630,7 @@ export default function Header(props) {
                   h(
                     'div',
                     { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
-                    portfolio.name,
+                    displayPortfolioName(portfolio),
                     portfolio.id === OWNER_PORTFOLIO_ID &&
                       h(
                         'span',
@@ -917,7 +924,7 @@ export default function Header(props) {
       title: editor?.mode === 'rename' ? '重新命名組合' : '建立新組合',
       subtitle:
         editor?.mode === 'rename'
-          ? `調整「${editor?.targetPortfolio?.name || ''}」的顯示名稱`
+          ? `調整「${displayPortfolioName(editor?.targetPortfolio)}」的顯示名稱`
           : '建立新的投資組合與獨立本機資料空間',
       label: '組合名稱',
       value: editor?.name || '',
@@ -932,7 +939,7 @@ export default function Header(props) {
     h(ConfirmDialog, {
       open: Boolean(deleteDialog?.isOpen),
       title: '刪除組合',
-      message: `確定要刪除「${deleteDialog?.targetPortfolio?.name || ''}」嗎？\n這會清掉該組合的本機資料，且無法復原。`,
+      message: `確定要刪除「${displayPortfolioName(deleteDialog?.targetPortfolio)}」嗎？\n這會清掉該組合的本機資料，且無法復原。`,
       confirmLabel: '確認刪除',
       cancelLabel: '取消',
       busy: Boolean(deleteDialog?.submitting),

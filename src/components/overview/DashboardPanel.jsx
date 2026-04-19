@@ -3,6 +3,7 @@ import { C, alpha } from '../../theme.js'
 import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
+import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { Button, Card } from '../common'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
@@ -144,7 +145,7 @@ function TodayPnlHero({
   const totalText = Math.round(totalVal).toLocaleString()
   const pnlText = `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
   const submetrics = buildSubmetrics({ holdings, watchlist })
-  const portfolioLabel = portfolioName || '目前組合'
+  const portfolioLabel = displayPortfolioName({ displayName: portfolioName }) || '目前組合'
   const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
   const headlineText = String(headline || '').trim() || '今日持倉 overview'
   const headlineColor =
@@ -1248,7 +1249,7 @@ export function DashboardPanel({
           onNavigate,
           totalVal,
           todayTotalPnl,
-          portfolioName: portfolioName || portfolioId,
+          portfolioName: displayPortfolioName({ displayName: portfolioName, id: portfolioId }),
         })
       ),
       h(

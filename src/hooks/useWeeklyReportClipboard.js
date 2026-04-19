@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
+import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { buildWeeklyReportTemplate } from '../lib/promptTemplateCatalog.js'
 
 export function useWeeklyReportClipboard({
@@ -30,11 +31,12 @@ export function useWeeklyReportClipboard({
   )
     .trim()
     .toLowerCase()
+  const activePortfolioName = displayPortfolioName(activePortfolio || { id: activePortfolioId })
 
   const generateWeeklyReport = useCallback(
     () =>
       buildWeeklyReportTemplate({
-        portfolioName: activePortfolio?.name || activePortfolioId || '主組合',
+        portfolioName: activePortfolioName,
         complianceMode,
         today: toDateLabel(),
         holdings,
@@ -53,8 +55,7 @@ export function useWeeklyReportClipboard({
         brainRuleSummary,
       }),
     [
-      activePortfolio?.name,
-      activePortfolioId,
+      activePortfolioName,
       analysisHistory,
       brainRuleSummary,
       complianceMode,

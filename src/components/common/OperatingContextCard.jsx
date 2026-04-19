@@ -1,4 +1,5 @@
 import { createElement as h } from 'react'
+import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { C, alpha } from '../../theme.js'
 import { Badge, Card } from './Base.jsx'
 
@@ -22,6 +23,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
   if (!context) return null
 
   const {
+    portfolio,
     portfolioLabel,
     holdingsCount = 0,
     pendingCount = 0,
@@ -40,6 +42,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
     nextActionReason = '',
     focus,
   } = context
+  const resolvedPortfolioLabel = displayPortfolioName(portfolio || { displayName: portfolioLabel })
 
   const hasSummary =
     nextActionLabel ||
@@ -132,7 +135,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                 justifyContent: 'flex-end',
               },
             },
-            portfolioLabel && h(Badge, { color: 'teal' }, portfolioLabel),
+            resolvedPortfolioLabel && h(Badge, { color: 'teal' }, resolvedPortfolioLabel),
             holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
             activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
             pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
@@ -268,7 +271,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             justifyContent: 'flex-end',
           },
         },
-        portfolioLabel && h(Badge, { color: 'teal' }, portfolioLabel),
+        resolvedPortfolioLabel && h(Badge, { color: 'teal' }, resolvedPortfolioLabel),
         holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
         pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),

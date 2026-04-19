@@ -101,7 +101,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
               {
                 'data-testid': 'holdings-home-headline',
                 style: {
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: 700,
                   color: headlineColor,
                   lineHeight: 1.3,
@@ -149,7 +149,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             'div',
             {
               style: {
-                padding: '8px 8px',
+                padding: '8px 12px',
                 borderRadius: 10,
                 background: C.subtle,
                 border: `1px solid ${C.borderSub}`,
@@ -288,7 +288,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         {
           style: {
             marginBottom: latestInsightSummary ? 8 : 0,
-            padding: '8px 8px',
+            padding: '8px 12px',
             borderRadius: 8,
             background: C.card,
             border: `1px solid ${C.borderSub}`,

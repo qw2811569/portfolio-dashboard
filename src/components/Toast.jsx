@@ -62,7 +62,7 @@ export function ToastContainer({ toasts, remove }) {
       case 'success':
         return { bg: C.oliveBg, border: alpha(C.olive, '40'), color: C.textSec }
       case 'error':
-        return { bg: C.upBg, border: alpha(C.up, '40'), color: C.textSec }
+        return { bg: C.downBg, border: alpha(C.down, '40'), color: C.textSec }
       case 'warning':
         return { bg: C.amberBg, border: alpha(C.amber, '40'), color: C.textSec }
       default:
@@ -88,8 +88,8 @@ export function ToastContainer({ toasts, remove }) {
     {
       style: {
         position: 'fixed',
-        top: 20,
-        right: 20,
+        top: 24,
+        right: 24,
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
@@ -109,7 +109,7 @@ export function ToastContainer({ toasts, remove }) {
             padding: '12px 16px',
             minWidth: 300,
             maxWidth: 400,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            boxShadow: `0 16px 32px ${alpha(C.text, '24')}`,
             display: 'flex',
             alignItems: 'center',
             gap: 8,
@@ -117,18 +117,28 @@ export function ToastContainer({ toasts, remove }) {
           },
         },
         h('span', { style: { fontSize: 16, color: styles.color } }, getIcon(toast.type)),
-        h('span', { style: { fontSize: 12, color: C.text, flex: 1 } }, toast.message),
+        h(
+          'span',
+          { style: { fontSize: 14, color: C.text, flex: 1, lineHeight: 1.6 } },
+          toast.message
+        ),
         h(
           'button',
           {
             onClick: () => remove(toast.id),
             style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
               background: 'transparent',
               border: 'none',
               color: C.textMute,
               cursor: 'pointer',
               fontSize: 16,
-              padding: '0 4px',
+              borderRadius: 999,
+              flexShrink: 0,
             },
           },
           '×'

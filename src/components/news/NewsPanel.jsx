@@ -222,7 +222,7 @@ function NewsFeedCard({
     'article',
     {
       style: {
-        padding: '20px 0 18px',
+        padding: '24px 0 16px',
         borderBottom: isLast ? 'none' : `1px solid ${TOKENS.boneDeep}`,
       },
     },
@@ -287,7 +287,7 @@ function NewsFeedCard({
           {
             style: {
               marginTop: 8,
-              fontSize: 13,
+              fontSize: 14,
               lineHeight: 1.7,
               color: TOKENS.charcoal,
               fontFamily: TOKENS.fontBody,
@@ -445,7 +445,7 @@ export function NewsFeedSection({
   if (loading) {
     return h(
       Card,
-      { style: { padding: '20px 16px' } },
+      { style: { padding: '24px 16px' } },
       h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 12 } }, '新聞脈絡整理中'),
       h(Skeleton, { variant: 'card', count: 2 })
     )
@@ -565,7 +565,7 @@ export function NewsFeedSection({
                 style: {
                   fontFamily: TOKENS.fontSection,
                   fontSize: 52,
-                  lineHeight: 0.96,
+                  lineHeight: 1.04,
                   color: TOKENS.ink,
                   maxWidth: 520,
                 },
@@ -725,7 +725,7 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 600,
                   color: TOKENS.ink,
                   marginBottom: 8,
@@ -800,7 +800,7 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 600,
                   color: TOKENS.ink,
                   marginBottom: 8,
@@ -847,7 +847,7 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 600,
                   color: TOKENS.ink,
                   marginBottom: 8,
@@ -941,7 +941,7 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  fontSize: 13,
+                  fontSize: 14,
                   lineHeight: 1.7,
                   color: TOKENS.ink,
                   fontFamily: TOKENS.fontBody,

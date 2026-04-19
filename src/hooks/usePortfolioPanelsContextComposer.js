@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
+import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 
 const EMPTY_LIST = []
 
@@ -143,6 +144,13 @@ export function usePortfolioPanelsContextComposer({
       }),
     [renderViewMode, safeHoldingDossiers]
   )
+  const activePortfolio = useMemo(
+    () =>
+      safeOverviewPortfolios.find((portfolio) => portfolio?.id === activePortfolioId) || {
+        id: activePortfolioId,
+      },
+    [activePortfolioId, safeOverviewPortfolios]
+  )
 
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
@@ -183,7 +191,8 @@ export function usePortfolioPanelsContextComposer({
     }
 
     return {
-      portfolioLabel: activePortfolioId === 'me' ? '主組合' : `組合 ${activePortfolioId}`,
+      portfolio: activePortfolio,
+      portfolioLabel: displayPortfolioName(activePortfolio),
       holdingsCount: safeHoldings.length,
       pendingCount,
       attentionCount,
@@ -214,7 +223,7 @@ export function usePortfolioPanelsContextComposer({
         : null,
     }
   }, [
-    activePortfolioId,
+    activePortfolio,
     attentionCount,
     dashboardHeadline,
     safeDataRefreshRows,

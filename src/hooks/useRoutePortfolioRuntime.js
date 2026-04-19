@@ -59,6 +59,7 @@ import {
   savePortfolioData,
   readStorageValue,
 } from '../lib/portfolioUtils.js'
+import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import {
   normalizeAnalysisHistoryEntries,
   normalizeAnalystReportsStore,
@@ -577,9 +578,12 @@ export function useRoutePortfolioRuntime() {
     refreshing,
     reloadRuntime,
   ])
+  const activePortfolio = portfolios.find((portfolio) => portfolio.id === routePortfolioId) || {
+    id: routePortfolioId,
+  }
+  const activePortfolioName = displayPortfolioName(activePortfolio)
 
   const copyWeeklyReport = useCallback(async () => {
-    const activePortfolio = portfolios.find((portfolio) => portfolio.id === routePortfolioId)
     const totalValue = routeData.holdings.reduce((sum, item) => sum + (item.value || 0), 0)
     const totalCost = routeData.holdings.reduce(
       (sum, item) => sum + (Number(item.cost) || 0) * (Number(item.qty) || 0),
@@ -589,7 +593,7 @@ export function useRoutePortfolioRuntime() {
     const retPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
     const { todayAlertSummary } = buildHoldingAlertSummary(routeData.holdings)
     const text = buildClipboardReport({
-      portfolioName: activePortfolio?.name || routePortfolioId,
+      portfolioName: activePortfolioName,
       holdings: routeData.holdings,
       totalValue,
       totalPnl,
@@ -604,7 +608,7 @@ export function useRoutePortfolioRuntime() {
       console.error('copyWeeklyReport failed:', error)
       flashSaved('❌ 週報複製失敗')
     }
-  }, [flashSaved, portfolios, routePortfolioId, routeData.holdings])
+  }, [activePortfolioName, flashSaved, routeData.holdings])
 
   const exportLocalBackup = useCallback(() => {
     downloadJson(`portfolio-backup-${routePortfolioId}-${toSlashDate().replace(/\//g, '-')}.json`, {
@@ -701,7 +705,7 @@ export function useRoutePortfolioRuntime() {
     setPortfolioEditorState({
       isOpen: true,
       mode: 'rename',
-      name: portfolio.name || '',
+      name: displayPortfolioName(portfolio),
       targetId: portfolio.id,
       submitting: false,
     })
@@ -828,6 +832,7 @@ export function useRoutePortfolioRuntime() {
   const outletContext = useMemo(
     () => ({
       portfolioId: routePortfolioId,
+      portfolioName: activePortfolioName,
       ...routeData,
       todayTotalPnl,
       setHoldings,
@@ -882,6 +887,7 @@ export function useRoutePortfolioRuntime() {
     }),
     [
       routePortfolioId,
+      activePortfolioName,
       routeData,
       todayTotalPnl,
       analyzing,

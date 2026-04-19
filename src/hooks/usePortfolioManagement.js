@@ -20,6 +20,7 @@ import {
   clonePortfolioNotes,
   normalizeNewsEvents,
 } from '../utils.js'
+import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 
 /**
  * Read a value from localStorage
@@ -315,7 +316,7 @@ export const usePortfolioManagement = ({
           await switchPortfolio(nextPid)
         }
 
-        emitSaved(`✅ 已刪除組合「${current.name}」`)
+        emitSaved(`✅ 已刪除組合「${displayPortfolioName(current)}」`)
         return true
       } catch (err) {
         console.error('刪除組合失敗:', err)
@@ -348,7 +349,7 @@ export const usePortfolioManagement = ({
     setPortfolioEditorState({
       isOpen: true,
       mode: 'rename',
-      name: portfolio.name || '',
+      name: displayPortfolioName(portfolio),
       targetId: portfolio.id,
       submitting: false,
     })

@@ -400,7 +400,7 @@ describe('routes/page actions', () => {
       expect(JSON.parse(localStorage.getItem(PORTFOLIOS_KEY))).toEqual([
         expect.objectContaining({ id: OWNER_PORTFOLIO_ID, name: '我' }),
       ])
-      expect(screen.getByRole('combobox')).toHaveTextContent('我')
+      expect(screen.getByRole('combobox')).toHaveTextContent('小奎主要投資')
     },
     ROUTE_ACTION_TIMEOUT
   )

@@ -1,4 +1,5 @@
 import { createElement as h } from 'react'
+import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, MetricCard, StaleBadge } from '../common'
 import { STOCK_META } from '../../seedData.js'
@@ -270,7 +271,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
               h(
                 'div',
                 { style: { fontSize: 12, fontWeight: 600, color: C.text } },
-                portfolio.name,
+                displayPortfolioName(portfolio),
                 portfolio.id === 'me' &&
                   h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 6 } }, 'owner')
               ),
@@ -389,7 +390,7 @@ export function DuplicateHoldings({ holdings }) {
                     color: C.textSec,
                   },
                 },
-                `${portfolio.name} · ${portfolio.qty}股 · ${portfolio.pnl >= 0 ? '+' : ''}${Math.round(portfolio.pnl)}`
+                `${displayPortfolioName(portfolio)} · ${portfolio.qty}股 · ${portfolio.pnl >= 0 ? '+' : ''}${Math.round(portfolio.pnl)}`
               )
             )
           )
@@ -449,7 +450,7 @@ export function PendingItems({ items, onSwitch }) {
               h(
                 'div',
                 { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
-                `${item.portfolioName} · ${item.date || '未排日期'} · 預測${item.pred === 'up' ? '看漲' : item.pred === 'down' ? '看跌' : '中性'}`
+                `${displayPortfolioName({ displayName: item.portfolioName, id: item.portfolioId })} · ${item.date || '未排日期'} · 預測${item.pred === 'up' ? '看漲' : item.pred === 'down' ? '看跌' : '中性'}`
               ),
               item.predReason &&
                 h(

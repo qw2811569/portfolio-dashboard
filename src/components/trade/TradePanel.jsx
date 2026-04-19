@@ -202,7 +202,7 @@ export function UploadDropzone({
               ),
               h(
                 'span',
-                { style: { fontSize: 9, color: upload.parseErr ? C.up : C.textMute } },
+                { style: { fontSize: 9, color: upload.parseErr ? C.textSec : C.textMute } },
                 statusLabel
               ),
               h(
@@ -259,7 +259,7 @@ export function UploadDropzone({
             borderRadius: 10,
             padding: 12,
             fontSize: 12,
-            color: C.up,
+            color: C.text,
           },
         },
         parseErr
@@ -670,7 +670,7 @@ export function ParseResults({
                 style: {
                   marginTop: 6,
                   fontSize: 10,
-                  color: C.amber,
+                  color: C.textSec,
                   background: C.amberBg,
                   border: `1px solid ${alpha(C.amber, '20')}`,
                   borderRadius: 6,
@@ -697,7 +697,7 @@ export function ParseResults({
           },
           h(
             'div',
-            { style: { fontSize: 9, color: C.teal, fontWeight: 600, marginBottom: 4 } },
+            { style: { fontSize: 9, color: C.textSec, fontWeight: 600, marginBottom: 4 } },
             '偵測到目標價更新'
           ),
           parsed.targetPriceUpdates.map((u, i) =>
@@ -741,7 +741,7 @@ export function ParseResults({
       ),
       h(
         'div',
-        { style: { fontSize: 12, fontWeight: 500, color: C.blue, marginBottom: 8 } },
+        { style: { fontSize: 12, fontWeight: 500, color: C.textSec, marginBottom: 8 } },
         `Q${memoStep + 1}/${qs.length}. ${qs[memoStep]}`
       ),
       h('textarea', {

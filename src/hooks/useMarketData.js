@@ -342,8 +342,8 @@ export function useMarketData({
   const priceSyncStatusTone = useMemo(() => {
     if (!marketPriceSync) return C.textMute
     if (marketPriceSync.status === 'failed') return C.down
-    if (marketPriceSync.status === 'partial') return C.amber
-    if (marketPriceSync.status === 'success') return C.up
+    if (marketPriceSync.status === 'partial') return C.textSec
+    if (marketPriceSync.status === 'success') return C.textSec
     return C.textMute
   }, [marketPriceSync])
 

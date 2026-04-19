@@ -24,11 +24,11 @@ export function Card({ children, style = {}, highlighted = false, color = null, 
 export function MetricCard({ label, value, tone = 'default', style = {} }) {
   const toneColors = {
     default: C.text,
-    up: C.up,
+    up: C.text,
     down: C.down,
-    muted: C.textMute,
-    teal: C.teal,
-    amber: C.amber,
+    muted: C.textSec,
+    teal: C.text,
+    amber: C.text,
   }
 
   return h(
@@ -75,13 +75,18 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
 
 export function Badge({ children, color = 'default', size = 'sm', style = {} }) {
   const colors = {
-    default: { bg: C.card, text: C.textSec, border: C.border },
-    up: { bg: C.upBg, text: C.up, border: alpha(C.up, '20') },
+    default: { bg: C.card, text: C.textSec, border: C.border, dot: null },
+    up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, '20'), dot: C.up },
     down: { bg: C.downBg, text: C.down, border: alpha(C.down, '20') },
-    teal: { bg: alpha(C.teal, '15'), text: C.teal, border: alpha(C.teal, '25') },
-    amber: { bg: C.amberBg, text: C.amber, border: alpha(C.amber, '25') },
-    olive: { bg: C.oliveBg, text: C.olive, border: alpha(C.olive, '25') },
-    lavender: { bg: C.lavBg, text: C.lavender, border: alpha(C.lavender, '25') },
+    teal: { bg: alpha(C.teal, '15'), text: C.textSec, border: alpha(C.teal, '25'), dot: C.teal },
+    amber: { bg: C.amberBg, text: C.textSec, border: alpha(C.amber, '25'), dot: C.amber },
+    olive: { bg: C.oliveBg, text: C.textSec, border: alpha(C.olive, '25'), dot: C.olive },
+    lavender: {
+      bg: C.lavBg,
+      text: C.textSec,
+      border: alpha(C.lavender, '25'),
+      dot: C.lavender,
+    },
   }
 
   const sizes = {
@@ -111,6 +116,17 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
         ...style,
       },
     },
+    selectedColor.dot &&
+      h('span', {
+        'aria-hidden': 'true',
+        style: {
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: selectedColor.dot,
+          flexShrink: 0,
+        },
+      }),
     children
   )
 }
@@ -131,11 +147,11 @@ export function Button({
   const variants = {
     ghost: {
       default: { bg: C.card, text: C.textSec, border: C.border },
-      blue: { bg: C.cardBlue, text: C.teal, border: alpha(C.blue, A.strongLine) },
+      blue: { bg: C.cardBlue, text: C.textSec, border: alpha(C.blue, A.strongLine) },
       rose: { bg: C.cardRose, text: C.down, border: alpha(C.down, A.strongLine) },
-      amber: { bg: C.cardAmber, text: C.amber, border: alpha(C.amber, A.strongLine) },
-      olive: { bg: C.oliveBg, text: C.olive, border: alpha(C.olive, A.strongLine) },
-      up: { bg: C.upBg, text: C.up, border: alpha(C.up, A.strongLine) },
+      amber: { bg: C.cardAmber, text: C.textSec, border: alpha(C.amber, A.strongLine) },
+      olive: { bg: C.oliveBg, text: C.textSec, border: alpha(C.olive, A.strongLine) },
+      up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, A.strongLine) },
     },
     filled: {
       default: { bg: C.subtleElev, text: C.text, border: C.border },

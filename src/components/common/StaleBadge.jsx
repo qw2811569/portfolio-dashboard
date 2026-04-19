@@ -3,15 +3,17 @@ import { C, alpha } from '../../theme.js'
 
 const BADGE_META = {
   fresh: {
-    color: C.up,
+    color: C.textSec,
     background: C.upBg,
     border: alpha(C.up, '24'),
+    dot: C.up,
     title: '資料狀態良好',
   },
   stale: {
-    color: C.amber,
+    color: C.textSec,
     background: alpha(C.amber, '16'),
     border: alpha(C.amber, '28'),
+    dot: C.amber,
     title: '資料需要更新',
   },
   missing: {
@@ -24,6 +26,7 @@ const BADGE_META = {
     color: C.down,
     background: C.downBg,
     border: alpha(C.down, '28'),
+    dot: C.down,
     title: '資料同步失敗',
   },
 }
@@ -66,6 +69,7 @@ export function StaleBadge({
       style: {
         display: 'inline-flex',
         alignItems: 'center',
+        gap: 6,
         padding: '3px 8px',
         borderRadius: 999,
         border: `1px solid ${meta.border}`,
@@ -78,6 +82,17 @@ export function StaleBadge({
         ...style,
       },
     },
+    meta.dot &&
+      h('span', {
+        'aria-hidden': 'true',
+        style: {
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: meta.dot,
+          flexShrink: 0,
+        },
+      }),
     label || resolvedStatus
   )
 }

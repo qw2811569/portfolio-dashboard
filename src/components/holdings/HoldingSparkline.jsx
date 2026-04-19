@@ -34,7 +34,11 @@ export default function HoldingSparkline({ history = [], color = 'var(--up)' }) 
   const trend = getHoldingSparklineTrend(data)
 
   if (!trend) {
-    return h('span', { style: { fontSize: 10, color: 'var(--muted)' } }, '—')
+    return h(
+      'span',
+      { style: { fontSize: 10, color: 'var(--text-sec, var(--charcoal, #2f3232))' } },
+      '—'
+    )
   }
 
   return h(

@@ -163,10 +163,10 @@ function KpiCard({
   onAction = null,
 }) {
   const valueColor = {
-    up: 'var(--up)',
+    up: C.text,
     down: 'var(--down)',
-    warning: 'var(--warning)',
-    neutral: 'var(--muted)',
+    warning: C.textSec,
+    neutral: C.textSec,
   }[variant]
 
   return h(

@@ -24,7 +24,7 @@ const ghostBtn = {
   transition: 'all 0.18s ease',
 }
 
-const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
+const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
 
 function flattenPortfolioHoldings(portfolios = []) {
   return (Array.isArray(portfolios) ? portfolios : []).flatMap((portfolio) =>
@@ -99,7 +99,7 @@ export function OverviewHeader({
               {
                 style: {
                   fontSize: 14,
-                  color: 'var(--muted)',
+                  color: C.textSec,
                   fontFamily: 'var(--font-headline)',
                   letterSpacing: '0.08em',
                   marginBottom: 8,
@@ -146,7 +146,7 @@ export function OverviewHeader({
                 onClick: onExit,
                 style: {
                   background: C.cardBlue,
-                  color: C.blue,
+                  color: C.textSec,
                   border: `1px solid ${alpha(C.blue, '2a')}`,
                   ...ghostBtn,
                 },
@@ -192,7 +192,7 @@ export function OverviewHeader({
       h(
         Card,
         { style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.blue, '40')}` } },
-        h('div', { style: { ...lbl, color: C.blue, marginBottom: 4 } }, '全部總覽'),
+        h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '全部總覽'),
         h(
           'div',
           { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 } },
@@ -304,7 +304,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                   style: {
                     marginTop: 6,
                     background: C.cardBlue,
-                    color: C.blue,
+                    color: C.textSec,
                     border: `1px solid ${alpha(C.blue, '2a')}`,
                     ...ghostBtn,
                   },
@@ -464,7 +464,7 @@ export function PendingItems({ items, onSwitch }) {
                 onClick: () => onSwitch(item.portfolioId),
                 style: {
                   background: C.cardBlue,
-                  color: C.blue,
+                  color: C.textSec,
                   border: `1px solid ${alpha(C.blue, '2a')}`,
                   ...ghostBtn,
                 },

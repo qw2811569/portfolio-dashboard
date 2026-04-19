@@ -60,13 +60,13 @@ export function ToastContainer({ toasts, remove }) {
   const getTypeStyles = (type) => {
     switch (type) {
       case 'success':
-        return { bg: C.oliveBg, border: alpha(C.olive, '40'), color: C.olive }
+        return { bg: C.oliveBg, border: alpha(C.olive, '40'), color: C.textSec }
       case 'error':
-        return { bg: C.upBg, border: alpha(C.up, '40'), color: C.up }
+        return { bg: C.upBg, border: alpha(C.up, '40'), color: C.textSec }
       case 'warning':
-        return { bg: C.amberBg, border: alpha(C.amber, '40'), color: C.amber }
+        return { bg: C.amberBg, border: alpha(C.amber, '40'), color: C.textSec }
       default:
-        return { bg: C.blueBg, border: alpha(C.blue, '40'), color: C.blue }
+        return { bg: C.blueBg, border: alpha(C.blue, '40'), color: C.textSec }
     }
   }
 

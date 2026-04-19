@@ -169,8 +169,8 @@ export const C = Object.freeze({
 
   text: TOKENS.ink,
   textSec: TOKENS.charcoal,
-  textMute: TOKENS.iron,
-  textMuteFallback: TOKENS.muted,
+  textMute: alpha(TOKENS.charcoal, 'bf'),
+  textMuteFallback: alpha(TOKENS.charcoal, 'bf'),
 
   up: TOKENS.positive,
   upBg: alpha(TOKENS.positive, '12'),
@@ -225,8 +225,8 @@ export function applyThemeVars(target = DEFAULT_TARGET) {
   target.style.setProperty('--bone', TOKENS.bone)
   target.style.setProperty('--bone-soft', TOKENS.boneSoft)
   target.style.setProperty('--line', TOKENS.line)
-  target.style.setProperty('--muted', TOKENS.muted)
-  target.style.setProperty('--muted-fallback', TOKENS.muted)
+  target.style.setProperty('--muted', C.textMute)
+  target.style.setProperty('--muted-fallback', C.textMuteFallback)
   target.style.setProperty(LEGACY_ACCENT_VAR, TOKENS.positive)
   target.style.setProperty(LEGACY_ACCENT_SOFT_VAR, alpha(TOKENS.positive, '16'))
   target.style.setProperty('--up', TOKENS.positive)

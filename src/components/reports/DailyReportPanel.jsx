@@ -164,7 +164,11 @@ export function ReviewGateCard({
         borderLeft: `3px solid ${alpha(C.amber, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: C.amber } }, `待復盤事件 · ${pendingReviewItems.length}件`),
+    h(
+      'div',
+      { style: { ...lbl, color: C.textSec } },
+      `待復盤事件 · ${pendingReviewItems.length}件`
+    ),
     h(
       'div',
       { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } },
@@ -183,7 +187,7 @@ export function ReviewGateCard({
             borderRadius: 8,
             border: `1px solid ${alpha(C.olive, '2a')}`,
             background: alpha(C.olive, '12'),
-            color: C.olive,
+            color: C.textSec,
             fontSize: 11,
             fontWeight: 600,
             cursor: 'pointer',
@@ -249,7 +253,7 @@ export function AnalyzingState({ step }) {
       {
         style: {
           fontSize: 11,
-          color: C.blue,
+          color: C.textSec,
           fontWeight: 500,
           marginBottom: 12,
           minHeight: 16,
@@ -445,11 +449,7 @@ export function AnalysisStageCard({ report }) {
           marginBottom: 6,
         },
       },
-      h(
-        'div',
-        { style: { ...lbl, color: stageMeta.badgeColor === 'teal' ? C.teal : C.amber } },
-        '資料確認階段'
-      ),
+      h('div', { style: { ...lbl, color: C.textSec } }, '資料確認階段'),
       h(Badge, { color: stageMeta.badgeColor }, report.analysisStageLabel || '既有版本')
     ),
     h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, stageMeta.summary),
@@ -462,13 +462,13 @@ export function AnalysisStageCard({ report }) {
     report.rerunReason === 'finmind-confirmed' &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.teal, marginTop: 6 } },
+        { style: { fontSize: 9, color: C.textSec, marginTop: 6 } },
         '這份分析是由同日快版升級而來，已保留先前版本供追蹤。'
       ),
     report.rerunReason === 'finmind-auto-confirmed' &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.teal, marginTop: 6 } },
+        { style: { fontSize: 9, color: C.textSec, marginTop: 6 } },
         '系統在偵測到 FinMind 日終資料齊全後，已自動補跑並保留同日快版供比對。'
       )
   )
@@ -503,7 +503,7 @@ export function RitualModeCard({ report }) {
           marginBottom: 6,
         },
       },
-      h('div', { style: { ...lbl, color: C.olive } }, ritualMode?.label || '收盤後儀式模式'),
+      h('div', { style: { ...lbl, color: C.textSec } }, ritualMode?.label || '收盤後儀式模式'),
       h(Badge, { color: 'olive' }, card?.title || '明日動作卡')
     ),
     h(
@@ -581,7 +581,7 @@ export function WeeklyExportNarrativeCard({ report }) {
         borderLeft: `3px solid ${alpha(C.blue, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: C.blue } }, '週報匯出內容'),
+    h('div', { style: { ...lbl, color: C.textSec } }, '週報匯出內容'),
     h(
       'div',
       { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } },
@@ -687,7 +687,7 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
           borderRadius: 8,
           border: `1px solid ${alpha(C.blue, '24')}`,
           background: alpha(C.blue, '10'),
-          color: C.blue,
+          color: C.textSec,
           fontSize: 11,
           fontWeight: 600,
           cursor: 'pointer',
@@ -749,7 +749,7 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
                         background: alpha(C.blue, '10'),
                       },
                     },
-                    h('div', { style: { ...lbl, marginBottom: 4, color: C.blue } }, '目前版本'),
+                    h('div', { style: { ...lbl, marginBottom: 4, color: C.textSec } }, '目前版本'),
                     h(DiffValue, { value: change.current, format: change.format })
                   )
                 )
@@ -862,7 +862,7 @@ export function HoldingsChanges({ changes }) {
                   padding: '1px 5px',
                   borderRadius: 3,
                   background: C.amberBg,
-                  color: C.amber,
+                  color: C.textSec,
                 },
               },
               c.type
@@ -916,7 +916,7 @@ export function AnomaliesSection({ anomalies }) {
     {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.amber } }, `異常波動 (>3%)`),
+    h('div', { style: { ...lbl, color: C.textSec } }, `異常波動 (>3%)`),
     anomalies.map((a) =>
       h(
         'div',
@@ -948,7 +948,7 @@ export function EventCorrelations({ correlations }) {
     {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.teal } }, '事件連動分析'),
+    h('div', { style: { ...lbl, color: C.textSec } }, '事件連動分析'),
     correlations.map((ec) =>
       h(
         'div',
@@ -1000,7 +1000,7 @@ export function EventAssessments({
     {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.blue, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.blue } }, `AI 事件評估 · ${assessments.length}件`),
+    h('div', { style: { ...lbl, color: C.textSec } }, `AI 事件評估 · ${assessments.length}件`),
     assessments.map((ea, i) => {
       const impactColor =
         ea.todayImpact === 'positive' ? C.up : ea.todayImpact === 'negative' ? C.down : C.textMute
@@ -1056,7 +1056,7 @@ export function EventAssessments({
                     padding: '2px 6px',
                     borderRadius: 3,
                     background: C.amberBg,
-                    color: C.amber,
+                    color: C.textSec,
                     fontWeight: 600,
                   },
                 },
@@ -1078,7 +1078,7 @@ export function EventAssessments({
             h(
               'span',
               {
-                style: { fontSize: 9, color: C.amber },
+                style: { fontSize: 9, color: C.textSec },
               },
               ea.suggestCloseReason
             )
@@ -1102,7 +1102,7 @@ export function EventAssessments({
                 borderRadius: 5,
                 border: `1px solid ${alpha(C.olive, '2a')}`,
                 background: 'transparent',
-                color: C.olive,
+                color: C.textSec,
                 fontSize: 10,
                 cursor: 'pointer',
               },
@@ -1119,8 +1119,8 @@ export function EventAssessments({
  */
 export function BrainAuditSection({ brainAudit }) {
   const sections = [
-    { key: 'validatedRules', label: '今天仍成立', color: C.up },
-    { key: 'staleRules', label: '需要重看 / 證據還不夠', color: C.amber },
+    { key: 'validatedRules', label: '今天仍成立', color: C.textSec },
+    { key: 'staleRules', label: '需要重看 / 證據還不夠', color: C.textSec },
     { key: 'invalidatedRules', label: '今天被證偽', color: C.down },
   ]
 
@@ -1200,7 +1200,7 @@ export function BrainAuditSection({ brainAudit }) {
               h(
                 'div',
                 {
-                  style: { fontSize: 9, color: C.blue, marginTop: 3 },
+                  style: { fontSize: 9, color: C.textSec, marginTop: 3 },
                 },
                 `證據來源：${item.evidenceRefs
                   .slice(0, 3)
@@ -1225,7 +1225,7 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
     {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.up, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.up } }, `需要復盤 · ${needsReview.length}件`),
+    h('div', { style: { ...lbl, color: C.textSec } }, `需要復盤 · ${needsReview.length}件`),
     needsReview.map((e) =>
       h(
         'div',
@@ -1250,7 +1250,7 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
               borderRadius: 5,
               border: `1px solid ${alpha(C.olive, '2a')}`,
               background: 'transparent',
-              color: C.olive,
+              color: C.textSec,
               fontSize: 10,
               cursor: 'pointer',
             },
@@ -1326,7 +1326,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
               borderRadius: 5,
               border: `1px solid ${alpha(C.up, '30')}`,
               background: alpha(C.up, '10'),
-              color: C.up,
+              color: C.textSec,
               fontSize: 14,
               cursor: 'pointer',
               lineHeight: 1,
@@ -1403,7 +1403,7 @@ export function MorningNoteSection({ morningNote }) {
       },
       h(
         'div',
-        { style: { ...lbl, color: C.teal, marginBottom: 0 } },
+        { style: { ...lbl, color: C.textSec, marginBottom: 0 } },
         `每日交易備忘 — ${morningNote.date}`
       )
     ),
@@ -1459,7 +1459,7 @@ export function MorningNoteSection({ morningNote }) {
               ),
             h('span', null, e.title),
             e.relatedPillars?.length > 0 &&
-              h('span', { style: { fontSize: 9, color: C.teal } }, '投資主軸觀察點')
+              h('span', { style: { fontSize: 9, color: C.textSec } }, '投資主軸觀察點')
           )
         )
       ),
@@ -1494,7 +1494,7 @@ export function MorningNoteSection({ morningNote }) {
               s.conviction &&
                 h(
                   'span',
-                  { style: { fontSize: 9, color: C.blue, fontWeight: 600 } },
+                  { style: { fontSize: 9, color: C.textSec, fontWeight: 600 } },
                   s.conviction.toUpperCase()
                 )
             ),
@@ -1521,7 +1521,7 @@ export function MorningNoteSection({ morningNote }) {
         sections.watchlistAlerts.map((w) =>
           h(
             'div',
-            { key: w.code, style: { fontSize: 11, color: C.up, padding: '3px 0' } },
+            { key: w.code, style: { fontSize: 11, color: C.text, padding: '3px 0' } },
             `${w.name}(${w.code}) 接近進場價 ${w.entryPrice}（距離 ${w.distance >= 0 ? '+' : ''}${w.distance.toFixed(1)}%）`
           )
         )
@@ -1724,7 +1724,7 @@ export function DailyReportPanel({
               borderRadius: 8,
               border: `1px solid ${analyzing ? C.border : alpha(C.blue, '2a')}`,
               background: analyzing ? C.subtle : C.cardBlue,
-              color: analyzing ? C.textMute : C.blue,
+              color: analyzing ? C.textMute : C.textSec,
               fontSize: 11,
               fontWeight: 600,
               cursor: analyzing ? 'not-allowed' : 'pointer',
@@ -1753,7 +1753,7 @@ export function DailyReportPanel({
               borderRadius: 8,
               border: `1px solid ${alpha(C.teal, '2a')}`,
               background: alpha(C.teal, '12'),
-              color: C.teal,
+              color: C.textSec,
               fontSize: 11,
               fontWeight: 600,
               cursor: 'pointer',

@@ -66,7 +66,7 @@ export function GeminiResearchBrowser() {
   return h(
     Card,
     { style: { padding: '12px 14px' } },
-    h('div', { style: { ...lbl, color: C.teal, marginBottom: 10 } }, 'Gemini 研究報告'),
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 10 } }, 'Gemini 研究報告'),
     researchFiles.length === 0
       ? h('div', { style: { fontSize: 11, color: C.textSec } }, '暫無研究報告')
       : h(
@@ -164,7 +164,7 @@ function ResearchFileDetail({ file, onBack }) {
     h(Button, { onClick: onBack, children: '← 返回' }),
     h(
       'div',
-      { style: { ...lbl, color: C.teal, marginTop: 10, marginBottom: 8 } },
+      { style: { ...lbl, color: C.textSec, marginTop: 10, marginBottom: 8 } },
       file.displayName
     ),
     h(

@@ -37,6 +37,48 @@ describe('components/DashboardPanel', () => {
     expect(container.textContent).toContain('1,234')
   })
 
+  it('renders a soft-language headline and demoted reminder bell from dossier state', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              thesis: { pillars: [{ status: 'stable' }] },
+              freshness: { fundamentals: 'fresh' },
+              position: { price: 950 },
+              targetAggregate: { lowerBound: 800, upperBound: 1000 },
+            },
+            {
+              code: '2454',
+              name: '聯發科',
+              thesis: { pillars: [{ status: 'stable' }] },
+              freshness: { fundamentals: 'fresh' },
+              position: { price: 1460 },
+              targetAggregate: { lowerBound: 1200, upperBound: 1500 },
+            },
+          ],
+          dataRefreshRows: [
+            {
+              code: '2454',
+              name: '聯發科',
+              targetLabel: '最新目標價仍在補齊中',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('dashboard-headline')).toHaveTextContent('接近估值上緣')
+    expect(screen.getByTestId('dashboard-reminder-toggle')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('dashboard-reminder-toggle'))
+
+    expect(screen.getByTestId('dashboard-reminder-drawer')).toBeInTheDocument()
+    expect(screen.getByText('聯發科 (2454)')).toBeInTheDocument()
+  })
+
   it('surfaces the urgent alert summary when urgentCount is non-zero', () => {
     const { container } = render(
       <DashboardPanel

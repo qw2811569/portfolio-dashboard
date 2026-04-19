@@ -258,7 +258,7 @@ describe('components/AppPanels context wiring', () => {
             losers: [],
             top5: [],
             holdingsIntegrityIssues: [],
-            latestInsight: '今天先補齊資料，再做深度研究。',
+            latestInsight: '資料補齊中，研究結論會跟著更新。',
             operatingContext: {
               portfolioLabel: '主組合',
               holdingsCount: 0,
@@ -266,9 +266,12 @@ describe('components/AppPanels context wiring', () => {
               attentionCount: 1,
               activeEventCount: 3,
               refreshBacklogCount: 4,
-              nextActionLabel: '先補齊資料，再做深度研究',
+              refreshBacklogItems: [{ code: '6274', name: '台燿' }],
+              headline: '資料補齊中 · 研究結論會跟著更新',
+              headlineTone: 'watch',
+              nextActionLabel: '資料補齊中 · 研究結論會跟著更新',
               nextActionReason: '研究、事件與持倉都應共用同一份資料基線。',
-              latestInsightSummary: '今天先補齊資料，再做深度研究。',
+              latestInsightSummary: '資料補齊中，研究結論會跟著更新。',
               focus: {
                 code: '6274',
                 name: '台燿',
@@ -316,9 +319,9 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
-    expect(await screen.findByText('現在先看這裡')).toBeInTheDocument()
-    expect(await screen.findByText('先補齊資料，再做深度研究')).toBeInTheDocument()
-    expect(await screen.findByText('先盯這檔：台燿 (6274)')).toBeInTheDocument()
+    expect(await screen.findByText('今日狀態')).toBeInTheDocument()
+    expect(await screen.findByText('資料補齊中 · 研究結論會跟著更新')).toBeInTheDocument()
+    expect(await screen.findByText('台燿 (6274)')).toBeInTheDocument()
   })
 
   it('wires daily actions from portfolio panel actions context', async () => {
@@ -1150,27 +1153,18 @@ describe('components/AppPanels context wiring', () => {
 
     const holdingsPanel = screen.getByLabelText('holdings-runtime-panel')
     const researchPanel = screen.getByLabelText('research-runtime-panel')
+    const sharedSummary = '今天先延續收盤分析結論，再檢查研究假設是否一致。'
 
-    expect(
-      within(holdingsPanel).queryByText('先延續最近一次收盤分析的結論')
-    ).not.toBeInTheDocument()
-    expect(
-      within(researchPanel).queryAllByText('今天先延續收盤分析結論，再檢查研究假設是否一致。')
-    ).toHaveLength(0)
+    expect(within(holdingsPanel).queryAllByText(sharedSummary)).toHaveLength(0)
+    expect(within(researchPanel).queryAllByText(sharedSummary)).toHaveLength(0)
 
     fireEvent.click(await screen.findByText('開始今日收盤分析'))
 
     await waitFor(() => {
-      expect(within(holdingsPanel).getByText('先延續最近一次收盤分析的結論')).toBeInTheDocument()
-      expect(
-        within(holdingsPanel).getAllByText('今天先延續收盤分析結論，再檢查研究假設是否一致。')
-          .length
-      ).toBeGreaterThan(0)
+      expect(within(holdingsPanel).getByText('今日狀態')).toBeInTheDocument()
+      expect(within(holdingsPanel).getAllByText(sharedSummary).length).toBeGreaterThan(0)
       expect(within(researchPanel).getByText('先延續最近一次收盤分析的結論')).toBeInTheDocument()
-      expect(
-        within(researchPanel).getAllByText('今天先延續收盤分析結論，再檢查研究假設是否一致。')
-          .length
-      ).toBeGreaterThan(0)
+      expect(within(researchPanel).getAllByText(sharedSummary).length).toBeGreaterThan(0)
     })
   })
 
@@ -1218,7 +1212,7 @@ describe('components/AppPanels context wiring', () => {
               portfolioLabel: '主組合',
               holdingsCount: 1,
               refreshBacklogCount: 1,
-              nextActionLabel: '先補齊資料，再做深度研究',
+              nextActionLabel: '資料補齊中 · 研究結論會跟著更新',
               nextActionReason: '公開報告與財報資料仍需刷新。',
             },
           },

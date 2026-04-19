@@ -18,7 +18,7 @@ function truncate(text, max = 120) {
   return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized
 }
 
-export function OperatingContextCard({ context }) {
+export function OperatingContextCard({ context, variant = 'default' }) {
   if (!context) return null
 
   const {
@@ -31,6 +31,9 @@ export function OperatingContextCard({ context }) {
     autoReviewedCorrect = 0,
     autoReviewedWrong = 0,
     refreshBacklogCount = 0,
+    refreshBacklogItems = [],
+    headline = '',
+    headlineTone = 'calm',
     lastAnalysisLabel = '',
     latestInsightSummary = '',
     nextActionLabel = '',
@@ -49,6 +52,159 @@ export function OperatingContextCard({ context }) {
     refreshBacklogCount > 0
 
   if (!hasSummary) return null
+
+  if (variant === 'home') {
+    const headlineText = String(headline || nextActionLabel || '').trim() || '今日持倉 overview'
+    const supportingText = String(
+      latestInsightSummary || nextActionReason || focus?.summary || ''
+    ).trim()
+    const headlineColor =
+      headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
+
+    return h(
+      Card,
+      {
+        style: {
+          marginBottom: 10,
+          background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
+          border: `1px solid ${C.border}`,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 10,
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 10,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            { style: { flex: 1, minWidth: 220 } },
+            h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '今日狀態'),
+            h(
+              'div',
+              {
+                'data-testid': 'holdings-home-headline',
+                style: {
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: headlineColor,
+                  lineHeight: 1.3,
+                  fontFamily: 'var(--font-headline)',
+                  letterSpacing: '-0.01em',
+                },
+              },
+              headlineText
+            ),
+            supportingText &&
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 11,
+                    color: C.textSec,
+                    lineHeight: 1.7,
+                    marginTop: 6,
+                  },
+                },
+                truncate(supportingText, 140)
+              )
+          ),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+              },
+            },
+            portfolioLabel && h(Badge, { color: 'teal' }, portfolioLabel),
+            holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
+            activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
+            pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
+            attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
+            autoReviewedCount > 0 &&
+              h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
+          )
+        ),
+        focus &&
+          h(
+            'div',
+            {
+              style: {
+                padding: '8px 10px',
+                borderRadius: 10,
+                background: C.subtle,
+                border: `1px solid ${C.borderSub}`,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                },
+              },
+              h(
+                'div',
+                { style: { fontSize: 11, color: C.text, fontWeight: 600 } },
+                `${focus.name} (${focus.code})`
+              ),
+              focus.upsideLabel &&
+                h(
+                  'span',
+                  {
+                    style: {
+                      fontSize: 10,
+                      color: C.textSec,
+                      fontWeight: 600,
+                    },
+                  },
+                  focus.upsideLabel
+                )
+            ),
+            focus.summary &&
+              h(
+                'div',
+                { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                truncate(focus.summary, 96)
+              )
+          ),
+        refreshBacklogCount > 0 &&
+          Array.isArray(refreshBacklogItems) &&
+          refreshBacklogItems.length > 0 &&
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 10,
+                color: C.textMute,
+                lineHeight: 1.7,
+              },
+            },
+            `目前有 ${refreshBacklogCount} 檔資料還在補齊中，右上角鈴鐺可以查看明細。`
+          )
+      )
+    )
+  }
 
   return h(
     Card,

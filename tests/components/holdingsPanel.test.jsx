@@ -57,6 +57,27 @@ describe('components/HoldingsPanel', () => {
     expect(container.textContent).toContain('9,876')
   })
 
+  it('renders the home headline variant without the old command card label', () => {
+    render(
+      <HoldingsPanel
+        {...buildProps({
+          operatingContext: {
+            portfolioLabel: '我的組合',
+            holdingsCount: 4,
+            refreshBacklogCount: 1,
+            refreshBacklogItems: [{ code: '2330', name: '台積電' }],
+            headline: '3 檔論述仍穩 · 1 檔接近估值上緣',
+            headlineTone: 'watch',
+            latestInsightSummary: '目前估值仍在追蹤區間，財報更新後會更完整。',
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('holdings-home-headline')).toHaveTextContent('接近估值上緣')
+    expect(screen.queryByText('現在先看這裡')).not.toBeInTheDocument()
+  })
+
   it('renders tracked-stocks sync badge when local sync state exists', () => {
     Object.defineProperty(globalThis, 'localStorage', {
       value: {

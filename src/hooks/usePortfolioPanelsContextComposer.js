@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 
 const EMPTY_LIST = []
@@ -134,6 +135,14 @@ export function usePortfolioPanelsContextComposer({
     return nextStatus
   }, [safeHoldingDossiers])
 
+  const dashboardHeadline = useMemo(
+    () =>
+      buildDashboardHeadline(safeHoldingDossiers, {
+        viewMode: activePortfolioId === 'me' ? 'retail' : 'insider-compressed',
+      }),
+    [activePortfolioId, safeHoldingDossiers]
+  )
+
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
     const trackingEventCount = safeNewsEvents.filter((event) => event?.status === 'tracking').length
@@ -146,12 +155,12 @@ export function usePortfolioPanelsContextComposer({
     const focusSummary = watchlistFocus?.summary || watchlistFocus?.action || ''
     const hasInsight = Boolean(latestInsight)
 
-    let nextActionLabel = '先從持倉健檢與待處理事件開始'
-    let nextActionReason = '先看目前持股、觀察名單與事件清單是否指向同一條主線。'
+    let nextActionLabel = '持倉健檢與待處理事件都整理在這裡'
+    let nextActionReason = '目前持股、觀察名單與事件清單可以一起對照主線。'
 
     if (refreshBacklogCount > 0) {
-      nextActionLabel = '先補齊資料，再做深度研究'
-      nextActionReason = `目前還有 ${refreshBacklogCount} 檔缺少最新目標價或財報資料，先補資料才能避免研究與事件判斷各說各話。`
+      nextActionLabel = '資料補齊中 · 研究結論會跟著更新'
+      nextActionReason = `目前還有 ${refreshBacklogCount} 檔缺少最新目標價或財報資料。資料到位後，研究與事件判讀會更一致。`
     } else if (
       autoReviewedEvents.length > 0 &&
       pendingEventCount === 0 &&
@@ -182,6 +191,9 @@ export function usePortfolioPanelsContextComposer({
       autoReviewedCorrect,
       autoReviewedWrong,
       refreshBacklogCount,
+      refreshBacklogItems: safeDataRefreshRows,
+      headline: dashboardHeadline.headline,
+      headlineTone: dashboardHeadline.tone,
       lastAnalysisLabel: dailyReport?.date
         ? [dailyReport.date, dailyReport.time].filter(Boolean).join(' ')
         : '',
@@ -203,6 +215,7 @@ export function usePortfolioPanelsContextComposer({
   }, [
     activePortfolioId,
     attentionCount,
+    dashboardHeadline,
     safeDataRefreshRows,
     dailyReport,
     safeHoldings.length,

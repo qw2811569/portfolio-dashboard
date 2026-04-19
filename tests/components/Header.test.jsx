@@ -40,7 +40,10 @@ function buildProps(overrides = {}) {
     OVERVIEW_VIEW_MODE: 'overview',
     urgentCount: 0,
     todayAlertSummary: '',
-    TABS: [{ k: 'holdings', label: '持倉' }, { k: 'research', label: '深度研究' }],
+    TABS: [
+      { k: 'holdings', label: '持倉' },
+      { k: 'research', label: '深度研究' },
+    ],
     tab: 'holdings',
     setTab: vi.fn(),
     workflowCue: null,
@@ -58,9 +61,10 @@ describe('components/Header.jsx', () => {
     })
   })
 
-  it('renders a workflow cue and only navigates through setTab', () => {
+  it('renders a data-refresh notice toggle and only navigates through setTab', () => {
     const setTab = vi.fn()
     const refreshPrices = vi.fn()
+    const onRefresh = vi.fn()
 
     render(
       <Header
@@ -68,28 +72,38 @@ describe('components/Header.jsx', () => {
           setTab,
           refreshPrices,
           workflowCue: {
-            label: '先補齊資料，再做深度研究',
+            kind: 'data-refresh',
+            label: '資料補齊中',
             reason: '公開報告與財報資料仍需刷新。',
+            count: 1,
+            items: [{ code: '2330', name: '台積電', targetLabel: '最新目標價仍在更新中' }],
             targetTab: 'research',
             actionLabel: '前往補資料',
+            onRefresh,
           },
         })}
       />
     )
 
-    expect(screen.getByText('WORKFLOW CUE')).toBeInTheDocument()
-    expect(screen.getByText('先補齊資料，再做深度研究')).toBeInTheDocument()
+    expect(screen.queryByTestId('header-notice-drawer')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('header-notice-toggle'))
+
+    expect(screen.getByTestId('header-notice-drawer')).toBeInTheDocument()
+    expect(screen.getByText('資料補齊提醒')).toBeInTheDocument()
+    expect(screen.getByText('台積電 (2330)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('前往補資料'))
 
     expect(setTab).toHaveBeenCalledWith('research')
     expect(window.scrollTo).toHaveBeenCalled()
     expect(refreshPrices).not.toHaveBeenCalled()
+    expect(onRefresh).not.toHaveBeenCalled()
   })
 
   it('omits the workflow cue when none is provided', () => {
     render(<Header {...buildProps()} />)
 
-    expect(screen.queryByText('WORKFLOW CUE')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('header-notice-toggle')).not.toBeInTheDocument()
   })
 })

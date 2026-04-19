@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { APP_LABELS } from '../lib/appMessages.js'
 import { filterEventsByType, resolveRuntimeNewsEvents } from '../lib/appShellRuntime.js'
 import { useAppDailyAnalysisRuntime } from './useAppDailyAnalysisRuntime.js'
@@ -142,7 +143,7 @@ export function useAppRuntimeWorkflows({
     setExpandedNews,
   } = setters
 
-  const { defaultNewsEvents, researchResults, stockMeta, indColor } = resources
+  const { defaultNewsEvents, researchResults, stockMeta, indColor, theses = [] } = resources
   const { flashSaved, requestAppConfirmation } = runtime
   const {
     priceSelfHealRef,
@@ -232,6 +233,21 @@ export function useAppRuntimeWorkflows({
     filterType,
     allFilterLabel: APP_LABELS.allFilter,
   }).filter((event) => catalystFilter === '全部' || event.catalystType === catalystFilter)
+
+  const panelHoldingDossiers = useMemo(() => {
+    const thesisByCode = new Map(
+      (Array.isArray(theses) ? theses : [])
+        .filter((thesis) => thesis?.stockId)
+        .map((thesis) => [String(thesis.stockId), thesis])
+    )
+    return Array.from(dossierByCode.values()).map((dossier) => ({
+      ...dossier,
+      thesis:
+        dossier?.thesis && typeof dossier.thesis === 'object'
+          ? dossier.thesis
+          : thesisByCode.get(String(dossier.code)) || null,
+    }))
+  }, [dossierByCode, theses])
 
   const { runDailyAnalysis, maybeAutoConfirmDailyReport } = useAppDailyAnalysisRuntime(
     {
@@ -409,6 +425,7 @@ export function useAppRuntimeWorkflows({
       overviewDuplicateHoldings,
       overviewPendingItems,
       holdings,
+      holdingDossiers: panelHoldingDossiers,
       totalVal,
       totalCost,
       todayTotalPnl,

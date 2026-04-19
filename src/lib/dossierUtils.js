@@ -433,10 +433,16 @@ export function buildHoldingDossiers(input, options = {}) {
     analystReports = {},
     newsEvents = [],
     researchHistory = [],
+    theses = [],
     stockMeta = {},
   } = config
 
   const rows = Array.isArray(holdings) ? holdings : []
+  const thesisByCode = new Map(
+    (Array.isArray(theses) ? theses : [])
+      .filter((thesis) => thesis?.stockId)
+      .map((thesis) => [String(thesis.stockId), thesis])
+  )
   const now = new Date()
   return rows
     .map((holding) => {
@@ -458,6 +464,7 @@ export function buildHoldingDossiers(input, options = {}) {
         code: holding.code,
         name: holding.name,
         position: holding,
+        thesis: thesisByCode.get(String(holding.code)) || null,
         targets: targetReports,
         fundamentals: fundamentalsEntry,
         analystReports: analystReports[holding.code]?.items || [],

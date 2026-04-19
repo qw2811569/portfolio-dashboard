@@ -280,6 +280,7 @@ export function useAppRuntime() {
       targets,
       fundamentals,
       analystReports,
+      theses,
       newsEvents,
       researchHistory,
       strategyBrain,

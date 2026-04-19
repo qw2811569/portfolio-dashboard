@@ -301,6 +301,29 @@ describe('dossierUtils - buildHoldingDossiers', () => {
   })
 
   describe('other dossier fields', () => {
+    it('should attach theses to dossiers by stock code', () => {
+      const dossiers = buildHoldingDossiers({
+        holdings: mockHoldings,
+        theses: [
+          {
+            id: 'thesis-2330',
+            stockId: '2330',
+            statement: '先進製程與 AI 需求持續推升獲利。',
+            pillars: [{ id: 'p-1', text: 'CoWoS 持續擴產', status: 'on_track' }],
+          },
+        ],
+      })
+
+      const tsmc = dossiers.find((d) => d.code === '2330')
+      const quanta = dossiers.find((d) => d.code === '2382')
+
+      expect(tsmc.thesis).toMatchObject({
+        stockId: '2330',
+        statement: '先進製程與 AI 需求持續推升獲利。',
+      })
+      expect(quanta.thesis).toBeNull()
+    })
+
     it('should attach targets to dossiers', () => {
       const mockTargets = {
         2330: { reports: [{ firm: '高盛', target: 700 }] },

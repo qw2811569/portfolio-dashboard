@@ -16,6 +16,7 @@ export function composePortfolioDerivedDataInput({ data, helperFns, constants })
     targets: data.targets,
     fundamentals: data.fundamentals,
     analystReports: data.analystReports,
+    theses: data.theses,
     newsEvents: data.newsEvents,
     researchHistory: data.researchHistory,
     strategyBrain: data.strategyBrain,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { API_ENDPOINTS } from '../constants.js'
+import { normalizeDataError } from '../lib/dataError.js'
 import {
   TRACKED_STOCKS_SYNC_DEBOUNCE_MS,
   collectTrackedStocksFromHoldings,
@@ -47,7 +48,11 @@ export function useTrackedStocksSync({
           const payload = await response.json().catch(() => ({}))
 
           if (!response.ok) {
-            throw new Error(payload?.error || `tracked stocks sync failed (${response.status})`)
+            const error = new Error(
+              payload?.error || `tracked stocks sync failed (${response.status})`
+            )
+            error.status = response.status
+            throw error
           }
 
           const nextState = writeTrackedStocksSyncState(portfolioId, {
@@ -64,6 +69,7 @@ export function useTrackedStocksSync({
           if (typeof onStateChange === 'function') onStateChange(nextState)
         } catch (error) {
           if (error?.name === 'AbortError') return
+          const normalizedError = normalizeDataError(error, { resource: 'tracked-stocks' })
 
           const nextState = writeTrackedStocksSyncState(portfolioId, {
             ...previousState,
@@ -73,7 +79,8 @@ export function useTrackedStocksSync({
             lastSyncedAt: previousState?.lastSyncedAt || null,
             totalTracked: Math.max(Number(previousState?.totalTracked) || 0, trackedStocks.length),
             source: previousState?.source || 'live-sync',
-            lastError: error?.message || 'tracked stocks sync failed',
+            lastError: normalizedError?.message || 'tracked stocks sync failed',
+            errorStatus: normalizedError?.status || null,
           })
 
           if (typeof onStateChange === 'function') onStateChange(nextState)

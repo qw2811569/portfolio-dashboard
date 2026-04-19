@@ -137,6 +137,7 @@ describe('hooks/useTrackedStocksSync', () => {
       lastSyncedAt: '2026-04-18T06:00:00.000Z',
       source: 'live-sync',
       lastError: 'network down',
+      errorStatus: '5xx',
     })
     expect(syncState.lastAttemptAt).toBeTruthy()
   })

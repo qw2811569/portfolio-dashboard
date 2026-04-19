@@ -172,7 +172,10 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/preview fallback：network error/)).toBeInTheDocument()
+      expect(screen.getByText('服務暫時不穩 · 正在重試')).toBeInTheDocument()
+      expect(
+        screen.getByText('新聞源暫時打不開，以下先用 preview fallback 撐住畫面。')
+      ).toBeInTheDocument()
     })
   })
 

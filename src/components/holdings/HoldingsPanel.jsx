@@ -2,7 +2,7 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
-import { Card, OperatingContextCard } from '../common'
+import { Card, DataError, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import Md from '../Md.jsx'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
@@ -122,10 +122,10 @@ export function HoldingsIntegrityWarning({ issues }) {
 }
 
 function TrackedStocksSyncBadge({ portfolioId = '' }) {
-  const { badge } = useTrackedStocksSyncStatus(portfolioId)
-  if (!badge) return null
+  const { badge, syncState } = useTrackedStocksSyncStatus(portfolioId)
+  if (!badge && syncState?.status !== 'failed') return null
 
-  const tone = trackedSyncTone[badge.status] || trackedSyncTone.missing
+  const tone = trackedSyncTone[badge?.status] || trackedSyncTone.missing
 
   return h(
     'div',
@@ -138,28 +138,45 @@ function TrackedStocksSyncBadge({ portfolioId = '' }) {
         marginTop: 6,
       },
     },
-    h(
-      'span',
-      {
-        'data-testid': 'tracked-stocks-sync-badge',
-        title: badge.title,
-        style: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          borderRadius: 999,
-          padding: '4px 9px',
-          fontSize: 10,
-          lineHeight: 1.2,
-          fontWeight: 700,
-          letterSpacing: '0.01em',
-          border: `1px solid ${tone.border}`,
-          background: tone.background,
-          color: tone.color,
+    syncState?.status === 'failed' &&
+      h(DataError, {
+        status: syncState?.errorStatus || 401,
+        resource: 'tracked-stocks',
+        retryBehavior: 'manual',
+        onRetry: () => {
+          if (typeof window !== 'undefined') window.location.reload()
         },
-      },
-      badge.label
-    )
+        style: { width: '100%' },
+      }),
+    badge &&
+      h(
+        'span',
+        {
+          'data-testid': 'tracked-stocks-sync-badge',
+          title: badge.title,
+          style: {
+            display: 'inline-flex',
+            alignItems: 'center',
+            borderRadius: 999,
+            padding: '4px 9px',
+            fontSize: 10,
+            lineHeight: 1.2,
+            fontWeight: 700,
+            letterSpacing: '0.01em',
+            border: `1px solid ${tone.border}`,
+            background: tone.background,
+            color: tone.color,
+          },
+        },
+        badge.label
+      )
   )
+}
+
+function getHoldingTargetError(holdingDossiers = []) {
+  return (Array.isArray(holdingDossiers) ? holdingDossiers : []).find(
+    (dossier) => dossier?.targetFetchError?.status
+  )?.targetFetchError
 }
 
 /**
@@ -499,6 +516,7 @@ function DailyInsightCard({ latestInsight }) {
 export function HoldingsPanel({
   activePortfolioId = '',
   holdings = [],
+  holdingDossiers = [],
   totalVal = 0,
   totalCost = 0,
   todayTotalPnl = 0,
@@ -513,10 +531,22 @@ export function HoldingsPanel({
   operatingContext = null,
   children,
 }) {
+  const targetFetchError = getHoldingTargetError(holdingDossiers)
+
   return h(
     'div',
     { 'data-testid': 'holdings-panel' },
     h(OperatingContextCard, { context: operatingContext, variant: 'home' }),
+    targetFetchError &&
+      h(DataError, {
+        status: targetFetchError.status,
+        resource: 'target-prices',
+        retryBehavior: 'manual',
+        onRetry: () => {
+          if (typeof window !== 'undefined') window.location.reload()
+        },
+        style: { marginBottom: 8 },
+      }),
     h(
       'div',
       {

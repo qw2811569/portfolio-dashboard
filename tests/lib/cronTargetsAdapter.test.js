@@ -77,14 +77,15 @@ describe('cronTargetsAdapter', () => {
       expect(globalThis.fetch).toHaveBeenCalledWith('/api/target-prices?code=2330')
     })
 
-    it('returns null on non-200 response', async () => {
+    it('throws on non-200 response so callers can surface the status', async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
       })
 
-      const result = await fetchCronTargets('9999')
-      expect(result).toBeNull()
+      await expect(fetchCronTargets('9999')).rejects.toMatchObject({
+        status: 404,
+      })
     })
 
     it('returns null when snapshot has no reports', async () => {

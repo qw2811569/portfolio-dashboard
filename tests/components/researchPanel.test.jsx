@@ -11,6 +11,7 @@ function buildProps(overrides = {}) {
     researchTarget: '',
     reportRefreshing: false,
     reportRefreshStatus: '',
+    reportRefreshMeta: {},
     dataRefreshRows: [],
     researchResults: null,
     researchHistory: [],
@@ -218,5 +219,26 @@ describe('components/ResearchPanel', () => {
     expect(container.textContent).toContain('營收季節性')
     expect(container.textContent).toContain('台泥 · 1101')
     expect(container.textContent).toContain('資料尚未取得')
+  })
+
+  it('renders visible analyst-report error state when refresh failed with auth error', () => {
+    const { container } = render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          reportRefreshMeta: {
+            2330: {
+              lastStatus: 'failed',
+              errorStatus: 401,
+              lastMessage: 'Unauthorized',
+            },
+          },
+        })}
+      />
+    )
+
+    expect(container.querySelector('[data-error="analyst-reports"]')).toBeTruthy()
+    expect(container.textContent).toContain('此帳號暫無分析師報告存取權限')
+    expect(container.textContent).toContain('這輪卡在 台積電 (2330)')
   })
 })

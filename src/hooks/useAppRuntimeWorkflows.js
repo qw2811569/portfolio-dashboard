@@ -426,6 +426,7 @@ export function useAppRuntimeWorkflows({
       dailyReport,
       newsEvents,
       strategyBrain,
+      reportRefreshMeta,
       dataRefreshRows,
       researchHistory,
       tradeLog,

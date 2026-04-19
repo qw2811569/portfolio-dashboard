@@ -99,4 +99,49 @@ describe('components/HoldingsPanel', () => {
     render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
     expect(screen.getByTestId('tracked-stocks-sync-badge')).toHaveTextContent('last-synced')
   })
+
+  it('renders target-price data error when dossier carries a target fetch failure', () => {
+    const { container } = render(
+      <HoldingsPanel
+        {...buildProps({
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              targetFetchError: { status: 404, message: 'no target snapshot' },
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(container.querySelector('[data-error="target-prices"]')).toBeTruthy()
+    expect(container.textContent).toContain('無券商目標價')
+  })
+
+  it('renders tracked-stocks auth error state when the latest sync failed', () => {
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: {
+        getItem(key) {
+          if (key !== 'pf-me-tracked-sync-v1') return null
+          return JSON.stringify({
+            portfolioId: 'me',
+            status: 'failed',
+            lastAttemptAt: '2026-04-19T06:00:00.000Z',
+            lastSyncedAt: '2026-04-18T06:00:00.000Z',
+            totalTracked: 2,
+            source: 'live-sync',
+            lastError: 'Unauthorized',
+            errorStatus: 401,
+          })
+        },
+        setItem() {},
+      },
+      configurable: true,
+    })
+
+    const { container } = render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
+    expect(container.querySelector('[data-error="tracked-stocks"]')).toBeTruthy()
+    expect(container.textContent).toContain('登入狀態已過期')
+  })
 })

@@ -65,6 +65,7 @@ export function useRouteHoldingsPage() {
       panelProps: {
         activePortfolioId: portfolioId,
         holdings,
+        holdingDossiers,
         totalVal,
         totalCost,
         todayTotalPnl,

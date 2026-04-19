@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { SoftMessage, StaleBadge } from '../common/index.js'
+import { DataError, SoftMessage, StaleBadge } from '../common/index.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
+import { normalizeDataError } from '../../lib/dataError.js'
 
 const valuationCache = new Map()
 
@@ -174,11 +175,13 @@ function useHoldingValuation(code) {
       cache: 'no-store',
     })
       .then(async (response) => {
-        if (response.status === 304 || response.status === 404) {
+        if (response.status === 304) {
           return { status: 'pending', data: null, error: null }
         }
         if (!response.ok) {
-          throw new Error(`valuation fetch failed (${response.status})`)
+          const error = new Error(`valuation fetch failed (${response.status})`)
+          error.status = response.status
+          throw error
         }
 
         const payload = await response.json()
@@ -514,9 +517,28 @@ function ValuationCard({ holding, dossier }) {
 }
 
 function TargetCard({ holding, dossier }) {
+  const targetFetchError = normalizeDataError(dossier?.targetFetchError, {
+    resource: 'target-prices',
+  })
   const target = buildTargetSnapshot(dossier)
   const currentPrice = getCurrentPrice(holding, dossier)
   const isEmerging = String(dossier?.stockMeta?.market || '').trim() === '興櫃'
+
+  if (targetFetchError?.status) {
+    return (
+      <div style={panelCard}>
+        <div style={eyebrow}>目標與空間</div>
+        <DataError
+          status={targetFetchError.status}
+          resource="target-prices"
+          retryBehavior="manual"
+          onRetry={() => {
+            if (typeof window !== 'undefined') window.location.reload()
+          }}
+        />
+      </div>
+    )
+  }
 
   if (!target || target.target == null) {
     return (

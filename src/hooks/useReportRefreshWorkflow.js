@@ -13,6 +13,7 @@ import {
   mergeAnalystReportBatchStore,
   mergeReportRefreshMetaStore,
 } from '../lib/reportRefreshRuntime.js'
+import { normalizeDataError } from '../lib/dataError.js'
 import { fetchJsonWithTimeout } from '../lib/utils.js'
 
 export function useReportRefreshWorkflow({
@@ -211,6 +212,7 @@ export function useReportRefreshWorkflow({
               })
             )
           } catch (error) {
+            const normalizedError = normalizeDataError(error, { resource: 'analyst-reports' })
             console.error(`公開報告刷新失敗 (${holding.code}):`, error)
             checkedCodes.push(holding.code)
             setReportRefreshMeta((prev) =>
@@ -219,7 +221,8 @@ export function useReportRefreshWorkflow({
                 todayRefreshKey,
                 fetchedAt: checkedAt,
                 changed: false,
-                errorMessage: error?.message || APP_STATUS_MESSAGES.reportRefreshFailed,
+                errorMessage: normalizedError?.message || APP_STATUS_MESSAGES.reportRefreshFailed,
+                errorStatus: normalizedError?.status || null,
               })
             )
           }

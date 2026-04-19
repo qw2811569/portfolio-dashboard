@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { fetchCronTargets, isCronTargetUsable } from '../lib/dataAdapters/cronTargetsAdapter.js'
+import { normalizeDataError } from '../lib/dataError.js'
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
 import { mapFinMindToPerBandTargets } from '../lib/dataAdapters/finmindTargetsMapper.js'
 import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/dateUtils.js'
@@ -227,35 +228,42 @@ export function usePortfolioDerivedData({
     }
     Promise.allSettled(
       codesToEnrich.map(async (code) => {
-        try {
-          const underlying = underlyingByCode.get(code)
-          const fetchCode = underlying ? underlying.code : code
-          const [fm, cronSnapshot] = await Promise.all([
-            fetchStockDossierData(fetchCode),
-            fetchCronTargets(fetchCode).catch(() => null),
-          ])
-          return { code, fm, cronSnapshot, underlying: underlying || null }
-        } catch {
-          return {
-            code,
-            fm: null,
-            cronSnapshot: null,
-            underlying: underlyingByCode.get(code) || null,
-          }
+        const underlying = underlyingByCode.get(code)
+        const fetchCode = underlying ? underlying.code : code
+        const [fmResult, cronResult] = await Promise.allSettled([
+          fetchStockDossierData(fetchCode),
+          fetchCronTargets(fetchCode),
+        ])
+
+        return {
+          code,
+          fm: fmResult.status === 'fulfilled' ? fmResult.value : null,
+          cronSnapshot: cronResult.status === 'fulfilled' ? cronResult.value : null,
+          targetFetchError:
+            cronResult.status === 'rejected'
+              ? normalizeDataError(cronResult.reason, { resource: 'target-prices' })
+              : null,
+          underlying: underlying || null,
         }
       })
     ).then((results) => {
       if (cancelled) return
-      const fmMap = new Map(results.map((r) => [r.value.code, r.value.fm]))
-      const cronMap = new Map(results.map((r) => [r.value.code, r.value.cronSnapshot]))
-      const underlyingMap = new Map(results.map((r) => [r.value.code, r.value.underlying]))
+      const fulfilled = results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value)
+      const fmMap = new Map(fulfilled.map((item) => [item.code, item.fm]))
+      const cronMap = new Map(fulfilled.map((item) => [item.code, item.cronSnapshot]))
+      const targetErrorMap = new Map(fulfilled.map((item) => [item.code, item.targetFetchError]))
+      const underlyingMap = new Map(fulfilled.map((item) => [item.code, item.underlying]))
       const enriched = D.map((d) => {
         const fm = fmMap.get(d.code) || d.finmind
         const cronSnapshot = cronMap.get(d.code) || null
+        const targetFetchError = targetErrorMap.get(d.code) || null
         const underlying = underlyingMap.get(d.code) || null
         const next = {
           ...d,
           finmind: fm,
+          targetFetchError,
           ...(underlying
             ? { underlyingCode: underlying.code, underlyingName: underlying.name }
             : {}),
@@ -370,6 +378,7 @@ export function usePortfolioDerivedData({
         targets: enriched.targets ?? d.targets,
         targetAggregate: enriched.targetAggregate ?? d.targetAggregate,
         targetSource: enriched.targetSource ?? d.targetSource,
+        targetFetchError: enriched.targetFetchError ?? d.targetFetchError ?? null,
         freshness: enriched.freshness
           ? { ...(d.freshness || {}), ...enriched.freshness }
           : d.freshness,

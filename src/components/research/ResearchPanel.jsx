@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, DataSourceBadge, OperatingContextCard } from '../common'
+import { Card, Button, DataError, DataSourceBadge, OperatingContextCard } from '../common'
 import Md from '../Md.jsx'
 import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
@@ -25,6 +25,29 @@ function describeStatus(kind, status) {
   if (status === 'aging') return '財報資料有點舊了'
   if (status === 'stale') return '財報資料太久沒更新'
   return '還沒有財報資料'
+}
+
+function getReportRefreshError(holdings = [], reportRefreshMeta = {}) {
+  const statusWeight = {
+    401: 4,
+    '5xx': 3,
+    offline: 2,
+    404: 1,
+  }
+
+  return (Array.isArray(holdings) ? holdings : [])
+    .map((holding) => {
+      const meta = reportRefreshMeta?.[holding.code] || null
+      if (!meta || meta.lastStatus !== 'failed' || !meta.errorStatus) return null
+      return {
+        code: holding.code,
+        name: holding.name,
+        status: meta.errorStatus,
+        weight: statusWeight[String(meta.errorStatus)] || 0,
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.weight - a.weight || String(a.code).localeCompare(String(b.code)))[0]
 }
 
 function ViewModeNotice({ note }) {
@@ -1273,6 +1296,7 @@ export function ResearchPanel({
   researchTarget,
   reportRefreshing,
   reportRefreshStatus,
+  reportRefreshMeta = {},
   dataRefreshRows,
   researchResults,
   researchHistory,
@@ -1293,6 +1317,7 @@ export function ResearchPanel({
   onSelectHistory,
 }) {
   const complianceNote = getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel)
+  const reportRefreshError = getReportRefreshError(holdings, reportRefreshMeta)
 
   return h(
     'div',
@@ -1307,6 +1332,24 @@ export function ResearchPanel({
       reportRefreshing,
       reportRefreshStatus,
     }),
+    reportRefreshError &&
+      h(
+        Card,
+        {
+          style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
+        },
+        h(DataError, {
+          status: reportRefreshError.status,
+          resource: 'analyst-reports',
+          retryBehavior: 'manual',
+          onRetry: onRefresh,
+        }),
+        h(
+          'div',
+          { style: { fontSize: 9, color: C.textMute, marginTop: 8, lineHeight: 1.6 } },
+          `這輪卡在 ${reportRefreshError.name} (${reportRefreshError.code})`
+        )
+      ),
     h(StockResearchButtons, {
       holdings,
       onResearch,

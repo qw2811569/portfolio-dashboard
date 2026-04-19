@@ -203,6 +203,10 @@ export function normalizeReportRefreshMeta(value) {
       lastChangedAt: String(entry.lastChangedAt || '').trim() || null,
       lastStatus: String(entry.lastStatus || '').trim() || 'idle',
       lastMessage: String(entry.lastMessage || '').trim() || '',
+      errorStatus:
+        entry?.errorStatus === 'offline' || entry?.errorStatus === '5xx'
+          ? entry.errorStatus
+          : Number(entry?.errorStatus) || null,
       lastHashes: Array.isArray(entry.lastHashes)
         ? entry.lastHashes.filter(Boolean).slice(0, 20)
         : [],

@@ -66,7 +66,7 @@ function buildDailyReport() {
 
 describe('components/DailyReportPanel viewMode', () => {
   it('hides per-stock daily rows in insider-compressed mode', () => {
-    render(
+    const { container } = render(
       <DailyReportPanel
         {...baseProps}
         viewMode="insider-compressed"
@@ -74,7 +74,13 @@ describe('components/DailyReportPanel viewMode', () => {
       />
     )
 
-    expect(screen.getByTestId('viewmode-compliance-note')).toBeInTheDocument()
+    const complianceNote = screen.getByTestId('viewmode-compliance-note')
+    const dailyPanel = container.querySelector('[data-testid="daily-panel"]')
+
+    expect(complianceNote).toBeInTheDocument()
+    expect(complianceNote).toHaveAttribute('role', 'top-banner')
+    expect(complianceNote).toHaveTextContent('這是合規壓縮版 · 僅保留組合層級觀察 · 不顯示個股細節')
+    expect(dailyPanel?.firstElementChild).toBe(complianceNote)
     expect(screen.getByTestId('aggregate-daily-summary')).toBeInTheDocument()
     expect(screen.queryByText('台積電')).not.toBeInTheDocument()
     expect(screen.queryByText('聯發科')).not.toBeInTheDocument()
@@ -82,6 +88,14 @@ describe('components/DailyReportPanel viewMode', () => {
 
   it('renders per-stock daily rows in owner mode', () => {
     render(<DailyReportPanel {...baseProps} viewMode="owner" dailyReport={buildDailyReport()} />)
+
+    expect(screen.getByText('台積電')).toBeInTheDocument()
+    expect(screen.getByText('聯發科')).toBeInTheDocument()
+    expect(screen.queryByTestId('viewmode-compliance-note')).not.toBeInTheDocument()
+  })
+
+  it('keeps retail mode free of compliance note banners', () => {
+    render(<DailyReportPanel {...baseProps} viewMode="retail" dailyReport={buildDailyReport()} />)
 
     expect(screen.getByText('台積電')).toBeInTheDocument()
     expect(screen.getByText('聯發科')).toBeInTheDocument()

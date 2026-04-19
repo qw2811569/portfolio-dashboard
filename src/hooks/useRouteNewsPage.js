@@ -14,6 +14,7 @@ function warnBlockedRouteWrite(actionName) {
 export function useRouteNewsPage() {
   const {
     portfolioId = 'me',
+    portfolioName = '',
     newsEvents = [],
     createDefaultReviewForm = createDefaultReviewFormFallback,
   } = usePortfolioRouteContext()
@@ -22,7 +23,12 @@ export function useRouteNewsPage() {
   const [reviewForm, setReviewForm] = useState(() => createDefaultReviewForm())
   const [expandedNews, setExpandedNews] = useState(() => new Set())
   const viewMode = resolveViewMode({
-    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    portfolio: {
+      id: portfolioId,
+      name: portfolioName,
+      displayName: portfolioName,
+      isOwner: portfolioId === 'me',
+    },
     currentUser: 'me',
   })
 
@@ -59,6 +65,7 @@ export function useRouteNewsPage() {
       createDefaultReviewForm,
       expandedNews,
       newsEvents,
+      portfolioName,
       reviewForm,
       reviewingEvent,
       submitReview,

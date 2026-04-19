@@ -160,10 +160,10 @@ export function Button({
   }
 
   const sizes = {
-    xs: { padding: '4px 9px', fontSize: 9 },
-    sm: { padding: '6px 12px', fontSize: 10 },
-    md: { padding: '8px 15px', fontSize: 11 },
-    lg: { padding: '10px 18px', fontSize: 12 },
+    xs: { padding: '8px 10px', fontSize: 9 },
+    sm: { padding: '10px 12px', fontSize: 10 },
+    md: { padding: '10px 16px', fontSize: 11 },
+    lg: { padding: '12px 18px', fontSize: 12 },
   }
 
   const selectedVariant = variants[variant]?.[color] || variants.ghost.default
@@ -176,10 +176,16 @@ export function Button({
       disabled,
       onClick,
       style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 44,
+        minHeight: 44,
         borderRadius: 999,
         fontWeight: 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
         whiteSpace: 'nowrap',
+        lineHeight: 1.2,
         transition: 'background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
         background: selectedVariant.bg,
         color: selectedVariant.text,

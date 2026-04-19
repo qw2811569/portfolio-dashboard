@@ -365,13 +365,14 @@ function NewsFeedCard({
           'button',
           {
             type: 'button',
+            className: 'ui-btn',
             onClick: () => onToggleRead(item),
             style: {
               border: `1px solid ${PAPER.line}`,
               background: isRead ? PAPER.grey : PAPER.paper,
               color: PAPER.muted,
               borderRadius: 999,
-              padding: '7px 12px',
+              padding: '10px 12px',
               fontSize: 11,
               cursor: 'pointer',
             },
@@ -707,6 +708,7 @@ export function NewsFeedSection({
                       {
                         key: option,
                         type: 'button',
+                        className: 'ui-btn',
                         onClick: () => setTickerFilter(option),
                         style: {
                           borderRadius: 999,
@@ -714,7 +716,7 @@ export function NewsFeedSection({
                           background:
                             tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
                           color: PAPER.ink,
-                          padding: '6px 10px',
+                          padding: '10px 12px',
                           fontSize: 11,
                           cursor: 'pointer',
                         },
@@ -766,13 +768,14 @@ export function NewsFeedSection({
                   {
                     key: option,
                     type: 'button',
+                    className: 'ui-btn',
                     onClick: () => setSourceFilter(option),
                     style: {
                       borderRadius: 999,
                       border: `1px solid ${sourceFilter === option ? alpha(PAPER.accent, '38') : PAPER.lineSoft}`,
                       background: sourceFilter === option ? alpha(PAPER.accent, '22') : PAPER.paper,
                       color: PAPER.ink,
-                      padding: '6px 10px',
+                      padding: '10px 12px',
                       fontSize: 11,
                       cursor: 'pointer',
                     },
@@ -799,13 +802,14 @@ export function NewsFeedSection({
                   {
                     key: option,
                     type: 'button',
+                    className: 'ui-btn',
                     onClick: () => setImpactFilter(option),
                     style: {
                       borderRadius: 999,
                       border: `1px solid ${impactFilter === option ? PAPER.line : PAPER.lineSoft}`,
                       background: impactFilter === option ? PAPER.sand : PAPER.paper,
                       color: PAPER.ink,
-                      padding: '6px 10px',
+                      padding: '10px 12px',
                       fontSize: 11,
                       cursor: 'pointer',
                     },

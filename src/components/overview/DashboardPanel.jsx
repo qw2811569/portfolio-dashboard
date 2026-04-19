@@ -873,6 +873,10 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                         }
                       : {}),
                     style: {
+                      display: item.link ? 'inline-flex' : 'block',
+                      alignItems: item.link ? 'center' : undefined,
+                      minHeight: item.link ? 44 : undefined,
+                      padding: item.link ? '6px 4px' : undefined,
                       fontSize: 11,
                       color: item.link ? C.blue : C.text,
                       fontWeight: 500,

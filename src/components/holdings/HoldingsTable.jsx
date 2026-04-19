@@ -95,10 +95,10 @@ export function HoldingRow({
         className: expanded ? 'holding-row holding-row-expanded' : 'holding-row',
         style: {
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 40px',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr 44px',
           gap: 8,
           alignItems: 'center',
-          padding: '10px 12px',
+          padding: '12px',
           background: expanded
             ? `linear-gradient(90deg, ${C.subtleElev}, ${C.card})`
             : `linear-gradient(90deg, ${C.card}, ${alpha(C.subtle, 'f4')})`,
@@ -246,14 +246,25 @@ export function HoldingRow({
       h(
         'button',
         {
+          type: 'button',
+          'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
           onClick: onToggle,
           style: {
-            background: 'transparent',
-            border: 'none',
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            minHeight: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            justifySelf: 'end',
+            padding: 0,
+            borderRadius: 999,
+            background: expanded ? alpha(C.blue, '10') : C.subtle,
+            border: `1px solid ${expanded ? alpha(C.blue, '24') : C.border}`,
             color: C.textMute,
             cursor: 'pointer',
-            fontSize: 12,
-            padding: '4px',
+            fontSize: 14,
           },
         },
         expanded ? '▲' : '▼'

@@ -60,6 +60,16 @@ textarea {
 
 .ui-btn {
   box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  line-height: 1.2;
+  touch-action: manipulation;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .ui-btn:not(:disabled):hover {

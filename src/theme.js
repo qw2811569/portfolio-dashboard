@@ -1,4 +1,4 @@
-import { TOKENS } from './theme.generated.js'
+import { TOKENS as GENERATED_TOKENS } from './theme.generated.js'
 
 const DEFAULT_TARGET = typeof document !== 'undefined' ? document.documentElement : null
 const LEGACY_ACCENT_BASE = ['sa', 'ge'].join('')
@@ -82,6 +82,57 @@ function formatOpacity(opacity) {
   return Number(opacity.toFixed(3)).toString()
 }
 
+export function alpha(color, opacity) {
+  const hexColor = normalizeHexColor(color)
+  const opacityHex = normalizeOpacityHex(opacity)
+
+  if (hexColor && opacityHex) {
+    return `${hexColor}${opacityHex}`
+  }
+
+  const rgbColor = parseRgbColor(color)
+  const opacityFloat = normalizeOpacityFloat(opacity)
+
+  if (rgbColor && opacityFloat != null) {
+    return `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${formatOpacity(opacityFloat)})`
+  }
+
+  return color
+}
+
+// Keep the app-facing token surface stable while generated tokens stay canonical-only.
+function buildRuntimeTokens() {
+  return Object.freeze({
+    ...GENERATED_TOKENS,
+    boneSoft: alpha(GENERATED_TOKENS.bone, 'f2'),
+    paper: alpha(GENERATED_TOKENS.bone, 'db'),
+    sand: alpha(GENERATED_TOKENS.warning, '18'),
+    line: GENERATED_TOKENS.boneDeep,
+    lineSoft: alpha(GENERATED_TOKENS.charcoal, '14'),
+    muted: GENERATED_TOKENS.iron,
+    mutedSoft: alpha(GENERATED_TOKENS.iron, 'b8'),
+    warningSoft: alpha(GENERATED_TOKENS.warning, '3d'),
+    positiveSoft: alpha(GENERATED_TOKENS.positive, '29'),
+    ctaSoft: alpha(GENERATED_TOKENS.cta, '1f'),
+    hotSoft: alpha(GENERATED_TOKENS.hot, '1f'),
+    negativeSoft: alpha(GENERATED_TOKENS.negative, '1f'),
+    shadow: `0 1px 0 ${alpha(GENERATED_TOKENS.charcoal, '0d')}, inset 0 1px 0 ${alpha(GENERATED_TOKENS.bone, 'b8')}`,
+    insetLine: `inset 0 1px 0 ${alpha(GENERATED_TOKENS.bone, 'b8')}`,
+    shellShadow: `0 18px 34px ${alpha(GENERATED_TOKENS.charcoal, '14')}`,
+    focusRing: `0 0 0 3px ${alpha(GENERATED_TOKENS.positive, '38')}`,
+    fontHeadline: GENERATED_TOKENS.fontDisplay,
+    fontHead: GENERATED_TOKENS.fontTitle,
+    fontNum: GENERATED_TOKENS.fontDisplay,
+    fontMono: GENERATED_TOKENS.fontCaption,
+    radius: '24px',
+    radiusSm: '16px',
+    ease: '240ms ease',
+    max: '1240px',
+  })
+}
+
+export const TOKENS = buildRuntimeTokens()
+
 export const A = Object.freeze({
   tint: '10',
   faint: '16',
@@ -103,18 +154,18 @@ export const C = Object.freeze({
   subtle: TOKENS.bone,
   subtleElev: TOKENS.boneDeep,
   border: TOKENS.line,
-  borderSub: 'rgba(23, 23, 23, 0.08)',
-  borderStrong: 'rgba(23, 23, 23, 0.16)',
-  borderSoft: 'rgba(23, 23, 23, 0.1)',
+  borderSub: alpha(TOKENS.charcoal, '14'),
+  borderStrong: alpha(TOKENS.charcoal, '29'),
+  borderSoft: alpha(TOKENS.charcoal, '1a'),
   shadow: TOKENS.shadow,
   insetLine: TOKENS.insetLine,
   shellShadow: TOKENS.shellShadow,
 
   cardBg: TOKENS.boneSoft,
-  cardBlue: '#f1e1d6',
-  cardAmber: '#f3e8d7',
-  cardOlive: '#f0e3d7',
-  cardRose: '#f0e1da',
+  cardBlue: alpha(TOKENS.positive, '18'),
+  cardAmber: alpha(TOKENS.warning, '18'),
+  cardOlive: alpha(TOKENS.positive, '14'),
+  cardRose: alpha(TOKENS.cta, '14'),
 
   text: TOKENS.ink,
   textSec: TOKENS.charcoal,
@@ -162,24 +213,6 @@ export const C = Object.freeze({
   glowWarm: alpha(TOKENS.warning, '14'),
 })
 
-export function alpha(color, opacity) {
-  const hexColor = normalizeHexColor(color)
-  const opacityHex = normalizeOpacityHex(opacity)
-
-  if (hexColor && opacityHex) {
-    return `${hexColor}${opacityHex}`
-  }
-
-  const rgbColor = parseRgbColor(color)
-  const opacityFloat = normalizeOpacityFloat(opacity)
-
-  if (rgbColor && opacityFloat != null) {
-    return `rgba(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b}, ${formatOpacity(opacityFloat)})`
-  }
-
-  return color
-}
-
 export function applyThemeVars(target = DEFAULT_TARGET) {
   if (!target?.style) return
 
@@ -206,5 +239,3 @@ export function applyThemeVars(target = DEFAULT_TARGET) {
   target.style.setProperty('--font-num', TOKENS.fontNum)
   target.style.setProperty('--font-mono', TOKENS.fontMono)
 }
-
-export { TOKENS }

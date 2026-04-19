@@ -766,7 +766,7 @@ test('ux simulation round2 persona A (me) runs live audit with error-state captu
       screenshotName: '04-events-initial.png',
       action: async () => {
         await scrollToTop(page)
-        await clickTab(page, 'events', '催化驗證')
+        await clickTab(page, 'events', '事件追蹤')
       },
     })
 
@@ -803,7 +803,7 @@ test('ux simulation round2 persona A (me) runs live audit with error-state captu
       screenshotName: '04-news-initial.png',
       action: async () => {
         await scrollToTop(page)
-        await clickTab(page, 'news', '情報脈絡')
+        await clickTab(page, 'news', '新聞聚合')
       },
     })
 
@@ -1064,7 +1064,7 @@ test('ux simulation round2 persona B (7865 / 金聯成) runs live audit with com
       screenshotName: '7865-04-events.png',
       action: async () => {
         await scrollToTop(page)
-        await clickTab(page, 'events', '催化驗證')
+        await clickTab(page, 'events', '事件追蹤')
       },
     })
 
@@ -1103,7 +1103,7 @@ test('ux simulation round2 persona B (7865 / 金聯成) runs live audit with com
       screenshotName: '7865-04-news.png',
       action: async () => {
         await scrollToTop(page)
-        await clickTab(page, 'news', '情報脈絡')
+        await clickTab(page, 'news', '新聞聚合')
       },
     })
 

@@ -183,7 +183,7 @@ export function usePortfolioPanelsContextComposer({
       nextActionLabel = `還有 ${remaining} 件事件等待自動復盤`
       nextActionReason = '事件將在取得收盤價後自動驗證，不需手動操作。'
     } else if (focusItem) {
-      nextActionLabel = `先聚焦 ${focusItem.name} 的催化驗證`
+      nextActionLabel = `先聚焦 ${focusItem.name} 的事件追蹤`
       nextActionReason =
         watchlistFocus?.action || focusSummary || '先看焦點標的與相關事件是否支持下一步操作。'
     } else if (hasInsight) {

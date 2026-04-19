@@ -557,7 +557,7 @@ export function NewsFeedSection({
             h(
               'div',
               { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
-              '情報脈絡 / News preview'
+              '新聞聚合 / News preview'
             ),
             h(
               'div',
@@ -584,7 +584,7 @@ export function NewsFeedSection({
                   fontFamily: TOKENS.fontBody,
                 },
               },
-              'Google News RSS 與 FinMind headline 先進來，先標已看、先收斂脈絡，再 handoff 給 Daily 判讀影響，不在這頁直接產事件。'
+              'Google News RSS 與 FinMind headline 先進來，先標已看、先聚合重點，再 handoff 給 Daily 判讀影響，不在這頁直接產事件。'
             ),
             h(
               'div',
@@ -1004,7 +1004,7 @@ export function NewsAnalysisPanel({
               fontVariantNumeric: 'tabular-nums',
             },
           },
-          '情報脈絡 / News'
+          '新聞聚合 / News'
         ),
         h(
           'div',

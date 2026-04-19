@@ -25,8 +25,12 @@ const PANEL_ITEMS = [
   },
   { key: 'holdings', label: '持股', keywords: 'holdings 持股 持倉 部位 股票' },
   { key: 'watchlist', label: '觀察股', keywords: 'watchlist 觀察股 追蹤 清單' },
-  { key: 'events', label: '催化驗證', keywords: 'events 催化 事件 驗證 calendar 行事曆' },
-  { key: 'news', label: '情報脈絡', keywords: 'news 情報 新聞 脈絡' },
+  {
+    key: 'events',
+    label: '事件追蹤',
+    keywords: 'events event tracking 事件 追蹤 timeline calendar 行事曆',
+  },
+  { key: 'news', label: '新聞聚合', keywords: 'news 新聞 聚合 headline feed' },
   { key: 'daily', label: '收盤分析', keywords: 'daily 收盤 分析 kpi 日報' },
   { key: 'research', label: '深度研究', keywords: 'research 研究 報告 dossier' },
   { key: 'trade', label: '上傳成交', keywords: 'trade 成交 上傳 匯入 交易' },
@@ -189,8 +193,8 @@ export function useCmdK({ headerProps = {}, panelsActions = {}, panelRootRef = n
         {
           key: 'open-events',
           label: '打開事件頁',
-          subtitle: '切到催化驗證',
-          keywords: 'events 事件 催化',
+          subtitle: '切到事件追蹤',
+          keywords: 'events 事件 追蹤',
         },
         {
           key: 'open-holdings',

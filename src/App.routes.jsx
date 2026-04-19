@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { DEFAULT_PORTFOLIO_ROUTE } from './constants.js'
 import { PortfolioLayout } from './pages/PortfolioLayout.jsx'
+import { C } from './theme.js'
 
 // Lazy load pages — each page becomes its own chunk
 const OverviewPage = lazy(() => import('./pages/OverviewPage.jsx'))
@@ -40,7 +41,7 @@ const routeQueryClient = new QueryClient({
 })
 
 const Loading = () =>
-  h('div', { style: { color: '#8a9a97', padding: 24, fontSize: 13 } }, '載入中...')
+  h('div', { style: { color: C.textMute, padding: 24, fontSize: 12 } }, '載入中...')
 
 function App() {
   return (

@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component {
       padding: '16px',
       background: C.card,
       border: `2px solid ${C.down}`,
-      borderRadius: 10,
+      borderRadius: 16,
       margin: 0,
       ...this.props.style,
     }
@@ -53,8 +53,16 @@ export class ErrorBoundary extends Component {
     return h(
       'div',
       { style: containerStyle },
-      h('h2', { style: { color: C.down, marginBottom: 8 } }, `${title} 發生錯誤`),
-      h('p', { style: { color: C.text, marginBottom: 8 } }, description),
+      h(
+        'h2',
+        { style: { color: C.down, marginBottom: 8, fontSize: 18, lineHeight: 1.3 } },
+        `${title} 發生錯誤`
+      ),
+      h(
+        'p',
+        { style: { color: C.text, marginBottom: 8, fontSize: 14, lineHeight: 1.7 } },
+        description
+      ),
       h(
         'details',
         { style: { color: C.textMute, fontSize: 12, whiteSpace: 'pre-wrap' } },
@@ -76,12 +84,13 @@ export class ErrorBoundary extends Component {
             marginTop: 12,
             padding: '8px 16px',
             background: C.blue,
-            color: '#fff',
+            color: C.onFill,
             border: 'none',
-            borderRadius: 6,
+            borderRadius: 999,
             cursor: 'pointer',
             fontSize: 12,
             fontWeight: 600,
+            minHeight: 44,
           },
         },
         actionLabel

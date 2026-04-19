@@ -102,8 +102,8 @@ export default function CmdKPalette({
           onClick={openFromFab}
           style={{
             position: 'fixed',
-            right: 'max(18px, env(safe-area-inset-right))',
-            bottom: 'max(18px, env(safe-area-inset-bottom))',
+            right: 'max(16px, env(safe-area-inset-right))',
+            bottom: 'max(16px, env(safe-area-inset-bottom))',
             zIndex: 1190,
             width: 56,
             height: 56,
@@ -170,7 +170,7 @@ export default function CmdKPalette({
                   borderRadius: 16,
                   border: `1px solid ${C.borderStrong}`,
                   background: alpha(C.bg, '30'),
-                  padding: isMobile ? '12px 16px' : '12px 12px',
+                  padding: '12px 16px',
                 }}
               >
                 <span style={{ color: C.textMute, fontSize: 14 }}>{isMobile ? '搜尋' : '⌘K'}</span>
@@ -204,8 +204,8 @@ export default function CmdKPalette({
                 minHeight: 0,
                 overflowY: 'auto',
                 padding: isMobile
-                  ? '12px 14px max(18px, env(safe-area-inset-bottom))'
-                  : '10px 12px 14px',
+                  ? '12px 16px max(24px, env(safe-area-inset-bottom))'
+                  : '12px 12px 16px',
               }}
             >
               {results.length === 0 ? (
@@ -214,7 +214,7 @@ export default function CmdKPalette({
                     padding: isMobile ? '48px 24px' : '32px 16px',
                     textAlign: 'center',
                     color: C.textMute,
-                    fontSize: 13,
+                    fontSize: 14,
                     lineHeight: 1.7,
                   }}
                 >
@@ -229,7 +229,7 @@ export default function CmdKPalette({
                   >
                     <div
                       style={{
-                        padding: isMobile ? '8px 12px 8px' : '8px 8px 4px',
+                        padding: isMobile ? '8px 12px 8px' : '8px 12px 4px',
                         fontSize: 12,
                         fontWeight: 700,
                         letterSpacing: '0.12em',
@@ -268,7 +268,7 @@ export default function CmdKPalette({
                           <div style={{ minWidth: 0 }}>
                             <div
                               style={{
-                                fontSize: isMobile ? 15 : 13,
+                                fontSize: isMobile ? 15 : 14,
                                 fontWeight: 600,
                                 color: selected ? C.teal : C.text,
                               }}

@@ -23,7 +23,7 @@ export default function Md({ text, color }) {
               {
                 key: j,
                 style: {
-                  fontSize: 11,
+                  fontSize: 12,
                   color: textColor,
                   lineHeight: 1.8,
                   paddingLeft: 12,
@@ -64,7 +64,7 @@ export default function Md({ text, color }) {
       const lvlMatch = line.match(/^(#+)/)
       const lvl = lvlMatch ? lvlMatch[1].length : 1
       const txt = line.replace(/^#+\s*/, '')
-      const sz = lvl === 1 ? 14 : lvl === 2 ? 12 : 11
+      const sz = lvl === 1 ? 18 : lvl === 2 ? 14 : 12
       const headingMarginTop = lvl === 1 ? 12 : 8
       els.push(
         h(
@@ -95,7 +95,7 @@ export default function Md({ text, color }) {
           {
             key: `ol-${i}`,
             style: {
-              fontSize: 11,
+              fontSize: 12,
               color: textColor,
               lineHeight: 1.8,
               paddingLeft: 12,
@@ -137,10 +137,10 @@ export default function Md({ text, color }) {
         const headerCells = parseRow(dataRows[0])
         const bodyRows = dataRows.slice(1).map(parseRow)
         const cellStyle = {
-          fontSize: 11,
+          fontSize: 12,
           color: textColor,
           padding: '4px 8px',
-          borderBottom: `1px solid ${C.border || '#333'}`,
+          borderBottom: `1px solid ${C.border}`,
           whiteSpace: 'nowrap',
         }
         els.push(
@@ -152,7 +152,7 @@ export default function Md({ text, color }) {
                 width: '100%',
                 borderCollapse: 'collapse',
                 margin: '4px 0',
-                fontSize: 11,
+                fontSize: 12,
               },
             },
             h(
@@ -202,7 +202,7 @@ export default function Md({ text, color }) {
           'div',
           {
             key: `p-${i}`,
-            style: { fontSize: 11, color: textColor, lineHeight: 1.8, marginBottom: 4 },
+            style: { fontSize: 12, color: textColor, lineHeight: 1.8, marginBottom: 4 },
           },
           renderInline(line)
         )

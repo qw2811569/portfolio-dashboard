@@ -20,7 +20,7 @@ function DialogShell({
       style: {
         position: 'fixed',
         inset: 0,
-        background: 'rgba(15, 23, 42, 0.36)',
+        background: alpha(C.text, '5c'),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -41,9 +41,9 @@ function DialogShell({
           width,
           background: C.card,
           border: `1px solid ${C.border}`,
-          borderRadius: 14,
+          borderRadius: 16,
           boxShadow: `${C.insetLine}, ${C.shadow}`,
-          padding: '16px 16px 16px',
+          padding: '16px',
         },
       },
       h(
@@ -65,10 +65,10 @@ function DialogShell({
               'div',
               {
                 style: {
-                  fontSize: 12,
-                  color: C.textSec,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
+                  fontSize: 14,
+                  color: C.text,
+                  fontWeight: 600,
+                  lineHeight: 1.4,
                 },
               },
               title
@@ -93,7 +93,7 @@ function DialogShell({
             Button,
             {
               onClick: onClose,
-              style: { padding: '4px 8px' },
+              style: { padding: '8px 12px' },
             },
             '關閉'
           )
@@ -141,7 +141,7 @@ export function ConfirmDialog({
         Button,
         {
           onClick: onCancel,
-          style: { padding: '4px 12px' },
+          style: { padding: '8px 12px' },
         },
         cancelLabel
       ),
@@ -151,7 +151,7 @@ export function ConfirmDialog({
           onClick: onConfirm,
           disabled: busy,
           style: {
-            padding: '4px 12px',
+            padding: '8px 12px',
             border: 'none',
             background: busy ? C.subtle : alpha(fill, '40'),
             color: busy ? C.textMute : C.onFill,
@@ -218,7 +218,7 @@ export function TextFieldDialog({
           borderRadius: 8,
           padding: '8px 12px',
           color: C.text,
-          fontSize: 12,
+          fontSize: 14,
           fontFamily: 'inherit',
         },
       })
@@ -230,7 +230,7 @@ export function TextFieldDialog({
           style: {
             marginTop: 8,
             fontSize: 12,
-            color: C.textSec,
+            color: C.down,
           },
         },
         error
@@ -250,7 +250,7 @@ export function TextFieldDialog({
         Button,
         {
           onClick: onCancel,
-          style: { padding: '4px 12px' },
+          style: { padding: '8px 12px' },
         },
         cancelLabel
       ),
@@ -260,7 +260,7 @@ export function TextFieldDialog({
           onClick: onSubmit,
           disabled: busy || submitDisabled,
           style: {
-            padding: '4px 12px',
+            padding: '8px 12px',
             border: 'none',
             background: busy || submitDisabled ? C.subtle : alpha(C.fillTeal, '40'),
             color: busy || submitDisabled ? C.textMute : C.onFill,

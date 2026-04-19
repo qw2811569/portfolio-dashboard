@@ -8,7 +8,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 /**
@@ -62,7 +62,7 @@ export function UploadDropzone({
         style: {
           border: `1px dashed ${dragOver ? C.borderStrong : C.border}`,
           borderRadius: 12,
-          padding: '28px 16px',
+          padding: '24px 16px',
           textAlign: 'center',
           cursor: 'pointer',
           background: dragOver ? C.subtleElev : C.card,
@@ -103,7 +103,7 @@ export function UploadDropzone({
         : h(
             'div',
             null,
-            h('div', { style: { fontSize: 32, marginBottom: 10, opacity: 0.5 } }, '↑'),
+            h('div', { style: { fontSize: 32, marginBottom: 8, opacity: 0.5 } }, '↑'),
             h(
               'div',
               { style: { fontSize: 13, fontWeight: 500, color: C.textSec } },
@@ -177,11 +177,11 @@ export function UploadDropzone({
                 style: {
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 4,
                   background: isActive ? C.subtleElev : C.subtle,
                   border: `1px solid ${isActive ? C.borderStrong : C.border}`,
                   borderRadius: 999,
-                  padding: '5px 8px',
+                  padding: '4px 8px',
                 },
               },
               h(
@@ -233,7 +233,7 @@ export function UploadDropzone({
           disabled: parsing,
           style: {
             width: '100%',
-            padding: '13px',
+            padding: '12px',
             borderRadius: 10,
             background: parsing ? C.subtle : C.cardHover,
             color: parsing ? C.textMute : C.text,
@@ -253,7 +253,7 @@ export function UploadDropzone({
         'div',
         {
           style: {
-            marginTop: 10,
+            marginTop: 8,
             background: C.upBg,
             border: `1px solid ${alpha(C.up, '20')}`,
             borderRadius: 10,
@@ -365,7 +365,7 @@ export function ParseResults({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 10,
+            gap: 8,
             flexWrap: 'wrap',
           },
         },
@@ -389,7 +389,7 @@ export function ParseResults({
           style: {
             display: 'grid',
             gridTemplateColumns: 'minmax(140px, 220px) auto',
-            gap: 10,
+            gap: 8,
             alignItems: 'end',
             marginBottom: 12,
           },
@@ -408,7 +408,7 @@ export function ParseResults({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '9px 10px',
+              padding: '8px 8px',
               color: C.text,
               fontSize: 12,
               outline: 'none',
@@ -425,7 +425,7 @@ export function ParseResults({
               background: memoBatchMode === '混合' ? C.amberBg : C.subtle,
               border: `1px solid ${memoBatchMode === '混合' ? alpha(C.amber, '25') : C.border}`,
               borderRadius: 8,
-              padding: '8px 10px',
+              padding: '8px 8px',
               lineHeight: 1.6,
             },
           },
@@ -451,10 +451,10 @@ export function ParseResults({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '8px 10px',
+              padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '批次摘要'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '批次摘要'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -468,10 +468,10 @@ export function ParseResults({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '8px 10px',
+              padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '買 / 賣分布'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '買 / 賣分布'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -485,10 +485,10 @@ export function ParseResults({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '8px 10px',
+              padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '估計成交金額'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '估計成交金額'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -502,10 +502,10 @@ export function ParseResults({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '8px 10px',
+              padding: '8px 8px',
             },
           },
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '涉及標的'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '涉及標的'),
           h(
             'div',
             { style: { fontSize: 12, color: C.text, fontWeight: 600 } },
@@ -522,7 +522,7 @@ export function ParseResults({
               background: quality.confidence === 'low' ? C.upBg : C.amberBg,
               border: `1px solid ${alpha(quality.confidence === 'low' ? C.up : C.amber, '25')}`,
               borderRadius: 8,
-              padding: '10px 12px',
+              padding: '8px 12px',
             },
           },
           h(
@@ -532,7 +532,7 @@ export function ParseResults({
                 fontSize: 10,
                 fontWeight: 700,
                 color: quality.confidence === 'low' ? C.up : C.amber,
-                marginBottom: 6,
+                marginBottom: 4,
                 letterSpacing: '0.04em',
               },
             },
@@ -569,7 +569,7 @@ export function ParseResults({
                       background: C.card,
                       border: `1px solid ${C.border}`,
                       borderRadius: 7,
-                      padding: '6px 8px',
+                      padding: '4px 8px',
                     },
                   },
                   `第 ${warning.index + 1} 筆 ${warning.name || warning.code || '未命名交易'}：${warning.issues.join('、')}`
@@ -591,13 +591,13 @@ export function ParseResults({
           {
             key: i,
             style: {
-              padding: '10px 0',
+              padding: '8px 0',
               borderBottom: i < parsed.trades.length - 1 ? `1px solid ${C.borderSub}` : 'none',
             },
           },
           h(
             'div',
-            { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
+            { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' } },
             h(
               'span',
               {
@@ -607,7 +607,7 @@ export function ParseResults({
                   color: t.action === '買進' ? C.up : C.down,
                   fontSize: 10,
                   fontWeight: 600,
-                  padding: '2px 9px',
+                  padding: '4px 8px',
                   borderRadius: 4,
                   cursor: 'pointer',
                   border: `1px dashed ${t.action === '買進' ? C.up : C.down}44`,
@@ -634,7 +634,7 @@ export function ParseResults({
           ),
           h(
             'div',
-            { style: { display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 } },
+            { style: { display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 } },
             h(
               'span',
               {
@@ -668,13 +668,13 @@ export function ParseResults({
               'div',
               {
                 style: {
-                  marginTop: 6,
+                  marginTop: 4,
                   fontSize: 10,
                   color: C.textSec,
                   background: C.amberBg,
                   border: `1px solid ${alpha(C.amber, '20')}`,
                   borderRadius: 6,
-                  padding: '5px 8px',
+                  padding: '4px 8px',
                 },
               },
               `請確認：${rowWarning.issues.join('、')}`
@@ -688,11 +688,11 @@ export function ParseResults({
           'div',
           {
             style: {
-              marginTop: 10,
+              marginTop: 8,
               background: C.tealBg,
               border: `1px solid ${alpha(C.teal, '20')}`,
               borderRadius: 7,
-              padding: '8px 10px',
+              padding: '8px 8px',
             },
           },
           h(
@@ -731,7 +731,7 @@ export function ParseResults({
                 color: C.textSec,
                 background: C.subtle,
                 borderRadius: 6,
-                padding: '8px 10px',
+                padding: '8px 8px',
                 lineHeight: 1.6,
               },
             },
@@ -753,14 +753,14 @@ export function ParseResults({
           background: C.subtle,
           border: `1px solid ${C.border}`,
           borderRadius: 8,
-          padding: '10px',
+          padding: '8px',
           color: C.text,
           fontSize: 12,
           resize: 'none',
           minHeight: 70,
           outline: 'none',
           fontFamily: 'inherit',
-          marginBottom: 10,
+          marginBottom: 8,
           lineHeight: 1.7,
         },
       }),
@@ -792,7 +792,7 @@ export function ParseResults({
             onClick: skipMemo,
             style: {
               width: '100%',
-              padding: '10px',
+              padding: '8px',
               border: `1px solid ${C.border}`,
               borderRadius: 8,
               background: 'transparent',
@@ -800,7 +800,7 @@ export function ParseResults({
               fontSize: 12,
               fontWeight: 400,
               cursor: 'pointer',
-              marginTop: 6,
+              marginTop: 4,
               letterSpacing: '0.02em',
             },
           },
@@ -860,7 +860,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
     h('div', { style: lbl }, '手動新增交易'),
     h(
       'div',
-      { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 } },
+      { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 } },
       h('input', {
         'data-testid': 'manual-trade-code-input',
         style: inputStyle,
@@ -968,23 +968,23 @@ export function ManualUpdateForms({
 
   return h(
     'div',
-    { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 } },
+    { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 } },
     h(
       Card,
       { style: { borderLeft: `2px solid ${alpha(C.teal, '40')}` } },
       h('div', { style: lbl }, '手動更新目標價'),
       h(
         'div',
-        { style: { fontSize: 11, color: C.textMute, marginBottom: 10, lineHeight: 1.6 } },
+        { style: { fontSize: 11, color: C.textMute, marginBottom: 8, lineHeight: 1.6 } },
         '收到新研究報告時，直接在這裡更新。系統會自動計算多家均值。'
       ),
       h(
         'div',
-        { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 7 } },
+        { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '股票代碼'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
           h('input', {
             value: tpCode,
             onChange: (e) => setTpCode(e.target.value),
@@ -994,7 +994,7 @@ export function ManualUpdateForms({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 7,
-              padding: '8px 10px',
+              padding: '8px 8px',
               color: C.text,
               fontSize: 12,
               outline: 'none',
@@ -1005,7 +1005,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '目標價（元）'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '目標價（元）'),
           h('input', {
             value: tpVal,
             onChange: (e) => setTpVal(e.target.value),
@@ -1016,7 +1016,7 @@ export function ManualUpdateForms({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 7,
-              padding: '8px 10px',
+              padding: '8px 8px',
               color: C.text,
               fontSize: 12,
               outline: 'none',
@@ -1027,8 +1027,8 @@ export function ManualUpdateForms({
       ),
       h(
         'div',
-        { style: { marginBottom: 10 } },
-        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '券商 / 來源'),
+        { style: { marginBottom: 8 } },
+        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '券商 / 來源'),
         h('input', {
           value: tpFirm,
           onChange: (e) => setTpFirm(e.target.value),
@@ -1038,7 +1038,7 @@ export function ManualUpdateForms({
             background: C.subtle,
             border: `1px solid ${C.border}`,
             borderRadius: 7,
-            padding: '8px 10px',
+            padding: '8px 8px',
             color: C.text,
             fontSize: 12,
             outline: 'none',
@@ -1053,7 +1053,7 @@ export function ManualUpdateForms({
           disabled: !tpCode.trim() || !tpVal,
           style: {
             width: '100%',
-            padding: '10px',
+            padding: '8px',
             border: 'none',
             borderRadius: 8,
             background: tpCode.trim() && tpVal ? alpha(C.fillTeal, '40') : C.subtle,
@@ -1073,16 +1073,16 @@ export function ManualUpdateForms({
       h('div', { style: lbl }, '手動更新財報 / 營收'),
       h(
         'div',
-        { style: { fontSize: 11, color: C.textMute, marginBottom: 10, lineHeight: 1.6 } },
+        { style: { fontSize: 11, color: C.textMute, marginBottom: 8, lineHeight: 1.6 } },
         '法說、月營收或財報出來後，把關鍵數字補進來，持股筆記就會一起更新。'
       ),
       h(
         'div',
-        { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 7 } },
+        { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 } },
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '股票代碼'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '股票代碼'),
           h('input', {
             value: fundamentalDraft.code,
             onChange: (e) => setFundamentalDraft((prev) => ({ ...prev, code: e.target.value })),
@@ -1092,7 +1092,7 @@ export function ManualUpdateForms({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 7,
-              padding: '8px 10px',
+              padding: '8px 8px',
               color: C.text,
               fontSize: 12,
               outline: 'none',
@@ -1103,7 +1103,7 @@ export function ManualUpdateForms({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 3 } }, '資料日期'),
+          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '資料日期'),
           h('input', {
             value: fundamentalDraft.updatedAt,
             onChange: (e) =>
@@ -1114,7 +1114,7 @@ export function ManualUpdateForms({
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 7,
-              padding: '8px 10px',
+              padding: '8px 8px',
               color: C.text,
               fontSize: 12,
               outline: 'none',
@@ -1125,7 +1125,7 @@ export function ManualUpdateForms({
       ),
       h(
         'div',
-        { style: { marginBottom: 10 } },
+        { style: { marginBottom: 8 } },
         h(
           Button,
           {
@@ -1133,7 +1133,7 @@ export function ManualUpdateForms({
             disabled: !fundamentalDraft.code.trim(),
             style: {
               width: '100%',
-              padding: '10px',
+              padding: '8px',
               border: 'none',
               borderRadius: 8,
               background: fundamentalDraft.code.trim() ? alpha(C.fillAmber, '40') : C.subtle,

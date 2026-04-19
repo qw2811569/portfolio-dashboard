@@ -9,8 +9,8 @@ export function LogPanel({ tradeLog }) {
   if (!tradeLog || tradeLog.length === 0) {
     return h(
       Card,
-      { 'data-testid': 'trade-log-panel', style: { textAlign: 'center', padding: '24px 14px' } },
-      h('div', { style: { fontSize: 20, marginBottom: 6, opacity: 0.3 } }, '◌'),
+      { 'data-testid': 'trade-log-panel', style: { textAlign: 'center', padding: '24px 12px' } },
+      h('div', { style: { fontSize: 20, marginBottom: 4, opacity: 0.3 } }, '◌'),
       h(
         'div',
         { style: { fontSize: 12, color: C.textMute, fontWeight: 400 } },
@@ -41,7 +41,7 @@ export function LogPanel({ tradeLog }) {
             { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 4 } },
             h(
               'div',
-              { style: { display: 'flex', alignItems: 'center', gap: 7 } },
+              { style: { display: 'flex', alignItems: 'center', gap: 8 } },
               h(
                 'span',
                 {
@@ -50,7 +50,7 @@ export function LogPanel({ tradeLog }) {
                     color: log.action === '買進' ? C.up : C.down,
                     fontSize: 9,
                     fontWeight: 600,
-                    padding: '2px 8px',
+                    padding: '4px 8px',
                     borderRadius: 4,
                   },
                 },
@@ -63,14 +63,14 @@ export function LogPanel({ tradeLog }) {
           ),
           h(
             'div',
-            { style: { fontSize: 11, color: C.textMute, marginBottom: 10 } },
+            { style: { fontSize: 11, color: C.textMute, marginBottom: 8 } },
             `${log.qty}股 @ ${log.price?.toLocaleString()}元`
           ),
           log.qa.map((item, i) =>
             h(
               'div',
               { key: i, style: { marginBottom: 8 } },
-              h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 3 } }, item.q),
+              h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, item.q),
               h(
                 'div',
                 {
@@ -79,7 +79,7 @@ export function LogPanel({ tradeLog }) {
                     color: C.textSec,
                     background: C.subtle,
                     borderRadius: 6,
-                    padding: '7px 10px',
+                    padding: '8px 8px',
                     lineHeight: 1.7,
                   },
                 },

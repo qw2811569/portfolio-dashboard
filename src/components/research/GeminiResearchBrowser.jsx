@@ -7,7 +7,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 /**
@@ -45,7 +45,7 @@ export function GeminiResearchBrowser() {
   if (loading) {
     return h(
       Card,
-      { style: { padding: 20 } },
+      { style: { padding: 16 } },
       h('div', { style: { textAlign: 'center', color: C.textSec } }, '載入中...')
     )
   }
@@ -53,7 +53,7 @@ export function GeminiResearchBrowser() {
   if (error) {
     return h(
       Card,
-      { style: { padding: 20 } },
+      { style: { padding: 16 } },
       h('div', { style: { ...lbl, color: C.down } }, '錯誤'),
       h('div', { style: { fontSize: 11, color: C.textSec } }, error)
     )
@@ -65,8 +65,8 @@ export function GeminiResearchBrowser() {
 
   return h(
     Card,
-    { style: { padding: '12px 14px' } },
-    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 10 } }, 'Gemini 研究報告'),
+    { style: { padding: '12px 12px' } },
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, 'Gemini 研究報告'),
     researchFiles.length === 0
       ? h('div', { style: { fontSize: 11, color: C.textSec } }, '暫無研究報告')
       : h(
@@ -96,7 +96,7 @@ function ResearchFileItem({ file, onClick }) {
     {
       onClick,
       style: {
-        padding: '10px 12px',
+        padding: '8px 12px',
         background: C.subtle,
         border: `1px solid ${C.border}`,
         borderRadius: 8,
@@ -114,7 +114,7 @@ function ResearchFileItem({ file, onClick }) {
     file.itemCount &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textSec, marginTop: 2 } },
+        { style: { fontSize: 9, color: C.textSec, marginTop: 4 } },
         `${file.itemCount} 筆資料`
       )
   )
@@ -143,7 +143,7 @@ function ResearchFileDetail({ file, onBack }) {
   if (loading) {
     return h(
       Card,
-      { style: { padding: 20 } },
+      { style: { padding: 16 } },
       h('div', { style: { textAlign: 'center', color: C.textSec } }, '載入中...')
     )
   }
@@ -151,20 +151,20 @@ function ResearchFileDetail({ file, onBack }) {
   if (content?.error) {
     return h(
       Card,
-      { style: { padding: 20 } },
+      { style: { padding: 16 } },
       h(Button, { onClick: onBack, children: '← 返回' }),
-      h('div', { style: { ...lbl, color: C.down, marginTop: 10 } }, '載入失敗'),
+      h('div', { style: { ...lbl, color: C.down, marginTop: 8 } }, '載入失敗'),
       h('div', { style: { fontSize: 11, color: C.textSec } }, content.error)
     )
   }
 
   return h(
     Card,
-    { style: { padding: '12px 14px' } },
+    { style: { padding: '12px 12px' } },
     h(Button, { onClick: onBack, children: '← 返回' }),
     h(
       'div',
-      { style: { ...lbl, color: C.textSec, marginTop: 10, marginBottom: 8 } },
+      { style: { ...lbl, color: C.textSec, marginTop: 8, marginBottom: 8 } },
       file.displayName
     ),
     h(
@@ -186,7 +186,7 @@ function ResearchFileDetail({ file, onBack }) {
       h(
         'div',
         { style: { marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.border}` } },
-        h('div', { style: { ...lbl, marginBottom: 6 } }, '來源連結'),
+        h('div', { style: { ...lbl, marginBottom: 4 } }, '來源連結'),
         h(
           'div',
           { style: { display: 'grid', gap: 4 } },
@@ -202,7 +202,7 @@ function ResearchFileDetail({ file, onBack }) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   minHeight: 44,
-                  padding: '6px 4px',
+                  padding: '4px 8px',
                   fontSize: 9,
                   color: C.info,
                   textDecoration: 'underline',
@@ -242,7 +242,7 @@ function FactItem({ fact, type: _type }) {
     'div',
     {
       style: {
-        padding: '10px 12px',
+        padding: '8px 12px',
         background: C.subtle,
         border: `1px solid ${C.border}`,
         borderRadius: 6,
@@ -278,7 +278,7 @@ function FactItem({ fact, type: _type }) {
         {
           style: {
             fontSize: 9,
-            padding: '2px 6px',
+            padding: '4px 8px',
             background: impactColor + '20',
             color: impactColor,
             borderRadius: 4,
@@ -305,7 +305,7 @@ function FactItem({ fact, type: _type }) {
               key: code,
               style: {
                 fontSize: 9,
-                padding: '2px 4px',
+                padding: '4px 8px',
                 background: C.fillPrimary,
                 borderRadius: 4,
                 marginRight: 4,

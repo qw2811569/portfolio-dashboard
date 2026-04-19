@@ -10,7 +10,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const PAPER = {
@@ -167,7 +167,7 @@ function ViewModeNotice({ note }) {
     Card,
     {
       style: {
-        marginBottom: 14,
+        marginBottom: 12,
         borderRadius: 28,
         borderLeft: `3px solid ${alpha(PAPER.tangerine, '40')}`,
       },
@@ -186,7 +186,7 @@ function renderChip(text, style = {}, key = text) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
-        padding: '5px 10px',
+        padding: '4px 8px',
         borderRadius: 999,
         border: `1px solid ${PAPER.lineSoft}`,
         background: PAPER.paper,
@@ -233,8 +233,8 @@ function NewsFeedCard({
     Card,
     {
       style: {
-        marginBottom: 14,
-        padding: '18px 18px 16px',
+        marginBottom: 12,
+        padding: '16px 16px 16px',
         borderRadius: 28,
         background: `linear-gradient(180deg, ${alpha(PAPER.paper, 'fc')}, ${alpha(PAPER.bone, 'f0')})`,
         border: `1px solid ${PAPER.lineSoft}`,
@@ -300,7 +300,7 @@ function NewsFeedCard({
           'div',
           {
             style: {
-              marginTop: 10,
+              marginTop: 8,
               fontSize: 13,
               lineHeight: 1.7,
               color: PAPER.muted,
@@ -322,7 +322,7 @@ function NewsFeedCard({
               display: 'flex',
               gap: 8,
               flexWrap: 'wrap',
-              marginTop: 14,
+              marginTop: 12,
             },
           },
           ...(item.relatedStocks || []).map((stock) =>
@@ -347,7 +347,7 @@ function NewsFeedCard({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
-            gap: 10,
+            gap: 8,
           },
         },
         h(
@@ -373,7 +373,7 @@ function NewsFeedCard({
               background: isRead ? PAPER.grey : PAPER.paper,
               color: PAPER.muted,
               borderRadius: 999,
-              padding: '10px 12px',
+              padding: '8px 12px',
               fontSize: 11,
               cursor: 'pointer',
             },
@@ -390,7 +390,7 @@ function NewsFeedCard({
               color: PAPER.ink,
               textTransform: 'none',
               letterSpacing: '0.02em',
-              padding: '10px 14px',
+              padding: '8px 12px',
               width: '100%',
               justifyContent: 'center',
             },
@@ -454,7 +454,7 @@ export function NewsFeedSection({
   if (loading) {
     return h(
       Card,
-      { style: { padding: '16px 14px', textAlign: 'center' } },
+      { style: { padding: '16px 12px', textAlign: 'center' } },
       h('div', { style: { fontSize: 11, color: C.textMute } }, '載入新聞中...')
     )
   }
@@ -506,7 +506,7 @@ export function NewsFeedSection({
       style: {
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1.9fr) minmax(280px, 0.9fr)',
-        gap: 18,
+        gap: 16,
         alignItems: 'start',
       },
     },
@@ -529,7 +529,7 @@ export function NewsFeedSection({
         {
           style: {
             marginBottom: 16,
-            padding: '24px 26px',
+            padding: '24px 24px',
             borderRadius: 30,
             background: `radial-gradient(circle at 16% 18%, ${alpha(PAPER.sand, '90')}, transparent 28%), linear-gradient(180deg, ${alpha(PAPER.paper, 'fb')}, ${alpha(PAPER.bone, 'ee')})`,
             position: 'relative',
@@ -564,7 +564,7 @@ export function NewsFeedSection({
             null,
             h(
               'div',
-              { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 10 } },
+              { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 8 } },
               '情報脈絡 / News preview'
             ),
             h(
@@ -584,7 +584,7 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  marginTop: 14,
+                  marginTop: 12,
                   maxWidth: 520,
                   fontSize: 14,
                   lineHeight: 1.7,
@@ -600,7 +600,7 @@ export function NewsFeedSection({
                   display: 'flex',
                   gap: 8,
                   flexWrap: 'wrap',
-                  marginTop: 18,
+                  marginTop: 16,
                 },
               },
               renderChip(`${filteredItems.length} 則相關新聞`, {
@@ -688,14 +688,14 @@ export function NewsFeedSection({
         {
           style: {
             borderRadius: 28,
-            padding: '18px 18px 20px',
+            padding: '16px 16px 16px',
             position: 'sticky',
             top: 16,
           },
         },
         h(
           'div',
-          { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 10 } },
+          { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 8 } },
           'Filter / Side notes'
         ),
         h(
@@ -733,7 +733,7 @@ export function NewsFeedSection({
                           background:
                             tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
                           color: PAPER.ink,
-                          padding: '10px 12px',
+                          padding: '8px 12px',
                           fontSize: 11,
                           cursor: 'pointer',
                         },
@@ -757,7 +757,7 @@ export function NewsFeedSection({
                           borderRadius: 18,
                           border: `1px solid ${PAPER.lineSoft}`,
                           background: alpha(PAPER.accentStrong, '10'),
-                          padding: '10px 12px',
+                          padding: '8px 12px',
                           fontSize: 11,
                           color: PAPER.ink,
                           lineHeight: 1.6,
@@ -792,7 +792,7 @@ export function NewsFeedSection({
                       border: `1px solid ${sourceFilter === option ? alpha(PAPER.accent, '38') : PAPER.lineSoft}`,
                       background: sourceFilter === option ? alpha(PAPER.accent, '22') : PAPER.paper,
                       color: PAPER.ink,
-                      padding: '10px 12px',
+                      padding: '8px 12px',
                       fontSize: 11,
                       cursor: 'pointer',
                     },
@@ -826,7 +826,7 @@ export function NewsFeedSection({
                       border: `1px solid ${impactFilter === option ? PAPER.line : PAPER.lineSoft}`,
                       background: impactFilter === option ? PAPER.sand : PAPER.paper,
                       color: PAPER.ink,
-                      padding: '10px 12px',
+                      padding: '8px 12px',
                       fontSize: 11,
                       cursor: 'pointer',
                     },
@@ -840,13 +840,13 @@ export function NewsFeedSection({
             'div',
             {
               style: {
-                padding: '12px 14px',
+                padding: '12px 12px',
                 borderRadius: 22,
                 background: alpha(PAPER.sand, '90'),
                 color: PAPER.ink,
               },
             },
-            h('div', { style: { fontSize: 11, color: PAPER.muted, marginBottom: 6 } }, 'Notice'),
+            h('div', { style: { fontSize: 11, color: PAPER.muted, marginBottom: 4 } }, 'Notice'),
             renderChip(`未讀 ${unreadCount} 則`, {
               background: PAPER.sand,
               color: PAPER.ink,
@@ -857,7 +857,7 @@ export function NewsFeedSection({
             'div',
             {
               style: {
-                padding: '14px',
+                padding: '12px',
                 borderRadius: 22,
                 background: alpha(PAPER.accentStrong, '16'),
                 border: `1px solid ${alpha(PAPER.accentStrong, '22')}`,
@@ -922,7 +922,7 @@ export function NewsAnalysisPanel({
         {
           style: {
             textAlign: 'left',
-            padding: '28px 26px',
+            padding: '24px 24px',
             borderRadius: 30,
           },
         },
@@ -934,7 +934,7 @@ export function NewsAnalysisPanel({
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: C.textMute,
-              marginBottom: 10,
+              marginBottom: 8,
             },
           },
           '情報脈絡 / News'
@@ -960,7 +960,7 @@ export function NewsAnalysisPanel({
               color: C.textSec,
               lineHeight: 1.8,
               maxWidth: 520,
-              marginBottom: 18,
+              marginBottom: 16,
             },
           },
           '這頁先聚合 headline，再 handoff 給 Daily 判讀影響。加入持股後，ticker filter、impact tag 與已看機制會一起啟用。'
@@ -970,7 +970,7 @@ export function NewsAnalysisPanel({
           {
             onClick: onNavigateDaily,
             style: {
-              padding: '10px 18px',
+              padding: '8px 16px',
               background: PAPER.tangerine,
               border: `1px solid ${alpha(PAPER.tangerine, '40')}`,
               color: '#fff8f0',

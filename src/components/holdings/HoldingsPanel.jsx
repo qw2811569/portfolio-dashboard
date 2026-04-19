@@ -12,13 +12,13 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 const metricCard = {
   background: C.card,
   border: `1px solid ${C.border}`,
   borderRadius: 8,
-  padding: '8px 11px',
+  padding: '8px 8px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
 
@@ -67,7 +67,7 @@ export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl =
   return h(
     'div',
     {
-      style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 8 },
+      style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4, marginBottom: 8 },
     },
     metrics.map(([label, value, color]) =>
       h(
@@ -82,7 +82,7 @@ export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl =
               fontSize: 14,
               fontWeight: 600,
               color: label === '總市值' ? C.text : label === '持股數' ? C.textSec : color,
-              marginTop: 2,
+              marginTop: 4,
             },
           },
           value
@@ -105,7 +105,7 @@ export function HoldingsIntegrityWarning({ issues }) {
         ...metricCard,
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.amber, '40')}`,
-        padding: '8px 10px',
+        padding: '8px 8px',
         fontSize: 10,
         color: C.textSec,
         lineHeight: 1.7,
@@ -133,9 +133,9 @@ function TrackedStocksSyncBadge({ portfolioId = '' }) {
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
         flexWrap: 'wrap',
-        marginTop: 6,
+        marginTop: 4,
       },
     },
     syncState?.status === 'failed' &&
@@ -158,7 +158,7 @@ function TrackedStocksSyncBadge({ portfolioId = '' }) {
             display: 'inline-flex',
             alignItems: 'center',
             borderRadius: 999,
-            padding: '4px 9px',
+            padding: '4px 8px',
             fontSize: 10,
             lineHeight: 1.2,
             fontWeight: 700,
@@ -257,7 +257,7 @@ export function PortfolioHealthCheck({ holdings }) {
     // Industry labels
     h(
       'div',
-      { style: { display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 } },
+      { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 } },
       indArr.map(([ind, val]) => {
         const pct = ((val / indTotal) * 100).toFixed(0)
         const count = holdings.filter((h) => STOCK_META[h.code]?.industry === ind).length
@@ -271,7 +271,7 @@ export function PortfolioHealthCheck({ holdings }) {
               alignItems: 'center',
               gap: 4,
               fontSize: 10,
-              padding: '3px 8px',
+              padding: '4px 8px',
               borderRadius: 6,
               background: C.subtle,
               border: `1px solid ${C.border}`,
@@ -295,7 +295,7 @@ export function PortfolioHealthCheck({ holdings }) {
             background: C.amberBg,
             border: `1px solid ${alpha(C.amber, '20')}`,
             borderRadius: 6,
-            padding: '6px 10px',
+            padding: '4px 8px',
             marginBottom: 8,
             fontSize: 10,
             color: C.textSec,
@@ -315,7 +315,7 @@ export function PortfolioHealthCheck({ holdings }) {
     // Three column distributions
     h(
       'div',
-      { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 } },
+      { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 } },
       h(
         'div',
         null,
@@ -325,7 +325,7 @@ export function PortfolioHealthCheck({ holdings }) {
           .map(([s, n]) =>
             h(
               'div',
-              { key: s, style: { fontSize: 10, color: C.textSec, marginBottom: 2 } },
+              { key: s, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
               s,
               ' ',
               h('span', { style: { color: C.text, fontWeight: 600 } }, n)
@@ -339,7 +339,7 @@ export function PortfolioHealthCheck({ holdings }) {
         Object.entries(periodMap).map(([p, n]) =>
           h(
             'div',
-            { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 2 } },
+            { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
             p === '短' ? '短期' : p === '中' ? '中期' : p === '短中' ? '短中期' : '中長期',
             ' ',
             h('span', { style: { color: C.text, fontWeight: 600 } }, n)
@@ -355,7 +355,7 @@ export function PortfolioHealthCheck({ holdings }) {
           .map(([p, val]) =>
             h(
               'div',
-              { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 2 } },
+              { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
               p,
               ' ',
               h(
@@ -386,7 +386,7 @@ export function Top5Holdings({ holdings, totalVal }) {
     h('div', { style: lbl }, '市值佔比 Top 5'),
     h(
       'div',
-      { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
+      { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
       top5.map((holding) => {
         const pct = (getHoldingMarketValue(holding) / Math.max(totalVal, 1)) * 100
         return h(
@@ -396,11 +396,11 @@ export function Top5Holdings({ holdings, totalVal }) {
             style: {
               display: 'flex',
               alignItems: 'center',
-              gap: 5,
+              gap: 4,
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 20,
-              padding: '4px 10px',
+              padding: '4px 8px',
             },
           },
           h('span', { style: { fontSize: 11, color: C.textSec, fontWeight: 500 } }, holding.name),
@@ -421,18 +421,18 @@ export function Top5Holdings({ holdings, totalVal }) {
 export function WinLossSummary({ winners, losers }) {
   return h(
     'div',
-    { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 } },
+    { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 8 } },
     h(
       Card,
       {
         style: {
           borderLeft: `3px solid ${alpha(C.up, '40')}`,
-          padding: '8px 10px',
+          padding: '8px 8px',
         },
       },
       h(
         'div',
-        { style: { ...lbl, color: C.textSec, marginBottom: 3 } },
+        { style: { ...lbl, color: C.textSec, marginBottom: 4 } },
         `獲利 ${winners.length}檔`
       ),
       winners.slice(0, 3).map((holding) =>
@@ -456,10 +456,10 @@ export function WinLossSummary({ winners, losers }) {
       {
         style: {
           borderLeft: `3px solid ${alpha(C.down, '40')}`,
-          padding: '8px 10px',
+          padding: '8px 8px',
         },
       },
-      h('div', { style: { ...lbl, color: C.down, marginBottom: 3 } }, `虧損 ${losers.length}檔`),
+      h('div', { style: { ...lbl, color: C.down, marginBottom: 4 } }, `虧損 ${losers.length}檔`),
       losers.slice(0, 3).map((holding) =>
         h(
           'div',
@@ -569,7 +569,7 @@ export function HoldingsPanel({
         Card,
         {
           style: {
-            padding: '18px 18px 14px',
+            padding: '16px 16px 12px',
           },
         },
         h(HoldingsRing, { holdings, totalVal })

@@ -79,8 +79,8 @@ export function DataError({
       data-error-status={String(normalizedStatus)}
       style={{
         display: 'grid',
-        gap: 10,
-        padding: '11px 12px',
+        gap: 8,
+        padding: '8px 12px',
         borderRadius: 14,
         border: `1px solid ${tone.border}`,
         background: tone.background,
@@ -125,7 +125,7 @@ export function DataError({
                   justifyContent: 'center',
                   minWidth: 44,
                   minHeight: 44,
-                  padding: '10px 12px',
+                  padding: '8px 12px',
                   borderRadius: 999,
                   border: `1px solid ${alpha(C.amber, '2a')}`,
                   background: alpha(C.amber, '12'),

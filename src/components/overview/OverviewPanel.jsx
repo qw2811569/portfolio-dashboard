@@ -12,12 +12,12 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const ghostBtn = {
   borderRadius: 20,
-  padding: '4px 11px',
+  padding: '4px 8px',
   fontSize: 9,
   fontWeight: 500,
   cursor: 'pointer',
@@ -69,7 +69,7 @@ export function OverviewHeader({
       {
         style: {
           marginBottom: 8,
-          padding: '28px 24px',
+          padding: '24px 24px',
           background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
         },
       },
@@ -78,7 +78,7 @@ export function OverviewHeader({
         {
           style: {
             display: 'grid',
-            gap: 18,
+            gap: 16,
           },
         },
         h(
@@ -133,7 +133,7 @@ export function OverviewHeader({
                 style: {
                   fontSize: 11,
                   color: C.textSec,
-                  padding: '4px 10px',
+                  padding: '4px 8px',
                   borderRadius: 999,
                   background: alpha(C.blue, '18'),
                   border: `1px solid ${C.borderStrong}`,
@@ -196,7 +196,7 @@ export function OverviewHeader({
         h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '全部總覽'),
         h(
           'div',
-          { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 } },
+          { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 } },
           h(MetricCard, {
             label: '組合數',
             value: portfolioCount,
@@ -251,7 +251,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
               background: portfolio.id === activePortfolioId ? C.subtleElev : C.subtle,
               border: `1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
               borderRadius: 8,
-              padding: '10px 12px',
+              padding: '8px 12px',
             },
           },
           h(
@@ -261,7 +261,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                gap: 10,
+                gap: 8,
                 flexWrap: 'wrap',
               },
             },
@@ -273,7 +273,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                 { style: { fontSize: 12, fontWeight: 600, color: C.text } },
                 displayPortfolioName(portfolio),
                 portfolio.id === 'me' &&
-                  h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 6 } }, 'owner')
+                  h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 4 } }, 'owner')
               ),
               h(
                 'div',
@@ -283,7 +283,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
               noteSummary &&
                 h(
                   'div',
-                  { style: { fontSize: 10, color: C.textSec, marginTop: 6, lineHeight: 1.7 } },
+                  { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                   noteSummary
                 )
             ),
@@ -303,7 +303,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                 {
                   onClick: () => onSwitch(portfolio.id),
                   style: {
-                    marginTop: 6,
+                    marginTop: 4,
                     background: C.cardBlue,
                     color: C.textSec,
                     border: `1px solid ${alpha(C.blue, '2a')}`,
@@ -362,7 +362,7 @@ export function DuplicateHoldings({ holdings }) {
               'div',
               null,
               h('span', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, item.name),
-              h('span', { style: { fontSize: 10, color: C.textMute, marginLeft: 6 } }, item.code)
+              h('span', { style: { fontSize: 10, color: C.textMute, marginLeft: 4 } }, item.code)
             ),
             h(
               'span',
@@ -375,7 +375,7 @@ export function DuplicateHoldings({ holdings }) {
           ),
           h(
             'div',
-            { style: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 } },
+            { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 } },
             item.portfolios.map((portfolio) =>
               h(
                 'span',
@@ -383,7 +383,7 @@ export function DuplicateHoldings({ holdings }) {
                   key: `${item.code}-${portfolio.id}`,
                   style: {
                     fontSize: 9,
-                    padding: '2px 8px',
+                    padding: '4px 8px',
                     borderRadius: 999,
                     background: C.subtle,
                     border: `1px solid ${C.border}`,
@@ -429,7 +429,7 @@ export function PendingItems({ items, onSwitch }) {
               background: C.subtle,
               border: `1px solid ${C.border}`,
               borderRadius: 8,
-              padding: '10px 12px',
+              padding: '8px 12px',
             },
           },
           h(
@@ -455,7 +455,7 @@ export function PendingItems({ items, onSwitch }) {
               item.predReason &&
                 h(
                   'div',
-                  { style: { fontSize: 10, color: C.textSec, marginTop: 6, lineHeight: 1.7 } },
+                  { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                   item.predReason
                 )
             ),

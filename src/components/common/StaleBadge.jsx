@@ -69,8 +69,8 @@ export function StaleBadge({
       style: {
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
-        padding: '3px 8px',
+        gap: 4,
+        padding: '4px 8px',
         borderRadius: 999,
         border: `1px solid ${meta.border}`,
         background: meta.background,

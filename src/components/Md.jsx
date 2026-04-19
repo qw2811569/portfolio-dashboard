@@ -15,7 +15,7 @@ export default function Md({ text, color }) {
           'ul',
           {
             key: `ul-${els.length}`,
-            style: { margin: '4px 0 8px 6px', padding: 0, listStyle: 'none' },
+            style: { margin: '4px 0 8px 4px', padding: 0, listStyle: 'none' },
           },
           listItems.map((li, j) =>
             h(
@@ -65,6 +65,7 @@ export default function Md({ text, color }) {
       const lvl = lvlMatch ? lvlMatch[1].length : 1
       const txt = line.replace(/^#+\s*/, '')
       const sz = lvl === 1 ? 14 : lvl === 2 ? 12 : 11
+      const headingMarginTop = lvl === 1 ? 12 : 8
       els.push(
         h(
           'div',
@@ -74,7 +75,7 @@ export default function Md({ text, color }) {
               fontSize: sz,
               fontWeight: 600,
               color: C.text,
-              marginTop: lvl === 1 ? 12 : 8,
+              marginTop: headingMarginTop,
               marginBottom: 4,
             },
           },
@@ -99,7 +100,7 @@ export default function Md({ text, color }) {
               lineHeight: 1.8,
               paddingLeft: 12,
               position: 'relative',
-              marginBottom: 2,
+              marginBottom: 4,
             },
           },
           h(
@@ -138,7 +139,7 @@ export default function Md({ text, color }) {
         const cellStyle = {
           fontSize: 11,
           color: textColor,
-          padding: '3px 8px',
+          padding: '4px 8px',
           borderBottom: `1px solid ${C.border || '#333'}`,
           whiteSpace: 'nowrap',
         }
@@ -150,7 +151,7 @@ export default function Md({ text, color }) {
               style: {
                 width: '100%',
                 borderCollapse: 'collapse',
-                margin: '6px 0',
+                margin: '4px 0',
                 fontSize: 11,
               },
             },
@@ -201,7 +202,7 @@ export default function Md({ text, color }) {
           'div',
           {
             key: `p-${i}`,
-            style: { fontSize: 11, color: textColor, lineHeight: 1.8, marginBottom: 2 },
+            style: { fontSize: 11, color: textColor, lineHeight: 1.8, marginBottom: 4 },
           },
           renderInline(line)
         )

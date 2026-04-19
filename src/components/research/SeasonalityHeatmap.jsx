@@ -114,12 +114,12 @@ function EmptySeasonalityCard({ name, code }) {
     ),
     h(
       'div',
-      { style: { fontSize: 12, color: C.text, fontWeight: 600, marginTop: 6 } },
+      { style: { fontSize: 12, color: C.text, fontWeight: 600, marginTop: 4 } },
       `${name} · ${code}`
     ),
     h(
       'div',
-      { style: { fontSize: 11, color: C.textMute, lineHeight: 1.7, marginTop: 10 } },
+      { style: { fontSize: 11, color: C.textMute, lineHeight: 1.7, marginTop: 8 } },
       '資料尚未取得'
     )
   )
@@ -149,9 +149,9 @@ function SeasonalityCard({ holding, revenueRows }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 10,
+          gap: 8,
           flexWrap: 'wrap',
-          marginBottom: 10,
+          marginBottom: 8,
         },
       },
       h(
@@ -217,7 +217,7 @@ function SeasonalityCard({ holding, revenueRows }) {
               fontSize: 9,
               color: C.textMute,
               textAlign: 'center',
-              paddingBottom: 2,
+              paddingBottom: 4,
             },
           },
           label
@@ -270,7 +270,7 @@ function SeasonalityCard({ holding, revenueRows }) {
         style: {
           display: 'grid',
           gap: 4,
-          marginTop: 10,
+          marginTop: 8,
           fontSize: 10,
           color: C.textSec,
           lineHeight: 1.7,
@@ -312,9 +312,9 @@ export function SeasonalityHeatmap({ holdings }) {
     {
       style: {
         display: 'grid',
-        gap: 10,
+        gap: 8,
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        marginBottom: 10,
+        marginBottom: 8,
       },
     },
     cards.map(({ holding, revenueRows }) =>

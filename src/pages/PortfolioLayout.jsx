@@ -38,7 +38,7 @@ export function PortfolioLayout() {
       'div',
       {
         style: {
-          padding: '8px 14px',
+          padding: '8px 12px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           background: 'rgba(255, 196, 0, 0.08)',
           color: '#f3c96b',
@@ -50,7 +50,7 @@ export function PortfolioLayout() {
       ROUTE_SHELL_NOTICE
     ),
     h(Header, headerProps),
-    h('div', { style: { padding: '10px 14px' } }, h(Outlet, { context: outletContext })),
+    h('div', { style: { padding: '8px 12px' } }, h(Outlet, { context: outletContext })),
     h(ConfirmDialog, {
       open: appConfirmDialog.open,
       title: appConfirmDialog.title,

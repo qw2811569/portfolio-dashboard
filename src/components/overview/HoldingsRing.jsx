@@ -38,11 +38,11 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
     <div
       style={{
         display: 'grid',
-        gap: 18,
+        gap: 16,
         height: '100%',
       }}
     >
-      <div style={{ display: 'grid', gap: 6 }}>
+      <div style={{ display: 'grid', gap: 4 }}>
         <div
           style={{
             fontSize: 14,
@@ -134,7 +134,7 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
             style={{
               display: 'grid',
               gridTemplateColumns: '12px minmax(0, 1fr) auto',
-              gap: 10,
+              gap: 8,
               alignItems: 'center',
               fontSize: 12,
             }}
@@ -159,7 +159,7 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
               >
                 {holding.name}
               </div>
-              <div style={{ color: C.textMute, marginTop: 2 }}>{holding.code}</div>
+              <div style={{ color: C.textMute, marginTop: 4 }}>{holding.code}</div>
             </div>
             <div className="tn" style={{ color: C.textSec, fontWeight: 600 }}>
               {(holding.weight * 100).toFixed(1)}%
@@ -172,7 +172,7 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
             style={{
               display: 'grid',
               gridTemplateColumns: '12px minmax(0, 1fr) auto',
-              gap: 10,
+              gap: 8,
               alignItems: 'center',
               fontSize: 12,
             }}

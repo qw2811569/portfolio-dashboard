@@ -34,7 +34,7 @@ export function SoftMessage({ children, tone = 'muted', style = {} }) {
         display: 'flex',
         alignItems: 'flex-start',
         gap: 8,
-        padding: '10px 11px',
+        padding: '8px 8px',
         borderRadius: 12,
         border: `1px solid ${meta.border}`,
         background: meta.background,

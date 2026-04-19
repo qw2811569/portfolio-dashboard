@@ -47,7 +47,7 @@ function PrincipleCard({ label, text }) {
     Card,
     {
       style: {
-        padding: '18px 20px',
+        padding: '16px 16px',
         background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
         minHeight: 132,
       },

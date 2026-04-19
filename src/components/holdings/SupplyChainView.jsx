@@ -8,12 +8,12 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const chipStyle = {
   fontSize: 10,
-  padding: '3px 8px',
+  padding: '4px 8px',
   borderRadius: 4,
   background: C.fillPrimary,
   color: C.text,
@@ -62,7 +62,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
 
   return h(
     Card,
-    { style: { padding: '12px 14px' } },
+    { style: { padding: '12px 12px' } },
     // Title
     h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '供應鏈關係'),
 
@@ -70,7 +70,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
     hasUpstream &&
       h(
         'div',
-        { style: { marginBottom: 10 } },
+        { style: { marginBottom: 8 } },
         h('div', { style: { ...lbl, marginBottom: 4 } }, '上游'),
         h(
           'div',
@@ -104,7 +104,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
           padding: '8px 12px',
           background: C.fillPrimary,
           borderRadius: 6,
-          margin: '10px 0',
+          margin: '8px 0',
         },
       },
       h('div', { style: { fontSize: 12, fontWeight: 600, color: C.text } }, name),
@@ -115,7 +115,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
     hasDownstream &&
       h(
         'div',
-        { style: { marginBottom: 10 } },
+        { style: { marginBottom: 8 } },
         h('div', { style: { ...lbl, marginBottom: 4 } }, '下游'),
         h(
           'div',
@@ -145,7 +145,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
       !hasDownstream &&
       h(
         'div',
-        { style: { marginBottom: 10 } },
+        { style: { marginBottom: 8 } },
         h('div', { style: { ...lbl, marginBottom: 4 } }, '主要客戶'),
         h(
           'div',
@@ -161,7 +161,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
       !hasUpstream &&
       h(
         'div',
-        { style: { marginBottom: 10 } },
+        { style: { marginBottom: 8 } },
         h('div', { style: { ...lbl, marginBottom: 4 } }, '主要供應商'),
         h(
           'div',
@@ -178,8 +178,8 @@ export function SupplyChainView({ code, name, onStockClick }) {
         'div',
         {
           style: {
-            marginTop: 10,
-            paddingTop: 10,
+            marginTop: 8,
+            paddingTop: 8,
             borderTop: `1px solid ${C.border}`,
           },
         },

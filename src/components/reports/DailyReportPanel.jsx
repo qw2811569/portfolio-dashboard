@@ -12,7 +12,7 @@ const lbl = {
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
-  marginBottom: 5,
+  marginBottom: 4,
 }
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
@@ -124,7 +124,7 @@ function AggregateDailySummary({
   const Container = compact ? 'div' : Card
   const containerStyle = compact
     ? {
-        padding: '8px 10px',
+        padding: '8px 8px',
         borderRadius: 8,
         background: C.subtle,
         border: `1px solid ${C.borderSub}`,
@@ -149,7 +149,7 @@ function AggregateDailySummary({
       'data-testid': testId,
       style: containerStyle,
     },
-    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 6 } }, title),
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, title),
     subtitle &&
       h(
         'div',
@@ -169,7 +169,7 @@ function AggregateDailySummary({
         {
           style: {
             display: 'flex',
-            gap: 6,
+            gap: 4,
             flexWrap: 'wrap',
             marginBottom: totalTodayPnl != null ? 8 : 0,
           },
@@ -181,7 +181,7 @@ function AggregateDailySummary({
               key: item,
               style: {
                 fontSize: 9,
-                padding: '3px 7px',
+                padding: '4px 8px',
                 borderRadius: 999,
                 background: alpha(C.amber, '12'),
                 border: `1px solid ${alpha(C.amber, '20')}`,
@@ -256,9 +256,9 @@ export function DailyAnalysisEmpty({
   return h(
     Card,
     {
-      style: { textAlign: 'center', padding: '20px 14px', marginBottom: 10 },
+      style: { textAlign: 'center', padding: '16px 12px', marginBottom: 8 },
     },
-    h('div', { style: { fontSize: 24, marginBottom: 6, opacity: 0.4 } }, '◎'),
+    h('div', { style: { fontSize: 24, marginBottom: 4, opacity: 0.4 } }, '◎'),
     h(
       'div',
       { style: { fontSize: 12, color: C.textSec, fontWeight: 500, marginBottom: 4 } },
@@ -277,7 +277,7 @@ export function DailyAnalysisEmpty({
         {
           onClick: onAnalyze,
           style: {
-            padding: '10px 24px',
+            padding: '8px 24px',
             borderRadius: 8,
             border: 'none',
             background: `linear-gradient(135deg,${alpha(C.blue, '20')},${alpha(C.olive, '20')})`,
@@ -296,7 +296,7 @@ export function DailyAnalysisEmpty({
           onClick: onStressTest,
           disabled: stressTesting || analyzing,
           style: {
-            padding: '10px 16px',
+            padding: '8px 16px',
             borderRadius: 8,
             border: `1px solid ${alpha(C.down, 0.4)}`,
             background: 'transparent',
@@ -354,7 +354,7 @@ export function ReviewGateCard({
         {
           onClick: onNavigateReview,
           style: {
-            padding: '8px 14px',
+            padding: '8px 12px',
             borderRadius: 8,
             border: `1px solid ${alpha(C.olive, '2a')}`,
             background: alpha(C.olive, '12'),
@@ -390,7 +390,7 @@ export function AnalyzingState({ step }) {
     {
       style: {
         textAlign: 'center',
-        padding: '40px 16px',
+        padding: '48px 16px',
         background: `linear-gradient(135deg, ${alpha(C.blue, '08')}, ${alpha(C.lavender, '08')})`,
       },
     },
@@ -413,7 +413,7 @@ export function AnalyzingState({ step }) {
           fontSize: 13,
           color: C.text,
           fontWeight: 600,
-          marginBottom: 10,
+          marginBottom: 8,
         },
       },
       '正在進行收盤分析'
@@ -461,7 +461,7 @@ export function AnalyzingState({ step }) {
         style: {
           fontSize: 10,
           color: C.textMute,
-          marginTop: 10,
+          marginTop: 8,
         },
       },
       'AI 正在分析持股、事件與市場變化，請稍候...'
@@ -539,7 +539,7 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
       },
       h(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+        { style: { display: 'flex', alignItems: 'center', gap: 4 } },
         h('div', { style: { ...lbl, marginBottom: 0 } }, `${report.date} 收盤分析`),
         h('span', { style: { fontSize: 9, color: C.textMute } }, report.time),
         report.analysisStageLabel &&
@@ -575,8 +575,8 @@ export function DailyReportSummary({ report, expanded, onToggle }) {
         'div',
         {
           style: {
-            marginTop: 10,
-            paddingTop: 10,
+            marginTop: 8,
+            paddingTop: 8,
             borderTop: `1px solid ${C.border}`,
             display: 'flex',
             gap: 12,
@@ -617,7 +617,7 @@ export function AnalysisStageCard({ report }) {
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
-          marginBottom: 6,
+          marginBottom: 4,
         },
       },
       h('div', { style: { ...lbl, color: C.textSec } }, '資料確認階段'),
@@ -627,19 +627,19 @@ export function AnalysisStageCard({ report }) {
     pendingCodes.length > 0 &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textMute, marginTop: 6, lineHeight: 1.7 } },
+        { style: { fontSize: 9, color: C.textMute, marginTop: 4, lineHeight: 1.7 } },
         `待確認標的：${pendingCodes.slice(0, 5).join('、')}${pendingCodes.length > 5 ? '…' : ''}`
       ),
     report.rerunReason === 'finmind-confirmed' &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textSec, marginTop: 6 } },
+        { style: { fontSize: 9, color: C.textSec, marginTop: 4 } },
         '這份分析是由同日快版升級而來，已保留先前版本供追蹤。'
       ),
     report.rerunReason === 'finmind-auto-confirmed' &&
       h(
         'div',
-        { style: { fontSize: 9, color: C.textSec, marginTop: 6 } },
+        { style: { fontSize: 9, color: C.textSec, marginTop: 4 } },
         '系統在偵測到 FinMind 日終資料齊全後，已自動補跑並保留同日快版供比對。'
       )
   )
@@ -671,7 +671,7 @@ export function RitualModeCard({ report }) {
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
-          marginBottom: 6,
+          marginBottom: 4,
         },
       },
       h('div', { style: { ...lbl, color: C.textSec } }, ritualMode?.label || '收盤後儀式模式'),
@@ -700,7 +700,7 @@ export function RitualModeCard({ report }) {
                 fontSize: 10,
                 color: C.text,
                 lineHeight: 1.7,
-                padding: '3px 0',
+                padding: '4px 0',
               },
             },
             `${index + 1}. ${item}`
@@ -725,7 +725,7 @@ export function RitualModeCard({ report }) {
                 fontSize: 10,
                 color: C.text,
                 lineHeight: 1.7,
-                padding: '3px 0',
+                padding: '4px 0',
               },
             },
             `- ${item}`
@@ -820,7 +820,7 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
           alignItems: 'center',
           gap: 8,
           flexWrap: 'wrap',
-          marginBottom: 6,
+          marginBottom: 4,
         },
       },
       h(
@@ -830,7 +830,7 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
       ),
       h(
         'div',
-        { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' } },
+        { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' } },
         h(
           Badge,
           { color: diff.changeCount > 0 ? 'olive' : 'teal' },
@@ -885,11 +885,11 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
                   style: {
                     border: `1px solid ${C.border}`,
                     borderRadius: 8,
-                    padding: 10,
+                    padding: 8,
                     background: alpha(C.bg, '0d'),
                   },
                 },
-                h('div', { style: { ...lbl, marginBottom: 6 } }, change.label),
+                h('div', { style: { ...lbl, marginBottom: 4 } }, change.label),
                 h(
                   'div',
                   {
@@ -1025,7 +1025,7 @@ export function HoldingsChanges({ changes, viewMode = 'retail' }) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '5px 0',
+            padding: '4px 0',
             borderBottom: i < changes.length - 1 ? `1px solid ${C.borderSub}` : 'none',
           },
         },
@@ -1033,15 +1033,15 @@ export function HoldingsChanges({ changes, viewMode = 'retail' }) {
           'div',
           null,
           h('span', { style: { fontSize: 12, fontWeight: 500, color: C.text } }, c.name),
-          h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 5 } }, c.code),
+          h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 4 } }, c.code),
           c.type !== '股票' &&
             h(
               'span',
               {
                 style: {
                   fontSize: 9,
-                  marginLeft: 5,
-                  padding: '1px 5px',
+                  marginLeft: 4,
+                  padding: '4px 8px',
                   borderRadius: 3,
                   background: C.amberBg,
                   color: C.textSec,
@@ -1114,7 +1114,7 @@ export function AnomaliesSection({ anomalies, viewMode = 'retail' }) {
         'div',
         {
           key: a.code,
-          style: { display: 'flex', justifyContent: 'space-between', padding: '6px 0' },
+          style: { display: 'flex', justifyContent: 'space-between', padding: '4px 0' },
         },
         h('span', { style: { fontSize: 12, color: C.text } }, a.name),
         h(
@@ -1165,20 +1165,20 @@ export function EventCorrelations({ correlations, viewMode = 'retail' }) {
         'div',
         {
           key: ec.id,
-          style: { marginBottom: 10, background: C.subtle, borderRadius: 7, padding: '9px 11px' },
+          style: { marginBottom: 8, background: C.subtle, borderRadius: 7, padding: '8px 8px' },
         },
         h(
           'div',
           { style: { fontSize: 11, fontWeight: 500, color: C.text, marginBottom: 4 } },
           ec.title
         ),
-        h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 6 } }, ec.date),
+        h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, ec.date),
         ec.relatedStocks.map((s) =>
           h(
             'div',
             {
               key: s.code,
-              style: { display: 'flex', justifyContent: 'space-between', padding: '3px 0' },
+              style: { display: 'flex', justifyContent: 'space-between', padding: '4px 0' },
             },
             h('span', { style: { fontSize: 10, color: C.textSec } }, s.name),
             h(
@@ -1228,7 +1228,7 @@ export function EventAssessments({
         'div',
         {
           key: ea.eventId || i,
-          style: { marginBottom: 8, background: C.subtle, borderRadius: 7, padding: '9px 11px' },
+          style: { marginBottom: 8, background: C.subtle, borderRadius: 7, padding: '8px 8px' },
         },
         h(
           'div',
@@ -1243,13 +1243,13 @@ export function EventAssessments({
           h('span', { style: { fontSize: 11, fontWeight: 500, color: C.text } }, ea.title),
           h(
             'div',
-            { style: { display: 'flex', gap: 6, alignItems: 'center' } },
+            { style: { display: 'flex', gap: 4, alignItems: 'center' } },
             h(
               'span',
               {
                 style: {
                   fontSize: 9,
-                  padding: '2px 6px',
+                  padding: '4px 8px',
                   borderRadius: 3,
                   background: impactColor + '22',
                   color: impactColor,
@@ -1264,7 +1264,7 @@ export function EventAssessments({
                 {
                   style: {
                     fontSize: 9,
-                    padding: '2px 6px',
+                    padding: '4px 8px',
                     borderRadius: 3,
                     background: C.amberBg,
                     color: C.textSec,
@@ -1275,7 +1275,7 @@ export function EventAssessments({
               )
           )
         ),
-        h('div', { style: { fontSize: 10, color: C.textSec, marginBottom: 2 } }, ea.note),
+        h('div', { style: { fontSize: 10, color: C.textSec, marginBottom: 4 } }, ea.note),
         h(
           'div',
           { style: { display: 'flex', gap: 8, alignItems: 'center' } },
@@ -1309,7 +1309,7 @@ export function EventAssessments({
               },
               style: {
                 marginTop: 4,
-                padding: '4px 10px',
+                padding: '4px 8px',
                 borderRadius: 5,
                 border: `1px solid ${alpha(C.olive, '2a')}`,
                 background: 'transparent',
@@ -1364,21 +1364,21 @@ export function BrainAuditSection({ brainAudit }) {
             {
               key: `${section.key}-${idx}`,
               style: {
-                marginBottom: 6,
+                marginBottom: 4,
                 background: C.subtle,
                 borderRadius: 7,
-                padding: '9px 11px',
+                padding: '8px 8px',
               },
             },
             h(
               'div',
               {
-                style: { fontSize: 10, fontWeight: 600, color: C.textSec, marginBottom: 3 },
+                style: { fontSize: 10, fontWeight: 600, color: C.textSec, marginBottom: 4 },
               },
               item.text || item.id || '未命名規則'
             ),
             item.reason &&
-              h('div', { style: { fontSize: 10, color: C.textSec, marginBottom: 2 } }, item.reason),
+              h('div', { style: { fontSize: 10, color: C.textSec, marginBottom: 4 } }, item.reason),
             h(
               'div',
               { style: { display: 'flex', flexWrap: 'wrap', gap: 8 } },
@@ -1411,7 +1411,7 @@ export function BrainAuditSection({ brainAudit }) {
               h(
                 'div',
                 {
-                  style: { fontSize: 9, color: C.textSec, marginTop: 3 },
+                  style: { fontSize: 9, color: C.textSec, marginTop: 4 },
                 },
                 `證據來源：${item.evidenceRefs
                   .slice(0, 3)
@@ -1457,7 +1457,7 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
             },
             style: {
               marginTop: 4,
-              padding: '4px 10px',
+              padding: '4px 8px',
               borderRadius: 5,
               border: `1px solid ${alpha(C.olive, '2a')}`,
               background: 'transparent',
@@ -1503,7 +1503,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
               fontSize: 10,
               color: C.textMute,
               background: C.subtle,
-              padding: '2px 8px',
+              padding: '4px 8px',
               borderRadius: 4,
             },
           },
@@ -1518,7 +1518,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
           style: {
             display: 'flex',
             gap: 8,
-            marginTop: 10,
+            marginTop: 8,
             paddingTop: 8,
             borderTop: `1px solid ${C.borderSub}`,
           },
@@ -1533,7 +1533,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
           {
             onClick: () => onFeedback && onFeedback('helpful'),
             style: {
-              padding: '4px 10px',
+              padding: '4px 8px',
               borderRadius: 5,
               border: `1px solid ${alpha(C.up, '30')}`,
               background: alpha(C.up, '10'),
@@ -1550,7 +1550,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
           {
             onClick: () => onFeedback && onFeedback('misleading'),
             style: {
-              padding: '4px 10px',
+              padding: '4px 8px',
               borderRadius: 5,
               border: `1px solid ${alpha(C.down, '30')}`,
               background: alpha(C.down, '10'),
@@ -1569,7 +1569,7 @@ export function AIInsightSection({ insight, error, date, time, onFeedback }) {
   return h(
     Card,
     {
-      style: { marginBottom: 10, background: C.subtle },
+      style: { marginBottom: 8, background: C.subtle },
     },
     h(
       'div',
@@ -1601,7 +1601,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
   return h(
     Card,
     {
-      style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
     },
     h(
       'div',
@@ -1638,9 +1638,9 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
               style: {
                 fontSize: 11,
                 color: C.text,
-                padding: '3px 0',
+                padding: '4px 0',
                 display: 'flex',
-                gap: 6,
+                gap: 4,
                 alignItems: 'center',
               },
             },
@@ -1650,7 +1650,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
                 {
                   style: {
                     fontSize: 9,
-                    padding: '1px 5px',
+                    padding: '4px 8px',
                     borderRadius: 3,
                     fontWeight: 600,
                     background:
@@ -1696,7 +1696,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
                   style: {
                     fontSize: 11,
                     color: C.text,
-                    padding: '3px 0',
+                    padding: '4px 0',
                     display: 'flex',
                     justifyContent: 'space-between',
                   },
@@ -1741,7 +1741,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
         sections.watchlistAlerts.map((w) =>
           h(
             'div',
-            { key: w.code, style: { fontSize: 11, color: C.text, padding: '3px 0' } },
+            { key: w.code, style: { fontSize: 11, color: C.text, padding: '4px 0' } },
             `${w.name}(${w.code}) 接近進場價 ${w.entryPrice}（距離 ${w.distance >= 0 ? '+' : ''}${w.distance.toFixed(1)}%）`
           )
         )
@@ -1760,7 +1760,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
         sections.announcements.map((a, i) =>
           h(
             'div',
-            { key: i, style: { fontSize: 11, color: C.text, padding: '3px 0' } },
+            { key: i, style: { fontSize: 11, color: C.text, padding: '4px 0' } },
             `${a.code} ${a.name}：${a.title}`
           )
         )
@@ -1953,7 +1953,7 @@ export function DailyReportPanel({
             disabled: analyzing,
             style: {
               width: '100%',
-              padding: '10px 12px',
+              padding: '8px 12px',
               borderRadius: 8,
               border: `1px solid ${analyzing ? C.border : alpha(C.blue, '2a')}`,
               background: analyzing ? C.subtle : C.cardBlue,
@@ -1982,7 +1982,7 @@ export function DailyReportPanel({
             },
             style: {
               width: '100%',
-              padding: '10px 12px',
+              padding: '8px 12px',
               borderRadius: 8,
               border: `1px solid ${alpha(C.teal, '2a')}`,
               background: alpha(C.teal, '12'),

@@ -219,7 +219,6 @@ export function TextFieldDialog({
           padding: '8px 12px',
           color: C.text,
           fontSize: 12,
-          outline: 'none',
           fontFamily: 'inherit',
         },
       })

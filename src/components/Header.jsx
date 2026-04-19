@@ -499,7 +499,6 @@ export default function Header(props) {
             minHeight: 44,
             padding: '8px 12px',
             fontSize: 11,
-            outline: 'none',
             cursor: portfolioSwitching ? 'progress' : 'pointer',
           },
         },
@@ -762,7 +761,6 @@ export default function Header(props) {
                       padding: '8px 8px',
                       color: C.text,
                       fontSize: 11,
-                      outline: 'none',
                       fontFamily: 'inherit',
                     },
                   })
@@ -788,7 +786,6 @@ export default function Header(props) {
                       padding: '8px 8px',
                       color: C.text,
                       fontSize: 11,
-                      outline: 'none',
                       fontFamily: 'inherit',
                     },
                   })
@@ -817,7 +814,6 @@ export default function Header(props) {
                     fontSize: 11,
                     resize: 'vertical',
                     minHeight: 72,
-                    outline: 'none',
                     fontFamily: 'inherit',
                     lineHeight: 1.7,
                   },

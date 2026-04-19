@@ -185,7 +185,6 @@ export default function CmdKPalette({
                     flex: 1,
                     background: 'transparent',
                     border: 'none',
-                    outline: 'none',
                     color: C.text,
                     fontSize: 16,
                     fontFamily: 'var(--font-body)',

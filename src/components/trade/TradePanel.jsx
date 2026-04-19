@@ -411,7 +411,6 @@ export function ParseResults({
               padding: '8px 8px',
               color: C.text,
               fontSize: 12,
-              outline: 'none',
               fontFamily: 'inherit',
             },
           })
@@ -758,7 +757,6 @@ export function ParseResults({
           fontSize: 12,
           resize: 'none',
           minHeight: 70,
-          outline: 'none',
           fontFamily: 'inherit',
           marginBottom: 8,
           lineHeight: 1.7,
@@ -997,7 +995,6 @@ export function ManualUpdateForms({
               padding: '8px 8px',
               color: C.text,
               fontSize: 12,
-              outline: 'none',
               fontFamily: 'inherit',
             },
           })
@@ -1019,7 +1016,6 @@ export function ManualUpdateForms({
               padding: '8px 8px',
               color: C.text,
               fontSize: 12,
-              outline: 'none',
               fontFamily: 'inherit',
             },
           })
@@ -1041,7 +1037,6 @@ export function ManualUpdateForms({
             padding: '8px 8px',
             color: C.text,
             fontSize: 12,
-            outline: 'none',
             fontFamily: 'inherit',
           },
         })
@@ -1095,7 +1090,6 @@ export function ManualUpdateForms({
               padding: '8px 8px',
               color: C.text,
               fontSize: 12,
-              outline: 'none',
               fontFamily: 'inherit',
             },
           })
@@ -1117,7 +1111,6 @@ export function ManualUpdateForms({
               padding: '8px 8px',
               color: C.text,
               fontSize: 12,
-              outline: 'none',
               fontFamily: 'inherit',
             },
           })

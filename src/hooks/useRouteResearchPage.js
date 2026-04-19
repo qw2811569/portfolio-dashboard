@@ -26,6 +26,7 @@ function warnBlockedRouteWrite(actionName) {
 export function useRouteResearchPage() {
   const {
     portfolioId = '',
+    portfolioName = '',
     holdings = [],
     targets = {},
     fundamentals = {},
@@ -56,7 +57,12 @@ export function useRouteResearchPage() {
   const researchTarget = ctxResearchTarget ?? fallbackResearchTarget
   const setResearchTarget = ctxSetResearchTarget ?? setFallbackResearchTarget
   const viewMode = resolveViewMode({
-    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    portfolio: {
+      id: portfolioId,
+      name: portfolioName,
+      displayName: portfolioName,
+      isOwner: portfolioId === 'me',
+    },
     currentUser: 'me',
   })
   const [researchResults, setResearchResults] = useState(null)
@@ -191,6 +197,7 @@ export function useRouteResearchPage() {
       analystReports,
       enrichingResearchCode,
       holdings,
+      portfolioName,
       reportRefreshing,
       reportRefreshStatus,
       reportRefreshMeta,

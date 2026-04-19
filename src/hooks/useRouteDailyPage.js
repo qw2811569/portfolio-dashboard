@@ -17,6 +17,7 @@ export function useRouteDailyPage() {
   const navigate = useNavigate()
   const {
     portfolioId = 'me',
+    portfolioName = '',
     dailyReport,
     analysisHistory = [],
     newsEvents = [],
@@ -31,7 +32,12 @@ export function useRouteDailyPage() {
   const analyzing = ctxAnalyzing ?? false
   const analyzeStep = ctxAnalyzeStep ?? ''
   const viewMode = resolveViewMode({
-    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    portfolio: {
+      id: portfolioId,
+      name: portfolioName || operatingContext?.portfolio?.name || operatingContext?.portfolioLabel,
+      displayName: operatingContext?.portfolioLabel || portfolioName,
+      isOwner: portfolioId === 'me',
+    },
     currentUser: 'me',
   })
 
@@ -98,6 +104,7 @@ export function useRouteDailyPage() {
       newsEvents,
       operatingContext,
       portfolioId,
+      portfolioName,
       runDailyAnalysis,
       runStressTest,
       setExpandedStock,

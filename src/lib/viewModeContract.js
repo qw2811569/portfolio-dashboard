@@ -4,7 +4,7 @@ const VIEW_MODES = {
   INSIDER_COMPRESSED: 'insider-compressed',
 }
 
-export const INSIDER_LIST = ['7865']
+export const INSIDER_LIST = ['7865', 'jinliancheng', '金聯成', '金聯成組合']
 
 const INSIDER_SET = new Set(
   INSIDER_LIST.map((value) =>
@@ -25,6 +25,10 @@ function getPortfolioIdentifiers(portfolio = null) {
     portfolio?.custId,
     portfolio?.portfolioId,
     portfolio?.id,
+    portfolio?.name,
+    portfolio?.displayName,
+    portfolio?.portfolioLabel,
+    portfolio?.label,
     portfolio?.owner,
     portfolio?.ownerId,
   ]

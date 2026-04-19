@@ -52,7 +52,12 @@ export function useRouteDashboardPage() {
       portfolioId,
       portfolioName,
       viewMode: resolveViewMode({
-        portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+        portfolio: {
+          id: portfolioId,
+          name: portfolioName,
+          displayName: portfolioName,
+          isOwner: portfolioId === 'me',
+        },
         currentUser: 'me',
       }),
     }

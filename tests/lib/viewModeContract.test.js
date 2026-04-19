@@ -12,6 +12,18 @@ describe('viewModeContract', () => {
     )
   })
 
+  it('resolves live 金聯成 aliases to insider-compressed even with random ids', () => {
+    expect(
+      resolveViewMode({ portfolio: { id: 'p-random', name: '金聯成' }, currentUser: 'me' })
+    ).toBe('insider-compressed')
+    expect(
+      resolveViewMode({
+        portfolio: { id: 'p-random', displayName: '金聯成組合' },
+        currentUser: 'me',
+      })
+    ).toBe('insider-compressed')
+  })
+
   it('resolves me portfolio to owner when current user matches owner', () => {
     expect(resolveViewMode({ portfolio: { id: 'me', isOwner: true }, currentUser: 'me' })).toBe(
       'owner'

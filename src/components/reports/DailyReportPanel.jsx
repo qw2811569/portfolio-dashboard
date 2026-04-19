@@ -89,12 +89,13 @@ function summarizeDailyChanges(changes = []) {
   )
 }
 
-function ComplianceNoteCard({ note }) {
+function ComplianceNoteCard({ note, role }) {
   if (!note) return null
 
   return h(
     Card,
     {
+      role,
       'data-testid': 'viewmode-compliance-note',
       style: {
         marginBottom: 8,
@@ -1795,10 +1796,10 @@ export function DailyReportPanel({
   viewMode = 'retail',
 }) {
   const [autoConfirmState, setAutoConfirmState] = useState(null)
-  const complianceNote = getViewModeComplianceMessage(
-    viewMode,
-    operatingContext?.portfolioLabel || ''
-  )
+  const isInsiderCompressed = viewMode === 'insider-compressed'
+  const complianceNote = isInsiderCompressed
+    ? '這是合規壓縮版 · 僅保留組合層級觀察 · 不顯示個股細節'
+    : getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel || '')
 
   // Feedback handler - stores to localStorage
   function handleFeedback(signal) {
@@ -1871,8 +1872,14 @@ export function DailyReportPanel({
   return h(
     'div',
     { 'data-testid': 'daily-panel' },
+    isInsiderCompressed &&
+      h(ComplianceNoteCard, {
+        note: complianceNote,
+        role: 'top-banner',
+      }),
     h(OperatingContextCard, { context: operatingContext }),
-    isViewModeEnabled('showComplianceNote', viewMode) &&
+    !isInsiderCompressed &&
+      isViewModeEnabled('showComplianceNote', viewMode) &&
       h(ComplianceNoteCard, { note: complianceNote }),
     h(
       'div',

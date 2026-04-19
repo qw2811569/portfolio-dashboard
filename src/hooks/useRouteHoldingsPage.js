@@ -14,6 +14,7 @@ function warnBlockedRouteWrite(actionName) {
 export function useRouteHoldingsPage() {
   const {
     portfolioId = '',
+    portfolioName = '',
     holdings = [],
     holdingDossiers = [],
     todayTotalPnl = 0,
@@ -23,7 +24,12 @@ export function useRouteHoldingsPage() {
   const expandedStock = useBrainStore((state) => state.expandedStock)
   const setExpandedStock = useBrainStore((state) => state.setExpandedStock)
   const viewMode = resolveViewMode({
-    portfolio: { id: portfolioId, isOwner: portfolioId === 'me' },
+    portfolio: {
+      id: portfolioId,
+      name: portfolioName,
+      displayName: portfolioName,
+      isOwner: portfolioId === 'me',
+    },
     currentUser: 'me',
   })
 
@@ -92,6 +98,7 @@ export function useRouteHoldingsPage() {
     holdingDossiers,
     holdings,
     portfolioId,
+    portfolioName,
     todayTotalPnl,
     reversalConditions,
     setExpandedStock,

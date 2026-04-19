@@ -1,31 +1,16 @@
 import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
-import { C, TOKENS, alpha } from '../../theme.js'
+import { TOKENS, alpha } from '../../theme.js'
 import { Card, Button, DataError, OperatingContextCard } from '../common'
 import { normalizeDataError } from '../../lib/dataError.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
   fontSize: 12,
-  color: C.textMute,
+  color: TOKENS.iron,
   letterSpacing: '0.06em',
   fontWeight: 600,
   marginBottom: 4,
-}
-
-const PAPER = {
-  bone: TOKENS.boneSoft,
-  paper: TOKENS.paper,
-  sand: TOKENS.sand,
-  accent: C.blue,
-  accentStrong: C.olive,
-  ink: C.text,
-  muted: C.textSec,
-  mutedSoft: C.textMute,
-  grey: alpha(TOKENS.iron, '18'),
-  line: alpha(TOKENS.charcoal, '22'),
-  lineSoft: alpha(TOKENS.charcoal, '12'),
-  tangerine: TOKENS.cta,
 }
 
 const IMPACT_COPY = {
@@ -169,11 +154,11 @@ function ViewModeNotice({ note }) {
       style: {
         marginBottom: 12,
         borderRadius: 28,
-        borderLeft: `3px solid ${alpha(PAPER.tangerine, '40')}`,
+        borderLeft: `3px solid ${alpha(TOKENS.cta, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: PAPER.muted } }, '合規顯示模式'),
-    h('div', { style: { fontSize: 12, color: PAPER.ink, lineHeight: 1.7 } }, note)
+    h('div', { style: { ...lbl, color: TOKENS.iron } }, '合規顯示模式'),
+    h('div', { style: { fontSize: 12, color: TOKENS.ink, lineHeight: 1.7 } }, note)
   )
 }
 
@@ -188,11 +173,13 @@ function renderChip(text, style = {}, key = text) {
         gap: 4,
         padding: '4px 8px',
         borderRadius: 999,
-        border: `1px solid ${PAPER.lineSoft}`,
-        background: PAPER.paper,
-        color: PAPER.muted,
+        border: `1px solid ${TOKENS.boneDeep}`,
+        background: alpha(TOKENS.bone, 'eb'),
+        color: TOKENS.charcoal,
         fontSize: 11,
         letterSpacing: '0.04em',
+        fontFamily: TOKENS.fontBody,
+        fontVariantNumeric: 'tabular-nums',
         ...style,
       },
     },
@@ -203,6 +190,7 @@ function renderChip(text, style = {}, key = text) {
 function NewsFeedCard({
   item,
   isRead = false,
+  isLast = false,
   onToggleRead = () => {},
   onNavigateDaily = () => {},
 }) {
@@ -211,34 +199,30 @@ function NewsFeedCard({
     impact === 'positive'
       ? {
           label: IMPACT_COPY.positive,
-          bg: alpha(PAPER.accentStrong, '20'),
-          color: PAPER.ink,
-          border: alpha(PAPER.accentStrong, '32'),
+          bg: alpha(TOKENS.positive, '16'),
+          color: TOKENS.ink,
+          border: alpha(TOKENS.positive, '28'),
         }
       : impact === 'negative'
         ? {
             label: `▼ ${IMPACT_COPY.negative}`,
-            bg: alpha(PAPER.ink, '12'),
-            color: PAPER.ink,
-            border: alpha(PAPER.ink, '24'),
+            bg: alpha(TOKENS.charcoal, '10'),
+            color: TOKENS.ink,
+            border: alpha(TOKENS.charcoal, '24'),
           }
         : {
             label: IMPACT_COPY.neutral,
-            bg: PAPER.grey,
-            color: PAPER.muted,
-            border: alpha(PAPER.muted, '20'),
+            bg: alpha(TOKENS.boneDeep, 'd6'),
+            color: TOKENS.iron,
+            border: alpha(TOKENS.charcoal, '16'),
           }
 
   return h(
-    Card,
+    'article',
     {
       style: {
-        marginBottom: 12,
-        padding: '16px 16px 16px',
-        borderRadius: 28,
-        background: `linear-gradient(180deg, ${alpha(PAPER.paper, 'fc')}, ${alpha(PAPER.bone, 'f0')})`,
-        border: `1px solid ${PAPER.lineSoft}`,
-        boxShadow: '0 18px 30px rgba(91,84,72,0.06)',
+        padding: '20px 0 18px',
+        borderBottom: isLast ? 'none' : `1px solid ${TOKENS.boneDeep}`,
       },
     },
     h(
@@ -267,8 +251,9 @@ function NewsFeedCard({
             },
           },
           renderChip(normalizeSourceLabel(item.source), {
-            background: alpha(PAPER.accent, '26'),
-            color: PAPER.ink,
+            background: alpha(TOKENS.warning, '18'),
+            border: `1px solid ${alpha(TOKENS.warning, '24')}`,
+            color: TOKENS.ink,
           }),
           renderChip(impactTone.label, {
             background: impactTone.bg,
@@ -285,10 +270,10 @@ function NewsFeedCard({
             style: {
               fontSize: 26,
               fontWeight: 600,
-              color: PAPER.ink,
+              color: TOKENS.ink,
               textDecoration: 'none',
               lineHeight: 1.08,
-              fontFamily: 'var(--font-headline)',
+              fontFamily: TOKENS.fontSection,
               display: 'block',
               textDecorationLine: isRead ? 'line-through' : 'none',
               opacity: isRead ? 0.62 : 1,
@@ -303,7 +288,8 @@ function NewsFeedCard({
               marginTop: 8,
               fontSize: 13,
               lineHeight: 1.7,
-              color: PAPER.muted,
+              color: TOKENS.charcoal,
+              fontFamily: TOKENS.fontBody,
               maxWidth: 560,
               textDecorationLine: isRead ? 'line-through' : 'none',
               opacity: isRead ? 0.72 : 1,
@@ -329,9 +315,9 @@ function NewsFeedCard({
             renderChip(
               `${stock.code} ${stock.name}`,
               {
-                background: alpha(PAPER.accentStrong, '18'),
-                color: PAPER.ink,
-                border: `1px solid ${alpha(PAPER.accentStrong, '20')}`,
+                background: alpha(TOKENS.bone, 'f2'),
+                color: TOKENS.charcoal,
+                border: `1px solid ${TOKENS.boneDeep}`,
               },
               stock.code
             )
@@ -357,7 +343,9 @@ function NewsFeedCard({
               fontSize: 11,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: PAPER.mutedSoft,
+              color: TOKENS.iron,
+              fontFamily: TOKENS.fontCaption,
+              fontVariantNumeric: 'tabular-nums',
             },
           },
           formatDateTime(item.pubDate)
@@ -369,12 +357,14 @@ function NewsFeedCard({
             className: 'ui-btn',
             onClick: () => onToggleRead(item),
             style: {
-              border: `1px solid ${PAPER.line}`,
-              background: isRead ? PAPER.grey : PAPER.paper,
-              color: PAPER.muted,
+              border: `1px solid ${TOKENS.boneDeep}`,
+              background: isRead ? alpha(TOKENS.boneDeep, 'b8') : alpha(TOKENS.bone, 'ed'),
+              color: isRead ? TOKENS.charcoal : TOKENS.iron,
               borderRadius: 999,
               padding: '8px 12px',
               fontSize: 11,
+              fontFamily: TOKENS.fontBody,
+              fontVariantNumeric: 'tabular-nums',
               cursor: 'pointer',
             },
           },
@@ -385,9 +375,9 @@ function NewsFeedCard({
           {
             onClick: () => onNavigateDaily(item),
             style: {
-              background: PAPER.tangerine,
-              border: `1px solid ${alpha(PAPER.tangerine, '40')}`,
-              color: PAPER.ink,
+              background: TOKENS.cta,
+              border: `1px solid ${alpha(TOKENS.cta, '40')}`,
+              color: TOKENS.ink,
               textTransform: 'none',
               letterSpacing: '0.02em',
               padding: '8px 12px',
@@ -455,7 +445,7 @@ export function NewsFeedSection({
     return h(
       Card,
       { style: { padding: '16px 12px', textAlign: 'center' } },
-      h('div', { style: { fontSize: 11, color: C.textMute } }, '載入新聞中...')
+      h('div', { style: { fontSize: 11, color: TOKENS.iron } }, '載入新聞中...')
     )
   }
 
@@ -531,7 +521,8 @@ export function NewsFeedSection({
             marginBottom: 16,
             padding: '24px 24px',
             borderRadius: 30,
-            background: `radial-gradient(circle at 16% 18%, ${alpha(PAPER.sand, '90')}, transparent 28%), linear-gradient(180deg, ${alpha(PAPER.paper, 'fb')}, ${alpha(PAPER.bone, 'ee')})`,
+            border: `1px solid ${TOKENS.boneDeep}`,
+            background: `radial-gradient(circle at 16% 18%, ${alpha(TOKENS.warning, '18')}, transparent 28%), linear-gradient(180deg, ${alpha(TOKENS.bone, 'fa')}, ${alpha(TOKENS.bone, 'ec')})`,
             position: 'relative',
             overflow: 'hidden',
           },
@@ -540,8 +531,7 @@ export function NewsFeedSection({
           style: {
             position: 'absolute',
             inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(32,40,35,0.035) 0.7px, transparent 0.7px), radial-gradient(rgba(32,40,35,0.025) 0.7px, transparent 0.7px)',
+            backgroundImage: `radial-gradient(${alpha(TOKENS.charcoal, '09')} 0.7px, transparent 0.7px), radial-gradient(${alpha(TOKENS.charcoal, '06')} 0.7px, transparent 0.7px)`,
             backgroundPosition: '0 0, 12px 12px',
             backgroundSize: '24px 24px',
             opacity: 0.38,
@@ -564,17 +554,17 @@ export function NewsFeedSection({
             null,
             h(
               'div',
-              { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 8 } },
+              { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
               '情報脈絡 / News preview'
             ),
             h(
               'div',
               {
                 style: {
-                  fontFamily: 'var(--font-headline)',
+                  fontFamily: TOKENS.fontSection,
                   fontSize: 52,
-                  lineHeight: 0.94,
-                  color: PAPER.ink,
+                  lineHeight: 0.96,
+                  color: TOKENS.ink,
                   maxWidth: 520,
                 },
               },
@@ -588,7 +578,8 @@ export function NewsFeedSection({
                   maxWidth: 520,
                   fontSize: 14,
                   lineHeight: 1.7,
-                  color: PAPER.muted,
+                  color: TOKENS.charcoal,
+                  fontFamily: TOKENS.fontBody,
                 },
               },
               'Google News RSS 與 FinMind headline 先進來，先標已看、先收斂脈絡，再 handoff 給 Daily 判讀影響，不在這頁直接產事件。'
@@ -604,11 +595,14 @@ export function NewsFeedSection({
                 },
               },
               renderChip(`${filteredItems.length} 則相關新聞`, {
-                background: alpha(PAPER.accent, '22'),
-                color: PAPER.ink,
+                background: alpha(TOKENS.warning, '18'),
+                border: `1px solid ${alpha(TOKENS.warning, '24')}`,
+                color: TOKENS.ink,
               }),
               renderChip(`Ticker filter: ${holdingCodes.length || 'Auto'}`, {
-                background: PAPER.paper,
+                background: alpha(TOKENS.bone, 'f0'),
+                border: `1px solid ${TOKENS.boneDeep}`,
+                color: TOKENS.charcoal,
               })
             )
           ),
@@ -627,7 +621,9 @@ export function NewsFeedSection({
                   fontSize: 14,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  color: PAPER.mutedSoft,
+                  color: TOKENS.iron,
+                  fontFamily: TOKENS.fontCaption,
+                  fontVariantNumeric: 'tabular-nums',
                   marginBottom: 4,
                 },
               },
@@ -637,10 +633,11 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  fontFamily: 'var(--font-headline)',
+                  fontFamily: TOKENS.fontSection,
                   fontSize: 56,
                   lineHeight: 1,
-                  color: PAPER.ink,
+                  color: TOKENS.ink,
+                  fontVariantNumeric: 'tabular-nums',
                 },
               },
               filteredItems.length
@@ -650,7 +647,8 @@ export function NewsFeedSection({
               {
                 style: {
                   fontSize: 12,
-                  color: PAPER.muted,
+                  color: TOKENS.charcoal,
+                  fontFamily: TOKENS.fontBody,
                 },
               },
               '新增新聞數 N'
@@ -665,19 +663,32 @@ export function NewsFeedSection({
             style: {
               marginBottom: 12,
               fontSize: 11,
-              color: PAPER.mutedSoft,
+              color: TOKENS.iron,
             },
           },
           '新聞源暫時打不開，以下先用 preview fallback 撐住畫面。'
         ),
-      filteredItems.map((item, i) =>
-        h(NewsFeedCard, {
-          key: getItemId(item, i),
-          item,
-          isRead: readIds.has(getItemId(item, i)),
-          onToggleRead: () => handleToggleRead(item, i),
-          onNavigateDaily,
-        })
+      h(
+        Card,
+        {
+          style: {
+            borderRadius: 30,
+            padding: '0 24px',
+            border: `1px solid ${TOKENS.boneDeep}`,
+            background: `linear-gradient(180deg, ${alpha(TOKENS.bone, 'f7')}, ${alpha(TOKENS.bone, 'ee')})`,
+            overflow: 'hidden',
+          },
+        },
+        filteredItems.map((item, i) =>
+          h(NewsFeedCard, {
+            key: getItemId(item, i),
+            item,
+            isRead: readIds.has(getItemId(item, i)),
+            isLast: i === filteredItems.length - 1,
+            onToggleRead: () => handleToggleRead(item, i),
+            onNavigateDaily,
+          })
+        )
       )
     ),
     h(
@@ -689,15 +700,13 @@ export function NewsFeedSection({
           style: {
             borderRadius: 28,
             padding: '16px 16px 16px',
+            border: `1px solid ${TOKENS.boneDeep}`,
+            background: `linear-gradient(180deg, ${alpha(TOKENS.bone, 'f5')}, ${alpha(TOKENS.bone, 'ec')})`,
             position: 'sticky',
             top: 16,
           },
         },
-        h(
-          'div',
-          { style: { ...lbl, color: PAPER.mutedSoft, marginBottom: 8 } },
-          'Filter / Side notes'
-        ),
+        h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, 'Filter / Side notes'),
         h(
           'div',
           {
@@ -712,7 +721,15 @@ export function NewsFeedSection({
             null,
             h(
               'div',
-              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              {
+                style: {
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: TOKENS.ink,
+                  marginBottom: 8,
+                  fontFamily: TOKENS.fontSection,
+                },
+              },
               showTickerSideNotes ? '依 ticker' : 'Aggregate clusters'
             ),
             showTickerSideNotes
@@ -729,12 +746,16 @@ export function NewsFeedSection({
                         onClick: () => setTickerFilter(option),
                         style: {
                           borderRadius: 999,
-                          border: `1px solid ${tickerFilter === option ? alpha(PAPER.accentStrong, '28') : PAPER.lineSoft}`,
+                          border: `1px solid ${tickerFilter === option ? alpha(TOKENS.positive, '2a') : TOKENS.boneDeep}`,
                           background:
-                            tickerFilter === option ? alpha(PAPER.accentStrong, '18') : PAPER.paper,
-                          color: PAPER.ink,
+                            tickerFilter === option
+                              ? alpha(TOKENS.positive, '12')
+                              : alpha(TOKENS.bone, 'ed'),
+                          color: TOKENS.ink,
                           padding: '8px 12px',
                           fontSize: 11,
+                          fontFamily: TOKENS.fontBody,
+                          fontVariantNumeric: 'tabular-nums',
                           cursor: 'pointer',
                         },
                       },
@@ -755,12 +776,14 @@ export function NewsFeedSection({
                         key: cluster,
                         style: {
                           borderRadius: 18,
-                          border: `1px solid ${PAPER.lineSoft}`,
-                          background: alpha(PAPER.accentStrong, '10'),
+                          border: `1px solid ${TOKENS.boneDeep}`,
+                          borderLeft: `2px solid ${alpha(TOKENS.warning, '32')}`,
+                          background: alpha(TOKENS.bone, 'ef'),
                           padding: '8px 12px',
                           fontSize: 11,
-                          color: PAPER.ink,
+                          color: TOKENS.ink,
                           lineHeight: 1.6,
+                          fontFamily: TOKENS.fontBody,
                         },
                       },
                       cluster
@@ -773,7 +796,15 @@ export function NewsFeedSection({
             null,
             h(
               'div',
-              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              {
+                style: {
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: TOKENS.ink,
+                  marginBottom: 8,
+                  fontFamily: TOKENS.fontSection,
+                },
+              },
               '依來源'
             ),
             h(
@@ -789,11 +820,16 @@ export function NewsFeedSection({
                     onClick: () => setSourceFilter(option),
                     style: {
                       borderRadius: 999,
-                      border: `1px solid ${sourceFilter === option ? alpha(PAPER.accent, '38') : PAPER.lineSoft}`,
-                      background: sourceFilter === option ? alpha(PAPER.accent, '22') : PAPER.paper,
-                      color: PAPER.ink,
+                      border: `1px solid ${sourceFilter === option ? alpha(TOKENS.warning, '2e') : TOKENS.boneDeep}`,
+                      background:
+                        sourceFilter === option
+                          ? alpha(TOKENS.warning, '14')
+                          : alpha(TOKENS.bone, 'ed'),
+                      color: TOKENS.ink,
                       padding: '8px 12px',
                       fontSize: 11,
+                      fontFamily: TOKENS.fontBody,
+                      fontVariantNumeric: 'tabular-nums',
                       cursor: 'pointer',
                     },
                   },
@@ -807,32 +843,54 @@ export function NewsFeedSection({
             null,
             h(
               'div',
-              { style: { fontSize: 13, fontWeight: 600, color: PAPER.ink, marginBottom: 8 } },
+              {
+                style: {
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: TOKENS.ink,
+                  marginBottom: 8,
+                  fontFamily: TOKENS.fontSection,
+                },
+              },
               '依 impact'
             ),
             h(
               'div',
               { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
               ...impacts.map((option) =>
-                h(
-                  'button',
-                  {
-                    key: option,
-                    type: 'button',
-                    className: 'ui-btn',
-                    onClick: () => setImpactFilter(option),
-                    style: {
-                      borderRadius: 999,
-                      border: `1px solid ${impactFilter === option ? PAPER.line : PAPER.lineSoft}`,
-                      background: impactFilter === option ? PAPER.sand : PAPER.paper,
-                      color: PAPER.ink,
-                      padding: '8px 12px',
-                      fontSize: 11,
-                      cursor: 'pointer',
+                (() => {
+                  const tone =
+                    option === '利多'
+                      ? TOKENS.positive
+                      : option === '利空'
+                        ? TOKENS.negative
+                        : option === '中性'
+                          ? TOKENS.charcoal
+                          : TOKENS.warning
+
+                  return h(
+                    'button',
+                    {
+                      key: option,
+                      type: 'button',
+                      className: 'ui-btn',
+                      onClick: () => setImpactFilter(option),
+                      style: {
+                        borderRadius: 999,
+                        border: `1px solid ${impactFilter === option ? alpha(tone, '2a') : TOKENS.boneDeep}`,
+                        background:
+                          impactFilter === option ? alpha(tone, '12') : alpha(TOKENS.bone, 'ed'),
+                        color: TOKENS.ink,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        fontFamily: TOKENS.fontBody,
+                        fontVariantNumeric: 'tabular-nums',
+                        cursor: 'pointer',
+                      },
                     },
-                  },
-                  option
-                )
+                    option
+                  )
+                })()
               )
             )
           ),
@@ -842,15 +900,16 @@ export function NewsFeedSection({
               style: {
                 padding: '12px 12px',
                 borderRadius: 22,
-                background: alpha(PAPER.sand, '90'),
-                color: PAPER.ink,
+                background: alpha(TOKENS.warning, '12'),
+                border: `1px solid ${alpha(TOKENS.warning, '20')}`,
+                color: TOKENS.ink,
               },
             },
-            h('div', { style: { fontSize: 11, color: PAPER.muted, marginBottom: 4 } }, 'Notice'),
+            h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 4 } }, 'Notice'),
             renderChip(`未讀 ${unreadCount} 則`, {
-              background: PAPER.sand,
-              color: PAPER.ink,
-              border: `1px solid ${alpha(PAPER.tangerine, '22')}`,
+              background: alpha(TOKENS.warning, '18'),
+              color: TOKENS.ink,
+              border: `1px solid ${alpha(TOKENS.warning, '28')}`,
             })
           ),
           h(
@@ -859,8 +918,8 @@ export function NewsFeedSection({
               style: {
                 padding: '12px',
                 borderRadius: 22,
-                background: alpha(PAPER.accentStrong, '16'),
-                border: `1px solid ${alpha(PAPER.accentStrong, '22')}`,
+                background: alpha(TOKENS.positive, '10'),
+                border: `1px solid ${alpha(TOKENS.positive, '22')}`,
               },
             },
             h(
@@ -871,8 +930,9 @@ export function NewsFeedSection({
                 },
               },
               renderChip('今日趨勢摘要', {
-                background: alpha(PAPER.accentStrong, '22'),
-                color: PAPER.ink,
+                background: alpha(TOKENS.positive, '18'),
+                border: `1px solid ${alpha(TOKENS.positive, '24')}`,
+                color: TOKENS.ink,
               })
             ),
             h(
@@ -881,7 +941,8 @@ export function NewsFeedSection({
                 style: {
                   fontSize: 13,
                   lineHeight: 1.7,
-                  color: PAPER.ink,
+                  color: TOKENS.ink,
+                  fontFamily: TOKENS.fontBody,
                 },
               },
               buildTrendSummary(filteredItems)
@@ -924,6 +985,8 @@ export function NewsAnalysisPanel({
             textAlign: 'left',
             padding: '24px 24px',
             borderRadius: 30,
+            border: `1px solid ${TOKENS.boneDeep}`,
+            background: `radial-gradient(circle at 16% 18%, ${alpha(TOKENS.warning, '16')}, transparent 28%), linear-gradient(180deg, ${alpha(TOKENS.bone, 'fa')}, ${alpha(TOKENS.bone, 'ee')})`,
           },
         },
         h(
@@ -933,8 +996,10 @@ export function NewsAnalysisPanel({
               fontSize: 11,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: C.textMute,
+              color: TOKENS.iron,
               marginBottom: 8,
+              fontFamily: TOKENS.fontCaption,
+              fontVariantNumeric: 'tabular-nums',
             },
           },
           '情報脈絡 / News'
@@ -944,8 +1009,8 @@ export function NewsAnalysisPanel({
           {
             style: {
               fontSize: 38,
-              fontFamily: 'var(--font-headline)',
-              color: C.text,
+              fontFamily: TOKENS.fontSection,
+              color: TOKENS.ink,
               lineHeight: 1,
               marginBottom: 12,
             },
@@ -957,10 +1022,11 @@ export function NewsAnalysisPanel({
           {
             style: {
               fontSize: 14,
-              color: C.textSec,
+              color: TOKENS.charcoal,
               lineHeight: 1.8,
               maxWidth: 520,
               marginBottom: 16,
+              fontFamily: TOKENS.fontBody,
             },
           },
           '這頁先聚合 headline，再 handoff 給 Daily 判讀影響。加入持股後，ticker filter、impact tag 與已看機制會一起啟用。'
@@ -971,9 +1037,9 @@ export function NewsAnalysisPanel({
             onClick: onNavigateDaily,
             style: {
               padding: '8px 16px',
-              background: PAPER.tangerine,
-              border: `1px solid ${alpha(PAPER.tangerine, '40')}`,
-              color: '#fff8f0',
+              background: TOKENS.cta,
+              border: `1px solid ${alpha(TOKENS.cta, '40')}`,
+              color: TOKENS.ink,
               textTransform: 'none',
               letterSpacing: '0.02em',
             },

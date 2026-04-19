@@ -127,7 +127,7 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
   })
 
   await test.step('step 4: events render', async () => {
-    await clickTab(page, 'events', '催化驗證')
+    await clickTab(page, 'events', '事件追蹤')
     await expect(page.locator('body')).toContainText('全部主題', { timeout: 20000 })
     await expect(page.locator('body')).toContainText('財報公司產業總經技術', {
       timeout: 20000,
@@ -136,8 +136,8 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
   })
 
   await test.step('step 5: news render', async () => {
-    await clickTab(page, 'news', '情報脈絡')
-    await expect(page.locator('body')).toContainText(/情報脈絡 \/ News|News preview|今天市場在說什麼/, {
+    await clickTab(page, 'news', '新聞聚合')
+    await expect(page.locator('body')).toContainText(/新聞聚合 \/ News|News preview|今天市場在說什麼/, {
       timeout: 20000,
     })
     await savePageScreenshot(page, testInfo, '05-news.png')

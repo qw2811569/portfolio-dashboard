@@ -10,7 +10,6 @@ const inputBaseStyle = {
   padding: '8px 8px',
   color: C.text,
   fontSize: 12,
-  outline: 'none',
   fontFamily: 'inherit',
 }
 

@@ -45,6 +45,21 @@ textarea {
   font: inherit;
 }
 
+:where(
+    a[href],
+    button,
+    input:not([type='hidden']),
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible {
+  outline: 2px solid var(--ink, #0b120e) !important;
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(239, 125, 47, 0.22)) !important;
+}
+
 .tn {
   font-family: var(--font-num, 'Source Serif 4', 'IBM Plex Mono', serif);
   font-variant-numeric: tabular-nums;

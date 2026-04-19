@@ -461,7 +461,7 @@ export function HoldingsTable({
     h(
       'style',
       null,
-      '@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 rgba(111,133,104,0.18); } 50% { box-shadow: 0 0 0 5px rgba(111,133,104,0.06); } 100% { box-shadow: 0 0 0 0 rgba(111,133,104,0); } }'
+      `@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 ${alpha(C.up, 0.18)}; } 50% { box-shadow: 0 0 0 5px ${alpha(C.up, 0.06)}; } 100% { box-shadow: 0 0 0 0 ${alpha(C.up, 0)}; } }`
     ),
     h(
       'div',

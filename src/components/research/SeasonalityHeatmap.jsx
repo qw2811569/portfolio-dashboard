@@ -53,7 +53,7 @@ function getCellBackground(indexedToYearMean) {
   if (!Number.isFinite(indexedToYearMean)) return alpha(C.textMute, '08')
   const normalized = Math.max(0, Math.min(1, (indexedToYearMean - 0.65) / 0.85))
   const opacity = 0.12 + normalized * 0.5
-  return `rgba(143, 158, 126, ${opacity.toFixed(3)})`
+  return alpha(C.up, Number(opacity.toFixed(3)))
 }
 
 function getSeasonalityLabel(index) {

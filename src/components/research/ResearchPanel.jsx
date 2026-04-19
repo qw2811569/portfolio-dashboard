@@ -795,6 +795,10 @@ function AnalystReportRow({ item }) {
               target: '_blank',
               rel: 'noreferrer',
               style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
+                padding: '6px 4px',
                 fontSize: 11,
                 color: C.text,
                 fontWeight: 600,

@@ -199,6 +199,10 @@ function ResearchFileDetail({ file, onBack }) {
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                  padding: '6px 4px',
                   fontSize: 9,
                   color: C.info,
                   textDecoration: 'underline',

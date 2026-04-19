@@ -134,7 +134,6 @@ function buildTimelineEvents(events, holdingCodes) {
 
 function TimelineMarker({ event, onHover, onLeave }) {
   const markerSize = event.isImportant ? 18 : 12
-  const markerOffset = markerSize / 2
 
   return h(
     'button',
@@ -143,12 +142,13 @@ function TimelineMarker({ event, onHover, onLeave }) {
       type: 'button',
       className: `events-timeline__marker events-timeline__marker--${event.lane}`,
       title: event.tooltip,
+      'aria-label': event.fullLabel,
       onMouseEnter: () => onHover(event),
       onMouseLeave: onLeave,
       onFocus: () => onHover(event),
       onBlur: onLeave,
       style: {
-        left: `calc(${event.position}% - ${markerOffset}px)`,
+        left: `${event.position}%`,
         '--marker-size': `${markerSize}px`,
         '--marker-color': event.tone.marker,
         '--marker-rail': event.tone.rail,
@@ -250,7 +250,7 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__tick--today{width:4px;height:34px;background:var(--up, ${C.up});border-radius:999px}
 .events-timeline__tick-label{position:absolute;top:calc(50% + 18px);transform:translateX(-50%);font-size:9px;color:${C.textMute};white-space:nowrap}
 .events-timeline__tick-label--today{color:var(--up, ${C.up});font-weight:700}
-.events-timeline__marker{position:absolute;transform:translateX(0);width:max-content;max-width:132px;border:none;background:transparent;padding:0;cursor:pointer;text-align:center;color:var(--marker-text)}
+.events-timeline__marker{position:absolute;left:0;transform:translateX(-50%);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:132px;border:none;border-radius:14px;background:transparent;padding:6px;cursor:pointer;text-align:center;color:var(--marker-text)}
 .events-timeline__marker--top{top:18px}
 .events-timeline__marker--bottom{bottom:20px}
 .events-timeline__marker--top .events-timeline__label{margin-top:8px}
@@ -266,10 +266,10 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__tooltip-meta{color:${C.textMute};margin-top:2px}
 .events-timeline__mobile{display:none;margin-top:12px}
 .events-timeline__mobile-list{display:grid;gap:8px}
-.events-timeline__mobile-item{display:grid;grid-template-columns:14px 1fr;gap:10px;align-items:start;padding:8px 0}
-.events-timeline__mobile-line{position:relative;width:14px;height:100%}
-.events-timeline__mobile-line::before{content:"";position:absolute;left:6px;top:-8px;bottom:-8px;width:2px;background:${alpha(C.borderStrong, '24')};border-radius:999px}
-.events-timeline__mobile-dot{position:absolute;left:0;top:3px;width:14px;height:14px;border-radius:999px;background:${C.bg};border:2px solid var(--marker-color)}
+.events-timeline__mobile-item{display:grid;grid-template-columns:18px 1fr;gap:12px;align-items:start;width:100%;min-height:44px;padding:12px 0;border:none;background:transparent;text-align:left;cursor:pointer}
+.events-timeline__mobile-line{position:relative;width:18px;height:100%}
+.events-timeline__mobile-line::before{content:"";position:absolute;left:8px;top:-12px;bottom:-12px;width:2px;background:${alpha(C.borderStrong, '24')};border-radius:999px}
+.events-timeline__mobile-dot{position:absolute;left:0;top:6px;width:18px;height:18px;border-radius:999px;background:${C.bg};border:2px solid var(--marker-color)}
 .events-timeline__mobile-title{font-size:11px;color:${C.text};line-height:1.5}
 .events-timeline__mobile-date{font-size:9px;color:${C.textMute};margin-top:2px}
 @media (max-width: 767px){
@@ -368,11 +368,16 @@ export function EventsTimeline({ events = [] }) {
           { className: 'events-timeline__mobile-list' },
           timelineEvents.map((event) =>
             h(
-              'div',
+              'button',
               {
                 key: `${event.date}-${event.fullLabel}-mobile`,
+                type: 'button',
                 className: 'events-timeline__mobile-item',
                 title: event.tooltip,
+                'aria-label': event.fullLabel,
+                onClick: () => setHoveredEvent(event),
+                onFocus: () => setHoveredEvent(event),
+                onBlur: () => setHoveredEvent(null),
               },
               h(
                 'div',

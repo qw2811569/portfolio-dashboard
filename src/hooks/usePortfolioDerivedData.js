@@ -51,6 +51,7 @@ export function usePortfolioDerivedData({
   targets,
   fundamentals,
   analystReports,
+  theses,
   newsEvents,
   researchHistory,
   strategyBrain,
@@ -96,6 +97,15 @@ export function usePortfolioDerivedData({
   } = constants
 
   const H = useMemo(() => (Array.isArray(holdings) ? holdings : []), [holdings])
+  const thesisByCode = useMemo(
+    () =>
+      new Map(
+        (Array.isArray(theses) ? theses : [])
+          .filter((thesis) => thesis?.stockId)
+          .map((thesis) => [String(thesis.stockId), thesis])
+      ),
+    [theses]
+  )
   const currentNewsEvents = useMemo(
     () => (Array.isArray(newsEvents) ? newsEvents : []),
     [newsEvents]
@@ -125,13 +135,22 @@ export function usePortfolioDerivedData({
 
   const D = useMemo(() => {
     const normalized = normalizeHoldingDossiers(holdingDossiers)
-    if (normalized.length > 0) return normalized
+    if (normalized.length > 0) {
+      return normalized.map((dossier) => ({
+        ...dossier,
+        thesis:
+          dossier?.thesis && typeof dossier.thesis === 'object'
+            ? dossier.thesis
+            : thesisByCode.get(String(dossier.code)) || null,
+      }))
+    }
     return buildHoldingDossiers({
       holdings: H,
       watchlist: W,
       targets,
       fundamentals,
       analystReports,
+      theses,
       newsEvents: currentNewsEvents,
       researchHistory,
       strategyBrain,
@@ -146,6 +165,8 @@ export function usePortfolioDerivedData({
     targets,
     fundamentals,
     analystReports,
+    thesisByCode,
+    theses,
     currentNewsEvents,
     researchHistory,
     strategyBrain,

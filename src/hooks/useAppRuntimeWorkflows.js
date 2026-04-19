@@ -143,7 +143,7 @@ export function useAppRuntimeWorkflows({
     setExpandedNews,
   } = setters
 
-  const { defaultNewsEvents, researchResults, stockMeta, indColor, theses = [] } = resources
+  const { defaultNewsEvents, researchResults, stockMeta, indColor } = resources
   const { flashSaved, requestAppConfirmation } = runtime
   const {
     priceSelfHealRef,
@@ -234,20 +234,7 @@ export function useAppRuntimeWorkflows({
     allFilterLabel: APP_LABELS.allFilter,
   }).filter((event) => catalystFilter === '全部' || event.catalystType === catalystFilter)
 
-  const panelHoldingDossiers = useMemo(() => {
-    const thesisByCode = new Map(
-      (Array.isArray(theses) ? theses : [])
-        .filter((thesis) => thesis?.stockId)
-        .map((thesis) => [String(thesis.stockId), thesis])
-    )
-    return Array.from(dossierByCode.values()).map((dossier) => ({
-      ...dossier,
-      thesis:
-        dossier?.thesis && typeof dossier.thesis === 'object'
-          ? dossier.thesis
-          : thesisByCode.get(String(dossier.code)) || null,
-    }))
-  }, [dossierByCode, theses])
+  const panelHoldingDossiers = useMemo(() => Array.from(dossierByCode.values()), [dossierByCode])
 
   const { runDailyAnalysis, maybeAutoConfirmDailyReport } = useAppDailyAnalysisRuntime(
     {

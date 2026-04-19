@@ -14,6 +14,7 @@ export function useRouteHoldingsPage() {
   const {
     portfolioId = '',
     holdings = [],
+    holdingDossiers = [],
     todayTotalPnl = 0,
     reversalConditions = {},
   } = usePortfolioRouteContext()
@@ -48,6 +49,12 @@ export function useRouteHoldingsPage() {
     const holdingsIntegrityIssues = holdings.filter(
       (item) => item.integrityIssue === 'missing-price'
     )
+    const dossierByCode = new Map(
+      (Array.isArray(holdingDossiers) ? holdingDossiers : []).map((dossier) => [
+        dossier.code,
+        dossier,
+      ])
+    )
 
     return {
       panelProps: {
@@ -66,11 +73,20 @@ export function useRouteHoldingsPage() {
       },
       tableProps: {
         holdings,
+        dossierByCode,
         expandedStock,
         setExpandedStock,
         onUpdateTarget: blockUpdateTargetPrice,
         onUpdateAlert: blockUpdateAlert,
       },
     }
-  }, [expandedStock, holdings, portfolioId, todayTotalPnl, reversalConditions, setExpandedStock])
+  }, [
+    expandedStock,
+    holdingDossiers,
+    holdings,
+    portfolioId,
+    todayTotalPnl,
+    reversalConditions,
+    setExpandedStock,
+  ])
 }

@@ -368,6 +368,7 @@ export const STOCK_META = {
     period: '中長',
     position: '核心',
     leader: '小龍頭',
+    market: '興櫃',
   },
   8074: {
     industry: 'PCB/材料',

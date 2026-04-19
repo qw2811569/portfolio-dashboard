@@ -5,6 +5,7 @@ import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils
 import { buildPriceDeviationBadgeMeta } from '../../lib/priceDeviation.js'
 import { PeerRankingBadge } from './PeerRankingBadge.jsx'
 import HoldingSparkline from './HoldingSparkline.jsx'
+import HoldingDrillPane from './HoldingDrillPane.jsx'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
   getHoldingMarketValue,
@@ -297,14 +298,24 @@ export function HoldingRow({
               )
             : null
         })(),
+        h(HoldingDrillPane, { holding, dossier }),
         h(
           'div',
-          { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 8,
+              marginTop: 8,
+              paddingTop: 8,
+              borderTop: `1px solid ${C.borderSub}`,
+            },
+          },
           // Target price
           h(
             'div',
             null,
-            h('div', { style: { ...lbl, marginBottom: 3 } }, '目標價'),
+            h('div', { style: { ...lbl, marginBottom: 3 } }, '手動目標價'),
             h('input', {
               type: 'number',
               value: holding.targetPrice || '',
@@ -328,7 +339,7 @@ export function HoldingRow({
           h(
             'div',
             null,
-            h('div', { style: { ...lbl, marginBottom: 3 } }, '警報'),
+            h('div', { style: { ...lbl, marginBottom: 3 } }, '提醒筆記'),
             h('input', {
               type: 'text',
               value: holding.alert || '',

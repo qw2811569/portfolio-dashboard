@@ -90,6 +90,7 @@ const defaultProps = (overrides = {}) => ({
   targets: {},
   fundamentals: {},
   analystReports: {},
+  theses: [],
   newsEvents: [],
   researchHistory: [],
   strategyBrain: null,
@@ -126,6 +127,32 @@ describe('usePortfolioDerivedData', () => {
       const { result } = renderHook(() => usePortfolioDerivedData(defaultProps({ watchlist: [] })))
       expect(result.current).toBeDefined()
       expect(result.current.W).toEqual([])
+    })
+  })
+
+  describe('thesis canonicalization', () => {
+    it('hydrates thesis onto normalized holding dossiers when storage payload is missing it', () => {
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 1000, cost: 550, price: 600 }],
+            holdingDossiers: [{ code: '2330', name: '台積電', freshness: {} }],
+            theses: [
+              {
+                id: 'thesis-2330',
+                stockId: '2330',
+                statement: 'AI 需求延續，先進製程稼動率維持高檔。',
+                pillars: [{ id: 'p-1', text: 'CoWoS 擴產', status: 'on_track' }],
+              },
+            ],
+          })
+        )
+      )
+
+      expect(result.current.dossierByCode.get('2330')?.thesis).toMatchObject({
+        stockId: '2330',
+        statement: 'AI 需求延續，先進製程稼動率維持高檔。',
+      })
     })
   })
 

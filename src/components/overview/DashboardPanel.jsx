@@ -22,12 +22,12 @@ const metricCard = {
   background: `linear-gradient(180deg, ${alpha(C.card, 'f0')}, ${alpha(C.subtle, 'f6')})`,
   border: `1px solid ${C.border}`,
   borderRadius: 12,
-  padding: '8px 8px',
+  padding: '12px 14px',
   boxShadow: `${C.insetLine}, ${C.shadow}`,
 }
 
 const heroHeadlineLabel = {
-  fontSize: 14,
+  fontSize: 12,
   color: C.textSec,
   fontFamily: 'var(--font-headline)',
   letterSpacing: '0.08em',
@@ -157,7 +157,7 @@ function TodayPnlHero({
     {
       style: {
         marginBottom: 8,
-        padding: '48px 24px',
+        padding: '56px 28px',
         background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
       },
     },
@@ -166,7 +166,7 @@ function TodayPnlHero({
       {
         style: {
           display: 'grid',
-          gap: 24,
+          gap: 32,
         },
       },
       h(
@@ -174,7 +174,7 @@ function TodayPnlHero({
         {
           style: {
             display: 'grid',
-            gap: 16,
+            gap: 20,
           },
         },
         h(
@@ -400,12 +400,13 @@ function TodayPnlHero({
           {
             'data-testid': 'dashboard-headline',
             style: {
-              fontSize: 'clamp(22px, 3.2vw, 32px)',
+              fontSize: 'clamp(36px, 4.8vw, 56px)',
               fontWeight: 700,
               color: headlineColor,
               fontFamily: 'var(--font-headline)',
-              lineHeight: 1.28,
+              lineHeight: 1.12,
               letterSpacing: '-0.02em',
+              maxWidth: '14ch',
             },
           },
           headlineText
@@ -416,12 +417,13 @@ function TodayPnlHero({
           {
             className: 'tn',
             style: {
-              fontSize: 'clamp(40px, 6vw, 56px)',
-              fontWeight: 600,
+              fontSize: 'clamp(56px, 8vw, 76px)',
+              fontWeight: 700,
               color: C.text,
               fontFamily: 'var(--font-num)',
               letterSpacing: '-0.02em',
-              lineHeight: 1.02,
+              lineHeight: 0.96,
+              fontVariantNumeric: 'tabular-nums',
             },
           },
           totalText
@@ -432,7 +434,7 @@ function TodayPnlHero({
             style: {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: 8,
+              gap: 'clamp(16px, 2vw, 24px)',
             },
           },
           submetrics.map((metric) =>
@@ -441,7 +443,14 @@ function TodayPnlHero({
               { key: metric.label, style: metricCard },
               h(
                 'div',
-                { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } },
+                {
+                  style: {
+                    fontSize: 11,
+                    color: C.textMute,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1.4,
+                  },
+                },
                 metric.label
               ),
               h(
@@ -449,11 +458,13 @@ function TodayPnlHero({
                 {
                   className: 'tn',
                   style: {
-                    fontSize: 18,
+                    fontSize: 22,
                     fontWeight: 600,
                     color: C.text,
-                    marginTop: 4,
+                    marginTop: 6,
                     fontFamily: 'var(--font-num)',
+                    lineHeight: 1.05,
+                    fontVariantNumeric: 'tabular-nums',
                   },
                 },
                 metric.value
@@ -479,9 +490,10 @@ function TodayPnlHero({
             'div',
             {
               style: {
-                fontSize: 14,
+                fontSize: 12,
                 color: C.textMute,
                 fontFamily: 'var(--font-body)',
+                letterSpacing: '0.08em',
               },
             },
             '今日損益'
@@ -509,9 +521,10 @@ function TodayPnlHero({
             'div',
             {
               style: {
-                fontSize: 14,
+                fontSize: 12,
                 color: C.textMute,
                 fontFamily: 'var(--font-body)',
+                letterSpacing: '0.08em',
               },
             },
             '總持倉'
@@ -1283,8 +1296,9 @@ export function DashboardPanel({
         {
           className: 'dashboard-hero-ring',
           style: {
+            marginTop: 8,
             marginBottom: 8,
-            padding: 24,
+            padding: '28px 24px',
           },
         },
         h(HoldingsRing, { holdings, totalVal })

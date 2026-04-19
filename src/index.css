@@ -273,8 +273,9 @@ textarea {
 .dashboard-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 420px);
-  gap: 24px;
+  gap: clamp(24px, 3vw, 36px);
   align-items: stretch;
+  padding-bottom: 48px;
 }
 
 .dashboard-hero-main,
@@ -285,5 +286,6 @@ textarea {
 @media (max-width: 1080px) {
   .dashboard-hero {
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 40px;
   }
 }

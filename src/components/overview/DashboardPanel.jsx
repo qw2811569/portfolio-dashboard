@@ -25,7 +25,7 @@ const metricCard = {
 
 const heroHeadlineLabel = {
   fontSize: 14,
-  color: 'var(--muted)',
+  color: C.textSec,
   fontFamily: 'var(--font-headline)',
   letterSpacing: '0.08em',
 }
@@ -458,7 +458,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
           marginBottom: 8,
         },
       },
-      h('div', { style: { ...lbl, marginBottom: 0, color: C.teal } }, 'Morning Note'),
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Morning Note'),
       h('span', { style: { fontSize: 9, color: C.textMute } }, morningNote.date || '')
     ),
     todayEvents.length > 0 &&
@@ -493,7 +493,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               { style: { fontSize: 11, color: C.text, lineHeight: 1.7 } },
               event.title,
               event.relatedPillars?.length > 0 &&
-                h('span', { style: { fontSize: 9, color: C.teal, marginLeft: 6 } }, '主軸驗證')
+                h('span', { style: { fontSize: 9, color: C.textSec, marginLeft: 6 } }, '主軸驗證')
             )
           )
         )
@@ -543,7 +543,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             {
               style: {
                 fontSize: 9,
-                color: C.up,
+                color: C.textSec,
                 background: alpha(C.up, '12'),
                 borderRadius: 999,
                 padding: '3px 8px',
@@ -586,7 +586,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               borderRadius: 999,
               border: `1px solid ${alpha(C.teal, '32')}`,
               background: alpha(C.teal, '10'),
-              color: C.teal,
+              color: C.textSec,
               fontSize: 10,
               fontWeight: 600,
               cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
@@ -622,7 +622,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
           flexWrap: 'wrap',
         },
       },
-      h('div', { style: { ...lbl, marginBottom: 0, color: C.blue } }, 'Today in Markets'),
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Today in Markets'),
       h(
         'span',
         { style: { fontSize: 9, color: C.textMute } },
@@ -756,7 +756,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
             style: {
               fontSize: 9,
               fontWeight: 600,
-              color: C.amber,
+              color: C.textSec,
               background: C.amberBg,
               border: `1px solid ${alpha(C.amber, '20')}`,
               borderRadius: 999,
@@ -772,7 +772,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
         {
           style: {
             fontSize: 10,
-            color: C.amber,
+            color: C.textSec,
             marginTop: 6,
             lineHeight: 1.7,
           },
@@ -873,7 +873,7 @@ function PortfolioHealthCard({
   totalCost = 0,
 }) {
   const totalReturn = totalCost > 0 ? ((totalVal - totalCost) / totalCost) * 100 : 0
-  const returnColor = totalReturn > 0 ? C.up : totalReturn < 0 ? C.down : C.textSec
+  const returnColor = totalReturn > 0 ? C.text : totalReturn < 0 ? C.down : C.textSec
   const flat = holdings.length - winners.length - losers.length
 
   return h(
@@ -896,7 +896,7 @@ function PortfolioHealthCard({
             style: {
               fontSize: 14,
               fontWeight: 600,
-              color: C.up,
+              color: C.text,
               marginTop: 2,
               fontFamily: 'var(--font-num)',
             },

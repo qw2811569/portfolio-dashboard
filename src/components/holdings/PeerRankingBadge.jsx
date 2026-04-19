@@ -4,9 +4,10 @@ import { getPeerRankingForHolding } from '../../lib/peerRanking.js'
 
 const toneStyles = {
   leader: {
-    color: C.up,
+    color: C.textSec,
     background: C.upBg,
     borderColor: alpha(C.up, '28'),
+    dot: C.up,
   },
   neutral: {
     color: C.textMute,
@@ -17,6 +18,7 @@ const toneStyles = {
     color: C.down,
     background: C.downBg,
     borderColor: alpha(C.down, '28'),
+    dot: C.down,
   },
 }
 
@@ -58,6 +60,7 @@ export function PeerRankingBadge({ holding }) {
           style: {
             display: 'inline-flex',
             alignItems: 'center',
+            gap: 6,
             fontSize: 9,
             lineHeight: 1.2,
             fontWeight: 600,
@@ -68,6 +71,17 @@ export function PeerRankingBadge({ holding }) {
             color: tone.color,
           },
         },
+        tone.dot &&
+          h('span', {
+            'aria-hidden': 'true',
+            style: {
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: tone.dot,
+              flexShrink: 0,
+            },
+          }),
         chip
       )
     )

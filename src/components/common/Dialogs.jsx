@@ -63,7 +63,14 @@ function DialogShell({
           title &&
             h(
               'div',
-              { style: { fontSize: 10, color: C.teal, fontWeight: 700, letterSpacing: '0.08em' } },
+              {
+                style: {
+                  fontSize: 10,
+                  color: C.textSec,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                },
+              },
               title
             ),
           subtitle &&
@@ -224,7 +231,7 @@ export function TextFieldDialog({
           style: {
             marginTop: 8,
             fontSize: 10,
-            color: C.up,
+            color: C.textSec,
           },
         },
         error

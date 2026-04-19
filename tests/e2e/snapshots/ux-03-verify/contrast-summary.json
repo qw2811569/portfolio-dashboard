@@ -1,0 +1,38 @@
+{
+  "baseURL": "http://127.0.0.1:3002",
+  "total": 0,
+  "summary": [
+    {
+      "name": "after-home",
+      "count": 0
+    },
+    {
+      "name": "after-holdings",
+      "count": 0
+    },
+    {
+      "name": "after-research",
+      "count": 0
+    },
+    {
+      "name": "after-events",
+      "count": 0
+    },
+    {
+      "name": "after-news",
+      "count": 0
+    },
+    {
+      "name": "after-daily",
+      "count": 0
+    },
+    {
+      "name": "after-trade",
+      "count": 0
+    },
+    {
+      "name": "after-log",
+      "count": 0
+    }
+  ]
+}

@@ -29,7 +29,7 @@ const trackedSyncTone = {
     background: alpha(C.olive, '10'),
   },
   stale: {
-    color: C.amber,
+    color: C.textSec,
     border: alpha(C.amber, '30'),
     background: alpha(C.amber, '12'),
   },
@@ -49,7 +49,7 @@ const trackedSyncTone = {
  * Holdings Summary Metrics
  */
 export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl = 0 }) {
-  const todayPnlColor = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
+  const todayPnlColor = todayTotalPnl > 0 ? C.text : todayTotalPnl < 0 ? C.down : C.textSec
   const todayPnlText =
     todayTotalPnl > 0
       ? `+${todayTotalPnl.toLocaleString()}`
@@ -59,7 +59,7 @@ export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl =
 
   const metrics = [
     ['總成本', totalCost.toLocaleString(), C.textSec],
-    ['總市值', totalVal.toLocaleString(), C.blue],
+    ['總市值', totalVal.toLocaleString(), C.text],
     ['持股數', `${holdings.length}檔`, C.lavender],
     ['今日損益', todayPnlText, todayPnlColor],
   ]
@@ -107,7 +107,7 @@ export function HoldingsIntegrityWarning({ issues }) {
         borderLeft: `3px solid ${alpha(C.amber, '40')}`,
         padding: '8px 10px',
         fontSize: 10,
-        color: C.amber,
+        color: C.textSec,
         lineHeight: 1.7,
       },
     },
@@ -281,7 +281,7 @@ export function PortfolioHealthCheck({ holdings }) {
             padding: '6px 10px',
             marginBottom: 8,
             fontSize: 10,
-            color: C.amber,
+            color: C.textSec,
             lineHeight: 1.6,
           },
         },
@@ -413,7 +413,11 @@ export function WinLossSummary({ winners, losers }) {
           padding: '8px 10px',
         },
       },
-      h('div', { style: { ...lbl, color: C.up, marginBottom: 3 } }, `獲利 ${winners.length}檔`),
+      h(
+        'div',
+        { style: { ...lbl, color: C.textSec, marginBottom: 3 } },
+        `獲利 ${winners.length}檔`
+      ),
       winners.slice(0, 3).map((holding) =>
         h(
           'div',
@@ -424,7 +428,7 @@ export function WinLossSummary({ winners, losers }) {
           h('span', { style: { fontSize: 11, color: C.textSec } }, holding.name),
           h(
             'span',
-            { style: { fontSize: 11, fontWeight: 600, color: C.up } },
+            { style: { fontSize: 11, fontWeight: 600, color: C.text } },
             `+${getHoldingReturnPct(holding).toFixed(2)}%`
           )
         )

@@ -10,22 +10,25 @@ const BADGE_STYLE = {
     fontWeight: 700,
   },
   imminent: {
-    color: C.amber,
+    color: C.textSec,
     background: alpha(C.amber, '12'),
     border: alpha(C.amber, '30'),
     fontWeight: 600,
+    dot: C.amber,
   },
   soon: {
-    color: C.olive,
+    color: C.textSec,
     background: alpha(C.olive, '10'),
     border: alpha(C.olive, '24'),
     fontWeight: 600,
+    dot: C.olive,
   },
   far: {
-    color: C.olive,
+    color: C.textSec,
     background: alpha(C.olive, '10'),
     border: alpha(C.olive, '24'),
     fontWeight: 500,
+    dot: C.olive,
   },
   past: {
     color: C.choco,
@@ -59,6 +62,17 @@ export function EventCountdownBadge({ event, now }) {
       },
       title: countdown.autoReviewReady ? '事件已過 3 天，進入自動復盤視窗' : label,
     },
+    tone.dot &&
+      h('span', {
+        'aria-hidden': 'true',
+        style: {
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: tone.dot,
+          flexShrink: 0,
+        },
+      }),
     label
   )
 }

@@ -28,7 +28,7 @@ const lbl = {
   marginBottom: 5,
 }
 
-const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
+const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
 
 const badgeToneStyles = {
@@ -38,17 +38,17 @@ const badgeToneStyles = {
     borderColor: alpha(C.textMute, '24'),
   },
   positive: {
-    color: C.up,
+    color: C.textSec,
     background: C.upBg,
     borderColor: alpha(C.up, '24'),
   },
   amber: {
-    color: C.amber,
+    color: C.textSec,
     background: C.amberBg,
     borderColor: alpha(C.amber, '24'),
   },
   'positive-strong': {
-    color: C.up,
+    color: C.textSec,
     background: alpha(C.up, '18'),
     borderColor: alpha(C.up, '30'),
   },

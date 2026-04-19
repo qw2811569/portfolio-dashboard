@@ -41,7 +41,7 @@ export function ResearchHeader({
     {
       style: { marginBottom: 10, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
     },
-    h('div', { style: { ...lbl, color: C.teal, marginBottom: 6 } }, 'AI 投資助手'),
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 6 } }, 'AI 投資助手'),
     h(
       'div',
       { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
@@ -85,7 +85,7 @@ export function ResearchHeader({
             fontWeight: 600,
             cursor: reportRefreshing ? 'not-allowed' : 'pointer',
             background: alpha(C.amber, '15'),
-            color: reportRefreshing ? C.textMute : C.amber,
+            color: reportRefreshing ? C.textMute : C.textSec,
             whiteSpace: 'nowrap',
           },
         },
@@ -169,7 +169,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, marginBottom: 4, color: C.amber } }, '先補資料'),
+        h('div', { style: { ...lbl, marginBottom: 4, color: C.textSec } }, '先補資料'),
         h(
           'div',
           { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7 } },
@@ -190,7 +190,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                 borderRadius: 999,
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
-                color: C.amber,
+                color: C.textSec,
               },
             },
             `${item.name} 要補`
@@ -251,14 +251,18 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                           item.targetSource === 'per-band'
                             ? alpha(C.textMute, '14')
                             : alpha(C.teal, '14'),
-                        color: item.targetSource === 'per-band' ? C.textMute : C.teal,
+                        color: C.textSec,
                       },
                     },
                     item.targetSource === 'per-band' ? '區間估算' : '券商報告'
                   ),
                   item.targetLabel,
                   item.targetStatus === 'aging'
-                    ? h('span', { style: { color: C.amber, marginLeft: 4 } }, '\u26A0 報告有點舊了')
+                    ? h(
+                        'span',
+                        { style: { color: C.textSec, marginLeft: 4 } },
+                        '\u26A0 報告有點舊了'
+                      )
                     : null
                 )
               : h(
@@ -269,7 +273,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
             item.classificationNote &&
               h(
                 'div',
-                { style: { fontSize: 8, color: C.amber, marginTop: 2, fontStyle: 'italic' } },
+                { style: { fontSize: 8, color: C.textSec, marginTop: 2, fontStyle: 'italic' } },
                 item.classificationNote
               )
           )
@@ -375,16 +379,16 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
 }
 
 function proposalStatusMeta(proposalStatus, gatePassed) {
-  if (proposalStatus === 'applied') return { label: '已套用', color: C.olive }
+  if (proposalStatus === 'applied') return { label: '已套用', color: C.textSec }
   if (proposalStatus === 'discarded') return { label: '已放棄', color: C.textMute }
   if (proposalStatus === 'blocked' || gatePassed === false)
     return { label: '風險偏高，暫不建議採用', color: C.down }
-  return { label: '待決策', color: C.amber }
+  return { label: '待決策', color: C.textSec }
 }
 
 function knowledgeProposalStatusMeta(status, gatePassed) {
   if (status === 'candidate' && gatePassed !== false)
-    return { label: '建議可考慮採用', color: C.teal }
+    return { label: '建議可考慮採用', color: C.textSec }
   if (status === 'blocked' || gatePassed === false)
     return { label: '風險偏高，暫不建議採用', color: C.down }
   return { label: '暫無調整', color: C.textMute }
@@ -552,7 +556,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
         },
       },
       h('span', null, `$${formatConsensusPrice(min)}`),
-      h('span', { style: { color: 'var(--positive)', fontWeight: 600 } }, 'mean'),
+      h('span', { style: { color: C.textSec, fontWeight: 600 } }, 'mean'),
       h('span', null, `$${formatConsensusPrice(max)}`)
     )
   )
@@ -563,7 +567,7 @@ function ConsensusHighlightCard({ item }) {
     Card,
     {
       highlighted: true,
-      color: 'var(--positive)',
+      color: C.textSec,
       style: {
         border: '1px solid var(--positive-soft)',
         background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd8')})`,
@@ -583,7 +587,7 @@ function ConsensusHighlightCard({ item }) {
       h(
         'div',
         null,
-        h('div', { style: { ...lbl, color: 'var(--positive)', marginBottom: 4 } }, '外資券商共識'),
+        h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '外資券商共識'),
         h('div', { style: { fontSize: 10, color: C.textMute } }, `${item.name} · ${item.code}`)
       ),
       h(
@@ -591,7 +595,7 @@ function ConsensusHighlightCard({ item }) {
         {
           style: {
             fontSize: 9,
-            color: 'var(--positive)',
+            color: C.textSec,
             border: '1px solid var(--positive-soft)',
             background: alpha(C.blue, '18'),
             borderRadius: 999,
@@ -753,7 +757,7 @@ function AnalystReportsSection({ holdings, analystReports }) {
         borderLeft: `3px solid ${alpha(C.blue, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: C.blue, marginBottom: 4 } }, '研究來源索引'),
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '研究來源索引'),
     h(
       'div',
       { style: { fontSize: 11, color: C.textSec, lineHeight: 1.7, marginBottom: 10 } },
@@ -1023,7 +1027,7 @@ export function ResearchResults({
       },
       h(
         'div',
-        { style: { ...lbl, marginBottom: 0, color: C.teal } },
+        { style: { ...lbl, marginBottom: 0, color: C.textSec } },
         `${results.name} · ${results.date}`
       ),
       h(
@@ -1054,7 +1058,7 @@ export function ResearchResults({
                 borderRadius: 7,
                 border: `1px solid ${alpha(C.amber, '2a')}`,
                 background: alpha(C.amber, '15'),
-                color: C.amber,
+                color: C.textSec,
                 fontSize: 10,
                 fontWeight: 500,
                 cursor: enriching === results.code ? 'not-allowed' : 'pointer',

@@ -25,20 +25,12 @@ const CATALYST_LABELS = {
   technical: '技術',
 }
 
-const CATALYST_COLOR = {
-  earnings: C.up,
-  corporate: C.teal,
-  industry: C.olive,
-  macro: C.lavender,
-  technical: C.amber,
-}
-
 const IMPACT_META = {
-  positive: { label: '🔴 利多', color: C.up, bg: C.upBg },
+  positive: { label: '🔴 利多', color: C.textSec, bg: C.upBg },
   negative: { label: '🟢 利空', color: C.down, bg: C.downBg },
-  neutral: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
-  high: { label: '🔴 利多', color: C.up, bg: C.upBg },
-  medium: { label: '🟡 中性', color: C.amber, bg: alpha(C.amber, '18') },
+  neutral: { label: '🟡 中性', color: C.textSec, bg: alpha(C.amber, '18') },
+  high: { label: '🔴 利多', color: C.textSec, bg: C.upBg },
+  medium: { label: '🟡 中性', color: C.textSec, bg: alpha(C.amber, '18') },
   low: { label: '⚪ 低影響', color: C.textMute, bg: alpha(C.textMute, '14') },
 }
 
@@ -66,23 +58,23 @@ function buildEventKey(event, index) {
 }
 
 function getPredictionMeta(event) {
-  if (event?.pred === 'up') return { label: '預測看漲', color: C.up, bg: C.upBg }
+  if (event?.pred === 'up') return { label: '預測看漲', color: C.textSec, bg: C.upBg }
   if (event?.pred === 'down') return { label: '預測看跌', color: C.down, bg: C.downBg }
-  if (event?.pred === 'neutral') return { label: '預測中性', color: C.blue, bg: C.blueBg }
+  if (event?.pred === 'neutral') return { label: '預測中性', color: C.textSec, bg: C.blueBg }
   return null
 }
 
 function getReviewMeta(event) {
   if (event?.status === 'closed' || event?.status === 'past') {
     if (event?.correct === true)
-      return { label: '復盤命中', color: C.teal, bg: alpha(C.teal, '16') }
+      return { label: '復盤命中', color: C.textSec, bg: alpha(C.teal, '16') }
     if (event?.correct === false) return { label: '復盤失準', color: C.down, bg: C.downBg }
     return { label: '已復盤', color: C.textMute, bg: alpha(C.textMute, '12') }
   }
   if (event?.status === 'tracking') {
-    return { label: '追蹤中', color: C.teal, bg: alpha(C.teal, '16') }
+    return { label: '追蹤中', color: C.textSec, bg: alpha(C.teal, '16') }
   }
-  return { label: '待觀察', color: C.amber, bg: alpha(C.amber, '16') }
+  return { label: '待觀察', color: C.textSec, bg: alpha(C.amber, '16') }
 }
 
 /**
@@ -117,7 +109,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
           {
             style: {
               fontSize: 9,
-              color: C.teal,
+              color: C.textSec,
               fontWeight: 600,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
@@ -149,7 +141,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
             whiteSpace: 'nowrap',
             transition: 'all 0.18s ease',
             background: expanded ? C.subtleElev : alpha(C.teal, '08'),
-            color: expanded ? C.text : C.teal,
+            color: C.textSec,
             border: `1px solid ${expanded ? C.borderStrong : alpha(C.teal, '2a')}`,
           },
         },
@@ -171,7 +163,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
               padding: '4px 8px',
               borderRadius: 20,
               background: alpha(C[item.tone] || C.text, '15'),
-              color: C[item.tone] || C.text,
+              color: C.textSec,
               border: `1px solid ${alpha(C[item.tone] || C.text, '20')}`,
             },
           },
@@ -241,7 +233,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   padding: '2px 7px',
                   borderRadius: 20,
                   background: alpha(C[leg.tone] || C.text, '15'),
-                  color: C[leg.tone] || C.text,
+                  color: C.textSec,
                 },
               },
               leg.status
@@ -470,7 +462,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
           {
             style: {
               background: event.urgent ? C.upBg : alpha(typeColor, '15'),
-              color: event.urgent ? C.up : typeColor,
+              color: C.textSec,
               fontSize: 9,
               fontWeight: 600,
               padding: '2px 5px',
@@ -501,11 +493,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               flexWrap: 'wrap',
             },
           },
-          h(
-            'div',
-            { style: { fontSize: 12, fontWeight: 500, color: event.urgent ? C.up : C.text } },
-            title
-          ),
+          h('div', { style: { fontSize: 12, fontWeight: 500, color: C.text } }, title),
           h(EventCountdownBadge, { event })
         ),
         subtitle
@@ -648,7 +636,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 borderRadius: 5,
                 border: `1px solid ${alpha(C.olive, '2a')}`,
                 background: 'transparent',
-                color: C.olive,
+                color: C.textSec,
                 fontSize: 10,
                 cursor: 'pointer',
               },
@@ -710,12 +698,7 @@ export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
           onClick: () => setCatalystFilter(t),
           style: {
             background: catalystFilter === t ? C.subtleElev : 'transparent',
-            color:
-              catalystFilter === t
-                ? C.text
-                : t === '全部'
-                  ? C.textMute
-                  : CATALYST_COLOR[t] || C.textMute,
+            color: catalystFilter === t ? C.text : C.textSec,
             border: `1px solid ${catalystFilter === t ? C.borderStrong : C.border}`,
             borderRadius: 20,
             padding: '3px 11px',

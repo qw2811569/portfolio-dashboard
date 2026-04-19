@@ -74,7 +74,7 @@ export function OperatingContextCard({ context }) {
       h(
         'div',
         { style: { flex: 1, minWidth: 220 } },
-        h('div', { style: { ...lbl, color: C.teal, marginBottom: 4 } }, '現在先看這裡'),
+        h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '現在先看這裡'),
         nextActionLabel &&
           h(
             'div',
@@ -157,7 +157,7 @@ export function OperatingContextCard({ context }) {
               {
                 style: {
                   fontSize: 10,
-                  color: C.teal,
+                  color: C.textSec,
                   fontWeight: 600,
                 },
               },

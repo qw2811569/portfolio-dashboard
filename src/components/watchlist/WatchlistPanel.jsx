@@ -61,7 +61,7 @@ export function WatchlistFocus({ focus }) {
           {
             style: {
               fontSize: 9,
-              color: C.teal,
+              color: C.textSec,
               fontWeight: 600,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
@@ -284,7 +284,7 @@ export function WatchlistRow({
                 border: `1px solid ${C.up}`,
                 borderRadius: 12,
                 fontSize: 9,
-                color: C.up,
+                color: C.textSec,
                 cursor: 'pointer',
               },
             },
@@ -412,9 +412,9 @@ export function WatchlistRow({
                   'div',
                   { style: { fontSize: 10 } },
                   hits > 0 &&
-                    h('span', { style: { color: C.olive, marginRight: 8 } }, `準確 ${hits}`),
+                    h('span', { style: { color: C.textSec, marginRight: 8 } }, `準確 ${hits}`),
                   misses > 0 &&
-                    h('span', { style: { color: C.up, marginRight: 8 } }, `失誤 ${misses}`),
+                    h('span', { style: { color: C.textSec, marginRight: 8 } }, `失誤 ${misses}`),
                   pendingCount + trackingCount > 0 &&
                     h(
                       'span',
@@ -425,7 +425,7 @@ export function WatchlistRow({
                     h(
                       'span',
                       {
-                        style: { color: C.amber, marginLeft: 8, fontWeight: 600 },
+                        style: { color: C.textSec, marginLeft: 8, fontWeight: 600 },
                       },
                       `勝率 ${Math.round((hits / (hits + misses)) * 100)}%`
                     )
@@ -485,7 +485,7 @@ export function WatchlistRow({
                               padding: '2px 6px',
                               borderRadius: 3,
                               background: C.oliveBg,
-                              color: C.olive,
+                              color: C.textSec,
                               fontWeight: 600,
                             },
                           },
@@ -500,7 +500,7 @@ export function WatchlistRow({
                               padding: '2px 6px',
                               borderRadius: 3,
                               background: C.upBg,
-                              color: C.up,
+                              color: C.textSec,
                               fontWeight: 600,
                             },
                           },
@@ -516,7 +516,7 @@ export function WatchlistRow({
                               padding: '2px 6px',
                               borderRadius: 3,
                               background: C.blueBg,
-                              color: C.blue,
+                              color: C.textSec,
                             },
                           },
                           '待驗證'
@@ -531,7 +531,7 @@ export function WatchlistRow({
                               padding: '2px 6px',
                               borderRadius: 3,
                               background: C.blueBg,
-                              color: C.blue,
+                              color: C.textSec,
                             },
                           },
                           '追蹤中'
@@ -579,7 +579,7 @@ export function WatchlistRow({
                     h(
                       'div',
                       {
-                        style: { fontSize: 10, color: C.amber, marginTop: 3, lineHeight: 1.6 },
+                        style: { fontSize: 10, color: C.textSec, marginTop: 3, lineHeight: 1.6 },
                       },
                       `教訓：${e.lessons}`
                     )
@@ -641,7 +641,14 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           null,
           h(
             'div',
-            { style: { fontSize: 10, color: C.teal, fontWeight: 700, letterSpacing: '0.08em' } },
+            {
+              style: {
+                fontSize: 10,
+                color: C.textSec,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+              },
+            },
             editingItem ? '編輯觀察股' : '新增觀察股'
           ),
           h(

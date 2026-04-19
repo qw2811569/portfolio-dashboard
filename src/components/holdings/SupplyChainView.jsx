@@ -64,7 +64,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
     Card,
     { style: { padding: '12px 14px' } },
     // Title
-    h('div', { style: { ...lbl, color: C.teal, marginBottom: 8 } }, '供應鏈關係'),
+    h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '供應鏈關係'),
 
     // Upstream
     hasUpstream &&
@@ -151,11 +151,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
           'div',
           null,
           chain.customers.map((customer) =>
-            h(
-              'span',
-              { key: customer, style: chipStyle },
-              customer
-            )
+            h('span', { key: customer, style: chipStyle }, customer)
           )
         )
       ),
@@ -171,11 +167,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
           'div',
           null,
           chain.suppliers.map((supplier) =>
-            h(
-              'span',
-              { key: supplier, style: chipStyle },
-              supplier
-            )
+            h('span', { key: supplier, style: chipStyle }, supplier)
           )
         )
       ),

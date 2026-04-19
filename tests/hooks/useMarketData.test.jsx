@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { C } from '../../src/theme.js'
 
 // Mock all external modules before importing the hook
 vi.mock('../../src/lib/market.js', () => ({
@@ -142,9 +143,9 @@ describe('useMarketData', () => {
       expect(result.current.priceSyncStatusLabel).toBe('未同步')
     })
 
-    it('priceSyncStatusTone defaults to the iron theme token when no sync state', () => {
+    it('priceSyncStatusTone defaults to the muted readable token when no sync state', () => {
       const { result } = renderHook(() => useMarketData(defaultProps()))
-      expect(result.current.priceSyncStatusTone).toBe('#838585')
+      expect(result.current.priceSyncStatusTone).toBe(C.textMute)
     })
 
     it('priceSelfHealRef is a ref object', () => {

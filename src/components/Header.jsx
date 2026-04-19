@@ -112,11 +112,7 @@ export default function Header(props) {
       h(
         'div',
         { style: { display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 } },
-        h(
-          'span',
-          { style: { color: cloudSync ? C.blue : C.textMute, fontSize: 9 } },
-          cloudSync ? '☁' : '⚡'
-        ),
+        h('span', { style: { color: C.textSec, fontSize: 9 } }, cloudSync ? '☁' : '⚡'),
         h(
           'span',
           {
@@ -130,7 +126,7 @@ export default function Header(props) {
           },
           '持倉看板'
         ),
-        saved && h('span', { style: { color: C.olive, fontSize: 9, fontWeight: 500 } }, saved),
+        saved && h('span', { style: { color: C.textSec, fontSize: 9, fontWeight: 500 } }, saved),
         h(
           'button',
           {
@@ -139,7 +135,7 @@ export default function Header(props) {
             disabled: refreshing,
             style: {
               background: refreshing ? C.subtle : alpha(C.blue, '10'),
-              color: refreshing ? C.textMute : C.blue,
+              color: refreshing ? C.textMute : C.textSec,
               border: `1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
               ...ghostBtn,
               cursor: refreshing ? 'not-allowed' : 'pointer',
@@ -154,7 +150,7 @@ export default function Header(props) {
             onClick: copyWeeklyReport,
             style: {
               background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.blue, '10')})`,
-              color: C.lavender,
+              color: C.textSec,
               border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
               ...ghostBtn,
             },
@@ -168,7 +164,7 @@ export default function Header(props) {
             onClick: exportLocalBackup,
             style: {
               background: alpha(C.olive, '12'),
-              color: C.olive,
+              color: C.textSec,
               border: `1px solid ${alpha(C.olive, A.strongLine)}`,
               ...ghostBtn,
             },
@@ -221,7 +217,7 @@ export default function Header(props) {
             style: {
               fontSize: 20,
               fontWeight: 700,
-              color: pc(displayedTotalPnl),
+              color: displayedTotalPnl >= 0 ? C.text : pc(displayedTotalPnl),
               fontFamily: 'var(--font-num)',
               letterSpacing: '-0.02em',
               lineHeight: 1.1,
@@ -235,7 +231,7 @@ export default function Header(props) {
             style: {
               fontSize: 10,
               fontWeight: 600,
-              color: pc(displayedRetPct),
+              color: displayedRetPct >= 0 ? C.textSec : pc(displayedRetPct),
               fontFamily: 'var(--font-num)',
             },
           },
@@ -290,7 +286,7 @@ export default function Header(props) {
           disabled: !ready || portfolioSwitching,
           style: {
             background: `linear-gradient(90deg, ${alpha(C.blue, '12')}, ${alpha(C.teal, '08')})`,
-            color: C.blue,
+            color: C.textSec,
             border: `1px solid ${alpha(C.blue, A.strongLine)}`,
             ...ghostBtn,
             cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
@@ -309,7 +305,7 @@ export default function Header(props) {
               viewMode === OVERVIEW_VIEW_MODE
                 ? `linear-gradient(90deg, ${alpha(C.amber, '12')}, ${alpha(C.choco, '10')})`
                 : `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.rose, '10')})`,
-            color: viewMode === OVERVIEW_VIEW_MODE ? C.amber : C.text,
+            color: C.textSec,
             border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : alpha(C.lavender, '20')}`,
             ...ghostBtn,
             cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
@@ -450,7 +446,7 @@ export default function Header(props) {
                         onClick: () => switchPortfolio(portfolio.id),
                         style: {
                           background: alpha(C.blue, '10'),
-                          color: C.blue,
+                          color: C.textSec,
                           border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                           ...ghostBtn,
                         },
@@ -467,7 +463,7 @@ export default function Header(props) {
                           : renamePortfolio(portfolio.id),
                       style: {
                         background: alpha(C.amber, '10'),
-                        color: C.amber,
+                        color: C.textSec,
                         border: `1px solid ${alpha(C.amber, A.strongLine)}`,
                         ...ghostBtn,
                       },
@@ -627,7 +623,7 @@ export default function Header(props) {
             padding: '5px 10px',
             marginBottom: 8,
             fontSize: 10,
-            color: C.up,
+            color: C.textSec,
             lineHeight: 1.6,
             fontWeight: 500,
           },
@@ -659,7 +655,7 @@ export default function Header(props) {
           { style: { minWidth: 0, flex: 1 } },
           h(
             'div',
-            { style: { fontSize: 9, color: C.blue, fontWeight: 700, letterSpacing: '0.08em' } },
+            { style: { fontSize: 9, color: C.textSec, fontWeight: 700, letterSpacing: '0.08em' } },
             'WORKFLOW CUE'
           ),
           h(
@@ -697,7 +693,7 @@ export default function Header(props) {
               onClick: () => navigateToTab(workflowCue.targetTab),
               style: {
                 background: alpha(C.blue, '10'),
-                color: C.blue,
+                color: C.textSec,
                 border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                 ...ghostBtn,
               },
@@ -736,7 +732,7 @@ export default function Header(props) {
               onClick: exitOverview,
               style: {
                 background: alpha(C.blue, '10'),
-                color: C.blue,
+                color: C.textSec,
                 border: `1px solid ${alpha(C.blue, A.strongLine)}`,
                 ...ghostBtn,
               },

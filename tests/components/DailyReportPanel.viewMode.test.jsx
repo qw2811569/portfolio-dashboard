@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DailyReportPanel } from '../../src/components/reports/DailyReportPanel.jsx'
 
@@ -56,12 +56,41 @@ function buildDailyReport() {
     aiInsight: '今日先收斂成組合層級結論。',
     analysisStage: 't1-confirmed',
     analysisStageLabel: '資料確認版',
+    analysisVersion: 2,
+    rerunReason: 'finmind-confirmed',
     finmindConfirmation: {
       expectedMarketDate: '2026-04-19',
       status: 'confirmed',
       pendingCodes: [],
     },
   }
+}
+
+function buildSameDayHistory() {
+  return [
+    buildDailyReport(),
+    {
+      id: 'daily-viewmode-t0',
+      date: '2026/04/19',
+      time: '14:03',
+      totalTodayPnl: 96,
+      changes: [],
+      anomalies: [],
+      eventCorrelations: [],
+      eventAssessments: [],
+      needsReview: [],
+      aiInsight: '先收斂成收盤快版結論。',
+      analysisStage: 't0-preliminary',
+      analysisStageLabel: '收盤快版',
+      analysisVersion: 1,
+      finmindDataCount: 1,
+      finmindConfirmation: {
+        expectedMarketDate: '2026-04-19',
+        status: 'preliminary',
+        pendingCodes: ['2330'],
+      },
+    },
+  ]
 }
 
 describe('components/DailyReportPanel viewMode', () => {
@@ -84,6 +113,24 @@ describe('components/DailyReportPanel viewMode', () => {
     expect(screen.getByTestId('aggregate-daily-summary')).toBeInTheDocument()
     expect(screen.queryByText('台積電')).not.toBeInTheDocument()
     expect(screen.queryByText('聯發科')).not.toBeInTheDocument()
+  })
+
+  it('shows aggregate-only same-day diff details in insider-compressed mode', () => {
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        viewMode="insider-compressed"
+        analysisHistory={buildSameDayHistory()}
+        dailyReport={buildDailyReport()}
+      />
+    )
+
+    fireEvent.click(screen.getByTestId('daily-diff-toggle'))
+
+    expect(screen.getByTestId('daily-diff-pane')).toHaveTextContent(
+      't0/t1 差異為 aggregate · 不顯示個股細節'
+    )
+    expect(screen.queryByText('AI 總結')).not.toBeInTheDocument()
   })
 
   it('renders per-stock daily rows in owner mode', () => {

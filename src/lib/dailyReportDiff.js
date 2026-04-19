@@ -1,4 +1,4 @@
-import { normalizeDailyReportEntry } from './reportUtils.js'
+import { normalizeAnalysisHistoryEntries, normalizeDailyReportEntry } from './reportUtils.js'
 
 function normalizeText(value = '') {
   return String(value || '')
@@ -9,9 +9,7 @@ function normalizeText(value = '') {
 function normalizeCodeList(value) {
   return Array.from(
     new Set(
-      (Array.isArray(value) ? value : [])
-        .map((item) => String(item || '').trim())
-        .filter(Boolean)
+      (Array.isArray(value) ? value : []).map((item) => String(item || '').trim()).filter(Boolean)
     )
   ).sort()
 }
@@ -35,6 +33,47 @@ function sortCandidates(a, b) {
   return (Number(b?.id) || 0) - (Number(a?.id) || 0)
 }
 
+function buildRerunReasonLabel(report = null) {
+  const rerunReason = String(report?.rerunReason || '').trim()
+
+  if (rerunReason === 'finmind-confirmed') return '因收盤後資料確認而補跑'
+  if (rerunReason === 'finmind-auto-confirmed') return '因 FinMind 日終資料齊全而自動補跑'
+  if (rerunReason === 'manual-rerun') return '因同日手動重新分析而更新'
+  return '因同日版本升級而重新比對'
+}
+
+function collectSameDayReports({ currentReport, analysisHistory = [] } = {}) {
+  const normalizedCurrent = normalizeDailyReportEntry(currentReport)
+  const currentDate = String(normalizedCurrent?.date || '').trim()
+  if (!currentDate) return []
+
+  return normalizeAnalysisHistoryEntries([
+    normalizedCurrent,
+    ...(Array.isArray(analysisHistory) ? analysisHistory : []),
+  ]).filter((entry) => String(entry?.date || '').trim() === currentDate)
+}
+
+function resolveSameDayDiffPair({ currentReport, analysisHistory = [] } = {}) {
+  const candidates = collectSameDayReports({ currentReport, analysisHistory }).sort(sortCandidates)
+  const latestReport = candidates[0] || null
+  if (!latestReport) return { currentReport: null, previousReport: null }
+
+  const previousReport =
+    findPreviousSameDayReport({
+      currentReport: latestReport,
+      analysisHistory: candidates,
+    }) ||
+    candidates.find((entry) => entry !== latestReport) ||
+    null
+
+  if (!previousReport) return { currentReport: null, previousReport: null }
+
+  return {
+    currentReport: latestReport,
+    previousReport,
+  }
+}
+
 export function findPreviousSameDayReport({ currentReport, analysisHistory = [] } = {}) {
   const normalizedCurrent = normalizeDailyReportEntry(currentReport)
   const currentDate = String(normalizedCurrent?.date || '').trim()
@@ -43,10 +82,12 @@ export function findPreviousSameDayReport({ currentReport, analysisHistory = [] 
   const currentId = Number(normalizedCurrent?.id) || 0
   const currentVersion = Math.max(1, Number(normalizedCurrent?.analysisVersion) || 1)
 
-  const candidates = (Array.isArray(analysisHistory) ? analysisHistory : [])
-    .map((entry) => normalizeDailyReportEntry(entry))
+  const candidates = collectSameDayReports({
+    currentReport: normalizedCurrent,
+    analysisHistory,
+  })
     .filter((entry) => {
-      if (!entry || String(entry?.date || '').trim() !== currentDate) return false
+      if (!entry) return false
       const entryId = Number(entry?.id) || 0
       const entryVersion = Math.max(1, Number(entry?.analysisVersion) || 1)
       return entryId !== currentId || entryVersion !== currentVersion
@@ -61,49 +102,52 @@ export function findPreviousSameDayReport({ currentReport, analysisHistory = [] 
 }
 
 export function buildSameDayDailyReportDiff({ currentReport, analysisHistory = [] } = {}) {
-  const normalizedCurrent = normalizeDailyReportEntry(currentReport)
-  const currentVersion = Math.max(1, Number(normalizedCurrent?.analysisVersion) || 1)
-  if (!normalizedCurrent || currentVersion <= 1) return null
-  const previousReport = findPreviousSameDayReport({
-    currentReport: normalizedCurrent,
+  const { currentReport: resolvedCurrentReport, previousReport } = resolveSameDayDiffPair({
+    currentReport,
     analysisHistory,
   })
 
-  if (!previousReport) return null
+  if (!resolvedCurrentReport || !previousReport) return null
 
-  const currentStageLabel = formatStageLabel(normalizedCurrent)
+  const currentStageLabel = formatStageLabel(resolvedCurrentReport)
   const previousStageLabel = formatStageLabel(previousReport)
-  const currentPendingCodes = normalizeCodeList(normalizedCurrent?.finmindConfirmation?.pendingCodes)
+  const currentPendingCodes = normalizeCodeList(
+    resolvedCurrentReport?.finmindConfirmation?.pendingCodes
+  )
   const previousPendingCodes = normalizeCodeList(previousReport?.finmindConfirmation?.pendingCodes)
-  const currentInsight = normalizeText(normalizedCurrent?.aiInsight)
+  const currentInsight = normalizeText(resolvedCurrentReport?.aiInsight)
   const previousInsight = normalizeText(previousReport?.aiInsight)
+  const rerunReasonLabel = buildRerunReasonLabel(resolvedCurrentReport)
 
   const changes = []
-
-  if (currentStageLabel !== previousStageLabel) {
+  const pushChange = ({ key, label, previous, current, format = 'text' }) => {
     changes.push({
-      key: 'stage',
-      label: '版本階段',
-      previous: previousStageLabel,
-      current: currentStageLabel,
-      format: 'text',
+      key,
+      label,
+      field: label,
+      previous,
+      current,
+      t0Value: previous,
+      t1Value: current,
+      format,
+      rerunReason: rerunReasonLabel,
     })
   }
 
   if (currentInsight !== previousInsight) {
-    changes.push({
+    pushChange({
       key: 'insight',
       label: 'AI 總結',
       previous: String(previousReport?.aiInsight || '').trim() || '無',
-      current: String(normalizedCurrent?.aiInsight || '').trim() || '無',
+      current: String(resolvedCurrentReport?.aiInsight || '').trim() || '無',
       format: 'markdown',
     })
   }
 
-  const currentFinmindCount = Number(normalizedCurrent?.finmindDataCount) || 0
+  const currentFinmindCount = Number(resolvedCurrentReport?.finmindDataCount) || 0
   const previousFinmindCount = Number(previousReport?.finmindDataCount) || 0
   if (currentFinmindCount !== previousFinmindCount) {
-    changes.push({
+    pushChange({
       key: 'finmindDataCount',
       label: 'FinMind 數據筆數',
       previous: String(previousFinmindCount),
@@ -113,7 +157,7 @@ export function buildSameDayDailyReportDiff({ currentReport, analysisHistory = [
   }
 
   if (!sameList(currentPendingCodes, previousPendingCodes)) {
-    changes.push({
+    pushChange({
       key: 'pendingCodes',
       label: '待確認標的',
       previous: previousPendingCodes.length > 0 ? previousPendingCodes.join('、') : '無',
@@ -130,9 +174,11 @@ export function buildSameDayDailyReportDiff({ currentReport, analysisHistory = [
 
   countComparisons.forEach(([field, label]) => {
     const previousCount = Array.isArray(previousReport?.[field]) ? previousReport[field].length : 0
-    const currentCount = Array.isArray(normalizedCurrent?.[field]) ? normalizedCurrent[field].length : 0
+    const currentCount = Array.isArray(resolvedCurrentReport?.[field])
+      ? resolvedCurrentReport[field].length
+      : 0
     if (previousCount !== currentCount) {
-      changes.push({
+      pushChange({
         key: `${field}Count`,
         label,
         previous: String(previousCount),
@@ -143,9 +189,9 @@ export function buildSameDayDailyReportDiff({ currentReport, analysisHistory = [
   })
 
   const previousPnl = Number(previousReport?.totalTodayPnl)
-  const currentPnl = Number(normalizedCurrent?.totalTodayPnl)
+  const currentPnl = Number(resolvedCurrentReport?.totalTodayPnl)
   if (Number.isFinite(previousPnl) && Number.isFinite(currentPnl) && previousPnl !== currentPnl) {
-    changes.push({
+    pushChange({
       key: 'totalTodayPnl',
       label: '今日損益',
       previous: `${previousPnl >= 0 ? '+' : ''}${previousPnl.toLocaleString()}`,
@@ -157,15 +203,18 @@ export function buildSameDayDailyReportDiff({ currentReport, analysisHistory = [
   const summary =
     changes.length > 0
       ? `同日已從 ${previousStageLabel} 升級到 ${currentStageLabel}，共有 ${changes.length} 項可感知更新。`
-      : `同日已從 ${previousStageLabel} 升級到 ${currentStageLabel}，但目前沒有偵測到可感知差異。`
+      : `同日已從 ${previousStageLabel} 升級到 ${currentStageLabel}，但目前沒有偵測到實質差異。`
 
   return {
-    currentReport: normalizedCurrent,
+    currentReport: resolvedCurrentReport,
     previousReport,
     currentStageLabel,
     previousStageLabel,
     changes,
     changeCount: changes.length,
     summary,
+    rerunReason: resolvedCurrentReport?.rerunReason || null,
+    rerunReasonLabel,
+    stageChanged: currentStageLabel !== previousStageLabel,
   }
 }

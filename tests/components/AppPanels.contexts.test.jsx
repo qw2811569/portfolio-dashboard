@@ -834,11 +834,13 @@ describe('components/AppPanels context wiring', () => {
     )
 
     expect(await screen.findByText('同日版本差異')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('展開差異'))
+    expect(screen.getByTestId('daily-diff-toggle')).toHaveTextContent('展開差異')
+    fireEvent.click(screen.getByTestId('daily-diff-toggle'))
+    expect(screen.getByTestId('daily-diff-pane')).toBeInTheDocument()
     expect(screen.getByText('AI 總結')).toBeInTheDocument()
-    expect(screen.getAllByText('上一版').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('目前版本').length).toBeGreaterThan(0)
-    expect(screen.getByText('收合差異')).toBeInTheDocument()
+    expect(screen.getAllByText('t0 快版').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('t1 確認版').length).toBeGreaterThan(0)
+    expect(screen.getByText('收起差異')).toBeInTheDocument()
   })
 
   it('surfaces post-close ritual mode and the tomorrow-action card on the daily panel', () => {

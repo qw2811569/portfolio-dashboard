@@ -790,8 +790,8 @@ function DiffValue({ value, format = 'text' }) {
   )
 }
 
-export function SameDayDiffCard({ report, analysisHistory = [] }) {
-  const [expanded, setExpanded] = useState(false)
+export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'retail' }) {
+  const [diffOpen, setDiffOpen] = useState(false)
   const diff = useMemo(
     () =>
       buildSameDayDailyReportDiff({
@@ -800,12 +800,20 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
       }),
     [analysisHistory, report]
   )
+  const isInsiderCompressed = viewMode === 'insider-compressed'
 
   if (!diff) return null
+
+  const toggleLabel = diffOpen
+    ? '收起差異'
+    : diff.changeCount > 0
+      ? '展開差異（t0 快版 vs t1 確認版）'
+      : '本日無差異 · 查看確認說明'
 
   return h(
     Card,
     {
+      'data-testid': 'daily-diff-card',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(diff.changeCount > 0 ? C.blue : C.teal, '40')}`,
@@ -825,22 +833,46 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
       },
       h(
         'div',
-        { style: { ...lbl, color: diff.changeCount > 0 ? C.blue : C.teal } },
-        '同日版本差異'
-      ),
-      h(
-        'div',
-        { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' } },
+        { style: { display: 'grid', gap: 4 } },
         h(
-          Badge,
-          { color: diff.changeCount > 0 ? 'olive' : 'teal' },
-          diff.changeCount > 0 ? '有更新' : '無差異'
+          'div',
+          { style: { ...lbl, color: diff.changeCount > 0 ? C.blue : C.teal } },
+          '同日版本差異'
         ),
         h(
-          Badge,
-          { color: 'default' },
-          `${diff.previousReport.analysisStageLabel || '既有版本'} -> ${diff.currentReport.analysisStageLabel || '既有版本'}`
+          'div',
+          { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' } },
+          h(
+            Badge,
+            { color: diff.changeCount > 0 ? 'olive' : 'teal' },
+            diff.changeCount > 0 ? `${diff.changeCount} 項更新` : '本日無差異'
+          ),
+          h(
+            Badge,
+            { color: 'default' },
+            `${diff.previousReport.analysisStageLabel || '收盤快版'} -> ${diff.currentReport.analysisStageLabel || '資料確認版'}`
+          )
         )
+      ),
+      h(
+        Button,
+        {
+          'data-testid': 'daily-diff-toggle',
+          'aria-controls': 'daily-diff-pane',
+          'aria-expanded': diffOpen,
+          color: diff.changeCount > 0 ? 'blue' : 'olive',
+          onClick: () => setDiffOpen((value) => !value),
+          style: {
+            padding: '10px 12px',
+            borderRadius: 12,
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4,
+            whiteSpace: 'normal',
+            textAlign: 'center',
+          },
+        },
+        toggleLabel
       )
     ),
     h(
@@ -848,95 +880,172 @@ export function SameDayDiffCard({ report, analysisHistory = [] }) {
       { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7, marginBottom: 8 } },
       diff.summary
     ),
-    h(
-      Button,
-      {
-        onClick: () => setExpanded((value) => !value),
-        style: {
-          width: '100%',
-          padding: '8px 12px',
-          borderRadius: 8,
-          border: `1px solid ${alpha(C.blue, '24')}`,
-          background: alpha(C.blue, '10'),
-          color: C.textSec,
-          fontSize: 11,
-          fontWeight: 600,
-          cursor: 'pointer',
-          marginBottom: expanded ? 8 : 0,
-        },
-      },
-      expanded ? '收合差異' : diff.changeCount > 0 ? '展開差異' : '查看確認說明'
-    ),
-    expanded &&
+    diff.rerunReasonLabel &&
       h(
         'div',
         {
+          style: {
+            fontSize: 11,
+            color: C.textMute,
+            lineHeight: 1.7,
+            marginBottom: diffOpen ? 8 : 0,
+          },
+        },
+        `確認說明：${diff.rerunReasonLabel}`
+      ),
+    diffOpen &&
+      h(
+        'section',
+        {
+          id: 'daily-diff-pane',
+          className: 'diff-pane',
+          'data-testid': 'daily-diff-pane',
           style: {
             display: 'grid',
             gap: 8,
           },
         },
-        diff.changes.length > 0
-          ? diff.changes.map((change) =>
-              h(
-                'div',
+        isInsiderCompressed
+          ? h(
+              'p',
+              {
+                style: {
+                  margin: 0,
+                  fontSize: 12,
+                  color: C.textSec,
+                  lineHeight: 1.8,
+                },
+              },
+              diff.changeCount > 0
+                ? 't0/t1 差異為 aggregate · 不顯示個股細節'
+                : '本日 t0 與 t1 無實質差異 · t0/t1 差異為 aggregate · 不顯示個股細節'
+            )
+          : diff.changes.length > 0
+            ? h(
+                'ul',
                 {
-                  key: change.key,
                   style: {
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 8,
-                    padding: 8,
-                    background: alpha(C.bg, '0d'),
+                    margin: 0,
+                    padding: 0,
+                    listStyle: 'none',
+                    display: 'grid',
+                    gap: 8,
                   },
                 },
-                h('div', { style: { ...lbl, marginBottom: 4 } }, change.label),
-                h(
-                  'div',
-                  {
-                    style: {
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: 8,
-                    },
-                  },
+                ...diff.changes.map((change) =>
                   h(
-                    'div',
+                    'li',
                     {
+                      key: change.key,
                       style: {
+                        border: `1px solid ${C.border}`,
                         borderRadius: 8,
                         padding: 8,
-                        background: alpha(C.textMute, '10'),
+                        background: alpha(C.bg, '0d'),
                       },
                     },
-                    h('div', { style: { ...lbl, marginBottom: 4, color: C.textMute } }, '上一版'),
-                    h(DiffValue, { value: change.previous, format: change.format })
-                  ),
-                  h(
-                    'div',
-                    {
-                      style: {
-                        borderRadius: 8,
-                        padding: 8,
-                        background: alpha(C.blue, '10'),
+                    h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          marginBottom: 6,
+                        },
                       },
-                    },
-                    h('div', { style: { ...lbl, marginBottom: 4, color: C.textSec } }, '目前版本'),
-                    h(DiffValue, { value: change.current, format: change.format })
+                      h(
+                        'span',
+                        { className: 'diff-label', style: { ...lbl, marginBottom: 0 } },
+                        change.field
+                      ),
+                      change.rerunReason &&
+                        h(
+                          'span',
+                          {
+                            className: 'diff-reason',
+                            style: {
+                              fontSize: 11,
+                              color: C.textMute,
+                            },
+                          },
+                          change.rerunReason
+                        )
+                    ),
+                    h(
+                      'div',
+                      {
+                        style: {
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto 1fr',
+                          gap: 8,
+                          alignItems: 'start',
+                        },
+                      },
+                      h(
+                        'div',
+                        {
+                          className: 'diff-old',
+                          style: {
+                            borderRadius: 8,
+                            padding: 8,
+                            background: alpha(C.textMute, '10'),
+                          },
+                        },
+                        h(
+                          'div',
+                          { style: { ...lbl, marginBottom: 4, color: C.textMute } },
+                          't0 快版'
+                        ),
+                        h(DiffValue, { value: change.t0Value, format: change.format })
+                      ),
+                      h(
+                        'span',
+                        {
+                          className: 'diff-arrow',
+                          style: {
+                            alignSelf: 'center',
+                            fontSize: 14,
+                            color: C.textMute,
+                          },
+                        },
+                        '→'
+                      ),
+                      h(
+                        'div',
+                        {
+                          className: 'diff-new',
+                          style: {
+                            borderRadius: 8,
+                            padding: 8,
+                            background: alpha(C.blue, '10'),
+                          },
+                        },
+                        h(
+                          'div',
+                          { style: { ...lbl, marginBottom: 4, color: C.textSec } },
+                          't1 確認版'
+                        ),
+                        h(DiffValue, { value: change.t1Value, format: change.format })
+                      )
+                    )
                   )
                 )
               )
-            )
-          : h(
-              'div',
-              {
-                style: {
-                  fontSize: 12,
-                  color: C.textMute,
-                  lineHeight: 1.7,
+            : h(
+                'p',
+                {
+                  style: {
+                    margin: 0,
+                    fontSize: 12,
+                    color: C.textMute,
+                    lineHeight: 1.7,
+                  },
                 },
-              },
-              '這次主要是把快版補成正式版，內容本身沒有明顯變動。'
-            )
+                '本日 t0 與 t1 無實質差異 · 收盤快版結論穩定'
+              )
       )
   )
 }
@@ -1933,7 +2042,7 @@ export function DailyReportPanel({
         h(AnalysisStageCard, { report: dailyReport }),
         h(RitualModeCard, { report: dailyReport }),
         isPreliminaryReport && !analyzing && h(AutoConfirmCard, { state: autoConfirmState }),
-        h(SameDayDiffCard, { report: dailyReport, analysisHistory }),
+        h(SameDayDiffCard, { report: dailyReport, analysisHistory, viewMode }),
         h(WeeklyExportNarrativeCard, { report: dailyReport }),
 
         h(DailyReportSummary, {

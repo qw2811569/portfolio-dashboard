@@ -39,7 +39,7 @@ export function SoftMessage({ children, tone = 'muted', style = {} }) {
         border: `1px solid ${meta.border}`,
         background: meta.background,
         color: C.text,
-        fontSize: 10,
+        fontSize: 12,
         lineHeight: 1.6,
         minHeight: 42,
         ...style,

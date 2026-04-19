@@ -23,7 +23,7 @@ const card = {
 }
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 500,
@@ -146,7 +146,7 @@ export function HoldingRow({
                 marginTop: 4,
               },
             },
-            h('div', { className: 'tn', style: { fontSize: 9, color: C.textMute } }, holding.code),
+            h('div', { className: 'tn', style: { fontSize: 11, color: C.textMute } }, holding.code),
             h(StaleBadge, {
               dossier,
               field: 'targets',
@@ -168,7 +168,7 @@ export function HoldingRow({
                     display: 'inline-flex',
                     alignItems: 'center',
                     maxWidth: '100%',
-                    fontSize: 9,
+                    fontSize: 11,
                     lineHeight: 1.2,
                     fontWeight: 600,
                     padding: '4px 8px',
@@ -193,11 +193,11 @@ export function HoldingRow({
       // Qty + Cost
       h(
         'div',
-        { className: 'tn', style: { fontSize: 10, color: C.textSec } },
+        { className: 'tn', style: { fontSize: 12, color: C.textSec } },
         h('div', null, `${holding.qty.toLocaleString()} 股`),
         h(
           'div',
-          { style: { fontSize: 9, color: C.textMute, fontFamily: 'var(--font-num)' } },
+          { style: { fontSize: 11, color: C.textMute, fontFamily: 'var(--font-num)' } },
           `成本 ${holding.cost}`
         )
       ),
@@ -205,7 +205,7 @@ export function HoldingRow({
       // Price + Value
       h(
         'div',
-        { className: 'tn', style: { fontSize: 10, color: C.textSec } },
+        { className: 'tn', style: { fontSize: 12, color: C.textSec } },
         h(
           'div',
           { style: { fontWeight: 600, color: C.text, fontFamily: 'var(--font-num)' } },
@@ -213,7 +213,7 @@ export function HoldingRow({
         ),
         h(
           'div',
-          { style: { fontSize: 9, color: C.textMute, fontFamily: 'var(--font-num)' } },
+          { style: { fontSize: 11, color: C.textMute, fontFamily: 'var(--font-num)' } },
           value.toLocaleString()
         )
       ),
@@ -223,7 +223,7 @@ export function HoldingRow({
         'div',
         {
           style: {
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 600,
             color: pc(pnl),
             fontFamily: 'var(--font-num)',
@@ -237,7 +237,7 @@ export function HoldingRow({
         h('div', null, `${pnl >= 0 ? '+' : ''}${Math.round(pnl).toLocaleString()}`),
         h(
           'div',
-          { style: { fontSize: 9, fontWeight: 500, fontFamily: 'var(--font-num)' } },
+          { style: { fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-num)' } },
           `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`
         )
       ),
@@ -298,7 +298,7 @@ export function HoldingRow({
                     {
                       key: c.theme,
                       style: {
-                        fontSize: 9,
+                        fontSize: 11,
                         padding: '4px 8px',
                         background: alpha(C.lavender, '12'),
                         color: C.text,
@@ -395,7 +395,7 @@ export function HoldingRow({
                     'div',
                     {
                       style: {
-                        fontSize: 9,
+                        fontSize: 11,
                         color: C.textSec,
                         lineHeight: 1.6,
                         whiteSpace: 'pre-line',
@@ -405,7 +405,7 @@ export function HoldingRow({
                   )
                 : h(
                     'div',
-                    { style: { fontSize: 9, color: C.textMute } },
+                    { style: { fontSize: 11, color: C.textMute } },
                     '這檔目前還沒抓到補充資料'
                   )
             })()
@@ -415,7 +415,7 @@ export function HoldingRow({
         holding.type &&
           h(
             'div',
-            { style: { fontSize: 9, color: C.textMute, marginTop: 8 } },
+            { style: { fontSize: 11, color: C.textMute, marginTop: 8 } },
             '類型：',
             holding.type
           )
@@ -446,7 +446,7 @@ export function HoldingsTable({
       h('div', { style: { fontSize: 11, color: C.textSec, fontWeight: 600 } }, '尚無持股'),
       h(
         'div',
-        { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
+        { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
         '上傳成交記錄或手動新增持股'
       )
     )
@@ -515,7 +515,7 @@ export function HoldingsTable({
           gridTemplateColumns: '2fr 1fr 1fr 1fr 40px',
           gap: 8,
           padding: '8px 12px',
-          fontSize: 9,
+          fontSize: 11,
           color: C.textMute,
           fontWeight: 500,
           letterSpacing: '0.08em',

@@ -65,7 +65,7 @@ function DialogShell({
               'div',
               {
                 style: {
-                  fontSize: 10,
+                  fontSize: 12,
                   color: C.textSec,
                   fontWeight: 700,
                   letterSpacing: '0.08em',
@@ -199,7 +199,7 @@ export function TextFieldDialog({
         style: {
           display: 'grid',
           gap: 4,
-          fontSize: 10,
+          fontSize: 12,
           color: C.textMute,
         },
       },
@@ -230,7 +230,7 @@ export function TextFieldDialog({
         {
           style: {
             marginTop: 8,
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
           },
         },

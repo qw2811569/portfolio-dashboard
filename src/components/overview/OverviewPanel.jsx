@@ -8,7 +8,7 @@ import { KpiCards } from './KpiCards.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -18,7 +18,7 @@ const lbl = {
 const ghostBtn = {
   borderRadius: 20,
   padding: '4px 8px',
-  fontSize: 9,
+  fontSize: 11,
   fontWeight: 500,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
@@ -162,11 +162,11 @@ export function OverviewHeader({
           {
             className: 'tn',
             style: {
-              fontSize: 'clamp(42px, 6vw, 64px)',
+              fontSize: 'clamp(40px, 6vw, 56px)',
               fontWeight: 600,
               color: C.text,
               letterSpacing: '-0.02em',
-              lineHeight: 0.95,
+              lineHeight: 1.02,
             },
           },
           Math.round(totalValue).toLocaleString()
@@ -215,7 +215,7 @@ export function OverviewHeader({
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 8, lineHeight: 1.7 } },
+          { style: { fontSize: 12, color: C.textMute, marginTop: 8, lineHeight: 1.7 } },
           '這裡只做彙總，不會修改任何組合資料。'
         )
       )
@@ -273,17 +273,17 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                 { style: { fontSize: 12, fontWeight: 600, color: C.text } },
                 displayPortfolioName(portfolio),
                 portfolio.id === 'me' &&
-                  h('span', { style: { fontSize: 9, color: C.textMute, marginLeft: 4 } }, 'owner')
+                  h('span', { style: { fontSize: 11, color: C.textMute, marginLeft: 4 } }, 'owner')
               ),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
+                { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
                 `${portfolio.holdingCount} 檔 · 待處理事件 ${portfolio.pendingEvents} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
               ),
               noteSummary &&
                 h(
                   'div',
-                  { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                  { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                   noteSummary
                 )
             ),
@@ -362,13 +362,13 @@ export function DuplicateHoldings({ holdings }) {
               'div',
               null,
               h('span', { style: { fontSize: 12, color: C.text, fontWeight: 600 } }, item.name),
-              h('span', { style: { fontSize: 10, color: C.textMute, marginLeft: 4 } }, item.code)
+              h('span', { style: { fontSize: 12, color: C.textMute, marginLeft: 4 } }, item.code)
             ),
             h(
               'span',
               {
                 className: 'tn',
-                style: { fontSize: 10, color: C.textSec },
+                style: { fontSize: 12, color: C.textSec },
               },
               `合計市值 ${Math.round(item.totalValue).toLocaleString()}`
             )
@@ -382,7 +382,7 @@ export function DuplicateHoldings({ holdings }) {
                 {
                   key: `${item.code}-${portfolio.id}`,
                   style: {
-                    fontSize: 9,
+                    fontSize: 11,
                     padding: '4px 8px',
                     borderRadius: 999,
                     background: C.subtle,
@@ -449,13 +449,13 @@ export function PendingItems({ items, onSwitch }) {
               h('div', { style: { fontSize: 11, color: C.text, fontWeight: 600 } }, item.title),
               h(
                 'div',
-                { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
+                { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
                 `${displayPortfolioName({ displayName: item.portfolioName, id: item.portfolioId })} · ${item.date || '未排日期'} · 預測${item.pred === 'up' ? '看漲' : item.pred === 'down' ? '看跌' : '中性'}`
               ),
               item.predReason &&
                 h(
                   'div',
-                  { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                  { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
                   item.predReason
                 )
             ),

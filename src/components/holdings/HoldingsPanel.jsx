@@ -8,7 +8,7 @@ import Md from '../Md.jsx'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -73,7 +73,7 @@ export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl =
       h(
         'div',
         { key: label, className: 'ui-card', style: metricCard },
-        h('div', { style: { fontSize: 9, color: C.textMute, letterSpacing: '0.08em' } }, label),
+        h('div', { style: { fontSize: 11, color: C.textMute, letterSpacing: '0.08em' } }, label),
         h(
           'div',
           {
@@ -106,7 +106,7 @@ export function HoldingsIntegrityWarning({ issues }) {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.amber, '40')}`,
         padding: '8px 8px',
-        fontSize: 10,
+        fontSize: 12,
         color: C.textSec,
         lineHeight: 1.7,
       },
@@ -159,7 +159,7 @@ function TrackedStocksSyncBadge({ portfolioId = '' }) {
             alignItems: 'center',
             borderRadius: 999,
             padding: '4px 8px',
-            fontSize: 10,
+            fontSize: 12,
             lineHeight: 1.2,
             fontWeight: 700,
             letterSpacing: '0.01em',
@@ -270,7 +270,7 @@ export function PortfolioHealthCheck({ holdings }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
-              fontSize: 10,
+              fontSize: 12,
               padding: '4px 8px',
               borderRadius: 6,
               background: C.subtle,
@@ -297,7 +297,7 @@ export function PortfolioHealthCheck({ holdings }) {
             borderRadius: 6,
             padding: '4px 8px',
             marginBottom: 8,
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
             lineHeight: 1.6,
           },
@@ -319,13 +319,13 @@ export function PortfolioHealthCheck({ holdings }) {
       h(
         'div',
         null,
-        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '策略框架'),
+        h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '策略框架'),
         Object.entries(stratMap)
           .sort((a, b) => b[1] - a[1])
           .map(([s, n]) =>
             h(
               'div',
-              { key: s, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
+              { key: s, style: { fontSize: 12, color: C.textSec, marginBottom: 4 } },
               s,
               ' ',
               h('span', { style: { color: C.text, fontWeight: 600 } }, n)
@@ -335,11 +335,11 @@ export function PortfolioHealthCheck({ holdings }) {
       h(
         'div',
         null,
-        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '持有週期'),
+        h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '持有週期'),
         Object.entries(periodMap).map(([p, n]) =>
           h(
             'div',
-            { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
+            { key: p, style: { fontSize: 12, color: C.textSec, marginBottom: 4 } },
             p === '短' ? '短期' : p === '中' ? '中期' : p === '短中' ? '短中期' : '中長期',
             ' ',
             h('span', { style: { color: C.text, fontWeight: 600 } }, n)
@@ -349,13 +349,13 @@ export function PortfolioHealthCheck({ holdings }) {
       h(
         'div',
         null,
-        h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '持倉定位'),
+        h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '持倉定位'),
         Object.entries(posMap)
           .sort((a, b) => b[1] - a[1])
           .map(([p, val]) =>
             h(
               'div',
-              { key: p, style: { fontSize: 10, color: C.textSec, marginBottom: 4 } },
+              { key: p, style: { fontSize: 12, color: C.textSec, marginBottom: 4 } },
               p,
               ' ',
               h(
@@ -497,7 +497,7 @@ function DailyInsightCard({ latestInsight }) {
       'div',
       {
         style: {
-          fontSize: 10,
+          fontSize: 12,
           color: C.textMute,
           marginBottom: 4,
           letterSpacing: '0.06em',

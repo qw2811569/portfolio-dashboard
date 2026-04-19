@@ -201,7 +201,7 @@ function KpiCard({
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textMute,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',

@@ -60,7 +60,7 @@ export function WatchlistFocus({ focus }) {
           'div',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               color: C.textSec,
               fontWeight: 600,
               letterSpacing: '0.1em',
@@ -88,7 +88,7 @@ export function WatchlistFocus({ focus }) {
             'span',
             {
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 20,
                 background: C.subtle,
@@ -101,12 +101,12 @@ export function WatchlistFocus({ focus }) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+          { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
           focus.summary
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.7 } },
+          { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.7 } },
           focus.action
         )
       ),
@@ -117,7 +117,7 @@ export function WatchlistFocus({ focus }) {
           'span',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
               background: C.subtle,
@@ -131,7 +131,7 @@ export function WatchlistFocus({ focus }) {
           'span',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
               background: C.subtle,
@@ -145,7 +145,7 @@ export function WatchlistFocus({ focus }) {
           'span',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
               background: C.subtle,
@@ -216,7 +216,7 @@ export function WatchlistRow({
             h(
               'span',
               {
-                style: { fontSize: 10, color: C.textMute, fontWeight: 400, marginLeft: 4 },
+                style: { fontSize: 12, color: C.textMute, fontWeight: 400, marginLeft: 4 },
               },
               w.code
             ),
@@ -225,7 +225,7 @@ export function WatchlistRow({
                 'span',
                 {
                   style: {
-                    fontSize: 9,
+                    fontSize: 11,
                     padding: '4px 8px',
                     borderRadius: 3,
                     marginLeft: 4,
@@ -243,10 +243,10 @@ export function WatchlistRow({
           h(
             'div',
             {
-              style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 },
+              style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 },
             },
             w.catalyst || '尚未補上催化劑',
-            h('span', { style: { fontSize: 9 } }, isWExp ? '▲' : '▼')
+            h('span', { style: { fontSize: 11 } }, isWExp ? '▲' : '▼')
           )
         ),
         h(
@@ -264,7 +264,7 @@ export function WatchlistRow({
                 background: 'transparent',
                 border: `1px solid ${C.border}`,
                 borderRadius: 12,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.textMute,
                 cursor: 'pointer',
               },
@@ -283,7 +283,7 @@ export function WatchlistRow({
                 background: 'transparent',
                 border: `1px solid ${C.up}`,
                 borderRadius: 12,
-                fontSize: 9,
+                fontSize: 11,
                 color: C.textSec,
                 cursor: 'pointer',
               },
@@ -297,7 +297,7 @@ export function WatchlistRow({
             style: {
               background: C.subtle,
               color: C.textSec,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
               border: `1px solid ${C.border}`,
               padding: '4px 8px',
@@ -316,7 +316,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '現價'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '現價'),
           h(
             'div',
             { style: { fontSize: 17, fontWeight: 600, color: C.text } },
@@ -326,7 +326,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '目標價'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '目標價'),
           h(
             'div',
             { style: { fontSize: 17, fontWeight: 600, color: C.textSec } },
@@ -336,7 +336,7 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '潛在漲幅'),
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '潛在漲幅'),
           h('div', { style: { fontSize: 17, fontWeight: 600, color: C.text } }, upsideText)
         )
       ),
@@ -359,7 +359,7 @@ export function WatchlistRow({
       h(
         'div',
         {
-          style: { fontSize: 10, color: C.textMute, marginTop: 8, lineHeight: 1.7 },
+          style: { fontSize: 12, color: C.textMute, marginTop: 8, lineHeight: 1.7 },
         },
         w.note || '尚未補上觀察重點。'
       )
@@ -405,12 +405,12 @@ export function WatchlistRow({
                 },
                 h(
                   'div',
-                  { style: { fontSize: 10, color: C.lavender, fontWeight: 600 } },
+                  { style: { fontSize: 12, color: C.lavender, fontWeight: 600 } },
                   `策略追蹤（${relatedEvents.length} 筆）`
                 ),
                 h(
                   'div',
-                  { style: { fontSize: 10 } },
+                  { style: { fontSize: 12 } },
                   hits > 0 &&
                     h('span', { style: { color: C.textSec, marginRight: 8 } }, `準確 ${hits}`),
                   misses > 0 &&
@@ -455,7 +455,7 @@ export function WatchlistRow({
                         { style: { fontSize: 11, fontWeight: 500, color: C.text } },
                         e.title
                       ),
-                      h('div', { style: { fontSize: 9, color: C.textMute, marginTop: 4 } }, e.date)
+                      h('div', { style: { fontSize: 11, color: C.textMute, marginTop: 4 } }, e.date)
                     ),
                     h(
                       'div',
@@ -466,7 +466,7 @@ export function WatchlistRow({
                         'span',
                         {
                           style: {
-                            fontSize: 9,
+                            fontSize: 11,
                             padding: '4px 8px',
                             borderRadius: 3,
                             background:
@@ -481,7 +481,7 @@ export function WatchlistRow({
                           'span',
                           {
                             style: {
-                              fontSize: 9,
+                              fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
                               background: C.oliveBg,
@@ -496,7 +496,7 @@ export function WatchlistRow({
                           'span',
                           {
                             style: {
-                              fontSize: 9,
+                              fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
                               background: C.upBg,
@@ -512,7 +512,7 @@ export function WatchlistRow({
                           'span',
                           {
                             style: {
-                              fontSize: 9,
+                              fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
                               background: C.blueBg,
@@ -527,7 +527,7 @@ export function WatchlistRow({
                           'span',
                           {
                             style: {
-                              fontSize: 9,
+                              fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
                               background: C.blueBg,
@@ -541,7 +541,7 @@ export function WatchlistRow({
                   h(
                     'div',
                     {
-                      style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 },
+                      style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 },
                     },
                     e.predReason
                   ),
@@ -550,7 +550,7 @@ export function WatchlistRow({
                       'div',
                       {
                         style: {
-                          fontSize: 10,
+                          fontSize: 12,
                           color: C.textSec,
                           marginTop: 4,
                           lineHeight: 1.6,
@@ -566,7 +566,7 @@ export function WatchlistRow({
                       'div',
                       {
                         style: {
-                          fontSize: 9,
+                          fontSize: 11,
                           color: C.textMute,
                           marginTop: 4,
                           lineHeight: 1.6,
@@ -579,7 +579,7 @@ export function WatchlistRow({
                     h(
                       'div',
                       {
-                        style: { fontSize: 10, color: C.textSec, marginTop: 4, lineHeight: 1.6 },
+                        style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.6 },
                       },
                       `教訓：${e.lessons}`
                     )
@@ -643,7 +643,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
             'div',
             {
               style: {
-                fontSize: 10,
+                fontSize: 12,
                 color: C.textSec,
                 fontWeight: 700,
                 letterSpacing: '0.08em',
@@ -677,7 +677,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         },
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '代碼',
           h('input', {
             value: form.code,
@@ -688,7 +688,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         ),
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '名稱',
           h('input', {
             value: form.name,
@@ -699,7 +699,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         ),
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '現價',
           h('input', {
             value: form.price,
@@ -711,7 +711,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         ),
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '目標價',
           h('input', {
             value: form.target,
@@ -723,7 +723,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         ),
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '狀態',
           h('input', {
             value: form.status,
@@ -734,7 +734,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         ),
         h(
           'label',
-          { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute } },
+          { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
           '色彩 key',
           h(
             'select',
@@ -753,7 +753,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
       ),
       h(
         'label',
-        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 8 } },
+        { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute, marginTop: 8 } },
         '催化劑',
         h('textarea', {
           value: form.catalyst,
@@ -765,7 +765,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
       ),
       h(
         'label',
-        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textMute, marginTop: 8 } },
+        { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute, marginTop: 8 } },
         '補充備註',
         h('textarea', {
           value: form.note,
@@ -932,7 +932,7 @@ export function WatchlistPanel({
                 color: 'white',
                 border: 'none',
                 borderRadius: 20,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
               },

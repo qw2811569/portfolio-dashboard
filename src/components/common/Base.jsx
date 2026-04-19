@@ -1,6 +1,26 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 
+function extractTextContent(content) {
+  if (content == null || typeof content === 'boolean') return ''
+  if (typeof content === 'string' || typeof content === 'number') return String(content)
+  if (Array.isArray(content)) return content.map(extractTextContent).join('')
+  if (content?.props?.children) return extractTextContent(content.props.children)
+  return ''
+}
+
+function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = false } = {}) {
+  const text = extractTextContent(content)
+  const hasCjk = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/u.test(text)
+
+  return {
+    letterSpacing: hasCjk ? '0' : latinTracking,
+    textTransform: hasCjk ? 'none' : uppercase ? 'uppercase' : 'none',
+    lineHeight: hasCjk ? 1.4 : 1.25,
+    fontVariantNumeric: 'tabular-nums',
+  }
+}
+
 export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
   const accent = color || C.blue
   const baseStyle = {
@@ -48,12 +68,11 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
         'div',
         {
           style: {
-            fontSize: 10,
+            fontSize: 12,
             color: C.textMute,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
             fontWeight: 500,
             marginBottom: 4,
+            ...getLocalizedMetaStyle(label, { latinTracking: '0.12em', uppercase: true }),
           },
         },
         label
@@ -90,13 +109,14 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
   }
 
   const sizes = {
-    xs: { padding: '4px 8px', fontSize: 9 },
-    sm: { padding: '4px 8px', fontSize: 10 },
+    xs: { padding: '4px 8px', fontSize: 11 },
+    sm: { padding: '4px 8px', fontSize: 12 },
     md: { padding: '4px 8px', fontSize: 11 },
   }
 
   const selectedColor = colors[color] || colors.default
   const selectedSize = sizes[size] || sizes.sm
+  const localizedStyle = getLocalizedMetaStyle(children, { uppercase: true })
 
   return h(
     'span',
@@ -110,9 +130,8 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
         border: `1px solid ${selectedColor.border}`,
         borderRadius: 999,
         fontWeight: 500,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
         ...selectedSize,
+        ...localizedStyle,
         ...style,
       },
     },
@@ -160,14 +179,15 @@ export function Button({
   }
 
   const sizes = {
-    xs: { padding: '8px 8px', fontSize: 9 },
-    sm: { padding: '8px 12px', fontSize: 10 },
+    xs: { padding: '8px 8px', fontSize: 11 },
+    sm: { padding: '8px 12px', fontSize: 12 },
     md: { padding: '8px 16px', fontSize: 11 },
     lg: { padding: '12px 16px', fontSize: 12 },
   }
 
   const selectedVariant = variants[variant]?.[color] || variants.ghost.default
   const selectedSize = sizes[size] || sizes.sm
+  const localizedStyle = getLocalizedMetaStyle(children, { uppercase: true })
 
   return h(
     'button',
@@ -191,9 +211,8 @@ export function Button({
         color: selectedVariant.text,
         border: `1px solid ${selectedVariant.border}`,
         boxShadow: disabled ? 'none' : C.shadow,
-        textTransform: 'uppercase',
-        letterSpacing: '0.08em',
         ...selectedSize,
+        ...localizedStyle,
         ...style,
       },
       ...props,
@@ -204,12 +223,11 @@ export function Button({
 
 export function SectionHeader({ title, description, action, style = {} }) {
   const lblStyle = {
-    fontSize: 10,
+    fontSize: 12,
     color: C.textMute,
-    letterSpacing: '0.12em',
-    textTransform: 'uppercase',
     fontWeight: 500,
     marginBottom: 4,
+    ...getLocalizedMetaStyle(title, { latinTracking: '0.12em', uppercase: true }),
   }
 
   return h(

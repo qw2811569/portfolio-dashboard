@@ -108,7 +108,7 @@ function EmptySeasonalityCard({ name, code }) {
     h(
       'div',
       {
-        style: { fontSize: 10, color: C.textSec, fontWeight: 700, letterSpacing: '0.06em' },
+        style: { fontSize: 12, color: C.textSec, fontWeight: 700, letterSpacing: '0.06em' },
       },
       '營收季節性'
     ),
@@ -161,7 +161,7 @@ function SeasonalityCard({ holding, revenueRows }) {
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textSec,
               fontWeight: 700,
               letterSpacing: '0.06em',
@@ -176,7 +176,7 @@ function SeasonalityCard({ holding, revenueRows }) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 4 } },
+          { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
           `12 月 × ${years.length} 年`
         )
       ),
@@ -184,7 +184,7 @@ function SeasonalityCard({ holding, revenueRows }) {
         'div',
         {
           style: {
-            fontSize: 10,
+            fontSize: 12,
             color: C.textSec,
             border: '1px solid var(--positive-soft)',
             background: alpha(C.olive, '16'),
@@ -214,7 +214,7 @@ function SeasonalityCard({ holding, revenueRows }) {
           {
             key: label,
             style: {
-              fontSize: 9,
+              fontSize: 11,
               color: C.textMute,
               textAlign: 'center',
               paddingBottom: 4,
@@ -229,7 +229,7 @@ function SeasonalityCard({ holding, revenueRows }) {
           {
             key: `${row.year}-label`,
             style: {
-              fontSize: 10,
+              fontSize: 12,
               color: C.textSec,
               fontFamily: 'var(--font-num)',
               display: 'flex',
@@ -254,7 +254,7 @@ function SeasonalityCard({ holding, revenueRows }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 9,
+                fontSize: 11,
                 color: cell && Number(cell[4]) >= 1 ? C.text : C.textSec,
                 fontFamily: 'var(--font-num)',
               },
@@ -271,7 +271,7 @@ function SeasonalityCard({ holding, revenueRows }) {
           display: 'grid',
           gap: 4,
           marginTop: 8,
-          fontSize: 10,
+          fontSize: 12,
           color: C.textSec,
           lineHeight: 1.7,
         },

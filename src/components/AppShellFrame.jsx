@@ -115,7 +115,7 @@ export default function AppShellFrame({
                   style={{
                     borderRadius: 999,
                     padding: '4px 8px',
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: 500,
                     color: C.textMute,
                     background: C.card,

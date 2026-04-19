@@ -6,7 +6,7 @@ import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -59,7 +59,7 @@ function ViewModeNotice({ note }) {
       style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
     },
     h('div', { style: { ...lbl, color: C.textSec } }, '合規顯示模式'),
-    h('div', { style: { fontSize: 10, color: C.textSec, lineHeight: 1.7 } }, note)
+    h('div', { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } }, note)
   )
 }
 
@@ -118,7 +118,7 @@ function CompressedResearchResults({ results }) {
         'span',
         {
           style: {
-            fontSize: 9,
+            fontSize: 11,
             padding: '4px 8px',
             borderRadius: 999,
             background: alpha(C.amber, '14'),
@@ -133,7 +133,7 @@ function CompressedResearchResults({ results }) {
           'span',
           {
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 999,
               background: alpha(C.teal, '12'),
@@ -214,7 +214,7 @@ export function ResearchHeader({
       )
     ),
     reportRefreshStatus &&
-      h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 8 } }, reportRefreshStatus)
+      h('div', { style: { fontSize: 12, color: C.textMute, marginBottom: 8 } }, reportRefreshStatus)
   )
 }
 
@@ -232,7 +232,7 @@ export function StockResearchButtons({
   return h(
     'div',
     null,
-    h('div', { style: { fontSize: 9, color: C.textMute, marginBottom: 4 } }, '想先深挖哪一檔：'),
+    h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '想先深挖哪一檔：'),
     h(
       'div',
       { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
@@ -247,7 +247,7 @@ export function StockResearchButtons({
             onClick: () => onResearch('single', holding),
             disabled: researching,
             style: {
-              fontSize: 9,
+              fontSize: 11,
               padding: '4px 8px',
               borderRadius: 6,
               cursor: researching ? 'not-allowed' : 'pointer',
@@ -306,7 +306,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
             {
               key: item.code,
               style: {
-                fontSize: 9,
+                fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 999,
                 background: C.subtle,
@@ -355,7 +355,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                       alignItems: 'center',
                       gap: 4,
                       flexWrap: 'wrap',
-                      fontSize: 9,
+                      fontSize: 11,
                       marginTop: 4,
                       color: item.targetSource === 'per-band' ? C.textMute : C.textSec,
                     },
@@ -364,7 +364,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                     'span',
                     {
                       style: {
-                        fontSize: 8,
+                        fontSize: 11,
                         padding: '4px 8px',
                         borderRadius: 3,
                         fontWeight: 600,
@@ -388,13 +388,13 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                 )
               : h(
                   'div',
-                  { style: { fontSize: 9, color: C.textMute, marginTop: 4 } },
+                  { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
                   `${describeStatus('target', item.targetStatus)} · ${describeStatus('fundamental', item.fundamentalStatus)}`
                 ),
             item.classificationNote &&
               h(
                 'div',
-                { style: { fontSize: 8, color: C.textSec, marginTop: 4, fontStyle: 'italic' } },
+                { style: { fontSize: 11, color: C.textSec, marginTop: 4, fontStyle: 'italic' } },
                 item.classificationNote
               )
           )
@@ -405,7 +405,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
       'div',
       {
         style: {
-          fontSize: 10,
+          fontSize: 12,
           color: C.textMute,
           lineHeight: 1.7,
           marginTop: 8,
@@ -466,7 +466,7 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
     ),
     h(
       'div',
-      { style: { fontSize: 10, color: C.textMute, marginBottom: 12 } },
+      { style: { fontSize: 12, color: C.textMute, marginBottom: 12 } },
       isEvolve
         ? '3 輪迭代：系統診斷 → 進化建議 → AI 策略建議，預計 1-2 分鐘'
         : isPortfolio
@@ -671,7 +671,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           alignItems: 'center',
           gap: 8,
           marginTop: 4,
-          fontSize: 10,
+          fontSize: 12,
           color: C.textMute,
           fontFamily: 'var(--font-num)',
         },
@@ -709,13 +709,13 @@ function ConsensusHighlightCard({ item }) {
         'div',
         null,
         h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '外資券商共識'),
-        h('div', { style: { fontSize: 10, color: C.textMute } }, `${item.name} · ${item.code}`)
+        h('div', { style: { fontSize: 12, color: C.textMute } }, `${item.name} · ${item.code}`)
       ),
       h(
         'div',
         {
           style: {
-            fontSize: 9,
+            fontSize: 11,
             color: C.textSec,
             border: '1px solid var(--positive-soft)',
             background: alpha(C.blue, '18'),
@@ -849,7 +849,7 @@ function AnalystReportRow({ item }) {
       'div',
       {
         style: {
-          fontSize: 10,
+          fontSize: 12,
           color: C.textSec,
           lineHeight: 1.7,
         },
@@ -860,7 +860,7 @@ function AnalystReportRow({ item }) {
       'div',
       {
         style: {
-          fontSize: 9,
+          fontSize: 11,
           color: C.textMute,
           lineHeight: 1.6,
         },
@@ -915,7 +915,7 @@ function AnalystReportsSection({ holdings, analystReports }) {
             { style: { fontSize: 11, color: C.text, fontWeight: 600 } },
             `${group.name} · ${group.code}`
           ),
-          h('div', { style: { fontSize: 9, color: C.textMute } }, `${group.items.length} 則`)
+          h('div', { style: { fontSize: 11, color: C.textMute } }, `${group.items.length} 則`)
         ),
         group.items.map((item) =>
           h(AnalystReportRow, { key: item.id || item.hash || item.title, item })
@@ -926,7 +926,7 @@ function AnalystReportsSection({ holdings, analystReports }) {
       'div',
       {
         style: {
-          fontSize: 10,
+          fontSize: 12,
           color: C.textMute,
           lineHeight: 1.7,
           marginTop: 8,
@@ -985,7 +985,7 @@ export function ResearchProposalCard({
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+          { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
           `${statusMeta.label} · ${evaluation.summary || '尚未評估'}`
         )
       ),
@@ -1003,7 +1003,7 @@ export function ResearchProposalCard({
               border: 'none',
               background: canApply ? alpha(C.olive, '22') : C.subtle,
               color: canApply ? C.olive : C.textMute,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               cursor: !canApply || actionBusy ? 'not-allowed' : 'pointer',
             },
@@ -1021,7 +1021,7 @@ export function ResearchProposalCard({
               border: `1px solid ${alpha(C.down, '2a')}`,
               background: alpha(C.down, '12'),
               color: proposalStatus === 'discarded' ? C.textMute : C.down,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               cursor: proposalStatus === 'discarded' || actionBusy ? 'not-allowed' : 'pointer',
             },
@@ -1036,7 +1036,7 @@ export function ResearchProposalCard({
         style: {
           display: 'grid',
           gap: 4,
-          fontSize: 10,
+          fontSize: 12,
           color: C.textSec,
           lineHeight: 1.7,
         },
@@ -1094,13 +1094,13 @@ export function KnowledgeProposalCard({ results }) {
         ),
         h(
           'div',
-          { style: { fontSize: 10, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+          { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
           `${statusMeta.label} · ${evaluation.summary || '尚未評估'}`
         )
       ),
       h(
         'div',
-        { style: { fontSize: 10, color: C.textMute, textAlign: 'right', lineHeight: 1.6 } },
+        { style: { fontSize: 12, color: C.textMute, textAlign: 'right', lineHeight: 1.6 } },
         `調整 ${proposal.metrics?.adjustmentCount || adjustments.length} 筆`,
         h('br'),
         `已連結回饋 ${proposal.metrics?.feedbackLinkedCount || 0} / 未連結 ${proposal.metrics?.feedbackMissingLinkCount || 0}`
@@ -1109,7 +1109,7 @@ export function KnowledgeProposalCard({ results }) {
     adjustments.length > 0 &&
       h(
         'div',
-        { style: { display: 'grid', gap: 4, fontSize: 10, color: C.textSec, lineHeight: 1.7 } },
+        { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
         adjustments
           .slice(0, 5)
           .map((item) =>
@@ -1173,7 +1173,7 @@ export function ResearchResults({
         results.priceAtResearch &&
           h(
             'span',
-            { style: { fontSize: 10, color: C.textMute } },
+            { style: { fontSize: 12, color: C.textMute } },
             `研究時股價 ${results.priceAtResearch}`
           ),
         results.mode === 'single' &&
@@ -1188,7 +1188,7 @@ export function ResearchResults({
                 border: `1px solid ${alpha(C.amber, '2a')}`,
                 background: alpha(C.amber, '15'),
                 color: C.textSec,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 500,
                 cursor: enriching === results.code ? 'not-allowed' : 'pointer',
               },
@@ -1221,7 +1221,7 @@ export function ResearchResults({
           'div',
           {
             style: {
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               color: [C.blue, C.amber, C.teal][i % 3],
               marginBottom: 4,
@@ -1250,7 +1250,7 @@ export function ResearchHistory({ history, onSelect, selectedId }) {
       h('span', null, '歷史研究記錄'),
       h(
         'span',
-        { style: { fontSize: 9, color: C.textMute, fontWeight: 400 } },
+        { style: { fontSize: 11, color: C.textMute, fontWeight: 400 } },
         `${history.length} 筆`
       )
     ),
@@ -1279,9 +1279,9 @@ export function ResearchHistory({ history, onSelect, selectedId }) {
             { style: { fontSize: 12, color: r.mode === 'evolve' ? C.up : C.text } },
             `${r.mode === 'evolve' ? '🧬 ' : '🔬 '}${r.name}`
           ),
-          h('span', { style: { fontSize: 10, color: C.textMute, marginLeft: 4 } }, r.date)
+          h('span', { style: { fontSize: 12, color: C.textMute, marginLeft: 4 } }, r.date)
         ),
-        h('span', { style: { fontSize: 9, color: C.textMute } }, `${r.rounds?.length || 0} 輪分析`)
+        h('span', { style: { fontSize: 11, color: C.textMute } }, `${r.rounds?.length || 0} 輪分析`)
       )
     )
   )
@@ -1346,7 +1346,7 @@ export function ResearchPanel({
         }),
         h(
           'div',
-          { style: { fontSize: 9, color: C.textMute, marginTop: 8, lineHeight: 1.6 } },
+          { style: { fontSize: 11, color: C.textMute, marginTop: 8, lineHeight: 1.6 } },
           `這輪卡在 ${reportRefreshError.name} (${reportRefreshError.code})`
         )
       ),

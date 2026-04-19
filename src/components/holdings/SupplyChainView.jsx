@@ -4,7 +4,7 @@ import { Card } from '../common'
 import { getSupplyChain } from '../../lib/dataAdapters/index.js'
 
 const lbl = {
-  fontSize: 10,
+  fontSize: 12,
   color: C.textMute,
   letterSpacing: '0.06em',
   fontWeight: 600,
@@ -12,7 +12,7 @@ const lbl = {
 }
 
 const chipStyle = {
-  fontSize: 10,
+  fontSize: 12,
   padding: '4px 8px',
   borderRadius: 4,
   background: C.fillPrimary,
@@ -108,7 +108,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
         },
       },
       h('div', { style: { fontSize: 12, fontWeight: 600, color: C.text } }, name),
-      h('div', { style: { fontSize: 10, color: C.textSec } }, code)
+      h('div', { style: { fontSize: 12, color: C.textSec } }, code)
     ),
 
     // Downstream

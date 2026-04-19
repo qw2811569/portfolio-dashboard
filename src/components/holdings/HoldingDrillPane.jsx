@@ -16,7 +16,7 @@ const panelCard = {
 }
 
 const eyebrow = {
-  fontSize: 9,
+  fontSize: 11,
   color: C.textMute,
   letterSpacing: '0.08em',
   fontWeight: 700,
@@ -252,12 +252,12 @@ function TonePill({ tone = 'muted', children }) {
         border: `1px solid ${meta.border}`,
         background: meta.background,
         color: C.text,
-        fontSize: 9,
+        fontSize: 11,
         fontWeight: 700,
         lineHeight: 1.2,
       }}
     >
-      <span aria-hidden="true" style={{ color: meta.color, fontSize: 10 }}>
+      <span aria-hidden="true" style={{ color: meta.color, fontSize: 12 }}>
         {tone === 'positive' ? '▼' : tone === 'negative' ? '▲' : tone === 'warning' ? '▲' : '•'}
       </span>
       <span>{children}</span>
@@ -343,7 +343,7 @@ function ThesisCard({ dossier }) {
                   gridTemplateColumns: '10px minmax(0, 1fr) auto',
                   alignItems: 'center',
                   gap: 8,
-                  fontSize: 10,
+                  fontSize: 12,
                 }}
               >
                 <span
@@ -357,7 +357,7 @@ function ThesisCard({ dossier }) {
                   }}
                 />
                 <span style={{ color: C.text }}>{pillar.label}</span>
-                <span style={{ color: C.textMute, fontSize: 9 }}>{meta.label}</span>
+                <span style={{ color: C.textMute, fontSize: 11 }}>{meta.label}</span>
               </div>
             )
           })}
@@ -487,7 +487,7 @@ function ValuationCard({ holding, dossier }) {
           gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
           gap: 4,
           marginTop: 8,
-          fontSize: 9,
+          fontSize: 11,
         }}
       >
         <div style={{ color: C.textMute }}>
@@ -509,7 +509,7 @@ function ValuationCard({ holding, dossier }) {
           </div>
         </div>
       </div>
-      <div style={{ color: C.textMute, fontSize: 9, lineHeight: 1.6, marginTop: 8 }}>
+      <div style={{ color: C.textMute, fontSize: 11, lineHeight: 1.6, marginTop: 8 }}>
         {valuation?.note || '歷史區間估值'}
       </div>
     </div>
@@ -580,19 +580,19 @@ function TargetCard({ holding, dossier }) {
         }}
       >
         <div>
-          <div style={{ color: C.textMute, fontSize: 9, marginBottom: 4 }}>{target.label}</div>
+          <div style={{ color: C.textMute, fontSize: 11, marginBottom: 4 }}>{target.label}</div>
           <div style={{ color: C.text, fontSize: 12, fontWeight: 700 }}>
             {formatCurrency(target.target)}
           </div>
         </div>
         {upside != null ? <TonePill tone={upsideTone}>{formatPercent(upside)}</TonePill> : null}
       </div>
-      <div style={{ color: C.text, fontSize: 10, lineHeight: 1.6, marginTop: 8 }}>
+      <div style={{ color: C.text, fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
         {sourceLabel}
         {target.reportsCount && target.reportsCount > 1 ? ` · ${target.reportsCount} 筆` : ''}
         {target.date ? ` · ${formatDateLabel(target.date)}` : ''}
       </div>
-      <div style={{ color: C.textMute, fontSize: 9, lineHeight: 1.6, marginTop: 4 }}>
+      <div style={{ color: C.textMute, fontSize: 11, lineHeight: 1.6, marginTop: 4 }}>
         {upside == null
           ? '現價還沒跟上來時，先把這個價位當成錨。'
           : upside >= 0
@@ -628,7 +628,7 @@ function FreshnessCard({ dossier, holding }) {
           style={{ textTransform: 'none' }}
         />
       </div>
-      <div style={{ display: 'grid', gap: 4, marginTop: 8, fontSize: 9, lineHeight: 1.6 }}>
+      <div style={{ display: 'grid', gap: 4, marginTop: 8, fontSize: 11, lineHeight: 1.6 }}>
         {targetSourceLabel ? (
           <div style={{ color: C.text }}>目標來源 · {targetSourceLabel}</div>
         ) : null}
@@ -666,7 +666,7 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
   return (
     <div style={{ ...panelCard, minHeight: 0 }}>
       <div style={eyebrow}>持股 aggregate status</div>
-      <div style={{ color: C.textSec, fontSize: 10, lineHeight: 1.7, marginBottom: 8 }}>
+      <div style={{ color: C.textSec, fontSize: 12, lineHeight: 1.7, marginBottom: 8 }}>
         {complianceNote || 'insider-compressed 僅顯示組合層級摘要。'}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>

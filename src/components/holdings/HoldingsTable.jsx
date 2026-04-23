@@ -334,13 +334,15 @@ export function HoldingRow({
                 placeholder: '輸入目標價',
                 style: {
                   width: '100%',
+                  minHeight: 44,
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '4px 8px',
+                  padding: '10px 8px',
                   color: C.text,
                   fontSize: 11,
                   fontFamily: 'var(--font-mono)',
+                  boxSizing: 'border-box',
                 },
               })
             ),
@@ -357,12 +359,14 @@ export function HoldingRow({
                 placeholder: '如：跌破月線',
                 style: {
                   width: '100%',
+                  minHeight: 44,
                   background: C.subtle,
                   border: `1px solid ${C.border}`,
                   borderRadius: 8,
-                  padding: '4px 8px',
+                  padding: '10px 8px',
                   color: C.text,
                   fontSize: 11,
+                  boxSizing: 'border-box',
                 },
               })
             )

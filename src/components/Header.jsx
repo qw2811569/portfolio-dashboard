@@ -498,6 +498,7 @@ export default function Header(props) {
         disabled: !ready || portfolioSwitching,
         style: {
           minWidth: 190,
+          height: 44,
           background: C.subtle,
           color: C.text,
           border: `1px solid ${C.border}`,
@@ -505,6 +506,9 @@ export default function Header(props) {
           minHeight: 44,
           padding: '8px 12px',
           fontSize: 11,
+          lineHeight: '20px',
+          boxSizing: 'border-box',
+          WebkitAppearance: 'none',
           cursor: portfolioSwitching ? 'progress' : 'pointer',
         },
       },

@@ -1,7 +1,8 @@
 import { createElement as h, useEffect, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, Badge, OperatingContextCard, StaleBadge } from '../common'
+import { AccuracyGateBlock, Card, Button, Badge, OperatingContextCard, StaleBadge } from '../common'
 import Md from '../Md.jsx'
+import { resolveDailyAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
 import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
 import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
@@ -1585,7 +1586,26 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
 /**
  * AI Insight Section (with feedback buttons)
  */
-export function AIInsightSection({ insight, error, date, time, onFeedback }) {
+export function AIInsightSection({
+  insight,
+  error,
+  date,
+  time,
+  onFeedback,
+  accuracyGate = null,
+  onRetry = null,
+  onDismiss = null,
+}) {
+  if (accuracyGate) {
+    return h(AccuracyGateBlock, {
+      reason: accuracyGate.reason,
+      resource: accuracyGate.resource,
+      context: accuracyGate.context,
+      onRetry,
+      onDismiss,
+    })
+  }
+
   if (!insight && !error) return null
 
   if (insight) {
@@ -1935,6 +1955,29 @@ export function DailyReportPanel({
   }).needsReview
   const hasPendingReview = Array.isArray(liveNeedsReview) && liveNeedsReview.length > 0
   const isPreliminaryReport = dailyReport?.analysisStage === 't0-preliminary'
+  const dailyAccuracyGate = useMemo(
+    () =>
+      resolveDailyAccuracyGate({
+        report: dailyReport,
+        staleStatus,
+        viewMode,
+        autoConfirmState,
+      }),
+    [autoConfirmState, dailyReport, staleStatus, viewMode]
+  )
+  const dailyAccuracyGateKey = dailyAccuracyGate
+    ? [
+        dailyAccuracyGate.resource,
+        dailyAccuracyGate.reason,
+        dailyReport?.id || dailyReport?.date || '',
+      ]
+        .filter(Boolean)
+        .join(':')
+    : ''
+  const [dismissedAccuracyGateKey, setDismissedAccuracyGateKey] = useState('')
+  const showDailyAccuracyGate = Boolean(
+    dailyAccuracyGate && dismissedAccuracyGateKey !== dailyAccuracyGateKey
+  )
 
   useEffect(() => {
     let active = true
@@ -1976,6 +2019,25 @@ export function DailyReportPanel({
     if (firstId && typeof setExpandedNews === 'function') {
       setExpandedNews(new Set([firstId]))
     }
+  }
+
+  const retryDailyAccuracyGate = () => {
+    if (isPreliminaryReport && typeof maybeAutoConfirmDailyReport === 'function' && dailyReport) {
+      Promise.resolve(maybeAutoConfirmDailyReport(dailyReport))
+        .then((result) => {
+          if (!result || result.status === 'triggered' || result.status === 'skipped') {
+            setAutoConfirmState(null)
+            return
+          }
+          setAutoConfirmState(result)
+        })
+        .catch(() => {
+          setAutoConfirmState({ status: 'error' })
+        })
+      return
+    }
+
+    if (typeof runDailyAnalysis === 'function') runDailyAnalysis()
   }
 
   return h(
@@ -2130,6 +2192,9 @@ export function DailyReportPanel({
               date: dailyReport.date,
               time: dailyReport.time,
               onFeedback: handleFeedback,
+              accuracyGate: showDailyAccuracyGate ? dailyAccuracyGate : null,
+              onRetry: retryDailyAccuracyGate,
+              onDismiss: () => setDismissedAccuracyGateKey(dailyAccuracyGateKey),
             })
           )
       )

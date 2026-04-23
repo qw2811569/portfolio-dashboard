@@ -1,10 +1,11 @@
 import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { resolveDashboardAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
-import { Button, Card, StaleBadge } from '../common'
+import { AccuracyGateBlock, Button, Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
@@ -241,11 +242,13 @@ function TodayPnlHero({
   portfolioName = '',
   headline = '',
   headlineTone = 'calm',
+  headlineGate = null,
   dataRefreshRows = [],
   onRefreshReminder = null,
   onNavigate = null,
 }) {
   const [isReminderOpen, setIsReminderOpen] = useState(false)
+  const [dismissedGateKey, setDismissedGateKey] = useState('')
   const color = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
   const sign = todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
@@ -254,6 +257,11 @@ function TodayPnlHero({
   const portfolioLabel = displayPortfolioName({ displayName: portfolioName }) || '目前組合'
   const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
   const headlineText = String(headline || '').trim() || '今日持倉 overview'
+  const headlineGateKey = headlineGate
+    ? [headlineGate.resource, headlineGate.reason, portfolioLabel].filter(Boolean).join(':')
+    : ''
+  const showHeadlineGate = Boolean(headlineGate && dismissedGateKey !== headlineGateKey)
+  const safeHeadlineText = headlineGate ? '首頁 headline 稍後再補' : headlineText
   const headlineColor =
     headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
 
@@ -500,22 +508,30 @@ function TodayPnlHero({
             )
           )
         ),
-        h(
-          'div',
-          {
-            'data-testid': 'dashboard-headline',
-            style: {
-              fontSize: 'clamp(36px, 4.8vw, 56px)',
-              fontWeight: 700,
-              color: headlineColor,
-              fontFamily: 'var(--font-headline)',
-              lineHeight: 1.12,
-              letterSpacing: '-0.02em',
-              maxWidth: '14ch',
-            },
-          },
-          headlineText
-        ),
+        showHeadlineGate
+          ? h(AccuracyGateBlock, {
+              reason: headlineGate.reason,
+              resource: headlineGate.resource,
+              context: headlineGate.context,
+              onRetry: typeof onRefreshReminder === 'function' ? onRefreshReminder : null,
+              onDismiss: () => setDismissedGateKey(headlineGateKey),
+            })
+          : h(
+              'div',
+              {
+                'data-testid': 'dashboard-headline',
+                style: {
+                  fontSize: 'clamp(36px, 4.8vw, 56px)',
+                  fontWeight: 700,
+                  color: headlineColor,
+                  fontFamily: 'var(--font-headline)',
+                  lineHeight: 1.12,
+                  letterSpacing: '-0.02em',
+                  maxWidth: '14ch',
+                },
+              },
+              safeHeadlineText
+            ),
         h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
         h(
           'div',
@@ -736,7 +752,14 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
   if (!morningNote) return null
 
   const sections = morningNote.sections || {}
+  const focusPoints = Array.isArray(morningNote.focusPoints) ? morningNote.focusPoints : []
   const hasContent =
+    Boolean(morningNote.headline) ||
+    Boolean(morningNote.summary) ||
+    Boolean(morningNote.lead) ||
+    Boolean(morningNote.fallbackMessage) ||
+    Boolean(morningNote.blockedReason) ||
+    focusPoints.length > 0 ||
     sections.todayEvents?.length > 0 ||
     sections.holdingStatus?.length > 0 ||
     sections.watchlistAlerts?.length > 0 ||
@@ -751,6 +774,9 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
   const watchlistAlerts = Array.isArray(sections.watchlistAlerts) ? sections.watchlistAlerts : []
   const announcements = Array.isArray(sections.announcements) ? sections.announcements : []
   const deepLinks = buildMorningNoteDeepLinks(morningNote)
+  const staleStatus = ['stale', 'missing', 'failed'].includes(morningNote.staleStatus)
+    ? morningNote.staleStatus
+    : ''
 
   return h(
     Card,
@@ -773,8 +799,144 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
         },
       },
       h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Morning Note'),
-      h('span', { style: { fontSize: 11, color: C.textMute } }, morningNote.date || '')
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          },
+        },
+        staleStatus &&
+          h(StaleBadge, {
+            status: staleStatus,
+            title: 'morning note freshness',
+          }),
+        h('span', { style: { fontSize: 11, color: C.textMute } }, morningNote.date || '')
+      )
     ),
+    morningNote.headline &&
+      h(
+        'div',
+        {
+          'data-testid': 'morning-note-headline',
+          style: {
+            fontSize: 16,
+            fontWeight: 700,
+            color: C.text,
+            lineHeight: 1.55,
+            marginBottom: 8,
+          },
+        },
+        morningNote.headline
+      ),
+    (morningNote.summary || morningNote.lead) &&
+      h(
+        'div',
+        {
+          'data-testid': 'morning-note-lead',
+          style: {
+            fontSize: 12,
+            color: C.textSec,
+            lineHeight: 1.8,
+            marginBottom: 8,
+          },
+        },
+        [morningNote.summary, morningNote.lead].filter(Boolean).join(' ')
+      ),
+    morningNote.blockedReason &&
+      h(
+        'div',
+        {
+          'data-testid': 'morning-note-blocked-reason',
+          style: {
+            marginBottom: 8,
+            fontSize: 12,
+            lineHeight: 1.7,
+            color: C.down,
+            background: C.downBg,
+            border: `1px solid ${alpha(C.down, '24')}`,
+            borderRadius: 12,
+            padding: '10px 12px',
+          },
+        },
+        `Accuracy Gate：${morningNote.blockedReason}`
+      ),
+    morningNote.fallbackMessage &&
+      h(
+        'div',
+        {
+          'data-testid': 'morning-note-fallback',
+          style: {
+            marginBottom: 8,
+            fontSize: 12,
+            color: C.textSec,
+            lineHeight: 1.7,
+            background: alpha(C.subtle, 'f0'),
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            padding: '10px 12px',
+          },
+        },
+        morningNote.fallbackMessage
+      ),
+    focusPoints.length > 0 &&
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 6,
+            marginBottom: 8,
+          },
+        },
+        focusPoints.slice(0, 3).map((item) =>
+          h(
+            'div',
+            {
+              key: item.id || item.title,
+              style: {
+                borderRadius: 12,
+                border: `1px solid ${
+                  item.tone === 'watch' ? alpha(C.amber, '32') : alpha(C.fillTeal, '24')
+                }`,
+                background:
+                  item.tone === 'watch'
+                    ? `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.amber, '08')})`
+                    : `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.fillTeal, '08')})`,
+                padding: '10px 12px',
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: C.text,
+                  lineHeight: 1.6,
+                  marginBottom: 4,
+                },
+              },
+              item.title
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  color: C.textSec,
+                  lineHeight: 1.7,
+                },
+              },
+              item.body
+            )
+          )
+        )
+      ),
     todayEvents.length > 0 &&
       h(
         'div',
@@ -880,37 +1042,38 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             `重大訊息 ${announcements.length} 則`
           )
       ),
-    h(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-        },
-      },
-      deepLinks.map((item) =>
-        h(
-          Button,
-          {
-            key: item.key,
-            onClick: () => typeof onNavigate === 'function' && onNavigate(item.target),
-            style: {
-              padding: '8px 12px',
-              borderRadius: 999,
-              border: `1px solid ${alpha(C.teal, '32')}`,
-              background: alpha(C.teal, '10'),
-              color: C.textSec,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
-            },
-            title: item.summary,
+    deepLinks.length > 0 &&
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
           },
-          item.label
+        },
+        deepLinks.map((item) =>
+          h(
+            Button,
+            {
+              key: item.key,
+              onClick: () => typeof onNavigate === 'function' && onNavigate(item.target),
+              style: {
+                padding: '8px 12px',
+                borderRadius: 999,
+                border: `1px solid ${alpha(C.fillTeal, '32')}`,
+                background: alpha(C.fillTeal, '10'),
+                color: C.textSec,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
+              },
+              title: item.summary,
+            },
+            item.label
+          )
         )
       )
-    )
   )
 }
 
@@ -1354,6 +1517,10 @@ export function DashboardPanel({
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
     [holdingDossiers, viewMode]
   )
+  const dashboardHeadlineGate = useMemo(
+    () => resolveDashboardAccuracyGate({ holdingDossiers, dataRefreshRows }),
+    [dataRefreshRows, holdingDossiers]
+  )
   const showHoldingsEmptyState =
     holdings.length === 0 && totalVal === 0 && totalCost === 0 && todayTotalPnl === 0
 
@@ -1389,6 +1556,7 @@ export function DashboardPanel({
           watchlist,
           headline: dashboardHeadline.headline,
           headlineTone: dashboardHeadline.tone,
+          headlineGate: dashboardHeadlineGate,
           dataRefreshRows,
           onRefreshReminder,
           onNavigate,

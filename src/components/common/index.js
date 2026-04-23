@@ -3,6 +3,7 @@
  */
 
 export * from './Base.jsx'
+export * from './AccuracyGateBlock.jsx'
 export * from './DataError.jsx'
 export * from './DataSourceBadge.jsx'
 export * from './Dialogs.jsx'

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ResearchPanel } from '../../src/components/research/ResearchPanel.jsx'
 
@@ -259,5 +259,56 @@ describe('components/ResearchPanel', () => {
     expect(container.querySelector('[data-error="analyst-reports"]')).toBeTruthy()
     expect(container.textContent).toContain('此帳號暫無分析師報告存取權限')
     expect(container.textContent).toContain('這輪卡在 台積電 (2330)')
+  })
+
+  it('renders an accuracy gate block for single-stock research when fundamentals are incomplete and keeps other sections visible', () => {
+    const onResearch = vi.fn()
+
+    render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          onResearch,
+          dataRefreshRows: [
+            {
+              code: '2330',
+              name: '台積電',
+              fundamentalStatus: '缺失',
+              targetStatus: '缺少',
+            },
+          ],
+          analystReports: {
+            2330: {
+              items: [
+                {
+                  id: 'rss-1',
+                  title: '研究摘要',
+                  source: 'rss',
+                  publishedAt: '2026-04-24',
+                  summary: '公開研究摘要',
+                },
+              ],
+            },
+          },
+          researchResults: {
+            timestamp: 9,
+            code: '2330',
+            name: '台積電',
+            mode: 'single',
+            date: '2026-04-24',
+            summary: '這裡原本有研究摘要',
+            rounds: [{ title: '基本面深度分析', content: '這裡原本有逐輪內容' }],
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute('data-resource', 'research')
+    expect(screen.getByText('研究來源索引')).toBeInTheDocument()
+    expect(screen.queryByText('這裡原本有逐輪內容')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('accuracy-gate-retry'))
+
+    expect(onResearch).toHaveBeenCalledWith('single', { code: '2330', name: '台積電' })
   })
 })

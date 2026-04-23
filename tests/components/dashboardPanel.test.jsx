@@ -185,6 +185,17 @@ describe('components/DashboardPanel', () => {
           onNavigate,
           morningNote: {
             date: '2026/04/18',
+            headline: '今天先把節奏排好',
+            summary: '先看法說，再看主部位。',
+            lead: '盤前先把今天最容易影響情緒的兩三件事放在前面。',
+            focusPoints: [
+              {
+                id: 'event-1',
+                tone: 'watch',
+                title: '台積電法說直接牽動 2330',
+                body: '今天的盤前節奏先被這一題定義。',
+              },
+            ],
             sections: {
               todayEvents: [
                 {
@@ -209,6 +220,8 @@ describe('components/DashboardPanel', () => {
     )
 
     expect(screen.getByText('Morning Note')).toBeInTheDocument()
+    expect(screen.getByTestId('morning-note-headline')).toHaveTextContent('今天先把節奏排好')
+    expect(screen.getByTestId('morning-note-lead')).toHaveTextContent('先看法說，再看主部位。')
     expect(screen.getByText('HIGH')).toBeInTheDocument()
     expect(screen.getByText('台積電法說')).toBeInTheDocument()
 
@@ -217,5 +230,97 @@ describe('components/DashboardPanel', () => {
     fireEvent.click(screen.getByText('盤後接續'))
 
     expect(onNavigate.mock.calls).toEqual([['events'], ['holdings'], ['daily']])
+  })
+
+  it('renders fallback copy and stale badge when pre-open note is missing', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          morningNote: {
+            date: '2026/04/20',
+            staleStatus: 'missing',
+            fallbackMessage: '今日無 pre-open 更新 · 請等開盤 T1',
+            sections: {
+              todayEvents: [],
+              holdingStatus: [],
+              watchlistAlerts: [],
+              announcements: [],
+            },
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('missing')
+    expect(screen.getByTestId('morning-note-fallback')).toHaveTextContent(
+      '今日無 pre-open 更新 · 請等開盤 T1'
+    )
+  })
+
+  it('renders explicit accuracy gate block reason for failed morning notes', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          morningNote: {
+            date: '2026/04/20',
+            staleStatus: 'failed',
+            blockedReason: 'AI confidence 0.42 below 0.70',
+            sections: {
+              todayEvents: [],
+              holdingStatus: [],
+              watchlistAlerts: [],
+              announcements: [],
+            },
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('failed')
+    expect(screen.getByTestId('morning-note-blocked-reason')).toHaveTextContent(
+      'AI confidence 0.42 below 0.70'
+    )
+  })
+
+  it('degrades the hero headline into an accuracy gate block when all dossiers lack fresh fundamentals', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          dataRefreshRows: [
+            {
+              code: '2330',
+              name: '台積電',
+              targetLabel: '最新財報仍在補齊中',
+            },
+          ],
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              thesis: { pillars: [{ status: 'stable' }] },
+              freshness: { fundamentals: 'missing' },
+              position: { price: 950 },
+            },
+          ],
+          newsEvents: [
+            {
+              id: 'market-1',
+              source: 'market-cache',
+              type: 'market-summary',
+              date: '2026-04-24',
+              title: '台股收高',
+              detail: '電子權值股撐盤。',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute('data-resource', 'dashboard')
+    expect(screen.queryByTestId('dashboard-headline')).toBeNull()
+    expect(screen.getByText('Today in Markets')).toBeInTheDocument()
   })
 })

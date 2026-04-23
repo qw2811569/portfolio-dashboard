@@ -1,10 +1,18 @@
-import { createElement as h } from 'react'
+import { createElement as h, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, DataError, DataSourceBadge, OperatingContextCard } from '../common'
+import {
+  AccuracyGateBlock,
+  Card,
+  Button,
+  DataError,
+  DataSourceBadge,
+  OperatingContextCard,
+} from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Skeleton } from '../common/Skeleton.jsx'
 import Md from '../Md.jsx'
 import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
+import { resolveResearchAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
@@ -1286,6 +1294,24 @@ export function ResearchPanel({
   const complianceNote = getViewModeComplianceMessage(viewMode, operatingContext?.portfolioLabel)
   const reportRefreshError = getReportRefreshError(holdings, reportRefreshMeta)
   const hasHoldings = Array.isArray(holdings) && holdings.length > 0
+  const researchAccuracyGate = resolveResearchAccuracyGate({
+    results: researchResults,
+    dataRefreshRows,
+    viewMode,
+  })
+  const researchAccuracyGateKey = researchAccuracyGate
+    ? [
+        researchAccuracyGate.resource,
+        researchAccuracyGate.reason,
+        researchResults?.timestamp || researchResults?.code || '',
+      ]
+        .filter(Boolean)
+        .join(':')
+    : ''
+  const [dismissedAccuracyGateKey, setDismissedAccuracyGateKey] = useState('')
+  const showResearchAccuracyGate = Boolean(
+    researchAccuracyGate && dismissedAccuracyGateKey !== researchAccuracyGateKey
+  )
   const isResearchHistoryLoading =
     researchHistory == null && hasHoldings && !researchResults && !researching
   const showResearchEmpty =
@@ -1293,6 +1319,27 @@ export function ResearchPanel({
     !researchResults &&
     ((Array.isArray(researchHistory) && researchHistory.length === 0) ||
       (!hasHoldings && researchHistory == null))
+
+  const retryResearchAccuracyGate = () => {
+    const matchedHolding = (Array.isArray(holdings) ? holdings : []).find(
+      (item) => String(item?.code || '').trim() === String(researchResults?.code || '').trim()
+    )
+
+    if (researchResults?.mode === 'single' && matchedHolding && typeof onResearch === 'function') {
+      onResearch('single', matchedHolding)
+      return
+    }
+
+    if (
+      (researchResults?.mode === 'portfolio' || researchResults?.mode === 'evolve') &&
+      typeof onEvolve === 'function'
+    ) {
+      onEvolve()
+      return
+    }
+
+    if (typeof onRefresh === 'function') onRefresh()
+  }
 
   return h(
     'div',
@@ -1369,16 +1416,24 @@ export function ResearchPanel({
       holdings,
       analystReports,
     }),
-    h(ResearchResults, {
-      results: researchResults,
-      onEnrich,
-      enriching: enrichingResearchCode,
-      onApplyProposal,
-      onDiscardProposal,
-      proposalActionId,
-      proposalActionType,
-      viewMode,
-    }),
+    showResearchAccuracyGate
+      ? h(AccuracyGateBlock, {
+          reason: researchAccuracyGate.reason,
+          resource: researchAccuracyGate.resource,
+          context: researchAccuracyGate.context,
+          onRetry: retryResearchAccuracyGate,
+          onDismiss: () => setDismissedAccuracyGateKey(researchAccuracyGateKey),
+        })
+      : h(ResearchResults, {
+          results: researchResults,
+          onEnrich,
+          enriching: enrichingResearchCode,
+          onApplyProposal,
+          onDiscardProposal,
+          proposalActionId,
+          proposalActionType,
+          viewMode,
+        }),
     showResearchEmpty &&
       h(EmptyState, {
         resource: hasHoldings ? 'research' : 'holdings',

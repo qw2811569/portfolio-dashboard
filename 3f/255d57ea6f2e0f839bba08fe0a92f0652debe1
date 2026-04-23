@@ -1,0 +1,118 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "86a58cbc-f03c-42b0-ac92-9eaf30793b72",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>b12in2q3o</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "B7 派出。2 parallel（B1 + B7）繼續。Loop 下 tick 處理。",
+      "prompt_hash": "sha256:87a3ab302b955ab26d3460fe29cf16cf6bc016f0b54a409e6bf89cdc25d08c70",
+      "message_count": 7971,
+      "cost_usd": 0.1972116,
+      "input_tokens": 1,
+      "output_tokens": 2779,
+      "cache_read_tokens": 501712,
+      "cache_creation_tokens": 1336,
+      "timestamp": "2026-04-23T21:18:21.499Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T21:19:15.902Z",
+      "session_duration_secs": 750477,
+      "ai_response_time_secs": 11.423141664267222,
+      "prompt_submitted_at": "2026-04-23T21:18:21.696118Z",
+      "prompt_duration_secs": 58,
+      "accepted_lines": 1846,
+      "overridden_lines": 222,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/b7-accuracy-gate-ux/brief.md",
+      "line_range": [
+        1,
+        101
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/b7-accuracy-gate-ux/brief.md",
+          "line_range": [
+            1,
+            101
+          ],
+          "blob_hash": "f7ef76643a717c96c57189af1a09e3ad47d905c7",
+          "additions": 101
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "6f397c3875c44c70a0e5005ce9aa12e91528e615",
+          "additions": 129,
+          "deletions": 129
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "addf6023b1b5475a15a06be324349d566c6e2fdd",
+          "additions": 12,
+          "deletions": 9
+        }
+      ],
+      "prompt_number": 703,
+      "total_additions": 388,
+      "total_deletions": 219,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>b12in2q3o</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch B2 Trade memo + modal\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -50 .tmp/b2-trade-memo-modal/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "B2 done · commit `4bcede3` · mirror 完 · 派 **B7 Accuracy Gate hard-block UX**："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/b7-accuracy-gate-ux/brief.md)\" 2>&1 | t...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

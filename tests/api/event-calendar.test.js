@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
+  buildDgbasMacroCalendarEvents,
+  buildTwseExRightsEventsFromResponse,
+  parseMofNextTradeRelease,
+  parseRocDateString,
   fetchFinMindNewsEvents,
   mapGeminiFactsToEvents,
   dedupeCalendarEvents,
@@ -7,6 +11,98 @@ import {
 
 // Mock fetch globally
 global.fetch = vi.fn()
+
+describe('event-calendar.js - TW official calendar helpers', () => {
+  it('parses ROC date strings into ISO format', () => {
+    expect(parseRocDateString('115年5月8日')).toBe('2026-05-08')
+    expect(parseRocDateString('1150508')).toBe('2026-05-08')
+    expect(parseRocDateString('2026-05-08')).toBe('2026-05-08')
+  })
+
+  it('builds DGBAS macro events from the official release calendar payload', () => {
+    const advanceTimedatas = [[], [], [], [{ date: '30日', time: '16:00', notice: '(115年第1季)' }]]
+    const gdpTimedatas = [[], [], [], [], [{ date: '29日', time: '16:00', notice: '(115年第1季)' }]]
+    const forecastTimedatas = [
+      [],
+      [],
+      [],
+      [],
+      [{ date: '29日', time: '16:00', notice: '(115年第2季經濟預測)' }],
+    ]
+    const html = `
+      {"name":"國民所得概估統計","timedatas":${JSON.stringify(advanceTimedatas)},"IsPressConference":false}
+      {"name":"國內生產毛額、國民所得、經濟成長率及平減指數","timedatas":${JSON.stringify(gdpTimedatas)},"IsPressConference":false}
+      {"name":"經濟預測","timedatas":${JSON.stringify(forecastTimedatas)},"IsPressConference":false}
+    `
+
+    const events = buildDgbasMacroCalendarEvents(html, {
+      today: new Date('2026-04-20T00:00:00.000Z'),
+      rangeDays: 60,
+    })
+
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'dgbas-gdp-advance-2026-04-30',
+          source: 'dgbas-calendar',
+          marketSegment: 'macro',
+        }),
+        expect.objectContaining({
+          id: 'dgbas-gdp-final-2026-05-29',
+          source: 'dgbas-calendar',
+          marketSegment: 'macro',
+        }),
+        expect.objectContaining({
+          title: expect.stringMatching(/CPI \/ PPI 公布/),
+          source: 'dgbas-calendar',
+        }),
+      ])
+    )
+  })
+
+  it('builds TWSE ex-rights events from the official response payload', () => {
+    const events = buildTwseExRightsEventsFromResponse(
+      {
+        data: [
+          ['115年5月3日', '2330', '台積電', '除息交易日', '', '', '', '4.50'],
+          ['115年5月3日', '2454', '聯發科', '除息交易日', '', '', '', '2.00'],
+          ['115年7月8日', '2308', '台達電', '除息交易日', '', '', '', '5.00'],
+        ],
+      },
+      {
+        today: new Date('2026-04-24T00:00:00.000Z'),
+        rangeDays: 45,
+      }
+    )
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        id: 'twse-ex-rights-2330-2026-05-03',
+        source: 'twse-ex-rights',
+        stocks: ['2330'],
+      }),
+      expect.objectContaining({
+        id: 'twse-ex-rights-2454-2026-05-03',
+        source: 'twse-ex-rights',
+        stocks: ['2454'],
+      }),
+    ])
+  })
+
+  it('parses the Ministry of Finance next trade release timestamp', () => {
+    const parsed = parseMofNextTradeRelease(`
+      海關進出口貿易初步統計
+      發布日期：115年4月10日
+      下次發布日期：115年5月8日下午4時
+    `)
+
+    expect(parsed).toEqual({
+      currentRelease: '2026-04-10',
+      nextReleaseDate: '2026-05-08',
+      nextReleaseTime: '16:00',
+    })
+  })
+})
 
 describe('event-calendar.js - fetchFinMindNewsEvents', () => {
   beforeEach(() => {
@@ -27,12 +123,9 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       json: () => Promise.resolve(mockNews),
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2308'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2308'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toEqual(
       expect.arrayContaining([
@@ -46,9 +139,7 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
 
   it('should filter shareholder events from news titles', async () => {
     const mockNews = {
-      data: [
-        { date: '2026-04-01', title: '台積電股東常會 6 月舉行', description: '' },
-      ],
+      data: [{ date: '2026-04-01', title: '台積電股東常會 6 月舉行', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -56,12 +147,9 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       json: () => Promise.resolve(mockNews),
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2330'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2330'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toHaveLength(1)
     expect(events[0].type).toBe('shareholder')
@@ -69,9 +157,7 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
 
   it('should filter dividend events from news titles', async () => {
     const mockNews = {
-      data: [
-        { date: '2026-04-01', title: '聯發科除權息旺季來臨', description: '' },
-      ],
+      data: [{ date: '2026-04-01', title: '聯發科除權息旺季來臨', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -79,12 +165,9 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       json: () => Promise.resolve(mockNews),
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2454'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2454'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toHaveLength(1)
     expect(events[0].type).toBe('dividend')
@@ -103,12 +186,9 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       json: () => Promise.resolve(mockNews),
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2330'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2330'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     // Should filter out all irrelevant news
     expect(events).toHaveLength(1)
@@ -120,32 +200,24 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       ok: false,
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2308'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2308'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toHaveLength(0)
   })
 
   it('should return empty array for empty stock codes', async () => {
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      [],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, [], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toHaveLength(0)
   })
 
   it('should keep same-day FinMind news even when current time is after midnight', async () => {
     const mockNews = {
-      data: [
-        { date: '2026-04-01', title: '台達電法說會 4/1 登場', description: '' },
-      ],
+      data: [{ date: '2026-04-01', title: '台達電法說會 4/1 登場', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -170,14 +242,10 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
 
   it('should handle multiple stocks and aggregate events', async () => {
     const mockNews2308 = {
-      data: [
-        { date: '2026-04-01', title: '台達電法說會', description: '' },
-      ],
+      data: [{ date: '2026-04-01', title: '台達電法說會', description: '' }],
     }
     const mockNews2330 = {
-      data: [
-        { date: '2026-04-01', title: '台積電股東會', description: '' },
-      ],
+      data: [{ date: '2026-04-01', title: '台積電股東會', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -189,15 +257,12 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
       json: () => Promise.resolve(mockNews2330),
     })
 
-    const events = await fetchFinMindNewsEvents(
-      new Date('2026-04-01'),
-      7,
-      ['2308', '2330'],
-      { headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' } }
-    )
+    const events = await fetchFinMindNewsEvents(new Date('2026-04-01'), 7, ['2308', '2330'], {
+      headers: { 'x-forwarded-proto': 'http', host: 'localhost:3002' },
+    })
 
     expect(events).toHaveLength(2)
-    expect(events.map(e => e.stocks[0])).toEqual(expect.arrayContaining(['2308', '2330']))
+    expect(events.map((e) => e.stocks[0])).toEqual(expect.arrayContaining(['2308', '2330']))
   })
 })
 
@@ -213,7 +278,7 @@ describe('event-calendar.js - Gemini event filtering', () => {
 
     // Simulate filtering with stockCodes = ['2308']
     const stockCodes = ['2308']
-    const filtered = mockGeminiData.facts.filter(fact => {
+    const filtered = mockGeminiData.facts.filter((fact) => {
       if (!fact.date || !fact.eventType || fact.confidence !== 'confirmed') return false
       if (stockCodes.length > 0 && !stockCodes.includes(fact.code)) return false
       return true
@@ -233,7 +298,7 @@ describe('event-calendar.js - Gemini event filtering', () => {
 
     // Simulate filtering with stockCodes = []
     const stockCodes = []
-    const filtered = mockGeminiData.facts.filter(fact => {
+    const filtered = mockGeminiData.facts.filter((fact) => {
       if (!fact.date || !fact.eventType || fact.confidence !== 'confirmed') return false
       if (stockCodes.length > 0 && !stockCodes.includes(fact.code)) return false
       return true

@@ -31,19 +31,63 @@ export function useAutoEventCalendar({ setNewsEvents }) {
 
         const data = await res.json()
         const events = data.events || []
+        const sourceUpdatedAt = String(data.generatedAt || '').trim() || new Date().toISOString()
 
         if (events.length === 0) return []
 
         // Normalize 並合併到 newsEvents（去重）
-        const normalized = events.map((e) => normalizeEventRecord(e)).filter(Boolean)
+        const normalized = events
+          .map((event) =>
+            normalizeEventRecord({
+              ...event,
+              eventDate: event?.eventDate || event?.date || null,
+              sourceUpdatedAt: event?.sourceUpdatedAt || sourceUpdatedAt,
+            })
+          )
+          .filter(Boolean)
 
         if (normalized.length === 0) return []
 
         setNewsEvents((prev) => {
-          const existingIds = new Set((prev || []).map((e) => e.id))
-          const newOnes = normalized.filter((e) => !existingIds.has(e.id))
-          if (newOnes.length === 0) return prev
-          return [...(prev || []), ...newOnes]
+          const current = Array.isArray(prev) ? [...prev] : []
+          const indexById = new Map(current.map((event, index) => [event?.id, index]))
+          let changed = false
+
+          for (const nextEvent of normalized) {
+            const existingIndex = indexById.get(nextEvent.id)
+            if (existingIndex == null) {
+              current.push(nextEvent)
+              indexById.set(nextEvent.id, current.length - 1)
+              changed = true
+              continue
+            }
+
+            const existing = current[existingIndex]
+            const merged = normalizeEventRecord({
+              ...existing,
+              ...nextEvent,
+              status: existing?.status || nextEvent.status,
+              trackingStart: existing?.trackingStart || nextEvent.trackingStart,
+              exitDate: existing?.exitDate || nextEvent.exitDate,
+              reviewDate: existing?.reviewDate || nextEvent.reviewDate,
+              actual: existing?.actual || nextEvent.actual,
+              actualNote: existing?.actualNote || nextEvent.actualNote,
+              lessons: existing?.lessons || nextEvent.lessons,
+              correct:
+                typeof existing?.correct === 'boolean' ? existing.correct : nextEvent.correct,
+              stockOutcomes:
+                Array.isArray(existing?.stockOutcomes) && existing.stockOutcomes.length > 0
+                  ? existing.stockOutcomes
+                  : nextEvent.stockOutcomes,
+            })
+
+            if (JSON.stringify(existing) !== JSON.stringify(merged)) {
+              current[existingIndex] = merged
+              changed = true
+            }
+          }
+
+          return changed ? current : prev
         })
 
         return normalized

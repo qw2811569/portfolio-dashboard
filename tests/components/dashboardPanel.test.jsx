@@ -4,6 +4,25 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPanel } from '../../src/components/overview/DashboardPanel.jsx'
 
+const originalMatchMedia = window.matchMedia
+
+function mockMatchMedia(matches) {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+}
+
 function buildProps(overrides = {}) {
   return {
     holdings: [],
@@ -24,6 +43,17 @@ function buildProps(overrides = {}) {
 describe('components/DashboardPanel', () => {
   afterEach(() => {
     cleanup()
+    vi.restoreAllMocks()
+    if (typeof originalMatchMedia === 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      })
+      return
+    }
+
+    delete window.matchMedia
   })
 
   it('renders without crashing when given empty data', () => {
@@ -127,47 +157,111 @@ describe('components/DashboardPanel', () => {
     expect(container.textContent).toContain('今日有 3 檔需要關注')
   })
 
-  it('renders Today in Markets items from macro and calendar feeds', () => {
+  it('renders Today in Markets items from central-bank, macro, and calendar feeds', () => {
     render(
       <DashboardPanel
         {...buildProps({
           newsEvents: [
             {
-              id: 'market-1',
-              source: 'market-cache',
-              type: 'market-summary',
+              id: 'cbc-1',
+              source: 'cbc-calendar',
+              type: 'macro',
               date: '2026-04-18',
-              title: '台股加權指數收 21,245 點，上漲 0.8%',
-              detail: '外資買超，電子權值股撐盤。',
-              link: 'https://example.com/market',
+              time: '16:00',
+              title: '台灣央行理監事會議',
+              detail: '決定利率與選擇性信用管制',
+              sourceUpdatedAt: '2026-04-18T01:20:00.000Z',
+              link: 'https://example.com/cbc',
             },
             {
               id: 'macro-1',
-              source: 'auto-calendar',
+              source: 'dgbas-calendar',
               type: 'macro',
-              date: '2026-04-18',
-              title: '台灣央行理監事會議',
-              detail: '決定利率與選擇性信用管制',
+              date: '2026-04-30',
+              time: '16:00',
+              title: '2026 Q1 GDP 概估',
+              detail: '主計總處更新第一季經濟成長輪廓',
+              sourceUpdatedAt: '2026-04-18T01:20:00.000Z',
             },
             {
               id: 'calendar-1',
-              source: 'auto-calendar',
-              type: 'revenue',
-              date: '2026-04-20',
-              title: '2026/03 月營收公布截止',
-              detail: '關注持股最新營收',
+              source: 'twse-ex-rights',
+              type: 'dividend',
+              date: '2026-05-03',
+              title: '台積電(2330) 除息交易日',
+              detail: '現金股利 4.50 元',
+              sourceUpdatedAt: '2026-04-18T01:20:00.000Z',
             },
           ],
         })}
       />
     )
 
-    expect(screen.getByText('Today in Markets')).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: '大盤｜台股加權指數收 21,245 點，上漲 0.8%' })
-    ).toHaveAttribute('href', 'https://example.com/market')
-    expect(screen.getByText('總經｜台灣央行理監事會議')).toBeInTheDocument()
-    expect(screen.getByText('行事曆｜2026/03 月營收公布截止')).toBeInTheDocument()
+    const card = screen.getByTestId('today-in-markets-card')
+
+    expect(card).toHaveTextContent('Today in Markets')
+    expect(card).toHaveTextContent('央行')
+    expect(card).toHaveTextContent('總經')
+    expect(card).toHaveTextContent('行事曆')
+    expect(screen.getByRole('link', { name: '台灣央行理監事會議' })).toHaveAttribute(
+      'href',
+      'https://example.com/cbc'
+    )
+    expect(card).toHaveTextContent('2026 Q1 GDP 概估')
+    expect(card).toHaveTextContent('台積電(2330) 除息交易日')
+    expect(screen.getByTestId('today-in-markets-list')).toHaveAttribute(
+      'data-layout',
+      'desktop-stack'
+    )
+  })
+
+  it('shows a stale badge when today in markets data is older than four hours', () => {
+    const staleTimestamp = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          newsEvents: [
+            {
+              id: 'stale-1',
+              source: 'cbc-calendar',
+              type: 'macro',
+              date: '2026-04-18',
+              title: '台灣央行理監事會議',
+              sourceUpdatedAt: staleTimestamp,
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTitle('today in markets freshness')).toHaveTextContent('stale')
+  })
+
+  it('switches Today in Markets into the mobile single-column branch', () => {
+    mockMatchMedia(true)
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          newsEvents: [
+            {
+              id: 'mobile-1',
+              source: 'dgbas-calendar',
+              type: 'macro',
+              date: '2026-04-18',
+              title: '2026 Q1 GDP 概估',
+              sourceUpdatedAt: '2026-04-18T01:20:00.000Z',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('today-in-markets-list')).toHaveAttribute(
+      'data-layout',
+      'mobile-single-column'
+    )
   })
 
   it('shows a truthful empty state when no market items exist', () => {

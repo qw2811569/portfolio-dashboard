@@ -123,6 +123,19 @@ async function routeDailySnapshotStatus(page, payload) {
   })
 }
 
+async function routeTodayInMarketsFeed(page, payload) {
+  await page.route('**/api/event-calendar**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        ...payload,
+      }),
+    })
+  })
+}
+
 async function saveShot(page, testInfo, fileName, options = {}) {
   ensureEvidenceDirs()
   const targetPath = buildEvidenceShotPath(testInfo, fileName)
@@ -824,6 +837,84 @@ test('dashboard hides the stale snapshot badge when the daily snapshot marker is
   await ensureAppShellReady(page)
 
   await expect(page.getByTestId('daily-snapshot-status-card')).toHaveCount(0)
+})
+
+test('dashboard today in markets renders TW central-bank, macro, and calendar coverage with stale and mobile states', async ({
+  page,
+}, testInfo) => {
+  const staleTimestamp = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+
+  await routeTodayInMarketsFeed(page, {
+    generatedAt: staleTimestamp,
+    sources: ['cbc-calendar', 'dgbas-calendar', 'twse-ex-rights'],
+    events: [
+      {
+        id: 'b4-cbc-board',
+        source: 'cbc-calendar',
+        marketSegment: 'central-bank',
+        type: 'macro',
+        date: '2026-06-18',
+        eventDate: '2026-06-18',
+        time: '16:00',
+        title: '台灣央行理監事會議',
+        detail: '利率與信用管制通常會在這天定調。',
+        link: 'https://www.cbc.gov.tw/tw/cp-357-189514-82841-1.html',
+      },
+      {
+        id: 'b4-dgbas-gdp',
+        source: 'dgbas-calendar',
+        marketSegment: 'macro',
+        type: 'macro',
+        date: '2026-04-30',
+        eventDate: '2026-04-30',
+        time: '16:00',
+        title: '115年第1季 GDP 概估',
+        detail: '主計總處更新第一季經濟成長輪廓。',
+        link: 'https://www.stat.gov.tw/News_NoticeCalendar.aspx?n=3717',
+      },
+      {
+        id: 'b4-twse-ex-rights',
+        source: 'twse-ex-rights',
+        marketSegment: 'calendar',
+        type: 'dividend',
+        date: '2026-05-03',
+        eventDate: '2026-05-03',
+        title: '台積電(2330) 除息交易日',
+        detail: '現金股利 4.50 元。',
+        link: 'https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html',
+      },
+    ],
+  })
+
+  await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 120000 })
+  await page.waitForTimeout(1800)
+  await maybeAcceptTradeDisclaimer(page)
+  await ensureAppShellReady(page)
+  await ensureDashboardOpen(page)
+
+  const card = page.getByTestId('today-in-markets-card')
+  const list = page.getByTestId('today-in-markets-list')
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Today in Markets')
+  await expect(card).toContainText('央行')
+  await expect(card).toContainText('總經')
+  await expect(card).toContainText('行事曆')
+  await expect(card.getByTitle('today in markets freshness')).toContainText('stale')
+  await expect
+    .poll(async () => page.getByTestId('today-in-markets-item').count(), {
+      timeout: 15000,
+      message: 'today in markets items did not render',
+    })
+    .toBeGreaterThanOrEqual(3)
+  await expect(list).toHaveAttribute('data-layout', /desktop-stack|mobile-single-column/)
+
+  await saveShot(page, testInfo, 'today-in-markets-desktop.png')
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await settle(page, 1200)
+  await expect(list).toHaveAttribute('data-layout', 'mobile-single-column')
+
+  await saveShot(page, testInfo, 'today-in-markets-mobile.png')
 })
 
 test('real user simulation covers golden path, clipboard/download correctness, backup import/export, and mobile scroll evidence', async ({

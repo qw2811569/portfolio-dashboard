@@ -9,6 +9,610 @@ import { queryFinMindDataset } from './_lib/finmind-governor.js'
 
 const FIXED_EVENT_LOOKAHEAD_DAYS = 45
 const GEMINI_EVENT_LOOKAHEAD_DAYS = 60
+const ANNOUNCEMENT_LOOKBACK_DAYS = 7
+const FSC_PRESS_RSS_URL = 'https://www.fsc.gov.tw/RSS/Messages?language=chinese&serno=201202290009'
+const CBC_PRESS_LIST_URL = 'https://www.cbc.gov.tw/tw/lp-302-1.html'
+const CBC_BOARD_SCHEDULE_URL = 'https://www.cbc.gov.tw/tw/cp-357-189514-82841-1.html'
+const TWSE_EX_RIGHTS_URL = 'https://www.twse.com.tw/exchangeReport/TWT48U?response=json'
+const MOF_TRADE_NEWS_URL = 'https://www.mof.gov.tw/singlehtml/121?cntId=1201'
+const DGBAS_RELEASE_CALENDAR_URL = 'https://www.stat.gov.tw/News_NoticeCalendar.aspx?n=3717'
+const DGBAS_CPI_REFERENCE_URL = 'https://ws.dgbas.gov.tw/win/dgbas03/bs7/sdds/english/cpi.htm'
+const TWSE_EX_RIGHTS_PAGE_URL = 'https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html'
+const DGBAS_GDP_NEWS_URL = 'https://www.stat.gov.tw/News.aspx?n=3703&sms=10980'
+
+function normalizeText(value) {
+  return String(value || '')
+    .replace(/<!\[CDATA\[|\]\]>/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function stripHtml(value) {
+  return normalizeText(value)
+}
+
+function clampDay(year, month, day) {
+  const lastDay = new Date(year, month, 0).getDate()
+  return Math.min(Math.max(day, 1), lastDay)
+}
+
+function formatIsoDate(year, month, day) {
+  const resolvedDay = clampDay(year, month, day)
+  return `${year}-${String(month).padStart(2, '0')}-${String(resolvedDay).padStart(2, '0')}`
+}
+
+export function parseRocDateString(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+
+  const isoMatch = raw.match(/(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
+  }
+
+  const rocMatch = raw.match(/(\d{2,3})年\s*(\d{1,2})月\s*(\d{1,2})日/)
+  if (rocMatch) {
+    const year = Number(rocMatch[1]) + 1911
+    const month = Number(rocMatch[2])
+    const day = Number(rocMatch[3])
+    return formatIsoDate(year, month, day)
+  }
+
+  const compactMatch = raw.match(/(\d{3})(\d{2})(\d{2})/)
+  if (compactMatch) {
+    const year = Number(compactMatch[1]) + 1911
+    const month = Number(compactMatch[2])
+    const day = Number(compactMatch[3])
+    return formatIsoDate(year, month, day)
+  }
+
+  return null
+}
+
+function parseRocDateTimeString(value) {
+  const raw = String(value || '').trim()
+  const date = parseRocDateString(raw)
+  if (!date) return null
+
+  const timeMatch = raw.match(/(\d{1,2})[:時](\d{2})/)
+  const time = timeMatch
+    ? `${String(Number(timeMatch[1])).padStart(2, '0')}:${String(Number(timeMatch[2])).padStart(2, '0')}`
+    : ''
+
+  return {
+    date,
+    time,
+  }
+}
+
+function readNumericDateToken(value) {
+  const match = String(value || '').match(/(\d{1,2})/)
+  return match ? Number(match[1]) : null
+}
+
+function isBusinessDay(date) {
+  const day = date.getDay()
+  return day !== 0 && day !== 6
+}
+
+function nthBusinessDayAfterMonthEnd(year, month, nth = 5) {
+  let cursor = new Date(year, month, 1)
+  let businessCount = 0
+
+  while (businessCount < nth) {
+    if (isBusinessDay(cursor)) businessCount += 1
+    if (businessCount === nth) {
+      return formatIsoDate(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate())
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return formatIsoDate(year, month, nth)
+}
+
+function shiftDate(date, days) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function toAbsoluteUrl(baseUrl, href) {
+  if (!href) return ''
+  try {
+    return new URL(String(href).trim(), baseUrl).toString()
+  } catch {
+    return ''
+  }
+}
+
+function toHttpsUrl(value) {
+  const href = String(value || '').trim()
+  if (!href) return ''
+  if (href.startsWith('http://')) return `https://${href.slice('http://'.length)}`
+  return href
+}
+
+function isIsoDateInWindow(dateStr, startDate, endDate) {
+  if (!dateStr) return false
+  const normalized = parseRocDateString(dateStr) || dateStr
+  if (!normalized) return false
+  return isDateInRange(normalized, startDate, endDate)
+}
+
+function createCalendarEvent({
+  id,
+  date,
+  title,
+  detail = '',
+  source = 'auto-calendar',
+  type = 'macro',
+  stocks = [],
+  status = 'pending',
+  pred = 'neutral',
+  predReason = '',
+  catalystType = 'macro',
+  impact = 'medium',
+  link = '',
+  time = '',
+  marketSegment = '',
+}) {
+  const normalizedDate = parseRocDateString(date) || String(date || '').trim()
+  if (!normalizedDate) return null
+
+  return {
+    id,
+    date: normalizedDate,
+    eventDate: normalizedDate,
+    type,
+    source,
+    title,
+    detail,
+    stocks,
+    status,
+    pred,
+    predReason,
+    catalystType,
+    impact,
+    link,
+    time,
+    marketSegment,
+  }
+}
+
+async function fetchText(url, timeoutMs = 4500) {
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: {
+      Accept:
+        'text/html, application/rss+xml, application/xml, text/xml;q=0.9, application/json;q=0.8',
+      'User-Agent': 'portfolio-dashboard/1.0',
+    },
+  })
+  if (!response.ok) {
+    throw new Error(`fetch failed (${response.status}) for ${url}`)
+  }
+  return response.text()
+}
+
+function parseRssItems(xml = '') {
+  const items = []
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi
+  for (const match of xml.matchAll(itemRegex)) {
+    const block = match[1] || ''
+    const title = normalizeText(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || '')
+    const link = toHttpsUrl(normalizeText(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || ''))
+    const pubDate = normalizeText(block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || '')
+    if (!title || !pubDate) continue
+    items.push({
+      title,
+      link,
+      pubDate: parseRocDateString(pubDate) || pubDate,
+    })
+  }
+  return items
+}
+
+function parseCbcPressList(html = '') {
+  const rows = []
+  const itemRegex =
+    /<li><span class="num">\d+<\/span><time>(\d{4}-\d{2}-\d{2})<\/time><a href="([^"]+)" title="([^"]+)">/g
+  for (const match of html.matchAll(itemRegex)) {
+    rows.push({
+      date: match[1],
+      link: toAbsoluteUrl(CBC_PRESS_LIST_URL, match[2]),
+      title: stripHtml(match[3]),
+    })
+  }
+  return rows
+}
+
+function parseCbcBoardScheduleDates(html = '') {
+  return [...html.matchAll(/(\d{2,3})年(\d{1,2})月(\d{1,2})日/g)].map((match) =>
+    formatIsoDate(Number(match[1]) + 1911, Number(match[2]), Number(match[3]))
+  )
+}
+
+function buildStatCalendarDate(year, monthIndex, item = {}) {
+  const day = readNumericDateToken(item?.date)
+  if (!day) return null
+  return formatIsoDate(year, monthIndex + 1, day)
+}
+
+function extractStatCalendarTimedatas(html = '', name = '') {
+  if (!html || !name) return []
+  const compact = html.replace(/\s+/g, ' ')
+  const pattern = new RegExp(
+    `"name":"${name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}".*?"timedatas":(\\[[\\s\\S]*?\\])\\s*,\\"IsPressConference\\"`,
+    'i'
+  )
+  const match = compact.match(pattern)
+  if (!match) return []
+  try {
+    return JSON.parse(match[1])
+  } catch {
+    return []
+  }
+}
+
+export function buildDgbasMacroCalendarEvents(
+  html = '',
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  const events = []
+  const endDate = shiftDate(today, rangeDays)
+  const year = today.getFullYear()
+
+  const gdpAdvanceTimedatas = extractStatCalendarTimedatas(html, '國民所得概估統計')
+  for (let monthIndex = 0; monthIndex < gdpAdvanceTimedatas.length; monthIndex += 1) {
+    for (const item of gdpAdvanceTimedatas[monthIndex] || []) {
+      const date = buildStatCalendarDate(year, monthIndex, item)
+      if (!isIsoDateInWindow(date, today, endDate)) continue
+      const quarter = normalizeText(item.notice || '').replace(/[()]/g, '')
+      const time = normalizeText(item.time || '')
+      events.push(
+        createCalendarEvent({
+          id: `dgbas-gdp-advance-${date}`,
+          date,
+          time,
+          type: 'macro',
+          source: 'dgbas-calendar',
+          title: `${quarter || 'GDP'} 概估`,
+          detail: '主計總處先給市場一個季度輪廓，電子、航運與景氣循環股通常會先對這組數字有反應。',
+          predReason: '官方 GDP 概估時點',
+          catalystType: 'macro',
+          impact: 'high',
+          link: DGBAS_GDP_NEWS_URL,
+          marketSegment: 'macro',
+        })
+      )
+    }
+  }
+
+  const gdpTimedatas = extractStatCalendarTimedatas(
+    html,
+    '國內生產毛額、國民所得、經濟成長率及平減指數'
+  )
+  const forecastTimedatas = extractStatCalendarTimedatas(html, '經濟預測')
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const gdpEntry = (gdpTimedatas[monthIndex] || [])[0] || null
+    const forecastEntry = (forecastTimedatas[monthIndex] || [])[0] || null
+    const referenceEntry = gdpEntry || forecastEntry
+    if (!referenceEntry) continue
+    const date = buildStatCalendarDate(year, monthIndex, referenceEntry)
+    if (!isIsoDateInWindow(date, today, endDate)) continue
+    const time = normalizeText(referenceEntry.time || gdpEntry?.time || forecastEntry?.time || '')
+    const notice = normalizeText(gdpEntry?.notice || forecastEntry?.notice || '').replace(
+      /[()]/g,
+      ''
+    )
+    events.push(
+      createCalendarEvent({
+        id: `dgbas-gdp-final-${date}`,
+        date,
+        time,
+        type: 'macro',
+        source: 'dgbas-calendar',
+        title: `${notice || 'GDP'} 更新`,
+        detail: '這天會把 GDP、國民所得與年度展望一起攤開來看，市場會順手重估出口鏈與內需節奏。',
+        predReason: '官方 GDP / 經濟預測更新時點',
+        catalystType: 'macro',
+        impact: 'high',
+        link: DGBAS_RELEASE_CALENDAR_URL,
+        marketSegment: 'macro',
+      })
+    )
+  }
+
+  for (let offset = 0; offset < 2; offset += 1) {
+    const referenceMonth = new Date(today.getFullYear(), today.getMonth() + offset + 1, 1)
+    const releaseDate = nthBusinessDayAfterMonthEnd(
+      referenceMonth.getFullYear(),
+      referenceMonth.getMonth() + 1,
+      5
+    )
+    if (!isIsoDateInWindow(releaseDate, today, endDate)) continue
+    const statsMonth = new Date(referenceMonth)
+    statsMonth.setMonth(statsMonth.getMonth() - 1)
+    const label = `${statsMonth.getFullYear()}/${String(statsMonth.getMonth() + 1).padStart(2, '0')}`
+    events.push(
+      createCalendarEvent({
+        id: `dgbas-cpi-${releaseDate}`,
+        date: releaseDate,
+        time: '16:00',
+        type: 'macro',
+        source: 'dgbas-calendar',
+        title: `${label} CPI / PPI 公布`,
+        detail:
+          '主計總處通常在下午 4 點更新物價數字，利率敏感、內需與零售股常會先看這組資料怎麼落地。',
+        predReason: '官方物價統計固定發布節奏',
+        catalystType: 'macro',
+        impact: 'high',
+        link: DGBAS_CPI_REFERENCE_URL,
+        marketSegment: 'macro',
+      })
+    )
+  }
+
+  return events.filter(Boolean)
+}
+
+export function buildTwseExRightsEventsFromResponse(
+  payload = {},
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  const endDate = shiftDate(today, rangeDays)
+  const rows = Array.isArray(payload?.data) ? payload.data : []
+
+  return rows
+    .map((row) => {
+      const date = parseRocDateString(row?.[0])
+      if (!isIsoDateInWindow(date, today, endDate)) return null
+      const code = normalizeText(row?.[1])
+      const name = normalizeText(row?.[2])
+      const dividendType = normalizeText(row?.[3]) || '除權息'
+      const cashDividendRaw = normalizeText(row?.[7])
+      const cashDividend = Number(cashDividendRaw)
+      const cashDividendLabel = Number.isFinite(cashDividend)
+        ? `現金股利 ${cashDividend.toFixed(2)} 元`
+        : cashDividendRaw || '現金股利待公告'
+
+      return {
+        event: createCalendarEvent({
+          id: `twse-ex-rights-${code}-${date}`,
+          date,
+          type: 'dividend',
+          source: 'twse-ex-rights',
+          title: `${name}(${code}) ${dividendType}`,
+          detail: `${cashDividendLabel}，除權息日靠近時，殖利率與填息題材通常會重新被拿出來看。`,
+          predReason: 'TWSE 除權息預告表',
+          catalystType: 'dividend',
+          impact: 'medium',
+          link: TWSE_EX_RIGHTS_PAGE_URL,
+          marketSegment: 'calendar',
+          stocks: code ? [code] : [],
+        }),
+        sortCashDividend: Number.isFinite(cashDividend) ? cashDividend : -1,
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => {
+      const dateDiff = String(left.event?.date || '').localeCompare(String(right.event?.date || ''))
+      if (dateDiff !== 0) return dateDiff
+      return right.sortCashDividend - left.sortCashDividend
+    })
+    .slice(0, 8)
+    .map((item) => item.event)
+}
+
+export function parseMofNextTradeRelease(html = '') {
+  const compact = html.replace(/\s+/g, ' ')
+  const match = compact.match(
+    /海關進出口貿易初步統計.*?發布日期：\s*([0-9]{2,3}年[0-9]{1,2}月[0-9]{1,2}日).*?下次發布日期：\s*([0-9]{2,3}年[0-9]{1,2}月[0-9]{1,2}日(?:下午)?[0-9]{1,2}時(?:[0-9]{1,2}分)?)/i
+  )
+  if (!match) return null
+
+  const currentRelease = parseRocDateString(match[1])
+  const nextRelease = parseRocDateTimeString(match[2])
+  if (!nextRelease?.date) return null
+
+  return {
+    currentRelease,
+    nextReleaseDate: nextRelease.date,
+    nextReleaseTime: nextRelease.time || '16:00',
+  }
+}
+
+function filterRecentWindow(dateStr, today, lookbackDays = ANNOUNCEMENT_LOOKBACK_DAYS) {
+  const normalized = parseRocDateString(dateStr)
+  if (!normalized) return false
+  const startDate = shiftDate(today, -lookbackDays)
+  return isDateInRange(normalized, startDate, today)
+}
+
+const FSC_MARKET_KEYWORDS =
+  /金控|保險|證券|期貨|銀行|基金|ETF|金融科技|數位金融|洗錢|開放銀行|資本市場|股市|房貸|授信/i
+const CBC_MARKET_KEYWORDS =
+  /理監事|外匯|匯率|外匯存底|金融|五大銀行|信用管制|房貸|人民幣|準備貨幣|CBDC/i
+
+async function fetchFscAnnouncementEvents(today, _rangeDays) {
+  try {
+    const xml = await fetchText(FSC_PRESS_RSS_URL, 3500)
+    return parseRssItems(xml)
+      .filter((item) => filterRecentWindow(item.pubDate, today))
+      .filter((item) => FSC_MARKET_KEYWORDS.test(item.title))
+      .slice(0, 4)
+      .map((item, index) =>
+        createCalendarEvent({
+          id: `fsc-news-${item.pubDate}-${index}`,
+          date: item.pubDate,
+          type: 'macro',
+          source: 'fsc-rss',
+          title: item.title,
+          detail: '金管會本週有新公告，金融股、券商與保險族群可以留意盤面怎麼消化這個訊息。',
+          predReason: '金管會 RSS 新聞稿',
+          catalystType: 'macro',
+          impact: 'medium',
+          link: item.link,
+          marketSegment: 'regulator',
+        })
+      )
+      .filter(Boolean)
+  } catch (error) {
+    console.warn('FSC announcements fetch error:', error.message)
+    return []
+  }
+}
+
+async function fetchCbcAnnouncementEvents(today, _rangeDays) {
+  try {
+    const html = await fetchText(CBC_PRESS_LIST_URL, 3500)
+    return parseCbcPressList(html)
+      .filter((item) => filterRecentWindow(item.date, today))
+      .filter((item) => CBC_MARKET_KEYWORDS.test(item.title))
+      .slice(0, 4)
+      .map((item) =>
+        createCalendarEvent({
+          id: `cbc-news-${item.date}-${item.title.slice(0, 18)}`,
+          date: item.date,
+          type: 'macro',
+          source: 'cbc-news',
+          title: item.title,
+          detail: '央行這週有新訊息，金融、利率敏感與匯率連動族群通常會先有情緒反應。',
+          predReason: '央行新聞稿列表',
+          catalystType: 'macro',
+          impact: /理監事|外匯存底|匯率/.test(item.title) ? 'high' : 'medium',
+          link: item.link,
+          marketSegment: 'central-bank',
+        })
+      )
+      .filter(Boolean)
+  } catch (error) {
+    console.warn('CBC announcements fetch error:', error.message)
+    return []
+  }
+}
+
+async function fetchCbcBoardMeetingEvents(today, rangeDays) {
+  try {
+    const html = await fetchText(CBC_BOARD_SCHEDULE_URL, 3500)
+    const endDate = shiftDate(today, rangeDays)
+    return parseCbcBoardScheduleDates(html)
+      .filter((date) => isIsoDateInWindow(date, today, endDate))
+      .map((date) =>
+        createCalendarEvent({
+          id: `cbc-board-${date}`,
+          date,
+          time: '16:00',
+          type: 'macro',
+          source: 'cbc-calendar',
+          title: '台灣央行理監事會議',
+          detail: '利率與選擇性信用管制通常都在這天定調，金融、營建與高股息族群容易先被點名。',
+          predReason: '央行公告之年度理監事會議日期',
+          catalystType: 'macro',
+          impact: 'high',
+          link: CBC_BOARD_SCHEDULE_URL,
+          marketSegment: 'central-bank',
+        })
+      )
+      .filter(Boolean)
+  } catch (error) {
+    console.warn('CBC board schedule fetch error:', error.message)
+    return []
+  }
+}
+
+async function fetchCbcFxCalendarEvents(today, rangeDays) {
+  try {
+    const html = await fetchText(CBC_PRESS_LIST_URL, 3500)
+    const latestReserve = parseCbcPressList(html).find((item) => /外匯存底/.test(item.title))
+    if (!latestReserve?.link) return []
+
+    const detailHtml = await fetchText(latestReserve.link, 3500)
+    const nextReleaseMatch = detailHtml.match(
+      /下一次之發布時間為\s*([0-9]{2,3}年[0-9]{1,2}月[0-9]{1,2}日)([0-9]{1,2}時[0-9]{2}分)/
+    )
+    if (!nextReleaseMatch) return []
+
+    const nextReleaseDate = parseRocDateString(nextReleaseMatch[1])
+    const nextReleaseTime = normalizeText(nextReleaseMatch[2]).replace('時', ':').replace('分', '')
+    if (!nextReleaseDate) return []
+    const endDate = shiftDate(today, rangeDays)
+    if (!isIsoDateInWindow(nextReleaseDate, today, endDate)) return []
+
+    return [
+      createCalendarEvent({
+        id: `cbc-fx-${nextReleaseDate}`,
+        date: nextReleaseDate,
+        time: nextReleaseTime || '16:20',
+        type: 'macro',
+        source: 'cbc-calendar',
+        title: '央行外匯存底公布',
+        detail: '外匯存底固定在下午更新，台幣、壽險與金控題材通常會順手被拿來比對。',
+        predReason: '央行外匯存底新聞稿註記之下次發布時間',
+        catalystType: 'macro',
+        impact: 'medium',
+        link: latestReserve.link,
+        marketSegment: 'central-bank',
+      }),
+    ].filter(Boolean)
+  } catch (error) {
+    console.warn('CBC FX calendar fetch error:', error.message)
+    return []
+  }
+}
+
+async function fetchTwseExRightsEvents(today, rangeDays) {
+  try {
+    const response = await fetch(TWSE_EX_RIGHTS_URL, {
+      signal: AbortSignal.timeout(3500),
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'portfolio-dashboard/1.0',
+      },
+    })
+    if (!response.ok) return []
+    const payload = await response.json()
+    return buildTwseExRightsEventsFromResponse(payload, { today, rangeDays })
+  } catch (error) {
+    console.warn('TWSE ex-rights fetch error:', error.message)
+    return []
+  }
+}
+
+async function fetchMofTradeReleaseEvents(today, rangeDays) {
+  try {
+    const html = await fetchText(MOF_TRADE_NEWS_URL, 3500)
+    const parsed = parseMofNextTradeRelease(html)
+    if (!parsed?.nextReleaseDate) return []
+    const endDate = shiftDate(today, rangeDays)
+    if (!isIsoDateInWindow(parsed.nextReleaseDate, today, endDate)) return []
+
+    return [
+      createCalendarEvent({
+        id: `mof-export-${parsed.nextReleaseDate}`,
+        date: parsed.nextReleaseDate,
+        time: parsed.nextReleaseTime || '16:00',
+        type: 'macro',
+        source: 'mof-calendar',
+        title: '財政部出口統計公布',
+        detail: '出口數字一更新，電子鏈、航運與景氣循環股通常會很快被重新定價。',
+        predReason: '財政部海關進出口貿易初步統計之下次發布日期',
+        catalystType: 'macro',
+        impact: 'high',
+        link: MOF_TRADE_NEWS_URL,
+        marketSegment: 'macro',
+      }),
+    ].filter(Boolean)
+  } catch (error) {
+    console.warn('MOF trade release fetch error:', error.message)
+    return []
+  }
+}
 
 async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -27,22 +631,58 @@ async function handler(req, res) {
   try {
     const today = new Date()
     const events = []
+    const generatedAt = new Date().toISOString()
 
     // ── 1. 月營收公布日（每月 1-10 號，所有上市櫃公司） ──
     const revenueEvents = generateRevenueAnnouncementEvents(today, rangeDays, stockCodes)
     events.push(...revenueEvents)
 
-    // ── 2. 固定行事曆事件（FOMC、台灣央行、財報季） ──
+    // ── 2. 固定行事曆事件（FOMC、財報季） ──
     const fixedEvents = generateFixedCalendarEvents(today, fixedLookaheadDays)
     events.push(...fixedEvents)
 
-    // ── 3. 除權息預估（6-9 月旺季） ──
+    // ── 3. 官方總經 / 央行 / 監理 calendar 與公告 ──
+    const [
+      dgbasMacroEvents,
+      cbcBoardEvents,
+      cbcFxEvents,
+      cbcAnnouncementEvents,
+      fscAnnouncementEvents,
+      twseExRightsEvents,
+      mofTradeReleaseEvents,
+    ] = await Promise.allSettled([
+      fetchText(DGBAS_RELEASE_CALENDAR_URL, 3500).then((html) =>
+        buildDgbasMacroCalendarEvents(html, { today, rangeDays: fixedLookaheadDays })
+      ),
+      fetchCbcBoardMeetingEvents(today, fixedLookaheadDays),
+      fetchCbcFxCalendarEvents(today, fixedLookaheadDays),
+      fetchCbcAnnouncementEvents(today, fixedLookaheadDays),
+      fetchFscAnnouncementEvents(today, fixedLookaheadDays),
+      fetchTwseExRightsEvents(today, fixedLookaheadDays),
+      fetchMofTradeReleaseEvents(today, fixedLookaheadDays),
+    ])
+
+    for (const result of [
+      dgbasMacroEvents,
+      cbcBoardEvents,
+      cbcFxEvents,
+      cbcAnnouncementEvents,
+      fscAnnouncementEvents,
+      twseExRightsEvents,
+      mofTradeReleaseEvents,
+    ]) {
+      if (result.status === 'fulfilled') {
+        events.push(...(result.value || []))
+      }
+    }
+
+    // ── 4. 除權息旺季提醒（TWSE 預告失敗時至少保留季節提醒） ──
     const dividendEvents = generateDividendSeasonEvents(today, fixedLookaheadDays, stockCodes)
     events.push(...dividendEvents)
 
-    // ── 4. MOPS 法說會 ── 已停用（需要瀏覽器會話）
+    // ── 5. MOPS 法說會 ── 已停用（需要瀏覽器會話）
 
-    // ── 5. FinMind 個股新聞（直接呼叫外部 API，不走 self-request）──
+    // ── 6. FinMind 個股新聞（直接呼叫外部 API，不走 self-request）──
     let finmindNewsEvents = []
     if (stockCodes.length > 0) {
       try {
@@ -60,7 +700,7 @@ async function handler(req, res) {
     }
     events.push(...finmindNewsEvents)
 
-    // ── 6. Gemini 蒐集的已確認事件（即時 API fallback） ──
+    // ── 7. Gemini 蒐集的已確認事件（即時 API fallback） ──
     let geminiEvents = []
     try {
       geminiEvents = await loadGeminiCalendarEvents(today, geminiLookaheadDays, stockCodes)
@@ -70,7 +710,11 @@ async function handler(req, res) {
     events.push(...geminiEvents)
 
     // 去重後按日期排序
-    const dedupedEvents = dedupeCalendarEvents(events)
+    const dedupedEvents = dedupeCalendarEvents(events).map((event) => ({
+      ...event,
+      eventDate: event?.eventDate || event?.date || null,
+      sourceUpdatedAt: String(event?.sourceUpdatedAt || generatedAt).trim() || generatedAt,
+    }))
     dedupedEvents.sort((a, b) => a.date.localeCompare(b.date))
 
     return res.status(200).json({
@@ -79,11 +723,29 @@ async function handler(req, res) {
       sources: [
         'revenue-calendar',
         'fixed-calendar',
+        dgbasMacroEvents.status === 'fulfilled' && dgbasMacroEvents.value?.length > 0
+          ? 'dgbas-calendar'
+          : null,
+        cbcBoardEvents.status === 'fulfilled' && cbcBoardEvents.value?.length > 0
+          ? 'cbc-calendar'
+          : null,
+        cbcAnnouncementEvents.status === 'fulfilled' && cbcAnnouncementEvents.value?.length > 0
+          ? 'cbc-news'
+          : null,
+        fscAnnouncementEvents.status === 'fulfilled' && fscAnnouncementEvents.value?.length > 0
+          ? 'fsc-rss'
+          : null,
+        twseExRightsEvents.status === 'fulfilled' && twseExRightsEvents.value?.length > 0
+          ? 'twse-ex-rights'
+          : null,
+        mofTradeReleaseEvents.status === 'fulfilled' && mofTradeReleaseEvents.value?.length > 0
+          ? 'mof-calendar'
+          : null,
         'dividend-season',
         finmindNewsEvents.length > 0 ? 'finmind-news' : null,
         geminiEvents.length > 0 ? 'gemini-research' : null,
       ].filter(Boolean),
-      generatedAt: new Date().toISOString(),
+      generatedAt,
     })
   } catch (error) {
     console.error('Event calendar error:', error)
@@ -93,7 +755,6 @@ async function handler(req, res) {
 
 // 輔助函數：比較日期（忽略時間，只比較日期部分）
 function isDateInRange(dateStr, today, endDate) {
-  const d = new Date(dateStr + 'T00:00:00')
   const todayStr = today.toISOString().slice(0, 10)
   const endStr = endDate.toISOString().slice(0, 10)
   const dStr = dateStr
@@ -172,40 +833,6 @@ function generateFixedCalendarEvents(today, rangeDays) {
         catalystType: 'macro',
         impact: 'high',
       })
-    }
-  }
-
-  // 台灣央行理監事會議（每季：3/6/9/12 月第三週四）
-  const cbcMonths = [3, 6, 9, 12]
-  for (const m of cbcMonths) {
-    // 第三週四：月的 15-21 日中的週四
-    const firstDay = new Date(year, m - 1, 1)
-    let thursdays = 0
-    for (let day = 1; day <= 28; day++) {
-      const d = new Date(year, m - 1, day)
-      if (d.getDay() === 4) {
-        thursdays++
-        if (thursdays === 3) {
-          const dateStr = d.toISOString().slice(0, 10)
-          if (d >= today && d <= endDate) {
-            events.push({
-              id: `cbc-${dateStr}`,
-              date: dateStr,
-              type: 'macro',
-              source: 'auto-calendar',
-              title: '台灣央行理監事會議',
-              detail: '決定利率與選擇性信用管制。升息利多金融、利空營建；降息反向',
-              stocks: [],
-              status: 'pending',
-              pred: 'neutral',
-              predReason: '利率決議結果不確定',
-              catalystType: 'macro',
-              impact: 'high',
-            })
-          }
-          break
-        }
-      }
     }
   }
 

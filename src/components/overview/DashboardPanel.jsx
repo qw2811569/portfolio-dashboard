@@ -5,6 +5,7 @@ import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { AccuracyGateBlock, Button, Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import Md from '../Md.jsx'
@@ -32,6 +33,57 @@ const heroHeadlineLabel = {
   color: C.textSec,
   fontFamily: 'var(--font-headline)',
   letterSpacing: '0.08em',
+}
+
+const TODAY_IN_MARKETS_MAX_ITEMS = 6
+const TODAY_IN_MARKETS_STALE_MS = 4 * 60 * 60 * 1000
+const TODAY_IN_MARKETS_CATEGORY_META = {
+  'central-bank': {
+    label: '央行',
+    order: 0,
+    color: C.text,
+    border: alpha(C.fillTeal, '32'),
+    background: alpha(C.fillTeal, '10'),
+  },
+  macro: {
+    label: '總經',
+    order: 1,
+    color: C.text,
+    border: alpha(C.amber, '32'),
+    background: alpha(C.amber, '10'),
+  },
+  calendar: {
+    label: '行事曆',
+    order: 2,
+    color: C.text,
+    border: alpha(C.up, '28'),
+    background: alpha(C.up, '10'),
+  },
+  regulator: {
+    label: '金管會',
+    order: 3,
+    color: C.text,
+    border: alpha(C.orange, '28'),
+    background: alpha(C.orange, '10'),
+  },
+  market: {
+    label: '大盤',
+    order: 4,
+    color: C.text,
+    border: alpha(C.ink, '22'),
+    background: alpha(C.ink, '08'),
+  },
+}
+const TODAY_IN_MARKETS_CATEGORY_PRIORITY = Object.keys(TODAY_IN_MARKETS_CATEGORY_META)
+const TODAY_IN_MARKETS_SOURCE_LABELS = {
+  'cbc-calendar': '央行排程',
+  'cbc-news': '央行公告',
+  'dgbas-calendar': '主計總處',
+  'mof-calendar': '財政部',
+  'fsc-rss': '金管會',
+  'twse-ex-rights': 'TWSE',
+  'auto-calendar': '市場行事曆',
+  'market-cache': '盤面整理',
 }
 
 function formatTaipeiDate() {
@@ -78,6 +130,192 @@ function formatMarketItemDate(value) {
     month: 'numeric',
     day: 'numeric',
   }).format(parsed)
+}
+
+function formatMarketItemDateTime(value, time = '') {
+  const dateLabel = formatMarketItemDate(value)
+  const timeLabel = String(time || '').trim()
+  return [dateLabel, timeLabel].filter(Boolean).join(' ')
+}
+
+function parseEventTimestamp(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function resolveTodayInMarketsCategory(event = {}) {
+  const type = String(event?.type || '')
+    .trim()
+    .toLowerCase()
+  const catalystType = String(event?.catalystType || '')
+    .trim()
+    .toLowerCase()
+  const source = String(event?.source || '')
+    .trim()
+    .toLowerCase()
+  const segment = String(event?.marketSegment || '')
+    .trim()
+    .toLowerCase()
+  const combinedText = `${event?.title || ''} ${event?.detail || ''}`.toLowerCase()
+
+  if (
+    segment === 'central-bank' ||
+    source === 'cbc-news' ||
+    source === 'cbc-calendar' ||
+    /央行|外匯存底|匯率/.test(combinedText)
+  ) {
+    return { key: 'central-bank', ...TODAY_IN_MARKETS_CATEGORY_META['central-bank'] }
+  }
+
+  if (
+    segment === 'macro' ||
+    source === 'dgbas-calendar' ||
+    source === 'mof-calendar' ||
+    type === 'macro' ||
+    catalystType === 'macro'
+  ) {
+    return { key: 'macro', ...TODAY_IN_MARKETS_CATEGORY_META.macro }
+  }
+
+  if (segment === 'regulator' || source === 'fsc-rss') {
+    return { key: 'regulator', ...TODAY_IN_MARKETS_CATEGORY_META.regulator }
+  }
+
+  if (
+    segment === 'calendar' ||
+    source === 'auto-calendar' ||
+    source === 'twse-ex-rights' ||
+    ['revenue', 'conference', 'earnings', 'dividend', 'shareholder'].includes(type) ||
+    ['earnings', 'dividend', 'conference'].includes(catalystType)
+  ) {
+    return { key: 'calendar', ...TODAY_IN_MARKETS_CATEGORY_META.calendar }
+  }
+
+  if (
+    ['market', 'market-summary', 'index', 'indices'].includes(type) ||
+    source === 'market-cache'
+  ) {
+    return { key: 'market', ...TODAY_IN_MARKETS_CATEGORY_META.market }
+  }
+
+  return null
+}
+
+function resolveTodayInMarketsCopy(event, category) {
+  const text = `${event?.title || ''} ${event?.detail || ''}`
+
+  if (category?.key === 'central-bank') {
+    if (/理監事|利率|信用管制/.test(text)) {
+      return '央行今天會定調利率與信用管制，金融、營建與高股息族群通常會先被拿出來看。'
+    }
+    if (/外匯存底|匯率|外匯/.test(text)) {
+      return '央行下午會更新外匯數字，台幣、壽險與金控題材常會先有討論。'
+    }
+    return '央行這週有新訊息，金融與匯率敏感族群通常會先看市場怎麼接。'
+  }
+
+  if (category?.key === 'regulator') {
+    return '金管會本週有新公告，金融股、券商與保險題材可能先反映情緒。'
+  }
+
+  if (category?.key === 'macro') {
+    if (/CPI|PPI|物價/.test(text)) {
+      return '物價數字一更新，利率敏感與內需股通常會先被重新估值。'
+    }
+    if (/GDP|國民所得|經濟成長/.test(text)) {
+      return 'GDP 與展望更新時，出口鏈和景氣循環股通常會先被重新比較。'
+    }
+    if (/出口|進出口|海關/.test(text)) {
+      return '出口數字一公布，電子鏈、航運與景氣循環股通常會很快被重估。'
+    }
+    return '今天有總經節點，市場通常會先重排成長、內需與利率敏感族群的節奏。'
+  }
+
+  if (category?.key === 'calendar') {
+    if (/除權|除息/.test(text)) {
+      return '除權息時程靠近時，殖利率與填息題材通常會重新回到盤面。'
+    }
+    if (/營收/.test(text)) {
+      return '營收公布日靠近時，市場通常會先看強勢股能不能把節奏延續下去。'
+    }
+    return '今天的行事曆偏密，市場通常會先挑最接近催化的個股出來反應。'
+  }
+
+  return String(event?.detail || '').trim() || '市場焦點先整理到這裡，後續看盤面怎麼接。'
+}
+
+function resolveTodayInMarketsSourceLabel(source = '') {
+  return (
+    TODAY_IN_MARKETS_SOURCE_LABELS[
+      String(source || '')
+        .trim()
+        .toLowerCase()
+    ] || '官方來源'
+  )
+}
+
+function resolveTodayInMarketsWindowLabel(dateValue = '') {
+  const normalized = toMarketDateString(dateValue)
+  if (!normalized) return ''
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(`${normalized}T00:00:00`)
+  if (Number.isNaN(target.getTime())) return ''
+
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+  if (diffDays === 0) return '今天'
+  if (diffDays > 0 && diffDays <= 6) return '本週'
+  if (diffDays < 0 && diffDays >= -6) return '近一週'
+  return ''
+}
+
+function selectTodayInMarketsItems(items = [], limit = TODAY_IN_MARKETS_MAX_ITEMS) {
+  const grouped = new Map()
+  for (const key of TODAY_IN_MARKETS_CATEGORY_PRIORITY) grouped.set(key, [])
+  for (const item of items) {
+    if (!grouped.has(item.categoryKey)) grouped.set(item.categoryKey, [])
+    grouped.get(item.categoryKey).push(item)
+  }
+
+  const selected = []
+  const selectedIds = new Set()
+
+  for (const key of TODAY_IN_MARKETS_CATEGORY_PRIORITY) {
+    const firstItem = grouped.get(key)?.[0]
+    if (!firstItem) continue
+    selected.push(firstItem)
+    selectedIds.add(firstItem.id)
+    if (selected.length >= limit) return selected
+  }
+
+  for (const key of TODAY_IN_MARKETS_CATEGORY_PRIORITY) {
+    for (const item of grouped.get(key) || []) {
+      if (selectedIds.has(item.id)) continue
+      selected.push(item)
+      selectedIds.add(item.id)
+      if (selected.length >= limit) return selected
+    }
+  }
+
+  return selected
+}
+
+function resolveTodayInMarketsFreshness(items = []) {
+  const timestamps = items
+    .map((item) => parseEventTimestamp(item.updatedAt))
+    .filter(Boolean)
+    .sort((left, right) => right.getTime() - left.getTime())
+
+  if (timestamps.length === 0) return { staleStatus: '', updatedAt: '' }
+
+  const latest = timestamps[0]
+  return {
+    staleStatus: Date.now() - latest.getTime() > TODAY_IN_MARKETS_STALE_MS ? 'stale' : '',
+    updatedAt: latest.toISOString(),
+  }
 }
 
 function readMetricValue(item, keys) {
@@ -701,39 +939,47 @@ function AiQuickSummary({ latestInsight }) {
 
 function buildTodayInMarketsItems(newsEvents = []) {
   const safeEvents = Array.isArray(newsEvents) ? newsEvents : []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   const items = safeEvents
     .map((event, index) => {
-      const type = String(event?.type || '')
-        .trim()
-        .toLowerCase()
-      const catalystType = String(event?.catalystType || '')
-        .trim()
-        .toLowerCase()
+      const category = resolveTodayInMarketsCategory(event)
+      if (!category) return null
+
       const source = String(event?.source || '')
         .trim()
         .toLowerCase()
       const date = toMarketDateString(event?.eventDate || event?.date)
+      const time = String(event?.time || '').trim()
       const link = [event?.link, event?.url, event?.sourceUrl, event?.source_url]
         .map((value) => String(value || '').trim())
         .find((value) => isSafeExternalUrl(value))
-      const isMarket =
-        ['market', 'market-summary', 'index', 'indices'].includes(type) || source === 'market-cache'
-      const isMacro = type === 'macro' || catalystType === 'macro'
-      const isCalendar =
-        source === 'auto-calendar' ||
-        ['revenue', 'conference', 'earnings', 'dividend', 'shareholder'].includes(type) ||
-        ['earnings', 'dividend', 'conference'].includes(catalystType)
-
-      if (!isMarket && !isMacro && !isCalendar) return null
+      const parsedDate = date ? new Date(`${date}T00:00:00`) : null
+      const dateDistance =
+        parsedDate && !Number.isNaN(parsedDate.getTime())
+          ? Math.abs(Math.round((parsedDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
+          : Number.POSITIVE_INFINITY
+      const title = String(event?.title || '').trim() || '未命名市場事件'
+      const detail = String(event?.detail || event?.summary || '').trim()
 
       return {
         id: event?.id || `market-${index}`,
-        title: String(event?.title || '').trim() || '未命名市場事件',
-        detail: String(event?.detail || event?.summary || '').trim(),
+        title,
+        detail,
+        copy: resolveTodayInMarketsCopy({ ...event, title, detail }, category),
         date,
+        time,
+        dateLabel: formatMarketItemDateTime(date, time),
         link,
-        category: isMarket ? '大盤' : isMacro ? '總經' : '行事曆',
-        categoryOrder: isMarket ? 0 : isMacro ? 1 : 2,
+        sourceLabel: resolveTodayInMarketsSourceLabel(source),
+        windowLabel: resolveTodayInMarketsWindowLabel(date),
+        updatedAt: String(event?.sourceUpdatedAt || event?.updatedAt || '').trim(),
+        categoryKey: category.key,
+        categoryLabel: category.label,
+        categoryMeta: category,
+        categoryOrder: category.order,
+        dateDistance,
       }
     })
     .filter(Boolean)
@@ -742,10 +988,13 @@ function buildTodayInMarketsItems(newsEvents = []) {
     if (left.categoryOrder !== right.categoryOrder) {
       return left.categoryOrder - right.categoryOrder
     }
+    if (left.dateDistance !== right.dateDistance) {
+      return left.dateDistance - right.dateDistance
+    }
     return String(left.date || '9999-99-99').localeCompare(String(right.date || '9999-99-99'))
   })
 
-  return items
+  return selectTodayInMarketsItems(items, TODAY_IN_MARKETS_MAX_ITEMS)
 }
 
 function MorningNoteCard({ morningNote = null, onNavigate = null }) {
@@ -1182,14 +1431,19 @@ function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {
 }
 
 function TodayInMarketsCard({ newsEvents = [] }) {
-  const items = buildTodayInMarketsItems(newsEvents).slice(0, 6)
+  const isMobile = useIsMobile()
+  const items = buildTodayInMarketsItems(newsEvents)
+  const freshness = resolveTodayInMarketsFreshness(items)
+  const updatedAtLabel = formatSnapshotTimestamp(freshness.updatedAt)
 
   return h(
     Card,
     {
+      'data-testid': 'today-in-markets-card',
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.ink, '40')}`,
+        borderLeft: `3px solid ${alpha(C.fillTeal, '42')}`,
+        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.fillTeal, '06')})`,
       },
     },
     h(
@@ -1203,17 +1457,64 @@ function TodayInMarketsCard({ newsEvents = [] }) {
           flexWrap: 'wrap',
         },
       },
-      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Today in Markets'),
       h(
-        'span',
-        { style: { fontSize: 11, color: C.textMute } },
-        items.length > 0 ? `${items.length} 則` : 'v1'
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 4,
+          },
+        },
+        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Today in Markets'),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 12,
+              color: C.textSec,
+              lineHeight: 1.7,
+            },
+          },
+          '今天先看總經、央行與行事曆節點，挑最接近台股節奏的幾條整理給你。'
+        )
+      ),
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          },
+        },
+        freshness.staleStatus &&
+          h(StaleBadge, {
+            status: freshness.staleStatus,
+            title: 'today in markets freshness',
+          }),
+        updatedAtLabel &&
+          h(
+            'span',
+            {
+              'data-testid': 'today-in-markets-updated-at',
+              style: { fontSize: 11, color: C.textMute },
+            },
+            `更新 ${updatedAtLabel}`
+          ),
+        h(
+          'span',
+          { style: { fontSize: 11, color: C.textMute } },
+          items.length > 0 ? `${items.length} 則` : 'v1'
+        )
       )
     ),
     items.length === 0
       ? h(
           'div',
           {
+            'data-testid': 'today-in-markets-empty',
             style: {
               fontSize: 11,
               color: C.textMute,
@@ -1224,82 +1525,150 @@ function TodayInMarketsCard({ newsEvents = [] }) {
         )
       : h(
           'div',
-          { style: { display: 'grid', gap: 8, marginTop: 8 } },
-          items.map((item, index) => {
-            const hasDivider = index < items.length - 1
-            return h(
+          {
+            'data-testid': 'today-in-markets-list',
+            'data-layout': isMobile ? 'mobile-single-column' : 'desktop-stack',
+            style: {
+              display: 'grid',
+              gap: 10,
+              marginTop: 12,
+            },
+          },
+          items.map((item) =>
+            h(
               'div',
               {
                 key: item.id,
+                'data-testid': 'today-in-markets-item',
                 style: {
                   display: 'grid',
-                  gap: 4,
-                  paddingBottom: hasDivider ? 8 : 0,
-                  borderBottom: hasDivider ? `1px solid ${C.border}` : 'none',
+                  gap: 10,
+                  padding: '12px 14px',
+                  borderRadius: 14,
+                  border: `1px solid ${item.categoryMeta.border}`,
+                  background: `linear-gradient(180deg, ${alpha(C.card, 'fc')}, ${item.categoryMeta.background})`,
                 },
               },
               h(
                 'div',
                 {
                   style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                    gap: 8,
-                    flexWrap: 'wrap',
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) auto',
+                    gap: 10,
+                    alignItems: 'start',
                   },
                 },
-                h(
-                  item.link ? 'a' : 'div',
-                  {
-                    ...(item.link
-                      ? {
-                          href: item.link,
-                          target: '_blank',
-                          rel: 'noreferrer',
-                        }
-                      : {}),
-                    style: {
-                      display: item.link ? 'inline-flex' : 'block',
-                      alignItems: item.link ? 'center' : undefined,
-                      minHeight: item.link ? 44 : undefined,
-                      padding: item.link ? '4px 8px' : undefined,
-                      fontSize: 11,
-                      color: C.text,
-                      fontWeight: 500,
-                      lineHeight: 1.6,
-                      textDecoration: 'none',
-                    },
-                  },
-                  `${item.category}｜${item.title}`
-                ),
-                item.date &&
-                  h(
-                    'span',
-                    {
-                      style: {
-                        fontSize: 11,
-                        color: C.textMute,
-                        flexShrink: 0,
-                      },
-                    },
-                    formatMarketItemDate(item.date)
-                  )
-              ),
-              item.detail &&
                 h(
                   'div',
                   {
                     style: {
-                      fontSize: 12,
-                      color: C.textSec,
-                      lineHeight: 1.7,
+                      display: 'grid',
+                      gap: 8,
                     },
                   },
-                  item.detail
-                )
+                  h(
+                    'div',
+                    {
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap',
+                      },
+                    },
+                    h(
+                      'span',
+                      {
+                        style: {
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '4px 8px',
+                          borderRadius: 999,
+                          border: `1px solid ${item.categoryMeta.border}`,
+                          background: item.categoryMeta.background,
+                          color: item.categoryMeta.color,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                          letterSpacing: '0.04em',
+                        },
+                      },
+                      item.categoryLabel
+                    ),
+                    item.windowLabel
+                      ? h(
+                          'span',
+                          {
+                            style: {
+                              fontSize: 11,
+                              color: C.textMute,
+                            },
+                          },
+                          item.windowLabel
+                        )
+                      : null,
+                    h(
+                      'span',
+                      {
+                        style: {
+                          fontSize: 11,
+                          color: C.textMute,
+                        },
+                      },
+                      item.sourceLabel
+                    )
+                  ),
+                  h(
+                    item.link ? 'a' : 'div',
+                    {
+                      ...(item.link
+                        ? {
+                            href: item.link,
+                            target: '_blank',
+                            rel: 'noreferrer',
+                          }
+                        : {}),
+                      style: {
+                        color: C.text,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        lineHeight: 1.6,
+                        textDecoration: 'none',
+                      },
+                    },
+                    item.title
+                  ),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        fontSize: 12,
+                        color: C.textSec,
+                        lineHeight: 1.8,
+                      },
+                    },
+                    item.copy
+                  )
+                ),
+                item.dateLabel || item.windowLabel
+                  ? h(
+                      'span',
+                      {
+                        style: {
+                          fontSize: 11,
+                          color: C.textMute,
+                          flexShrink: 0,
+                          justifySelf: isMobile ? 'start' : 'end',
+                          whiteSpace: 'nowrap',
+                        },
+                      },
+                      item.dateLabel || item.windowLabel
+                    )
+                  : null
+              )
             )
-          })
+          )
         )
   )
 }

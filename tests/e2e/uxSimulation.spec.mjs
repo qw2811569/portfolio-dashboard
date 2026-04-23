@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 import {
   AGENT_BRIDGE_BASE_URL,
@@ -13,6 +13,16 @@ import { diffHoldingCodes, getPersonaFixture, sortHoldingCodes } from './persona
 const ROOT_DIR = process.cwd()
 const ROUND_DIR = resolve(ROOT_DIR, '.tmp/portfolio-r8-loop')
 const STEP_LOG_DIR = resolve(ROUND_DIR, 'step-logs')
+const UX21_DIR = resolve(ROOT_DIR, '.tmp/ux-21-mobile-header')
+const UX21_SCREENSHOT_DIR = 'ux-21-verify'
+const UX21_MEASUREMENT_PHASE = String(process.env.UX21_MEASUREMENT_PHASE || '').trim()
+const UX21_MEASUREMENT_MODE = Boolean(UX21_MEASUREMENT_PHASE)
+const UX21_RESULT_JSON_PATH = UX21_MEASUREMENT_MODE
+  ? resolve(UX21_DIR, `${UX21_MEASUREMENT_PHASE}-measurements.json`)
+  : ''
+const UX21_RESULT_MD_PATH = UX21_MEASUREMENT_MODE
+  ? resolve(UX21_DIR, `${UX21_MEASUREMENT_PHASE}-measurements.md`)
+  : ''
 const stepLogsByTestId = new Map()
 const PERSONA_A = getPersonaFixture('me')
 const PERSONA_B = getPersonaFixture('7865')
@@ -22,6 +32,13 @@ const PERSONA_DRILL_PREFERENCES = {
 }
 const EMPTY_PORTFOLIO_ID = 'p-empty-round2'
 const EMPTY_PORTFOLIO_NAME = '空白測試組合'
+const UX21_VIEWPORTS = {
+  'ios-safari': [
+    { id: 'iphone-se', width: 375, height: 667, label: 'iPhone SE (375x667)' },
+    { id: 'iphone-14', width: 390, height: 844, label: 'iPhone 13/14/15 class (390x844)' },
+  ],
+  chromium: [{ id: 'desktop-1280', width: 1280, height: 900, label: 'Desktop Chrome (1280x900)' }],
+}
 const EMPTY_PORTFOLIO_SEED = {
   'pf-portfolios-v1': [
     { id: 'me', name: '我', isOwner: true, createdAt: '2026-04-19' },
@@ -63,6 +80,15 @@ function ensureDir(target) {
   mkdirSync(target, { recursive: true })
 }
 
+function loadJsonFile(filePath, fallbackValue) {
+  if (!filePath || !existsSync(filePath)) return fallbackValue
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf8'))
+  } catch {
+    return fallbackValue
+  }
+}
+
 function buildScreenshotPath(dirName, fileName) {
   return resolve(ROOT_DIR, 'tests/e2e/snapshots', dirName, fileName)
 }
@@ -89,6 +115,72 @@ async function saveShot(page, testInfo, dirName, fileName, options = {}) {
   const relativePath = relative(ROOT_DIR, absolutePath)
   mergeQaEvidence(testInfo, { screenshots: [relativePath] })
   return relativePath
+}
+
+function renderMeasurementLink(path) {
+  return path ? `[shot](../${path})` : ''
+}
+
+function renderUx21MeasurementsMarkdown(rows = []) {
+  const projectOrder = ['ios-safari', 'chromium']
+  const sortedRows = [...rows].sort((left, right) => {
+    const projectDelta =
+      projectOrder.indexOf(left.projectName) - projectOrder.indexOf(right.projectName)
+    if (projectDelta !== 0) return projectDelta
+    if (left.viewportWidth !== right.viewportWidth) return left.viewportWidth - right.viewportWidth
+    return String(left.scenarioLabel || '').localeCompare(String(right.scenarioLabel || ''), 'en')
+  })
+
+  const lines = [
+    `# UX-21 ${UX21_MEASUREMENT_PHASE} measurements`,
+    '',
+    '| Project | Viewport | Scenario | View mode | Sticky px | Root px | Urgent | Notice | Screenshot |',
+    '| --- | --- | --- | --- | ---: | ---: | --- | --- | --- |',
+  ]
+
+  for (const row of sortedRows) {
+    lines.push(
+      [
+        row.projectName,
+        row.viewportLabel,
+        row.scenarioLabel,
+        row.viewMode,
+        row.stickyHeight,
+        row.rootHeight,
+        row.hasUrgentAlert ? 'yes' : 'no',
+        row.hasHeaderNotice ? 'yes' : 'no',
+        renderMeasurementLink(row.screenshotPath),
+      ].join(' | ').replace(/^/, '| ').replace(/$/, ' |')
+    )
+  }
+
+  return `${lines.join('\n')}\n`
+}
+
+function persistUx21MeasurementRows(nextRows = []) {
+  if (!UX21_MEASUREMENT_MODE) return
+
+  ensureDir(UX21_DIR)
+  const currentRows = Array.isArray(loadJsonFile(UX21_RESULT_JSON_PATH, []))
+    ? loadJsonFile(UX21_RESULT_JSON_PATH, [])
+    : []
+  const merged = new Map()
+
+  for (const row of [...currentRows, ...nextRows]) {
+    const key = [
+      row.phase,
+      row.projectName,
+      row.viewportId,
+      row.scenarioKey,
+    ]
+      .filter(Boolean)
+      .join('::')
+    merged.set(key, row)
+  }
+
+  const rows = [...merged.values()]
+  writeFileSync(UX21_RESULT_JSON_PATH, `${JSON.stringify(rows, null, 2)}\n`)
+  writeFileSync(UX21_RESULT_MD_PATH, renderUx21MeasurementsMarkdown(rows))
 }
 
 function createScenarioState(testInfo, scenario, screenshotDir) {
@@ -358,6 +450,117 @@ async function scrollBy(page, amount = 600, times = 1, waitMs = 350) {
   }
 }
 
+async function clickFirstMatchingButton(page, names = []) {
+  for (const name of names) {
+    const button = page.getByRole('button', { name }).first()
+    if ((await button.count()) === 0) continue
+    await button.scrollIntoViewIfNeeded()
+    await button.click()
+    await settle(page, 1200)
+    return true
+  }
+  return false
+}
+
+async function measureHeaderBoundingBoxes(page) {
+  return page.evaluate(() => {
+    const root = document.querySelector('.app-shell')
+    const sticky =
+      document.querySelector('[data-testid="header-sticky-zone"]') ||
+      document.querySelector('.app-shell')
+    const rootRect = root?.getBoundingClientRect?.()
+    const stickyRect = sticky?.getBoundingClientRect?.()
+    const rootText = String(root?.textContent || '')
+    const hasUrgentAlert = rootText.includes('今日 ·')
+    const hasHeaderNotice = Boolean(document.querySelector('[data-testid="header-notice-toggle"]'))
+
+    return {
+      rootHeight: rootRect ? Number(rootRect.height.toFixed(2)) : 0,
+      stickyHeight: stickyRect ? Number(stickyRect.height.toFixed(2)) : 0,
+      hasUrgentAlert,
+      hasHeaderNotice,
+    }
+  })
+}
+
+async function recordUx21Measurement({
+  page,
+  testInfo,
+  state,
+  viewport,
+  scenarioKey,
+  scenarioLabel,
+  viewMode,
+}) {
+  await scrollToTop(page)
+  await settle(page, 1200)
+  const metrics = await measureHeaderBoundingBoxes(page)
+  const screenshotPath = await saveShot(
+    page,
+    testInfo,
+    UX21_SCREENSHOT_DIR,
+    `${UX21_MEASUREMENT_PHASE}-${slugify(testInfo.project.name)}-${viewport.id}-${scenarioKey}.png`
+  )
+
+  const row = {
+    phase: UX21_MEASUREMENT_PHASE,
+    projectName: testInfo.project.name,
+    viewportId: viewport.id,
+    viewportLabel: viewport.label,
+    viewportWidth: viewport.width,
+    viewportHeight: viewport.height,
+    scenarioKey,
+    scenarioLabel,
+    viewMode,
+    stickyHeight: metrics.stickyHeight,
+    rootHeight: metrics.rootHeight,
+    hasUrgentAlert: metrics.hasUrgentAlert,
+    hasHeaderNotice: metrics.hasHeaderNotice,
+    screenshotPath,
+  }
+
+  recordNote(
+    state,
+    `UX-21 ${scenarioKey} @ ${viewport.label}: sticky=${row.stickyHeight}px root=${row.rootHeight}px urgent=${row.hasUrgentAlert} notice=${row.hasHeaderNotice}`
+  )
+  persistUx21MeasurementRows([row])
+}
+
+async function runUx21ViewportScenario(page, testInfo, viewport, scenario, state) {
+  await page.setViewportSize({ width: viewport.width, height: viewport.height })
+  await openPortfolioHome(page, scenario.persona)
+
+  if (scenario.kind === 'overview') {
+    const opened = await clickFirstMatchingButton(page, [/全部總覽/, /All overview/i])
+    if (!opened) throw new Error('missing overview toggle button')
+  }
+
+  await recordUx21Measurement({
+    page,
+    testInfo,
+    state,
+    viewport,
+    scenarioKey: scenario.key,
+    scenarioLabel: scenario.label,
+    viewMode: scenario.viewMode,
+  })
+}
+
+async function runUx21HeaderMeasurementMatrix(page, testInfo, state, scenarios = []) {
+  if (!UX21_MEASUREMENT_MODE) return false
+
+  const viewports = UX21_VIEWPORTS[testInfo.project.name] || []
+  if (viewports.length === 0) return false
+
+  for (const viewport of viewports) {
+    for (const scenario of scenarios) {
+      await runUx21ViewportScenario(page, testInfo, viewport, scenario, state)
+    }
+  }
+
+  return true
+}
+
 function holdingRow(page, code) {
   return page.locator(`[data-holding-code="${String(code || '').trim()}"]`).first()
 }
@@ -615,6 +818,27 @@ test('ux simulation round2 persona A (me) runs live audit with error-state captu
   const personaADrillCodes = pickPersonaDrillCodes(PERSONA_A, 1)
 
   try {
+    if (
+      await runUx21HeaderMeasurementMatrix(page, testInfo, state, [
+        {
+          key: 'me',
+          label: 'me / retail',
+          viewMode: 'portfolio',
+          kind: 'portfolio',
+          persona: PERSONA_A,
+        },
+        {
+          key: 'overview',
+          label: 'overview',
+          viewMode: 'overview',
+          kind: 'overview',
+          persona: PERSONA_A,
+        },
+      ])
+    ) {
+      return
+    }
+
     await runStep({
       page,
       testInfo,
@@ -939,6 +1163,20 @@ test('ux simulation round2 persona B (7865 / 金聯成) runs live audit with com
   })
 
   try {
+    if (
+      await runUx21HeaderMeasurementMatrix(page, testInfo, state, [
+        {
+          key: '7865',
+          label: '7865 / insider-compressed',
+          viewMode: 'portfolio',
+          kind: 'portfolio',
+          persona: PERSONA_B,
+        },
+      ])
+    ) {
+      return
+    }
+
     await runStep({
       page,
       testInfo,

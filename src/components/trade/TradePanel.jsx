@@ -123,7 +123,7 @@ export function UploadDropzone({
         {
           style: {
             marginBottom: 12,
-            borderLeft: `2px solid ${alpha(C.teal, '35')}`,
+            borderLeft: `2px solid ${alpha(C.positive, '35')}`,
           },
         },
         h(
@@ -695,8 +695,8 @@ export function ParseResults({
           {
             style: {
               marginTop: 8,
-              background: C.tealBg,
-              border: `1px solid ${alpha(C.teal, '20')}`,
+              background: alpha(C.positive, '12'),
+              border: `1px solid ${alpha(C.positive, '20')}`,
               borderRadius: 7,
               padding: '8px 8px',
             },
@@ -718,7 +718,7 @@ export function ParseResults({
 
     h(
       Card,
-      { style: { borderLeft: `2px solid ${alpha(C.blue, '40')}` } },
+      { style: { borderLeft: `2px solid ${alpha(C.ink, '40')}` } },
       h('div', { style: lbl }, '交易備忘錄'),
       memoAns.map((a, i) =>
         String(a || '').trim()
@@ -1152,7 +1152,7 @@ export function ManualUpdateForms({
     { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 } },
     h(
       Card,
-      { style: { borderLeft: `2px solid ${alpha(C.teal, '40')}` } },
+      { style: { borderLeft: `2px solid ${alpha(C.positive, '40')}` } },
       h('div', { style: lbl }, '手動更新目標價'),
       h(
         'div',

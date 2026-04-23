@@ -135,13 +135,17 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                 justifyContent: 'flex-end',
               },
             },
-            resolvedPortfolioLabel && h(Badge, { color: 'teal' }, resolvedPortfolioLabel),
+            resolvedPortfolioLabel && h(Badge, { color: 'positive' }, resolvedPortfolioLabel),
             holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
             activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
             pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
-            attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
+            attentionCount > 0 && h(Badge, { color: 'iron' }, `需注意 ${attentionCount}`),
             autoReviewedCount > 0 &&
-              h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
+              h(
+                Badge,
+                { color: 'positive' },
+                `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`
+              )
           )
         ),
         focus &&
@@ -214,8 +218,8 @@ export function OperatingContextCard({ context, variant = 'default' }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.teal, '40')}`,
-        background: alpha(C.teal, '08'),
+        borderLeft: `3px solid ${alpha(C.positive, '40')}`,
+        background: alpha(C.positive, '08'),
       },
     },
     h(
@@ -271,15 +275,15 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             justifyContent: 'flex-end',
           },
         },
-        resolvedPortfolioLabel && h(Badge, { color: 'teal' }, resolvedPortfolioLabel),
+        resolvedPortfolioLabel && h(Badge, { color: 'positive' }, resolvedPortfolioLabel),
         holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
         pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
-        attentionCount > 0 && h(Badge, { color: 'olive' }, `需注意 ${attentionCount}`),
+        attentionCount > 0 && h(Badge, { color: 'iron' }, `需注意 ${attentionCount}`),
         refreshBacklogCount > 0 &&
           h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&
-          h(Badge, { color: 'teal' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
+          h(Badge, { color: 'positive' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
       )
     ),
     focus &&

@@ -818,7 +818,7 @@ export function useRoutePortfolioRuntime() {
       : marketPriceSync?.status === 'partial'
         ? C.amber
         : marketPriceSync?.status === 'success'
-          ? C.olive
+          ? C.positive
           : C.textMute
   const priceSyncStatusLabel =
     marketPriceSync?.status === 'failed'

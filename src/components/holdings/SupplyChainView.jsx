@@ -15,7 +15,7 @@ const chipStyle = {
   fontSize: 12,
   padding: '4px 8px',
   borderRadius: 4,
-  background: C.fillPrimary,
+  background: C.bone,
   color: C.text,
   display: 'inline-block',
   marginRight: 4,
@@ -24,7 +24,7 @@ const chipStyle = {
 
 const linkChipStyle = {
   ...chipStyle,
-  background: C.fillInfo,
+  background: C.cardBlue,
   cursor: 'pointer',
   textDecoration: 'underline',
 }
@@ -102,7 +102,7 @@ export function SupplyChainView({ code, name, onStockClick }) {
         style: {
           textAlign: 'center',
           padding: '8px 12px',
-          background: C.fillPrimary,
+          background: C.bone,
           borderRadius: 6,
           margin: '8px 0',
         },

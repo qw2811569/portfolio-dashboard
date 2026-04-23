@@ -80,7 +80,7 @@ function resolveEventTone(daysFromToday) {
     marker: `var(--positive, ${C.up})`,
     line: `var(--positive, ${C.up})`,
     text: C.text,
-    rail: alpha(C.olive, '18'),
+    rail: alpha(C.iron, '18'),
   }
 }
 
@@ -186,7 +186,7 @@ function EmptyTimelineState() {
       style: {
         marginBottom: 8,
         padding: '16px 16px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.textMute, '06')} 0%, ${alpha(C.olive, '08')} 100%)`,
+        background: `linear-gradient(135deg, ${alpha(C.textMute, '06')} 0%, ${alpha(C.iron, '08')} 100%)`,
         border: `1px solid ${C.borderSub}`,
       },
     },
@@ -256,7 +256,7 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__marker--top .events-timeline__label{margin-top:8px}
 .events-timeline__marker--bottom .events-timeline__label{margin-bottom:8px;display:block}
 .events-timeline__marker--bottom .events-timeline__dot{order:2}
-.events-timeline__marker:focus-visible .events-timeline__dot,.events-timeline__marker:hover .events-timeline__dot{transform:scale(1.08);box-shadow:0 0 0 5px ${alpha(C.blue, '10')}}
+.events-timeline__marker:focus-visible .events-timeline__dot,.events-timeline__marker:hover .events-timeline__dot{transform:scale(1.08);box-shadow:0 0 0 5px ${alpha(C.ink, '10')}}
 .events-timeline__dot{display:block;width:var(--marker-size);height:var(--marker-size);border-radius:999px;background:${C.bg};border-style:solid;border-color:var(--marker-color);margin:0 auto;box-shadow:0 8px 18px var(--marker-rail);transition:transform .15s ease, box-shadow .15s ease}
 .events-timeline__label{display:block;font-size:12px;line-height:1.45;color:var(--marker-text)}
 .events-timeline__label-type{color:${C.text}}

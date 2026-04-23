@@ -515,7 +515,7 @@ export function usePortfolioDerivedData({
   const priceSyncStatusTone = !activeMarketDate
     ? C.amber
     : activeMarketDate === todayMarketClock.marketDate
-      ? C.olive
+      ? C.positive
       : C.textMute
   const holdingsIntegrityIssues = useMemo(
     () => H.filter((item) => item?.integrityIssue === 'missing-price'),

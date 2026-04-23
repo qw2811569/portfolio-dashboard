@@ -25,8 +25,8 @@ const metricCard = {
 const trackedSyncTone = {
   fresh: {
     color: C.textSec,
-    border: alpha(C.olive, '30'),
-    background: alpha(C.olive, '10'),
+    border: alpha(C.positive, '30'),
+    background: alpha(C.positive, '10'),
   },
   stale: {
     color: C.textSec,

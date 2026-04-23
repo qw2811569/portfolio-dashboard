@@ -18,17 +18,17 @@ const BADGE_STYLE = {
   },
   soon: {
     color: C.textSec,
-    background: alpha(C.olive, '10'),
-    border: alpha(C.olive, '24'),
+    background: alpha(C.iron, '10'),
+    border: alpha(C.iron, '24'),
     fontWeight: 600,
-    dot: C.olive,
+    dot: C.iron,
   },
   far: {
     color: C.textSec,
-    background: alpha(C.olive, '10'),
-    border: alpha(C.olive, '24'),
+    background: alpha(C.iron, '10'),
+    border: alpha(C.iron, '24'),
     fontWeight: 500,
-    dot: C.olive,
+    dot: C.iron,
   },
   past: {
     color: C.choco,

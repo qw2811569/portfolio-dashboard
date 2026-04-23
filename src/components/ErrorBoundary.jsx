@@ -83,7 +83,7 @@ export class ErrorBoundary extends Component {
           style: {
             marginTop: 12,
             padding: '8px 16px',
-            background: C.blue,
+            background: C.cta,
             color: C.onFill,
             border: 'none',
             borderRadius: 999,

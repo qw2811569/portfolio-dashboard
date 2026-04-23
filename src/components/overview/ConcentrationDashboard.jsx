@@ -10,13 +10,13 @@ function getRiskMeta(risk) {
     case 'high':
       return { label: '偏高', badgeColor: 'amber', accent: C.amber }
     case 'moderate':
-      return { label: '中度集中', badgeColor: 'olive', accent: C.olive }
+      return { label: '中度集中', badgeColor: 'iron', accent: C.iron }
     default:
-      return { label: '分散', badgeColor: 'teal', accent: C.teal }
+      return { label: '分散', badgeColor: 'positive', accent: C.positive }
   }
 }
 
-function WeightBar({ label, value, tone = C.blue, solid = false }) {
+function WeightBar({ label, value, tone = C.ink, solid = false }) {
   const percent = Math.max(0, Math.min(100, Math.round((Number(value) || 0) * 100)))
 
   return h(
@@ -50,7 +50,7 @@ function WeightBar({ label, value, tone = C.blue, solid = false }) {
           overflow: 'hidden',
           background: solid
             ? alpha(tone, '18')
-            : `linear-gradient(90deg, ${alpha(C.blue, '14')}, ${alpha(C.olive, '10')})`,
+            : `linear-gradient(90deg, ${alpha(C.ink, '14')}, ${alpha(C.iron, '10')})`,
           border: `1px solid ${alpha(tone, '24')}`,
           position: 'relative',
         },
@@ -61,7 +61,7 @@ function WeightBar({ label, value, tone = C.blue, solid = false }) {
           height: '100%',
           background: solid
             ? `linear-gradient(90deg, ${alpha(tone, '78')}, ${alpha(tone, 'b8')})`
-            : `linear-gradient(90deg, ${alpha(C.blue, '70')}, ${alpha(C.olive, 'b8')})`,
+            : `linear-gradient(90deg, ${alpha(C.ink, '70')}, ${alpha(C.iron, 'b8')})`,
           borderRadius: 999,
         },
       })

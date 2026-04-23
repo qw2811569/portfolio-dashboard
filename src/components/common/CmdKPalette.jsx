@@ -108,7 +108,7 @@ export default function CmdKPalette({
             width: 56,
             height: 56,
             borderRadius: '50%',
-            border: `1px solid ${alpha(C.teal, '40')}`,
+            border: `1px solid ${alpha(C.positive, '40')}`,
             background: `linear-gradient(180deg, ${alpha(C.cardBlue, 'f0')} 0%, ${alpha(C.shell, 'f8')} 100%)`,
             color: C.text,
             boxShadow: `0 18px 40px ${alpha(C.bg, '72')}`,
@@ -251,9 +251,9 @@ export default function CmdKPalette({
                           style={{
                             width: '100%',
                             textAlign: 'left',
-                            border: `1px solid ${selected ? alpha(C.teal, '44') : 'transparent'}`,
+                            border: `1px solid ${selected ? alpha(C.positive, '44') : 'transparent'}`,
                             background: selected
-                              ? `linear-gradient(90deg, ${alpha(C.teal, '12')} 0%, ${alpha(C.cardBlue, '28')} 100%)`
+                              ? `linear-gradient(90deg, ${alpha(C.positive, '12')} 0%, ${alpha(C.cardBlue, '28')} 100%)`
                               : 'transparent',
                             color: C.text,
                             borderRadius: 16,
@@ -270,7 +270,7 @@ export default function CmdKPalette({
                               style={{
                                 fontSize: isMobile ? 15 : 14,
                                 fontWeight: 600,
-                                color: selected ? C.teal : C.text,
+                                color: selected ? C.positive : C.text,
                               }}
                             >
                               {item.title}
@@ -293,7 +293,7 @@ export default function CmdKPalette({
                               fontSize: 12,
                               color: selected ? C.text : C.textMute,
                               borderRadius: 999,
-                              border: `1px solid ${selected ? alpha(C.teal, '30') : C.borderSub}`,
+                              border: `1px solid ${selected ? alpha(C.positive, '30') : C.borderSub}`,
                               padding: isMobile ? '4px 8px' : '4px 8px',
                               flexShrink: 0,
                             }}

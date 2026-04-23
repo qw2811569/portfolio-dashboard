@@ -48,7 +48,9 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
     down: C.down,
     muted: C.textSec,
     teal: C.text,
+    positive: C.text,
     amber: C.text,
+    iron: C.textSec,
   }
 
   return h(
@@ -103,8 +105,15 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
       border: alpha(C.positive, '25'),
       dot: C.positive,
     },
+    positive: {
+      bg: alpha(C.positive, '15'),
+      text: C.textSec,
+      border: alpha(C.positive, '25'),
+      dot: C.positive,
+    },
     amber: { bg: C.amberBg, text: C.textSec, border: alpha(C.amber, '25'), dot: C.amber },
     olive: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
+    iron: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
     lavender: {
       bg: C.lavBg,
       text: C.textSec,
@@ -172,9 +181,15 @@ export function Button({
     ghost: {
       default: { bg: C.card, text: C.textSec, border: C.border },
       blue: { bg: alpha(C.cta, '12'), text: C.textSec, border: alpha(C.cta, A.strongLine) },
+      positive: {
+        bg: alpha(C.positive, '12'),
+        text: C.textSec,
+        border: alpha(C.positive, A.strongLine),
+      },
       rose: { bg: C.cardRose, text: C.down, border: alpha(C.down, A.strongLine) },
       amber: { bg: C.cardAmber, text: C.textSec, border: alpha(C.amber, A.strongLine) },
       olive: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, A.strongLine) },
+      iron: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, A.strongLine) },
       up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, A.strongLine) },
     },
     filled: {

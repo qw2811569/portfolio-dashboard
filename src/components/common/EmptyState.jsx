@@ -267,8 +267,8 @@ export function EmptyState({ resource = 'holdings', onAction }) {
             onClick: onAction,
             style: {
               marginTop: 4,
-              background: alpha(C.blue, '12'),
-              border: `1px solid ${alpha(C.blue, '28')}`,
+              background: alpha(C.cta, '12'),
+              border: `1px solid ${alpha(C.cta, '28')}`,
               color: C.text,
               padding: '10px 16px',
               textTransform: 'none',

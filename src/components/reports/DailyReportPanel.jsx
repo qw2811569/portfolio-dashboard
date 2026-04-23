@@ -221,7 +221,7 @@ function buildDailyStageMeta(report = null) {
 
   if (stage === 't1-confirmed') {
     return {
-      badgeColor: 'teal',
+      badgeColor: 'positive',
       summary: expectedLabel
         ? `已用 FinMind ${expectedLabel} 的收盤後資料確認`
         : '已用 FinMind 的收盤後資料確認',
@@ -605,7 +605,7 @@ export function AnalysisStageCard({ report }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${
-          stageMeta.badgeColor === 'teal' ? alpha(C.positive, '40') : alpha(C.amber, '40')
+          stageMeta.badgeColor === 'positive' ? alpha(C.positive, '40') : alpha(C.amber, '40')
         }`,
       },
     },
@@ -676,7 +676,7 @@ export function RitualModeCard({ report }) {
         },
       },
       h('div', { style: { ...lbl, color: C.textSec } }, ritualMode?.label || '收盤後儀式模式'),
-      h(Badge, { color: 'olive' }, card?.title || '明日動作卡')
+      h(Badge, { color: 'iron' }, card?.title || '明日動作卡')
     ),
     h(
       'div',
@@ -845,7 +845,7 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
           { style: { display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' } },
           h(
             Badge,
-            { color: diff.changeCount > 0 ? 'olive' : 'teal' },
+            { color: diff.changeCount > 0 ? 'iron' : 'positive' },
             diff.changeCount > 0 ? `${diff.changeCount} 項更新` : '本日無差異'
           ),
           h(
@@ -861,7 +861,7 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
           'data-testid': 'daily-diff-toggle',
           'aria-controls': 'daily-diff-pane',
           'aria-expanded': diffOpen,
-          color: diff.changeCount > 0 ? 'blue' : 'olive',
+          color: diff.changeCount > 0 ? 'positive' : 'iron',
           onClick: () => setDiffOpen((value) => !value),
           style: {
             padding: '10px 12px',
@@ -1055,7 +1055,7 @@ function buildAutoConfirmUiState(state = null) {
   switch (state?.status) {
     case 'checking':
       return {
-        tone: 'olive',
+        tone: 'iron',
         summary: '正在檢查 FinMind 收盤後資料，若今天資料已齊全，系統會自動補跑資料確認版。',
       }
     case 'waiting':
@@ -1086,7 +1086,7 @@ function AutoConfirmCard({ state = null }) {
   if (!uiState) return null
 
   const toneColor =
-    uiState.tone === 'olive' ? C.iron : uiState.tone === 'amber' ? C.amber : C.textMute
+    uiState.tone === 'iron' ? C.iron : uiState.tone === 'amber' ? C.amber : C.textMute
 
   return h(
     Card,
@@ -1094,7 +1094,7 @@ function AutoConfirmCard({ state = null }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${
-          uiState.tone === 'olive'
+          uiState.tone === 'iron'
             ? alpha(C.iron, '40')
             : uiState.tone === 'amber'
               ? alpha(C.amber, '40')

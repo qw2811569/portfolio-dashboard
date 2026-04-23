@@ -388,26 +388,26 @@ export const STOCK_META = {
 
 // 產業色彩映射 — 提亮版（文字用，需在 #283D3B 上可讀）
 export const IND_COLOR = {
-  'AI/伺服器': C.teal,
-  光通訊: C.cyan,
+  'AI/伺服器': C.positive,
+  光通訊: C.positive,
   'PCB/材料': C.amber,
   'IC/記憶體': C.lavender,
   被動元件: C.orange,
   '被動元件/電感': C.orange,
   重電: C.up,
-  營建: C.olive,
+  營建: C.iron,
   精密機械: C.stone,
   連接器: C.mint,
   中國ETF: C.rose,
   半導體設備: C.choco,
   // 金聯成 組合新增產業
   生技醫療: C.up,
-  台股ETF: C.blue,
-  高股息ETF: C.blue,
-  主動型ETF: C.blue,
+  台股ETF: C.positive,
+  高股息ETF: C.positive,
+  主動型ETF: C.positive,
   商品ETF: C.amber,
   '顯示器/光電': C.rose,
-  '環保/循環': C.olive,
+  '環保/循環': C.iron,
   電子通路: C.lavender,
 }
 

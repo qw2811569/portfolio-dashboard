@@ -185,7 +185,7 @@ export function OverviewHeader({
                   color: C.textSec,
                   padding: '4px 8px',
                   borderRadius: 999,
-                  background: alpha(C.blue, '18'),
+                  background: alpha(C.ink, '10'),
                   border: `1px solid ${C.borderStrong}`,
                 },
               },
@@ -198,7 +198,7 @@ export function OverviewHeader({
                 style: {
                   background: C.cardBlue,
                   color: C.textSec,
-                  border: `1px solid ${alpha(C.blue, '2a')}`,
+                  border: `1px solid ${alpha(C.ink, '2a')}`,
                   ...ghostBtn,
                 },
               },
@@ -259,7 +259,7 @@ export function OverviewHeader({
       ),
       h(
         Card,
-        { style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.blue, '40')}` } },
+        { style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.ink, '40')}` } },
         h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '全部總覽'),
         h(
           'div',
@@ -380,7 +380,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                     marginTop: 4,
                     background: C.cardBlue,
                     color: C.textSec,
-                    border: `1px solid ${alpha(C.blue, '2a')}`,
+                    border: `1px solid ${alpha(C.ink, '2a')}`,
                     ...ghostBtn,
                   },
                 },
@@ -540,7 +540,7 @@ export function PendingItems({ items, onSwitch }) {
                 style: {
                   background: C.cardBlue,
                   color: C.textSec,
-                  border: `1px solid ${alpha(C.blue, '2a')}`,
+                  border: `1px solid ${alpha(C.ink, '2a')}`,
                   ...ghostBtn,
                 },
               },

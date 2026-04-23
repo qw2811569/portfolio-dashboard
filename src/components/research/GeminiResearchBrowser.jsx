@@ -89,7 +89,7 @@ export function GeminiResearchBrowser() {
 function ResearchFileItem({ file, onClick }) {
   const daysAgo = getDaysAgo(file.date)
   const freshness = daysAgo <= 1 ? '今天' : daysAgo <= 2 ? '昨天' : `${daysAgo}天前`
-  const freshnessColor = daysAgo <= 2 ? C.olive : daysAgo <= 7 ? C.amber : C.textMute
+  const freshnessColor = daysAgo <= 2 ? C.positive : daysAgo <= 7 ? C.amber : C.textMute
 
   return h(
     'div',
@@ -101,7 +101,7 @@ function ResearchFileItem({ file, onClick }) {
         border: `1px solid ${C.border}`,
         borderRadius: 8,
         cursor: 'pointer',
-        ':hover': { background: C.fillPrimary },
+        ':hover': { background: C.bone },
       },
     },
     h(
@@ -230,10 +230,10 @@ function ResearchFileDetail({ file, onBack }) {
  */
 function FactItem({ fact, type: _type }) {
   const impactColors = {
-    positive: C.olive,
+    positive: C.positive,
     negative: C.down,
     neutral: C.textMute,
-    confirmed: C.teal,
+    confirmed: C.positive,
   }
 
   const impactColor = impactColors[fact.confidence] || impactColors[fact.impact] || C.text
@@ -306,7 +306,7 @@ function FactItem({ fact, type: _type }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                background: C.fillPrimary,
+                background: C.bone,
                 borderRadius: 4,
                 marginRight: 4,
               },

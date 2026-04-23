@@ -128,7 +128,7 @@ export function ConfirmDialog({
   busy = false,
   tone = 'danger',
 }) {
-  const accent = tone === 'warning' ? C.amber : tone === 'primary' ? C.teal : C.up
+  const accent = tone === 'warning' ? C.amber : tone === 'primary' ? C.cta : C.up
   const fill = tone === 'warning' ? C.fillAmber : tone === 'primary' ? C.fillTeal : C.fillTomato
 
   return h(DialogShell, {

@@ -5,8 +5,8 @@ const SOURCE_META = {
   finmind: {
     label: 'FinMind 資料',
     text: C.textSec,
-    border: alpha(C.blue, '24'),
-    background: alpha(C.blue, '10'),
+    border: alpha(C.ink, '24'),
+    background: alpha(C.ink, '10'),
   },
   cnyes_aggregate: {
     label: 'FactSet 共識',

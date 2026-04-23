@@ -28,9 +28,9 @@ const toneByStatus = {
     color: C.textSec,
   },
   offline: {
-    dot: C.teal,
-    border: alpha(C.teal, '26'),
-    background: alpha(C.teal, '10'),
+    dot: C.ink,
+    border: alpha(C.ink, '26'),
+    background: alpha(C.ink, '10'),
     color: C.textSec,
   },
 }

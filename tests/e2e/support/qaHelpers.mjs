@@ -39,7 +39,8 @@ function mergeEvidenceState(testId, partial) {
 }
 
 function buildScreenshotPath(testInfo, fileName) {
-  return resolve(ROOT_DIR, 'tests/e2e/snapshots', testInfo.project.name, fileName)
+  const snapshotDirName = process.env.PLAYWRIGHT_SNAPSHOT_DIR || testInfo.project.name
+  return resolve(ROOT_DIR, 'tests/e2e/snapshots', snapshotDirName, fileName)
 }
 
 export function installQaMonitor(

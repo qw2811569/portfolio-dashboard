@@ -4,6 +4,25 @@ import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { NewsAnalysisPanel, NewsFeedSection } from '../../src/components/news/NewsPanel.jsx'
 
+const originalMatchMedia = window.matchMedia
+
+function mockMatchMedia(matches) {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+}
+
 function buildProps(overrides = {}) {
   return {
     newsEvents: [],
@@ -46,6 +65,16 @@ describe('components/NewsAnalysisPanel', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    if (typeof originalMatchMedia === 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      })
+      return
+    }
+
+    delete window.matchMedia
   })
 
   it('shows the empty-state welcome card when newsEvents is empty and no holdingCodes', () => {
@@ -94,6 +123,16 @@ describe('components/NewsFeedSection', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    if (typeof originalMatchMedia === 'function') {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      })
+      return
+    }
+
+    delete window.matchMedia
   })
 
   it('fetches news and renders cards with title, source, and stock chips', async () => {
@@ -199,5 +238,59 @@ describe('components/NewsFeedSection', () => {
 
     expect(screen.getAllByText(/→ 判讀影響/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/利多/).length).toBeGreaterThan(0)
+  })
+
+  it('uses the mobile single-column branch and keeps filters collapsed by default on <=768px', async () => {
+    mockMatchMedia(true)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: MOCK_NEWS_ITEMS }),
+    })
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330', '2454']} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    })
+
+    expect(screen.getByTestId('news-layout')).toHaveStyle({
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    })
+    expect(screen.getByTestId('news-hero-grid')).toHaveStyle({
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    })
+    expect(screen.getByTestId('news-hero-title')).toHaveStyle({
+      fontSize: 'clamp(20px, 5vw, 28px)',
+    })
+    expect(screen.getAllByTestId('news-article-main')[0]).toHaveStyle({ minWidth: '0' })
+    expect(screen.getAllByTestId('news-article-rail')[0]).toHaveStyle({ width: '100%' })
+    expect(screen.getByTestId('news-side-notes')).toHaveStyle({ position: 'static' })
+    expect(screen.getByTestId('news-filter-toggle')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('news-side-notes-body')).not.toBeInTheDocument()
+  })
+
+  it('expands mobile filters when the toggle is pressed', async () => {
+    mockMatchMedia(true)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: MOCK_NEWS_ITEMS }),
+    })
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330', '2454']} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('news-filter-toggle')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId('news-filter-toggle'))
+
+    expect(screen.getByTestId('news-filter-toggle')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('news-side-notes-body')).toBeInTheDocument()
+    expect(screen.getByText('依來源')).toBeInTheDocument()
+    expect(screen.getByText('依 impact')).toBeInTheDocument()
   })
 })

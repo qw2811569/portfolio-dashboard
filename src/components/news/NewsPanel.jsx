@@ -1,6 +1,7 @@
 import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { TOKENS, alpha } from '../../theme.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { Card, Button, DataError, OperatingContextCard } from '../common'
 import { Skeleton } from '../common/Skeleton.jsx'
 import { normalizeDataError } from '../../lib/dataError.js'
@@ -192,6 +193,7 @@ function NewsFeedCard({
   item,
   isRead = false,
   isLast = false,
+  isMobile = false,
   onToggleRead = () => {},
   onNavigateDaily = () => {},
 }) {
@@ -221,6 +223,7 @@ function NewsFeedCard({
   return h(
     'article',
     {
+      'data-testid': 'news-article-card',
       style: {
         padding: '24px 0 16px',
         borderBottom: isLast ? 'none' : `1px solid ${TOKENS.boneDeep}`,
@@ -229,17 +232,22 @@ function NewsFeedCard({
     h(
       'div',
       {
+        'data-testid': 'news-article-row',
         style: {
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 16,
-          flexWrap: 'wrap',
+          justifyContent: isMobile ? 'flex-start' : 'space-between',
+          alignItems: isMobile ? 'stretch' : 'flex-start',
+          gap: isMobile ? 12 : 16,
+          flexWrap: isMobile ? 'nowrap' : 'wrap',
+          flexDirection: isMobile ? 'column' : 'row',
         },
       },
       h(
         'div',
-        { style: { flex: 1, minWidth: 280 } },
+        {
+          'data-testid': 'news-article-main',
+          style: { flex: 1, minWidth: isMobile ? 0 : 280 },
+        },
         h(
           'div',
           {
@@ -328,12 +336,15 @@ function NewsFeedCard({
       h(
         'div',
         {
+          'data-testid': 'news-article-rail',
           style: {
-            width: 170,
-            flexShrink: 0,
+            width: isMobile ? '100%' : 170,
+            flexShrink: isMobile ? 1 : 0,
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
+            flexDirection: isMobile ? 'row' : 'column',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            justifyContent: isMobile ? 'space-between' : 'flex-start',
+            alignItems: isMobile ? 'center' : 'flex-end',
             gap: 8,
           },
         },
@@ -341,6 +352,7 @@ function NewsFeedCard({
           'div',
           {
             style: {
+              width: isMobile ? '100%' : 'auto',
               fontSize: 11,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -382,7 +394,7 @@ function NewsFeedCard({
               textTransform: 'none',
               letterSpacing: '0.02em',
               padding: '8px 12px',
-              width: '100%',
+              width: isMobile ? 'auto' : '100%',
               justifyContent: 'center',
             },
           },
@@ -401,6 +413,7 @@ export function NewsFeedSection({
   onNavigateDaily = () => {},
   viewMode = 'retail',
 }) {
+  const isMobile = useIsMobile()
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
 
   const [items, setItems] = useState([])
@@ -410,6 +423,7 @@ export function NewsFeedSection({
   const [sourceFilter, setSourceFilter] = useState('全部來源')
   const [impactFilter, setImpactFilter] = useState('全部影響')
   const [tickerFilter, setTickerFilter] = useState('全部持股')
+  const [isMobileFilterCollapsed, setIsMobileFilterCollapsed] = useState(true)
   const [readIds, setReadIds] = useState(() => new Set())
   const fetchedRef = useRef(false)
 
@@ -479,6 +493,7 @@ export function NewsFeedSection({
   ).length
   const showTickerSideNotes = isViewModeEnabled('showTickerSideNotes', viewMode)
   const aggregateClusters = buildAggregateNewsClusters(filteredItems)
+  const showFilterBody = !isMobile || !isMobileFilterCollapsed
 
   const handleToggleRead = (item, index) => {
     const itemId = getItemId(item, index)
@@ -491,13 +506,256 @@ export function NewsFeedSection({
   }
 
   const heroTitle = holdingCodes.length > 0 ? '這些新聞跟你組合有關' : '今天市場在說什麼'
+  const sideNotesBody = h(
+    'div',
+    {
+      id: 'news-side-notes-body',
+      'data-testid': 'news-side-notes-body',
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      },
+    },
+    h(
+      'div',
+      null,
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 14,
+            fontWeight: 600,
+            color: TOKENS.ink,
+            marginBottom: 8,
+            fontFamily: TOKENS.fontSection,
+          },
+        },
+        showTickerSideNotes ? '依 ticker' : 'Aggregate clusters'
+      ),
+      showTickerSideNotes
+        ? h(
+            'div',
+            { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+            ...tickers.map((option) =>
+              h(
+                'button',
+                {
+                  key: option,
+                  type: 'button',
+                  className: 'ui-btn',
+                  onClick: () => setTickerFilter(option),
+                  style: {
+                    borderRadius: 999,
+                    border: `1px solid ${tickerFilter === option ? alpha(TOKENS.positive, '2a') : TOKENS.boneDeep}`,
+                    background:
+                      tickerFilter === option
+                        ? alpha(TOKENS.positive, '12')
+                        : alpha(TOKENS.bone, 'ed'),
+                    color: TOKENS.ink,
+                    padding: '8px 12px',
+                    fontSize: 11,
+                    fontFamily: TOKENS.fontBody,
+                    fontVariantNumeric: 'tabular-nums',
+                    cursor: 'pointer',
+                  },
+                },
+                option
+              )
+            )
+          )
+        : h(
+            'div',
+            {
+              'data-testid': 'news-aggregate-clusters',
+              style: { display: 'grid', gap: 8 },
+            },
+            ...aggregateClusters.map((cluster) =>
+              h(
+                'div',
+                {
+                  key: cluster,
+                  style: {
+                    borderRadius: 18,
+                    border: `1px solid ${TOKENS.boneDeep}`,
+                    borderLeft: `2px solid ${alpha(TOKENS.warning, '32')}`,
+                    background: alpha(TOKENS.bone, 'ef'),
+                    padding: '8px 12px',
+                    fontSize: 11,
+                    color: TOKENS.ink,
+                    lineHeight: 1.6,
+                    fontFamily: TOKENS.fontBody,
+                  },
+                },
+                cluster
+              )
+            )
+          )
+    ),
+    h(
+      'div',
+      null,
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 14,
+            fontWeight: 600,
+            color: TOKENS.ink,
+            marginBottom: 8,
+            fontFamily: TOKENS.fontSection,
+          },
+        },
+        '依來源'
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+        ...sources.map((option) =>
+          h(
+            'button',
+            {
+              key: option,
+              type: 'button',
+              className: 'ui-btn',
+              onClick: () => setSourceFilter(option),
+              style: {
+                borderRadius: 999,
+                border: `1px solid ${sourceFilter === option ? alpha(TOKENS.warning, '2e') : TOKENS.boneDeep}`,
+                background:
+                  sourceFilter === option ? alpha(TOKENS.warning, '14') : alpha(TOKENS.bone, 'ed'),
+                color: TOKENS.ink,
+                padding: '8px 12px',
+                fontSize: 11,
+                fontFamily: TOKENS.fontBody,
+                fontVariantNumeric: 'tabular-nums',
+                cursor: 'pointer',
+              },
+            },
+            option
+          )
+        )
+      )
+    ),
+    h(
+      'div',
+      null,
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 14,
+            fontWeight: 600,
+            color: TOKENS.ink,
+            marginBottom: 8,
+            fontFamily: TOKENS.fontSection,
+          },
+        },
+        '依 impact'
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+        ...impacts.map((option) =>
+          (() => {
+            const tone =
+              option === '利多'
+                ? TOKENS.positive
+                : option === '利空'
+                  ? TOKENS.negative
+                  : option === '中性'
+                    ? TOKENS.charcoal
+                    : TOKENS.warning
+
+            return h(
+              'button',
+              {
+                key: option,
+                type: 'button',
+                className: 'ui-btn',
+                onClick: () => setImpactFilter(option),
+                style: {
+                  borderRadius: 999,
+                  border: `1px solid ${impactFilter === option ? alpha(tone, '2a') : TOKENS.boneDeep}`,
+                  background:
+                    impactFilter === option ? alpha(tone, '12') : alpha(TOKENS.bone, 'ed'),
+                  color: TOKENS.ink,
+                  padding: '8px 12px',
+                  fontSize: 11,
+                  fontFamily: TOKENS.fontBody,
+                  fontVariantNumeric: 'tabular-nums',
+                  cursor: 'pointer',
+                },
+              },
+              option
+            )
+          })()
+        )
+      )
+    ),
+    h(
+      'div',
+      {
+        style: {
+          padding: '12px 12px',
+          borderRadius: 22,
+          background: alpha(TOKENS.warning, '12'),
+          border: `1px solid ${alpha(TOKENS.warning, '20')}`,
+          color: TOKENS.ink,
+        },
+      },
+      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 4 } }, 'Notice'),
+      renderChip(`未讀 ${unreadCount} 則`, {
+        background: alpha(TOKENS.warning, '18'),
+        color: TOKENS.ink,
+        border: `1px solid ${alpha(TOKENS.warning, '28')}`,
+      })
+    ),
+    h(
+      'div',
+      {
+        style: {
+          padding: '12px',
+          borderRadius: 22,
+          background: alpha(TOKENS.positive, '10'),
+          border: `1px solid ${alpha(TOKENS.positive, '22')}`,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            marginBottom: 8,
+          },
+        },
+        renderChip('今日趨勢摘要', {
+          background: alpha(TOKENS.positive, '18'),
+          border: `1px solid ${alpha(TOKENS.positive, '24')}`,
+          color: TOKENS.ink,
+        })
+      ),
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 14,
+            lineHeight: 1.7,
+            color: TOKENS.ink,
+            fontFamily: TOKENS.fontBody,
+          },
+        },
+        buildTrendSummary(filteredItems)
+      )
+    )
+  )
 
   return h(
     'div',
     {
+      'data-testid': 'news-layout',
       style: {
         display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.9fr) minmax(280px, 0.9fr)',
+        gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1.9fr) minmax(280px, 0.9fr)',
         gap: 16,
         alignItems: 'start',
       },
@@ -543,12 +801,13 @@ export function NewsFeedSection({
         h(
           'div',
           {
+            'data-testid': 'news-hero-grid',
             style: {
               position: 'relative',
               display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) auto',
-              gap: 16,
-              alignItems: 'end',
+              gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) auto',
+              gap: isMobile ? 12 : 16,
+              alignItems: isMobile ? 'start' : 'end',
             },
           },
           h(
@@ -562,12 +821,13 @@ export function NewsFeedSection({
             h(
               'div',
               {
+                'data-testid': 'news-hero-title',
                 style: {
                   fontFamily: TOKENS.fontSection,
-                  fontSize: 52,
+                  fontSize: isMobile ? 'clamp(20px, 5vw, 28px)' : 52,
                   lineHeight: 1.04,
                   color: TOKENS.ink,
-                  maxWidth: 520,
+                  maxWidth: isMobile ? '100%' : 520,
                 },
               },
               heroTitle
@@ -605,57 +865,70 @@ export function NewsFeedSection({
                 background: alpha(TOKENS.bone, 'f0'),
                 border: `1px solid ${TOKENS.boneDeep}`,
                 color: TOKENS.charcoal,
-              })
+              }),
+              isMobile &&
+                renderChip(`today ${filteredItems.length}`, {
+                  background: alpha(TOKENS.charcoal, '06'),
+                  border: `1px solid ${TOKENS.boneDeep}`,
+                  color: TOKENS.iron,
+                }),
+              isMobile &&
+                renderChip(`未讀 ${unreadCount} 則`, {
+                  background: alpha(TOKENS.warning, '12'),
+                  border: `1px solid ${alpha(TOKENS.warning, '20')}`,
+                  color: TOKENS.ink,
+                })
             )
           ),
-          h(
-            'div',
-            {
-              style: {
-                textAlign: 'right',
-                minWidth: 120,
-              },
-            },
+          !isMobile &&
             h(
               'div',
               {
                 style: {
-                  fontSize: 14,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: TOKENS.iron,
-                  fontFamily: TOKENS.fontCaption,
-                  fontVariantNumeric: 'tabular-nums',
-                  marginBottom: 4,
+                  textAlign: 'right',
+                  minWidth: 120,
                 },
               },
-              'today'
-            ),
-            h(
-              'div',
-              {
-                style: {
-                  fontFamily: TOKENS.fontSection,
-                  fontSize: 56,
-                  lineHeight: 1,
-                  color: TOKENS.ink,
-                  fontVariantNumeric: 'tabular-nums',
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 14,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: TOKENS.iron,
+                    fontFamily: TOKENS.fontCaption,
+                    fontVariantNumeric: 'tabular-nums',
+                    marginBottom: 4,
+                  },
                 },
-              },
-              filteredItems.length
-            ),
-            h(
-              'div',
-              {
-                style: {
-                  fontSize: 12,
-                  color: TOKENS.charcoal,
-                  fontFamily: TOKENS.fontBody,
+                'today'
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    fontFamily: TOKENS.fontSection,
+                    fontSize: 56,
+                    lineHeight: 1,
+                    color: TOKENS.ink,
+                    fontVariantNumeric: 'tabular-nums',
+                  },
                 },
-              },
-              '新增新聞數 N'
+                filteredItems.length
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 12,
+                    color: TOKENS.charcoal,
+                    fontFamily: TOKENS.fontBody,
+                  },
+                },
+                '新增新聞數 N'
+              )
             )
-          )
         )
       ),
       error &&
@@ -687,6 +960,7 @@ export function NewsFeedSection({
             item,
             isRead: readIds.has(getItemId(item, i)),
             isLast: i === filteredItems.length - 1,
+            isMobile,
             onToggleRead: () => handleToggleRead(item, i),
             onNavigateDaily,
           })
@@ -699,258 +973,83 @@ export function NewsFeedSection({
       h(
         Card,
         {
+          'data-testid': 'news-side-notes',
           style: {
             borderRadius: 28,
             padding: '16px 16px 16px',
             border: `1px solid ${TOKENS.boneDeep}`,
             background: `linear-gradient(180deg, ${alpha(TOKENS.bone, 'f5')}, ${alpha(TOKENS.bone, 'ec')})`,
-            position: 'sticky',
-            top: 16,
+            position: isMobile ? 'static' : 'sticky',
+            top: isMobile ? 'auto' : 16,
           },
         },
-        h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, 'Filter / Side notes'),
-        h(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            },
-          },
-          h(
-            'div',
-            null,
-            h(
+        isMobile
+          ? h(
               'div',
               {
                 style: {
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: TOKENS.ink,
-                  marginBottom: 8,
-                  fontFamily: TOKENS.fontSection,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginBottom: showFilterBody ? 12 : 0,
                 },
               },
-              showTickerSideNotes ? '依 ticker' : 'Aggregate clusters'
-            ),
-            showTickerSideNotes
-              ? h(
-                  'div',
-                  { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-                  ...tickers.map((option) =>
-                    h(
-                      'button',
-                      {
-                        key: option,
-                        type: 'button',
-                        className: 'ui-btn',
-                        onClick: () => setTickerFilter(option),
-                        style: {
-                          borderRadius: 999,
-                          border: `1px solid ${tickerFilter === option ? alpha(TOKENS.positive, '2a') : TOKENS.boneDeep}`,
-                          background:
-                            tickerFilter === option
-                              ? alpha(TOKENS.positive, '12')
-                              : alpha(TOKENS.bone, 'ed'),
-                          color: TOKENS.ink,
-                          padding: '8px 12px',
-                          fontSize: 11,
-                          fontFamily: TOKENS.fontBody,
-                          fontVariantNumeric: 'tabular-nums',
-                          cursor: 'pointer',
-                        },
-                      },
-                      option
-                    )
-                  )
-                )
-              : h(
-                  'div',
-                  {
-                    'data-testid': 'news-aggregate-clusters',
-                    style: { display: 'grid', gap: 8 },
+              h(
+                'div',
+                { style: { ...lbl, color: TOKENS.iron, marginBottom: 0 } },
+                'Filter / Side notes'
+              ),
+              h(
+                'button',
+                {
+                  'data-testid': 'news-filter-toggle',
+                  type: 'button',
+                  className: 'ui-btn',
+                  'aria-expanded': showFilterBody,
+                  'aria-controls': 'news-side-notes-body',
+                  onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
+                  style: {
+                    borderRadius: 999,
+                    border: `1px solid ${TOKENS.boneDeep}`,
+                    background: alpha(TOKENS.bone, 'ef'),
+                    color: TOKENS.ink,
+                    padding: '8px 12px',
+                    fontSize: 11,
+                    fontFamily: TOKENS.fontBody,
+                    cursor: 'pointer',
                   },
-                  ...aggregateClusters.map((cluster) =>
-                    h(
-                      'div',
-                      {
-                        key: cluster,
-                        style: {
-                          borderRadius: 18,
-                          border: `1px solid ${TOKENS.boneDeep}`,
-                          borderLeft: `2px solid ${alpha(TOKENS.warning, '32')}`,
-                          background: alpha(TOKENS.bone, 'ef'),
-                          padding: '8px 12px',
-                          fontSize: 11,
-                          color: TOKENS.ink,
-                          lineHeight: 1.6,
-                          fontFamily: TOKENS.fontBody,
-                        },
-                      },
-                      cluster
-                    )
-                  )
-                )
-          ),
-          h(
-            'div',
-            null,
-            h(
-              'div',
-              {
-                style: {
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: TOKENS.ink,
-                  marginBottom: 8,
-                  fontFamily: TOKENS.fontSection,
                 },
-              },
-              '依來源'
-            ),
-            h(
-              'div',
-              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-              ...sources.map((option) =>
-                h(
-                  'button',
-                  {
-                    key: option,
-                    type: 'button',
-                    className: 'ui-btn',
-                    onClick: () => setSourceFilter(option),
-                    style: {
-                      borderRadius: 999,
-                      border: `1px solid ${sourceFilter === option ? alpha(TOKENS.warning, '2e') : TOKENS.boneDeep}`,
-                      background:
-                        sourceFilter === option
-                          ? alpha(TOKENS.warning, '14')
-                          : alpha(TOKENS.bone, 'ed'),
-                      color: TOKENS.ink,
-                      padding: '8px 12px',
-                      fontSize: 11,
-                      fontFamily: TOKENS.fontBody,
-                      fontVariantNumeric: 'tabular-nums',
-                      cursor: 'pointer',
-                    },
-                  },
-                  option
-                )
+                showFilterBody ? '收起 filter' : '展開 filter'
               )
             )
-          ),
-          h(
-            'div',
-            null,
-            h(
+          : h(
               'div',
-              {
-                style: {
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: TOKENS.ink,
-                  marginBottom: 8,
-                  fontFamily: TOKENS.fontSection,
-                },
-              },
-              '依 impact'
+              { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
+              'Filter / Side notes'
             ),
-            h(
-              'div',
-              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-              ...impacts.map((option) =>
-                (() => {
-                  const tone =
-                    option === '利多'
-                      ? TOKENS.positive
-                      : option === '利空'
-                        ? TOKENS.negative
-                        : option === '中性'
-                          ? TOKENS.charcoal
-                          : TOKENS.warning
-
-                  return h(
-                    'button',
-                    {
-                      key: option,
-                      type: 'button',
-                      className: 'ui-btn',
-                      onClick: () => setImpactFilter(option),
-                      style: {
-                        borderRadius: 999,
-                        border: `1px solid ${impactFilter === option ? alpha(tone, '2a') : TOKENS.boneDeep}`,
-                        background:
-                          impactFilter === option ? alpha(tone, '12') : alpha(TOKENS.bone, 'ed'),
-                        color: TOKENS.ink,
-                        padding: '8px 12px',
-                        fontSize: 11,
-                        fontFamily: TOKENS.fontBody,
-                        fontVariantNumeric: 'tabular-nums',
-                        cursor: 'pointer',
-                      },
-                    },
-                    option
-                  )
-                })()
-              )
-            )
-          ),
-          h(
-            'div',
-            {
-              style: {
-                padding: '12px 12px',
-                borderRadius: 22,
-                background: alpha(TOKENS.warning, '12'),
-                border: `1px solid ${alpha(TOKENS.warning, '20')}`,
-                color: TOKENS.ink,
-              },
-            },
-            h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 4 } }, 'Notice'),
-            renderChip(`未讀 ${unreadCount} 則`, {
-              background: alpha(TOKENS.warning, '18'),
-              color: TOKENS.ink,
-              border: `1px solid ${alpha(TOKENS.warning, '28')}`,
-            })
-          ),
-          h(
-            'div',
-            {
-              style: {
-                padding: '12px',
-                borderRadius: 22,
-                background: alpha(TOKENS.positive, '10'),
-                border: `1px solid ${alpha(TOKENS.positive, '22')}`,
-              },
-            },
-            h(
+        showFilterBody
+          ? sideNotesBody
+          : h(
               'div',
               {
                 style: {
-                  marginBottom: 8,
+                  display: 'flex',
+                  gap: 8,
+                  flexWrap: 'wrap',
                 },
               },
-              renderChip('今日趨勢摘要', {
-                background: alpha(TOKENS.positive, '18'),
-                border: `1px solid ${alpha(TOKENS.positive, '24')}`,
+              renderChip(`未讀 ${unreadCount} 則`, {
+                background: alpha(TOKENS.warning, '18'),
                 color: TOKENS.ink,
+                border: `1px solid ${alpha(TOKENS.warning, '28')}`,
+              }),
+              renderChip(showTickerSideNotes ? 'ticker filters' : 'aggregate summary', {
+                background: alpha(TOKENS.bone, 'ef'),
+                color: TOKENS.charcoal,
+                border: `1px solid ${TOKENS.boneDeep}`,
               })
-            ),
-            h(
-              'div',
-              {
-                style: {
-                  fontSize: 14,
-                  lineHeight: 1.7,
-                  color: TOKENS.ink,
-                  fontFamily: TOKENS.fontBody,
-                },
-              },
-              buildTrendSummary(filteredItems)
             )
-          )
-        )
       )
     )
   )

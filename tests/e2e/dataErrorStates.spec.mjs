@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { PORTFOLIO_BASE_URL } from './support/qaHelpers.mjs'
+import { maybeAcceptTradeDisclaimer } from './support/tradeHelpers.mjs'
 
 async function settle(page, waitMs = 1600) {
   await page.waitForLoadState('domcontentloaded')
@@ -74,6 +75,7 @@ test('tracked-stocks 401 becomes visible on holdings after a failed sync attempt
   await clickTab(page, '上傳成交')
 
   await expect(page.getByTestId('trade-panel')).toBeVisible()
+  await maybeAcceptTradeDisclaimer(page)
 
   await page.getByTestId('manual-trade-code-input').fill('2454')
   await page.getByTestId('manual-trade-name-input').fill('聯發科')
@@ -82,9 +84,10 @@ test('tracked-stocks 401 becomes visible on holdings after a failed sync attempt
   await page.getByTestId('manual-trade-price-input').fill('1250')
   await page.getByTestId('manual-trade-submit-btn').click()
 
-  const skipMemoButton = page.getByRole('button', { name: '跳過備忘，直接寫入' })
+  const skipMemoButton = page.getByRole('button', { name: '跳過備忘，先看預覽' })
   if (await skipMemoButton.isVisible().catch(() => false)) {
     await skipMemoButton.click()
+    await page.getByTestId('trade-confirm-btn').click()
   }
 
   await settle(page, 2400)

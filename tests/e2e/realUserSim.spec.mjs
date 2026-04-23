@@ -10,6 +10,7 @@ import {
 } from 'node:fs'
 import { basename, dirname, extname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { maybeAcceptTradeDisclaimer } from './support/tradeHelpers.mjs'
 
 const ROOT_DIR = process.cwd()
 const BASE_URL = String(process.env.PORTFOLIO_BASE_URL || 'http://127.0.0.1:3002/').trim()
@@ -217,6 +218,7 @@ async function openTabAndAssert(page, key, label) {
   }
   if (key === 'trade') {
     await expect(page.getByTestId('trade-panel')).toBeVisible()
+    await maybeAcceptTradeDisclaimer(page)
     return
   }
   if (key === 'log') {

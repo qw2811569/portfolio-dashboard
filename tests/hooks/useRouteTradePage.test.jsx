@@ -31,6 +31,7 @@ describe('hooks/useRouteTradePage.js', () => {
     const flashSaved = vi.fn()
 
     mockUsePortfolioRouteContext.mockReturnValue({
+      portfolioId: 'me',
       holdings: [{ code: '2330', name: '台積電', qty: 1000, price: 950, cost: 900 }],
       tradeLog: [{ id: 't1', code: '2330', action: '買進', qty: 500 }],
       setHoldings,
@@ -68,6 +69,7 @@ describe('hooks/useRouteTradePage.js', () => {
     const callArgs = mockUseTradeCaptureRuntime.mock.calls[0][0]
     expect(callArgs).toEqual(
       expect.objectContaining({
+        portfolioId: 'me',
         holdings: [expect.objectContaining({ code: '2330' })],
         tradeLog: [expect.objectContaining({ id: 't1' })],
         applyTradeEntryToHoldings,
@@ -104,6 +106,7 @@ describe('hooks/useRouteTradePage.js', () => {
 
     expect(mockUseTradeCaptureRuntime).toHaveBeenCalledTimes(1)
     const callArgs = mockUseTradeCaptureRuntime.mock.calls[0][0]
+    expect(callArgs.portfolioId).toBe('me')
     expect(callArgs.holdings).toEqual([])
     expect(callArgs.tradeLog).toEqual([])
     expect(typeof callArgs.setHoldings).toBe('function')
@@ -138,6 +141,7 @@ describe('hooks/useRouteTradePage.js', () => {
     })
 
     mockUsePortfolioRouteContext.mockReturnValue({
+      portfolioId: '7865',
       holdings: [{ code: '2330' }],
       tradeLog: [{ id: 't1' }],
       applyTradeEntryToHoldings: vi.fn(),
@@ -151,6 +155,7 @@ describe('hooks/useRouteTradePage.js', () => {
     const { result } = renderHook(() => useRouteTradePage())
 
     const callArgs = mockUseTradeCaptureRuntime.mock.calls[0][0]
+    expect(callArgs.portfolioId).toBe('7865')
 
     callArgs.setHoldings([{ code: '2454' }])
     callArgs.setTradeLog([{ id: 't2' }])

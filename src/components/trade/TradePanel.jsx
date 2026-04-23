@@ -2,6 +2,7 @@ import { createElement as h, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, TextFieldDialog } from '../common'
 import { assessTradeParseQuality, summarizeTradeBatch } from '../../lib/tradeParseUtils.js'
+import { TradeDisclaimerModal } from './TradeDisclaimerModal.jsx'
 
 const lbl = {
   fontSize: 12,
@@ -285,6 +286,12 @@ export function ParseResults({
   memoBatchMode,
   uploadCount = 0,
   activeUploadIndex = -1,
+  isPreviewReady = false,
+  previewEntries = [],
+  confirmTradePreview,
+  submittingTrade = false,
+  disclaimerAckedAt = '',
+  openTradeDisclaimer,
 }) {
   const [editingField, setEditingField] = useState(null)
   const [editingValue, setEditingValue] = useState('')
@@ -714,96 +721,272 @@ export function ParseResults({
       { style: { borderLeft: `2px solid ${alpha(C.blue, '40')}` } },
       h('div', { style: lbl }, '交易備忘錄'),
       memoAns.map((a, i) =>
-        h(
-          'div',
-          { key: i, style: { marginBottom: 12 } },
-          h(
-            'div',
-            { style: { fontSize: 12, color: C.textMute, marginBottom: 4 } },
-            `Q${i + 1}. ${qs[i]}`
-          ),
-          h(
+        String(a || '').trim()
+          ? h(
+              'div',
+              { key: i, style: { marginBottom: 12 } },
+              h(
+                'div',
+                { style: { fontSize: 12, color: C.textMute, marginBottom: 4 } },
+                `Q${i + 1}. ${qs[i]}`
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 12,
+                    color: C.textSec,
+                    background: C.subtle,
+                    borderRadius: 6,
+                    padding: '8px 8px',
+                    lineHeight: 1.6,
+                  },
+                },
+                a
+              )
+            )
+          : null
+      ),
+      isPreviewReady
+        ? h(
             'div',
             {
+              'data-testid': 'trade-preview-panel',
               style: {
-                fontSize: 12,
-                color: C.textSec,
-                background: C.subtle,
-                borderRadius: 6,
-                padding: '8px 8px',
-                lineHeight: 1.6,
+                marginTop: 4,
+                borderRadius: 12,
+                border: `1px solid ${alpha(C.orange, '24')}`,
+                background: alpha(C.orange, '10'),
+                padding: '12px 12px',
               },
             },
-            a
+            h(
+              'div',
+              { style: { fontSize: 12, fontWeight: 700, color: C.textSec, marginBottom: 6 } },
+              '寫入預覽'
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  color: C.textMute,
+                  lineHeight: 1.7,
+                  marginBottom: 10,
+                },
+              },
+              '這一步先確認即將寫入的交易內容。系統只會記錄你已完成的交易，不會生成買賣建議。'
+            ),
+            previewEntries.length > 0 &&
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'grid',
+                    gap: 8,
+                    marginBottom: 10,
+                  },
+                },
+                previewEntries.map((entry) =>
+                  h(
+                    'div',
+                    {
+                      key: entry.id,
+                      style: {
+                        borderRadius: 10,
+                        border: `1px solid ${C.border}`,
+                        background: C.card,
+                        padding: '10px 10px',
+                      },
+                    },
+                    h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          marginBottom: 4,
+                        },
+                      },
+                      h(
+                        'div',
+                        {
+                          style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            flexWrap: 'wrap',
+                          },
+                        },
+                        h(
+                          'span',
+                          {
+                            style: {
+                              minHeight: 28,
+                              padding: '4px 8px',
+                              borderRadius: 999,
+                              background: entry.action === '買進' ? C.upBg : C.downBg,
+                              color: entry.action === '買進' ? C.textSec : C.down,
+                              fontSize: 11,
+                              fontWeight: 700,
+                            },
+                          },
+                          entry.action
+                        ),
+                        h(
+                          'span',
+                          { style: { fontSize: 13, fontWeight: 700, color: C.text } },
+                          `${entry.name || entry.code} ${entry.code ? `· ${entry.code}` : ''}`
+                        )
+                      ),
+                      h(
+                        'span',
+                        { style: { fontSize: 11, color: C.textMute } },
+                        `${entry.date} ${entry.time}`
+                      )
+                    ),
+                    h(
+                      'div',
+                      { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
+                      `${entry.qty.toLocaleString()} 股 @ ${entry.price.toLocaleString()} 元`
+                    )
+                  )
+                )
+              ),
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 11,
+                  color: disclaimerAckedAt ? C.textMute : C.amber,
+                  lineHeight: 1.7,
+                  marginBottom: 10,
+                },
+              },
+              disclaimerAckedAt
+                ? `交易提醒已確認：${disclaimerAckedAt.slice(0, 10)}`
+                : '尚未完成交易提醒確認；按下確認時會先請你勾選一次。'
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                },
+              },
+              h(
+                Button,
+                {
+                  onClick: () => openTradeDisclaimer?.('entry'),
+                  style: {
+                    flex: '1 1 180px',
+                  },
+                },
+                '查看交易提醒'
+              ),
+              h(
+                Button,
+                {
+                  'data-testid': 'trade-confirm-btn',
+                  onClick: () => confirmTradePreview?.(),
+                  disabled: submittingTrade,
+                  variant: 'filled',
+                  color: 'blue',
+                  style: {
+                    flex: '1 1 220px',
+                    fontWeight: 700,
+                  },
+                },
+                submittingTrade ? '寫入中...' : '確認寫入交易'
+              )
+            )
           )
-        )
-      ),
-      h(
-        'div',
-        { style: { fontSize: 12, fontWeight: 500, color: C.textSec, marginBottom: 8 } },
-        `Q${memoStep + 1}/${qs.length}. ${qs[memoStep]}`
-      ),
-      h('textarea', {
-        value: memoIn,
-        onChange: (e) => setMemoIn(e.target.value),
-        placeholder: '輸入你的想法... (Enter 送出)',
-        style: {
-          width: '100%',
-          background: C.subtle,
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: '8px',
-          color: C.text,
-          fontSize: 12,
-          resize: 'none',
-          minHeight: 70,
-          fontFamily: 'inherit',
-          marginBottom: 8,
-          lineHeight: 1.7,
-        },
-      }),
-      h(
-        Button,
-        {
-          onClick: submitMemo,
-          disabled: !memoIn.trim(),
-          style: {
-            width: '100%',
-            padding: '12px',
-            border: 'none',
-            borderRadius: 8,
-            background: memoIn.trim() ? alpha(C.fillTeal, '40') : C.subtle,
-            color: memoIn.trim() ? C.onFill : C.textMute,
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: memoIn.trim() ? 'pointer' : 'not-allowed',
-            letterSpacing: '0.02em',
-          },
-        },
-        memoStep === qs.length - 1 ? '完成備忘 · 更新持倉' : `下一題 (${memoStep + 1}/${qs.length})`
-      ),
-      skipMemo &&
-        h(
-          Button,
-          {
-            'data-testid': 'skip-memo-btn',
-            onClick: skipMemo,
-            style: {
-              width: '100%',
-              padding: '8px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              background: 'transparent',
-              color: C.textMute,
-              fontSize: 12,
-              fontWeight: 400,
-              cursor: 'pointer',
-              marginTop: 4,
-              letterSpacing: '0.02em',
-            },
-          },
-          '跳過備忘，直接寫入'
-        )
+        : [
+            h(
+              'div',
+              {
+                key: 'memo-question',
+                style: {
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: C.textSec,
+                  marginBottom: 8,
+                },
+              },
+              `Q${memoStep + 1}/${qs.length}. ${qs[memoStep]}`
+            ),
+            h('textarea', {
+              key: 'memo-input',
+              value: memoIn,
+              onChange: (e) => setMemoIn(e.target.value),
+              placeholder: '輸入你的想法... (Enter 送出)',
+              style: {
+                width: '100%',
+                background: C.subtle,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: '8px',
+                color: C.text,
+                fontSize: 12,
+                resize: 'none',
+                minHeight: 70,
+                fontFamily: 'inherit',
+                marginBottom: 8,
+                lineHeight: 1.7,
+              },
+            }),
+            h(
+              Button,
+              {
+                key: 'memo-submit',
+                onClick: submitMemo,
+                disabled: !memoIn.trim(),
+                style: {
+                  width: '100%',
+                  padding: '12px',
+                  border: 'none',
+                  borderRadius: 8,
+                  background: memoIn.trim() ? alpha(C.fillTeal, '40') : C.subtle,
+                  color: memoIn.trim() ? C.onFill : C.textMute,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: memoIn.trim() ? 'pointer' : 'not-allowed',
+                  letterSpacing: '0.02em',
+                },
+              },
+              memoStep === qs.length - 1
+                ? '完成備忘 · 前往預覽'
+                : `下一題 (${memoStep + 1}/${qs.length})`
+            ),
+            skipMemo &&
+              h(
+                Button,
+                {
+                  key: 'memo-skip',
+                  'data-testid': 'skip-memo-btn',
+                  onClick: skipMemo,
+                  style: {
+                    width: '100%',
+                    padding: '8px',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    background: 'transparent',
+                    color: C.textMute,
+                    fontSize: 12,
+                    fontWeight: 400,
+                    cursor: 'pointer',
+                    marginTop: 4,
+                    letterSpacing: '0.02em',
+                  },
+                },
+                '跳過備忘，先看預覽'
+              ),
+          ]
     )
   )
 }
@@ -1169,11 +1352,19 @@ export function TradePanel({
   memoIn,
   setMemoIn,
   memoStep,
+  isPreviewReady,
+  previewEntries,
+  submittingTrade,
   submitMemo,
   skipMemo,
+  confirmTradePreview,
   selectUpload,
   removeUpload,
   clearUploads,
+  tradeDisclaimer,
+  setTradeDisclaimerChecked,
+  acknowledgeTradeDisclaimer,
+  openTradeDisclaimer,
   tpCode,
   tpFirm,
   tpVal,
@@ -1190,6 +1381,13 @@ export function TradePanel({
   return h(
     'div',
     { 'data-testid': 'trade-panel' },
+    h(TradeDisclaimerModal, {
+      open: Boolean(tradeDisclaimer?.open),
+      checked: Boolean(tradeDisclaimer?.checked),
+      onCheckedChange: setTradeDisclaimerChecked,
+      onConfirm: acknowledgeTradeDisclaimer,
+      mode: tradeDisclaimer?.mode || 'entry',
+    }),
     h(UploadDropzone, {
       img,
       parsed,
@@ -1218,8 +1416,14 @@ export function TradePanel({
       memoIn,
       setMemoIn,
       memoStep,
+      isPreviewReady,
+      previewEntries,
+      submittingTrade,
       submitMemo,
       skipMemo,
+      confirmTradePreview,
+      disclaimerAckedAt: tradeDisclaimer?.ackedAt || '',
+      openTradeDisclaimer,
       uploadCount,
       activeUploadIndex,
     }),

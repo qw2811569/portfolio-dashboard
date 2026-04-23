@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { readTrackedStocksForPortfolio } from '../../api/_lib/tracked-stocks.js'
 import { DEFAULT_UPLOAD_FIXTURE_PATH, PORTFOLIO_BASE_URL } from './support/qaHelpers.mjs'
+import { maybeAcceptTradeDisclaimer } from './support/tradeHelpers.mjs'
 
 const baseUrl = new URL(PORTFOLIO_BASE_URL)
 const baseOrigin = `${baseUrl.protocol}//${baseUrl.host}`
@@ -40,6 +41,7 @@ test('trade route syncs tracked stocks into blob and shows last-synced badge', a
   await page.waitForLoadState('domcontentloaded')
   await page.getByRole('button', { name: '上傳成交' }).click()
   await expect(page.getByTestId('trade-panel')).toBeVisible()
+  await maybeAcceptTradeDisclaimer(page)
 
   const uploadInput = page.getByTestId('trade-upload-input')
   await uploadInput.setInputFiles(DEFAULT_UPLOAD_FIXTURE_PATH)
@@ -51,7 +53,7 @@ test('trade route syncs tracked stocks into blob and shows last-synced badge', a
   await page.getByTestId('manual-trade-price-input').fill('1250')
   await page.getByTestId('manual-trade-submit-btn').click()
 
-  await expect(page.getByRole('button', { name: '跳過備忘，直接寫入' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '跳過備忘，先看預覽' })).toBeVisible()
 
   const syncResponsePromise = page.waitForResponse(
     (response) =>
@@ -61,7 +63,8 @@ test('trade route syncs tracked stocks into blob and shows last-synced badge', a
     { timeout: 15000 }
   )
 
-  await page.getByRole('button', { name: '跳過備忘，直接寫入' }).click()
+  await page.getByRole('button', { name: '跳過備忘，先看預覽' }).click()
+  await page.getByTestId('trade-confirm-btn').click()
   const syncResponse = await syncResponsePromise
 
   expect(syncResponse.status()).toBe(200)

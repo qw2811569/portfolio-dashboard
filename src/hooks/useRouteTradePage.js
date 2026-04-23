@@ -12,6 +12,7 @@ function warnBlockedRouteWrite(actionName) {
 
 export function useRouteTradePage() {
   const {
+    portfolioId = 'me',
     holdings = [],
     tradeLog = [],
     setHoldings: routeSetHoldings,
@@ -51,6 +52,7 @@ export function useRouteTradePage() {
   const upsertFundamentalsEntry = routeUpsertFundamentalsEntry || blockedUpsertFundamentalsEntry
 
   const tradeRuntime = useTradeCaptureRuntime({
+    portfolioId,
     holdings,
     tradeLog,
     setHoldings,

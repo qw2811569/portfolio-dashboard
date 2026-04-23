@@ -134,12 +134,25 @@ function renderRoute(ui) {
 describe('routes/page actions', () => {
   beforeEach(() => {
     installStorage(createSeedStorage())
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        totalTracked: 2,
-        lastSyncedAt: '2026-04-19T06:00:00.000Z',
-      }),
+    global.fetch = vi.fn(async (input) => {
+      const url = String(input || '')
+      if (url.includes('/api/trade-audit')) {
+        return {
+          ok: true,
+          json: async () => ({
+            saved: true,
+            filePath: 'logs/trade-audit-2026-03.jsonl',
+          }),
+        }
+      }
+
+      return {
+        ok: true,
+        json: async () => ({
+          totalTracked: 2,
+          lastSyncedAt: '2026-04-19T06:00:00.000Z',
+        }),
+      }
     })
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -174,6 +187,19 @@ describe('routes/page actions', () => {
       localStorage.setItem.mockClear()
       warnSpy.mockClear()
 
+      expect(screen.getByTestId('trade-disclaimer-modal')).toBeInTheDocument()
+      fireEvent.click(screen.getByTestId('trade-disclaimer-checkbox'))
+      fireEvent.click(screen.getByTestId('trade-disclaimer-enter-btn'))
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('trade-disclaimer-modal')).not.toBeInTheDocument()
+      })
+
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'trade-disclaimer-v1-ack-at',
+        expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+      )
+
       const uploadInput = document.getElementById('fi')
       const imageFile = new File(['fake-image'], 'trade.png', { type: 'image/png' })
       fireEvent.change(uploadInput, { target: { files: [imageFile] } })
@@ -195,9 +221,15 @@ describe('routes/page actions', () => {
       fireEvent.change(priceInputs[0], { target: { value: '1250' } })
       fireEvent.click(screen.getByRole('button', { name: '新增' }))
 
-      expect(screen.getByRole('button', { name: '跳過備忘，直接寫入' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '跳過備忘，先看預覽' })).toBeInTheDocument()
 
-      fireEvent.click(screen.getByRole('button', { name: '跳過備忘，直接寫入' }))
+      fireEvent.click(screen.getByRole('button', { name: '跳過備忘，先看預覽' }))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('trade-preview-panel')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByTestId('trade-confirm-btn'))
 
       await waitFor(() => {
         const persistedHoldings = JSON.parse(
@@ -226,6 +258,13 @@ describe('routes/page actions', () => {
               price: 1250,
             }),
           ])
+        )
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/trade-audit',
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          })
         )
       })
 

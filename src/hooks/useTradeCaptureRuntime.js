@@ -7,6 +7,11 @@ import {
   normalizeTradeParseResult,
 } from '../lib/tradeParseUtils.js'
 import { buildTradeParseErrorMessage } from '../lib/tradeAiResponse.js'
+import {
+  readTradeDisclaimerAckAt,
+  shouldPromptTradeDisclaimer,
+  writeTradeDisclaimerAckAt,
+} from '../lib/tradeCompliance.js'
 
 function createEmptyTradeEditorState(createDefaultFundamentalDraft) {
   return {
@@ -35,6 +40,7 @@ function revokeUploadPreview(upload) {
 }
 
 export function useTradeCaptureRuntime({
+  portfolioId = 'me',
   holdings = [],
   tradeLog = [],
   marketQuotes = null,
@@ -51,6 +57,16 @@ export function useTradeCaptureRuntime({
 }) {
   const [dragOver, setDragOver] = useState(false)
   const [parsing, setParsing] = useState(false)
+  const [submittingTrade, setSubmittingTrade] = useState(false)
+  const [tradeDisclaimer, setTradeDisclaimer] = useState(() => {
+    const ackedAt = readTradeDisclaimerAckAt()
+    return {
+      ackedAt,
+      checked: false,
+      open: shouldPromptTradeDisclaimer(ackedAt),
+      mode: 'entry',
+    }
+  })
   const [tradeEditorState, setTradeEditorState] = useState(() =>
     createEmptyTradeEditorState(createDefaultFundamentalDraft)
   )
@@ -93,6 +109,8 @@ export function useTradeCaptureRuntime({
         memoStep: 0,
         memoAns: [],
         memoIn: '',
+        isPreviewReady: false,
+        previewGeneratedAt: '',
       }
     },
     [toSlashDate]
@@ -123,6 +141,8 @@ export function useTradeCaptureRuntime({
               memoStep: 0,
               memoAns: [],
               memoIn: '',
+              isPreviewReady: false,
+              previewGeneratedAt: '',
             }
           })
         )
@@ -230,6 +250,8 @@ export function useTradeCaptureRuntime({
                 ...upload,
                 parsed: nextParsed,
                 tradeDate: nextParsed?.tradeDate || upload.tradeDate,
+                isPreviewReady: false,
+                previewGeneratedAt: '',
               }
             : upload
         )
@@ -275,6 +297,8 @@ export function useTradeCaptureRuntime({
         ...upload,
         memoAns:
           typeof valueOrUpdater === 'function' ? valueOrUpdater(upload.memoAns) : valueOrUpdater,
+        isPreviewReady: false,
+        previewGeneratedAt: '',
       }))
     },
     [updateActiveUpload]
@@ -286,6 +310,8 @@ export function useTradeCaptureRuntime({
       memoStep: 0,
       memoAns: [],
       memoIn: '',
+      isPreviewReady: false,
+      previewGeneratedAt: '',
     }))
   }, [updateActiveUpload])
 
@@ -326,6 +352,8 @@ export function useTradeCaptureRuntime({
         memoStep: 0,
         memoAns: [],
         memoIn: '',
+        isPreviewReady: false,
+        previewGeneratedAt: '',
       }))
     } catch (error) {
       console.error('parseShot error:', error)
@@ -345,57 +373,138 @@ export function useTradeCaptureRuntime({
   const memoBatchMode = useMemo(() => getTradeBatchMode(parsed?.trades || []), [parsed])
   const memoQuestions = useMemo(() => MEMO_Q[memoBatchMode] || MEMO_Q['買進'], [memoBatchMode])
 
+  const previewEntries = useMemo(() => {
+    if (!activeUpload?.parsed?.trades?.length || !activeUpload?.isPreviewReady) return []
+
+    return buildTradeLogEntries({
+      parsed: activeUpload.parsed,
+      tradeDate: String(activeUpload.tradeDate || '').trim() || toSlashDate(),
+      memoQuestions,
+      memoAnswers: activeUpload.memoAns || [],
+      now: new Date(activeUpload.previewGeneratedAt || new Date().toISOString()),
+    })
+  }, [activeUpload, memoQuestions, toSlashDate])
+
+  const setTradeDisclaimerChecked = useCallback((value) => {
+    setTradeDisclaimer((prev) => ({ ...prev, checked: Boolean(value) }))
+  }, [])
+
+  const openTradeDisclaimer = useCallback((mode = 'entry') => {
+    setTradeDisclaimer((prev) => ({
+      ...prev,
+      checked: false,
+      open: true,
+      mode,
+    }))
+  }, [])
+
+  const acknowledgeTradeDisclaimer = useCallback(() => {
+    const ackedAt = writeTradeDisclaimerAckAt()
+    setTradeDisclaimer({
+      ackedAt,
+      checked: false,
+      open: false,
+      mode: 'entry',
+    })
+    return ackedAt
+  }, [])
+
+  const persistTradeAudit = useCallback(
+    async ({ entries, nextHoldings, memoAnswers = [] }) => {
+      const beforeHoldings = Array.isArray(holdings) ? holdings : []
+      const beforeTradeLog = Array.isArray(tradeLog) ? tradeLog : []
+      const disclaimerAckedAt = tradeDisclaimer.ackedAt || readTradeDisclaimerAckAt()
+
+      const response = await fetch('/api/trade-audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          portfolioId,
+          action: 'trade.confirm',
+          disclaimerAckedAt,
+          before: {
+            holdings: beforeHoldings,
+            tradeLogCount: beforeTradeLog.length,
+          },
+          after: {
+            holdings: nextHoldings,
+            tradeLogCount: beforeTradeLog.length + entries.length,
+            appendedTradeLogEntries: entries,
+            targetPriceUpdates: activeUpload?.parsed?.targetPriceUpdates || [],
+            memoAnswers,
+          },
+        }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload?.error || payload?.detail || 'trade audit append failed')
+      }
+
+      return {
+        beforeHoldings,
+        beforeTradeLog,
+        disclaimerAckedAt,
+      }
+    },
+    [activeUpload, holdings, portfolioId, tradeDisclaimer.ackedAt, tradeLog]
+  )
+
   const finalizeTradeSubmit = useCallback(
-    (memoAnswers) => {
-      if (!activeUpload?.parsed?.trades?.length) return
+    async (memoAnswers) => {
+      if (!activeUpload?.parsed?.trades?.length || submittingTrade) return
+      setSubmittingTrade(true)
 
-      const selectedTradeDate = String(activeUpload.tradeDate || '').trim() || toSlashDate()
-      const entries = buildTradeLogEntries({
-        parsed: activeUpload.parsed,
-        tradeDate: selectedTradeDate,
-        memoQuestions,
-        memoAnswers,
-        now: new Date(),
-      })
+      try {
+        const selectedTradeDate = String(activeUpload.tradeDate || '').trim() || toSlashDate()
+        const entries = buildTradeLogEntries({
+          parsed: activeUpload.parsed,
+          tradeDate: selectedTradeDate,
+          memoQuestions,
+          memoAnswers,
+          now: new Date(activeUpload.previewGeneratedAt || new Date().toISOString()),
+        })
 
-      setHoldings((prev) => {
-        try {
-          return applyParsedTradesToHoldings({
-            holdings: Array.isArray(prev) ? prev : holdings,
-            parsed: activeUpload.parsed,
-            applyTradeEntryToHoldings,
-            marketQuotes,
-          })
-        } catch (error) {
-          console.error('Holdings update failed:', error)
-          return Array.isArray(prev) ? prev : holdings
-        }
-      })
+        const nextHoldings = applyParsedTradesToHoldings({
+          holdings: Array.isArray(holdings) ? holdings : [],
+          parsed: activeUpload.parsed,
+          applyTradeEntryToHoldings,
+          marketQuotes,
+        })
 
-      setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
-      ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
-        upsertTargetReport(update)
-        const targetValue = Number(update?.targetPrice ?? update?.target)
-        if (update?.code && Number.isFinite(targetValue) && targetValue > 0) {
-          updateTargetPrice(update.code, targetValue)
-        }
-      })
+        await persistTradeAudit({ entries, nextHoldings, memoAnswers })
+        setHoldings(nextHoldings)
 
-      const remainingUploads = Math.max(tradeEditorState.uploads.length - 1, 0)
-      flashSaved(
-        remainingUploads > 0
-          ? `✅ 已寫入 ${entries.length} 筆成交，還有 ${remainingUploads} 張待處理`
-          : `✅ 已寫入 ${entries.length} 筆成交`,
-        3000
-      )
+        setTradeLog((prev) => [...entries, ...(Array.isArray(prev) ? prev : tradeLog)])
+        ;(activeUpload.parsed.targetPriceUpdates || []).forEach((update) => {
+          upsertTargetReport(update)
+          const targetValue = Number(update?.targetPrice ?? update?.target)
+          if (update?.code && Number.isFinite(targetValue) && targetValue > 0) {
+            updateTargetPrice(update.code, targetValue)
+          }
+        })
 
-      const processedUploadId = activeUpload.id
-      removeUpload(processedUploadId)
-      afterSubmit({
-        processedTrades: entries.length,
-        remainingUploads,
-        processedUploadId,
-      })
+        const remainingUploads = Math.max(tradeEditorState.uploads.length - 1, 0)
+        flashSaved(
+          remainingUploads > 0
+            ? `✅ 已寫入 ${entries.length} 筆成交，還有 ${remainingUploads} 張待處理`
+            : `✅ 已寫入 ${entries.length} 筆成交`,
+          3000
+        )
+
+        const processedUploadId = activeUpload.id
+        removeUpload(processedUploadId)
+        afterSubmit({
+          processedTrades: entries.length,
+          remainingUploads,
+          processedUploadId,
+        })
+      } catch (error) {
+        console.error('trade audit append failed:', error)
+        flashSaved(`❌ ${error?.message || '交易稽核寫入失敗，這筆交易尚未送出。'}`, 4200)
+      } finally {
+        setSubmittingTrade(false)
+      }
     },
     [
       activeUpload,
@@ -405,9 +514,11 @@ export function useTradeCaptureRuntime({
       holdings,
       marketQuotes,
       memoQuestions,
+      persistTradeAudit,
       removeUpload,
       setHoldings,
       setTradeLog,
+      submittingTrade,
       toSlashDate,
       tradeEditorState.uploads.length,
       tradeLog,
@@ -426,18 +537,51 @@ export function useTradeCaptureRuntime({
         memoAns: nextAnswers,
         memoIn: '',
         memoStep: (upload.memoStep || 0) + 1,
+        isPreviewReady: false,
       }))
       return
     }
 
-    finalizeTradeSubmit(nextAnswers)
-  }, [activeUpload, finalizeTradeSubmit, memoQuestions, updateActiveUpload])
+    updateActiveUpload((upload) => ({
+      ...upload,
+      memoAns: nextAnswers,
+      memoIn: '',
+      isPreviewReady: true,
+      previewGeneratedAt: new Date().toISOString(),
+    }))
+  }, [activeUpload, memoQuestions, updateActiveUpload])
 
   const skipMemo = useCallback(() => {
     if (!activeUpload?.parsed?.trades?.length) return
     const emptyAnswers = memoQuestions.map(() => '')
-    finalizeTradeSubmit(emptyAnswers)
-  }, [activeUpload, finalizeTradeSubmit, memoQuestions])
+    updateActiveUpload((upload) => ({
+      ...upload,
+      memoAns: emptyAnswers,
+      memoIn: '',
+      isPreviewReady: true,
+      previewGeneratedAt: new Date().toISOString(),
+    }))
+  }, [activeUpload, memoQuestions, updateActiveUpload])
+
+  const confirmTradePreview = useCallback(async () => {
+    if (!activeUpload?.parsed?.trades?.length || !activeUpload?.isPreviewReady || submittingTrade)
+      return
+
+    const currentAckedAt = tradeDisclaimer.ackedAt || readTradeDisclaimerAckAt()
+    if (shouldPromptTradeDisclaimer(currentAckedAt)) {
+      openTradeDisclaimer('confirm')
+      return
+    }
+
+    await finalizeTradeSubmit(activeUpload.memoAns || memoQuestions.map(() => ''))
+  }, [
+    activeUpload,
+    finalizeTradeSubmit,
+    memoQuestions,
+    openTradeDisclaimer,
+    submittingTrade,
+    tradeDisclaimer.ackedAt,
+  ])
 
   return useMemo(
     () => ({
@@ -468,12 +612,20 @@ export function useTradeCaptureRuntime({
       setMemoIn,
       memoStep: activeUpload?.memoStep || 0,
       setMemoStep,
+      isPreviewReady: Boolean(activeUpload?.isPreviewReady),
+      previewEntries,
+      submittingTrade,
       submitMemo,
       skipMemo,
+      confirmTradePreview,
       selectUpload,
       removeUpload,
       clearUploads,
       resetTradeCapture,
+      tradeDisclaimer,
+      setTradeDisclaimerChecked,
+      acknowledgeTradeDisclaimer,
+      openTradeDisclaimer,
       tpCode: tradeEditorState.tpCode,
       tpFirm: tradeEditorState.tpFirm,
       tpVal: tradeEditorState.tpVal,
@@ -504,6 +656,7 @@ export function useTradeCaptureRuntime({
       parseShot,
       parsed,
       parsing,
+      previewEntries,
       processFile,
       processFiles,
       removeUpload,
@@ -517,7 +670,13 @@ export function useTradeCaptureRuntime({
       setParsed,
       setTradeDate,
       skipMemo,
+      submittingTrade,
       submitMemo,
+      confirmTradePreview,
+      tradeDisclaimer,
+      setTradeDisclaimerChecked,
+      acknowledgeTradeDisclaimer,
+      openTradeDisclaimer,
       toSlashDate,
       tradeEditorState,
       upsertFundamentalsEntry,

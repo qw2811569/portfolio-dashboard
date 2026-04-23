@@ -74,6 +74,7 @@ const LOCAL_API_ROUTE_MODULES = {
   '/api/brain': './api/brain.js',
   '/api/target-prices': './api/target-prices.js',
   '/api/telemetry': './api/telemetry.js',
+  '/api/trade-audit': './api/trade-audit.js',
   '/api/tracked-stocks': './api/tracked-stocks.js',
   '/api/valuation': './api/valuation.js',
 }

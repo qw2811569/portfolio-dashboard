@@ -7,6 +7,7 @@ import {
   mergeQaEvidence,
   savePageScreenshot,
 } from './support/qaHelpers.mjs'
+import { maybeAcceptTradeDisclaimer } from './support/tradeHelpers.mjs'
 
 const STEP_WAIT_MS = 1800
 const TARGET_PORTFOLIO_ID = String(process.env.GOLDEN_PATH_PORTFOLIO_ID || '7865').trim()
@@ -211,6 +212,7 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
         page.getByText(/手動新增交易/)
       )
     ).toBeVisible()
+    await maybeAcceptTradeDisclaimer(page)
 
     const uploadInput = await requireLocator(
       'missing upload input',
@@ -270,9 +272,10 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
     const skipMemoButton = await requireLocator(
       'missing skip memo button',
       page.getByTestId('skip-memo-btn'),
-      page.getByRole('button', { name: '跳過備忘，直接寫入', exact: true })
+      page.getByRole('button', { name: '跳過備忘，先看預覽', exact: true })
     )
     await skipMemoButton.click()
+    await page.getByTestId('trade-confirm-btn').click()
     await settle(page, 2200)
 
     await clickTab(page, 'log', '交易日誌')

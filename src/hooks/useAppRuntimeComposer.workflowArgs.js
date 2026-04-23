@@ -225,6 +225,7 @@ export function composeWeeklyReportClipboardArgs({
 }
 
 export function composeTradeCaptureRuntimeArgs({
+  activePortfolioId,
   holdings,
   tradeLog,
   marketQuotes,
@@ -239,6 +240,7 @@ export function composeTradeCaptureRuntimeArgs({
   setTab,
 }) {
   return {
+    portfolioId: activePortfolioId,
     holdings: holdings || [],
     tradeLog: tradeLog || [],
     marketQuotes: marketQuotes || null,

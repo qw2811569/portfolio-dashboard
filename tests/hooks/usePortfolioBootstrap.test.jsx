@@ -37,6 +37,7 @@ function createBootstrapProps(overrides = {}) {
     setAnalysisHistory: vi.fn(),
     setDailyReport: vi.fn(),
     setResearchHistory: vi.fn(),
+    restoreTabForPortfolio: vi.fn(),
     migrateLegacyPortfolioStorageIfNeeded: vi.fn().mockResolvedValue(false),
     seedJinlianchengIfNeeded: vi.fn().mockResolvedValue(undefined),
     ensurePortfolioRegistry: vi.fn().mockResolvedValue({
@@ -126,6 +127,7 @@ describe('hooks/usePortfolioBootstrap.js', () => {
     )
     expect(global.fetch).not.toHaveBeenCalled()
     expect(props.bootRuntimeRef.current.applyPortfolioSnapshot).toHaveBeenCalled()
+    expect(props.restoreTabForPortfolio).toHaveBeenCalledWith('p-1')
     expect(props.cloudSyncStateRef.current).toEqual({ enabled: false, syncedAt: 0 })
     expect(props.bootRuntimeRef.current.portfolioTransitionRef.current).toEqual({
       isHydrating: false,
@@ -183,6 +185,7 @@ describe('hooks/usePortfolioBootstrap.js', () => {
     })
 
     expect(global.fetch).toHaveBeenCalledTimes(5)
+    expect(props.restoreTabForPortfolio).toHaveBeenCalledWith(OWNER_PORTFOLIO_ID)
     expect(props.setStrategyBrain).toHaveBeenCalledWith({
       rules: [{ text: 'rule' }],
       normalized: true,

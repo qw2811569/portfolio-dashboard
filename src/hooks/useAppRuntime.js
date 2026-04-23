@@ -152,8 +152,15 @@ export function useAppRuntime() {
     resetTradeCaptureRef,
   })
 
-  const { tab, setTab, sortBy, setReviewingEvent, setReviewForm, resetTransientUiState } =
-    appUiState
+  const {
+    tab,
+    setTab,
+    restoreTabForPortfolio,
+    sortBy,
+    setReviewingEvent,
+    setReviewForm,
+    resetTransientUiState,
+  } = appUiState
 
   const { appConfirmDialog, requestAppConfirmation, closeAppConfirmDialog } =
     useAppConfirmationDialog()
@@ -163,6 +170,7 @@ export function useAppRuntime() {
     setters: runtimeSetters,
     ui: {
       tab,
+      restoreTabForPortfolio,
       resetTransientUiState,
       setReviewingEvent,
       setReviewForm,

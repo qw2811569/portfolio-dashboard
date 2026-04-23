@@ -61,7 +61,7 @@ export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, 
     setDailyReport,
   } = setters
 
-  const { resetTransientUiState, setReviewingEvent, setReviewForm } = ui
+  const { restoreTabForPortfolio, resetTransientUiState, setReviewingEvent, setReviewForm } = ui
   const { flashSaved, requestAppConfirmation } = runtime
   const {
     activePortfolioIdRef,
@@ -197,6 +197,7 @@ export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, 
     portfolioNotes,
     marketPriceCache,
     flushCurrentPortfolio,
+    restoreTabForPortfolio,
     resetTransientUiState,
     loadPortfolio,
     flashSaved,
@@ -242,6 +243,7 @@ export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, 
     portfolioNotes,
     marketPriceCache,
     flashSaved,
+    restoreTabForPortfolio,
     activePortfolioId,
     viewMode,
     portfolios,

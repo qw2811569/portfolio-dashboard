@@ -26,6 +26,7 @@ export function useAppRuntimeCoreArgs({ state, setters, ui, runtime, refs, helpe
       setDailyReport: setters.setDailyReport,
     },
     ui: {
+      restoreTabForPortfolio: ui.restoreTabForPortfolio,
       resetTransientUiState: ui.resetTransientUiState,
       setReviewingEvent: ui.setReviewingEvent,
       setReviewForm: ui.setReviewForm,

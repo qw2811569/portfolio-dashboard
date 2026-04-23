@@ -80,6 +80,7 @@ export function usePortfolioBootstrap({
   setAnalysisHistory,
   setDailyReport,
   setResearchHistory,
+  restoreTabForPortfolio = () => {},
   migrateLegacyPortfolioStorageIfNeeded,
   seedJinlianchengIfNeeded,
   ensurePortfolioRegistry,
@@ -150,6 +151,7 @@ export function usePortfolioBootstrap({
       setActivePortfolioId(pid)
       setViewMode(registry.viewMode)
       applyPortfolioSnapshot(snapshot)
+      restoreTabForPortfolio(pid)
       setReady(true)
       captureBootstrapPhase(runId, 'hydrate-shell', startedAt, startedAt, {
         pid,
@@ -159,11 +161,17 @@ export function usePortfolioBootstrap({
 
       const postReadyBackfillStartedAt = getNow()
       const postReadyBackfillChanges = await applyTradeBackfillPatchesIfNeeded()
-      captureBootstrapPhase(runId, 'trade-backfill-post-ready', startedAt, postReadyBackfillStartedAt, {
-        pid,
-        changed: postReadyBackfillChanges,
-        postReady: true,
-      })
+      captureBootstrapPhase(
+        runId,
+        'trade-backfill-post-ready',
+        startedAt,
+        postReadyBackfillStartedAt,
+        {
+          pid,
+          changed: postReadyBackfillChanges,
+          postReady: true,
+        }
+      )
 
       if (!cancelled && postReadyBackfillChanges > 0) {
         snapshot = await loadPortfolioSnapshot(pid)
@@ -370,6 +378,7 @@ export function usePortfolioBootstrap({
     setAnalysisHistory,
     setDailyReport,
     setResearchHistory,
+    restoreTabForPortfolio,
     migrateLegacyPortfolioStorageIfNeeded,
     seedJinlianchengIfNeeded,
     ensurePortfolioRegistry,

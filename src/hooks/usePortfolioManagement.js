@@ -21,6 +21,7 @@ import {
   normalizeNewsEvents,
 } from '../utils.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
+import { removePersistedTabForPortfolio } from '../lib/tabPersistence.js'
 
 /**
  * Read a value from localStorage
@@ -90,6 +91,7 @@ export const usePortfolioManagement = ({
   activePortfolioNotes = {},
   marketPriceCache = null,
   flushCurrentPortfolio = async () => {},
+  restoreTabForPortfolio = () => {},
   resetTransientUiState = () => {},
   loadPortfolio = async () => {},
   setSaved = () => {},
@@ -214,6 +216,7 @@ export const usePortfolioManagement = ({
         await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE)
         await save(ACTIVE_PORTFOLIO_KEY, pid)
         await loadPortfolio(pid, PORTFOLIO_VIEW_MODE)
+        restoreTabForPortfolio(pid)
       } catch (err) {
         console.error('組合切換失敗:', err)
         emitSaved('❌ 組合切換失敗')
@@ -227,6 +230,7 @@ export const usePortfolioManagement = ({
       viewMode,
       portfolioSwitching,
       flushCurrentPortfolio,
+      restoreTabForPortfolio,
       resetTransientUiState,
       loadPortfolio,
       emitSaved,
@@ -304,6 +308,7 @@ export const usePortfolioManagement = ({
         }
 
         removePortfolioData(pid)
+        removePersistedTabForPortfolio(pid)
         const nextPortfolios = portfolios.filter((item) => item.id !== pid)
         nextPid = nextPortfolios.some((item) => item.id === OWNER_PORTFOLIO_ID)
           ? OWNER_PORTFOLIO_ID

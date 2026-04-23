@@ -1,10 +1,17 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { DEFAULT_CANONICAL_PORTFOLIO_TAB } from '../constants.js'
 import { APP_LABELS } from '../lib/appMessages.js'
 import { createDefaultReviewForm } from '../lib/eventUtils.js'
+import {
+  readActivePortfolioIdForTabPersistence,
+  readPersistedTabForPortfolio,
+  writePersistedTabForPortfolio,
+} from '../lib/tabPersistence.js'
 
 export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
-  const [tab, setTab] = useState(DEFAULT_CANONICAL_PORTFOLIO_TAB)
+  const initialPortfolioId = readActivePortfolioIdForTabPersistence()
+  const activePortfolioIdRef = useRef(initialPortfolioId)
+  const [tab, setRawTab] = useState(() => readPersistedTabForPortfolio(initialPortfolioId))
   const [sortBy, setSortBy] = useState('value')
   const [scanQuery, setScanQuery] = useState('')
   const [scanFilter, setScanFilter] = useState(APP_LABELS.allFilter)
@@ -20,6 +27,17 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
   const [researchTarget, setResearchTarget] = useState(null)
   const [researchResults, setResearchResults] = useState(null)
 
+  const setTab = useCallback((nextTab) => {
+    if (!nextTab) return
+    setRawTab(nextTab)
+    writePersistedTabForPortfolio(activePortfolioIdRef.current, nextTab)
+  }, [])
+
+  const restoreTabForPortfolio = useCallback((portfolioId) => {
+    activePortfolioIdRef.current = portfolioId || readActivePortfolioIdForTabPersistence()
+    setRawTab(readPersistedTabForPortfolio(activePortfolioIdRef.current))
+  }, [])
+
   const resetTransientUiState = useCallback(
     ({ resetTab = false } = {}) => {
       resetTradeCaptureRef?.current?.()
@@ -32,7 +50,7 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
       setResearchResults(null)
       setRelayPlanExpanded(false)
       setCatalystFilter('全部')
-      if (resetTab) setTab(DEFAULT_CANONICAL_PORTFOLIO_TAB)
+      if (resetTab) setRawTab(DEFAULT_CANONICAL_PORTFOLIO_TAB)
     },
     [resetTradeCaptureRef]
   )
@@ -40,6 +58,7 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
   return {
     tab,
     setTab,
+    restoreTabForPortfolio,
     sortBy,
     setSortBy,
     scanQuery,

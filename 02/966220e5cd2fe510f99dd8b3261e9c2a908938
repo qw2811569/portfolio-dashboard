@@ -1,0 +1,367 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "afad7b07-54b0-4e0a-97e0-d6b34e583bac",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bfih0t2kq</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "P2 啟動。2 parallel（C1b Stage 2+ + B3）。Loop 繼續。",
+      "prompt_hash": "sha256:d76da67a24c62f69739f2b1460a565cb105913b730c0188bb2c26b089813c5b5",
+      "message_count": 8022,
+      "cost_usd": 0.20365035,
+      "input_tokens": 1,
+      "output_tokens": 2741,
+      "cache_read_tokens": 527362,
+      "cache_creation_tokens": 1153,
+      "timestamp": "2026-04-23T22:40:37.796Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T22:41:37.658Z",
+      "session_duration_secs": 755419,
+      "ai_response_time_secs": 11.41229169054443,
+      "prompt_submitted_at": "2026-04-23T22:40:38.030754Z",
+      "prompt_duration_secs": 67,
+      "accepted_lines": 5822,
+      "overridden_lines": 401,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/b3-weekly-export/brief.md",
+      "line_range": [
+        1,
+        87
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/b3-weekly-export/brief.md",
+          "line_range": [
+            1,
+            87
+          ],
+          "blob_hash": "5f746813fed81cf52d392c3660eef46a1e513682",
+          "additions": 87
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "3685bd18c8a37cff23571b4a369d9dbc71c3dfa7",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "c54192e575739d7f1b5d2a2db8e14c8d68b5a836",
+          "additions": 10,
+          "deletions": 7
+        },
+        {
+          "path": "src/components/events/EventsPanel.jsx",
+          "line_range": [
+            11,
+            663
+          ],
+          "blob_hash": "6726f7713325679e7541f469d570e56d186b9859",
+          "additions": 38,
+          "deletions": 13
+        },
+        {
+          "path": "src/components/overview/DashboardPanel.jsx",
+          "line_range": [
+            472,
+            1268
+          ],
+          "blob_hash": "1238f4de2a583908c00f0216be23f41895f60ab7",
+          "additions": 8,
+          "deletions": 8
+        },
+        {
+          "path": "src/components/watchlist/WatchlistPanel.jsx",
+          "line_range": [
+            6,
+            948
+          ],
+          "blob_hash": "6a7161518be495ac0e41d4504cfffd8e0bf3ac6d",
+          "additions": 29,
+          "deletions": 13
+        },
+        {
+          "path": "src/theme.js",
+          "line_range": [
+            150,
+            160
+          ],
+          "blob_hash": "c6dee16ad58833e8a0c1da48893027d4c2f39db4",
+          "additions": 11
+        },
+        {
+          "path": "tests/e2e/goldenPath.spec.mjs",
+          "line_range": [
+            13,
+            400
+          ],
+          "blob_hash": "baf4c8e7d195fc19ffeb8f3eaa12fdf8ccb3e8d9",
+          "additions": 107,
+          "deletions": 20
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "873163a23ea8dd0688b2afafb4bfc26e381e2155"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8bc04c2cc5c543b0eacb600db2e269b11860ee9e"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "eb80a216233ac420f81b6c421f2f6a0724f43898"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "331761e4638cb5e7d2e0f82914d449e3c238a435"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6281b1cd635445630a8cbb1f52ff7f47599e2545"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ce5febb35a082045637eb50268adffee5362977e"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "39df002c31359573cd1a34d8a90f2942133c8f07"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "bf766c3494b9616f58e982df3f072d5c6de70403"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c0ff2fa0299f13ff74c98ee6f6e09d6a85750a2a"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "98314dc95a3892191173848008a9c203b9201042"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c83390cfe45428c9fdf51b8a6d1a9daf33349460"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f7c97730356db3d19858481a57f3fff51be3e999"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "5b696b18025494311f59a147a3d664e7e6ee7cf1"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "96296efe48528a40c87308383e70123c86c2602e"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "7b2d022fb59345d46019178c6c2423ff977d0d91"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "887b7a51f156aacd485f944cc00be674439847ee"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6d465dda8992da91b5a66bb1876775380c2602dc"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "bf74635a21b93379a37ec80858b761a10f679ecc"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "78aedb7fee1152b3c2037ba151924188c60e0fb6"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "549074f6543d91107ff40330db38c71dbd7cd14b"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9bcf27ec6e31bf655e1fb44ea7f517ee80d81ad5"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "d976c8dc99ac3b675c3f9478637c94a6b5a3b79c"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "50266b4c7cd843f1e5931093c68dd874ba8f9b25"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9210058a53b5ac5d32ccda9e5d8c492d0fe06629"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "a44b6ac6cc6a9ac61bae673256cdf848e9a07798"
+        }
+      ],
+      "prompt_number": 708,
+      "total_additions": 568,
+      "total_deletions": 274,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bfih0t2kq</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch R121 §11 Recurring Ops\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -40 .tmp/r121-recurring-ops/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "R121 §11 done · 3 stage commits · VM cron + monthly rehearsal + Dashboard stale card all ship。\n\nP1 基本收完（C1b Stage 2+ 還在跑）· **啟動 P2 lane**。派 B3 weekly export："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/b3-weekly-export/brief.md)\" 2>&1 | tee ...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

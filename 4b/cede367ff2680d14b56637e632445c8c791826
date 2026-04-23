@@ -1,0 +1,223 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "dff65def-9255-4e42-a61a-3c652eb20671",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>b9v0c1a2u</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "B1 派出 · 8-12 hr。\n\nLoop 繼續。目前 2 parallel（B1 + B2）。下次 Codex 回來 loop 會自動處理派下一個（B7 Accuracy Gate）。",
+      "prompt_hash": "sha256:a2e63086e4b691f47f32284dd42962030d682d72ad5059a9de39ca4035cd5761",
+      "message_count": 7962,
+      "cost_usd": 0.1912473,
+      "input_tokens": 1,
+      "output_tokens": 2693,
+      "cache_read_tokens": 497581,
+      "cache_creation_tokens": 420,
+      "timestamp": "2026-04-23T21:13:39.493Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T21:14:29.811Z",
+      "session_duration_secs": 750191,
+      "ai_response_time_secs": 11.425740057636906,
+      "prompt_submitted_at": "2026-04-23T21:13:39.703762Z",
+      "prompt_duration_secs": 59,
+      "accepted_lines": 2130,
+      "overridden_lines": 219,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/b1-morning-note/brief.md",
+      "line_range": [
+        1,
+        88
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/b1-morning-note/brief.md",
+          "line_range": [
+            1,
+            88
+          ],
+          "blob_hash": "0a3208f544f5315f9bb2d05416ff811e010332e8",
+          "additions": 88
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "0f129944043818bb6e173a4ec3be5a8cf17944f9",
+          "additions": 129,
+          "deletions": 129
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "d1b766ba7477d81e301046d8ae72c3bbb9138263",
+          "additions": 12,
+          "deletions": 9
+        },
+        {
+          "path": "src/components/trade/TradePanel.jsx",
+          "line_range": [
+            5,
+            1426
+          ],
+          "blob_hash": "e8a4fc59ef4fd7ca29d1274ffc2b44f9e2875f59",
+          "additions": 288,
+          "deletions": 84
+        },
+        {
+          "path": "src/hooks/useAppRuntimeComposer.workflowArgs.js",
+          "line_range": [
+            228,
+            243
+          ],
+          "blob_hash": "5b773b8ee48c1500d18268b2ce819acf5e7a41c4",
+          "additions": 2
+        },
+        {
+          "path": "src/hooks/useRouteTradePage.js",
+          "line_range": [
+            15,
+            55
+          ],
+          "blob_hash": "3bbd2f3561b9949194fb881f4143c71726790b65",
+          "additions": 2
+        },
+        {
+          "path": "src/hooks/useTradeCaptureRuntime.js",
+          "line_range": [
+            10,
+            679
+          ],
+          "blob_hash": "3c365b9ee380c62bd03ff7e74bb28153a160e657",
+          "additions": 209,
+          "deletions": 50
+        },
+        {
+          "path": "tests/e2e/dataErrorStates.spec.mjs",
+          "line_range": [
+            3,
+            90
+          ],
+          "blob_hash": "b0c93ea559833f0fb74c59bc91b5a2ee6d79ed11",
+          "additions": 4,
+          "deletions": 1
+        },
+        {
+          "path": "tests/e2e/goldenPath.spec.mjs",
+          "line_range": [
+            10,
+            278
+          ],
+          "blob_hash": "7d969745206fc3f7ca333a2ef93ccd3f62ce15c3",
+          "additions": 4,
+          "deletions": 1
+        },
+        {
+          "path": "tests/e2e/realUserSim.spec.mjs",
+          "line_range": [
+            13,
+            221
+          ],
+          "blob_hash": "f8951d5257e56c981e3310f1c4b97ae0fe1646c8",
+          "additions": 2
+        },
+        {
+          "path": "tests/e2e/trackedStocksSync.spec.mjs",
+          "line_range": [
+            4,
+            67
+          ],
+          "blob_hash": "f808b29def06fb795c3b0a88b961e2c3c034eccf",
+          "additions": 5,
+          "deletions": 2
+        },
+        {
+          "path": "tests/hooks/useRouteTradePage.test.jsx",
+          "line_range": [
+            34,
+            158
+          ],
+          "blob_hash": "4094a13edcb905196e2544246619478449717132",
+          "additions": 5
+        },
+        {
+          "path": "tests/routes/routePages.actions.test.jsx",
+          "line_range": [
+            137,
+            268
+          ],
+          "blob_hash": "df1a851a6b44192499a398f9578edc64c239688a",
+          "additions": 47,
+          "deletions": 8
+        },
+        {
+          "path": "vite.config.js",
+          "line_range": [
+            77,
+            77
+          ],
+          "blob_hash": "c0ac2e1e68ab95e1be4bd9301a5ce6e4df9a7d41",
+          "additions": 1
+        }
+      ],
+      "prompt_number": 702,
+      "total_additions": 944,
+      "total_deletions": 365,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>b9v0c1a2u</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch UX-22b NewsPanel polish\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -50 .tmp/ux-22b-newspanel-polish/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "UX-22b 收 · `d50803a` · mirror 完成。派 P1 next：**B1 Morning Note 08:30 pre-open automation**。"
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/b1-morning-note/brief.md)\" 2>&1 | tee ....\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

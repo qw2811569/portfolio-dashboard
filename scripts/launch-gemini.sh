@@ -65,7 +65,7 @@ EOF
 }
 
 gemini_supports_auth_type() {
-  gemini --help 2>/dev/null | rg -q -- '--auth-type'
+  gemini --help 2>/dev/null | grep -q -- '--auth-type'
 }
 
 build_gemini_args() {

@@ -34,5 +34,10 @@ memory/
 playwright-report/
 test-results/
 
+# Historical UX audit artifacts (round-specific, not regression baseline)
+tests/e2e/snapshots/ux-round*/
+tests/e2e/snapshots/ux-*-verify/
+tests/e2e/snapshots/ux-*-polish/
+
 # Runtime alert log
 coordination/llm-bus/alerts.jsonl

@@ -138,9 +138,9 @@ export default function Header(props) {
       onClick: refreshPrices,
       disabled: refreshing,
       style: {
-        background: refreshing ? C.subtle : alpha(C.blue, '10'),
+        background: refreshing ? C.subtle : alpha(C.ink, '10'),
         color: refreshing ? C.textMute : C.textSec,
-        border: `1px solid ${refreshing ? C.border : alpha(C.blue, A.strongLine)}`,
+        border: `1px solid ${refreshing ? C.border : alpha(C.ink, A.strongLine)}`,
         ...ghostBtn,
         cursor: refreshing ? 'not-allowed' : 'pointer',
       },
@@ -153,7 +153,7 @@ export default function Header(props) {
       className: 'ui-btn',
       onClick: copyWeeklyReport,
       style: {
-        background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.blue, '10')})`,
+        background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.ink, '08')})`,
         color: C.textSec,
         border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
         ...ghostBtn,
@@ -167,9 +167,9 @@ export default function Header(props) {
       className: 'ui-btn',
       onClick: exportLocalBackup,
       style: {
-        background: alpha(C.olive, '12'),
+        background: alpha(C.iron, '12'),
         color: C.textSec,
-        border: `1px solid ${alpha(C.olive, A.strongLine)}`,
+        border: `1px solid ${alpha(C.iron, A.strongLine)}`,
         ...ghostBtn,
       },
     },
@@ -395,9 +395,9 @@ export default function Header(props) {
                   },
                   style: {
                     ...ghostBtn,
-                    background: alpha(C.blue, '10'),
+                    background: alpha(C.ink, '10'),
                     color: C.textSec,
-                    border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+                    border: `1px solid ${alpha(C.ink, A.strongLine)}`,
                   },
                 },
                 workflowCue.actionLabel || '查看詳情'
@@ -533,9 +533,9 @@ export default function Header(props) {
         onClick: editor?.openCreate || createPortfolio,
         disabled: !ready || portfolioSwitching,
         style: {
-          background: `linear-gradient(90deg, ${alpha(C.blue, '12')}, ${alpha(C.teal, '08')})`,
+          background: `linear-gradient(90deg, ${alpha(C.cta, '12')}, ${alpha(C.positive, '08')})`,
           color: C.textSec,
-          border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+          border: `1px solid ${alpha(C.cta, A.strongLine)}`,
           ...ghostBtn,
           cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
         },
@@ -638,7 +638,7 @@ export default function Header(props) {
               style: {
                 background:
                   portfolio.id === activePortfolioId
-                    ? `linear-gradient(90deg, ${alpha(C.lavender, '08')}, ${alpha(C.blue, '08')})`
+                    ? `linear-gradient(90deg, ${alpha(C.lavender, '08')}, ${alpha(C.ink, '08')})`
                     : C.subtle,
                 border: `1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
                 borderRadius: 8,
@@ -688,9 +688,9 @@ export default function Header(props) {
                       className: 'ui-btn',
                       onClick: () => switchPortfolio(portfolio.id),
                       style: {
-                        background: alpha(C.blue, '10'),
+                        background: alpha(C.ink, '10'),
                         color: C.textSec,
-                        border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+                        border: `1px solid ${alpha(C.ink, A.strongLine)}`,
                         ...ghostBtn,
                       },
                     },
@@ -894,9 +894,9 @@ export default function Header(props) {
           className: 'ui-btn',
           onClick: exitOverview,
           style: {
-            background: alpha(C.blue, '10'),
+            background: alpha(C.ink, '10'),
             color: C.textSec,
-            border: `1px solid ${alpha(C.blue, A.strongLine)}`,
+            border: `1px solid ${alpha(C.ink, A.strongLine)}`,
             ...ghostBtn,
           },
         },
@@ -927,11 +927,11 @@ export default function Header(props) {
             style: {
               background:
                 tab === t.k
-                  ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.blue, '10')})`
+                  ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.ink, '10')})`
                   : 'transparent',
               color: tab === t.k ? C.text : C.textMute,
               border: `1px solid ${tab === t.k ? alpha(C.lavender, '26') : 'transparent'}`,
-              boxShadow: tab === t.k ? `0 0 0 1px ${alpha(C.blue, '10')}` : 'none',
+              boxShadow: tab === t.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
               borderRadius: 999,
               minHeight: 44,
               padding: '8px 12px',

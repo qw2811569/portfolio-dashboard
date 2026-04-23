@@ -146,8 +146,8 @@ function CompressedResearchResults({ results }) {
               fontSize: 11,
               padding: '4px 8px',
               borderRadius: 999,
-              background: alpha(C.teal, '12'),
-              border: `1px solid ${alpha(C.teal, '22')}`,
+              background: alpha(C.positive, '12'),
+              border: `1px solid ${alpha(C.positive, '22')}`,
               color: C.textSec,
             },
           },
@@ -170,7 +170,7 @@ export function ResearchHeader({
   return h(
     Card,
     {
-      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.positive, '40')}` },
     },
     h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, 'AI 投資助手'),
     h(
@@ -381,7 +381,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                         background:
                           item.targetSource === 'per-band'
                             ? alpha(C.textMute, '14')
-                            : alpha(C.teal, '14'),
+                            : alpha(C.positive, '14'),
                         color: C.textSec,
                       },
                     },
@@ -446,7 +446,7 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
       style: {
         marginBottom: 8,
         padding: '24px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.teal, '08')}, ${alpha(C.olive, '08')})`,
+        background: `linear-gradient(135deg, ${alpha(C.positive, '08')}, ${alpha(C.iron, '08')})`,
       },
     },
     h(
@@ -454,7 +454,7 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
       {
         style: {
           fontSize: 13,
-          color: isEvolve ? C.up : C.teal,
+          color: isEvolve ? C.up : C.positive,
           fontWeight: 600,
           marginBottom: 8,
         },
@@ -633,7 +633,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           background: 'var(--positive)',
           border: `2px solid ${C.card}`,
           transform: 'translate(-50%, -50%)',
-          boxShadow: `0 0 0 2px ${alpha(C.blue, '30')}`,
+          boxShadow: `0 0 0 2px ${alpha(C.positive, '30')}`,
         },
       })
     ),
@@ -693,7 +693,7 @@ function ConsensusHighlightCard({ item }) {
             fontSize: 11,
             color: C.textSec,
             border: '1px solid var(--positive-soft)',
-            background: alpha(C.blue, '18'),
+            background: alpha(C.positive, '18'),
             borderRadius: 999,
             padding: '4px 8px',
             letterSpacing: '0.06em',
@@ -854,7 +854,7 @@ function AnalystReportsSection({ holdings, analystReports }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+        borderLeft: `3px solid ${alpha(C.positive, '40')}`,
       },
     },
     h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '研究來源索引'),
@@ -976,8 +976,8 @@ export function ResearchProposalCard({
               padding: '8px 8px',
               borderRadius: 7,
               border: 'none',
-              background: canApply ? alpha(C.olive, '22') : C.subtle,
-              color: canApply ? C.olive : C.textMute,
+              background: canApply ? alpha(C.positive, '22') : C.subtle,
+              color: canApply ? C.textSec : C.textMute,
               fontSize: 12,
               fontWeight: 600,
               cursor: !canApply || actionBusy ? 'not-allowed' : 'pointer',
@@ -1189,7 +1189,7 @@ export function ResearchResults({
           key: i,
           style: {
             marginBottom: 4,
-            borderLeft: `2px solid ${alpha([C.blue, C.amber, C.teal][i % 3], '40')}`,
+            borderLeft: `2px solid ${alpha([C.positive, C.amber, C.cta][i % 3], '40')}`,
           },
         },
         h(
@@ -1198,7 +1198,7 @@ export function ResearchResults({
             style: {
               fontSize: 12,
               fontWeight: 600,
-              color: [C.blue, C.amber, C.teal][i % 3],
+              color: [C.positive, C.amber, C.cta][i % 3],
               marginBottom: 4,
             },
           },

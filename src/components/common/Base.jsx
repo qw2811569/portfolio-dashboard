@@ -22,7 +22,7 @@ function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = 
 }
 
 export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
-  const accent = color || C.blue
+  const accent = color || C.ink
   const baseStyle = {
     background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
     border: `1px solid ${C.border}`,
@@ -97,9 +97,14 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
     default: { bg: C.card, text: C.textSec, border: C.border, dot: null },
     up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, '20'), dot: C.up },
     down: { bg: C.downBg, text: C.down, border: alpha(C.down, '20') },
-    teal: { bg: alpha(C.teal, '15'), text: C.textSec, border: alpha(C.teal, '25'), dot: C.teal },
+    teal: {
+      bg: alpha(C.positive, '15'),
+      text: C.textSec,
+      border: alpha(C.positive, '25'),
+      dot: C.positive,
+    },
     amber: { bg: C.amberBg, text: C.textSec, border: alpha(C.amber, '25'), dot: C.amber },
-    olive: { bg: C.oliveBg, text: C.textSec, border: alpha(C.olive, '25'), dot: C.olive },
+    olive: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
     lavender: {
       bg: C.lavBg,
       text: C.textSec,
@@ -166,15 +171,15 @@ export function Button({
   const variants = {
     ghost: {
       default: { bg: C.card, text: C.textSec, border: C.border },
-      blue: { bg: C.cardBlue, text: C.textSec, border: alpha(C.blue, A.strongLine) },
+      blue: { bg: alpha(C.cta, '12'), text: C.textSec, border: alpha(C.cta, A.strongLine) },
       rose: { bg: C.cardRose, text: C.down, border: alpha(C.down, A.strongLine) },
       amber: { bg: C.cardAmber, text: C.textSec, border: alpha(C.amber, A.strongLine) },
-      olive: { bg: C.oliveBg, text: C.textSec, border: alpha(C.olive, A.strongLine) },
+      olive: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, A.strongLine) },
       up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, A.strongLine) },
     },
     filled: {
       default: { bg: C.subtleElev, text: C.text, border: C.border },
-      blue: { bg: C.blue, text: C.text, border: alpha(C.blue, A.strongLine) },
+      blue: { bg: C.cta, text: C.onFill, border: alpha(C.cta, A.strongLine) },
     },
   }
 

@@ -281,7 +281,7 @@ export function DailyAnalysisEmpty({
             padding: '8px 24px',
             borderRadius: 8,
             border: 'none',
-            background: `linear-gradient(135deg,${alpha(C.blue, '20')},${alpha(C.olive, '20')})`,
+            background: `linear-gradient(135deg,${alpha(C.cta, '20')},${alpha(C.positive, '20')})`,
             color: C.onFill,
             fontSize: 12,
             fontWeight: 600,
@@ -357,8 +357,8 @@ export function ReviewGateCard({
           style: {
             padding: '8px 12px',
             borderRadius: 8,
-            border: `1px solid ${alpha(C.olive, '2a')}`,
-            background: alpha(C.olive, '12'),
+            border: `1px solid ${alpha(C.iron, '2a')}`,
+            background: alpha(C.iron, '12'),
             color: C.textSec,
             fontSize: 11,
             fontWeight: 600,
@@ -392,7 +392,7 @@ export function AnalyzingState({ step }) {
       style: {
         textAlign: 'center',
         padding: '48px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.blue, '08')}, ${alpha(C.lavender, '08')})`,
+        background: `linear-gradient(135deg, ${alpha(C.ink, '08')}, ${alpha(C.lavender, '08')})`,
       },
     },
     // Spinning loader
@@ -401,8 +401,8 @@ export function AnalyzingState({ step }) {
         width: 36,
         height: 36,
         margin: '0 auto 16px',
-        border: `3px solid ${alpha(C.blue, '20')}`,
-        borderTop: `3px solid ${C.blue}`,
+        border: `3px solid ${alpha(C.ink, '20')}`,
+        borderTop: `3px solid ${C.ink}`,
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
       },
@@ -450,7 +450,7 @@ export function AnalyzingState({ step }) {
         style: {
           height: '100%',
           width: '60%',
-          background: `linear-gradient(90deg, ${C.blue}, ${C.lavender})`,
+          background: `linear-gradient(90deg, ${C.ink}, ${C.lavender})`,
           borderRadius: 2,
           animation: 'indeterminate 1.8s ease-in-out infinite',
         },
@@ -605,7 +605,7 @@ export function AnalysisStageCard({ report }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${
-          stageMeta.badgeColor === 'teal' ? alpha(C.teal, '40') : alpha(C.amber, '40')
+          stageMeta.badgeColor === 'teal' ? alpha(C.positive, '40') : alpha(C.amber, '40')
         }`,
       },
     },
@@ -660,7 +660,7 @@ export function RitualModeCard({ report }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.olive, '40')}`,
+        borderLeft: `3px solid ${alpha(C.iron, '40')}`,
       },
     },
     h(
@@ -750,7 +750,7 @@ export function WeeklyExportNarrativeCard({ report }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+        borderLeft: `3px solid ${alpha(C.ink, '40')}`,
       },
     },
     h('div', { style: { ...lbl, color: C.textSec } }, '週報匯出內容'),
@@ -817,7 +817,7 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
       'data-testid': 'daily-diff-card',
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(diff.changeCount > 0 ? C.blue : C.teal, '40')}`,
+        borderLeft: `3px solid ${alpha(diff.changeCount > 0 ? C.ink : C.positive, '40')}`,
       },
     },
     h(
@@ -837,7 +837,7 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
         { style: { display: 'grid', gap: 4 } },
         h(
           'div',
-          { style: { ...lbl, color: diff.changeCount > 0 ? C.blue : C.teal } },
+          { style: { ...lbl, color: diff.changeCount > 0 ? C.ink : C.positive } },
           '同日版本差異'
         ),
         h(
@@ -1021,7 +1021,7 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
                           style: {
                             borderRadius: 8,
                             padding: 8,
-                            background: alpha(C.blue, '10'),
+                            background: alpha(C.ink, '10'),
                           },
                         },
                         h(
@@ -1086,7 +1086,7 @@ function AutoConfirmCard({ state = null }) {
   if (!uiState) return null
 
   const toneColor =
-    uiState.tone === 'olive' ? C.olive : uiState.tone === 'amber' ? C.amber : C.textMute
+    uiState.tone === 'olive' ? C.iron : uiState.tone === 'amber' ? C.amber : C.textMute
 
   return h(
     Card,
@@ -1095,7 +1095,7 @@ function AutoConfirmCard({ state = null }) {
         marginBottom: 8,
         borderLeft: `3px solid ${
           uiState.tone === 'olive'
-            ? alpha(C.olive, '40')
+            ? alpha(C.iron, '40')
             : uiState.tone === 'amber'
               ? alpha(C.amber, '40')
               : alpha(C.textMute, '35')
@@ -1267,7 +1267,7 @@ export function EventCorrelations({ correlations, viewMode = 'retail' }) {
   return h(
     Card,
     {
-      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.ink, '40')}` },
     },
     h('div', { style: { ...lbl, color: C.textSec } }, '事件連動分析'),
     correlations.map((ec) =>
@@ -1319,7 +1319,7 @@ export function EventAssessments({
   return h(
     Card,
     {
-      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.blue, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.ink, '40')}` },
     },
     h('div', { style: { ...lbl, color: C.textSec } }, `AI 事件評估 · ${assessments.length}件`),
     assessments.map((ea, i) => {
@@ -1421,7 +1421,7 @@ export function EventAssessments({
                 marginTop: 4,
                 padding: '4px 8px',
                 borderRadius: 5,
-                border: `1px solid ${alpha(C.olive, '2a')}`,
+                border: `1px solid ${alpha(C.iron, '2a')}`,
                 background: 'transparent',
                 color: C.textSec,
                 fontSize: 12,
@@ -1569,7 +1569,7 @@ export function NeedsReviewSection({ needsReview, onNavigate, onExpand }) {
               marginTop: 4,
               padding: '4px 8px',
               borderRadius: 5,
-              border: `1px solid ${alpha(C.olive, '2a')}`,
+              border: `1px solid ${alpha(C.iron, '2a')}`,
               background: 'transparent',
               color: C.textSec,
               fontSize: 12,
@@ -1730,7 +1730,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
   return h(
     Card,
     {
-      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.teal, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.ink, '40')}` },
     },
     h(
       'div',
@@ -2126,8 +2126,8 @@ export function DailyReportPanel({
               width: '100%',
               padding: '8px 12px',
               borderRadius: 8,
-              border: `1px solid ${analyzing ? C.border : alpha(C.blue, '2a')}`,
-              background: analyzing ? C.subtle : C.cardBlue,
+              border: `1px solid ${analyzing ? C.border : alpha(C.cta, '2a')}`,
+              background: analyzing ? C.subtle : alpha(C.cta, '12'),
               color: analyzing ? C.textMute : C.textSec,
               fontSize: 11,
               fontWeight: 600,
@@ -2155,8 +2155,8 @@ export function DailyReportPanel({
               width: '100%',
               padding: '8px 12px',
               borderRadius: 8,
-              border: `1px solid ${alpha(C.teal, '2a')}`,
-              background: alpha(C.teal, '12'),
+              border: `1px solid ${alpha(C.positive, '2a')}`,
+              background: alpha(C.positive, '12'),
               color: C.textSec,
               fontSize: 11,
               fontWeight: 600,

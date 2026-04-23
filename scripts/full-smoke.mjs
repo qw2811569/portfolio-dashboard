@@ -16,6 +16,17 @@ const PLAYWRIGHT_RESULTS_JSON = resolve(PLAYWRIGHT_RESULTS_DIR, 'results.json')
 const PLAYWRIGHT_ARTIFACTS_DIR = resolve(ROOT_DIR, '.playwright-artifacts')
 const PLAYWRIGHT_EVIDENCE_DIR = resolve(PLAYWRIGHT_ARTIFACTS_DIR, 'evidence')
 const SIGNOFF_PATH = resolve(ROOT_DIR, 'docs/release/internal-beta-signoff.md')
+const LOCAL_DEV_URL = String(process.env.FULL_SMOKE_LOCAL_URL || 'http://127.0.0.1:3002').trim()
+const PROD_URL = String(
+  process.env.FULL_SMOKE_PROD_URL || 'https://jiucaivoice-dashboard.vercel.app/'
+).trim()
+const VM_DASHBOARD_URL = String(
+  process.env.FULL_SMOKE_VM_URL || 'https://35.236.155.62.sslip.io/agent-bridge/dashboard/'
+).trim()
+const VM_PROGRESS_URL = String(
+  process.env.FULL_SMOKE_PROGRESS_URL || 'https://35.236.155.62.sslip.io/portfolio-report/progress.json'
+).trim()
+const SKIP_REMOTE_CHECKS = String(process.env.FULL_SMOKE_SKIP_REMOTE_CHECKS || '').trim() === '1'
 
 function logStep(message) {
   console.log(`\n==> ${message}`)
@@ -106,7 +117,7 @@ function getHttpStatus(url) {
   return (result.stdout || '').trim() || '000'
 }
 
-function ensureLocalDevServer(url = 'http://127.0.0.1:3002') {
+function ensureLocalDevServer(url = LOCAL_DEV_URL) {
   const status = getHttpStatus(url)
   if (status === '200') {
     console.log(`local dev server ready · ${url}`)
@@ -241,9 +252,11 @@ try {
   runCommand('npm', ['run', 'build'])
   runCommand('node', ['scripts/render-portfolio-report-previews.mjs'])
 
-  curlStatus('https://jiucaivoice-dashboard.vercel.app/')
-  curlStatus('https://35.236.155.62.sslip.io/agent-bridge/dashboard/')
-  curlJson('https://35.236.155.62.sslip.io/portfolio-report/progress.json')
+  if (!SKIP_REMOTE_CHECKS) {
+    curlStatus(PROD_URL)
+    curlStatus(VM_DASHBOARD_URL)
+    curlJson(VM_PROGRESS_URL)
+  }
 
   preparePlaywrightArtifacts()
   const playwrightRun = runCommandAllowFailure(

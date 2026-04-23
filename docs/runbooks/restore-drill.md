@@ -36,29 +36,28 @@ Status: `runbook-only`
 
 The architecture names the logical lanes as `snapshot/research/*`, `snapshot/brain/*`, `snapshot/portfolio-state/*`, plus the `localStorage checkpoint` added by `T62`.
 
-Current repo reality is not yet one clean prefix. Use the following mapping during drill:
+`R121 §11` now materializes the canonical daily snapshot tree into private Blob. During restore rehearsal, prefer the dated snapshot lanes plus `snapshot/daily-manifest/<date>.json`; the older live keys remain the upstream source artifacts that the worker mirrors from.
 
-| Logical lane                 | Canonical intent                           | Current physical keys seen in repo                                                                                                         | Restore note                                                                                                    |
-| ---------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `snapshot/research/*`        | private Blob research artifacts            | `research-index.json`, `brain-proposals/*`                                                                                                 | `api/research.js` is still local-first with Blob mirror; download both                                          |
-| `snapshot/brain/*`           | private Blob strategy / analysis artifacts | `strategy-brain.json`, `analysis-history-index.json`, `analysis-history/*.json`                                                            | `api/brain.js` still reads local first, Blob fallback; restore both index and per-analysis files                |
-| `snapshot/portfolio-state/*` | private Blob portfolio runtime state       | `holdings.json`, `events.json`, `portfolios/<pid>/snapshots/YYYY-MM-DD.json`                                                               | dated snapshot is the daily immutable point-in-time artifact; holdings / events are mutable mirrors             |
-| `localStorage checkpoint`    | browser truth per `T62`                    | `.tmp/localstorage-backups/latest.json` and VM mirror `/home/chenkuichen/portfolio-backups/YYYY-MM-DD.json` via `scripts/backup-to-vm.mjs` | this lane is required for notes / prefs / pid-scoped local truth; current repo does not yet mirror it into Blob |
+| Logical lane                 | Canonical intent                           | Current physical keys seen in repo                                                                                                                                         | Restore note                                                                                                    |
+| ---------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `snapshot/research/*`        | private Blob research artifacts            | `snapshot/research/<date>/research-index.json`, `snapshot/research/<date>/portfolio-<pid>-research-history.json`                                                           | restore from the dated snapshot first; only fall back to legacy `research-index.json` if the manifest is absent |
+| `snapshot/brain/*`           | private Blob strategy / analysis artifacts | `snapshot/brain/<date>/strategy-brain.json`, `snapshot/brain/<date>/analysis-history-index.json`, `snapshot/brain/<date>/analysis-history/*`                               | restore from the dated snapshot first; legacy `strategy-brain.json` / `analysis-history/*` remain source lanes  |
+| `snapshot/portfolio-state/*` | private Blob portfolio runtime state       | `snapshot/portfolio-state/<date>/<pid>/holdings.json`, `tradeLog.json`, `targets.json`, `fundamentals.json`, `newsEvents.json`                                             | owner `me` holdings/news events can also be mirrored back into `data/holdings.json` / `data/events.json`        |
+| `localStorage checkpoint`    | browser truth per `T62`                    | `snapshot/localStorage-checkpoint/<date>.json` plus local mirror `.tmp/localstorage-backups/latest.json` / VM mirror `/home/chenkuichen/portfolio-backups/YYYY-MM-DD.json` | Blob copy is now canonical for drill selection; local / VM mirrors stay as operator fallback                    |
 
 ### 1.3 Retention
 
 - ACL: private for `brain / research / snapshot`; telemetry is the only explicit public exception (`T49`)
 - current retention truth: no dedicated retention doc exists yet
 - until `O06` lands, use this operating default:
-  - hot retention: keep the latest `30` days in private Blob
-  - cold retention: archive `90` days before cleanup
+  - hot retention: keep the latest `30` days as the normal restore window
+  - cold retention: retain up to `90` days in private Blob, then purge with the manual retention script
   - never delete any artifact referenced by an active anchor branch, release note, or `docs/runbooks/restore-drill-log.md`
 
 ### 1.4 Current Gaps To Treat As Known Variance
 
-- `snapshot-portfolios` exists, but the unified `snapshot/research/*` / `snapshot/brain/*` prefix does not yet
-- `localStorage checkpoint` is extended by `T62`, but current implementation still lands it in local mirror + VM backup, not Blob
-- `snapshot-portfolios` currently does not emit its own `last-success-*.json` marker; until that is added, use Blob `uploadedAt` plus evidence log as the recency proof
+- legacy live keys (`strategy-brain.json`, `research-index.json`, `holdings.json`, `events.json`) still exist because the worker snapshots them into the dated restore tree; treat the dated tree as restore source of truth
+- the dated `last-success/daily-snapshot/<date>.txt` marker is supplementary; automation truth still reads `last-success-daily-snapshot.json`
 
 ## 2. Monthly Restore Drill
 
@@ -119,9 +118,9 @@ node --input-type=module <<'EOF'
 import { list } from '@vercel/blob'
 
 const token = process.env.BLOB_READ_WRITE_TOKEN
-const { blobs } = await list({ prefix: 'portfolios/me/snapshots/', token, limit: 10 })
-for (const blob of (blobs || []).sort((a, b) => Date.parse(b.uploadedAt) - Date.parse(a.uploadedAt))) {
-  console.log(`${blob.pathname}\t${blob.uploadedAt}`)
+const { blobs } = await list({ prefix: 'snapshot/daily-manifest/', token, limit: 1000 })
+for (const blob of (blobs || []).sort((a, b) => String(a.pathname).localeCompare(String(b.pathname)))) {
+  console.log(blob.pathname)
 }
 EOF
 
@@ -147,7 +146,7 @@ Command:
 cd "$DRILL_REPO"
 
 node --input-type=module <<'EOF'
-import { get, list } from '@vercel/blob'
+import { get } from '@vercel/blob'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
@@ -155,66 +154,28 @@ const token = process.env.BLOB_READ_WRITE_TOKEN
 const snapshotDate = process.env.SNAPSHOT_DATE
 const outDir = process.env.DRILL_DOWNLOAD
 
-const exactPaths = [
-  'strategy-brain.json',
-  'analysis-history-index.json',
-  'research-index.json',
-  'holdings.json',
-  'events.json',
-]
+const manifestBlob = await get(`snapshot/daily-manifest/${snapshotDate}.json`, {
+  access: 'private',
+  token,
+  useCache: false,
+})
+const manifest = JSON.parse(await new Response(manifestBlob.stream).text())
 
-const prefixPaths = ['analysis-history/', 'brain-proposals/']
-
-let portfolioIds = ['me']
-try {
-  const registry = await get('portfolios/active.json', {
-    access: 'private',
-    token,
-    useCache: false,
-  })
-  const payload = JSON.parse(await new Response(registry.stream).text())
-  const fromRegistry = payload?.portfolioIds || payload?.activePortfolioIds || []
-  portfolioIds = Array.from(new Set(['me', ...fromRegistry.map((value) => String(value || '').trim())])).filter(Boolean)
-} catch {
-  // fall back to owner portfolio only
-}
-
-for (const portfolioId of portfolioIds) {
-  exactPaths.push(`portfolios/${portfolioId}/snapshots/${snapshotDate}.json`)
-}
-
-async function downloadPath(pathname) {
-  const blob = await get(pathname, { access: 'private', token, useCache: false })
+for (const file of manifest.files || []) {
+  const blob = await get(file.pathname, { access: 'private', token, useCache: false })
   const body = await new Response(blob.stream).text()
-  const target = join(outDir, pathname)
+  const target = join(outDir, file.pathname)
   await mkdir(dirname(target), { recursive: true })
   await writeFile(target, body)
   console.log(target)
 }
-
-for (const pathname of exactPaths) {
-  try {
-    await downloadPath(pathname)
-  } catch (error) {
-    console.log(`missing-or-skipped\t${pathname}\t${error.message}`)
-  }
-}
-
-for (const prefix of prefixPaths) {
-  const page = await list({ prefix, token, limit: 1000 })
-  for (const blob of page?.blobs || []) {
-    await downloadPath(blob.pathname)
-  }
-}
 EOF
-
-cp .tmp/localstorage-backups/latest.json "$DRILL_DOWNLOAD/localstorage-checkpoint.json"
 ```
 
 Verify:
 
 - expected files exist under `$DRILL_DOWNLOAD`
-- `localstorage-checkpoint.json` exists alongside the Blob download
+- `snapshot/localStorage-checkpoint/<date>.json` exists alongside the Blob download
 - missing files are recorded explicitly; they are not silently ignored
 
 Rollback if fail:
@@ -343,20 +304,16 @@ Rollback if fail:
 
 ### Step 5 · Smoke Test The Restored Stage
 
-Default: use the sub-set, not raw `scripts/full-smoke.mjs`, because `full-smoke` currently curls prod URLs and updates signoff docs.
+Default: use staging mode for `scripts/full-smoke.mjs` so the rehearsal stays inside the isolated local stage and skips prod/VM remote probes.
 
 Command:
 
 ```bash
 cd "$DRILL_REPO"
 
-npm run verify:local
-npm run build
-npx vitest run \
-  tests/hooks/usePortfolioPersistence.test.jsx \
-  tests/hooks/usePortfolioSnapshotRuntime.test.jsx \
-  tests/api/portfolio-snapshots.test.js
-npx playwright test tests/e2e/goldenPath.spec.mjs --project=chromium
+FULL_SMOKE_SKIP_REMOTE_CHECKS=1 FULL_SMOKE_LOCAL_URL=http://127.0.0.1:3002 \
+  PORTFOLIO_BASE_URL=http://127.0.0.1:3002/ \
+  node scripts/full-smoke.mjs
 ```
 
 Verify:

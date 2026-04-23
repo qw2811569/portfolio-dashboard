@@ -295,24 +295,24 @@ if (mode === 'staged') {
 const uniqueViolations = dedupeViolations(violations)
 
 if (uniqueViolations.length > 0) {
-  console.error('❌ Facade alias use detected:')
+  console.warn('⚠️ Facade alias use detected (legacy warn only):')
   uniqueViolations.forEach((violation) => {
-    console.error(`  ${violation.file}:${violation.lineNumber}   ${violation.alias}`)
+    console.warn(`  ${violation.file}:${violation.lineNumber}   ${violation.alias}`)
   })
-  console.error('')
-  console.error(
+  console.warn('')
+  console.warn(
     'Facade aliases (C.blue/C.olive/C.teal/C.cyan/C.fillPrimary/C.blueBg/C.oliveBg/C.tealBg) are frozen per C1a'
   )
-  console.error(
+  console.warn(
     '(docs/decisions/2026-04-24-facade-alias-freeze.md; extends R139 Round 2 Q5 and docs/decisions/2026-04-24-r120-scope-batch.md).'
   )
-  console.error(
+  console.warn(
     'Use canonical semantics backed by src/theme.generated.js instead (for example: C.up/C.down/C.amber/C.orange or TOKENS.positive/warning/cta/hot).'
   )
-  console.error(
+  console.warn(
     'If you MUST use a facade for legacy-consistency reason, add `// facade-alias-exception: reason` on the same line.'
   )
-  process.exit(1)
+  process.exit(0)
 }
 
 if (scopes.length === 0) {

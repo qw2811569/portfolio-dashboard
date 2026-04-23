@@ -21,6 +21,12 @@ const IMPACT_COPY = {
   neutral: '中性',
 }
 
+const FILTER_DEFAULTS = {
+  source: '全部來源',
+  impact: '全部影響',
+  ticker: '全部持股',
+}
+
 const PREVIEW_NEWS = [
   {
     title: '台積電 CoWoS 產能續擴，供應鏈接單能見度再往上修',
@@ -148,6 +154,8 @@ function buildAggregateNewsClusters(items = []) {
 }
 
 function ViewModeNotice({ note }) {
+  const isMobile = useIsMobile()
+
   if (!note) return null
 
   return h(
@@ -155,12 +163,103 @@ function ViewModeNotice({ note }) {
     {
       style: {
         marginBottom: 12,
-        borderRadius: 28,
+        padding: isMobile ? '12px 14px' : '16px 16px',
+        borderRadius: isMobile ? 22 : 28,
         borderLeft: `3px solid ${alpha(TOKENS.cta, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: TOKENS.iron } }, '合規顯示模式'),
-    h('div', { style: { fontSize: 12, color: TOKENS.ink, lineHeight: 1.7 } }, note)
+    h(
+      'div',
+      { style: { ...lbl, color: TOKENS.iron, fontSize: isMobile ? 11 : lbl.fontSize } },
+      '合規顯示模式'
+    ),
+    h('div', { style: { fontSize: isMobile ? 11 : 12, color: TOKENS.ink, lineHeight: 1.7 } }, note)
+  )
+}
+
+function countActiveFilters({
+  sourceFilter = FILTER_DEFAULTS.source,
+  impactFilter = FILTER_DEFAULTS.impact,
+  tickerFilter = FILTER_DEFAULTS.ticker,
+}) {
+  let count = 0
+  if (sourceFilter !== FILTER_DEFAULTS.source) count += 1
+  if (impactFilter !== FILTER_DEFAULTS.impact) count += 1
+  if (tickerFilter !== FILTER_DEFAULTS.ticker) count += 1
+  return count
+}
+
+function buildActiveFilterSummary({
+  sourceFilter = FILTER_DEFAULTS.source,
+  impactFilter = FILTER_DEFAULTS.impact,
+  tickerFilter = FILTER_DEFAULTS.ticker,
+}) {
+  const activeFilters = [
+    sourceFilter !== FILTER_DEFAULTS.source ? sourceFilter : null,
+    impactFilter !== FILTER_DEFAULTS.impact ? impactFilter : null,
+    tickerFilter !== FILTER_DEFAULTS.ticker ? tickerFilter : null,
+  ].filter(Boolean)
+
+  if (activeFilters.length === 0) {
+    return '預設：全部來源 / 全部影響 / 全部持股'
+  }
+
+  return activeFilters.join(' · ')
+}
+
+function renderFilterSectionHeading({ title, activeValue, isMobile }) {
+  if (!isMobile) {
+    return h(
+      'div',
+      {
+        style: {
+          fontSize: 14,
+          fontWeight: 600,
+          color: TOKENS.ink,
+          marginBottom: 8,
+          fontFamily: TOKENS.fontSection,
+        },
+      },
+      title
+    )
+  }
+
+  return h(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        gap: 12,
+        marginBottom: 8,
+        flexWrap: 'wrap',
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 13,
+          fontWeight: 600,
+          color: TOKENS.ink,
+          fontFamily: TOKENS.fontSection,
+        },
+      },
+      title
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 11,
+          color: activeValue ? TOKENS.ink : TOKENS.iron,
+          lineHeight: 1.5,
+          fontFamily: TOKENS.fontBody,
+        },
+      },
+      activeValue
+    )
   )
 }
 
@@ -456,17 +555,6 @@ export function NewsFeedSection({
       })
   }, [codesKey, holdingCodes, requestNonce])
 
-  if (loading) {
-    return h(
-      Card,
-      { style: { padding: '24px 16px' } },
-      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 12 } }, '新聞脈絡整理中'),
-      h(Skeleton, { variant: 'card', count: 2 })
-    )
-  }
-
-  if (items.length === 0) return null
-
   const sources = ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))]
   const impacts = ['全部影響', '利多', '利空', '中性']
   const tickers = [
@@ -494,6 +582,20 @@ export function NewsFeedSection({
   const showTickerSideNotes = isViewModeEnabled('showTickerSideNotes', viewMode)
   const aggregateClusters = buildAggregateNewsClusters(filteredItems)
   const showFilterBody = !isMobile || !isMobileFilterCollapsed
+  const activeFilterCount = countActiveFilters({ sourceFilter, impactFilter, tickerFilter })
+  const hasActiveFilters = activeFilterCount > 0
+  const activeFilterSummary = buildActiveFilterSummary({ sourceFilter, impactFilter, tickerFilter })
+
+  if (loading) {
+    return h(
+      Card,
+      { style: { padding: '24px 16px' } },
+      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 12 } }, '新聞脈絡整理中'),
+      h(Skeleton, { variant: 'card', count: 2 })
+    )
+  }
+
+  if (items.length === 0) return null
 
   const handleToggleRead = (item, index) => {
     const itemId = getItemId(item, index)
@@ -505,7 +607,51 @@ export function NewsFeedSection({
     })
   }
 
+  const handleResetFilters = () => {
+    setSourceFilter(FILTER_DEFAULTS.source)
+    setImpactFilter(FILTER_DEFAULTS.impact)
+    setTickerFilter(FILTER_DEFAULTS.ticker)
+  }
+
+  const handleRetryNewsFeed = () => {
+    setLoading(true)
+    setError(null)
+    setRequestNonce((current) => current + 1)
+  }
+
+  const handleSourceFilterChange = (nextValue) => {
+    setSourceFilter(nextValue)
+  }
+
+  const handleImpactFilterChange = (nextValue) => {
+    setImpactFilter(nextValue)
+  }
+
+  const handleTickerFilterChange = (nextValue) => {
+    setTickerFilter(nextValue)
+  }
+
   const heroTitle = holdingCodes.length > 0 ? '這些新聞跟你組合有關' : '今天市場在說什麼'
+  const mobileResultChipStyle = {
+    background: hasActiveFilters ? alpha(TOKENS.warning, '26') : alpha(TOKENS.warning, '18'),
+    border: `1px solid ${hasActiveFilters ? alpha(TOKENS.warning, '36') : alpha(TOKENS.warning, '24')}`,
+    color: TOKENS.ink,
+  }
+  const baseFilterButtonStyle = (isSelected, tone) => ({
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 999,
+    border: `1px solid ${isSelected ? alpha(tone, '2c') : TOKENS.boneDeep}`,
+    background: isSelected ? alpha(tone, '12') : alpha(TOKENS.bone, 'ed'),
+    color: TOKENS.ink,
+    padding: '8px 12px',
+    fontSize: 11,
+    fontFamily: TOKENS.fontBody,
+    fontVariantNumeric: 'tabular-nums',
+    cursor: 'pointer',
+    transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+    boxShadow: isSelected && isMobile ? `0 0 0 1px ${alpha(tone, '14')}` : 'none',
+  })
   const sideNotesBody = h(
     'div',
     {
@@ -514,56 +660,89 @@ export function NewsFeedSection({
       style: {
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: isMobile ? 18 : 16,
       },
     },
     h(
       'div',
-      null,
-      h(
-        'div',
-        {
-          style: {
-            fontSize: 14,
-            fontWeight: 600,
-            color: TOKENS.ink,
-            marginBottom: 8,
-            fontFamily: TOKENS.fontSection,
-          },
-        },
-        showTickerSideNotes ? '依 ticker' : 'Aggregate clusters'
-      ),
+      { 'data-testid': 'news-filter-group-ticker' },
+      renderFilterSectionHeading({
+        title: showTickerSideNotes
+          ? isMobile
+            ? '持股篩選'
+            : '依 ticker'
+          : isMobile
+            ? '組合摘要'
+            : 'Aggregate clusters',
+        activeValue: showTickerSideNotes ? tickerFilter : `${aggregateClusters.length} 個群組`,
+        isMobile,
+      }),
       showTickerSideNotes
-        ? h(
-            'div',
-            { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
-            ...tickers.map((option) =>
+        ? isMobile
+          ? h(
+              'div',
+              {
+                style: {
+                  position: 'relative',
+                },
+              },
               h(
-                'button',
+                'select',
                 {
-                  key: option,
-                  type: 'button',
-                  className: 'ui-btn',
-                  onClick: () => setTickerFilter(option),
+                  'data-testid': 'news-filter-ticker-select',
+                  value: tickerFilter,
+                  onChange: (event) => handleTickerFilterChange(event.target.value),
                   style: {
-                    borderRadius: 999,
-                    border: `1px solid ${tickerFilter === option ? alpha(TOKENS.positive, '2a') : TOKENS.boneDeep}`,
-                    background:
-                      tickerFilter === option
-                        ? alpha(TOKENS.positive, '12')
-                        : alpha(TOKENS.bone, 'ed'),
+                    appearance: 'none',
+                    width: '100%',
+                    minHeight: 44,
+                    borderRadius: 18,
+                    border: `1px solid ${tickerFilter !== FILTER_DEFAULTS.ticker ? alpha(TOKENS.positive, '2c') : TOKENS.boneDeep}`,
+                    background: alpha(TOKENS.bone, 'f7'),
                     color: TOKENS.ink,
-                    padding: '8px 12px',
-                    fontSize: 11,
+                    padding: '10px 40px 10px 12px',
+                    fontSize: 12,
                     fontFamily: TOKENS.fontBody,
                     fontVariantNumeric: 'tabular-nums',
-                    cursor: 'pointer',
+                    outline: 'none',
                   },
                 },
-                option
+                ...tickers.map((option) => h('option', { key: option, value: option }, option))
+              ),
+              h(
+                'span',
+                {
+                  'aria-hidden': 'true',
+                  style: {
+                    position: 'absolute',
+                    top: '50%',
+                    right: 14,
+                    transform: 'translateY(-50%)',
+                    color: TOKENS.iron,
+                    fontSize: 11,
+                    pointerEvents: 'none',
+                  },
+                },
+                'v'
               )
             )
-          )
+          : h(
+              'div',
+              { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+              ...tickers.map((option) =>
+                h(
+                  'button',
+                  {
+                    key: option,
+                    type: 'button',
+                    className: 'ui-btn',
+                    onClick: () => handleTickerFilterChange(option),
+                    style: baseFilterButtonStyle(option === tickerFilter, TOKENS.positive),
+                  },
+                  option
+                )
+              )
+            )
         : h(
             'div',
             {
@@ -594,20 +773,12 @@ export function NewsFeedSection({
     ),
     h(
       'div',
-      null,
-      h(
-        'div',
-        {
-          style: {
-            fontSize: 14,
-            fontWeight: 600,
-            color: TOKENS.ink,
-            marginBottom: 8,
-            fontFamily: TOKENS.fontSection,
-          },
-        },
-        '依來源'
-      ),
+      { 'data-testid': 'news-filter-group-source' },
+      renderFilterSectionHeading({
+        title: isMobile ? '來源篩選' : '依來源',
+        activeValue: sourceFilter,
+        isMobile,
+      }),
       h(
         'div',
         { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
@@ -618,19 +789,8 @@ export function NewsFeedSection({
               key: option,
               type: 'button',
               className: 'ui-btn',
-              onClick: () => setSourceFilter(option),
-              style: {
-                borderRadius: 999,
-                border: `1px solid ${sourceFilter === option ? alpha(TOKENS.warning, '2e') : TOKENS.boneDeep}`,
-                background:
-                  sourceFilter === option ? alpha(TOKENS.warning, '14') : alpha(TOKENS.bone, 'ed'),
-                color: TOKENS.ink,
-                padding: '8px 12px',
-                fontSize: 11,
-                fontFamily: TOKENS.fontBody,
-                fontVariantNumeric: 'tabular-nums',
-                cursor: 'pointer',
-              },
+              onClick: () => handleSourceFilterChange(option),
+              style: baseFilterButtonStyle(option === sourceFilter, TOKENS.warning),
             },
             option
           )
@@ -639,20 +799,12 @@ export function NewsFeedSection({
     ),
     h(
       'div',
-      null,
-      h(
-        'div',
-        {
-          style: {
-            fontSize: 14,
-            fontWeight: 600,
-            color: TOKENS.ink,
-            marginBottom: 8,
-            fontFamily: TOKENS.fontSection,
-          },
-        },
-        '依 impact'
-      ),
+      { 'data-testid': 'news-filter-group-impact' },
+      renderFilterSectionHeading({
+        title: isMobile ? '影響篩選' : '依 impact',
+        activeValue: impactFilter,
+        isMobile,
+      }),
       h(
         'div',
         { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
@@ -673,19 +825,8 @@ export function NewsFeedSection({
                 key: option,
                 type: 'button',
                 className: 'ui-btn',
-                onClick: () => setImpactFilter(option),
-                style: {
-                  borderRadius: 999,
-                  border: `1px solid ${impactFilter === option ? alpha(tone, '2a') : TOKENS.boneDeep}`,
-                  background:
-                    impactFilter === option ? alpha(tone, '12') : alpha(TOKENS.bone, 'ed'),
-                  color: TOKENS.ink,
-                  padding: '8px 12px',
-                  fontSize: 11,
-                  fontFamily: TOKENS.fontBody,
-                  fontVariantNumeric: 'tabular-nums',
-                  cursor: 'pointer',
-                },
+                onClick: () => handleImpactFilterChange(option),
+                style: baseFilterButtonStyle(option === impactFilter, tone),
               },
               option
             )
@@ -697,26 +838,64 @@ export function NewsFeedSection({
       'div',
       {
         style: {
-          padding: '12px 12px',
-          borderRadius: 22,
+          padding: isMobile ? '10px 12px' : '12px 12px',
+          borderRadius: isMobile ? 18 : 22,
           background: alpha(TOKENS.warning, '12'),
           border: `1px solid ${alpha(TOKENS.warning, '20')}`,
           color: TOKENS.ink,
         },
       },
-      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 4 } }, 'Notice'),
-      renderChip(`未讀 ${unreadCount} 則`, {
-        background: alpha(TOKENS.warning, '18'),
-        color: TOKENS.ink,
-        border: `1px solid ${alpha(TOKENS.warning, '28')}`,
-      })
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          null,
+          h(
+            'div',
+            {
+              style: {
+                fontSize: isMobile ? 10 : 11,
+                color: TOKENS.iron,
+                marginBottom: isMobile ? 2 : 4,
+              },
+            },
+            isMobile ? '閱讀狀態' : 'Notice'
+          ),
+          isMobile &&
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 11,
+                  color: TOKENS.charcoal,
+                  lineHeight: 1.6,
+                },
+              },
+              unreadCount > 0 ? '先標已看，再交給 Daily 判讀。' : '這輪都已經標記已看。'
+            )
+        ),
+        renderChip(`未讀 ${unreadCount} 則`, {
+          background: alpha(TOKENS.warning, '18'),
+          color: TOKENS.ink,
+          border: `1px solid ${alpha(TOKENS.warning, '28')}`,
+        })
+      )
     ),
     h(
       'div',
       {
         style: {
-          padding: '12px',
-          borderRadius: 22,
+          padding: isMobile ? '10px 12px' : '12px',
+          borderRadius: isMobile ? 18 : 22,
           background: alpha(TOKENS.positive, '10'),
           border: `1px solid ${alpha(TOKENS.positive, '22')}`,
         },
@@ -728,7 +907,7 @@ export function NewsFeedSection({
             marginBottom: 8,
           },
         },
-        renderChip('今日趨勢摘要', {
+        renderChip(isMobile ? '今日摘要' : '今日趨勢摘要', {
           background: alpha(TOKENS.positive, '18'),
           border: `1px solid ${alpha(TOKENS.positive, '24')}`,
           color: TOKENS.ink,
@@ -738,7 +917,7 @@ export function NewsFeedSection({
         'div',
         {
           style: {
-            fontSize: 14,
+            fontSize: isMobile ? 12 : 14,
             lineHeight: 1.7,
             color: TOKENS.ink,
             fontFamily: TOKENS.fontBody,
@@ -764,14 +943,11 @@ export function NewsFeedSection({
       'div',
       null,
       error &&
+        !isMobile &&
         h(DataError, {
           status: error.status,
           resource: 'news',
-          onRetry: () => {
-            setLoading(true)
-            setError(null)
-            setRequestNonce((current) => current + 1)
-          },
+          onRetry: handleRetryNewsFeed,
           style: { marginBottom: 12 },
         }),
       h(
@@ -779,7 +955,7 @@ export function NewsFeedSection({
         {
           style: {
             marginBottom: 16,
-            padding: '24px 24px',
+            padding: isMobile ? '20px 18px' : '24px 24px',
             borderRadius: 30,
             border: `1px solid ${TOKENS.boneDeep}`,
             background: `radial-gradient(circle at 16% 18%, ${alpha(TOKENS.warning, '18')}, transparent 28%), linear-gradient(180deg, ${alpha(TOKENS.bone, 'fa')}, ${alpha(TOKENS.bone, 'ec')})`,
@@ -857,9 +1033,13 @@ export function NewsFeedSection({
                 },
               },
               renderChip(`${filteredItems.length} 則相關新聞`, {
-                background: alpha(TOKENS.warning, '18'),
-                border: `1px solid ${alpha(TOKENS.warning, '24')}`,
-                color: TOKENS.ink,
+                ...(isMobile
+                  ? mobileResultChipStyle
+                  : {
+                      background: alpha(TOKENS.warning, '18'),
+                      border: `1px solid ${alpha(TOKENS.warning, '24')}`,
+                      color: TOKENS.ink,
+                    }),
               }),
               renderChip(`Ticker filter: ${holdingCodes.length || 'Auto'}`, {
                 background: alpha(TOKENS.bone, 'f0'),
@@ -932,6 +1112,74 @@ export function NewsFeedSection({
         )
       ),
       error &&
+        isMobile &&
+        h(
+          'div',
+          {
+            'data-testid': 'news-mobile-error-notice',
+            style: {
+              marginBottom: 12,
+              padding: '10px 12px',
+              borderRadius: 18,
+              background: alpha(TOKENS.warning, '12'),
+              border: `1px solid ${alpha(TOKENS.warning, '20')}`,
+              display: 'grid',
+              gap: 8,
+            },
+          },
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: 8,
+              },
+            },
+            h(
+              'div',
+              { style: { flex: 1, minWidth: 0 } },
+              h(
+                'div',
+                { style: { fontSize: 10, color: TOKENS.iron, marginBottom: 4 } },
+                'Heads-up'
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 12,
+                    color: TOKENS.ink,
+                    lineHeight: 1.7,
+                    fontFamily: TOKENS.fontBody,
+                  },
+                },
+                '新聞源暫時打不開，先用 preview fallback，不擋住你先讀重點。'
+              )
+            ),
+            renderChip('preview fallback', {
+              background: alpha(TOKENS.warning, '18'),
+              border: `1px solid ${alpha(TOKENS.warning, '24')}`,
+              color: TOKENS.ink,
+            })
+          ),
+          h(
+            Button,
+            {
+              type: 'button',
+              size: 'xs',
+              onClick: handleRetryNewsFeed,
+              style: {
+                textTransform: 'none',
+                justifySelf: 'flex-start',
+              },
+            },
+            '再試一次'
+          )
+        ),
+      error &&
+        !isMobile &&
         h(
           'div',
           {
@@ -988,39 +1236,130 @@ export function NewsFeedSection({
               'div',
               {
                 style: {
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 12,
+                  display: 'grid',
+                  gap: 10,
                   marginBottom: showFilterBody ? 12 : 0,
                 },
               },
               h(
                 'div',
-                { style: { ...lbl, color: TOKENS.iron, marginBottom: 0 } },
-                'Filter / Side notes'
-              ),
-              h(
-                'button',
                 {
-                  'data-testid': 'news-filter-toggle',
-                  type: 'button',
-                  className: 'ui-btn',
-                  'aria-expanded': showFilterBody,
-                  'aria-controls': 'news-side-notes-body',
-                  onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
                   style: {
-                    borderRadius: 999,
-                    border: `1px solid ${TOKENS.boneDeep}`,
-                    background: alpha(TOKENS.bone, 'ef'),
-                    color: TOKENS.ink,
-                    padding: '8px 12px',
-                    fontSize: 11,
-                    fontFamily: TOKENS.fontBody,
-                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    flexWrap: 'wrap',
                   },
                 },
-                showFilterBody ? '收起 filter' : '展開 filter'
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'grid',
+                      gap: 6,
+                      flex: 1,
+                      minWidth: 0,
+                    },
+                  },
+                  h(
+                    'div',
+                    { style: { ...lbl, color: TOKENS.iron, marginBottom: 0 } },
+                    'Filter / Side notes'
+                  ),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        display: 'flex',
+                        gap: 8,
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                      },
+                    },
+                    renderChip(`${filteredItems.length} 則`, mobileResultChipStyle),
+                    renderChip(hasActiveFilters ? `${activeFilterCount} 個篩選中` : '預設狀態', {
+                      background: hasActiveFilters
+                        ? alpha(TOKENS.positive, '12')
+                        : alpha(TOKENS.bone, 'f0'),
+                      border: `1px solid ${hasActiveFilters ? alpha(TOKENS.positive, '24') : TOKENS.boneDeep}`,
+                      color: hasActiveFilters ? TOKENS.ink : TOKENS.charcoal,
+                    })
+                  ),
+                  h(
+                    'div',
+                    {
+                      'data-testid': 'news-filter-summary',
+                      style: {
+                        fontSize: 11,
+                        color: TOKENS.charcoal,
+                        lineHeight: 1.6,
+                        fontFamily: TOKENS.fontBody,
+                      },
+                    },
+                    activeFilterSummary
+                  )
+                ),
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                      justifyContent: 'flex-end',
+                    },
+                  },
+                  showFilterBody &&
+                    h(
+                      Button,
+                      {
+                        type: 'button',
+                        size: 'xs',
+                        disabled: !hasActiveFilters,
+                        onClick: handleResetFilters,
+                        style: {
+                          textTransform: 'none',
+                        },
+                      },
+                      '全部清除'
+                    ),
+                  h(
+                    Button,
+                    {
+                      'data-testid': 'news-filter-toggle',
+                      type: 'button',
+                      size: 'xs',
+                      'aria-expanded': showFilterBody,
+                      'aria-controls': 'news-side-notes-body',
+                      onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
+                      style: {
+                        textTransform: 'none',
+                        background: hasActiveFilters
+                          ? alpha(TOKENS.warning, '18')
+                          : alpha(TOKENS.bone, 'ef'),
+                        border: `1px solid ${hasActiveFilters ? alpha(TOKENS.warning, '32') : TOKENS.boneDeep}`,
+                        color: TOKENS.ink,
+                      },
+                    },
+                    h(
+                      'span',
+                      {
+                        style: {
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        },
+                      },
+                      h('span', null, showFilterBody ? '收起 filter' : '看篩選'),
+                      h(
+                        'span',
+                        { 'aria-hidden': 'true', style: { fontSize: 11, color: TOKENS.iron } },
+                        showFilterBody ? '^' : 'v'
+                      )
+                    )
+                  )
+                )
               )
             )
           : h(
@@ -1028,28 +1367,7 @@ export function NewsFeedSection({
               { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
               'Filter / Side notes'
             ),
-        showFilterBody
-          ? sideNotesBody
-          : h(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                },
-              },
-              renderChip(`未讀 ${unreadCount} 則`, {
-                background: alpha(TOKENS.warning, '18'),
-                color: TOKENS.ink,
-                border: `1px solid ${alpha(TOKENS.warning, '28')}`,
-              }),
-              renderChip(showTickerSideNotes ? 'ticker filters' : 'aggregate summary', {
-                background: alpha(TOKENS.bone, 'ef'),
-                color: TOKENS.charcoal,
-                border: `1px solid ${TOKENS.boneDeep}`,
-              })
-            )
+        showFilterBody ? sideNotesBody : null
       )
     )
   )

@@ -268,6 +268,9 @@ describe('components/NewsFeedSection', () => {
     expect(screen.getAllByTestId('news-article-rail')[0]).toHaveStyle({ width: '100%' })
     expect(screen.getByTestId('news-side-notes')).toHaveStyle({ position: 'static' })
     expect(screen.getByTestId('news-filter-toggle')).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('news-filter-summary')).toHaveTextContent(
+      '預設：全部來源 / 全部影響 / 全部持股'
+    )
     expect(screen.queryByTestId('news-side-notes-body')).not.toBeInTheDocument()
   })
 
@@ -290,7 +293,24 @@ describe('components/NewsFeedSection', () => {
 
     expect(screen.getByTestId('news-filter-toggle')).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByTestId('news-side-notes-body')).toBeInTheDocument()
-    expect(screen.getByText('依來源')).toBeInTheDocument()
-    expect(screen.getByText('依 impact')).toBeInTheDocument()
+    expect(screen.getByText('來源篩選')).toBeInTheDocument()
+    expect(screen.getByText('影響篩選')).toBeInTheDocument()
+    expect(screen.getByTestId('news-filter-ticker-select')).toBeInTheDocument()
+  })
+
+  it('renders a compact mobile error heads-up and retry action on fetch failure', async () => {
+    mockMatchMedia(true)
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network error'))
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330']} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('news-mobile-error-notice')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText('preview fallback')).toBeInTheDocument()
+    expect(screen.getByText('再試一次')).toBeInTheDocument()
   })
 })

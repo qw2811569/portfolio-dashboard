@@ -9,6 +9,15 @@ import {
 } from './support/qaHelpers.mjs'
 
 const STEP_WAIT_MS = 1800
+const TARGET_PORTFOLIO_ID = String(process.env.GOLDEN_PATH_PORTFOLIO_ID || '7865').trim()
+const TARGET_PORTFOLIO_LABEL = String(
+  process.env.GOLDEN_PATH_PORTFOLIO_LABEL ||
+    (TARGET_PORTFOLIO_ID === 'me' ? '我' : TARGET_PORTFOLIO_ID === '7865' ? '金聯成' : TARGET_PORTFOLIO_ID)
+).trim()
+const TARGET_PORTFOLIO_SCENARIO = String(
+  process.env.GOLDEN_PATH_SCENARIO ||
+    `golden-path-${TARGET_PORTFOLIO_ID === 'me' ? 'me' : TARGET_PORTFOLIO_ID}`
+).trim()
 
 async function settle(page, waitMs = STEP_WAIT_MS) {
   await page.waitForLoadState('domcontentloaded')
@@ -50,7 +59,7 @@ async function getSelectedOptionLabel(selectLocator) {
   )
 }
 
-async function switchToJinliancheng(page) {
+async function switchToPortfolio(page, { portfolioId = '', portfolioLabel = '' } = {}) {
   const custIdInput = await firstExisting(
     page.getByTestId('cust-id-input'),
     page.getByLabel(/cust[_\s-]?id|客戶編號/i)
@@ -61,23 +70,34 @@ async function switchToJinliancheng(page) {
   )
 
   if (custIdInput && loginButton && (await custIdInput.isVisible().catch(() => false))) {
-    await custIdInput.fill('7865')
+    await custIdInput.fill(portfolioId)
     await loginButton.click()
     await settle(page, 2500)
     return
   }
 
   const select = await getPortfolioSelect(page)
-  const jinValue = await select.evaluate((element) => {
-    const option = Array.from(element.options).find((item) => /金聯成/.test(item.textContent || ''))
-    return option?.value || ''
-  })
+  const matchedValue = await select.evaluate(
+    (element, target) => {
+      const options = Array.from(element.options)
+      const exact = options.find((item) => String(item.value || '').trim() === target.portfolioId)
+      if (exact) return exact.value
 
-  if (!jinValue) {
-    throw new Error('missing 金聯成 option in portfolio selector')
+      const byLabel = options.find((item) =>
+        String(item.textContent || '')
+          .trim()
+          .includes(target.portfolioLabel)
+      )
+      return byLabel?.value || ''
+    },
+    { portfolioId, portfolioLabel }
+  )
+
+  if (!matchedValue) {
+    throw new Error(`missing ${portfolioId || portfolioLabel} option in portfolio selector`)
   }
 
-  await select.selectOption(jinValue)
+  await select.selectOption(matchedValue)
   await settle(page, 2200)
 }
 
@@ -88,24 +108,30 @@ test.afterEach(async ({}, testInfo) => {
 test('golden path smoke covers holdings, research, events, news, daily, log, upload, and logout', async ({
   page,
 }, testInfo) => {
-  mergeQaEvidence(testInfo, { scenario: 'golden-path' })
+  mergeQaEvidence(testInfo, { scenario: TARGET_PORTFOLIO_SCENARIO })
   installQaMonitor(testInfo, page)
 
   await test.step('step 1: open home', async () => {
     await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
     await settle(page, 2600)
     await expect(page).toHaveTitle(/持倉看板|Portfolio/)
+    await switchToPortfolio(page, {
+      portfolioId: TARGET_PORTFOLIO_ID,
+      portfolioLabel: TARGET_PORTFOLIO_LABEL,
+    })
+
+    const select = await getPortfolioSelect(page)
+    await expect.soft(select).toBeVisible()
+    expect(await getSelectedOptionLabel(select)).toMatch(
+      new RegExp(TARGET_PORTFOLIO_ID === 'me' ? '我' : TARGET_PORTFOLIO_LABEL)
+    )
     await savePageScreenshot(page, testInfo, '01-home.png')
   })
 
-  await test.step('step 2: enter owner context and verify holdings shell', async () => {
-    await switchToJinliancheng(page)
-    const select = await getPortfolioSelect(page)
-    await expect.soft(select).toBeVisible()
-    expect(await getSelectedOptionLabel(select)).toMatch(/金聯成/)
+  await test.step('step 2: verify holdings shell', async () => {
     await expect(
       await requireLocator(
-        'missing holdings shell after owner switch',
+        'missing holdings shell after portfolio switch',
         page.getByTestId('holdings-panel'),
         page.getByText(/持股明細/)
       )

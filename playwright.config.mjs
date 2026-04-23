@@ -15,9 +15,9 @@ export default defineConfig({
     actionTimeout: 20000,
     navigationTimeout: 60000,
     ignoreHTTPSErrors: true,
-    trace: 'retain-on-failure',
+    trace: process.env.PLAYWRIGHT_TRACE_MODE || 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.PLAYWRIGHT_VIDEO_MODE || 'retain-on-failure',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

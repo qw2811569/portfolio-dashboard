@@ -408,6 +408,7 @@ export function useAppRuntimeWorkflows({
 
   const { portfolioPanelsData, portfolioPanelsActions } = useAppPanelsRuntime({
     data: {
+      ready,
       activePortfolioId,
       overviewPortfolios,
       overviewTotalValue,

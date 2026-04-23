@@ -84,6 +84,35 @@ describe('components/DashboardPanel', () => {
     expect(screen.getByText('聯發科 (2454)')).toBeInTheDocument()
   })
 
+  it('renders the overview compare strip below the hero and jumps to overview on click', () => {
+    const onNavigate = vi.fn()
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          onNavigate,
+          compareStrip: {
+            primary: { label: '小奎主要投資' },
+            secondary: { label: '金聯成組合' },
+            summaryText: '小奎主要投資 +0.7% · 金聯成組合 +0.6% · 今日差距 +0.1pp',
+            insightText: '小奎主要投資 今天比 金聯成組合 快 +0.1pp · 主要拉動是 台積電 (2330)',
+            tone: 'calm',
+            staleStatus: 'stale',
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('dashboard-compare-strip')).toBeInTheDocument()
+    expect(screen.getByTestId('dashboard-compare-summary')).toHaveTextContent('今日差距 +0.1pp')
+    expect(screen.getByText('stale')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('dashboard-compare-summary'))
+
+    expect(onNavigate).toHaveBeenCalledWith('overview')
+  })
+
   it('surfaces the urgent alert summary when urgentCount is non-zero', () => {
     const { container } = render(
       <DashboardPanel

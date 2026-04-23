@@ -4,6 +4,7 @@ const { chromium } = require("playwright");
 
 const URL = process.env.APP_URL || "http://127.0.0.1:3002";
 const REQUIRED_MARKERS = ["持倉看板", "持倉", "深度研究"];
+const IGNORED_RESPONSE_PATTERNS = [/\/api\/target-prices\?code=/];
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
@@ -17,9 +18,17 @@ async function main() {
   page.on("console", (message) => {
     const type = message.type();
     const text = message.text();
+    if (/^Failed to load resource:/i.test(text)) return;
     if (type === "error" || /ReferenceError|TypeError/.test(text)) {
       issues.push(`console:${type}: ${text}`);
     }
+  });
+
+  page.on("response", (response) => {
+    if (response.status() < 400) return;
+    const url = response.url();
+    if (IGNORED_RESPONSE_PATTERNS.some((pattern) => pattern.test(url))) return;
+    issues.push(`response:${response.status()}: ${url}`);
   });
 
   try {

@@ -7,6 +7,7 @@ export function composePortfolioPanelsContextInput({
   actions,
 }) {
   return {
+    ready: data.ready,
     activePortfolioId: data.activePortfolioId,
     overviewPortfolios: data.overviewPortfolios,
     overviewTotalValue: data.overviewTotalValue,

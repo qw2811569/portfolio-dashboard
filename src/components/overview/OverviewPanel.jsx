@@ -1,7 +1,8 @@
 import { createElement as h } from 'react'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { C, alpha } from '../../theme.js'
-import { Card, Button, MetricCard, StaleBadge } from '../common'
+import { Card, Button, MetricCard, Skeleton, StaleBadge } from '../common'
 import { STOCK_META } from '../../seedData.js'
 import { ConcentrationDashboard } from './ConcentrationDashboard.jsx'
 import { KpiCards } from './KpiCards.jsx'
@@ -27,6 +28,22 @@ const ghostBtn = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
 
+function formatSignedWholeNumber(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '-'
+  return `${number >= 0 ? '+' : ''}${Math.round(number).toLocaleString()}`
+}
+
+function resolvePendingEventsCount(portfolio) {
+  const explicitCount = Number(portfolio?.pendingEventsCount)
+  if (Number.isFinite(explicitCount)) return explicitCount
+
+  if (Array.isArray(portfolio?.pendingEvents)) return portfolio.pendingEvents.length
+
+  const fallbackCount = Number(portfolio?.pendingEvents)
+  return Number.isFinite(fallbackCount) ? fallbackCount : 0
+}
+
 function flattenPortfolioHoldings(portfolios = []) {
   return (Array.isArray(portfolios) ? portfolios : []).flatMap((portfolio) =>
     Array.isArray(portfolio?.holdings) ? portfolio.holdings : []
@@ -42,6 +59,31 @@ function formatTaipeiDate() {
   }).format(new Date())
 }
 
+function OverviewPanelSkeleton() {
+  return h(
+    'div',
+    { 'data-testid': 'overview-panel-skeleton' },
+    h(
+      Card,
+      { style: { marginBottom: 8, padding: '24px 16px' } },
+      h(
+        'div',
+        { style: { fontSize: 11, color: C.textMute, marginBottom: 12 } },
+        '跨組合脈絡整理中'
+      ),
+      h(Skeleton, { variant: 'text', count: 2 }),
+      h('div', { style: { height: 16 } }),
+      h(Skeleton, { variant: 'card', count: 2 })
+    ),
+    h(
+      Card,
+      { style: { marginBottom: 8, padding: '20px 16px' } },
+      h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 12 } }, '組合摘要載入中'),
+      h(Skeleton, { variant: 'row', count: 3 })
+    )
+  )
+}
+
 /**
  * Overview Header
  */
@@ -52,8 +94,16 @@ export function OverviewHeader({
   watchlistCount = 0,
   missingTargetCount = 0,
   staleStatus = 'fresh',
+  dashboardHeadline = null,
   onExit,
 }) {
+  const isMobile = useIsMobile()
+  const headlineText = String(dashboardHeadline?.headline || '').trim()
+  const headlineTone = String(dashboardHeadline?.tone || 'calm')
+    .trim()
+    .toLowerCase()
+  const headlineColor =
+    headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
   const heroMetrics = [
     { label: '本週損益', value: '-' },
     { label: '本月損益', value: '-' },
@@ -156,6 +206,23 @@ export function OverviewHeader({
             )
           )
         ),
+        headlineText &&
+          h(
+            'div',
+            {
+              'data-testid': 'overview-dashboard-headline',
+              style: {
+                fontSize: 'clamp(28px, 4.4vw, 38px)',
+                fontWeight: 700,
+                color: headlineColor,
+                fontFamily: 'var(--font-headline)',
+                lineHeight: 1.14,
+                letterSpacing: '-0.02em',
+                maxWidth: '18ch',
+              },
+            },
+            headlineText
+          ),
         h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
         h(
           'div',
@@ -196,7 +263,14 @@ export function OverviewHeader({
         h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '全部總覽'),
         h(
           'div',
-          { style: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 } },
+          {
+            'data-testid': 'overview-summary-metrics-grid',
+            style: {
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '1fr 1fr 1fr',
+              gap: 4,
+            },
+          },
           h(MetricCard, {
             label: '組合數',
             value: portfolioCount,
@@ -278,7 +352,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
               h(
                 'div',
                 { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
-                `${portfolio.holdingCount} 檔 · 待處理事件 ${portfolio.pendingEvents} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
+                `${portfolio.holdingCount} 檔 · 待處理事件 ${resolvePendingEventsCount(portfolio)} 件 · 報酬 ${portfolio.retPct >= 0 ? '+' : ''}${portfolio.retPct.toFixed(1)}%`
               ),
               noteSummary &&
                 h(
@@ -296,7 +370,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                   className: 'tn',
                   style: { fontSize: 16, fontWeight: 700, color: pc(portfolio.totalPnl) },
                 },
-                portfolio.totalPnl >= 0 ? '+' : '' + Math.round(portfolio.totalPnl).toLocaleString()
+                formatSignedWholeNumber(portfolio.totalPnl)
               ),
               h(
                 Button,
@@ -493,10 +567,22 @@ export function OverviewPanel({
   watchlistCount,
   missingTargetCount,
   staleStatus = 'fresh',
+  dashboardHeadline = null,
+  compareStrip = null,
+  loading = false,
   onExit,
   onSwitch,
 }) {
+  if (loading) return h(OverviewPanelSkeleton)
+
   const overviewHoldings = flattenPortfolioHoldings(portfolios)
+  const resolvedDashboardHeadline =
+    dashboardHeadline?.headline || compareStrip?.insightText
+      ? {
+          headline: dashboardHeadline?.headline || compareStrip?.insightText || '',
+          tone: dashboardHeadline?.tone || compareStrip?.tone || 'calm',
+        }
+      : null
 
   return h(
     'div',
@@ -508,6 +594,7 @@ export function OverviewPanel({
       watchlistCount,
       staleStatus,
       missingTargetCount,
+      dashboardHeadline: resolvedDashboardHeadline,
       onExit,
     }),
     h(KpiCards, { portfolios }),

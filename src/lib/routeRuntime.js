@@ -186,6 +186,7 @@ export function buildOverviewRuntimeData({ portfolios = null, marketPriceCache =
     overviewPortfolios: portfolioSummaries.map((portfolio) => ({
       ...portfolio,
       pendingEvents: portfolio.pendingEvents.length,
+      pendingEventsCount: portfolio.pendingEvents.length,
     })),
     overviewTotalValue: portfolioSummaries.reduce(
       (sum, portfolio) => sum + portfolio.totalValue,

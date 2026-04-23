@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ACTIVE_PORTFOLIO_KEY, OWNER_PORTFOLIO_ID, buildPortfolioRoute } from '../constants.js'
+import { buildOverviewDashboardHeadline } from '../lib/overviewCompare.js'
 import {
   buildOverviewRuntimeData,
   readRouteMarketState,
@@ -23,6 +24,11 @@ export function useRouteOverviewPage() {
     } = buildOverviewRuntimeData({ portfolios, marketPriceCache })
 
     const activePortfolioId = readStorageValue(ACTIVE_PORTFOLIO_KEY) || OWNER_PORTFOLIO_ID
+    const dashboardHeadline = buildOverviewDashboardHeadline({
+      portfolioCount: overviewPortfolios.length,
+      duplicateHoldingsCount: overviewDuplicateHoldings.length,
+      pendingItemsCount: overviewPendingItems.length,
+    })
 
     return {
       portfolioCount: overviewPortfolios.length,
@@ -32,6 +38,7 @@ export function useRouteOverviewPage() {
       activePortfolioId,
       duplicateHoldings: overviewDuplicateHoldings,
       pendingItems: overviewPendingItems,
+      dashboardHeadline,
       onExit: () => navigate(buildPortfolioRoute(activePortfolioId)),
       onSwitch: (portfolioId) => navigate(buildPortfolioRoute(portfolioId)),
     }

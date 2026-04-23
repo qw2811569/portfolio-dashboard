@@ -4,7 +4,7 @@ import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
-import { Button, Card } from '../common'
+import { Button, Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
@@ -123,6 +123,111 @@ function buildSubmetrics({ holdings = [], watchlist = [] }) {
     { label: '追蹤中', value: `${safeWatchlist.length}` },
     { label: '需要補充', value: `${missingTargetCount}` },
   ]
+}
+
+function DashboardCompareStrip({ compareStrip = null, onNavigate = null }) {
+  if (!compareStrip) return null
+
+  const accentColor = compareStrip.tone === 'watch' ? C.amber : C.up
+  const toneColor = compareStrip.tone === 'watch' ? C.textSec : C.text
+  const isClickable = typeof onNavigate === 'function'
+  const showStaleBadge =
+    compareStrip.staleStatus && ['stale', 'missing', 'failed'].includes(compareStrip.staleStatus)
+  const RootTag = isClickable ? 'button' : 'div'
+
+  return h(
+    Card,
+    {
+      'data-testid': 'dashboard-compare-strip',
+      style: {
+        marginTop: 8,
+        marginBottom: 8,
+        padding: '12px 14px',
+        border: `1px solid ${alpha(accentColor, compareStrip.tone === 'watch' ? '22' : '18')}`,
+        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(accentColor, '08')})`,
+      },
+    },
+    h(
+      RootTag,
+      isClickable
+        ? {
+            type: 'button',
+            onClick: () => onNavigate('overview'),
+            style: {
+              width: '100%',
+              display: 'grid',
+              gap: 6,
+              border: 'none',
+              background: 'transparent',
+              padding: 0,
+              textAlign: 'left',
+              cursor: 'pointer',
+              color: 'inherit',
+              font: 'inherit',
+            },
+          }
+        : {
+            style: {
+              display: 'grid',
+              gap: 6,
+            },
+          },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'span',
+          {
+            style: {
+              fontSize: 11,
+              color: C.textMute,
+              letterSpacing: '0.08em',
+              lineHeight: 1.4,
+            },
+          },
+          `先看 ${compareStrip.primary.label} 和 ${compareStrip.secondary.label}`
+        ),
+        showStaleBadge &&
+          h(StaleBadge, {
+            status: compareStrip.staleStatus,
+            title: 'dashboard compare freshness',
+          })
+      ),
+      h(
+        'div',
+        {
+          'data-testid': 'dashboard-compare-summary',
+          style: {
+            fontSize: 'clamp(15px, 2.6vw, 18px)',
+            fontWeight: 600,
+            color: C.text,
+            lineHeight: 1.5,
+          },
+        },
+        compareStrip.summaryText
+      ),
+      h(
+        'div',
+        {
+          'data-testid': 'dashboard-compare-insight',
+          style: {
+            fontSize: 12,
+            color: toneColor,
+            lineHeight: 1.6,
+          },
+        },
+        compareStrip.insightText
+      )
+    )
+  )
 }
 
 /**
@@ -1241,6 +1346,7 @@ export function DashboardPanel({
   portfolioName = '',
   portfolioId = '',
   viewMode = 'retail',
+  compareStrip = null,
   onRefreshReminder = null,
   onNavigate = null,
 }) {
@@ -1289,7 +1395,8 @@ export function DashboardPanel({
           totalVal,
           todayTotalPnl,
           portfolioName: displayPortfolioName({ displayName: portfolioName, id: portfolioId }),
-        })
+        }),
+        h(DashboardCompareStrip, { compareStrip, onNavigate })
       ),
       h(
         Card,

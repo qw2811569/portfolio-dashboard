@@ -354,6 +354,33 @@ describe('usePortfolioDerivedData', () => {
       expect(result.current.overviewPortfolios[0]).toHaveProperty('newsEvents')
       expect(result.current.overviewPortfolios[0]).toHaveProperty('pendingEvents')
     })
+
+    it('adds pending event counts and daily compare metrics for overview consumers', () => {
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 10, cost: 90, price: 100 }],
+            newsEvents: [{ id: 'evt-1', status: 'pending', title: '法說追蹤' }],
+            marketPriceCache: {
+              prices: {
+                2330: { change: 1, price: 100 },
+              },
+            },
+            portfolioSummaries: [{ id: 'me', name: '我', totalValue: 1000, totalPnl: 100 }],
+          })
+        )
+      )
+
+      expect(result.current.overviewPortfolios[0]).toMatchObject({
+        pendingEventsCount: 1,
+        todayTotalPnl: 10,
+      })
+      expect(result.current.overviewPortfolios[0].todayRetPct).toBeCloseTo(1.01, 2)
+      expect(result.current.overviewPortfolios[0].todayTopContributor).toMatchObject({
+        code: '2330',
+        name: '台積電',
+      })
+    })
   })
 
   describe('reportRefreshCandidates delegation', () => {

@@ -1,11 +1,26 @@
 import { useMemo } from 'react'
 import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
+import {
+  buildDashboardCompareStrip,
+  buildOverviewDashboardHeadline,
+} from '../lib/overviewCompare.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 
 const EMPTY_LIST = []
 
+function resolvePendingEventsCount(portfolio) {
+  const explicitCount = Number(portfolio?.pendingEventsCount)
+  if (Number.isFinite(explicitCount)) return explicitCount
+
+  if (Array.isArray(portfolio?.pendingEvents)) return portfolio.pendingEvents.length
+
+  const fallbackCount = Number(portfolio?.pendingEvents)
+  return Number.isFinite(fallbackCount) ? fallbackCount : 0
+}
+
 export function usePortfolioPanelsContextComposer({
+  ready = true,
   activePortfolioId,
   overviewPortfolios,
   overviewTotalValue,
@@ -149,13 +164,45 @@ export function usePortfolioPanelsContextComposer({
       }),
     [renderViewMode, safeHoldingDossiers]
   )
+  const normalizedOverviewPortfolios = useMemo(
+    () =>
+      safeOverviewPortfolios.map((portfolio) => ({
+        ...portfolio,
+        pendingEventsCount: resolvePendingEventsCount(portfolio),
+      })),
+    [safeOverviewPortfolios]
+  )
   const activePortfolio = useMemo(
     () =>
-      safeOverviewPortfolios.find((portfolio) => portfolio?.id === activePortfolioId) || {
+      normalizedOverviewPortfolios.find((portfolio) => portfolio?.id === activePortfolioId) || {
         id: activePortfolioId,
       },
-    [activePortfolioId, safeOverviewPortfolios]
+    [activePortfolioId, normalizedOverviewPortfolios]
   )
+  const overviewCompareStrip = useMemo(
+    () =>
+      buildDashboardCompareStrip(normalizedOverviewPortfolios, {
+        activePortfolioId,
+        staleStatus: sharedStaleStatus,
+      }),
+    [activePortfolioId, normalizedOverviewPortfolios, sharedStaleStatus]
+  )
+  const overviewDashboardHeadline = useMemo(
+    () =>
+      buildOverviewDashboardHeadline({
+        compareStrip: overviewCompareStrip,
+        portfolioCount: normalizedOverviewPortfolios.length,
+        duplicateHoldingsCount: safeOverviewDuplicateHoldings.length,
+        pendingItemsCount: safeOverviewPendingItems.length,
+      }),
+    [
+      overviewCompareStrip,
+      normalizedOverviewPortfolios.length,
+      safeOverviewDuplicateHoldings.length,
+      safeOverviewPendingItems.length,
+    ]
+  )
+  const overviewLoading = ready === false && normalizedOverviewPortfolios.length === 0
 
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
@@ -243,10 +290,10 @@ export function usePortfolioPanelsContextComposer({
   const portfolioPanelsData = useMemo(
     () => ({
       overview: {
-        portfolioCount: safeOverviewPortfolios.length,
+        portfolioCount: normalizedOverviewPortfolios.length,
         totalValue: overviewTotalValue,
         totalPnl: overviewTotalPnl,
-        portfolios: safeOverviewPortfolios,
+        portfolios: normalizedOverviewPortfolios,
         activePortfolioId,
         duplicateHoldings: safeOverviewDuplicateHoldings,
         pendingItems: safeOverviewPendingItems,
@@ -257,6 +304,9 @@ export function usePortfolioPanelsContextComposer({
           const targetPrice = Number(holding?.targetPrice)
           return !Number.isFinite(targetPrice) || targetPrice <= 0
         }).length,
+        dashboardHeadline: overviewDashboardHeadline,
+        compareStrip: overviewCompareStrip,
+        loading: overviewLoading,
       },
       dashboard: {
         holdings: safeHoldings,
@@ -276,6 +326,7 @@ export function usePortfolioPanelsContextComposer({
         portfolioId: activePortfolioId,
         portfolioName: activePortfolio?.displayName || activePortfolio?.name || '',
         viewMode: renderViewMode,
+        compareStrip: overviewCompareStrip,
       },
       holdings: {
         activePortfolioId,
@@ -404,7 +455,10 @@ export function usePortfolioPanelsContextComposer({
       renderViewMode,
       safeOverviewDuplicateHoldings,
       safeOverviewPendingItems,
-      safeOverviewPortfolios,
+      normalizedOverviewPortfolios,
+      overviewCompareStrip,
+      overviewDashboardHeadline,
+      overviewLoading,
       overviewTotalPnl,
       overviewTotalValue,
       pendingCount,

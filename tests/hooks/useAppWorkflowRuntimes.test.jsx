@@ -249,6 +249,133 @@ describe('hooks/app workflow runtimes', () => {
     expect(result.current).toHaveProperty('portfolioPanelsActions')
   })
 
+  it('derives dashboard compare strip and overview headline from overview portfolios', () => {
+    const { result } = renderHook(() =>
+      useAppPanelsRuntime({
+        data: {
+          ready: true,
+          activePortfolioId: '7865',
+          overviewPortfolios: [
+            {
+              id: 'me',
+              name: '我',
+              pendingEvents: [{ id: 'evt-1' }],
+              todayRetPct: 0.7,
+              todayTopContributor: { code: '2330', name: '台積電', pnl: 80 },
+            },
+            {
+              id: '7865',
+              name: '金聯成',
+              pendingEventsCount: 2,
+              todayRetPct: 0.6,
+              todayTopDrag: { code: '2489', pnl: -20 },
+            },
+          ],
+          overviewTotalValue: 0,
+          overviewTotalPnl: 0,
+          overviewDuplicateHoldings: [],
+          overviewPendingItems: [],
+          holdings: [],
+          totalVal: 0,
+          totalCost: 0,
+          winners: [],
+          losers: [],
+          top5: [],
+          holdingsIntegrityIssues: [],
+          filteredEvents: [],
+          morningNote: null,
+          dailyReport: null,
+          newsEvents: [],
+          strategyBrain: null,
+          dataRefreshRows: [],
+          researchHistory: [],
+          tradeLog: [],
+        },
+        ui: {
+          showReversal: false,
+          reversalConditions: {},
+          reviewingEvent: null,
+          attentionCount: 0,
+          pendingCount: 0,
+          targetUpdateCount: 0,
+          scanQuery: '',
+          scanFilter: '',
+          sortBy: 'pnl',
+          expandedStock: null,
+          watchlistFocus: null,
+          watchlistRows: [],
+          showRelayPlan: false,
+          relayPlanExpanded: false,
+          filterType: 'all',
+          catalystFilter: '全部',
+          dailyExpanded: false,
+          researchTarget: null,
+          reviewForm: {},
+          expandedNews: null,
+        },
+        asyncState: {
+          analyzing: false,
+          analyzeStep: '',
+          stressResult: null,
+          stressTesting: false,
+          researching: false,
+          reportRefreshing: false,
+          reportRefreshStatus: '',
+          enrichingResearchCode: null,
+        },
+        resources: {
+          researchResults: null,
+          stockMeta: {},
+          indColor: {},
+          tradeCapture: {},
+          createDefaultReviewForm: vi.fn(() => ({})),
+        },
+        controls: {
+          exitOverview: vi.fn(),
+          switchPortfolio: vi.fn(),
+          setShowReversal: vi.fn(),
+          setReviewingEvent: vi.fn(),
+          updateReversal: vi.fn(),
+          setScanQuery: vi.fn(),
+          setScanFilter: vi.fn(),
+          setSortBy: vi.fn(),
+          setExpandedStock: vi.fn(),
+          setRelayPlanExpanded: vi.fn(),
+          setFilterType: vi.fn(),
+          setCatalystFilter: vi.fn(),
+          setDailyExpanded: vi.fn(),
+          setStressResult: vi.fn(),
+          setTab: vi.fn(),
+          setExpandedNews: vi.fn(),
+          setResearchResults: vi.fn(),
+          setReviewForm: vi.fn(),
+        },
+        actions: {
+          updateTargetPrice: vi.fn(),
+          updateAlert: vi.fn(),
+          handleWatchlistUpsert: vi.fn(),
+          handleWatchlistDelete: vi.fn(),
+          formatEventStockOutcomeLine: vi.fn(() => ''),
+          runDailyAnalysis: vi.fn(),
+          runStressTest: vi.fn(),
+          refreshAnalystReports: vi.fn(),
+          runResearch: vi.fn(),
+          enrichResearchToDossier: vi.fn(),
+          submitReview: vi.fn(),
+          cancelReview: vi.fn(),
+        },
+      })
+    )
+
+    expect(result.current.portfolioPanelsData.dashboard.compareStrip.summaryText).toContain(
+      '今日差距 +0.1pp'
+    )
+    expect(result.current.portfolioPanelsData.overview.dashboardHeadline.headline).toContain(
+      '主要拉動是 台積電 (2330)'
+    )
+    expect(result.current.portfolioPanelsData.overview.portfolios[0].pendingEventsCount).toBe(1)
+  })
+
   it('keeps trade runtime behavior while syncing late-bound callback refs', () => {
     const refreshAnalystReportsRef = { current: null }
     const resetTradeCaptureRef = { current: null }

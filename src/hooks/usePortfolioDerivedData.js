@@ -45,6 +45,64 @@ function buildAggregateConsensusTargets(snapshot) {
   ]
 }
 
+function toFiniteNumber(value, fallback = null) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : fallback
+}
+
+function readHoldingMarketValue(holding, getHoldingMarketValue) {
+  const explicitValue = toFiniteNumber(holding?.value)
+  if (explicitValue != null) return explicitValue
+  const derivedValue = toFiniteNumber(getHoldingMarketValue?.(holding))
+  if (derivedValue != null) return derivedValue
+
+  const qty = toFiniteNumber(holding?.qty, 0)
+  const price = toFiniteNumber(holding?.price, 0)
+  return qty * price
+}
+
+function buildPortfolioTodayMetrics(holdings = [], priceMap = {}, getHoldingMarketValue) {
+  const safeHoldings = Array.isArray(holdings) ? holdings : []
+  const safePriceMap = priceMap && typeof priceMap === 'object' ? priceMap : {}
+
+  let todayTotalPnl = 0
+  let priorCloseValue = 0
+  let todayTopContributor = null
+  let todayTopDrag = null
+
+  for (const holding of safeHoldings) {
+    const code = String(holding?.code || '').trim()
+    const qty = toFiniteNumber(holding?.qty, 0)
+    const quoteChange = toFiniteNumber(safePriceMap?.[code]?.change, 0)
+    const holdingTodayPnl = quoteChange * qty
+    const currentValue = readHoldingMarketValue(holding, getHoldingMarketValue)
+    const previousValue = Math.max(0, currentValue - holdingTodayPnl)
+
+    todayTotalPnl += holdingTodayPnl
+    priorCloseValue += previousValue
+
+    const metric = {
+      code,
+      name: holding?.name || code,
+      pnl: holdingTodayPnl,
+    }
+
+    if (!todayTopContributor || metric.pnl > todayTopContributor.pnl) {
+      todayTopContributor = metric
+    }
+    if (!todayTopDrag || metric.pnl < todayTopDrag.pnl) {
+      todayTopDrag = metric
+    }
+  }
+
+  return {
+    todayTotalPnl: Math.round(todayTotalPnl),
+    todayRetPct: priorCloseValue > 0 ? (todayTotalPnl / priorCloseValue) * 100 : 0,
+    todayTopContributor: todayTopContributor?.pnl > 0 ? todayTopContributor : null,
+    todayTopDrag: todayTopDrag?.pnl < 0 ? todayTopDrag : null,
+  }
+}
+
 export function usePortfolioDerivedData({
   holdings,
   watchlist,
@@ -509,12 +567,22 @@ export function usePortfolioDerivedData({
     return (portfolioSummaries || []).map((portfolio) => {
       const snapshot = getPortfolioSnapshot(portfolio.id)
       const pendingEvents = (snapshot.newsEvents || []).filter((event) => !isClosedEvent(event))
+      const todayMetrics = buildPortfolioTodayMetrics(
+        snapshot.holdings,
+        marketPriceCache?.prices,
+        getHoldingMarketValue
+      )
       return {
         ...portfolio,
         holdings: snapshot.holdings,
         newsEvents: snapshot.newsEvents,
         notes: snapshot.notes,
         pendingEvents,
+        pendingEventsCount: pendingEvents.length,
+        todayTotalPnl: todayMetrics.todayTotalPnl,
+        todayRetPct: todayMetrics.todayRetPct,
+        todayTopContributor: todayMetrics.todayTopContributor,
+        todayTopDrag: todayMetrics.todayTopDrag,
       }
     })
   }, [
@@ -527,6 +595,7 @@ export function usePortfolioDerivedData({
     portfolioNotes,
     marketPriceCache,
     applyMarketQuotesToHoldings,
+    getHoldingMarketValue,
     normalizeNewsEvents,
     clonePortfolioNotes,
     isClosedEvent,

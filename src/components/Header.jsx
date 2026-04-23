@@ -1049,32 +1049,40 @@ export default function Header(props) {
 
   return h(
     'div',
-    {
-      className: 'app-shell',
-      'data-testid': 'header-root',
-      style: { position: 'relative' },
-    },
+    null,
     h(
       'div',
       {
-        'data-testid': 'header-sticky-zone',
+        className: 'app-shell',
+        'data-testid': 'header-root',
         style: {
-          ...shellSurface,
-          borderBottom: `1px solid ${C.borderSoft}`,
-          padding: viewMode === OVERVIEW_VIEW_MODE ? '8px 12px 8px' : '4px 12px 0',
-          position: 'sticky',
+          position: 'fixed',
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 10,
         },
       },
-      mobileTitleRow,
-      tabsBlock
+      h(
+        'div',
+        {
+          style: {
+            ...shellSurface,
+            borderBottom: `1px solid ${C.borderSoft}`,
+            padding: viewMode === OVERVIEW_VIEW_MODE ? '8px 12px 8px' : '4px 12px 0',
+          },
+        },
+        mobileTitleRow,
+        tabsBlock
+      )
     ),
     h(
       'div',
       {
         'data-testid': 'header-scroll-zone',
-        style: { padding: '8px 12px 0' },
+        style: {
+          padding: `${viewMode === OVERVIEW_VIEW_MODE ? 84 : 108}px 12px 0`,
+        },
       },
       mobileActionsRow,
       portfolioSelectorBlock,

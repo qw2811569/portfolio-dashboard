@@ -140,6 +140,7 @@ export function ConfirmDialog({
       h(
         Button,
         {
+          key: 'cancel',
           onClick: onCancel,
           style: { padding: '8px 12px' },
         },
@@ -148,6 +149,7 @@ export function ConfirmDialog({
       h(
         Button,
         {
+          key: 'confirm',
           onClick: onConfirm,
           disabled: busy,
           style: {

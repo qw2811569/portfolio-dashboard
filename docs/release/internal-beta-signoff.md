@@ -117,6 +117,23 @@ Summary:
 - `tests/e2e/snapshots/webkit/agent-02-focus.png`
 - `tests/e2e/snapshots/webkit/agent-03-week.png`
 
+## UX-25 Real-User Evidence
+
+- evidence bundle: `.tmp/ux-25-e2e-real-user-sim/evidence-20260423T204857Z`
+- base URL: `https://35.236.155.62.sslip.io/`
+- Playwright projects: `chromium` / `webkit` / `ios-safari`
+- step totals: `25 passed / 0 failed / 3 blocked / 2 skipped`
+- runtime summary: `0 console errors / 0 pageerrors / 267 network 4xx/5xx`
+- feature correctness: weekly export passed as structured clipboard markdown, backup export passed as JSON, backup import passed after 2-step confirm, iOS portrait + landscape stayed single-column with sticky height `99.39px`
+- fixed during UX-25:
+  - `UX-25-bug-1` iOS mobile header lost stickiness during scroll → fixed in `src/components/Header.jsx`
+  - `UX-25-bug-2` analyst report refresh emitted `console.error` on expected misses → fixed in `src/hooks/useReportRefreshWorkflow.js`
+  - `UX-25-bug-3` backup import dialog emitted React key warning → fixed in `src/components/common/Dialogs.jsx`
+- remaining live issues:
+  - `UX-25-bug-4` live `daily-diff-toggle` absent for 金聯成 flow across all three projects; step 05 stayed blocked
+  - live API noise remains in `network-errors.jsonl`: `finmind 503`, `target-prices 500/503`, `news-feed 500`, `tracked-stocks 404`, `brain 503`, `research 503`
+- summary: `.tmp/ux-25-e2e-real-user-sim/evidence-20260423T204857Z/summary.md`
+
 ## Legal 勾選
 
 - [ ] Disclaimer 已確認

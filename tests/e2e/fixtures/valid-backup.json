@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "app": "portfolio-dashboard",
+  "exportedAt": "2026-04-24T00:00:00.000Z",
+  "origin": "https://35.236.155.62.sslip.io",
+  "storage": {
+    "pf-portfolios-v1": [
+      {
+        "id": "me",
+        "name": "小奎主要投資",
+        "isOwner": true,
+        "createdAt": "2026-04-01"
+      }
+    ],
+    "pf-active-portfolio-v1": "me",
+    "pf-view-mode-v1": "portfolio",
+    "pf-schema-version": 3,
+    "pf-me-holdings-v2": [
+      {
+        "code": "2330",
+        "name": "台積電",
+        "qty": 1,
+        "cost": 950,
+        "price": 980
+      }
+    ],
+    "pf-me-log-v2": [],
+    "pf-me-targets-v1": {},
+    "pf-me-fundamentals-v1": {},
+    "pf-me-watchlist-v1": [],
+    "pf-me-analyst-reports-v1": {},
+    "pf-me-holding-dossiers-v1": [],
+    "pf-me-news-events-v1": [],
+    "pf-me-analysis-history-v1": [],
+    "pf-me-daily-report-v1": null,
+    "pf-me-research-history-v1": [],
+    "pf-me-brain-v1": null,
+    "pf-me-reversal-v1": {},
+    "pf-me-notes-v1": {},
+    "pf-me-report-refresh-meta-v1": {}
+  }
+}

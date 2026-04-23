@@ -213,7 +213,6 @@ export function useReportRefreshWorkflow({
             )
           } catch (error) {
             const normalizedError = normalizeDataError(error, { resource: 'analyst-reports' })
-            console.error(`公開報告刷新失敗 (${holding.code}):`, error)
             checkedCodes.push(holding.code)
             setReportRefreshMeta((prev) =>
               mergeReportRefreshMetaStore(prev, {

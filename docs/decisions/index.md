@@ -50,6 +50,7 @@
 | --------------------------------------------------------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [2026-04-15-news-vs-events-separation](./2026-04-15-news-vs-events-separation.md) | 2026-04-15 | ✅ 實作完成 | News/Events UI 完全分離，discriminator 用 `recordType`（不用 `type` 避免與 event.type 衝突）                                         |
 | [2026-04-11-staged-daily-analysis](./2026-04-11-staged-daily-analysis.md)         | 2026-04-11 | ✅ 決議     | 2026-04-11 staged-daily analysis 成為正式 runtime contract：`T0 收盤快版`、`T1 資料確認版`、inline diff、cooldown-gated auto confirm |
+| [2026-04-24-mobile-sticky-policy](./2026-04-24-mobile-sticky-policy.md)           | 2026-04-24 | ✅ 決議     | Mobile（≤768px）只允許 `app-shell` 的 title + tabs sticky；其他 panel 預設隨滾動；例外需實機截圖 + 工時實測 + 拍板                   |
 
 ## 待歸檔（TODO）
 

@@ -1,0 +1,563 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "9cb9f6d9-6527-4263-ba1c-955507c2f0fc",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>buq1anai7</task-id>\n<tool-use-id>toolu_01AWfbjLLa5WrUo9pQSEjiWS</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "UX-28 派出 · 2 parallel（C1b Stage 3 + UX-28）。Loop 繼續。",
+      "prompt_hash": "sha256:a92f0ebddd63415c8752fb0b1e850340c99a2d1bbdfb973a69c5d67e9c799477",
+      "message_count": 8070,
+      "cost_usd": 0.20357085,
+      "input_tokens": 1,
+      "output_tokens": 2404,
+      "cache_read_tokens": 547047,
+      "cache_creation_tokens": 905,
+      "timestamp": "2026-04-23T23:50:23.424Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T23:51:16.622Z",
+      "session_duration_secs": 759598,
+      "ai_response_time_secs": 11.400177594070714,
+      "prompt_submitted_at": "2026-04-23T23:50:23.633184Z",
+      "prompt_duration_secs": 60,
+      "accepted_lines": 2253,
+      "overridden_lines": 255,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/ux-28-finmind-degraded/brief.md",
+      "line_range": [
+        1,
+        98
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/ux-28-finmind-degraded/brief.md",
+          "line_range": [
+            1,
+            98
+          ],
+          "blob_hash": "48c332988bd0acc9bd788ee965a6ef4ae4f6bf8e",
+          "additions": 98
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "ca1df10edadb2192099599f5ecc49d97344d84ab",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "fbf835f9a601a8f0c6a920e6b699f2f2388a62f1",
+          "additions": 10,
+          "deletions": 7
+        },
+        {
+          "path": "src/components/ErrorBoundary.jsx",
+          "line_range": [
+            86,
+            86
+          ],
+          "blob_hash": "9c31a0dbd002266f544bbf25e3e6a6e144a2cc2e",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "src/components/Toast.jsx",
+          "line_range": [
+            63,
+            73
+          ],
+          "blob_hash": "ad9d40a11aac3024fd12ed55dce20e261d1b87ce",
+          "additions": 6,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/common/Base.jsx",
+          "line_range": [
+            51,
+            192
+          ],
+          "blob_hash": "e98b4a6388bf1b9aaba4adeaca9d9559cfffa8ce",
+          "additions": 15
+        },
+        {
+          "path": "src/components/common/CmdKPalette.jsx",
+          "line_range": [
+            111,
+            296
+          ],
+          "blob_hash": "696c6d0e7405ffd93e7058cb9b76ff50f13476c6",
+          "additions": 5,
+          "deletions": 5
+        },
+        {
+          "path": "src/components/common/DataError.jsx",
+          "line_range": [
+            31,
+            33
+          ],
+          "blob_hash": "0302e5247354b8c60c89a64ea44a29e78b7b1673",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "path": "src/components/common/DataSourceBadge.jsx",
+          "line_range": [
+            8,
+            9
+          ],
+          "blob_hash": "7b77400354cae9b0f01c844862a9fda46e3ee8ca",
+          "additions": 2,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/common/Dialogs.jsx",
+          "line_range": [
+            131,
+            131
+          ],
+          "blob_hash": "e8f5fa5eb2cd46a13f8aedbaecb5e65b100a3844",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "src/components/common/EmptyState.jsx",
+          "line_range": [
+            270,
+            271
+          ],
+          "blob_hash": "eca256aee28ef5945b41e24db02a41c243d8af09",
+          "additions": 2,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/common/OperatingContextCard.jsx",
+          "line_range": [
+            138,
+            282
+          ],
+          "blob_hash": "03439a10af7797cc4a6c5d2b1b14f514c8116182",
+          "additions": 8,
+          "deletions": 8
+        },
+        {
+          "path": "src/components/events/EventCountdownBadge.jsx",
+          "line_range": [
+            21,
+            31
+          ],
+          "blob_hash": "167a2f6b2f972d0c6ece03aa3192c89574033eae",
+          "additions": 6,
+          "deletions": 6
+        },
+        {
+          "path": "src/components/events/EventsTimeline.jsx",
+          "line_range": [
+            83,
+            259
+          ],
+          "blob_hash": "f1286822846391a949331624e7edfbbf95aeb98a",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "path": "src/components/holdings/HoldingsPanel.jsx",
+          "line_range": [
+            28,
+            29
+          ],
+          "blob_hash": "540348ded2125687839c2b879b99e94815274fe9",
+          "additions": 2,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/holdings/HoldingsTable.jsx",
+          "line_range": [
+            258,
+            259
+          ],
+          "blob_hash": "3305afd22dc43f8f95ac511fd8568c725cd8bf5e",
+          "additions": 2,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/holdings/SupplyChainView.jsx",
+          "line_range": [
+            18,
+            105
+          ],
+          "blob_hash": "9e7e9ce77be19515b08b1e36e1361dcd34983c8c",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "path": "src/components/overview/ConcentrationDashboard.jsx",
+          "line_range": [
+            13,
+            64
+          ],
+          "blob_hash": "df9f758f3e3aea615a857f1e8517bffdd536fb0e",
+          "additions": 5,
+          "deletions": 5
+        },
+        {
+          "path": "src/components/overview/KpiCards.jsx",
+          "line_range": [
+            180,
+            239
+          ],
+          "blob_hash": "9ca54998c6ee81bbf4d401dd6b77df1d9b8438eb",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "path": "src/components/overview/OverviewPanel.jsx",
+          "line_range": [
+            188,
+            543
+          ],
+          "blob_hash": "c3568592421d586e68ab19837871aad9b5058fda",
+          "additions": 5,
+          "deletions": 5
+        },
+        {
+          "path": "src/components/reports/DailyReportPanel.jsx",
+          "line_range": [
+            224,
+            1097
+          ],
+          "blob_hash": "267275a7be8c7a02f4cb77396ce05851cc5e41c6",
+          "additions": 8,
+          "deletions": 8
+        },
+        {
+          "path": "src/components/research/GeminiResearchBrowser.jsx",
+          "line_range": [
+            92,
+            309
+          ],
+          "blob_hash": "fdaefc54509021c04902347a2a6c957bb17ccd5e",
+          "additions": 5,
+          "deletions": 5
+        },
+        {
+          "path": "src/components/trade/TradePanel.jsx",
+          "line_range": [
+            126,
+            1155
+          ],
+          "blob_hash": "4ca21e72663fe119f4cb1a932d2d6c4b940e8a20",
+          "additions": 5,
+          "deletions": 5
+        },
+        {
+          "path": "src/hooks/usePortfolioDerivedData.js",
+          "line_range": [
+            518,
+            518
+          ],
+          "blob_hash": "6973130f320da61d5c15c26c3e30ceadf8a3ce9d",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "src/hooks/useRoutePortfolioRuntime.js",
+          "line_range": [
+            821,
+            821
+          ],
+          "blob_hash": "40f521fd67db2565154761f3b68f6479df0be53f",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "src/seedData.js",
+          "line_range": [
+            391,
+            410
+          ],
+          "blob_hash": "91583cdd74dd07d822e4a9eed2a0ff05000fb70d",
+          "additions": 7,
+          "deletions": 7
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "a440c50c14cc80579a546e10e5a9b3501bf2cebd"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "91bbe32779d6a4d4657c89ee775985454fab6d04"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "97242e1bacd8d4d4f01963b7979cc17fbddb8407"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c4603aae5b36c7840dbfdcd1ae94ae0bf10e03e3"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "022e6d390bc786946aa85b3416862ea199e4742d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c3a774e9ff45b62443f14b90a582a3f5488248e5"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "bc2f27c8e02349ab8e9bd09112904df38efebd72"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8c84ab0bccabce11bb5d7fa55375aa29377bae5d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c0ff2fa0299f13ff74c98ee6f6e09d6a85750a2a"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f4037549354bfe130da2e3b5ac4cdd4bf8f18cab"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b8f12e3ea5f1dcc635dc139fe17a2584942736bf"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "dbd6f5b3e87acf8cb45a0a14a7a7dcbc58964db2"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fed06acb6f38982876b518d3af5366665768623a"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "79d14e2c9d6285b821d9c17512e0bbde33894870"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1b88cf8e109e7db94697c50302af49c1788e135e"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "5822fbbfa9a5f9f0fbca00a69c27cc31173d4bfe"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f4decb43aedf5793354f8faa0099883dedd35fe8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f4decb43aedf5793354f8faa0099883dedd35fe8"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "66294d0bc7dd0d72c5b3367d2797a17e4b6facca"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9a413197d61ff5ac2c914d9990ed3c9901450f6f"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3e8d450f3d4969610441856e8d85725d9797c0ef"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "2d75d687cd8eb976e2b05d0d24f1ff798d335d48"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e1c1a5136b1175615b88453dd25cebb6fcb8d34f"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "155643b4eab36088bf8e240c6ac5558e01ef4322"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8b2a27dcd48b0da01ebcdde573886ebc9c15a204"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9de76bbdad8b9ef99f519e218108df1175c6b410"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9de76bbdad8b9ef99f519e218108df1175c6b410"
+        }
+      ],
+      "prompt_number": 712,
+      "total_additions": 485,
+      "total_deletions": 300,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>buq1anai7</task-id>\n<tool-use-id>toolu_01AWfbjLLa5WrUo9pQSEjiWS</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch B5+B6 merged\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/b5-b6-principle-freshness/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "B5+B6 done · `2335182` · mirror 完。派 **UX-28 FinMind degraded UX**（Gemini R5 新 P2 task）："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/ux-28-finmind-degraded/brief.md)\" 2>&1 ...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

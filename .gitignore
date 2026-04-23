@@ -27,3 +27,12 @@ memory/
 
 # Local Claude task lock
 .claude/scheduled_tasks.lock
+.claude/settings.local.json
+
+# Playwright runtime outputs
+.playwright-artifacts/
+playwright-report/
+test-results/
+
+# Runtime alert log
+coordination/llm-bus/alerts.jsonl

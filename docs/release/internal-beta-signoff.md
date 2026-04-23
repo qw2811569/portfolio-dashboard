@@ -17,7 +17,8 @@ Status: `pending-signoff`
 - cust_id: `7865`
 - compliance mode: `insider`
 - candidate version: `1.0.0`
-- candidate sha: `59f76fd`
+- candidate sha: `ab20a48` (origin/main · reflects R137+R138 post-cleanup HEAD)
+- pending local: `b8eb2ec` (UX-21 mobile sticky shrink; to be promoted after push)
 
 ## Ship-Before 30 條 Checklist
 
@@ -43,7 +44,7 @@ Generated from `docs/portfolio-spec-report/progress.json` snapshot on `2026-04-1
 - [x] `T31` Correct quarter/H1/H2 financial semantics and derived standalone logic · `done` · `2026-04-18` · `8h`
 - [x] `T32` Harden MOPS revenue/announcement ingestion and fallback contract · `done` · `2026-04-18` · `6h`
 - [x] `T33` Add macro / 央行 / calendar feed for `Today in Markets` · `done` · `2026-04-18` · `6h`
-- [ ] `T48` Rotate secrets, add inventory, Secret Manager, and launch-script cleanup · <span style="color:#b42318"><strong>blocked</strong></span> · `6h`
+- [x] `T48` Rotate secrets, add inventory, Secret Manager, and launch-script cleanup · <span style="color:#7a5c00"><strong>deferred-per-decision</strong></span> · `6h` · reason: `docs/decisions/2026-04-24-r120-scope-batch.md` Q-I1 overrides 90d default — internal beta 不 rotate；正式產品上線前用戶親手換
 - [x] `T60` Add cron last-success markers and lateness alerts · `done` · `2026-04-18` · `6h`
 - [x] `T62` Extend checkpoint/backup contract to include localStorage · `done` · `2026-04-18` · `8h`
 - [ ] `T64` Run restore drill, rollback test, and MDD recovery test · <span style="color:#b42318"><strong>blocked</strong></span> · `5h`
@@ -57,16 +58,17 @@ Generated from `docs/portfolio-spec-report/progress.json` snapshot on `2026-04-1
 Summary:
 
 - done: `25 / 30`
-- blocked: `T48` `T64` `M04` `M09`
+- deferred-per-decision: `T48` (R120 Q-I1 · 不 rotate)
+- blocked: `T64` `M04` `M09`（ship 後收口 · 非 block ship）
 - pending-signoff: `T72b`
 
 ## Manual 演練記錄
 
-| Gate                                | 用途                                   | 演練日期 | 結果 | 證據 path | 備註                                      |
-| ----------------------------------- | -------------------------------------- | -------- | ---- | --------- | ----------------------------------------- |
-| `T64` restore drill                 | restore / rollback / MDD recovery      |          |      |           | 跑完才可勾 signoff                        |
-| `Q06` iOS Safari                    | owner 實機 smoke                       |          |      |           | 建議附 iPhone 截圖或短錄影                |
-| `M-U1` cert / secret rotate confirm | external ops confirmation for beta cut |          |      |           | 若本輪判定 `n/a`，請明寫原因與 owner 決策 |
+| Gate                                | 用途                                   | 演練日期     | 結果                  | 證據 path                                                   | 備註                                                                                                             |
+| ----------------------------------- | -------------------------------------- | ------------ | --------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `T64` restore drill                 | restore / rollback / MDD recovery      |              |                       | `docs/runbooks/restore-drill.md`（runbook · L8-e）          | runbook 完成 · 實跑推 ship 後 monthly rehearsal（R120 Q-I3）                                                     |
+| `Q06` iOS Safari                    | owner 實機 smoke                       | `2026-04-24` | pending M-U3 findings | `.tmp/m-u3-iphone-smoke/findings.md` + screenshots（L8 派） | M-U3 Codex 跑中 · 3 critical route + interaction（SA §5.3/5.4/5.7）· 覆蓋 Playwright 10% 實機缺口                |
+| `M-U1` cert / secret rotate confirm | external ops confirmation for beta cut | `2026-04-24` | `n/a`                 | `docs/decisions/2026-04-24-r120-scope-batch.md`（Q-I1）     | 依 R120 Q-I1 + `memory/project_secret_rotation_deferred.md`：內部 beta 不 rotate · 正式產品上線前由 owner 親手換 |
 
 ## 自動 QA 證據
 
@@ -119,21 +121,25 @@ Summary:
 
 - [ ] Disclaimer 已確認
   - 參照：[Ship Gate](./internal-beta-checklist.md#ship-gate)
+  - 草稿：本 app 不構成投資建議；所有 AI 分析為輔助參考 · 投資決策由用戶自行負責（SA §2.4 非目標）
 - [ ] Privacy 已確認
   - 參照：[Ship Gate](./internal-beta-checklist.md#ship-gate) / [Data Handling](./internal-beta-checklist.md#data-handling)
+  - 草稿：內部 beta 僅 owner + 金聯成董座二人使用；持股資料存 private Vercel Blob（R134c + architecture §6）+ localStorage checkpoint；無對外第三方分享
 - [ ] Residency 已確認
   - 參照：[Ship Gate](./internal-beta-checklist.md#ship-gate)
+  - 草稿：Vercel（美國 region）+ GCP VM（asia-east1 / 台灣）· FinMind 資料 API 走亞太；內部 beta 階段不涉跨境監管要求
 - [ ] Audit pack 已附齊
   - 參照：[Audit Pack Template](./internal-beta-checklist.md#audit-pack-template)
+  - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + 本輪 commit list (`ab20a48` .. `b8eb2ec`)
 
 ## Signoff Block
 
-- signoff date:
-- owner signature:
-- signed version:
-- signed sha:
-- demo evidence bundle:
-- decision: `ship` / `hold`
+- signoff date:（owner 填）
+- owner signature:（owner 填）
+- signed version: `1.0.0`
+- signed sha: 預設 `b8eb2ec`（UX-21 push 後 promote · 若 UX-22a 在 signoff 前收口 · 用該 SHA）
+- demo evidence bundle: `docs/release/internal-beta-v1.md` §8 + `.tmp/m-u3-iphone-smoke/screenshots/`
+- decision: `ship` / `hold`（owner 填）
 
 ## Rollback Trigger
 

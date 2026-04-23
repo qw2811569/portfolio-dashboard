@@ -2,6 +2,7 @@ import { get, list, put } from '@vercel/blob'
 import { getTaipeiClock } from './datetime.js'
 
 const DEFAULT_WEEKDAY_SUCCESS_GAP = 1
+const DEFAULT_CALENDAR_SUCCESS_GAP = 1
 
 export function getLastSuccessBlobKey(job) {
   return `last-success-${String(job || '').trim()}.json`
@@ -40,6 +41,18 @@ export function countElapsedWeekdays(fromValue, toValue) {
   }
 
   return elapsedWeekdays
+}
+
+export function countElapsedCalendarDays(fromValue, toValue) {
+  const fromDate = new Date(fromValue)
+  const toDate = new Date(toValue)
+  if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) return 0
+
+  const from = parseMarketDate(getTaipeiClock(fromDate).marketDate)
+  const to = parseMarketDate(getTaipeiClock(toDate).marketDate)
+  if (!from || !to || from.getTime() >= to.getTime()) return 0
+
+  return Math.max(0, Math.round((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)))
 }
 
 export async function readLastSuccessMarker(
@@ -93,7 +106,9 @@ export async function writeLastSuccessMarker(
   {
     token,
     now = new Date(),
+    expectedCadence = 'weekday-daily',
     maxWeekdayGap = DEFAULT_WEEKDAY_SUCCESS_GAP,
+    maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
     previousMarker = null,
     putImpl = put,
     logger = console,
@@ -105,23 +120,33 @@ export async function writeLastSuccessMarker(
   }
 
   const previousSuccessAt = String(previousMarker?.lastSuccessAt || '').trim()
+  const normalizedCadence =
+    expectedCadence === 'daily' || expectedCadence === 'calendar-daily' ? 'daily' : 'weekday-daily'
   const elapsedWeekdays = previousSuccessAt ? countElapsedWeekdays(previousSuccessAt, now) : 0
-  const late = elapsedWeekdays > maxWeekdayGap
+  const elapsedDays = previousSuccessAt ? countElapsedCalendarDays(previousSuccessAt, now) : 0
+  const late =
+    normalizedCadence === 'daily' ? elapsedDays > maxDayGap : elapsedWeekdays > maxWeekdayGap
 
   if (late) {
     logger.warn(
-      `[cron-monitor] lateness alert for ${job}: ${elapsedWeekdays} weekday gaps since ${previousSuccessAt}`
+      normalizedCadence === 'daily'
+        ? `[cron-monitor] lateness alert for ${job}: ${elapsedDays} calendar-day gaps since ${previousSuccessAt}`
+        : `[cron-monitor] lateness alert for ${job}: ${elapsedWeekdays} weekday gaps since ${previousSuccessAt}`
     )
   }
 
   const payload = {
     job,
     lastSuccessAt: now.toISOString(),
-    expectedCadence: 'weekday-daily',
+    lastAttemptAt: now.toISOString(),
+    lastAttemptStatus: 'success',
+    expectedCadence: normalizedCadence,
     maxWeekdayGap,
+    maxDayGap,
     lateness: {
       late,
       elapsedWeekdays,
+      elapsedDays,
       previousSuccessAt: previousSuccessAt || null,
     },
   }
@@ -142,6 +167,8 @@ export async function markCronSuccess(
   {
     token,
     now = new Date(),
+    expectedCadence = 'weekday-daily',
+    maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
     fetchImpl = fetch,
     listImpl = list,
     getImpl = get,
@@ -161,9 +188,76 @@ export async function markCronSuccess(
   return writeLastSuccessMarker(job, {
     token,
     now,
+    expectedCadence,
     previousMarker,
+    maxDayGap,
     putImpl,
     logger,
     access,
   })
+}
+
+export async function markCronFailure(
+  job,
+  {
+    token,
+    now = new Date(),
+    expectedCadence = 'weekday-daily',
+    maxWeekdayGap = DEFAULT_WEEKDAY_SUCCESS_GAP,
+    maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
+    fetchImpl = fetch,
+    listImpl = list,
+    getImpl = get,
+    putImpl = put,
+    logger = console,
+    access = 'public',
+    error = null,
+  } = {}
+) {
+  if (!token) {
+    throw new Error('blob token is required for last-success writes')
+  }
+
+  const previousMarker = await readLastSuccessMarker(job, {
+    token,
+    fetchImpl,
+    listImpl,
+    getImpl,
+    logger,
+    access,
+  })
+
+  const previousSuccessAt = String(previousMarker?.lastSuccessAt || '').trim() || null
+  const normalizedCadence =
+    expectedCadence === 'daily' || expectedCadence === 'calendar-daily' ? 'daily' : 'weekday-daily'
+  const elapsedWeekdays = previousSuccessAt ? countElapsedWeekdays(previousSuccessAt, now) : 0
+  const elapsedDays = previousSuccessAt ? countElapsedCalendarDays(previousSuccessAt, now) : 0
+
+  const payload = {
+    job,
+    lastSuccessAt: previousSuccessAt,
+    lastAttemptAt: new Date(now).toISOString(),
+    lastAttemptStatus: 'failed',
+    expectedCadence: normalizedCadence,
+    maxWeekdayGap,
+    maxDayGap,
+    lateness: {
+      late:
+        normalizedCadence === 'daily' ? elapsedDays > maxDayGap : elapsedWeekdays > maxWeekdayGap,
+      elapsedWeekdays,
+      elapsedDays,
+      previousSuccessAt,
+    },
+    error: error?.message || null,
+  }
+
+  await putImpl(getLastSuccessBlobKey(job), JSON.stringify(payload, null, 2), {
+    token,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    access,
+    contentType: 'application/json',
+  })
+
+  return payload
 }

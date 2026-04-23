@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily 03:00 Asia/Taipei snapshot timer
+
+[Timer]
+Unit=jcv-daily-snapshot.service
+OnCalendar=*-*-* 03:00:00 Asia/Taipei
+Persistent=true
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target

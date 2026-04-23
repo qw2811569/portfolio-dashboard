@@ -1,0 +1,16 @@
+[Unit]
+Description=JCV Daily Snapshot VM worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/chenkuichen/app/test
+Environment=WORKSPACE_ROOT=/home/chenkuichen/app/test
+EnvironmentFile=-/etc/agent-bridge/secrets.env
+ExecStart=/usr/bin/env node /home/chenkuichen/app/test/agent-bridge-standalone/workers/snapshot-worker.mjs
+StandardOutput=append:/home/chenkuichen/app/test/.tmp/daily-snapshot-worker.log
+StandardError=append:/home/chenkuichen/app/test/.tmp/daily-snapshot-worker.log
+
+[Install]
+WantedBy=multi-user.target

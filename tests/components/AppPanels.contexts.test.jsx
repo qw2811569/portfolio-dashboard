@@ -238,6 +238,89 @@ describe('components/AppPanels context wiring', () => {
     expect(await screen.findByText('測試紀錄')).toBeInTheDocument()
   })
 
+  it('renders dashboard panel from portfolio panel context and reuses canonical navigation actions', async () => {
+    const onNavigate = vi.fn()
+
+    renderWithPanelContexts(
+      <AppPanels
+        viewMode="portfolio"
+        overviewViewMode="overview"
+        tab="dashboard"
+        errorBoundaryCopy={APP_ERROR_BOUNDARY_COPY}
+      />,
+      {
+        data: {
+          dashboard: {
+            holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950, value: 950 }],
+            watchlist: [{ code: '2454', name: '聯發科' }],
+            holdingDossiers: [
+              {
+                code: '2330',
+                name: '台積電',
+                thesis: { pillars: [{ status: 'stable' }] },
+                freshness: { fundamentals: 'fresh' },
+                position: { price: 950 },
+                targetAggregate: { lowerBound: 800, upperBound: 1000 },
+              },
+            ],
+            dataRefreshRows: [],
+            morningNote: {
+              date: '2026/04/24',
+              sections: {
+                todayEvents: [{ title: '台積電法說', impactLabel: 'HIGH', relatedPillars: [] }],
+                holdingStatus: [{ code: '2330', name: '台積電', pillarSummary: '1/1 on_track' }],
+                watchlistAlerts: [],
+                announcements: [],
+              },
+            },
+            todayTotalPnl: 10,
+            totalVal: 950,
+            totalCost: 900,
+            winners: [],
+            losers: [],
+            latestInsight: '先延續最近一次收盤分析結論。',
+            newsEvents: [],
+            urgentCount: 0,
+            todayAlertSummary: '',
+            portfolioId: 'me',
+            portfolioName: '我',
+            viewMode: 'retail',
+          },
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {},
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+        actions: {
+          dashboard: {
+            onNavigate,
+            onRefreshReminder: vi.fn(),
+          },
+          overview: {},
+          holdings: {},
+          holdingsTable: {},
+          watchlist: {},
+          events: {},
+          daily: {},
+          research: {},
+          trade: {},
+          log: {},
+          news: {},
+        },
+      }
+    )
+
+    expect(await screen.findByText('Morning Note')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('前往事件'))
+    expect(onNavigate).toHaveBeenCalledWith('events')
+  })
+
   it('renders shared operating context in holdings panel from portfolio panel data context', async () => {
     renderWithPanelContexts(
       <AppPanels

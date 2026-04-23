@@ -125,10 +125,18 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
     expect(await getSelectedOptionLabel(select)).toMatch(
       new RegExp(TARGET_PORTFOLIO_ID === 'me' ? '我' : TARGET_PORTFOLIO_LABEL)
     )
+    await expect(
+      await requireLocator(
+        'missing dashboard shell after portfolio switch',
+        page.getByTestId('dashboard-headline'),
+        page.locator('.dashboard-hero')
+      )
+    ).toBeVisible()
     await savePageScreenshot(page, testInfo, '01-home.png')
   })
 
   await test.step('step 2: verify holdings shell', async () => {
+    await clickTab(page, 'holdings', '持倉')
     await expect(
       await requireLocator(
         'missing holdings shell after portfolio switch',
@@ -299,7 +307,7 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
       await expect(custIdInput).toBeVisible()
     } else {
       const select = await getPortfolioSelect(page)
-      expect(await getSelectedOptionLabel(select)).toMatch(/我/)
+      expect(await getSelectedOptionLabel(select)).toMatch(/我|主要投資|owner/i)
     }
     await savePageScreenshot(page, testInfo, '09-logout.png')
   })

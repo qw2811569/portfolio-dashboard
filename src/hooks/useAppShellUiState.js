@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
+import { DEFAULT_CANONICAL_PORTFOLIO_TAB } from '../constants.js'
 import { APP_LABELS } from '../lib/appMessages.js'
 import { createDefaultReviewForm } from '../lib/eventUtils.js'
 
 export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
-  const [tab, setTab] = useState('holdings')
+  const [tab, setTab] = useState(DEFAULT_CANONICAL_PORTFOLIO_TAB)
   const [sortBy, setSortBy] = useState('value')
   const [scanQuery, setScanQuery] = useState('')
   const [scanFilter, setScanFilter] = useState(APP_LABELS.allFilter)
@@ -19,18 +20,22 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
   const [researchTarget, setResearchTarget] = useState(null)
   const [researchResults, setResearchResults] = useState(null)
 
-  const resetTransientUiState = useCallback(() => {
-    resetTradeCaptureRef?.current?.()
-    setDailyExpanded(false)
-    setExpandedStock(null)
-    setExpandedNews(new Set())
-    setReviewingEvent(null)
-    setReviewForm(createDefaultReviewForm())
-    setResearchTarget(null)
-    setResearchResults(null)
-    setRelayPlanExpanded(false)
-    setCatalystFilter('全部')
-  }, [resetTradeCaptureRef])
+  const resetTransientUiState = useCallback(
+    ({ resetTab = false } = {}) => {
+      resetTradeCaptureRef?.current?.()
+      setDailyExpanded(false)
+      setExpandedStock(null)
+      setExpandedNews(new Set())
+      setReviewingEvent(null)
+      setReviewForm(createDefaultReviewForm())
+      setResearchTarget(null)
+      setResearchResults(null)
+      setRelayPlanExpanded(false)
+      setCatalystFilter('全部')
+      if (resetTab) setTab(DEFAULT_CANONICAL_PORTFOLIO_TAB)
+    },
+    [resetTradeCaptureRef]
+  )
 
   return {
     tab,

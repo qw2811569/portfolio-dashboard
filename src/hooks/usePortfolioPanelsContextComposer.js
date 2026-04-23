@@ -13,10 +13,13 @@ export function usePortfolioPanelsContextComposer({
   overviewDuplicateHoldings,
   overviewPendingItems,
   holdings,
+  watchlist,
   holdingDossiers,
   totalVal,
   totalCost,
   todayTotalPnl,
+  urgentCount,
+  todayAlertSummary,
   winners,
   losers,
   top5,
@@ -110,6 +113,7 @@ export function usePortfolioPanelsContextComposer({
     ? overviewPendingItems
     : EMPTY_LIST
   const safeHoldings = Array.isArray(holdings) ? holdings : EMPTY_LIST
+  const safeWatchlist = Array.isArray(watchlist) ? watchlist : EMPTY_LIST
   const safeHoldingDossiers = Array.isArray(holdingDossiers) ? holdingDossiers : EMPTY_LIST
   const safeNewsEvents = Array.isArray(newsEvents) ? newsEvents : EMPTY_LIST
   const safeDataRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : EMPTY_LIST
@@ -254,6 +258,25 @@ export function usePortfolioPanelsContextComposer({
           return !Number.isFinite(targetPrice) || targetPrice <= 0
         }).length,
       },
+      dashboard: {
+        holdings: safeHoldings,
+        watchlist: safeWatchlist,
+        holdingDossiers: safeHoldingDossiers,
+        dataRefreshRows: safeDataRefreshRows,
+        morningNote,
+        todayTotalPnl,
+        totalVal,
+        totalCost,
+        winners,
+        losers,
+        latestInsight,
+        newsEvents: safeNewsEvents,
+        urgentCount,
+        todayAlertSummary,
+        portfolioId: activePortfolioId,
+        portfolioName: activePortfolio?.displayName || activePortfolio?.name || '',
+        viewMode: renderViewMode,
+      },
       holdings: {
         activePortfolioId,
         holdings: safeHoldings,
@@ -353,6 +376,7 @@ export function usePortfolioPanelsContextComposer({
       },
     }),
     [
+      activePortfolio,
       activePortfolioId,
       analyzing,
       analyzeStep,
@@ -409,13 +433,16 @@ export function usePortfolioPanelsContextComposer({
       stressResult,
       stressTesting,
       maybeAutoConfirmDailyReport,
+      urgentCount,
       targetUpdateCount,
       todayTotalPnl,
+      todayAlertSummary,
       top5,
       totalCost,
       totalVal,
       tradeCapture,
       tradeLog,
+      safeWatchlist,
       watchlistFocus,
       watchlistRows,
       winners,
@@ -427,6 +454,10 @@ export function usePortfolioPanelsContextComposer({
       overview: {
         onExit: exitOverview,
         onSwitch: switchPortfolio,
+      },
+      dashboard: {
+        onNavigate: setTab,
+        onRefreshReminder: () => refreshAnalystReports({ force: true }),
       },
       holdings: {
         setShowReversal,

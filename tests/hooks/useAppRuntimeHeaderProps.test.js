@@ -64,6 +64,8 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
 
     expect(Array.isArray(headerProps.TABS)).toBe(true)
     expect(headerProps.TABS.length).toBeGreaterThan(0)
+    expect(headerProps.TABS[0]).toMatchObject({ k: 'dashboard', label: '看板' })
+    expect(headerProps.TABS[1]).toMatchObject({ k: 'overview', label: '全組合' })
     expect(headerProps.cloudSync).toBe(true)
     expect(headerProps.saved).toBe('ok')
     expect(headerProps.workflowCue?.targetTab).toBe('research')

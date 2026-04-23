@@ -97,6 +97,8 @@ export function useAppRuntimeWorkflowArgs({
       overviewTotalPnl: derived.overviewTotalPnl,
       overviewDuplicateHoldings: derived.overviewDuplicateHoldings,
       overviewPendingItems: derived.overviewPendingItems,
+      urgentCount: derived.urgentCount,
+      todayAlertSummary: derived.todayAlertSummary,
       winners: derived.winners,
       losers: derived.losers,
       top5: derived.top5,

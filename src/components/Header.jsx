@@ -61,8 +61,14 @@ export default function Header(props) {
     activePortfolioSummary || { id: activePortfolioId }
   )
   const navigateToTab = (nextTab) => {
-    if (!nextTab || typeof setTab !== 'function') return
-    setTab(nextTab)
+    if (!nextTab) return
+    if (nextTab === 'overview' && typeof openOverview === 'function') {
+      openOverview()
+    } else if (typeof setTab === 'function') {
+      setTab(nextTab)
+    } else {
+      return
+    }
     if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }

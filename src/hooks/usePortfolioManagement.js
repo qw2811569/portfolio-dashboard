@@ -210,7 +210,7 @@ export const usePortfolioManagement = ({
 
       try {
         await flushCurrentPortfolio()
-        resetTransientUiState()
+        resetTransientUiState({ resetTab: pid !== activePortfolioId })
         await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE)
         await save(ACTIVE_PORTFOLIO_KEY, pid)
         await loadPortfolio(pid, PORTFOLIO_VIEW_MODE)

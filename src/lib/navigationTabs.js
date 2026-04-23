@@ -4,6 +4,8 @@ export function buildPortfolioTabs({
   researching = false,
 } = {}) {
   return [
+    { k: 'dashboard', label: '看板' },
+    { k: 'overview', label: '全組合' },
     { k: 'holdings', label: '持倉' },
     { k: 'watchlist', label: '觀察股' },
     { k: 'events', label: `事件追蹤${urgentCount > 0 ? ' ·' : ''}` },
@@ -27,7 +29,8 @@ export function buildGroupedPortfolioTabs({
   researching = false,
 } = {}) {
   return [
-    { k: 'overview', label: '總覽' },
+    { k: 'dashboard', label: '看板' },
+    { k: 'overview', label: '全組合' },
     {
       k: 'holdings',
       label: '持倉',

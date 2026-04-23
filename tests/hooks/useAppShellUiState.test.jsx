@@ -3,12 +3,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { useAppShellUiState } from '../../src/hooks/useAppShellUiState.js'
 
 describe('hooks/useAppShellUiState.js', () => {
-  it('resets transient app UI state and clears pending trade capture state', () => {
+  it('defaults to dashboard and resets transient app UI state when requested', () => {
     const resetTradeCapture = vi.fn()
     const resetTradeCaptureRef = { current: resetTradeCapture }
     const { result } = renderHook(() => useAppShellUiState({ resetTradeCaptureRef }))
 
+    expect(result.current.tab).toBe('dashboard')
+
     act(() => {
+      result.current.setTab('research')
       result.current.setDailyExpanded(true)
       result.current.setExpandedStock('2330')
       result.current.setExpandedNews(new Set(['event-1']))
@@ -20,10 +23,11 @@ describe('hooks/useAppShellUiState.js', () => {
     })
 
     act(() => {
-      result.current.resetTransientUiState()
+      result.current.resetTransientUiState({ resetTab: true })
     })
 
     expect(resetTradeCapture).toHaveBeenCalledTimes(1)
+    expect(result.current.tab).toBe('dashboard')
     expect(result.current.dailyExpanded).toBe(false)
     expect(result.current.expandedStock).toBe(null)
     expect(Array.from(result.current.expandedNews)).toEqual([])

@@ -19,9 +19,14 @@ function isCmdKShortcut(event) {
 
 const PANEL_ITEMS = [
   {
+    key: 'dashboard',
+    label: '看板',
+    keywords: 'dashboard 看板 hero summary 首頁 holdings today pnl',
+  },
+  {
     key: 'overview',
-    label: '總覽',
-    keywords: 'overview dashboard kpi concentration 總覽 總表 指標 集中度',
+    label: '全組合',
+    keywords: 'overview all portfolios 全組合 總覽 總表 指標 集中度',
   },
   { key: 'holdings', label: '持股', keywords: 'holdings 持股 持倉 部位 股票' },
   { key: 'watchlist', label: '觀察股', keywords: 'watchlist 觀察股 追蹤 清單' },

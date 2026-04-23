@@ -3,7 +3,7 @@ import {
   usePortfolioPanelsActions,
   usePortfolioPanelsData,
 } from '../contexts/PortfolioPanelsContext.jsx'
-import { OverviewPanel } from './overview/index.js'
+import { DashboardPanel, OverviewPanel } from './overview/index.js'
 import HoldingsPanelChunk from './holdings/HoldingsPanelChunk.jsx'
 import { WatchlistPanel } from './watchlist/index.js'
 import { EventsPanel } from './events/index.js'
@@ -18,6 +18,7 @@ export default function AppPanels({ viewMode, overviewViewMode, tab, errorBounda
   const actions = usePortfolioPanelsActions()
   const activePanelKey = viewMode === overviewViewMode ? 'overview' : tab
 
+  const dashboardProps = { ...data.dashboard, ...actions.dashboard }
   const overviewProps = { ...data.overview, ...actions.overview }
   const holdingsProps = { ...data.holdings, ...actions.holdings }
   const holdingsTableProps = { ...data.holdingsTable, ...actions.holdingsTable }
@@ -30,6 +31,12 @@ export default function AppPanels({ viewMode, overviewViewMode, tab, errorBounda
   const newsProps = { ...data.news, ...actions.news }
 
   const panelRegistry = {
+    dashboard: {
+      scope: 'dashboard-panel',
+      title: errorBoundaryCopy.dashboard?.title || '看板',
+      Component: DashboardPanel,
+      props: dashboardProps,
+    },
     overview: {
       scope: 'overview-panel',
       title: errorBoundaryCopy.overview.title,

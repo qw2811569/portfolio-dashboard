@@ -1,0 +1,146 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "66bc984b-43fd-44a6-9192-ad5ae45acfca",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>b6uclehy1</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "M-VIEW fix 收 + dashboard 下方已有「我 vs 金聯成」compare strip + mobile metrics 修。UX-22b 跟 UX-25 v2 並跑。Loop 繼續 3 min 檢查。",
+      "prompt_hash": "sha256:efe243b8e02db16bfcb3c1184bd18e24d6ddb00632f6c9fbb37aa28562c94215",
+      "message_count": 7938,
+      "cost_usd": 0.1919505,
+      "input_tokens": 1,
+      "output_tokens": 2740,
+      "cache_read_tokens": 485650,
+      "cache_creation_tokens": 1374,
+      "timestamp": "2026-04-23T20:47:37.984Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T20:48:31.375Z",
+      "session_duration_secs": 748633,
+      "ai_response_time_secs": 11.425330540306287,
+      "prompt_submitted_at": "2026-04-23T20:47:38.187461Z",
+      "prompt_duration_secs": 58,
+      "accepted_lines": 1878,
+      "overridden_lines": 213,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/ux-22b-newspanel-polish/brief.md",
+      "line_range": [
+        1,
+        80
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/ux-22b-newspanel-polish/brief.md",
+          "line_range": [
+            1,
+            80
+          ],
+          "blob_hash": "82201b143af8c7928c2943dbc6bb6f9b1b6ea7a0",
+          "additions": 80
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "1a736f86a14938199ef6010f02c39858ca88649a",
+          "additions": 129,
+          "deletions": 129
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "a1068aa2cfea06b74db5d1060da924305ec4e8c0",
+          "additions": 12,
+          "deletions": 9
+        },
+        {
+          "path": "src/components/Header.jsx",
+          "line_range": [
+            1052,
+            1085
+          ],
+          "blob_hash": "5e77b856642ed93e308edc2dbc33a89d0a8285d4",
+          "additions": 21,
+          "deletions": 13
+        },
+        {
+          "path": "src/components/common/Dialogs.jsx",
+          "line_range": [
+            143,
+            152
+          ],
+          "blob_hash": "c63f8e5fb68e6d84cea4ee2601a11470b139d6b6",
+          "additions": 2
+        },
+        {
+          "path": "src/hooks/useReportRefreshWorkflow.js",
+          "line_range": [
+            215,
+            215
+          ],
+          "blob_hash": "56a8651057b3993f3646daa3fa868cb56ea87a6f",
+          "deletions": 1
+        }
+      ],
+      "prompt_number": 700,
+      "total_additions": 390,
+      "total_deletions": 233,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>b6uclehy1</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch M-VIEW fix\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -80 .tmp/m-view-fix/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "M-VIEW fix 回 · commit `e535803` · VM mirror 完。UX-25 還在跑 · 我用另一個 slot 起 P1 首項 **UX-22b**："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/ux-22b-newspanel-polish/brief.md)\" 2>&1...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

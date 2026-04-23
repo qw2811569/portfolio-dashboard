@@ -1,0 +1,118 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "41c339c0-adb6-49d8-8051-f1f168d0f5bf",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>byxf6yhai</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "C1b 派出（1-1.5 day · 分階段 commit）· 2 parallel（UX-27 + C1b）。Loop 繼續。",
+      "prompt_hash": "sha256:19c477cabaa9367ce68b0bcb4c180ad07e124f91a14fba09a66889480db3f5df",
+      "message_count": 7989,
+      "cost_usd": 0.20295675,
+      "input_tokens": 1,
+      "output_tokens": 3132,
+      "cache_read_tokens": 510050,
+      "cache_creation_tokens": 789,
+      "timestamp": "2026-04-23T21:45:21.073Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T21:46:20.652Z",
+      "session_duration_secs": 752102,
+      "ai_response_time_secs": 11.414403276803696,
+      "prompt_submitted_at": "2026-04-23T21:45:21.244545Z",
+      "prompt_duration_secs": 64,
+      "accepted_lines": 1835,
+      "overridden_lines": 233,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/c1b-facade-migration/brief.md",
+      "line_range": [
+        1,
+        113
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/c1b-facade-migration/brief.md",
+          "line_range": [
+            1,
+            113
+          ],
+          "blob_hash": "eb44461785db0307e98b88175e54c6b81f9e206c",
+          "additions": 113
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "1ca7a0ab0e5dfdc2d98ba49dbeb240c5aacada8e",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "4ae72026a79e6bd6cff7d52d7812fa5bb19f86f1",
+          "additions": 10,
+          "deletions": 7
+        }
+      ],
+      "prompt_number": 705,
+      "total_additions": 401,
+      "total_deletions": 220,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>byxf6yhai</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch B1 Morning Note automation\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -60 .tmp/b1-morning-note/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "B1 done · `c3acf72` · VM cron + worker + frontend all ship. 派 **C1b facade alias migration**："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/c1b-facade-migration/brief.md)\" 2>&1 | ...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

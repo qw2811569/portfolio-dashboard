@@ -228,6 +228,35 @@ async function ensureDashboardOpen(page) {
   )
 }
 
+async function ensureAppShellReady(page, timeoutMs = 120000) {
+  const shell = await waitForVisibleLocator(
+    timeoutMs,
+    page.getByTestId('header-root'),
+    page.getByTestId('portfolio-select'),
+    page.getByTestId('tab-dashboard'),
+    page.getByRole('button', { name: '看板', exact: true })
+  )
+  if (!shell) throw new Error('missing app shell')
+  return shell
+}
+
+async function ensureNewsReady(page, timeoutMs = 20000) {
+  const panel = await requireLocator(
+    'missing news panel',
+    page.getByTestId('news-panel'),
+    page.getByTestId('news-hero-title'),
+    page.getByText(/今天市場在說什麼|這些新聞跟你組合有關|新聞脈絡整理中/)
+  )
+  await expect(panel).toBeVisible()
+  await expect
+    .poll(async () => page.getByTestId('news-article-card').count(), {
+      timeout: timeoutMs,
+      message: 'news cards did not finish rendering',
+    })
+    .toBeGreaterThan(0)
+  return panel
+}
+
 async function returnToPortfolioView(page) {
   const button = await firstExisting(
     page.getByRole('button', { name: /返回目前組合|返回組合/ }),
@@ -770,7 +799,7 @@ test('dashboard shows a stale snapshot badge when the daily snapshot marker is o
   await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 120000 })
   await page.waitForTimeout(1800)
   await maybeAcceptTradeDisclaimer(page)
-  await ensureDashboardOpen(page)
+  await ensureAppShellReady(page)
 
   await expect(page.getByTestId('daily-snapshot-status-card')).toBeVisible()
   await expect(page.getByTitle('daily snapshot freshness')).toContainText('stale')
@@ -792,7 +821,7 @@ test('dashboard hides the stale snapshot badge when the daily snapshot marker is
   await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 120000 })
   await page.waitForTimeout(1800)
   await maybeAcceptTradeDisclaimer(page)
-  await ensureDashboardOpen(page)
+  await ensureAppShellReady(page)
 
   await expect(page.getByTestId('daily-snapshot-status-card')).toHaveCount(0)
 })
@@ -1024,6 +1053,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
       await page.setViewportSize({ width: 390, height: 844 })
       await settle(page, 1200)
       await clickTab(page, 'news', '新聞聚合')
+      await ensureNewsReady(page)
       const portrait = await measureMobileLayout(page)
       expect(portrait.stickyHeight).toBeLessThanOrEqual(100)
       expect(countGridColumns(portrait.newsGridTemplateColumns)).toBe(1)
@@ -1035,6 +1065,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
       await page.setViewportSize({ width: 844, height: 390 })
       await settle(page, 1200)
       await clickTab(page, 'news', '新聞聚合')
+      await ensureNewsReady(page)
       const landscape = await measureMobileLayout(page)
       expect(landscape.stickyHeight).toBeLessThanOrEqual(100)
       expect(countGridColumns(landscape.newsGridTemplateColumns)).toBe(1)
@@ -1055,6 +1086,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
     screenshotName: '14-scroll-check.png',
     action: async () => {
       await clickTab(page, 'news', '新聞聚合')
+      await ensureNewsReady(page)
 
       const before = await page.evaluate(() => {
         const sticky =

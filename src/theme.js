@@ -147,6 +147,17 @@ export const A = Object.freeze({
 })
 
 export const C = Object.freeze({
+  ink: TOKENS.ink,
+  charcoal: TOKENS.charcoal,
+  iron: TOKENS.iron,
+  bone: TOKENS.bone,
+  boneDeep: TOKENS.boneDeep,
+  warning: TOKENS.warning,
+  positive: TOKENS.positive,
+  cta: TOKENS.cta,
+  hot: TOKENS.hot,
+  negative: TOKENS.negative,
+
   bg: TOKENS.boneSoft,
   shell: TOKENS.bone,
   card: TOKENS.boneSoft,

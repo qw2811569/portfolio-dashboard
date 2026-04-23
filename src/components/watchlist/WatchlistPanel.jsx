@@ -3,6 +3,13 @@ import { C, alpha } from '../../theme.js'
 import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
 
 const bgTints = [C.card, C.cardBlue, C.cardAmber]
+const WATCHLIST_SC_COLOR = Object.freeze({
+  blue: C.ink,
+  teal: C.positive,
+  amber: C.amber,
+  olive: C.iron,
+  lavender: C.lavender,
+})
 const inputStyle = {
   width: '100%',
   padding: '8px 8px',
@@ -37,7 +44,7 @@ export function WatchlistFocus({ focus }) {
     Card,
     {
       style: {
-        borderLeft: `3px solid ${alpha(C.teal, '40')}`,
+        borderLeft: `3px solid ${alpha(C.positive, '40')}`,
         marginBottom: 8,
         background: C.cardBlue,
       },
@@ -182,7 +189,7 @@ export function WatchlistRow({
   const w = item
   const upsideText = upside != null ? `${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%` : '—'
   const prog = w.target > 0 && w.price > 0 ? Math.min((w.price / w.target) * 100, 100) : 0
-  const sc = C[w.scKey] || C.blue
+  const sc = WATCHLIST_SC_COLOR[w.scKey] || C.ink
   const isWExp = expanded
 
   return h(
@@ -350,7 +357,7 @@ export function WatchlistRow({
             style: {
               width: `${prog}%`,
               height: '100%',
-              background: `linear-gradient(90deg,${alpha(sc, '40')},${alpha(C.olive, '40')})`,
+              background: `linear-gradient(90deg,${alpha(sc, '40')},${alpha(C.iron, '40')})`,
               borderRadius: 3,
             },
           })
@@ -470,8 +477,12 @@ export function WatchlistRow({
                             padding: '4px 8px',
                             borderRadius: 3,
                             background:
-                              e.pred === 'up' ? C.upBg : e.pred === 'down' ? C.downBg : C.blueBg,
-                            color: e.pred === 'up' ? C.up : e.pred === 'down' ? C.down : C.blue,
+                              e.pred === 'up'
+                                ? C.upBg
+                                : e.pred === 'down'
+                                  ? C.downBg
+                                  : alpha(C.ink, '10'),
+                            color: e.pred === 'up' ? C.up : e.pred === 'down' ? C.down : C.charcoal,
                           },
                         },
                         `預測${e.pred === 'up' ? '看漲' : e.pred === 'down' ? '看跌' : '中性'}`
@@ -484,7 +495,7 @@ export function WatchlistRow({
                               fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
-                              background: C.oliveBg,
+                              background: alpha(C.iron, '12'),
                               color: C.textSec,
                               fontWeight: 600,
                             },
@@ -515,7 +526,7 @@ export function WatchlistRow({
                               fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
-                              background: C.blueBg,
+                              background: alpha(C.ink, '10'),
                               color: C.textSec,
                             },
                           },
@@ -530,7 +541,7 @@ export function WatchlistRow({
                               fontSize: 11,
                               padding: '4px 8px',
                               borderRadius: 3,
-                              background: C.blueBg,
+                              background: alpha(C.ink, '10'),
                               color: C.textSec,
                             },
                           },
@@ -554,7 +565,7 @@ export function WatchlistRow({
                           color: C.textSec,
                           marginTop: 4,
                           lineHeight: 1.6,
-                          borderLeft: `2px solid ${alpha(e.correct ? C.olive : C.up, '40')}`,
+                          borderLeft: `2px solid ${alpha(e.correct ? C.iron : C.up, '40')}`,
                           paddingLeft: 8,
                         },
                       },
@@ -907,8 +918,8 @@ export function WatchlistPanel({
               style: {
                 marginTop: 12,
                 padding: '8px 16px',
-                background: C.teal,
-                color: 'white',
+                background: C.cta,
+                color: C.onFill,
                 border: 'none',
                 borderRadius: 20,
                 fontSize: 11,
@@ -928,8 +939,8 @@ export function WatchlistPanel({
               onClick: openAddModal,
               style: {
                 padding: '4px 12px',
-                background: C.teal,
-                color: 'white',
+                background: C.cta,
+                color: C.onFill,
                 border: 'none',
                 borderRadius: 20,
                 fontSize: 12,

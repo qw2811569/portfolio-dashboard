@@ -469,8 +469,8 @@ function TodayPnlHero({
                             style: {
                               padding: '8px 12px',
                               borderRadius: 999,
-                              border: `1px solid ${alpha(C.blue, '32')}`,
-                              background: alpha(C.blue, '10'),
+                              border: `1px solid ${alpha(C.cta, '32')}`,
+                              background: alpha(C.cta, '10'),
                               color: C.textSec,
                               fontSize: 12,
                               fontWeight: 600,
@@ -500,7 +500,7 @@ function TodayPnlHero({
                   color: C.textSec,
                   padding: '4px 8px',
                   borderRadius: 999,
-                  background: alpha(C.blue, '18'),
+                  background: alpha(C.ink, '10'),
                   border: `1px solid ${C.borderStrong}`,
                 },
               },
@@ -783,7 +783,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.teal, '40')}`,
+        borderLeft: `3px solid ${alpha(C.ink, '40')}`,
       },
     },
     h(
@@ -957,7 +957,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               {
                 style: {
                   fontSize: 11,
-                  color: event.impactLabel === 'HIGH' ? C.down : C.teal,
+                  color: event.impactLabel === 'HIGH' ? C.down : C.positive,
                   fontWeight: 600,
                   flexShrink: 0,
                 },
@@ -1034,7 +1034,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
               style: {
                 fontSize: 11,
                 color: C.textSec,
-                background: alpha(C.blue, '12'),
+                background: alpha(C.ink, '10'),
                 borderRadius: 999,
                 padding: '4px 8px',
               },
@@ -1189,7 +1189,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `3px solid ${alpha(C.blue, '40')}`,
+        borderLeft: `3px solid ${alpha(C.ink, '40')}`,
       },
     },
     h(
@@ -1265,7 +1265,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                       minHeight: item.link ? 44 : undefined,
                       padding: item.link ? '4px 8px' : undefined,
                       fontSize: 11,
-                      color: item.link ? C.blue : C.text,
+                      color: C.text,
                       fontWeight: 500,
                       lineHeight: 1.6,
                       textDecoration: 'none',

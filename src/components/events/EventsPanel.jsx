@@ -8,10 +8,34 @@ import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
 import { calculateEventCountdown } from '../../lib/eventCountdown.js'
 
+const LEGACY_TONE_COLOR = Object.freeze({
+  up: C.up,
+  down: C.down,
+  amber: C.amber,
+  blue: C.ink,
+  teal: C.positive,
+  olive: C.iron,
+  cyan: C.positive,
+  ink: C.ink,
+  charcoal: C.charcoal,
+  iron: C.iron,
+  positive: C.positive,
+  cta: C.cta,
+  hot: C.hot,
+  warning: C.warning,
+  lavender: C.lavender,
+  choco: C.choco,
+  text: C.text,
+})
+
+function resolveToneColor(tone, fallback = C.text) {
+  return LEGACY_TONE_COLOR[tone] || fallback
+}
+
 const TYPE_COLOR = {
   法說: C.up,
-  財報: C.teal,
-  營收: C.olive,
+  財報: C.positive,
+  營收: C.iron,
   催化: C.amber,
   操作: C.text,
   總經: C.lavender,
@@ -61,19 +85,20 @@ function buildEventKey(event, index) {
 function getPredictionMeta(event) {
   if (event?.pred === 'up') return { label: '預測看漲', color: C.textSec, bg: C.upBg }
   if (event?.pred === 'down') return { label: '預測看跌', color: C.down, bg: C.downBg }
-  if (event?.pred === 'neutral') return { label: '預測中性', color: C.textSec, bg: C.blueBg }
+  if (event?.pred === 'neutral')
+    return { label: '預測中性', color: C.textSec, bg: alpha(C.ink, '10') }
   return null
 }
 
 function getReviewMeta(event) {
   if (event?.status === 'closed' || event?.status === 'past') {
     if (event?.correct === true)
-      return { label: '復盤命中', color: C.textSec, bg: alpha(C.teal, '16') }
+      return { label: '復盤命中', color: C.textSec, bg: alpha(C.positive, '16') }
     if (event?.correct === false) return { label: '復盤失準', color: C.down, bg: C.downBg }
     return { label: '已復盤', color: C.textMute, bg: alpha(C.textMute, '12') }
   }
   if (event?.status === 'tracking') {
-    return { label: '追蹤中', color: C.textSec, bg: alpha(C.teal, '16') }
+    return { label: '追蹤中', color: C.textSec, bg: alpha(C.positive, '16') }
   }
   return { label: '待觀察', color: C.textSec, bg: alpha(C.amber, '16') }
 }
@@ -88,7 +113,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
       style: {
         marginBottom: 8,
         background: C.cardBlue,
-        borderLeft: `3px solid ${alpha(C.teal, '40')}`,
+        borderLeft: `3px solid ${alpha(C.positive, '40')}`,
       },
     },
     h(
@@ -141,9 +166,9 @@ export function RelayPlanCard({ expanded, onToggle }) {
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             transition: 'all 0.18s ease',
-            background: expanded ? C.subtleElev : alpha(C.teal, '08'),
+            background: expanded ? C.subtleElev : alpha(C.positive, '08'),
             color: C.textSec,
-            border: `1px solid ${expanded ? C.borderStrong : alpha(C.teal, '2a')}`,
+            border: `1px solid ${expanded ? C.borderStrong : alpha(C.positive, '2a')}`,
           },
         },
         expanded ? '收合' : '展開完整計畫'
@@ -163,9 +188,9 @@ export function RelayPlanCard({ expanded, onToggle }) {
               fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
-              background: alpha(C[item.tone] || C.text, '15'),
+              background: alpha(resolveToneColor(item.tone), '15'),
               color: C.textSec,
-              border: `1px solid ${alpha(C[item.tone] || C.text, '20')}`,
+              border: `1px solid ${alpha(resolveToneColor(item.tone), '20')}`,
             },
           },
           `${item.label} · ${item.text}`
@@ -192,7 +217,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
             style: {
               background: C.subtle,
               border: `1px solid ${C.border}`,
-              borderLeft: `2px solid ${alpha(C[leg.tone] || C.text, '40')}`,
+              borderLeft: `2px solid ${alpha(resolveToneColor(leg.tone), '40')}`,
               borderRadius: 9,
               padding: '8px 8px',
             },
@@ -233,7 +258,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   fontSize: 11,
                   padding: '4px 8px',
                   borderRadius: 20,
-                  background: alpha(C[leg.tone] || C.text, '15'),
+                  background: alpha(resolveToneColor(leg.tone), '15'),
                   color: C.textSec,
                 },
               },
@@ -635,7 +660,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 marginTop: 4,
                 padding: '4px 8px',
                 borderRadius: 5,
-                border: `1px solid ${alpha(C.olive, '2a')}`,
+                border: `1px solid ${alpha(C.iron, '2a')}`,
                 background: 'transparent',
                 color: C.textSec,
                 fontSize: 12,

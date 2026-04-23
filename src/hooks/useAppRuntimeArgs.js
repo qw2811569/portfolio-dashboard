@@ -80,6 +80,7 @@ export function useAppRuntimeWorkflowArgs({
       analystReports: state.analystReports,
       portfolios: state.portfolios,
       morningNote: state.morningNote,
+      dailySnapshotStatus: state.dailySnapshotStatus,
       dailyReport: state.dailyReport,
     },
     derived: {

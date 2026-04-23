@@ -284,6 +284,42 @@ describe('components/DashboardPanel', () => {
     )
   })
 
+  it('shows a soft stale snapshot reminder when the daily snapshot is stale', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          dailySnapshotStatus: {
+            stale: true,
+            badgeStatus: 'stale',
+            lastSuccessAt: '2026-04-22T19:00:00.000Z',
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('daily-snapshot-status-card')).toBeInTheDocument()
+    expect(screen.getByTestId('daily-snapshot-status-copy')).toHaveTextContent('已超過 36 小時')
+    expect(screen.getByTitle('daily snapshot freshness')).toHaveTextContent('stale')
+  })
+
+  it('keeps the daily snapshot reminder hidden when the marker is fresh', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          dailySnapshotStatus: {
+            stale: false,
+            badgeStatus: 'fresh',
+            lastSuccessAt: '2026-04-24T02:59:00.000Z',
+          },
+        })}
+      />
+    )
+
+    expect(screen.queryByTestId('daily-snapshot-status-card')).not.toBeInTheDocument()
+  })
+
   it('degrades the hero headline into an accuracy gate block when all dossiers lack fresh fundamentals', () => {
     render(
       <DashboardPanel

@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   ANALYZE: '/api/analyze',
   ANALYST_REPORTS: '/api/analyst-reports',
   BRAIN: '/api/brain',
+  DAILY_SNAPSHOT_STATUS: '/api/daily-snapshot-status',
   MORNING_NOTE: '/api/morning-note',
   RESEARCH: '/api/research',
   RESEARCH_EXTRACT: '/api/research-extract',

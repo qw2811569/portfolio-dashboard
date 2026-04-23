@@ -117,6 +117,16 @@ async function requireLocator(message, ...locators) {
   return locator
 }
 
+async function routeDailySnapshotStatus(page, payload) {
+  await page.route('**/api/daily-snapshot-status', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(payload),
+    })
+  })
+}
+
 async function saveShot(page, testInfo, fileName, options = {}) {
   ensureEvidenceDirs()
   const targetPath = buildEvidenceShotPath(testInfo, fileName)
@@ -162,14 +172,60 @@ async function selectPortfolioByLabel(page, labelPattern) {
 }
 
 async function clickTab(page, key, label) {
-  const tab = await requireLocator(
-    `missing tab: ${key}`,
+  const tab = await waitForAttachedLocator(
+    5000,
     page.getByTestId(`tab-${key}`),
     page.getByRole('button', { name: label, exact: true })
   )
+  if (!tab) throw new Error(`missing tab: ${key}`)
   await tab.scrollIntoViewIfNeeded()
   await tab.click()
   await settle(page)
+}
+
+async function waitForVisibleLocator(timeoutMs, ...locators) {
+  for (const locator of locators) {
+    const candidate = locator.first()
+    try {
+      await candidate.waitFor({ state: 'visible', timeout: timeoutMs })
+      return candidate
+    } catch {
+      // try the next locator candidate
+    }
+  }
+
+  return null
+}
+
+async function waitForAttachedLocator(timeoutMs, ...locators) {
+  for (const locator of locators) {
+    const candidate = locator.first()
+    try {
+      await candidate.waitFor({ state: 'attached', timeout: timeoutMs })
+      return candidate
+    } catch {
+      // try the next locator candidate
+    }
+  }
+
+  return null
+}
+
+async function ensureDashboardOpen(page) {
+  const dashboardShell = await waitForVisibleLocator(
+    1000,
+    page.getByTestId('dashboard-headline'),
+    page.locator('.dashboard-hero')
+  )
+
+  if (dashboardShell) return dashboardShell
+
+  await clickTab(page, 'dashboard', '看板')
+  return requireLocator(
+    'missing dashboard shell after switching to dashboard tab',
+    page.getByTestId('dashboard-headline'),
+    page.locator('.dashboard-hero')
+  )
 }
 
 async function returnToPortfolioView(page) {
@@ -635,6 +691,44 @@ test.afterEach(async ({ page }, testInfo) => {
   await copyTraceAndVideoArtifacts(testInfo)
 })
 
+test('dashboard shows a stale snapshot badge when the daily snapshot marker is older than 36 hours', async ({
+  page,
+}) => {
+  await routeDailySnapshotStatus(page, {
+    ok: false,
+    stale: true,
+    badgeStatus: 'stale',
+    lastSuccessAt: '2026-04-22T18:00:00.000Z',
+    lastAttemptAt: '2026-04-22T18:00:00.000Z',
+    lastAttemptStatus: 'success',
+  })
+
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+  await maybeAcceptTradeDisclaimer(page)
+
+  await expect(page.getByTestId('daily-snapshot-status-card')).toBeVisible()
+  await expect(page.getByTitle('daily snapshot freshness')).toContainText('stale')
+  await expect(page.getByTestId('daily-snapshot-status-copy')).toContainText('已超過 36 小時')
+})
+
+test('dashboard hides the stale snapshot badge when the daily snapshot marker is fresh', async ({
+  page,
+}) => {
+  await routeDailySnapshotStatus(page, {
+    ok: true,
+    stale: false,
+    badgeStatus: 'fresh',
+    lastSuccessAt: '2026-04-24T02:55:00.000Z',
+    lastAttemptAt: '2026-04-24T02:55:00.000Z',
+    lastAttemptStatus: 'success',
+  })
+
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+  await maybeAcceptTradeDisclaimer(page)
+
+  await expect(page.getByTestId('daily-snapshot-status-card')).toHaveCount(0)
+})
+
 test('real user simulation covers golden path, clipboard/download correctness, backup import/export, and mobile scroll evidence', async ({
   page,
 }, testInfo) => {
@@ -654,6 +748,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
       await settle(page, 2600)
 
       await expect(page).toHaveTitle(/持倉看板/)
+      await ensureDashboardOpen(page)
       const headline = page.getByTestId('dashboard-headline')
       await expect(headline).toBeVisible()
       await expect(headline).toContainText(

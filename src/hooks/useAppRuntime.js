@@ -10,6 +10,7 @@ import { pickPnlTone, composeAppShellFrameRuntime } from './useAppRuntimeCompose
 import { useThesisTracking } from './useThesisTracking.js'
 import { useAppRuntimeWorkflows } from './useAppRuntimeWorkflows.js'
 import { usePostCloseSilentSync } from './usePostCloseSilentSync.js'
+import { useDailySnapshotStatus } from './useDailySnapshotStatus.js'
 import { useMorningNoteRuntime } from './useMorningNoteRuntime.js'
 import { useAppRuntimeCoreLifecycle } from './useAppRuntimeCoreLifecycle.js'
 import { useAppRuntimeCoreArgs, useAppRuntimeWorkflowArgs } from './useAppRuntimeArgs.js'
@@ -248,6 +249,7 @@ export function useAppRuntime() {
     newsEvents,
     watchlist,
   })
+  const dailySnapshotStatus = useDailySnapshotStatus()
 
   usePostCloseSilentSync({
     ready,
@@ -327,6 +329,7 @@ export function useAppRuntime() {
       marketPriceCache,
       portfolios,
       morningNote,
+      dailySnapshotStatus,
     },
     derived: {
       H,

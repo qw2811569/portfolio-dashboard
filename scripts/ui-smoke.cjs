@@ -5,6 +5,8 @@ const { chromium } = require("playwright");
 const URL = process.env.APP_URL || "http://127.0.0.1:3002";
 const REQUIRED_MARKERS = ["持倉看板", "持倉", "深度研究"];
 const IGNORED_RESPONSE_PATTERNS = [/\/api\/target-prices\?code=/];
+const NAVIGATION_TIMEOUT_MS = 20000;
+const MARKER_TIMEOUT_MS = 90000;
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
@@ -32,11 +34,14 @@ async function main() {
   });
 
   try {
-    await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 20000 });
+    // Local Vite cold starts can leave the document in an interactive state for a while
+    // even though the app is still progressively loading modules. Accept the initial
+    // navigation commit, then wait for the required UI markers instead.
+    await page.goto(URL, { waitUntil: "commit", timeout: NAVIGATION_TIMEOUT_MS });
     await page.waitForFunction(
       (markers) => markers.every((marker) => document.body.innerText.includes(marker)),
       REQUIRED_MARKERS,
-      { timeout: 8000 }
+      { timeout: MARKER_TIMEOUT_MS }
     ).catch(() => {});
     const body = await page.locator("body").innerText();
     const missingMarkers = REQUIRED_MARKERS.filter((marker) => !body.includes(marker));

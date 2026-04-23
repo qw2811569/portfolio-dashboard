@@ -1077,6 +1077,110 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
   )
 }
 
+function formatSnapshotTimestamp(value) {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(parsed)
+}
+
+function resolveSnapshotCopy(status, lastSuccessAt = '') {
+  const lastLabel = formatSnapshotTimestamp(lastSuccessAt)
+
+  if (status === 'failed') {
+    return lastLabel
+      ? `最近一次 snapshot 沒有順利落盤，若臨時要回復，時間點大概會停在 ${lastLabel} 那一版。`
+      : '最近一次 snapshot 沒有順利落盤，若臨時要回復，會更依賴前一份已保存版本。'
+  }
+
+  if (status === 'missing') {
+    return '目前還沒看到 daily snapshot 的成功紀錄，restore rehearsal 會更依賴本機 checkpoint。'
+  }
+
+  return lastLabel
+    ? `最近一份 daily snapshot 已超過 36 小時，若臨時要回復，時間點大概會停在 ${lastLabel} 那一版。`
+    : '最近一份 daily snapshot 已超過 36 小時，若臨時要回復，時間點會更接近前一版。'
+}
+
+function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {
+  if (!dailySnapshotStatus?.stale) return null
+
+  const badgeStatus = ['stale', 'missing', 'failed'].includes(dailySnapshotStatus.badgeStatus)
+    ? dailySnapshotStatus.badgeStatus
+    : 'stale'
+  const copy = resolveSnapshotCopy(badgeStatus, dailySnapshotStatus.lastSuccessAt)
+  const lastLabel = formatSnapshotTimestamp(dailySnapshotStatus.lastSuccessAt)
+
+  return h(
+    Card,
+    {
+      'data-testid': 'daily-snapshot-status-card',
+      style: {
+        marginBottom: 8,
+        border: `1px solid ${alpha(
+          badgeStatus === 'failed' ? C.down : badgeStatus === 'missing' ? C.border : C.amber,
+          badgeStatus === 'missing' ? '70' : '32'
+        )}`,
+        background:
+          badgeStatus === 'failed'
+            ? `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.down, '08')})`
+            : badgeStatus === 'missing'
+              ? `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.subtle, 'f2')})`
+              : `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.amber, '0a')})`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        },
+      },
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Restore Snapshot'),
+      h(StaleBadge, {
+        status: badgeStatus,
+        title: 'daily snapshot freshness',
+      })
+    ),
+    h(
+      'div',
+      {
+        'data-testid': 'daily-snapshot-status-copy',
+        style: {
+          fontSize: 12,
+          color: C.textSec,
+          lineHeight: 1.8,
+        },
+      },
+      copy
+    ),
+    lastLabel &&
+      h(
+        'div',
+        {
+          style: {
+            marginTop: 8,
+            fontSize: 11,
+            color: C.textMute,
+          },
+        },
+        `last success · ${lastLabel}`
+      )
+  )
+}
+
 function TodayInMarketsCard({ newsEvents = [] }) {
   const items = buildTodayInMarketsItems(newsEvents).slice(0, 6)
 
@@ -1497,6 +1601,7 @@ export function DashboardPanel({
   holdingDossiers = [],
   dataRefreshRows = [],
   morningNote = null,
+  dailySnapshotStatus = null,
   todayTotalPnl = 0,
   totalVal = 0,
   totalCost = 0,
@@ -1579,6 +1684,7 @@ export function DashboardPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+    h(DailySnapshotStatusCard, { dailySnapshotStatus }),
     h(MorningNoteCard, { morningNote, onNavigate }),
     h(PrincipleCards),
     h(TodayInMarketsCard, { newsEvents }),

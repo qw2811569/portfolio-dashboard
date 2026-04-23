@@ -44,6 +44,7 @@ export function composePortfolioPanelsContextInput({
     filteredEvents: data.filteredEvents,
     catalystFilter: ui.catalystFilter,
     morningNote: data.morningNote,
+    dailySnapshotStatus: data.dailySnapshotStatus,
     dailyReport: data.dailyReport,
     analysisHistory: data.analysisHistory,
     analyzing: asyncState.analyzing,

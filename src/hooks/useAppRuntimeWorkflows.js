@@ -43,6 +43,7 @@ export function useAppRuntimeWorkflows({
     analystReports,
     portfolios,
     morningNote,
+    dailySnapshotStatus,
     dailyReport,
   } = state
 
@@ -429,6 +430,7 @@ export function useAppRuntimeWorkflows({
       holdingsIntegrityIssues,
       filteredEvents,
       morningNote,
+      dailySnapshotStatus,
       dailyReport,
       newsEvents,
       strategyBrain,

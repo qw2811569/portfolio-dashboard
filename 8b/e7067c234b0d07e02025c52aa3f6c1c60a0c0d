@@ -1,0 +1,251 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "d0b5bbbb-e02c-4963-b536-8bfe3ceff8b1",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bibs0gwy1</task-id>\n<tool-use-id>toolu_01WtS5QuHGGdGXLwsi76xD68</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "R121 §11 派出 · P1 最後一條（C1b 也還在跑 · 這是 P1 全收前最後 2 個）。Loop 繼續。",
+      "prompt_hash": "sha256:436eab994fe4b59e2eda9ad6c58f03d464d9ae15fa6e86e0245b9cc20eddd049",
+      "message_count": 7998,
+      "cost_usd": 0.20679825000000004,
+      "input_tokens": 1,
+      "output_tokens": 3139,
+      "cache_read_tokens": 514430,
+      "cache_creation_tokens": 1435,
+      "timestamp": "2026-04-23T21:59:51.139Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T22:00:47.661Z",
+      "session_duration_secs": 752969,
+      "ai_response_time_secs": 11.409802125215409,
+      "prompt_submitted_at": "2026-04-23T21:59:51.345229Z",
+      "prompt_duration_secs": 61,
+      "accepted_lines": 3323,
+      "overridden_lines": 243,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/r121-recurring-ops/brief.md",
+      "line_range": [
+        1,
+        132
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/r121-recurring-ops/brief.md",
+          "line_range": [
+            1,
+            132
+          ],
+          "blob_hash": "dc1d02d0205c818accbec54e2a1b03700ba97fe7",
+          "additions": 132
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "3b92a6d98784b4551a05e9d5c726a385692ee5e9",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "1c6303baf26ea96492ae2be64728103d6c618bb7",
+          "additions": 10,
+          "deletions": 7
+        },
+        {
+          "path": "src/components/Header.jsx",
+          "line_range": [
+            141,
+            934
+          ],
+          "blob_hash": "3eefc8e476570d432ef8f5d160210dfce3b65177",
+          "additions": 16,
+          "deletions": 16
+        },
+        {
+          "path": "src/components/common/Base.jsx",
+          "line_range": [
+            25,
+            182
+          ],
+          "blob_hash": "31c2b538e8dc4e713cbe011b418806355040ee16",
+          "additions": 11,
+          "deletions": 6
+        },
+        {
+          "path": "src/components/reports/DailyReportPanel.jsx",
+          "line_range": [
+            284,
+            2159
+          ],
+          "blob_hash": "3b41ec495f729b4ccee647cc3e25c29750fa61b5",
+          "additions": 24,
+          "deletions": 24
+        },
+        {
+          "path": "src/components/research/ResearchPanel.jsx",
+          "line_range": [
+            149,
+            1201
+          ],
+          "blob_hash": "8c5d82fc79612eb949974a4b3e298c8971eb618a",
+          "additions": 13,
+          "deletions": 13
+        }
+      ],
+      "prompt_number": 706,
+      "total_additions": 484,
+      "total_deletions": 279,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bibs0gwy1</task-id>\n<tool-use-id>toolu_01WtS5QuHGGdGXLwsi76xD68</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch UX-27 default-tab persistence\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -40 .tmp/ux-27-default-tab-persist/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "UX-27 done · `2019a47`. 派 P1 最後一個：**R121 §11 Recurring Ops**（daily 03:00 snapshot + monthly restore rehearsal）："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/r121-recurring-ops/brief.md)\" 2>&1 | te...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    },
+    {
+      "id": "0f811329-6cc4-4fda-ad5d-84cb6e7849fb",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>b0jb8muvs</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "Stage 1 commit `15be792` + VM mirror 完。Stage 2+ 派了 with palette-diff-expected 規則（之前 STOP 條件收緊為「只有 layout break 才停」）。\n\n2 parallel（R121 §11 + C1b Stage 2+）。Loop 繼續。",
+      "prompt_hash": "sha256:7a6d4346ef0949ae4d65c5768fdeb218f2e4463c73f73d1758ca20f64080810e",
+      "message_count": 8013,
+      "cost_usd": 0.21335355,
+      "input_tokens": 1,
+      "output_tokens": 3513,
+      "cache_read_tokens": 521006,
+      "cache_creation_tokens": 1161,
+      "timestamp": "2026-04-23T22:06:30.688Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-23T22:07:44.373Z",
+      "session_duration_secs": 753386,
+      "ai_response_time_secs": 11.411745339833685,
+      "prompt_submitted_at": "2026-04-23T22:06:30.900018Z",
+      "prompt_duration_secs": 80,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/c1b-stage2-migration/brief.md",
+      "line_range": [
+        1,
+        106
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/c1b-stage2-migration/brief.md",
+          "line_range": [
+            1,
+            106
+          ],
+          "blob_hash": "f22de73c50ac6413f264a521e4d49a22e577986b",
+          "additions": 106
+        }
+      ],
+      "parent_receipt_id": "d0b5bbbb-e02c-4963-b536-8bfe3ceff8b1",
+      "prompt_number": 707,
+      "total_additions": 106,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>b0jb8muvs</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch C1b facade migration\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -60 .tmp/c1b-facade-migration/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"git status --short | head -15 && echo \"---diff size---\" && git diff --stat | hea...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 3,
+          "role": "assistant",
+          "content": "Stage 1 migration 實際在 working tree。Codex 依我 STOP 規則停 · 但 palette drift 正是 migration 目的（非 layout break）。決斷：commit Stage 1 + 派 Stage 2 with「palette diff expected」指示。"
+        },
+        {
+          "turn": 4,
+          "role": "tool",
+          "content": "Bash(command: \"git add src/components/Header.jsx src/components/common/Base.jsx src/components/...\"), Bash(command: \"node scripts/sync-to-vm-root.mjs 2>&1 | tail -5\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 5,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/c1b-stage2-migration/brief.md)\" 2>&1 | ...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

@@ -228,8 +228,18 @@ export function useAppRuntime() {
     cancelReview,
   } = useAppRuntimeCoreLifecycle(coreLifecycleArgs)
 
+  const activePortfolioName =
+    portfolios.find((portfolio) => portfolio?.id === activePortfolioId)?.name || ''
   const { theses } = useThesisTracking(activePortfolioId)
-  const morningNote = useMorningNoteRuntime({ holdings, theses, newsEvents, watchlist })
+  const morningNote = useMorningNoteRuntime({
+    portfolioId: activePortfolioId,
+    portfolioName: activePortfolioName,
+    viewMode,
+    holdings,
+    theses,
+    newsEvents,
+    watchlist,
+  })
 
   usePostCloseSilentSync({
     ready,

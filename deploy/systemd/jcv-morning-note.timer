@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekday 08:30 Asia/Taipei Morning Note timer
+
+[Timer]
+Unit=jcv-morning-note.service
+OnCalendar=Mon..Fri *-*-* 08:30:00 Asia/Taipei
+Persistent=true
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target

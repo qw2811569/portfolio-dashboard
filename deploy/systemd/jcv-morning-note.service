@@ -1,0 +1,17 @@
+[Unit]
+Description=JCV Morning Note VM worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/chenkuichen/app/test
+Environment=WORKSPACE_ROOT=/home/chenkuichen/app/test
+Environment=MORNING_NOTE_API_ORIGIN=http://127.0.0.1:3000
+EnvironmentFile=-/etc/agent-bridge/secrets.env
+ExecStart=/usr/bin/env node /home/chenkuichen/app/test/agent-bridge-standalone/workers/morning-note-worker.mjs
+StandardOutput=append:/home/chenkuichen/app/test/.tmp/morning-note-worker.log
+StandardError=append:/home/chenkuichen/app/test/.tmp/morning-note-worker.log
+
+[Install]
+WantedBy=multi-user.target

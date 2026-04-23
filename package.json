@@ -23,6 +23,7 @@
     "healthcheck": "bash scripts/healthcheck.sh",
     "smoke:ui": "node scripts/ui-smoke.cjs",
     "backfill:target-prices": "node scripts/backfill-target-prices.mjs",
+    "morning-note:worker": "node agent-bridge-standalone/workers/morning-note-worker.mjs",
     "audit:data-coverage": "node scripts/audit-data-coverage.mjs",
     "verify:local": "npm run check:facade-alias && npm run theme:check && npm run check:runtime-entry && npm run check:fast-refresh && npm run lint && npm run typecheck && npm run typecheck:js-critical && npm run test:run && npm run audit:data-coverage && npm run build && npm run healthcheck && npm run smoke:ui",
     "checkpoint": "bash scripts/create-checkpoint.sh",

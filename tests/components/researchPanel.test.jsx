@@ -226,6 +226,48 @@ describe('components/ResearchPanel', () => {
     expect(container.textContent).toContain('淡月：1月、2月、3月')
   })
 
+  it('shows a stale fundamentals badge when the research fundamentals data is older than 30 days', () => {
+    const storage = new Map([
+      [
+        'fm-cache-revenue-2330',
+        JSON.stringify({
+          data: Array.from({ length: 5 }, (_, yearOffset) =>
+            Array.from({ length: 12 }, (_, monthOffset) => ({
+              revenueYear: 2021 + yearOffset,
+              revenueMonth: monthOffset + 1,
+              revenue: monthOffset >= 9 ? 220 : monthOffset <= 2 ? 55 : 100,
+            }))
+          ).flat(),
+          ts: Date.now(),
+        }),
+      ],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key) => storage.get(key) || null),
+    })
+
+    const staleUpdatedAt = new Date(Date.now() - 32 * 24 * 60 * 60 * 1000).toISOString()
+
+    render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              fundamentals: { updatedAt: staleUpdatedAt },
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('research-fundamentals-stale-badge-2330')).toHaveTextContent(
+      '32 天前'
+    )
+  })
+
   it('shows a seasonality empty state when monthly revenue cache is unavailable', () => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(() => null),

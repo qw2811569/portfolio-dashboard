@@ -138,6 +138,18 @@ function formatMarketItemDateTime(value, time = '') {
   return [dateLabel, timeLabel].filter(Boolean).join(' ')
 }
 
+function formatTodayInMarketsRelativeLabel(value) {
+  const parsed = parseEventTimestamp(value)
+  if (!parsed) return ''
+
+  const diffMs = Math.max(0, Date.now() - parsed.getTime())
+  const hourMs = 60 * 60 * 1000
+  const dayMs = 24 * hourMs
+  if (diffMs < hourMs) return '剛剛'
+  if (diffMs < dayMs) return `${Math.max(1, Math.floor(diffMs / hourMs))} 小時前`
+  return `${Math.max(1, Math.floor(diffMs / dayMs))} 天前`
+}
+
 function parseEventTimestamp(value) {
   const raw = String(value || '').trim()
   if (!raw) return null
@@ -309,12 +321,13 @@ function resolveTodayInMarketsFreshness(items = []) {
     .filter(Boolean)
     .sort((left, right) => right.getTime() - left.getTime())
 
-  if (timestamps.length === 0) return { staleStatus: '', updatedAt: '' }
+  if (timestamps.length === 0) return { staleStatus: '', updatedAt: '', label: '' }
 
   const latest = timestamps[0]
   return {
     staleStatus: Date.now() - latest.getTime() > TODAY_IN_MARKETS_STALE_MS ? 'stale' : '',
     updatedAt: latest.toISOString(),
+    label: formatTodayInMarketsRelativeLabel(latest),
   }
 }
 
@@ -1492,7 +1505,9 @@ function TodayInMarketsCard({ newsEvents = [] }) {
         freshness.staleStatus &&
           h(StaleBadge, {
             status: freshness.staleStatus,
+            label: freshness.label,
             title: 'today in markets freshness',
+            'data-testid': 'today-in-markets-stale-badge',
           }),
         updatedAtLabel &&
           h(
@@ -2053,9 +2068,9 @@ export function DashboardPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+    h(PrincipleCards),
     h(DailySnapshotStatusCard, { dailySnapshotStatus }),
     h(MorningNoteCard, { morningNote, onNavigate }),
-    h(PrincipleCards),
     h(TodayInMarketsCard, { newsEvents }),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),

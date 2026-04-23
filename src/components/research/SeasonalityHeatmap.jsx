@@ -1,5 +1,5 @@
 import { createElement as h, useMemo } from 'react'
-import { Card } from '../common'
+import { Card, StaleBadge } from '../common'
 import { C, alpha } from '../../theme.js'
 import { computeSeasonality } from '../../lib/seasonalityMetrics.js'
 
@@ -96,7 +96,45 @@ function buildHeatmapRows(revenueRows = []) {
   }
 }
 
-function EmptySeasonalityCard({ name, code }) {
+function SeasonalityCardHeader({ name, code, updatedAt = null }) {
+  return h(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 8,
+        flexWrap: 'wrap',
+        marginBottom: 8,
+      },
+    },
+    h(
+      'div',
+      null,
+      h(
+        'div',
+        {
+          style: { fontSize: 12, color: C.textSec, fontWeight: 700, letterSpacing: '0.06em' },
+        },
+        '營收季節性'
+      ),
+      h(
+        'div',
+        { style: { fontSize: 12, color: C.text, fontWeight: 600, marginTop: 4 } },
+        `${name} · ${code}`
+      )
+    ),
+    h(StaleBadge, {
+      resource: 'fundamentals',
+      updatedAt,
+      title: 'fundamentals freshness',
+      'data-testid': `research-fundamentals-stale-badge-${code}`,
+    })
+  )
+}
+
+function EmptySeasonalityCard({ name, code, updatedAt = null }) {
   return h(
     Card,
     {
@@ -105,31 +143,16 @@ function EmptySeasonalityCard({ name, code }) {
         background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.cardBlue, 'c8')})`,
       },
     },
-    h(
-      'div',
-      {
-        style: { fontSize: 12, color: C.textSec, fontWeight: 700, letterSpacing: '0.06em' },
-      },
-      '營收季節性'
-    ),
-    h(
-      'div',
-      { style: { fontSize: 12, color: C.text, fontWeight: 600, marginTop: 4 } },
-      `${name} · ${code}`
-    ),
-    h(
-      'div',
-      { style: { fontSize: 11, color: C.textMute, lineHeight: 1.7, marginTop: 8 } },
-      '資料尚未取得'
-    )
+    h(SeasonalityCardHeader, { name, code, updatedAt }),
+    h('div', { style: { fontSize: 11, color: C.textMute, lineHeight: 1.7 } }, '資料尚未取得')
   )
 }
 
-function SeasonalityCard({ holding, revenueRows }) {
+function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
   const { metrics, rows, years } = useMemo(() => buildHeatmapRows(revenueRows), [revenueRows])
 
   if (metrics.matrix.length === 0 || years.length === 0) {
-    return h(EmptySeasonalityCard, { name: holding.name, code: holding.code })
+    return h(EmptySeasonalityCard, { name: holding.name, code: holding.code, updatedAt })
   }
 
   return h(
@@ -146,55 +169,40 @@ function SeasonalityCard({ holding, revenueRows }) {
       'div',
       {
         style: {
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          display: 'grid',
           gap: 8,
-          flexWrap: 'wrap',
           marginBottom: 8,
         },
       },
+      h(SeasonalityCardHeader, { name: holding.name, code: holding.code, updatedAt }),
       h(
         'div',
-        null,
+        {
+          style: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        h('div', { style: { fontSize: 12, color: C.textMute } }, `12 月 × ${years.length} 年`),
         h(
           'div',
           {
             style: {
               fontSize: 12,
               color: C.textSec,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
+              border: '1px solid var(--positive-soft)',
+              background: alpha(C.iron, '16'),
+              borderRadius: 999,
+              padding: '4px 8px',
+              letterSpacing: '0.04em',
+              whiteSpace: 'nowrap',
             },
           },
-          '營收季節性'
-        ),
-        h(
-          'div',
-          { style: { fontSize: 12, color: C.text, fontWeight: 600, marginTop: 4 } },
-          `${holding.name} · ${holding.code}`
-        ),
-        h(
-          'div',
-          { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
-          `12 月 × ${years.length} 年`
+          `${getSeasonalityLabel(metrics.seasonalityIndex)} · ${Math.round(metrics.seasonalityIndex * 100)}`
         )
-      ),
-      h(
-        'div',
-        {
-          style: {
-            fontSize: 12,
-            color: C.textSec,
-            border: '1px solid var(--positive-soft)',
-            background: alpha(C.olive, '16'),
-            borderRadius: 999,
-            padding: '4px 8px',
-            letterSpacing: '0.04em',
-            whiteSpace: 'nowrap',
-          },
-        },
-        `${getSeasonalityLabel(metrics.seasonalityIndex)} · ${Math.round(metrics.seasonalityIndex * 100)}`
       )
     ),
     h(
@@ -249,7 +257,7 @@ function SeasonalityCard({ holding, revenueRows }) {
               style: {
                 minHeight: 28,
                 borderRadius: 7,
-                border: `1px solid ${cell ? alpha(C.olive, '26') : alpha(C.textMute, '10')}`,
+                border: `1px solid ${cell ? alpha(C.iron, '26') : alpha(C.textMute, '10')}`,
                 background: cell ? getCellBackground(cell[4]) : alpha(C.textMute, '05'),
                 display: 'flex',
                 alignItems: 'center',
@@ -295,14 +303,26 @@ function SeasonalityCard({ holding, revenueRows }) {
   )
 }
 
-export function SeasonalityHeatmap({ holdings }) {
+export function SeasonalityHeatmap({ holdings, holdingDossiers = [] }) {
+  const dossierByCode = useMemo(
+    () =>
+      new Map(
+        (Array.isArray(holdingDossiers) ? holdingDossiers : []).map((dossier) => [
+          dossier.code,
+          dossier,
+        ])
+      ),
+    [holdingDossiers]
+  )
+
   const cards = useMemo(
     () =>
       (Array.isArray(holdings) ? holdings : []).map((holding) => ({
         holding,
         revenueRows: readRevenueCache(holding.code),
+        updatedAt: dossierByCode.get(holding.code)?.fundamentals?.updatedAt || null,
       })),
-    [holdings]
+    [dossierByCode, holdings]
   )
 
   if (cards.length === 0) return null
@@ -317,11 +337,12 @@ export function SeasonalityHeatmap({ holdings }) {
         marginBottom: 8,
       },
     },
-    cards.map(({ holding, revenueRows }) =>
+    cards.map(({ holding, revenueRows, updatedAt }) =>
       h(SeasonalityCard, {
         key: holding.code,
         holding,
         revenueRows,
+        updatedAt,
       })
     )
   )

@@ -395,6 +395,7 @@ export function usePortfolioPanelsContextComposer({
       },
       research: {
         holdings: safeHoldings,
+        holdingDossiers: safeHoldingDossiers,
         researching,
         researchTarget,
         reportRefreshing,

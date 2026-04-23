@@ -570,7 +570,24 @@ function TargetCard({ holding, dossier }) {
 
   return (
     <div style={panelCard}>
-      <div style={eyebrow}>目標與空間</div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ ...eyebrow, marginBottom: 0 }}>目標與空間</div>
+        <StaleBadge
+          resource="targets"
+          dossier={dossier}
+          title="目標價 freshness"
+          data-testid={`holding-targets-stale-badge-${holding?.code || 'unknown'}`}
+        />
+      </div>
       <div
         style={{
           display: 'flex',

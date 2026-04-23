@@ -1267,6 +1267,7 @@ export function ResearchHistory({ history, onSelect, selectedId }) {
  */
 export function ResearchPanel({
   holdings,
+  holdingDossiers = [],
   researching,
   researchTarget,
   reportRefreshing,
@@ -1411,6 +1412,7 @@ export function ResearchPanel({
     }),
     h(SeasonalityHeatmap, {
       holdings,
+      holdingDossiers,
     }),
     h(AnalystReportsSection, {
       holdings,

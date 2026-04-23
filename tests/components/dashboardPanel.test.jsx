@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPanel } from '../../src/components/overview/DashboardPanel.jsx'
+import { getDailyPrinciple } from '../../src/lib/dailyPrinciples.js'
 
 const originalMatchMedia = window.matchMedia
 
@@ -66,6 +67,13 @@ describe('components/DashboardPanel', () => {
     const { container } = render(<DashboardPanel {...buildProps({ todayTotalPnl: 1234 })} />)
     // TodayPnlHero formats with thousands separators — check for '1,234'
     expect(container.textContent).toContain('1,234')
+  })
+
+  it('renders the daily principle copy near the dashboard hero', () => {
+    render(<DashboardPanel {...buildProps({ holdings: [{ code: '2330', name: '台積電' }] })} />)
+
+    expect(screen.getByTestId('daily-principle-card')).toBeInTheDocument()
+    expect(screen.getByTestId('daily-principle-copy')).toHaveTextContent(getDailyPrinciple())
   })
 
   it('renders a soft-language headline and demoted reminder bell from dossier state', () => {
@@ -215,8 +223,8 @@ describe('components/DashboardPanel', () => {
     )
   })
 
-  it('shows a stale badge when today in markets data is older than four hours', () => {
-    const staleTimestamp = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+  it('shows a stale badge when today in markets data is older than one day', () => {
+    const staleTimestamp = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
 
     render(
       <DashboardPanel
@@ -235,7 +243,7 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getByTitle('today in markets freshness')).toHaveTextContent('stale')
+    expect(screen.getByTitle('today in markets freshness')).toHaveTextContent('2 天前')
   })
 
   it('switches Today in Markets into the mobile single-column branch', () => {

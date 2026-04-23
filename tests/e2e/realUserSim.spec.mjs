@@ -842,7 +842,7 @@ test('dashboard hides the stale snapshot badge when the daily snapshot marker is
 test('dashboard today in markets renders TW central-bank, macro, and calendar coverage with stale and mobile states', async ({
   page,
 }, testInfo) => {
-  const staleTimestamp = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+  const staleTimestamp = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
 
   await routeTodayInMarketsFeed(page, {
     generatedAt: staleTimestamp,
@@ -899,7 +899,7 @@ test('dashboard today in markets renders TW central-bank, macro, and calendar co
   await expect(card).toContainText('央行')
   await expect(card).toContainText('總經')
   await expect(card).toContainText('行事曆')
-  await expect(card.getByTitle('today in markets freshness')).toContainText('stale')
+  await expect(card.getByTitle('today in markets freshness')).toContainText(/昨天|\d+\s*天前/)
   await expect
     .poll(async () => page.getByTestId('today-in-markets-item').count(), {
       timeout: 15000,

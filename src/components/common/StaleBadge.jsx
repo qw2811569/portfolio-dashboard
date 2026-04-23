@@ -1,5 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
+import { resolveStaleBadgeResourceState } from '../../lib/staleBadge.js'
 
 const BADGE_META = {
   fresh: {
@@ -49,18 +50,66 @@ function resolveStatus({ status, dossier, field }) {
   return normalizeStaleBadgeStatus(dossier?.freshness?.[field])
 }
 
+function resolveResourceDates({ resource, updatedAt, dossier, field }) {
+  if (updatedAt != null) return updatedAt
+
+  const normalizedField = String(field || resource || '')
+    .trim()
+    .toLowerCase()
+
+  if (!dossier || !normalizedField) return null
+
+  if (normalizedField === 'targets') {
+    const reportDates = Array.isArray(dossier?.targets)
+      ? dossier.targets.map((report) => report?.date)
+      : []
+    return [dossier?.targets?.updatedAt, dossier?.targetAggregate?.rateDate, ...reportDates]
+  }
+
+  if (normalizedField === 'fundamentals') {
+    return [dossier?.fundamentals?.updatedAt]
+  }
+
+  if (normalizedField === 'restore') {
+    return [dossier?.lastSuccessAt, dossier?.updatedAt]
+  }
+
+  return null
+}
+
 export function StaleBadge({
   status = '',
   dossier = null,
   field = '',
+  resource = '',
+  updatedAt = null,
+  showFresh = false,
   label = '',
   title = '',
   style = {},
+  ...restProps
 }) {
-  const resolvedStatus = resolveStatus({ status, dossier, field })
-  if (!resolvedStatus) return null
+  let resolvedStatus = ''
+  let resolvedText = ''
+
+  if (resource) {
+    const resourceState = resolveStaleBadgeResourceState({
+      resource,
+      updatedAt: resolveResourceDates({ resource, updatedAt, dossier, field }),
+      status: normalizeStaleBadgeStatus(status),
+    })
+    resolvedStatus = normalizeStaleBadgeStatus(resourceState.status)
+    resolvedText = resourceState.text
+    if (!resolvedStatus) return null
+    if (resolvedStatus === 'fresh' && !showFresh) return null
+  } else {
+    resolvedStatus = resolveStatus({ status, dossier, field })
+    if (!resolvedStatus) return null
+  }
 
   const meta = BADGE_META[resolvedStatus] || BADGE_META.missing
+  const badgeText =
+    label && resolvedText ? `${label} · ${resolvedText}` : label || resolvedText || resolvedStatus
 
   return h(
     'span',
@@ -78,9 +127,10 @@ export function StaleBadge({
         fontSize: 11,
         fontWeight: 600,
         lineHeight: 1.2,
-        textTransform: 'lowercase',
+        textTransform: label || resolvedText ? 'none' : 'lowercase',
         ...style,
       },
+      ...restProps,
     },
     meta.dot &&
       h('span', {
@@ -93,6 +143,6 @@ export function StaleBadge({
           flexShrink: 0,
         },
       }),
-    label || resolvedStatus
+    badgeText
   )
 }

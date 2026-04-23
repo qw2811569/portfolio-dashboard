@@ -164,6 +164,7 @@ export function useRouteResearchPage() {
   return useMemo(
     () => ({
       holdings,
+      holdingDossiers,
       researching,
       researchTarget,
       reportRefreshing,
@@ -196,6 +197,7 @@ export function useRouteResearchPage() {
       dataRefreshRows,
       analystReports,
       enrichingResearchCode,
+      holdingDossiers,
       holdings,
       portfolioName,
       reportRefreshing,

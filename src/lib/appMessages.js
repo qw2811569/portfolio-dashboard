@@ -150,6 +150,12 @@ export const APP_TOAST_MESSAGES = {
   reversalSaved: '✅ 反轉條件已儲存',
   weeklyReportCopiedClipboard: '✅ 週報素材已複製到剪貼簿',
   weeklyReportCopied: '✅ 週報素材已複製',
+  weeklyReportDownloaded(extension = 'md') {
+    return `✅ 週報素材已下載（.${extension.replace(/^\./, '')}）`
+  },
+  weeklyReportDownloadFailed(extension = 'md') {
+    return `❌ 週報素材下載失敗（.${extension.replace(/^\./, '')}）`
+  },
   targetUpdated: '✅ 目標價已更新',
   fundamentalsUpdated: '✅ 財報 / 營收資料已更新',
   researchSyncedToDossier: '✅ 研究結果已同步回 dossier',

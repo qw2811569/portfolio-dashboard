@@ -148,6 +148,8 @@ export function composeAppRuntimeHeaderInput({
       refreshPrices: coreLifecycle.refreshPrices,
       refreshing: coreLifecycle.refreshing,
       copyWeeklyReport: sync.copyWeeklyReport,
+      downloadWeeklyReportMarkdown: sync.downloadWeeklyReportMarkdown,
+      downloadWeeklyReportHtml: sync.downloadWeeklyReportHtml,
       exportLocalBackup: sync.exportLocalBackup,
       backupFileInputRef: sync.backupFileInputRef,
       importLocalBackup: sync.importLocalBackup,

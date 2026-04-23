@@ -114,6 +114,8 @@ describe('hooks/app workflow runtimes', () => {
 
     expect(typeof result.current.generateWeeklyReport).toBe('function')
     expect(typeof result.current.copyWeeklyReport).toBe('function')
+    expect(typeof result.current.downloadWeeklyReportMarkdown).toBe('function')
+    expect(typeof result.current.downloadWeeklyReportHtml).toBe('function')
   })
 
   it('wraps local-backup workflow behind its own runtime slice', () => {

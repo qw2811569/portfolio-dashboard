@@ -449,6 +449,8 @@ export function useAppRuntime() {
 
   const {
     copyWeeklyReport,
+    downloadWeeklyReportMarkdown,
+    downloadWeeklyReportHtml,
     exportLocalBackup,
     importLocalBackup,
     portfolioPanelsData,
@@ -479,6 +481,8 @@ export function useAppRuntime() {
       refreshPrices,
       refreshing,
       copyWeeklyReport,
+      downloadWeeklyReportMarkdown,
+      downloadWeeklyReportHtml,
       exportLocalBackup,
       importLocalBackup,
       priceSyncStatusTone,

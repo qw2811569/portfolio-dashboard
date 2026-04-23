@@ -11,6 +11,8 @@ export default function Header(props) {
     refreshPrices,
     refreshing,
     copyWeeklyReport,
+    downloadWeeklyReportMarkdown,
+    downloadWeeklyReportHtml,
     exportLocalBackup,
     importLocalBackup,
     priceSyncStatusTone,
@@ -147,19 +149,69 @@ export default function Header(props) {
     },
     refreshing ? '股價更新中...' : '⟳ 收盤價'
   )
-  const weeklyReportButton = h(
-    'button',
+  const weeklyReportButtonStyle = {
+    color: C.textSec,
+    ...ghostBtn,
+  }
+  const weeklyReportControls = h(
+    'div',
     {
-      className: 'ui-btn',
-      onClick: copyWeeklyReport,
       style: {
-        background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.ink, '08')})`,
-        color: C.textSec,
-        border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
-        ...ghostBtn,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
       },
     },
-    '📋 週報'
+    h(
+      'button',
+      {
+        type: 'button',
+        className: 'ui-btn',
+        'data-testid': 'weekly-export-copy',
+        onClick: copyWeeklyReport,
+        style: {
+          background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.ink, '08')})`,
+          border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
+          ...weeklyReportButtonStyle,
+        },
+      },
+      '📋 複製'
+    ),
+    typeof downloadWeeklyReportMarkdown === 'function'
+      ? h(
+          'button',
+          {
+            type: 'button',
+            className: 'ui-btn',
+            'data-testid': 'weekly-export-md',
+            onClick: downloadWeeklyReportMarkdown,
+            style: {
+              background: alpha(C.up, '10'),
+              border: `1px solid ${alpha(C.up, A.strongLine)}`,
+              ...weeklyReportButtonStyle,
+            },
+          },
+          '📥 .md'
+        )
+      : null,
+    typeof downloadWeeklyReportHtml === 'function'
+      ? h(
+          'button',
+          {
+            type: 'button',
+            className: 'ui-btn',
+            'data-testid': 'weekly-export-html',
+            onClick: downloadWeeklyReportHtml,
+            style: {
+              background: alpha(C.orange, '10'),
+              border: `1px solid ${alpha(C.orange, A.strongLine)}`,
+              ...weeklyReportButtonStyle,
+            },
+          },
+          '📥 .html'
+        )
+      : null
   )
   const exportBackupButton = h(
     'button',
@@ -477,7 +529,7 @@ export default function Header(props) {
       },
     },
     refreshPricesButton,
-    weeklyReportButton,
+    weeklyReportControls,
     exportBackupButton,
     importBackupLabel,
     backupImportInput,
@@ -989,7 +1041,7 @@ export default function Header(props) {
           titleText,
           savedLabel,
           refreshPricesButton,
-          weeklyReportButton,
+          weeklyReportControls,
           exportBackupButton,
           importBackupLabel,
           backupImportInput,

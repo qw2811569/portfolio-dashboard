@@ -17,12 +17,8 @@ const BASE_URL = String(process.env.PORTFOLIO_BASE_URL || 'http://127.0.0.1:3002
 const EVIDENCE_STAMP =
   String(process.env.UX25_EVIDENCE_STAMP || '')
     .trim()
-    .replace(/[^0-9A-Za-z_.-]+/g, '-') ||
-  new Date().toISOString().replace(/[:.]/g, '-')
-const EVIDENCE_DIR = resolve(
-  ROOT_DIR,
-  `.tmp/ux-25-e2e-real-user-sim/evidence-${EVIDENCE_STAMP}`
-)
+    .replace(/[^0-9A-Za-z_.-]+/g, '-') || new Date().toISOString().replace(/[:.]/g, '-')
+const EVIDENCE_DIR = resolve(ROOT_DIR, `.tmp/ux-25-e2e-real-user-sim/evidence-${EVIDENCE_STAMP}`)
 const SCREENSHOT_DIR = resolve(EVIDENCE_DIR, 'screenshots')
 const STEP_DIR = resolve(EVIDENCE_DIR, 'steps')
 const CONSOLE_JSONL = resolve(EVIDENCE_DIR, 'console.jsonl')
@@ -140,7 +136,11 @@ async function saveShot(page, testInfo, fileName, options = {}) {
 }
 
 async function getPortfolioSelect(page) {
-  return requireLocator('missing portfolio select', page.getByTestId('portfolio-select'), page.locator('select'))
+  return requireLocator(
+    'missing portfolio select',
+    page.getByTestId('portfolio-select'),
+    page.locator('select')
+  )
 }
 
 async function getSelectedOptionLabel(select) {
@@ -380,7 +380,9 @@ async function expandFirstHolding(page) {
 
   const drill = page.locator(`[data-testid="holding-drill-${code}"]`)
   await expect(drill).toBeVisible()
-  const text = String((await drill.textContent()) || '').replace(/\s+/g, ' ').trim()
+  const text = String((await drill.textContent()) || '')
+    .replace(/\s+/g, ' ')
+    .trim()
   const hasMeaningfulContent =
     /thesis|pillar|valuation|估值|目標價|財報|aggregate|合規模式|資料新鮮度|買進理由/i.test(text) &&
     text.length >= 12
@@ -418,7 +420,11 @@ function assertWeeklyExportContent(text) {
   const hasMarkdownQuote = /(^|\n)>\s+\S/m.test(value)
   const notPlainNumeric = !/^[\d\s.,+\-/%]+$/.test(value)
   const hasKeywords = /本週損益|損益|論述|Weekly Narrative|金聯成|7865|持倉/i.test(value)
-  const structuralSignals = [hasMarkdownHeading || hasHtmlHeading, hasMarkdownTable || hasHtmlTable, hasMarkdownQuote || hasHtmlTable].filter(Boolean).length
+  const structuralSignals = [
+    hasMarkdownHeading || hasHtmlHeading,
+    hasMarkdownTable || hasHtmlTable,
+    hasMarkdownQuote || hasHtmlTable,
+  ].filter(Boolean).length
 
   expect(value.length).toBeGreaterThan(120)
   expect(notPlainNumeric).toBeTruthy()
@@ -436,43 +442,86 @@ function assertWeeklyExportContent(text) {
   }
 }
 
-async function captureWeeklyExport(page, testInfo) {
-  const weeklyButton = await requireLocator(
-    'missing weekly report button',
-    page.getByRole('button', { name: /週報/ }),
+function assertWeeklyMarkdownExportContent(text) {
+  const value = String(text || '').trim()
+  const shape = assertWeeklyExportContent(value)
+
+  expect(value).toContain('# 持倉看板週報素材')
+  expect(value).toContain('## Weekly Narrative')
+  expect(value).toContain('## 事件預測紀錄')
+  expect(shape.hasMarkdownHeading).toBeTruthy()
+  expect(value).not.toMatch(/<!doctype html>/i)
+
+  return shape
+}
+
+function assertWeeklyHtmlExportContent(text) {
+  const value = String(text || '').trim()
+  const shape = assertWeeklyExportContent(value)
+
+  expect(value).toMatch(/<!doctype html>/i)
+  expect(value).toMatch(/<html\b/i)
+  expect(value).toMatch(/<h2[^>]*>Weekly Narrative<\/h2>/i)
+  expect(value).toMatch(/<table\b/i)
+  expect(shape.hasHtmlHeading).toBeTruthy()
+  expect(shape.hasHtmlTable).toBeTruthy()
+
+  return shape
+}
+
+async function captureWeeklyClipboardExport(page) {
+  const copyButton = await waitForAttachedLocator(
+    15000,
+    page.getByTestId('weekly-export-copy'),
+    page.getByRole('button', { name: /複製/ }),
     page.getByRole('button', { name: /copyWeeklyReport/i })
   )
-  const downloadPromise = page
-    .waitForEvent('download', { timeout: 3000 })
-    .then((download) => ({ kind: 'download', download }))
-    .catch(() => null)
+  if (!copyButton) throw new Error('missing weekly export copy button')
 
-  await weeklyButton.scrollIntoViewIfNeeded()
-  await weeklyButton.click()
+  await copyButton.scrollIntoViewIfNeeded()
+  await copyButton.click()
   await settle(page, 900)
-
-  const downloadResult = await downloadPromise
-  if (downloadResult?.download) {
-    const suggestedFilename = downloadResult.download.suggestedFilename()
-    const targetPath = resolve(EVIDENCE_DIR, 'downloads', `${projectPrefix(testInfo)}-${suggestedFilename}`)
-    ensureDir(dirname(targetPath))
-    await downloadResult.download.saveAs(targetPath)
-    return {
-      method: 'download',
-      path: relative(ROOT_DIR, targetPath),
-      fileName: suggestedFilename,
-      content: readFileSync(targetPath, 'utf8'),
-    }
-  }
 
   const clipboardText = await readCapturedClipboard(page)
   if (!clipboardText) {
-    throw new Error('weekly export produced neither download nor clipboard payload')
+    throw new Error('weekly export copy button did not produce clipboard payload')
   }
 
   return {
     method: 'clipboard',
     content: clipboardText,
+  }
+}
+
+async function captureWeeklyDownloadExport(page, testInfo, { testId, buttonName, extension }) {
+  const downloadButton = await waitForAttachedLocator(
+    15000,
+    page.getByTestId(testId),
+    page.getByRole('button', { name: buttonName })
+  )
+  if (!downloadButton) throw new Error(`missing weekly export ${extension} button`)
+  const downloadPromise = page.waitForEvent('download', { timeout: 7000 })
+
+  await downloadButton.scrollIntoViewIfNeeded()
+  await downloadButton.click()
+
+  const download = await downloadPromise
+  const suggestedFilename = download.suggestedFilename()
+  const targetPath = resolve(
+    EVIDENCE_DIR,
+    'downloads',
+    `${projectPrefix(testInfo)}-${suggestedFilename}`
+  )
+  ensureDir(dirname(targetPath))
+  await download.saveAs(targetPath)
+
+  expect(suggestedFilename).toMatch(new RegExp(`^jiucaivoice-weekly-\\d{4}-\\d{2}\\.${extension}$`))
+
+  return {
+    method: 'download',
+    fileName: suggestedFilename,
+    path: relative(ROOT_DIR, targetPath),
+    content: readFileSync(targetPath, 'utf8'),
   }
 }
 
@@ -487,7 +536,11 @@ async function captureBackupExport(page, testInfo) {
 
   const download = await downloadPromise
   const suggestedFilename = download.suggestedFilename()
-  const targetPath = resolve(EVIDENCE_DIR, 'downloads', `${projectPrefix(testInfo)}-${suggestedFilename}`)
+  const targetPath = resolve(
+    EVIDENCE_DIR,
+    'downloads',
+    `${projectPrefix(testInfo)}-${suggestedFilename}`
+  )
   ensureDir(dirname(targetPath))
   await download.saveAs(targetPath)
   return {
@@ -562,7 +615,12 @@ function installRuntimeCapture(page, testInfo, state) {
   })
 }
 
-async function runStep(state, page, testInfo, { id, label, screenshotName = null, optional = false, action }) {
+async function runStep(
+  state,
+  page,
+  testInfo,
+  { id, label, screenshotName = null, optional = false, action }
+) {
   const beforeConsole = state.consoleErrors.length
   const beforePageErrors = state.pageErrors.length
   const beforeNetworkErrors = state.networkErrors.length
@@ -660,10 +718,16 @@ async function copyTraceAndVideoArtifacts(testInfo) {
     const sourcePath = resolve(testInfo.outputDir, fileName)
     const extension = extname(fileName).toLowerCase()
     if (extension === '.zip') {
-      copyFileSync(sourcePath, resolve(traceDir, `${projectPrefix(testInfo)}-${basename(fileName)}`))
+      copyFileSync(
+        sourcePath,
+        resolve(traceDir, `${projectPrefix(testInfo)}-${basename(fileName)}`)
+      )
     }
     if (extension === '.webm') {
-      copyFileSync(sourcePath, resolve(videoDir, `${projectPrefix(testInfo)}-${basename(fileName)}`))
+      copyFileSync(
+        sourcePath,
+        resolve(videoDir, `${projectPrefix(testInfo)}-${basename(fileName)}`)
+      )
     }
   }
 
@@ -703,8 +767,10 @@ test('dashboard shows a stale snapshot badge when the daily snapshot marker is o
     lastAttemptStatus: 'success',
   })
 
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+  await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 120000 })
+  await page.waitForTimeout(1800)
   await maybeAcceptTradeDisclaimer(page)
+  await ensureDashboardOpen(page)
 
   await expect(page.getByTestId('daily-snapshot-status-card')).toBeVisible()
   await expect(page.getByTitle('daily snapshot freshness')).toContainText('stale')
@@ -723,8 +789,10 @@ test('dashboard hides the stale snapshot badge when the daily snapshot marker is
     lastAttemptStatus: 'success',
   })
 
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+  await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 120000 })
+  await page.waitForTimeout(1800)
   await maybeAcceptTradeDisclaimer(page)
+  await ensureDashboardOpen(page)
 
   await expect(page.getByTestId('daily-snapshot-status-card')).toHaveCount(0)
 })
@@ -787,7 +855,8 @@ test('real user simulation covers golden path, clipboard/download correctness, b
 
   await runStep(state, page, testInfo, {
     id: '03',
-    label: 'Visit dashboard, holdings, events, news, daily, research, trade, log, and overview tabs',
+    label:
+      'Visit dashboard, holdings, events, news, daily, research, trade, log, and overview tabs',
     action: async () => {
       const tabs = [
         ['dashboard', '看板', '02-tab-dashboard.png'],
@@ -857,23 +926,39 @@ test('real user simulation covers golden path, clipboard/download correctness, b
 
   await runStep(state, page, testInfo, {
     id: '06',
-    label: 'Weekly export returns structured markdown/html instead of plain text',
+    label: 'Weekly export copies markdown and downloads markdown/html files',
     action: async () => {
       await clickTab(page, 'overview', '全組合')
-      const result = await captureWeeklyExport(page, testInfo)
-      const content =
-        result.method === 'clipboard'
-          ? result.content
-          : ''
-      const shape = assertWeeklyExportContent(content)
+      await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: 'instant' }))
+      await page.waitForTimeout(800)
+      const clipboardResult = await captureWeeklyClipboardExport(page)
+      const clipboardShape = assertWeeklyMarkdownExportContent(clipboardResult.content)
+      const markdownDownload = await captureWeeklyDownloadExport(page, testInfo, {
+        testId: 'weekly-export-md',
+        buttonName: /\.md/i,
+        extension: 'md',
+      })
+      const markdownShape = assertWeeklyMarkdownExportContent(markdownDownload.content)
+      const htmlDownload = await captureWeeklyDownloadExport(page, testInfo, {
+        testId: 'weekly-export-html',
+        buttonName: /\.html/i,
+        extension: 'html',
+      })
+      const htmlShape = assertWeeklyHtmlExportContent(htmlDownload.content)
+
+      expect(markdownDownload.content.trim()).toBe(clipboardResult.content.trim())
 
       return {
         metadata: {
-          method: result.method,
-          fileName: result.fileName || null,
-          path: result.path || null,
-          shape,
-          preview: content.slice(0, 320),
+          clipboardMethod: clipboardResult.method,
+          clipboardShape,
+          markdownFileName: markdownDownload.fileName,
+          markdownPath: markdownDownload.path,
+          markdownShape,
+          htmlFileName: htmlDownload.fileName,
+          htmlPath: htmlDownload.path,
+          htmlShape,
+          preview: clipboardResult.content.slice(0, 320),
         },
       }
     },
@@ -1030,5 +1115,8 @@ test('real user simulation covers golden path, clipboard/download correctness, b
 
   const summary = writeStepLog(testInfo, state)
   const failingSteps = summary.steps.filter((step) => step.status === 'failed')
-  expect(failingSteps, `see ${relative(ROOT_DIR, resolve(STEP_DIR, `${projectPrefix(testInfo)}.json`))}`).toEqual([])
+  expect(
+    failingSteps,
+    `see ${relative(ROOT_DIR, resolve(STEP_DIR, `${projectPrefix(testInfo)}.json`))}`
+  ).toEqual([])
 })

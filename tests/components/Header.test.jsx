@@ -9,6 +9,8 @@ function buildProps(overrides = {}) {
     refreshPrices: vi.fn(),
     refreshing: false,
     copyWeeklyReport: vi.fn(),
+    downloadWeeklyReportMarkdown: vi.fn(),
+    downloadWeeklyReportHtml: vi.fn(),
     exportLocalBackup: vi.fn(),
     backupFileInputRef: { current: null },
     importLocalBackup: vi.fn(),
@@ -105,5 +107,29 @@ describe('components/Header.jsx', () => {
     render(<Header {...buildProps()} />)
 
     expect(screen.queryByTestId('header-notice-toggle')).not.toBeInTheDocument()
+  })
+
+  it('renders weekly export controls and wires each action button', () => {
+    const copyWeeklyReport = vi.fn()
+    const downloadWeeklyReportMarkdown = vi.fn()
+    const downloadWeeklyReportHtml = vi.fn()
+
+    render(
+      <Header
+        {...buildProps({
+          copyWeeklyReport,
+          downloadWeeklyReportMarkdown,
+          downloadWeeklyReportHtml,
+        })}
+      />
+    )
+
+    fireEvent.click(screen.getByTestId('weekly-export-copy'))
+    fireEvent.click(screen.getByTestId('weekly-export-md'))
+    fireEvent.click(screen.getByTestId('weekly-export-html'))
+
+    expect(copyWeeklyReport).toHaveBeenCalledTimes(1)
+    expect(downloadWeeklyReportMarkdown).toHaveBeenCalledTimes(1)
+    expect(downloadWeeklyReportHtml).toHaveBeenCalledTimes(1)
   })
 })

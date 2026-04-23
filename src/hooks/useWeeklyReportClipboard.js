@@ -2,6 +2,22 @@ import { useCallback } from 'react'
 import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { buildWeeklyReportTemplate } from '../lib/promptTemplateCatalog.js'
+import {
+  buildWeeklyReportFilename,
+  buildWeeklyReportHtmlDocument,
+} from '../lib/weeklyReportExport.js'
+
+function downloadTextFile(filename, content, mimeType) {
+  const blob = new Blob([String(content ?? '')], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  setTimeout(() => URL.revokeObjectURL(url), 0)
+}
 
 export function useWeeklyReportClipboard({
   activePortfolioId = '',
@@ -22,6 +38,7 @@ export function useWeeklyReportClipboard({
   brainRuleSummary = () => '',
   flashSaved = () => {},
   toDateLabel = () => new Date().toLocaleDateString('zh-TW'),
+  now = () => new Date(),
 }) {
   const activePortfolio = (Array.isArray(portfolios) ? portfolios : []).find(
     (portfolio) => portfolio?.id === activePortfolioId
@@ -92,8 +109,43 @@ export function useWeeklyReportClipboard({
     return report
   }, [flashSaved, generateWeeklyReport])
 
+  const downloadWeeklyReportMarkdown = useCallback(() => {
+    const report = generateWeeklyReport()
+
+    try {
+      downloadTextFile(
+        buildWeeklyReportFilename('md', now()),
+        report,
+        'text/markdown;charset=utf-8'
+      )
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloaded('md'))
+    } catch (error) {
+      console.error('downloadWeeklyReportMarkdown failed:', error)
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloadFailed('md'))
+    }
+
+    return report
+  }, [flashSaved, generateWeeklyReport, now])
+
+  const downloadWeeklyReportHtml = useCallback(() => {
+    const report = generateWeeklyReport()
+    const html = buildWeeklyReportHtmlDocument(report)
+
+    try {
+      downloadTextFile(buildWeeklyReportFilename('html', now()), html, 'text/html;charset=utf-8')
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloaded('html'))
+    } catch (error) {
+      console.error('downloadWeeklyReportHtml failed:', error)
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloadFailed('html'))
+    }
+
+    return html
+  }, [flashSaved, generateWeeklyReport, now])
+
   return {
     generateWeeklyReport,
     copyWeeklyReport,
+    downloadWeeklyReportMarkdown,
+    downloadWeeklyReportHtml,
   }
 }

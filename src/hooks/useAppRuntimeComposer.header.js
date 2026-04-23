@@ -17,6 +17,8 @@ export function composeAppHeaderProps({
     refreshPrices: sync.refreshPrices,
     refreshing: sync.refreshing,
     copyWeeklyReport: sync.copyWeeklyReport,
+    downloadWeeklyReportMarkdown: sync.downloadWeeklyReportMarkdown,
+    downloadWeeklyReportHtml: sync.downloadWeeklyReportHtml,
     exportLocalBackup: sync.exportLocalBackup,
     backupFileInputRef: sync.backupFileInputRef,
     importLocalBackup: sync.importLocalBackup,

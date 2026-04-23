@@ -11,6 +11,8 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
         refreshPrices: vi.fn(),
         refreshing: false,
         copyWeeklyReport: vi.fn(),
+        downloadWeeklyReportMarkdown: vi.fn(),
+        downloadWeeklyReportHtml: vi.fn(),
         exportLocalBackup: vi.fn(),
         backupFileInputRef: { current: null },
         importLocalBackup: vi.fn(),
@@ -69,5 +71,7 @@ describe('hooks/useAppRuntimeHeaderProps', () => {
     expect(headerProps.cloudSync).toBe(true)
     expect(headerProps.saved).toBe('ok')
     expect(headerProps.workflowCue?.targetTab).toBe('research')
+    expect(typeof headerProps.downloadWeeklyReportMarkdown).toBe('function')
+    expect(typeof headerProps.downloadWeeklyReportHtml).toBe('function')
   })
 })

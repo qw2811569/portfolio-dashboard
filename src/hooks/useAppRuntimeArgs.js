@@ -106,6 +106,7 @@ export function useAppRuntimeWorkflowArgs({
       top5: derived.top5,
       holdingsIntegrityIssues: derived.holdingsIntegrityIssues,
       attentionCount: derived.attentionCount,
+      attentionSummary: derived.attentionSummary,
       pendingCount: derived.pendingCount,
       targetUpdateCount: derived.targetUpdateCount,
       dataRefreshRows: derived.dataRefreshRows,

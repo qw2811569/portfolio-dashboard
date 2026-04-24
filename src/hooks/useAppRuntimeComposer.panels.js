@@ -30,6 +30,7 @@ export function composePortfolioPanelsContextInput({
     reversalConditions: ui.reversalConditions,
     reviewingEvent: ui.reviewingEvent,
     attentionCount: ui.attentionCount,
+    attentionSummary: ui.attentionSummary,
     pendingCount: ui.pendingCount,
     targetUpdateCount: ui.targetUpdateCount,
     scanQuery: ui.scanQuery,

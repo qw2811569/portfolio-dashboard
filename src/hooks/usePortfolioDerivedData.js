@@ -963,6 +963,18 @@ export function usePortfolioDerivedData({
   const attentionCount = scanRows.filter((item) => item.needsAttention).length
   const pendingCount = scanRows.filter((item) => item.hasPending).length
   const targetUpdateCount = scanRows.filter((item) => item.T?.isNew).length
+  const attentionSummary = useMemo(() => {
+    const alertCount = scanRows.filter((item) => String(item?.h?.alert || '').trim()).length
+    const pendingEventCount = scanRows.filter((item) => item.hasPending).length
+    const weakPnlCount = scanRows.filter((item) => getHoldingUnrealizedPnl(item.h) < 0).length
+    const reasons = []
+
+    if (alertCount > 0) reasons.push(`提醒條件 ${alertCount} 檔`)
+    if (pendingEventCount > 0) reasons.push(`事件待驗證 ${pendingEventCount} 檔`)
+    if (weakPnlCount > 0) reasons.push(`走勢轉弱 ${weakPnlCount} 檔`)
+
+    return reasons.slice(0, 2).join(' / ')
+  }, [scanRows, getHoldingUnrealizedPnl])
 
   const dataRefreshRows = useMemo(
     () =>
@@ -1109,6 +1121,7 @@ export function usePortfolioDerivedData({
     winners,
     losers,
     attentionCount,
+    attentionSummary,
     pendingCount,
     targetUpdateCount,
     dataRefreshRows,

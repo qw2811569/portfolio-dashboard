@@ -16,9 +16,16 @@ function buildContext(overrides = {}) {
 
 describe('components/OperatingContextCard', () => {
   it('adds unit context to the attention badge in the default variant', () => {
-    render(<OperatingContextCard context={buildContext({ attentionCount: 10 })} />)
+    render(
+      <OperatingContextCard
+        context={{
+          ...buildContext({ attentionCount: 10 }),
+          attentionSummary: '提醒條件 4 檔 / 事件待驗證 2 檔',
+        }}
+      />
+    )
 
-    expect(screen.getByText('需留意 10 檔持股')).toBeInTheDocument()
+    expect(screen.getByText('需注意 10 檔 · 提醒條件 4 檔 / 事件待驗證 2 檔')).toBeInTheDocument()
   })
 
   it('adds unit context to the attention badge in the home variant', () => {
@@ -29,10 +36,11 @@ describe('components/OperatingContextCard', () => {
           headline: '今天先把節奏排好',
           latestInsightSummary: '先看需要補齊的資料，再看 thesis 變化。',
           attentionCount: 3,
+          attentionSummary: '走勢轉弱 3 檔',
         })}
       />
     )
 
-    expect(screen.getByText('需留意 3 檔持股')).toBeInTheDocument()
+    expect(screen.getByText('需注意 3 檔 · 走勢轉弱 3 檔')).toBeInTheDocument()
   })
 })

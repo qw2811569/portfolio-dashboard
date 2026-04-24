@@ -56,6 +56,8 @@ export default function Header(props) {
   const editor = portfolioEditor || null
   const deleteDialog = portfolioDeleteDialog || null
   const [isNoticeOpen, setIsNoticeOpen] = useState(false)
+  const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false)
+  const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false)
   const isMobile = useIsMobile()
   const activePortfolioSummary =
     safePortfolioSummaries.find((portfolio) => portfolio.id === activePortfolioId) || null
@@ -74,6 +76,10 @@ export default function Header(props) {
     if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+  const handleTabSelect = (nextTab) => {
+    navigateToTab(nextTab)
+    setIsMobileTabsOpen(false)
   }
 
   const ghostBtn = {
@@ -517,25 +523,141 @@ export default function Header(props) {
     ),
     pnlSummary
   )
+  const renderTabButton = (tabItem, { compact = false, fill = false } = {}) =>
+    h(
+      'button',
+      {
+        className: 'ui-btn',
+        key: tabItem.k,
+        'data-testid': `tab-${tabItem.k}`,
+        onClick: () => handleTabSelect(tabItem.k),
+        style: {
+          background:
+            tab === tabItem.k
+              ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.ink, '10')})`
+              : 'transparent',
+          color: tab === tabItem.k ? C.text : C.textMute,
+          border: `1px solid ${tab === tabItem.k ? alpha(C.lavender, '26') : alpha(C.borderSub, '70')}`,
+          boxShadow: tab === tabItem.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
+          borderRadius: 999,
+          minHeight: 44,
+          minWidth: compact ? 44 : undefined,
+          padding: compact ? '8px 10px' : '8px 12px',
+          fontSize: compact ? 10 : 11,
+          fontWeight: tab === tabItem.k ? 700 : 500,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          flex: fill ? '1 1 auto' : '0 0 auto',
+          justifyContent: 'center',
+        },
+      },
+      tabItem.label
+    )
+  const visibleMobileTabs = (() => {
+    if (!isMobile) return tabs
+    const primaryTabs = tabs.slice(0, 5)
+    const activeTab = tabs.find((item) => item.k === tab)
+    if (!activeTab || primaryTabs.some((item) => item.k === activeTab.k)) return primaryTabs
+    return [...primaryTabs, activeTab]
+  })()
+  const hiddenMobileTabs = isMobile
+    ? tabs.filter((item) => !visibleMobileTabs.some((visibleItem) => visibleItem.k === item.k))
+    : []
   const mobileActionsRow = h(
     'div',
     {
       style: {
-        display: 'flex',
-        alignItems: 'center',
+        display: 'grid',
         gap: 8,
-        flexWrap: 'wrap',
         marginBottom: 8,
       },
     },
-    refreshPricesButton,
-    weeklyReportControls,
-    exportBackupButton,
-    importBackupLabel,
-    backupImportInput,
-    priceSyncMeta,
-    lastUpdateMeta,
-    headerNoticeControl
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 8,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            flex: 1,
+            minWidth: 0,
+          },
+        },
+        refreshPricesButton,
+        headerNoticeControl
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          className: 'ui-btn',
+          'data-testid': 'header-mobile-overflow-toggle',
+          'aria-expanded': isMobileActionsOpen,
+          'aria-controls': 'header-mobile-actions-drawer',
+          onClick: () => setIsMobileActionsOpen((open) => !open),
+          style: {
+            ...ghostBtn,
+            padding: '8px 12px',
+            background: isMobileActionsOpen ? alpha(C.ink, '10') : C.subtle,
+            color: C.textSec,
+            border: `1px solid ${isMobileActionsOpen ? alpha(C.ink, A.strongLine) : C.border}`,
+          },
+        },
+        isMobileActionsOpen ? '收合' : '⋯'
+      )
+    ),
+    isMobileActionsOpen &&
+      h(
+        'div',
+        {
+          id: 'header-mobile-actions-drawer',
+          'data-testid': 'header-mobile-actions-drawer',
+          style: {
+            ...card,
+            padding: '12px',
+            display: 'grid',
+            gap: 10,
+          },
+        },
+        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '更多操作'),
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              gap: 8,
+              flexWrap: 'wrap',
+            },
+          },
+          weeklyReportControls,
+          exportBackupButton,
+          importBackupLabel
+        ),
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gap: 4,
+            },
+          },
+          h('div', { style: { fontSize: 11, color: C.textSec, fontWeight: 600 } }, '同步狀態'),
+          priceSyncMeta,
+          lastUpdateMeta
+        )
+      ),
+    backupImportInput
   )
   const portfolioSelectorBlock = h(
     'div',
@@ -967,40 +1089,87 @@ export default function Header(props) {
       {
         className: 'seg',
         style: {
-          display: 'flex',
-          gap: 4,
-          overflowX: 'auto',
-          padding: isMobile ? '0 0 4px' : '4px 0 4px',
+          display: 'grid',
+          gap: 6,
+          padding: isMobile ? '0 0 8px' : '4px 0 4px',
+          position: 'relative',
         },
       },
-      tabs.map((t) =>
+      isMobile
+        ? h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'wrap',
+              },
+            },
+            visibleMobileTabs.map((tabItem) => renderTabButton(tabItem, { compact: true })),
+            hiddenMobileTabs.length > 0 &&
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'ui-btn',
+                  'data-testid': 'mobile-tabs-more-toggle',
+                  'aria-expanded': isMobileTabsOpen,
+                  'aria-controls': 'mobile-tabs-drawer',
+                  onClick: () => setIsMobileTabsOpen((open) => !open),
+                  style: {
+                    ...ghostBtn,
+                    minHeight: 44,
+                    padding: '8px 10px',
+                    background: isMobileTabsOpen ? alpha(C.ink, '10') : C.subtle,
+                    color: C.textSec,
+                    border: `1px solid ${isMobileTabsOpen ? alpha(C.ink, A.strongLine) : C.border}`,
+                    fontSize: 10,
+                  },
+                },
+                isMobileTabsOpen ? '收合' : `更多 ${hiddenMobileTabs.length}`
+              )
+          )
+        : h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                gap: 4,
+                overflowX: 'auto',
+              },
+            },
+            tabs.map((tabItem) => renderTabButton(tabItem))
+          ),
+      isMobile &&
+        isMobileTabsOpen &&
+        hiddenMobileTabs.length > 0 &&
         h(
-          'button',
+          'div',
           {
-            className: 'ui-btn',
-            key: t.k,
-            'data-testid': `tab-${t.k}`,
-            onClick: () => navigateToTab(t.k),
+            id: 'mobile-tabs-drawer',
+            'data-testid': 'mobile-tabs-drawer',
             style: {
-              background:
-                tab === t.k
-                  ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.ink, '10')})`
-                  : 'transparent',
-              color: tab === t.k ? C.text : C.textMute,
-              border: `1px solid ${tab === t.k ? alpha(C.lavender, '26') : 'transparent'}`,
-              boxShadow: tab === t.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
-              borderRadius: 999,
-              minHeight: 44,
-              padding: '8px 12px',
-              fontSize: 11,
-              fontWeight: tab === t.k ? 700 : 500,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              ...card,
+              padding: '10px',
+              display: 'grid',
+              gap: 6,
             },
           },
-          t.label
+          h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '更多分頁'),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'wrap',
+              },
+            },
+            hiddenMobileTabs.map((tabItem) =>
+              renderTabButton(tabItem, { compact: true, fill: true })
+            )
+          )
         )
-      )
     )
 
   if (!isMobile)

@@ -19,10 +19,11 @@ function truncate(text, max = 120) {
   return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized
 }
 
-function formatAttentionBadgeLabel(attentionCount = 0) {
+function formatAttentionBadgeLabel(attentionCount = 0, attentionSummary = '') {
   const count = Math.max(0, Number(attentionCount) || 0)
   if (count <= 0) return ''
-  return `需留意 ${count} 檔持股`
+  const summary = truncate(attentionSummary, 32)
+  return summary ? `需注意 ${count} 檔 · ${summary}` : `需注意 ${count} 檔`
 }
 
 export function OperatingContextCard({ context, variant = 'default' }) {
@@ -34,6 +35,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
     holdingsCount = 0,
     pendingCount = 0,
     attentionCount = 0,
+    attentionSummary = '',
     activeEventCount = 0,
     autoReviewedCount = 0,
     autoReviewedCorrect = 0,
@@ -146,7 +148,11 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
             pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
             attentionCount > 0 &&
-              h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount)),
+              h(
+                Badge,
+                { color: 'iron' },
+                formatAttentionBadgeLabel(attentionCount, attentionSummary)
+              ),
             autoReviewedCount > 0 &&
               h(
                 Badge,
@@ -287,7 +293,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
         pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
         attentionCount > 0 &&
-          h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount)),
+          h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount, attentionSummary)),
         refreshBacklogCount > 0 &&
           h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&

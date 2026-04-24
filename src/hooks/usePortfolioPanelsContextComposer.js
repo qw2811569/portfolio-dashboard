@@ -43,6 +43,7 @@ export function usePortfolioPanelsContextComposer({
   reversalConditions,
   reviewingEvent,
   attentionCount,
+  attentionSummary,
   pendingCount,
   targetUpdateCount,
   scanQuery,
@@ -249,6 +250,7 @@ export function usePortfolioPanelsContextComposer({
       holdingsCount: safeHoldings.length,
       pendingCount,
       attentionCount,
+      attentionSummary,
       activeEventCount: pendingEventCount + trackingEventCount,
       autoReviewedCount: autoReviewedEvents.length,
       autoReviewedCorrect,
@@ -278,6 +280,7 @@ export function usePortfolioPanelsContextComposer({
   }, [
     activePortfolio,
     attentionCount,
+    attentionSummary,
     dashboardHeadline,
     safeDataRefreshRows,
     dailyReport,

@@ -15,6 +15,7 @@ import {
   getHoldingUnrealizedPnl,
 } from '../../lib/holdings.js'
 import { isViewModeEnabled } from '../../lib/viewModeContract.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 
 const lbl = {
   fontSize: 12,
@@ -55,6 +56,140 @@ const badgeToneStyles = {
   },
 }
 
+function HoldingExpandedDetails({
+  holding,
+  dossier = null,
+  onUpdateTarget = () => {},
+  onUpdateAlert = () => {},
+  viewMode = 'retail',
+}) {
+  const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
+
+  return h(
+    'div',
+    null,
+    (() => {
+      const chips = buildThemeChips(holding.code)
+      return chips.length > 0
+        ? h(
+            'div',
+            { style: { marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 4 } },
+            chips.map((c) =>
+              h(
+                'span',
+                {
+                  key: c.theme,
+                  style: {
+                    fontSize: 11,
+                    padding: '4px 8px',
+                    background: alpha(C.lavender, '12'),
+                    color: C.text,
+                    border: `1px solid ${alpha(C.lavender, '24')}`,
+                    borderRadius: 999,
+                  },
+                },
+                c.label
+              )
+            )
+          )
+        : null
+    })(),
+    h(HoldingDrillPane, { holding, dossier, viewMode }),
+    showPerStockDiff &&
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8,
+            marginTop: 8,
+            paddingTop: 8,
+            borderTop: `1px solid ${C.borderSub}`,
+          },
+        },
+        h(
+          'div',
+          null,
+          h('div', { style: { ...lbl, marginBottom: 4 } }, '手動目標價'),
+          h('input', {
+            type: 'number',
+            value: holding.targetPrice || '',
+            onChange: (e) =>
+              onUpdateTarget(holding.code, e.target.value ? Number(e.target.value) : null),
+            placeholder: '輸入目標價',
+            style: {
+              width: '100%',
+              minHeight: 44,
+              background: C.subtle,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: '10px 8px',
+              color: C.text,
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              boxSizing: 'border-box',
+            },
+          })
+        ),
+        h(
+          'div',
+          null,
+          h('div', { style: { ...lbl, marginBottom: 4 } }, '提醒筆記'),
+          h('input', {
+            type: 'text',
+            value: holding.alert || '',
+            onChange: (e) => onUpdateAlert(holding.code, e.target.value),
+            placeholder: '如：跌破月線',
+            style: {
+              width: '100%',
+              minHeight: 44,
+              background: C.subtle,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: '10px 8px',
+              color: C.text,
+              fontSize: 11,
+              boxSizing: 'border-box',
+            },
+          })
+        )
+      ),
+    h(SupplyChainView, { code: holding.code, name: holding.name }),
+    holding.finmind &&
+      h(
+        'div',
+        {
+          style: {
+            marginTop: 8,
+            paddingTop: 8,
+            borderTop: `1px solid ${C.border}`,
+          },
+        },
+        h('div', { style: { ...lbl, marginBottom: 4 } }, '最近抓到的補充資料'),
+        (() => {
+          const finmindText = buildFinMindChipContext(holding.finmind)
+          return finmindText
+            ? h(
+                'div',
+                {
+                  style: {
+                    fontSize: 11,
+                    color: C.textSec,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-line',
+                  },
+                },
+                finmindText
+              )
+            : h('div', { style: { fontSize: 11, color: C.textMute } }, '這檔目前還沒抓到補充資料')
+        })()
+      ),
+    holding.type &&
+      h('div', { style: { fontSize: 11, color: C.textMute, marginTop: 8 } }, '類型：', holding.type)
+  )
+}
+
 /**
  * Single Holding Row
  */
@@ -77,7 +212,6 @@ export function HoldingRow({
     : Array.isArray(holding.dailyHistory)
       ? holding.dailyHistory
       : []
-  const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
 
   return h(
     'div',
@@ -280,144 +414,294 @@ export function HoldingRow({
             marginBottom: 4,
           },
         },
-        // 主題 chips
-        (() => {
-          const chips = buildThemeChips(holding.code)
-          return chips.length > 0
-            ? h(
-                'div',
-                { style: { marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 4 } },
-                chips.map((c) =>
-                  h(
-                    'span',
-                    {
-                      key: c.theme,
-                      style: {
-                        fontSize: 11,
-                        padding: '4px 8px',
-                        background: alpha(C.lavender, '12'),
-                        color: C.text,
-                        border: `1px solid ${alpha(C.lavender, '24')}`,
-                        borderRadius: 999,
-                      },
-                    },
-                    c.label
-                  )
-                )
-              )
-            : null
-        })(),
-        h(HoldingDrillPane, { holding, dossier, viewMode }),
-        showPerStockDiff &&
+        h(HoldingExpandedDetails, {
+          holding,
+          dossier,
+          onUpdateTarget,
+          onUpdateAlert,
+          viewMode,
+        })
+      )
+  )
+}
+
+function HoldingMobileCard({
+  holding,
+  dossier = null,
+  expanded = false,
+  onToggle = () => {},
+  onUpdateTarget = () => {},
+  onUpdateAlert = () => {},
+  viewMode = 'retail',
+}) {
+  const pnl = getHoldingUnrealizedPnl(holding)
+  const pct = getHoldingReturnPct(holding)
+  const value = getHoldingMarketValue(holding)
+  const deviationBadge = buildPriceDeviationBadgeMeta(holding)
+  const badgeTone = badgeToneStyles[deviationBadge?.tone || 'muted']
+  const sparklineHistory = Array.isArray(holding.priceHistory)
+    ? holding.priceHistory
+    : Array.isArray(holding.dailyHistory)
+      ? holding.dailyHistory
+      : []
+
+  return h(
+    'div',
+    null,
+    h(
+      'div',
+      {
+        'data-testid': 'holdings-mobile-card',
+        style: {
+          display: 'grid',
+          gap: 12,
+          padding: '14px 14px 12px',
+          background: expanded
+            ? `linear-gradient(180deg, ${C.subtleElev}, ${C.card})`
+            : `linear-gradient(180deg, ${C.card}, ${alpha(C.subtle, 'f5')})`,
+          border: `1px solid ${C.border}`,
+          borderRadius: expanded ? '16px 16px 0 0' : 16,
+          marginBottom: expanded ? 0 : 8,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 10,
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gap: 6,
+              minWidth: 0,
+              flex: 1,
+            },
+          },
           h(
             'div',
             {
               style: {
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 8,
-                marginTop: 8,
-                paddingTop: 8,
-                borderTop: `1px solid ${C.borderSub}`,
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.text,
+                fontFamily: 'var(--font-headline)',
+                lineHeight: 1.3,
               },
             },
-            // Target price
+            holding.name
+          ),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+              },
+            },
             h(
-              'div',
-              null,
-              h('div', { style: { ...lbl, marginBottom: 4 } }, '手動目標價'),
-              h('input', {
-                type: 'number',
-                value: holding.targetPrice || '',
-                onChange: (e) =>
-                  onUpdateTarget(holding.code, e.target.value ? Number(e.target.value) : null),
-                placeholder: '輸入目標價',
-                style: {
-                  width: '100%',
-                  minHeight: 44,
-                  background: C.subtle,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 8,
-                  padding: '10px 8px',
-                  color: C.text,
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  boxSizing: 'border-box',
-                },
-              })
+              'span',
+              { className: 'tn', style: { fontSize: 11, color: C.textMute } },
+              holding.code
             ),
-
-            // Alert
-            h(
-              'div',
-              null,
-              h('div', { style: { ...lbl, marginBottom: 4 } }, '提醒筆記'),
-              h('input', {
-                type: 'text',
-                value: holding.alert || '',
-                onChange: (e) => onUpdateAlert(holding.code, e.target.value),
-                placeholder: '如：跌破月線',
-                style: {
-                  width: '100%',
-                  minHeight: 44,
-                  background: C.subtle,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 8,
-                  padding: '10px 8px',
-                  color: C.text,
-                  fontSize: 11,
-                  boxSizing: 'border-box',
+            h(StaleBadge, {
+              dossier,
+              field: 'targets',
+              title: 'targets freshness',
+              style: { textTransform: 'none' },
+            }),
+            h(StaleBadge, {
+              dossier,
+              field: 'fundamentals',
+              title: 'fundamentals freshness',
+              style: { textTransform: 'none' },
+            }),
+            deviationBadge &&
+              h(
+                'span',
+                {
+                  title: deviationBadge.tooltip,
+                  style: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    fontSize: 11,
+                    lineHeight: 1.2,
+                    fontWeight: 600,
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    border: `1px solid ${badgeTone.borderColor}`,
+                    background: badgeTone.background,
+                    color: badgeTone.color,
+                    whiteSpace: 'nowrap',
+                  },
                 },
-              })
-            )
+                deviationBadge.text
+              )
           ),
-
-        // Supply chain view
-        h(SupplyChainView, { code: holding.code, name: holding.name }),
-
-        // FinMind data panel
-        holding.finmind &&
+          h(PeerRankingBadge, { holding })
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
+            onClick: onToggle,
+            style: {
+              minWidth: 44,
+              minHeight: 44,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 12px',
+              borderRadius: 999,
+              background: expanded ? alpha(C.ink, '10') : C.subtle,
+              border: `1px solid ${expanded ? alpha(C.ink, '24') : C.border}`,
+              color: C.textSec,
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+            },
+          },
+          expanded ? '收合明細' : '展開明細'
+        )
+      ),
+      h(HoldingSparkline, { history: sparklineHistory }),
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 8,
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              borderRadius: 12,
+              border: `1px solid ${C.borderSub}`,
+              background: C.subtle,
+              padding: '10px 10px',
+            },
+          },
+          h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, '數量 / 成本'),
+          h(
+            'div',
+            { className: 'tn', style: { fontSize: 12, color: C.textSec } },
+            `${holding.qty.toLocaleString()} 股`
+          ),
+          h(
+            'div',
+            { className: 'tn', style: { fontSize: 11, color: C.textMute } },
+            `成本 ${holding.cost}`
+          )
+        ),
+        h(
+          'div',
+          {
+            style: {
+              borderRadius: 12,
+              border: `1px solid ${C.borderSub}`,
+              background: C.subtle,
+              padding: '10px 10px',
+            },
+          },
+          h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, '股價 / 市值'),
+          h(
+            'div',
+            { className: 'tn', style: { fontSize: 12, fontWeight: 600, color: C.text } },
+            holding.price
+          ),
+          h(
+            'div',
+            { className: 'tn', style: { fontSize: 11, color: C.textMute } },
+            value.toLocaleString()
+          )
+        ),
+        h(
+          'div',
+          {
+            style: {
+              borderRadius: 12,
+              border: `1px solid ${pnl == null ? C.borderSub : alpha(pc(pnl), '24')}`,
+              background: `linear-gradient(180deg, ${pcBg(pnl)}, transparent)`,
+              padding: '10px 10px',
+            },
+          },
+          h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, '未實現損益'),
+          h(
+            'div',
+            {
+              className: 'tn',
+              style: {
+                fontSize: 13,
+                fontWeight: 700,
+                color: pc(pnl),
+              },
+            },
+            `${pnl >= 0 ? '+' : ''}${Math.round(pnl).toLocaleString()}`
+          ),
+          h(
+            'div',
+            { className: 'tn', style: { fontSize: 11, color: pc(pnl) } },
+            `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`
+          )
+        ),
+        h(
+          'div',
+          {
+            style: {
+              borderRadius: 12,
+              border: `1px solid ${C.borderSub}`,
+              background: C.subtle,
+              padding: '10px 10px',
+            },
+          },
+          h('div', { style: { fontSize: 10, color: C.textMute, marginBottom: 4 } }, '操作提示'),
           h(
             'div',
             {
               style: {
-                marginTop: 8,
-                paddingTop: 8,
-                borderTop: `1px solid ${C.border}`,
+                fontSize: 11,
+                color: C.textSec,
+                lineHeight: 1.6,
               },
             },
-            h('div', { style: { ...lbl, marginBottom: 4 } }, '最近抓到的補充資料'),
-            (() => {
-              const finmindText = buildFinMindChipContext(holding.finmind)
-              return finmindText
-                ? h(
-                    'div',
-                    {
-                      style: {
-                        fontSize: 11,
-                        color: C.textSec,
-                        lineHeight: 1.6,
-                        whiteSpace: 'pre-line',
-                      },
-                    },
-                    finmindText
-                  )
-                : h(
-                    'div',
-                    { style: { fontSize: 11, color: C.textMute } },
-                    '這檔目前還沒抓到補充資料'
-                  )
-            })()
-          ),
-
-        // Additional info
-        holding.type &&
-          h(
-            'div',
-            { style: { fontSize: 11, color: C.textMute, marginTop: 8 } },
-            '類型：',
-            holding.type
+            deviationBadge?.tooltip || holding.alert || '先看明細，再決定是否調整 thesis。'
           )
+        )
+      )
+    ),
+    expanded &&
+      h(
+        'div',
+        {
+          style: {
+            background: C.subtle,
+            border: `1px solid ${C.border}`,
+            borderTop: 'none',
+            borderRadius: '0 0 16px 16px',
+            padding: '10px 12px 12px',
+            marginBottom: 8,
+          },
+        },
+        h(HoldingExpandedDetails, {
+          holding,
+          dossier,
+          onUpdateTarget,
+          onUpdateAlert,
+          viewMode,
+        })
       )
   )
 }
@@ -439,6 +723,8 @@ export function HoldingsTable({
   viewMode = 'retail',
   onAddHoldings = null,
 }) {
+  const isMobile = useIsMobile()
+
   if (loading) {
     return h(
       Card,
@@ -495,6 +781,55 @@ export function HoldingsTable({
     }
     return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
   })
+
+  if (isMobile) {
+    return h(
+      Card,
+      null,
+      h(
+        'style',
+        null,
+        `@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 ${alpha(C.up, 0.18)}; } 50% { box-shadow: 0 0 0 5px ${alpha(C.up, 0.06)}; } 100% { box-shadow: 0 0 0 0 ${alpha(C.up, 0)}; } }`
+      ),
+      h(
+        'div',
+        {
+          style: {
+            ...lbl,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        `持股明細 · ${holdings.length}檔`,
+        h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
+      ),
+      h(
+        'div',
+        {
+          'data-testid': 'holdings-mobile-card-list',
+          style: {
+            display: 'grid',
+            gap: 8,
+          },
+        },
+        sorted.map((holding) =>
+          h(HoldingMobileCard, {
+            key: holding.code,
+            holding,
+            dossier: dossierByCode.get(holding.code) || null,
+            expanded: expandedStock === holding.code,
+            onToggle: () => setExpandedStock(expandedStock === holding.code ? null : holding.code),
+            onUpdateTarget,
+            onUpdateAlert,
+            viewMode,
+          })
+        )
+      )
+    )
+  }
 
   return h(
     Card,

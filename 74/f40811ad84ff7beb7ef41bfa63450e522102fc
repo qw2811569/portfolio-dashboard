@@ -1,0 +1,142 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "528579c4-4346-4cbd-9764-d502a838f643",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bcku0uyz0</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "docs mockup refresh 派出 · P2 最後一個 active task（C2 backup delete 要等 2026-05-01 觀察期）。\n\n2 parallel（C4 + docs mockup refresh）。當這兩 + loop 裡可能衍生的 follow-up 都完成 · **所有 R139 task queue 收口** · loop 會自動 kill 並通知你。",
+      "prompt_hash": "sha256:12aed23804ee81f81982a9a1a0fc16c1ece88e3983df49cb03eac0f8faa69c61",
+      "message_count": 8117,
+      "cost_usd": 0.20799735000000005,
+      "input_tokens": 1,
+      "output_tokens": 2351,
+      "cache_read_tokens": 566627,
+      "cache_creation_tokens": 731,
+      "timestamp": "2026-04-24T00:52:43.642Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T00:53:28.733Z",
+      "session_duration_secs": 763330,
+      "ai_response_time_secs": 11.378682463110117,
+      "prompt_submitted_at": "2026-04-24T00:52:43.813189Z",
+      "prompt_duration_secs": 52,
+      "accepted_lines": 8,
+      "overridden_lines": 0,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/docs-mockup-refresh/brief.md",
+      "line_range": [
+        1,
+        87
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/docs-mockup-refresh/brief.md",
+          "line_range": [
+            1,
+            87
+          ],
+          "blob_hash": "328b801c37bfc8009d56888d91d553b507955c35",
+          "additions": 87
+        },
+        {
+          "path": ".gitignore",
+          "line_range": [
+            45,
+            50
+          ],
+          "blob_hash": "36af1ef1ed8f7e404608efe4d62e2eccc4895d8e",
+          "additions": 6
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            1,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "deletions": 1630
+        },
+        {
+          "path": "docs/AI_COLLABORATION_GUIDE.md",
+          "line_range": [
+            32,
+            39
+          ],
+          "blob_hash": "d3584cacbddac3d1c67964472973447336d4ca52",
+          "additions": 2
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            1,
+            325
+          ],
+          "blob_hash": "66122e312f09725d4546167442de39b9f6f2e0e8",
+          "deletions": 325
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            1,
+            48
+          ],
+          "blob_hash": "00db6c2aaced1a2df1c58e34c3f83a21e1abf880",
+          "deletions": 45
+        },
+        {
+          "path": "docs/status/data-coverage-2026-04-19.md",
+          "line_range": [
+            1,
+            60
+          ],
+          "blob_hash": "0da644a531ec6e98467a03ab5455aeae8c061ba2",
+          "deletions": 60
+        }
+      ],
+      "prompt_number": 717,
+      "total_additions": 95,
+      "total_deletions": 2060,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bcku0uyz0</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch C3 mirror-vercel flag\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/c3-mirror-vercel-flag/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "C3 done · `124bfe3` · script-only（不需 mirror per memory policy）. 派 P2 最後一個 task：**docs mockup refresh**（升 HTML 到 SD 1.6 + 重渲染 8 張 PNG）："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/docs-mockup-refresh/brief.md)\" 2>&1 | t...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

@@ -29,12 +29,14 @@
 - `docs/status/current-work.md` 是唯一 canonical 任務 checkpoint 真相
 - `docs/status/ai-activity.json` 是 canonical AI 即時工作狀態真相
 - `docs/status/ai-activity-log.json` 是 canonical AI 即時活動 feed 真相
+- 上述 `ai-activity*` 檔案是 **local runtime canonical**，但不應作為 repo history 長期追蹤；若檔案缺失，讓 `scripts/ai-status.sh` / `scripts/refresh-ai-presence.py` 重建即可
 - `docs-site/state.json` 只是 docs-site 的衍生展示檔，不是獨立黑板
 - docs-site 前端在手動「立即刷新」時，會直接讀 `docs-site/current-work.md`、`docs-site/ai-activity.json`、`docs-site/ai-activity-log.json` 的 canonical 鏡像，不再只依賴 `state.json`
 - 每次完成可交接的小 checkpoint，必須寫回 `docs/status/current-work.md`
 - 每次 AI 開始 / 進度推進 / 完成 / 交接工作時，可用 `scripts/ai-status.sh` 或 `scripts/ai-state.sh` 更新 `ai-activity`、`ai-activity-log` 與 checkpoint
 - `scripts/launch-qwen.sh`、`scripts/launch-gemini.sh`、`scripts/launch-gemini-research-scout.sh` 現在會在啟動時自動登記 `working` 狀態；若要更新更細的作業過程，請再補 `progress`
 - docs-site 啟動腳本會同時啟動 `refresh-ai-presence.py` daemon，從 `~/.qwen`、`~/.gemini`、`~/.claude`、`~/.codex` 活動痕跡自動回填 `ai-activity`；即使其他 AI 沒手動回報，也能在儀表板看到近期作業狀態
+- `agent-bridge-standalone/data/tasks.json` 是 Agent Bridge runtime mirror；需追蹤的 planning/seed 真相是 `coordination/llm-bus/agent-bridge-tasks.json`
 - 本 repo 的變更歸因標準組合是：`GitLens + BlamePrompt + ai-status/launcher`
 - 若需要讓 docs-site 同步新進度，再執行 `bash scripts/sync-state.sh`
 - 只有在需要重刷 build / lint / tests 健康狀態時，才執行 `bash scripts/sync-state.sh --full`

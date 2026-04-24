@@ -28,10 +28,11 @@
 
 ## Multi-LLM 協作
 
-| Decision                                                                              | 日期       | 狀態        | 摘要                                                                            |
-| ------------------------------------------------------------------------------------- | ---------- | ----------- | ------------------------------------------------------------------------------- |
-| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md) | 2026-04-15 | ✅ 決議     | Gemini 角色 = 用戶盲點審查員 + multi-LLM 反駁者。不做資料蒐集。不建議架構遷移。 |
-| [2026-04-15-bridge-auth-token-split](./2026-04-15-bridge-auth-token-split.md)         | 2026-04-15 | ✅ 實作完成 | VM Agent Bridge prod/preview token 拆開，避免 preview 分支拿 prod token         |
+| Decision                                                                              | 日期       | 狀態        | 摘要                                                                                                 |
+| ------------------------------------------------------------------------------------- | ---------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md) | 2026-04-15 | ✅ 決議     | Gemini 角色 = 用戶盲點審查員 + multi-LLM 反駁者。不做資料蒐集。不建議架構遷移。                      |
+| [2026-04-15-bridge-auth-token-split](./2026-04-15-bridge-auth-token-split.md)         | 2026-04-15 | ✅ 實作完成 | VM Agent Bridge prod/preview token 拆開，避免 preview 分支拿 prod token                              |
+| [2026-04-24-runtime-status-file-policy](./2026-04-24-runtime-status-file-policy.md)   | 2026-04-24 | ✅ 決議     | `ai-activity*` / `data-coverage-*` / bridge `tasks.json` 保留 local runtime 用途，但退出 git history |
 
 ## 產品策略
 

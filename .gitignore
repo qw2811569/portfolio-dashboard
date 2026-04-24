@@ -42,3 +42,9 @@ tests/e2e/snapshots/ux-*-polish/
 
 # Runtime alert log
 coordination/llm-bus/alerts.jsonl
+
+# Runtime status / bridge state (local truth, not repo history)
+docs/status/ai-activity.json
+docs/status/ai-activity-log.json
+docs/status/data-coverage-*.md
+agent-bridge-standalone/data/tasks.json

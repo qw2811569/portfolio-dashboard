@@ -375,3 +375,111 @@ PORTFOLIO_BASE_URL=https://35.236.155.62.sslip.io/ \
 - 本 handoff v2 已合 R144 Codex 稽核 · supersede v1
 - 若過程中遇到 handoff 沒寫的 · 先查 `.tmp/handoff-review-r144/` · 再問
 - 完成後 · append 一個「部署後記」到本 doc · 記載際部署碰到什麼 / 調整什麼
+
+---
+
+## 13 · Gemini R10 補（2026-04-24 後審）
+
+### Vercel 角色 · 不是「完全棄用」· 修正 header
+
+依 `docs/decisions/2026-04-16-vm-maximization-roadmap.md`：
+
+- **Vercel**：前端 CDN + 輕量 API + Auth · 作 VM proxy
+- **VM**：execution engine（cron / workers / 這 6 個 API 計算層）
+- Ship 後 strategy：Vercel 不 push 新 feature · 但不關服務 · 因 Auth / CDN / reverse proxy 仍走 Vercel
+
+### Manual worker trigger（cron 等不及時）
+
+```bash
+# morning-note-worker（產 Blob snapshot/morning-note/<date>.json）
+sudo systemctl start jcv-morning-note.service
+# 或直接
+node agent-bridge-standalone/workers/morning-note-worker.mjs
+
+# snapshot-worker（產 daily snapshot + benchmark）
+sudo systemctl start jcv-daily-snapshot.service
+# 或直接
+node agent-bridge-standalone/workers/snapshot-worker.mjs
+
+# 看 worker log
+pm2 logs morning-note-worker
+journalctl -u jcv-morning-note.service -f
+```
+
+驗 Blob 有寫入：
+
+```bash
+curl -sH "authorization: Bearer $BLOB_READ_WRITE_TOKEN" \
+  "https://blob.vercel-storage.com/snapshot/morning-note/$(date +%Y-%m-%d).json" | head
+```
+
+### Blob ACL 驗證（ship gate 漏寫）
+
+加進 §9 驗收：
+
+```bash
+# 1. 私有 Blob · 無 auth 應 403
+curl -so /dev/null -w "private morning-note (no auth): %{http_code}\n" \
+  "https://blob.vercel-storage.com/snapshot/morning-note/$(date +%Y-%m-%d).json"
+# 期望 403 Forbidden
+
+# 2. 私有 Blob · 有 auth 應 200
+curl -so /dev/null -w "private morning-note (authed): %{http_code}\n" \
+  -H "authorization: Bearer $BLOB_READ_WRITE_TOKEN" \
+  "https://blob.vercel-storage.com/snapshot/morning-note/$(date +%Y-%m-%d).json"
+# 期望 200
+
+# 3. 公有 Blob（telemetry）· 無 auth 應 200
+curl -so /dev/null -w "public telemetry (no auth): %{http_code}\n" \
+  "https://<pub-blob-url>/telemetry/latest.json"
+# 期望 200
+```
+
+驗清單同時覆蓋：
+
+- `snapshot/morning-note/<date>.json` · 私
+- `tracked-stocks/<portfolio>/latest.json` · 私
+- `last-success/daily-snapshot/<date>.txt` · 私
+- `valuation/<code>/latest.json` · 私
+- `benchmark/0050/<date>.json` · 私
+
+### API 回應 content 驗（不只 status code）
+
+§9 的「!= 404」不夠 · 加 content check：
+
+```bash
+# morning-note · 驗 JSON shape
+curl -s "http://127.0.0.1:3000/api/morning-note?portfolioId=me" | jq '.ok, .note' | head
+# 預期 .ok = true 或 false · .note 有結構
+
+# valuation · 驗不是 "compute required" fallback
+curl -s "http://127.0.0.1:3000/api/valuation?code=2330" | jq '.hint' | head
+# 若 hint = "compute required"，表示 upstream worker 沒跑
+# 需先跑 worker 再重驗
+```
+
+### Valuation upstream worker（gap 明確化）
+
+Gemini R10 指出：`valuation.js` 是純 reader · 完全靠 upstream worker 餵 Blob。**repo 裡沒看到 `valuation-worker.mjs`** · 也沒 systemd timer。
+
+解法二選一（呼應 §8）：
+
+- **VM 接管**：寫 `agent-bridge-standalone/workers/valuation-worker.mjs` + systemd timer · 每日 03:30 跑
+- **Vercel cron 暫留**：`vercel.json:6-23` 既有 cron 就 let it stay · 其他 5 API 上 VM · valuation 混合 mode
+
+### Update v2 header
+
+**原**：`Target：全部 API 上 VM · 不走 Vercel`
+**改為**：`Target：6 個 R139-R141 wave API 上 VM（execution engine）· Vercel 保留 Auth + CDN + reverse proxy · 依 2026-04-16 vm-maximization-roadmap 決議`
+
+---
+
+## 14 · 3 LLM audit summary
+
+| LLM        | Round      | 發現                                                                                                                           |
+| ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Codex R144 | 技術稽核   | repo 已有 VM 部署拓撲（PM2 + auto-mount + nginx）· 10-step deploy order · ws transitive / VERCEL_ENV 陷阱 · valuation cron gap |
+| Gemini R10 | Blind-spot | Blob ACL 驗證漏 · manual worker trigger 細節 · Vercel 角色矛盾 · API content check                                             |
+| Claude     | 統整       | v1 → v2（Codex 合併）→ v3 = v2 + §13/§14（Gemini 合併）                                                                        |
+
+3 LLM 並行 review 後 · 交接文件達到可操作狀態。接手人讀 §0-§14 + `.tmp/handoff-review-r144/*.md` · 應能 0 溝通成本 onboard。

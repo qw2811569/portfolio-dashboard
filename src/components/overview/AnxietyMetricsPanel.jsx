@@ -160,6 +160,7 @@ function Sparkline({ values = [], tone = 'muted' }) {
 function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = false }) {
   const meta = toneMeta[metric?.tone] || toneMeta.muted
   const detailId = `anxiety-metric-detail-${metric.id}`
+  const isMetricLoading = metric?.availability === 'loading'
 
   return h(
     'article',
@@ -254,13 +255,15 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
       h(
         Badge,
         { color: meta.badge, size: 'sm' },
-        metric.tone === 'ok'
-          ? 'OK'
-          : metric.tone === 'warn'
-            ? '留意'
-            : metric.tone === 'alert'
-              ? '快看'
-              : '待補'
+        isMetricLoading
+          ? '整理中'
+          : metric.tone === 'ok'
+            ? 'OK'
+            : metric.tone === 'warn'
+              ? '留意'
+              : metric.tone === 'alert'
+                ? '快看'
+                : '待補'
       )
     ),
     h(
@@ -271,31 +274,47 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
           gap: 4,
         },
       },
-      h(
-        'div',
-        {
-          style: {
-            color: C.text,
-            fontSize: 'clamp(18px, 2vw, 24px)',
-            lineHeight: 1.1,
-            fontWeight: 700,
-            fontFamily: 'var(--font-num)',
-          },
-        },
-        metric.currentValue
-      ),
-      h(
-        'div',
-        {
-          style: {
-            color: C.textSec,
-            fontSize: 12,
-            lineHeight: 1.6,
-            minHeight: 38,
-          },
-        },
-        metric.supportingValue
-      )
+      isMetricLoading
+        ? h(
+            'div',
+            {
+              style: {
+                minHeight: 64,
+                display: 'grid',
+                alignContent: 'start',
+              },
+            },
+            h(Skeleton, { variant: 'text', count: 1 })
+          )
+        : [
+            h(
+              'div',
+              {
+                key: 'current-value',
+                style: {
+                  color: C.text,
+                  fontSize: 'clamp(18px, 2vw, 24px)',
+                  lineHeight: 1.1,
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-num)',
+                },
+              },
+              metric.currentValue
+            ),
+            h(
+              'div',
+              {
+                key: 'supporting-value',
+                style: {
+                  color: C.textSec,
+                  fontSize: 12,
+                  lineHeight: 1.6,
+                  minHeight: 38,
+                },
+              },
+              metric.supportingValue
+            ),
+          ]
     ),
     Array.isArray(metric.sparkline) && metric.sparkline.length > 1
       ? h(
@@ -557,7 +576,7 @@ export function AnxietyMetricsPanel({
           '桌機先掃一排，手機先掃兩欄；真的有聲音的那張再點開看。'
         )
       ),
-      panelState.placeholderCount > 0
+      panelState.placeholderCount || panelState.loadingCount
         ? h(
             SoftMessage,
             {
@@ -566,7 +585,7 @@ export function AnxietyMetricsPanel({
                 minHeight: 0,
               },
             },
-            `目前有 ${panelState.placeholderCount} 題還在接資料，先把已經到位的放前面。`
+            `目前有 ${(panelState.placeholderCount || 0) + (panelState.loadingCount || 0)} 題還在接資料，先把已經到位的放前面。`
           )
         : null,
       h(

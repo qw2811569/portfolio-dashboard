@@ -89,4 +89,41 @@ describe('lib/anxietyMetrics', () => {
     expect(x1.currentValue).toBe('+1.7σ')
     expect(x1.tone).toBe('warn')
   })
+
+  it('prefers the live X1 benchmark state when available', () => {
+    const result = buildAnxietyMetrics({
+      x1Benchmark: {
+        status: 'ready',
+        data: {
+          zScore: -1.3,
+          interpretation: 'underperform',
+          marketDate: '2026-04-24',
+          latestPortfolioReturnPct: -0.8,
+          latestBenchmarkReturnPct: 0.2,
+          benchmark: { code: '0050' },
+        },
+      },
+    })
+
+    const x1 = result.metrics.find((metric) => metric.id === 'x1')
+
+    expect(x1.availability).toBe('ready')
+    expect(x1.currentValue).toBe('-1.3σ')
+    expect(x1.supportingValue).toContain('0050')
+    expect(x1.detail).toContain('慢一點')
+  })
+
+  it('keeps only X1 in loading state while the other cards remain usable', () => {
+    const result = buildAnxietyMetrics({
+      x1Benchmark: {
+        status: 'loading',
+      },
+      newsEvents: [],
+    })
+
+    const x1 = result.metrics.find((metric) => metric.id === 'x1')
+
+    expect(x1.availability).toBe('loading')
+    expect(result.loadingCount).toBe(1)
+  })
 })

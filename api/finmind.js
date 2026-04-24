@@ -7,6 +7,7 @@ import { readLatestFinMindSnapshotFallback } from './_lib/finmind-snapshot-fallb
 // Rate limit：無 token 300/hr，有 token 600/hr
 //
 // 支援的 dataset：
+//   price           — 個股 / ETF 日線 close
 //   institutional   — 三大法人買賣超
 //   margin          — 融資融券
 //   valuation       — PER/PBR/殖利率
@@ -273,7 +274,23 @@ function transformNews(rows = []) {
   )
 }
 
+function transformPrice(rows = []) {
+  return sortByDateDesc(
+    rows.map((row) => ({
+      date: row.date,
+      code: String(row.stock_id || '').trim() || null,
+      open: Number.isFinite(Number(row.open)) ? Number(row.open) : null,
+      high: Number.isFinite(Number(row.max)) ? Number(row.max) : null,
+      low: Number.isFinite(Number(row.min)) ? Number(row.min) : null,
+      close: Number.isFinite(Number(row.close)) ? Number(row.close) : null,
+      spread: Number.isFinite(Number(row.spread)) ? Number(row.spread) : null,
+      volume: toNumber(row.Trading_Volume),
+    }))
+  )
+}
+
 const DATASET_TRANSFORMS = {
+  price: transformPrice,
   institutional: transformInstitutional,
   margin: transformMarginTrading,
   valuation: transformValuation,

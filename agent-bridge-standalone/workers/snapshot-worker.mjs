@@ -23,7 +23,16 @@ import {
   inferArtifactSchemaVersion,
   readBlobText,
 } from '../../api/_lib/daily-snapshot.js'
+import {
+  DEFAULT_BENCHMARK_CODE,
+  DEFAULT_BENCHMARK_LABEL,
+  DEFAULT_BENCHMARK_PROXY_FOR,
+  DEFAULT_BENCHMARK_SOURCE,
+  getBenchmarkSnapshotKey,
+  normalizeBenchmarkSnapshot,
+} from '../../api/_lib/benchmark-snapshots.js'
 import { getPrivateBlobToken } from '../../api/_lib/blob-tokens.js'
+import { queryFinMindDataset } from '../../api/_lib/finmind-governor.js'
 import { loadLocalEnvIfPresent } from '../../api/_lib/local-env.js'
 import { markCronFailure, markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
@@ -34,6 +43,7 @@ const ALERTS_RELATIVE_PATH = path.join('coordination', 'llm-bus', 'alerts.jsonl'
 const LOCAL_STORAGE_CHECKPOINT_PATH = path.join('.tmp', 'localstorage-backups', 'latest.json')
 const DATA_DIR = 'data'
 const ANALYSIS_HISTORY_PREFIX = 'analysis-history/'
+const BENCHMARK_TIMEOUT_MS = 8000
 
 function resolveRepoRoot() {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -309,6 +319,54 @@ function buildLocalStorageArtifactRecord({
   })
 }
 
+function buildBenchmarkArtifactRecord({ snapshotDate, payload }) {
+  return buildManifestFileRecord({
+    pathname: getBenchmarkSnapshotKey(snapshotDate),
+    content: payload,
+    schemaVersion: payload?.schemaVersion,
+    source: payload?.source || DEFAULT_BENCHMARK_SOURCE,
+  })
+}
+
+async function buildBenchmarkSnapshotPayload(snapshotDate) {
+  const rows = await queryFinMindDataset('price', {
+    code: DEFAULT_BENCHMARK_CODE,
+    startDate: snapshotDate,
+    endDate: snapshotDate,
+    timeoutMs: BENCHMARK_TIMEOUT_MS,
+  })
+  const matched = rows.find((row) => String(row?.date || '').trim() === snapshotDate) || null
+  if (!matched) return null
+
+  const close = Number(matched.close)
+  const spread = Number(matched.spread)
+  const prevClose =
+    Number.isFinite(close) && Number.isFinite(spread)
+      ? Math.round((close - spread) * 1000) / 1000
+      : null
+  const returnPct =
+    Number.isFinite(close) && Number.isFinite(prevClose) && prevClose > 0
+      ? Math.round(((close / prevClose - 1) * 100) * 10000) / 10000
+      : null
+
+  return normalizeBenchmarkSnapshot({
+    date: snapshotDate,
+    code: DEFAULT_BENCHMARK_CODE,
+    label: DEFAULT_BENCHMARK_LABEL,
+    proxyFor: DEFAULT_BENCHMARK_PROXY_FOR,
+    source: DEFAULT_BENCHMARK_SOURCE,
+    close,
+    prevClose,
+    spread: Number.isFinite(spread) ? spread : null,
+    returnPct,
+    open: Number.isFinite(Number(matched.open)) ? Number(matched.open) : null,
+    high: Number.isFinite(Number(matched.max)) ? Number(matched.max) : null,
+    low: Number.isFinite(Number(matched.min)) ? Number(matched.min) : null,
+    volume: Number.isFinite(Number(matched.Trading_Volume)) ? Number(matched.Trading_Volume) : null,
+    fetchedAt: new Date().toISOString(),
+  })
+}
+
 function buildSnapshotManifest({
   snapshotDate,
   now,
@@ -336,6 +394,7 @@ function buildSnapshotManifest({
       ).length,
       checkpointFiles: files.filter((file) => file.pathname === getDailySnapshotLocalStorageKey(snapshotDate))
         .length,
+      benchmarkFiles: files.filter((file) => file.pathname === getBenchmarkSnapshotKey(snapshotDate)).length,
     },
     files: files.map(({ pathname, checksum, url, schemaVersion, sizeBytes, source, contentType }) => ({
       pathname,
@@ -353,6 +412,7 @@ function parseDateFromPathname(pathname = '') {
   const normalized = String(pathname || '').trim()
   const match =
     normalized.match(/^snapshot\/(?:research|brain|portfolio-state)\/(\d{4}-\d{2}-\d{2})\//) ||
+    normalized.match(/^snapshot\/benchmark\/(\d{4}-\d{2}-\d{2})\.json$/) ||
     normalized.match(/^snapshot\/(?:localStorage-checkpoint|daily-manifest)\/(\d{4}-\d{2}-\d{2})\.json$/) ||
     normalized.match(/^last-success\/daily-snapshot\/(\d{4}-\d{2}-\d{2})\.txt$/)
   return match ? match[1] : ''
@@ -383,6 +443,7 @@ export async function purgeExpiredDailySnapshots({
     'snapshot/research/',
     'snapshot/brain/',
     'snapshot/portfolio-state/',
+    'snapshot/benchmark/',
     'snapshot/localStorage-checkpoint/',
     'snapshot/daily-manifest/',
     'last-success/daily-snapshot/',
@@ -446,6 +507,7 @@ async function generateSnapshotBundle({
   token = getBlobToken(),
   listImpl = list,
   getImpl = get,
+  logger = console,
 } = {}) {
   if (!token) {
     throw new Error('BLOB_READ_WRITE_TOKEN is required for daily snapshot worker')
@@ -500,6 +562,17 @@ async function generateSnapshotBundle({
     }),
   ]
 
+  try {
+    const benchmarkPayload = await buildBenchmarkSnapshotPayload(snapshotDate)
+    if (benchmarkPayload) {
+      records.push(buildBenchmarkArtifactRecord({ snapshotDate, payload: benchmarkPayload }))
+    } else {
+      logger.warn?.(`[snapshot-worker] benchmark snapshot missing for ${snapshotDate}; skipping`)
+    }
+  } catch (error) {
+    logger.warn?.(`[snapshot-worker] benchmark snapshot skipped for ${snapshotDate}:`, error)
+  }
+
   return {
     snapshotDate,
     backupState,
@@ -546,6 +619,7 @@ export async function runSnapshotWorker({
           token,
           listImpl,
           getImpl,
+          logger,
         })
         attemptState.snapshotDate = bundle.snapshotDate
 

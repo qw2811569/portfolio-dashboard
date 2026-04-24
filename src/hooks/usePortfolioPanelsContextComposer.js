@@ -61,6 +61,7 @@ export function usePortfolioPanelsContextComposer({
   morningNote,
   dailySnapshotStatus,
   dailyReport,
+  x1BenchmarkState,
   analysisHistory,
   analyzing,
   analyzeStep,
@@ -214,6 +215,7 @@ export function usePortfolioPanelsContextComposer({
         holdingDossiers: safeHoldingDossiers,
         newsEvents: safeNewsEvents,
         dailyReport,
+        x1Benchmark: x1BenchmarkState,
         stockMeta,
         loading:
           ready === false &&
@@ -221,7 +223,15 @@ export function usePortfolioPanelsContextComposer({
           safeHoldingDossiers.length === 0 &&
           safeNewsEvents.length === 0,
       }),
-    [dailyReport, ready, safeHoldingDossiers, safeHoldings, safeNewsEvents, stockMeta]
+    [
+      dailyReport,
+      ready,
+      safeHoldingDossiers,
+      safeHoldings,
+      safeNewsEvents,
+      stockMeta,
+      x1BenchmarkState,
+    ]
   )
 
   const operatingContext = useMemo(() => {

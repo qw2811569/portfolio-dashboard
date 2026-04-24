@@ -153,6 +153,49 @@ async function seedDashboard(page) {
       body: JSON.stringify({ data: [] }),
     })
   })
+  await page.route('**/api/portfolio-benchmark-zscore*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ok: true,
+        status: 'ready',
+        portfolioId: 'me',
+        benchmark: {
+          code: '0050',
+          label: '元大台灣50',
+          proxyFor: '^TWII',
+          source: 'finmind:TaiwanStockPrice',
+        },
+        marketDate: '2026-04-24',
+        trailingWindow: 20,
+        recentWindow: 7,
+        zScore: 1.2,
+        interpretation: 'outperform',
+        latestPortfolioReturnPct: 1.1,
+        latestBenchmarkReturnPct: 0.4,
+        latestDiffPct: 0.7,
+        volatilityPct: 0.58,
+        sampleSize: 20,
+        recentSeries: [
+          { date: '2026-04-16', portfolioReturnPct: 0.8, benchmarkReturnPct: 0.4, diffPct: 0.4 },
+          { date: '2026-04-17', portfolioReturnPct: 1.0, benchmarkReturnPct: 0.5, diffPct: 0.5 },
+          { date: '2026-04-18', portfolioReturnPct: 0.7, benchmarkReturnPct: 0.3, diffPct: 0.4 },
+          { date: '2026-04-21', portfolioReturnPct: 1.3, benchmarkReturnPct: 0.6, diffPct: 0.7 },
+          { date: '2026-04-22', portfolioReturnPct: 0.9, benchmarkReturnPct: 0.5, diffPct: 0.4 },
+          { date: '2026-04-23', portfolioReturnPct: 1.0, benchmarkReturnPct: 0.4, diffPct: 0.6 },
+          { date: '2026-04-24', portfolioReturnPct: 1.1, benchmarkReturnPct: 0.4, diffPct: 0.7 },
+        ],
+      }),
+    })
+  })
+  await page.route('**/api/tracked-stocks*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ trackedStocks: [] }),
+    })
+  })
 
   await page.addInitScript((seed) => {
     window.localStorage.clear()
@@ -190,6 +233,8 @@ test('dashboard shows the unified X1-X5 anxiety metrics panel and handoff works'
   await expect(page.getByTestId('anxiety-metric-question-x5')).toContainText(
     '三天內有沒有事件？'
   )
+  await expect(page.getByText('+1.2σ')).toBeVisible()
+  await expect(page.getByText(/0050 \+0\.4%/)).toBeVisible()
   await saveLocatorScreenshot(panel, testInfo, 'anxiety-metrics-panel-desktop.png')
 
   const panelAxeResults = await new AxeBuilder({ page })

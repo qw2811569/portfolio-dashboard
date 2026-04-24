@@ -10,6 +10,7 @@ import { useAppResearchRuntime } from './useAppResearchRuntime.js'
 import { useAppWeeklyReportRuntime } from './useAppWeeklyReportRuntime.js'
 import { useAppLocalBackupRuntime } from './useAppLocalBackupRuntime.js'
 import { useAppPanelsRuntime } from './useAppPanelsRuntime.js'
+import { usePortfolioBenchmarkZScore } from './usePortfolioBenchmarkZScore.js'
 import { brainRuleSummary } from '../lib/brainRuntime.js'
 
 export function useAppRuntimeWorkflows({
@@ -46,6 +47,8 @@ export function useAppRuntimeWorkflows({
     dailySnapshotStatus,
     dailyReport,
   } = state
+
+  const x1BenchmarkState = usePortfolioBenchmarkZScore(activePortfolioId)
 
   const {
     todayMarketClock,
@@ -435,6 +438,7 @@ export function useAppRuntimeWorkflows({
       morningNote,
       dailySnapshotStatus,
       dailyReport,
+      x1BenchmarkState,
       newsEvents,
       strategyBrain,
       reportRefreshMeta,

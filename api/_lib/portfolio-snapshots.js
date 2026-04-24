@@ -143,6 +143,35 @@ async function loadRawSnapshots(
   return snapshots.sort((a, b) => a.date.localeCompare(b.date))
 }
 
+export async function readRawPortfolioSnapshots(
+  portfolioId,
+  { fromDate, toDate } = {},
+  {
+    token = getBlobToken(),
+    fetchImpl = fetch,
+    listImpl = list,
+    origin,
+    now = new Date(),
+    timeZone = DEFAULT_TIMEZONE,
+  } = {}
+) {
+  const range =
+    isIsoDate(fromDate) && isIsoDate(toDate)
+      ? { fromDate, toDate }
+      : getDefaultDateRange(now, timeZone)
+
+  const rawSnapshots = await loadRawSnapshots(portfolioId, {
+    token,
+    fetchImpl,
+    listImpl,
+    origin,
+  })
+
+  return rawSnapshots.filter(
+    (snapshot) => snapshot.date >= range.fromDate && snapshot.date <= range.toDate
+  )
+}
+
 export function forwardFillSnapshots(snapshots = [], { fromDate, toDate } = {}) {
   if (!isIsoDate(fromDate) || !isIsoDate(toDate)) return []
 
@@ -227,11 +256,13 @@ export async function readPortfolioSnapshots(
       ? { fromDate, toDate }
       : getDefaultDateRange(now, timeZone)
 
-  const rawSnapshots = await loadRawSnapshots(portfolioId, {
+  const rawSnapshots = await readRawPortfolioSnapshots(portfolioId, range, {
     token,
     fetchImpl,
     listImpl,
     origin,
+    now,
+    timeZone,
   })
 
   const bounded = rawSnapshots.filter((snapshot) => snapshot.date <= range.toDate)

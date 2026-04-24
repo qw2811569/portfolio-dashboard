@@ -47,6 +47,7 @@ export function composePortfolioPanelsContextInput({
     morningNote: data.morningNote,
     dailySnapshotStatus: data.dailySnapshotStatus,
     dailyReport: data.dailyReport,
+    x1BenchmarkState: data.x1BenchmarkState,
     analysisHistory: data.analysisHistory,
     analyzing: asyncState.analyzing,
     analyzeStep: asyncState.analyzeStep,

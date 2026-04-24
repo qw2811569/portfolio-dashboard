@@ -2,6 +2,15 @@ import fsPromises from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+const { queryFinMindDataset } = vi.hoisted(() => ({
+  queryFinMindDataset: vi.fn(),
+}))
+
+vi.mock('../../api/_lib/finmind-governor.js', () => ({
+  queryFinMindDataset,
+}))
+
 import { runSnapshotWorker } from '../../agent-bridge-standalone/workers/snapshot-worker.mjs'
 
 async function writeJson(targetPath, payload) {
@@ -14,6 +23,7 @@ describe('snapshot-worker', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks()
+    queryFinMindDataset.mockReset()
     if (tempRoot) {
       await fsPromises.rm(tempRoot, { recursive: true, force: true })
       tempRoot = ''
@@ -22,6 +32,17 @@ describe('snapshot-worker', () => {
 
   it('writes the daily snapshot tree, manifest, dated marker, and cron marker', async () => {
     tempRoot = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'snapshot-worker-'))
+    queryFinMindDataset.mockResolvedValue([
+      {
+        date: '2026-04-24',
+        close: 82,
+        spread: 1.5,
+        open: 81.2,
+        max: 82.4,
+        min: 81.1,
+        Trading_Volume: 123456,
+      },
+    ])
 
     await writeJson(path.join(tempRoot, 'data', 'research-index.json'), {
       schemaVersion: 1,
@@ -102,6 +123,7 @@ describe('snapshot-worker', () => {
       'snapshot/brain/2026-04-24/analysis-history/2026/04/23-1.json'
     )
     expect(writtenPathnames).toContain('snapshot/portfolio-state/2026-04-24/me/holdings.json')
+    expect(writtenPathnames).toContain('snapshot/benchmark/2026-04-24.json')
     expect(writtenPathnames).toContain('snapshot/localStorage-checkpoint/2026-04-24.json')
     expect(writtenPathnames).toContain('snapshot/daily-manifest/2026-04-24.json')
     expect(writtenPathnames).toContain('last-success/daily-snapshot/2026-04-24.txt')
@@ -118,6 +140,10 @@ describe('snapshot-worker', () => {
     })
     expect(manifest.files).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({
+          pathname: 'snapshot/benchmark/2026-04-24.json',
+          checksum: expect.any(String),
+        }),
         expect.objectContaining({
           pathname: 'snapshot/portfolio-state/2026-04-24/me/tradeLog.json',
           checksum: expect.any(String),

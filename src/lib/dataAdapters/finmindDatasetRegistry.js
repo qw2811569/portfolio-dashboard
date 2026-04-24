@@ -1,4 +1,13 @@
 export const FINMIND_DATASET_REGISTRY = Object.freeze({
+  price: Object.freeze({
+    key: 'price',
+    finmindDataset: 'TaiwanStockPrice',
+    requestKind: 'days',
+    defaultWindowDays: 90,
+    defaultRequest: Object.freeze({ days: 30 }),
+    dossierRequest: Object.freeze({ days: 30 }),
+    includeInDossier: false,
+  }),
   institutional: Object.freeze({
     key: 'institutional',
     finmindDataset: 'TaiwanStockInstitutionalInvestorsBuySell',

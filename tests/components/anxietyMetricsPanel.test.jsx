@@ -55,6 +55,17 @@ function buildPanelState() {
         stocks: ['台積電 2330'],
       },
     ],
+    x1Benchmark: {
+      status: 'ready',
+      data: {
+        zScore: 1.2,
+        interpretation: 'outperform',
+        marketDate: '2026-04-24',
+        latestPortfolioReturnPct: 1.1,
+        latestBenchmarkReturnPct: 0.4,
+        benchmark: { code: '0050' },
+      },
+    },
     now: new Date('2026-04-24T09:00:00+08:00'),
   })
 }
@@ -86,6 +97,7 @@ describe('components/AnxietyMetricsPanel', () => {
     expect(screen.getByTestId('anxiety-metric-card-x3')).toBeInTheDocument()
     expect(screen.getByTestId('anxiety-metric-card-x4')).toBeInTheDocument()
     expect(screen.getByTestId('anxiety-metric-card-x5')).toBeInTheDocument()
+    expect(screen.getByText('+1.2σ')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('anxiety-metric-toggle-x5'))
 

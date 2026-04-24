@@ -21,6 +21,14 @@ function formatPercent(value, digits = 0) {
   return `${Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits)}%`
 }
 
+function formatSignedPercent(value, digits = 1) {
+  const number = toFiniteNumber(value)
+  if (number == null) return '—'
+  const base = Math.pow(10, digits)
+  const rounded = Math.round(number * base) / base
+  return `${rounded >= 0 ? '+' : ''}${rounded}%`
+}
+
 function normalizePillarStatus(value) {
   const normalized = String(value || '')
     .trim()
@@ -67,14 +75,36 @@ function buildUnavailableMetric({
   routeTab,
   routeLabel,
   detail = '上線時才有，現在先不亂估。',
+  currentValue = '上線時才有',
+  supportingValue = '這題還沒接到可信來源',
 }) {
   return {
     id,
     question,
     tone: 'muted',
     availability: 'placeholder',
-    currentValue: '上線時才有',
-    supportingValue: '這題還沒接到可信來源',
+    currentValue,
+    supportingValue,
+    detail,
+    routeTab,
+    routeLabel,
+  }
+}
+
+function buildLoadingMetric({
+  id,
+  question,
+  routeTab,
+  routeLabel,
+  detail = '今天對比大盤還在整理，先讓資料對齊一下。',
+}) {
+  return {
+    id,
+    question,
+    tone: 'muted',
+    availability: 'loading',
+    currentValue: '',
+    supportingValue: '',
     detail,
     routeTab,
     routeLabel,
@@ -104,7 +134,86 @@ function extractZScoreFromDailyReport(dailyReport = null) {
   return matched ? toFiniteNumber(matched[1]) : null
 }
 
-function buildX1Metric(dailyReport = null) {
+function buildReadyX1Metric({
+  zScore,
+  interpretation = 'normal',
+  latestDate = '',
+  latestPortfolioReturnPct = null,
+  latestBenchmarkReturnPct = null,
+  benchmarkCode = '0050',
+} = {}) {
+  const abs = Math.abs(zScore)
+  const tone = abs < 1 ? 'ok' : abs < 2 ? 'warn' : 'alert'
+  const dateLabel = latestDate ? formatShortDate(latestDate) : ''
+  const hasReturnPair =
+    toFiniteNumber(latestPortfolioReturnPct) != null &&
+    toFiniteNumber(latestBenchmarkReturnPct) != null
+  const supportingValue = hasReturnPair
+    ? dateLabel
+      ? `${dateLabel} 組合 ${formatSignedPercent(latestPortfolioReturnPct)} · ${benchmarkCode} ${formatSignedPercent(latestBenchmarkReturnPct)}`
+      : `組合 ${formatSignedPercent(latestPortfolioReturnPct)} · ${benchmarkCode} ${formatSignedPercent(latestBenchmarkReturnPct)}`
+    : interpretation === 'anomaly'
+      ? '今天和大盤 proxy 的距離明顯放大'
+      : interpretation === 'outperform'
+        ? '今天比大盤 proxy 快一點'
+        : interpretation === 'underperform'
+          ? '今天比大盤 proxy 慢一點'
+          : '今天和大盤 proxy 大致同拍'
+  const detail =
+    interpretation === 'anomaly'
+      ? '今天和大盤 proxy 的距離比平常明顯大，先回 Daily 看是誰在放大聲量。'
+      : interpretation === 'outperform'
+        ? '今天比大盤 proxy 快一點，先確認是 thesis 在發力，還是單日情緒拉高。'
+        : interpretation === 'underperform'
+          ? '今天比大盤 proxy 慢一點，先看是個股噪音，還是組合主線一起轉弱。'
+          : '今天和大盤 proxy 大致同拍，暫時還在平常節奏裡。'
+
+  return {
+    id: 'x1',
+    question: '今天漲跌正常嗎？',
+    tone,
+    availability: 'ready',
+    currentValue: `${zScore >= 0 ? '+' : ''}${zScore.toFixed(1)}σ`,
+    supportingValue,
+    detail,
+    routeTab: 'daily',
+    routeLabel: '去 Daily 看脈絡',
+  }
+}
+
+function buildX1Metric({ dailyReport = null, x1Benchmark = null } = {}) {
+  if (x1Benchmark?.status === 'loading') {
+    return buildLoadingMetric({
+      id: 'x1',
+      question: '今天漲跌正常嗎？',
+      routeTab: 'daily',
+      routeLabel: '去 Daily 看脈絡',
+    })
+  }
+
+  if (x1Benchmark?.status === 'ready' && x1Benchmark?.data?.zScore != null) {
+    return buildReadyX1Metric({
+      zScore: Number(x1Benchmark.data.zScore),
+      interpretation: x1Benchmark.data.interpretation,
+      latestDate: x1Benchmark.data.marketDate,
+      latestPortfolioReturnPct: x1Benchmark.data.latestPortfolioReturnPct,
+      latestBenchmarkReturnPct: x1Benchmark.data.latestBenchmarkReturnPct,
+      benchmarkCode: x1Benchmark.data?.benchmark?.code || '0050',
+    })
+  }
+
+  if (x1Benchmark?.status === 'unavailable' || x1Benchmark?.status === 'error') {
+    return buildUnavailableMetric({
+      id: 'x1',
+      question: '今天漲跌正常嗎？',
+      routeTab: 'daily',
+      routeLabel: '去 Daily 看脈絡',
+      currentValue: '稍後再看',
+      supportingValue: '今天對比大盤還在整理',
+      detail: String(x1Benchmark?.data?.message || '').trim() || '今天對比大盤，稍後再看。',
+    })
+  }
+
   const zScore = extractZScoreFromDailyReport(dailyReport)
   if (zScore == null) {
     return buildUnavailableMetric({
@@ -115,22 +224,17 @@ function buildX1Metric(dailyReport = null) {
       detail: '現在只有單日盤面線索，還沒接到 7 日相對大盤 z-score。',
     })
   }
-
-  const abs = Math.abs(zScore)
-  const tone = abs < 1 ? 'ok' : abs < 2 ? 'warn' : 'alert'
-  const supportingValue = abs < 1 ? '還在日常波動裡' : abs < 2 ? '波動開始冒頭' : '今天比平常大聲'
-
-  return {
-    id: 'x1',
-    question: '今天漲跌正常嗎？',
-    tone,
-    availability: 'ready',
-    currentValue: `${zScore >= 0 ? '+' : ''}${zScore.toFixed(1)}σ`,
-    supportingValue,
-    detail: '用 7 日相對大盤 z-score 看今天是不是超出平常節奏。',
-    routeTab: 'daily',
-    routeLabel: '去 Daily 看脈絡',
-  }
+  return buildReadyX1Metric({
+    zScore,
+    interpretation:
+      Math.abs(zScore) >= 2
+        ? 'anomaly'
+        : zScore >= 1
+          ? 'outperform'
+          : zScore <= -1
+            ? 'underperform'
+            : 'normal',
+  })
 }
 
 function buildX2Metric(holdingDossiers = []) {
@@ -410,12 +514,13 @@ export function buildAnxietyMetrics({
   holdingDossiers = [],
   newsEvents = [],
   dailyReport = null,
+  x1Benchmark = null,
   stockMeta = null,
   loading = false,
   now = new Date(),
 } = {}) {
   const metrics = [
-    buildX1Metric(dailyReport),
+    buildX1Metric({ dailyReport, x1Benchmark }),
     buildX2Metric(holdingDossiers),
     buildX3Metric(holdingDossiers),
     buildX4Metric({ holdings, stockMeta }),
@@ -427,6 +532,7 @@ export function buildAnxietyMetrics({
     metrics,
     readyCount: metrics.filter((metric) => metric.availability === 'ready').length,
     placeholderCount: metrics.filter((metric) => metric.availability === 'placeholder').length,
+    loadingCount: metrics.filter((metric) => metric.availability === 'loading').length,
     generatedAt: new Date(now).toISOString(),
   }
 }

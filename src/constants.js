@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   BRAIN: '/api/brain',
   DAILY_SNAPSHOT_STATUS: '/api/daily-snapshot-status',
   MORNING_NOTE: '/api/morning-note',
+  PORTFOLIO_BENCHMARK_ZSCORE: '/api/portfolio-benchmark-zscore',
   RESEARCH: '/api/research',
   RESEARCH_EXTRACT: '/api/research-extract',
   TRACKED_STOCKS: '/api/tracked-stocks',

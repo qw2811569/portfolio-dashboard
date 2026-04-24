@@ -4,6 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock the external module-level imports
 vi.mock('../../src/lib/dataAdapters/finmindAdapter.js', () => ({
   fetchStockDossierData: vi.fn(async () => null),
+  fetchStockDossierDataState: vi.fn(async () => ({
+    data: null,
+    datasets: {},
+    isStale: false,
+    error: null,
+    degraded: false,
+    fallbackSnapshot: null,
+  })),
 }))
 
 vi.mock('../../src/lib/dataAdapters/cronTargetsAdapter.js', () => ({
@@ -17,7 +25,7 @@ vi.mock('../../src/lib/reportRefreshRuntime.js', () => ({
 
 import { usePortfolioDerivedData } from '../../src/hooks/usePortfolioDerivedData.js'
 import { buildReportRefreshCandidates } from '../../src/lib/reportRefreshRuntime.js'
-import { fetchStockDossierData } from '../../src/lib/dataAdapters/finmindAdapter.js'
+import { fetchStockDossierDataState } from '../../src/lib/dataAdapters/finmindAdapter.js'
 import {
   fetchCronTargets,
   isCronTargetUsable,
@@ -105,6 +113,18 @@ const defaultProps = (overrides = {}) => ({
   constants: stubConstants(),
   ...overrides,
 })
+
+function asFinMindState(data, overrides = {}) {
+  return {
+    data,
+    datasets: {},
+    isStale: false,
+    error: null,
+    degraded: false,
+    fallbackSnapshot: null,
+    ...overrides,
+  }
+}
 
 describe('usePortfolioDerivedData', () => {
   beforeEach(() => {
@@ -495,27 +515,29 @@ describe('usePortfolioDerivedData', () => {
 
   describe('FinMind enrichment flows into dataRefreshRows', () => {
     it('adds a PER-band derived target to a holding without seed targets after enrichment', async () => {
-      fetchStockDossierData.mockResolvedValue({
-        revenue: [
-          {
-            date: '2026-03-31',
-            revenueMonth: 3,
-            revenueYear: 2026,
-            revenue: 1000000,
-            revenueYoY: 12.5,
-            revenueMoM: -2.3,
-          },
-        ],
-        financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
-        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
-        valuation: [
-          { date: '2026-03-01', per: 15 },
-          { date: '2026-02-01', per: 18 },
-          { date: '2026-01-01', per: 20 },
-          { date: '2025-12-01', per: 22 },
-          { date: '2025-11-01', per: 25 },
-        ],
-      })
+      fetchStockDossierDataState.mockResolvedValue(
+        asFinMindState({
+          revenue: [
+            {
+              date: '2026-03-31',
+              revenueMonth: 3,
+              revenueYear: 2026,
+              revenue: 1000000,
+              revenueYoY: 12.5,
+              revenueMoM: -2.3,
+            },
+          ],
+          financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+          balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+          valuation: [
+            { date: '2026-03-01', per: 15 },
+            { date: '2026-02-01', per: 18 },
+            { date: '2026-01-01', per: 20 },
+            { date: '2025-12-01', per: 22 },
+            { date: '2025-11-01', per: 25 },
+          ],
+        })
+      )
 
       const { result } = renderHook(() =>
         usePortfolioDerivedData(
@@ -555,28 +577,30 @@ describe('usePortfolioDerivedData', () => {
       // Mapper should classify this as 'fresh' and set freshness.fundamentals='fresh'.
       // Use mockResolvedValue (not Once) so every enrichment effect re-run returns
       // the fixture and state converges on enriched.
-      fetchStockDossierData.mockResolvedValue({
-        revenue: [
-          {
-            date: '2026-03-31',
-            revenueMonth: 3,
-            revenueYear: 2026,
-            revenue: 1000000,
-            revenueYoY: 12.5,
-            revenueMoM: -2.3,
-          },
-        ],
-        financials: [
-          {
-            date: '2025-12-31',
-            EPS: 8.25,
-            Revenue: 850000,
-            GrossProfit: 450000,
-            NetIncome: 200000,
-          },
-        ],
-        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
-      })
+      fetchStockDossierDataState.mockResolvedValue(
+        asFinMindState({
+          revenue: [
+            {
+              date: '2026-03-31',
+              revenueMonth: 3,
+              revenueYear: 2026,
+              revenue: 1000000,
+              revenueYoY: 12.5,
+              revenueMoM: -2.3,
+            },
+          ],
+          financials: [
+            {
+              date: '2025-12-31',
+              EPS: 8.25,
+              Revenue: 850000,
+              GrossProfit: 450000,
+              NetIncome: 200000,
+            },
+          ],
+          balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+        })
+      )
 
       const { result } = renderHook(() =>
         usePortfolioDerivedData(
@@ -651,7 +675,7 @@ describe('usePortfolioDerivedData', () => {
         },
       }
 
-      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(finmindFixture))
       fetchCronTargets.mockResolvedValue(cronSnapshot)
       isCronTargetUsable.mockReturnValue(true)
 
@@ -698,7 +722,7 @@ describe('usePortfolioDerivedData', () => {
         },
       }
 
-      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(finmindFixture))
       fetchCronTargets.mockResolvedValue(aggregateCronSnapshot)
       isCronTargetUsable.mockReturnValue(true)
 
@@ -745,7 +769,7 @@ describe('usePortfolioDerivedData', () => {
         },
       }
 
-      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(finmindFixture))
       fetchCronTargets.mockResolvedValue(staleCronSnapshot)
       isCronTargetUsable.mockReturnValue(false)
 
@@ -771,7 +795,7 @@ describe('usePortfolioDerivedData', () => {
     })
 
     it('falls back to PER-band when cron targets fetch returns null', async () => {
-      fetchStockDossierData.mockResolvedValue(finmindFixture)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(finmindFixture))
       fetchCronTargets.mockResolvedValue(null)
       isCronTargetUsable.mockReturnValue(false)
 
@@ -799,9 +823,9 @@ describe('usePortfolioDerivedData', () => {
   describe('warrant → underlying stock target mapping', () => {
     it('uses underlying stock PER-band targets for a warrant holding', async () => {
       // FinMind returns null for the warrant code but valid data for underlyingCode
-      fetchStockDossierData.mockImplementation(async (code) => {
+      fetchStockDossierDataState.mockImplementation(async (code) => {
         if (code === '6139') {
-          return {
+          return asFinMindState({
             revenue: [
               {
                 date: '2026-03-31',
@@ -820,9 +844,9 @@ describe('usePortfolioDerivedData', () => {
               { date: '2026-01-01', per: 14 },
               { date: '2025-12-01', per: 16 },
             ],
-          }
+          })
         }
-        return null
+        return asFinMindState(null)
       })
       fetchCronTargets.mockResolvedValue(null)
       isCronTargetUsable.mockReturnValue(false)
@@ -869,27 +893,29 @@ describe('usePortfolioDerivedData', () => {
   describe('stale enrichment invalidation — dossiersToUse updates when D changes', () => {
     it('updates dossiersToUse when holdings data changes after enrichment resolves', async () => {
       // Setup: FinMind enrichment returns data so enrichedDossiers gets populated
-      fetchStockDossierData.mockResolvedValue({
-        revenue: [
-          {
-            date: '2026-03-31',
-            revenueMonth: 3,
-            revenueYear: 2026,
-            revenue: 1000000,
-            revenueYoY: 12.5,
-            revenueMoM: -2.3,
-          },
-        ],
-        financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
-        balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
-        valuation: [
-          { date: '2026-03-01', per: 15 },
-          { date: '2026-02-01', per: 18 },
-          { date: '2026-01-01', per: 20 },
-          { date: '2025-12-01', per: 22 },
-          { date: '2025-11-01', per: 25 },
-        ],
-      })
+      fetchStockDossierDataState.mockResolvedValue(
+        asFinMindState({
+          revenue: [
+            {
+              date: '2026-03-31',
+              revenueMonth: 3,
+              revenueYear: 2026,
+              revenue: 1000000,
+              revenueYoY: 12.5,
+              revenueMoM: -2.3,
+            },
+          ],
+          financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
+          balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
+          valuation: [
+            { date: '2026-03-01', per: 15 },
+            { date: '2026-02-01', per: 18 },
+            { date: '2026-01-01', per: 20 },
+            { date: '2025-12-01', per: 22 },
+            { date: '2025-11-01', per: 25 },
+          ],
+        })
+      )
 
       const helpers = stubHelpers()
       // buildHoldingDossiers propagates position data from holdings so we can
@@ -964,7 +990,7 @@ describe('usePortfolioDerivedData', () => {
     })
 
     it('updates classification ranking when market values change', async () => {
-      fetchStockDossierData.mockResolvedValue(null)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(null))
 
       const helpers = stubHelpers()
       helpers.buildHoldingDossiers = vi.fn(({ holdings }) =>
@@ -1032,7 +1058,7 @@ describe('usePortfolioDerivedData', () => {
         financials: [{ date: '2025-12-31', EPS: 40, Revenue: 1000000, GrossProfit: 500000 }],
         balanceSheet: [{ date: '2025-12-31', Equity: 1500000 }],
       }
-      fetchStockDossierData.mockResolvedValue(finmindData)
+      fetchStockDossierDataState.mockResolvedValue(asFinMindState(finmindData))
 
       const helpers = stubHelpers()
       helpers.buildHoldingDossiers = vi.fn(({ holdings }) =>

@@ -7,11 +7,14 @@ export {
   fetchCashFlowStatements,
   fetchDividendHistory,
   fetchDividendResults,
+  fetchCapitalReductionReferencePrices,
   fetchRevenueHistory,
   fetchShareholdingHistory,
   fetchStockNews,
   fetchStockDossierData,
+  fetchStockDossierDataState,
   finmindMethodRegistry,
+  finmindStateMethodRegistry,
   finmindRawMethodRegistry,
 } from './finmindMethods.js'
 
@@ -26,6 +29,7 @@ export {
 
 export {
   fetchFinMindDataset,
+  fetchFinMindDatasetState,
   fetchFinMindRawDataset,
   fetchCustomFinMindRawDataset,
 } from './finmindClient.js'

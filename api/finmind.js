@@ -1,5 +1,6 @@
 import { withApiAuth } from './_lib/auth-middleware.js'
 import { isFinMindRateLimitError, queryFinMindDataset } from './_lib/finmind-governor.js'
+import { readLatestFinMindSnapshotFallback } from './_lib/finmind-snapshot-fallback.js'
 // Vercel Serverless Function — FinMind 台股資料 API
 // 來源：https://finmindtrade.com
 // 免費使用，不需 API key（有 token 可提升 rate limit）
@@ -14,6 +15,7 @@ import { isFinMindRateLimitError, queryFinMindDataset } from './_lib/finmind-gov
 //   cashFlow        — 現金流量表
 //   dividend        — 股利政策
 //   dividendResult  — 除權息實際結果
+//   capitalReductionReferencePrice — 減資恢復買賣參考價格
 //   revenue         — 月營收（含歷史）
 //   shareholding    — 外資持股比率
 //   news            — 個股新聞（提供 Qwen 建動態事件來源）
@@ -24,9 +26,18 @@ import {
   getFinMindDatasetConfig,
 } from '../src/lib/dataAdapters/finmindDatasetRegistry.js'
 
+const FINMIND_RETRY_ATTEMPTS = 3
+const FINMIND_RETRY_DELAY_MS = 300
+
 function toNumber(value) {
   const number = Number(value)
   return Number.isFinite(number) ? number : 0
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
 }
 
 function sortByDateDesc(rows = []) {
@@ -178,6 +189,29 @@ function transformDividendResult(rows = []) {
   )
 }
 
+function transformCapitalReductionReferencePrice(rows = []) {
+  return sortByDateDesc(
+    rows.map((row) => ({
+      date: row.date,
+      closingPriceOnLastTradingDay: Number.isFinite(Number(row.ClosingPriceonTheLastTradingDay))
+        ? Number(row.ClosingPriceonTheLastTradingDay)
+        : null,
+      postReductionReferencePrice: Number.isFinite(Number(row.PostReductionReferencePrice))
+        ? Number(row.PostReductionReferencePrice)
+        : null,
+      openingReferencePrice: Number.isFinite(Number(row.OpeningReferencePrice))
+        ? Number(row.OpeningReferencePrice)
+        : null,
+      exRightReferencePrice: Number.isFinite(Number(row.ExrightReferencePrice))
+        ? Number(row.ExrightReferencePrice)
+        : null,
+      limitUp: Number.isFinite(Number(row.LimitUp)) ? Number(row.LimitUp) : null,
+      limitDown: Number.isFinite(Number(row.LimitDown)) ? Number(row.LimitDown) : null,
+      reasonForCapitalReduction: String(row.ReasonforCapitalReduction || '').trim() || null,
+    }))
+  )
+}
+
 function transformMonthlyRevenue(rows = []) {
   return sortRevenueRowsDesc(
     rows.map((row) => {
@@ -248,9 +282,104 @@ const DATASET_TRANSFORMS = {
   cashFlow: pivotStatementRows,
   dividend: transformDividend,
   dividendResult: transformDividendResult,
+  capitalReductionReferencePrice: transformCapitalReductionReferencePrice,
   revenue: transformMonthlyRevenue,
   shareholding: transformShareholding,
   news: transformNews,
+}
+
+function isTimeoutLikeError(error) {
+  return (
+    error?.name === 'TimeoutError' ||
+    error?.name === 'AbortError' ||
+    /timeout|timed out|aborted/i.test(String(error?.message || ''))
+  )
+}
+
+function isRetryableFinMindError(error) {
+  if (isFinMindRateLimitError(error)) return false
+  if (isTimeoutLikeError(error)) return true
+
+  const status = Number(error?.status)
+  if (!Number.isFinite(status)) return false
+  return [408, 425, 500, 502, 503, 504].includes(status)
+}
+
+function classifyFinMindDegradedReason(error) {
+  if (isFinMindRateLimitError(error)) return 'quota-exceeded'
+  if (isTimeoutLikeError(error)) return 'api-timeout'
+
+  const status = Number(error?.status)
+  if (status === 429) return 'quota-exceeded'
+  if ([408, 425, 500, 502, 503, 504].includes(status)) return 'api-timeout'
+  return ''
+}
+
+async function queryFinMindDatasetWithRetry(datasetKey, { code, startDate, endDate } = {}) {
+  let attempt = 0
+
+  while (true) {
+    try {
+      return await queryFinMindDataset(datasetKey, { code, startDate, endDate })
+    } catch (error) {
+      const shouldRetry = isRetryableFinMindError(error) && attempt + 1 < FINMIND_RETRY_ATTEMPTS
+      if (!shouldRetry) throw error
+      attempt += 1
+      await sleep(FINMIND_RETRY_DELAY_MS * attempt)
+    }
+  }
+}
+
+function buildDegradedPayload({
+  dataset,
+  code,
+  startDate,
+  endDate,
+  reason,
+  error,
+  fallbackSnapshot,
+}) {
+  const fallbackAt =
+    String(
+      fallbackSnapshot?.updatedAt ||
+        fallbackSnapshot?.exportedAt ||
+        fallbackSnapshot?.uploadedAt ||
+        ''
+    ).trim() || null
+
+  return {
+    success: true,
+    degraded: true,
+    dataset,
+    code,
+    startDate,
+    endDate: endDate || null,
+    count: 0,
+    data: [],
+    source: fallbackSnapshot ? 'snapshot-fallback' : 'finmind-degraded',
+    fetchedAt: new Date().toISOString(),
+    degradedMeta: {
+      reason,
+      liveError: String(error?.message || '').trim() || null,
+      attempts: FINMIND_RETRY_ATTEMPTS,
+      fallbackAt,
+      snapshotDate: fallbackSnapshot?.snapshotDate || null,
+      snapshotPath: fallbackSnapshot?.snapshotPath || null,
+      portfolioId: fallbackSnapshot?.portfolioId || null,
+      hasFallbackSnapshot: Boolean(fallbackSnapshot),
+    },
+    fallbackSnapshot: fallbackSnapshot
+      ? {
+          snapshotDate: fallbackSnapshot.snapshotDate || null,
+          exportedAt: fallbackSnapshot.exportedAt || null,
+          updatedAt: fallbackAt,
+          portfolioId: fallbackSnapshot.portfolioId || null,
+          dossier: fallbackSnapshot.dossier || null,
+          fundamentals: fallbackSnapshot.fundamentals || null,
+          targetsEntry: fallbackSnapshot.targetsEntry || null,
+        }
+      : null,
+  }
 }
 
 async function handler(req, res) {
@@ -279,10 +408,10 @@ async function handler(req, res) {
   const startDate = start_date || defaultStartDate(config.defaultWindowDays)
 
   try {
-    const rows = await queryFinMindDataset(dataset, { code, startDate, endDate: end_date })
+    const rows = await queryFinMindDatasetWithRetry(dataset, { code, startDate, endDate: end_date })
     let revenueRows = []
     if (dataset === 'financials') {
-      revenueRows = await queryFinMindDataset('revenue', {
+      revenueRows = await queryFinMindDatasetWithRetry('revenue', {
         code,
         startDate,
         endDate: end_date,
@@ -302,21 +431,23 @@ async function handler(req, res) {
       fetchedAt: new Date().toISOString(),
     })
   } catch (error) {
-    if (isFinMindRateLimitError(error)) {
-      return res.status(200).json({
-        success: true,
-        degraded: true,
-        reason: 'rate_limited',
-        warning: 'FinMind requests temporarily rate limited; returned empty dataset fallback',
-        dataset,
-        code,
-        startDate,
-        endDate: end_date || null,
-        count: 0,
-        data: [],
-        source: 'finmind',
-        fetchedAt: new Date().toISOString(),
-      })
+    const degradedReason = classifyFinMindDegradedReason(error)
+    if (degradedReason) {
+      const fallbackSnapshot = await readLatestFinMindSnapshotFallback(code).catch(
+        (_fallbackError) => null
+      )
+
+      return res.status(200).json(
+        buildDegradedPayload({
+          dataset,
+          code,
+          startDate,
+          endDate: end_date,
+          reason: degradedReason,
+          error,
+          fallbackSnapshot,
+        })
+      )
     }
 
     return res.status(500).json({ error: error.message, source: 'finmind' })

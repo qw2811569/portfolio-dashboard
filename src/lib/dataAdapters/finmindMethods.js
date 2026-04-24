@@ -3,9 +3,14 @@ import {
   FINMIND_DATASET_REGISTRY,
   createFinMindMethodRegistry,
 } from './finmindDatasetRegistry.js'
-import { fetchFinMindDataset, fetchFinMindRawDataset } from './finmindClient.js'
+import {
+  fetchFinMindDataset,
+  fetchFinMindDatasetState,
+  fetchFinMindRawDataset,
+} from './finmindClient.js'
 
 export const finmindMethodRegistry = createFinMindMethodRegistry(fetchFinMindDataset)
+export const finmindStateMethodRegistry = createFinMindMethodRegistry(fetchFinMindDatasetState)
 export const finmindRawMethodRegistry = createFinMindMethodRegistry(fetchFinMindRawDataset)
 
 function getDefaultRequestValue(datasetKey, field, fallback = 0) {
@@ -61,6 +66,14 @@ export async function fetchDividendResults(
   return finmindMethodRegistry.dividendResult(code, { days }, options)
 }
 
+export async function fetchCapitalReductionReferencePrices(
+  code,
+  days = getDefaultRequestValue('capitalReductionReferencePrice', 'days', 1825),
+  options = {}
+) {
+  return finmindMethodRegistry.capitalReductionReferencePrice(code, { days }, options)
+}
+
 export async function fetchRevenueHistory(
   code,
   months = getDefaultRequestValue('revenue', 'months', 12),
@@ -86,16 +99,64 @@ export async function fetchStockNews(
 }
 
 export async function fetchStockDossierData(code, options = {}) {
+  const state = await fetchStockDossierDataState(code, options)
+  return state.data
+}
+
+export async function fetchStockDossierDataState(code, options = {}) {
   const settled = await Promise.allSettled(
     FINMIND_DOSSIER_DATASET_PLAN.map(({ datasetKey, request }) =>
-      finmindMethodRegistry[datasetKey](code, request, options)
+      finmindStateMethodRegistry[datasetKey](code, request, options)
     )
   )
 
-  return Object.fromEntries(
-    FINMIND_DOSSIER_DATASET_PLAN.map(({ datasetKey }, index) => [
-      datasetKey,
-      settled[index]?.status === 'fulfilled' ? settled[index].value : [],
-    ])
+  const datasets = Object.fromEntries(
+    FINMIND_DOSSIER_DATASET_PLAN.map(({ datasetKey }, index) => {
+      const result = settled[index]
+      if (result?.status === 'fulfilled') {
+        return [datasetKey, result.value]
+      }
+
+      const message = String(result?.reason?.message || '').trim()
+      return [
+        datasetKey,
+        {
+          data: [],
+          isStale: false,
+          error: message
+            ? {
+                reason: /quota|upper limit|rate limit|429|402/i.test(message)
+                  ? 'quota-exceeded'
+                  : /timeout|timed out|503|504|502/i.test(message)
+                    ? 'api-timeout'
+                    : 'analysis-unavailable',
+                message,
+              }
+            : null,
+          degraded: false,
+          fetchedAt: null,
+          source: 'finmind',
+          fallbackSnapshot: null,
+        },
+      ]
+    })
   )
+
+  const degradedStates = Object.values(datasets).filter((state) => state?.error?.reason)
+  const fallbackSnapshot =
+    degradedStates.find((state) => state?.fallbackSnapshot)?.fallbackSnapshot || null
+
+  return {
+    data: Object.fromEntries(
+      FINMIND_DOSSIER_DATASET_PLAN.map(({ datasetKey }) => [
+        datasetKey,
+        Array.isArray(datasets[datasetKey]?.data) ? datasets[datasetKey].data : [],
+      ])
+    ),
+    datasets,
+    isStale: degradedStates.some((state) => state?.isStale),
+    error: degradedStates[0]?.error || null,
+    degraded: degradedStates.some((state) => state?.degraded),
+    fallbackSnapshot,
+  }
 }

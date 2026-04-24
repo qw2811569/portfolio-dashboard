@@ -193,8 +193,9 @@ describe('components/DashboardPanel', () => {
             },
             {
               id: 'calendar-1',
-              source: 'twse-ex-rights',
+              source: 'finmind-dividend',
               type: 'dividend',
+              eventType: 'ex-dividend',
               date: '2026-05-03',
               title: '台積電(2330) 除息交易日',
               detail: '現金股利 4.50 元',
@@ -460,5 +461,37 @@ describe('components/DashboardPanel', () => {
     expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute('data-resource', 'dashboard')
     expect(screen.queryByTestId('dashboard-headline')).toBeNull()
     expect(screen.getByText('Today in Markets')).toBeInTheDocument()
+  })
+
+  it('uses FinMind degraded reason for the dashboard headline gate when fallback data is active', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          dataRefreshRows: [
+            {
+              code: '2330',
+              name: '台積電',
+              degradedReason: 'quota-exceeded',
+              fallbackAgeLabel: '昨天',
+            },
+          ],
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              freshness: { fundamentals: 'stale' },
+              position: { price: 950 },
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute(
+      'data-reason',
+      'quota-exceeded'
+    )
+    expect(screen.getByText(/FinMind/i)).toBeInTheDocument()
   })
 })

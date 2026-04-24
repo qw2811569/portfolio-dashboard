@@ -6,6 +6,8 @@
  *   - 'YYYY/MM'   (month-granularity fundamentals snapshots)
  *   - 'YYYY-MM-DD' (FinMind API responses)
  *   - full ISO 8601 'YYYY-MM-DDTHH:mm:ss.sssZ'
+ *   - full ISO 8601 with numeric timezone offsets
+ *     'YYYY-MM-DDTHH:mm:ss.sss+08:00'
  *   - Date instances (returned as clones so callers can mutate safely)
  *
  * Rejects:
@@ -16,7 +18,8 @@
 
 const SLASH_DATE_REGEX = /^(\d{4})\/(\d{1,2})(?:\/(\d{1,2}))?$/
 const DASH_DATE_REGEX = /^(\d{4})-(\d{1,2})-(\d{1,2})$/
-const ISO_DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?Z?$/
+const ISO_DATE_REGEX =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(?:Z|[+-]\d{2}:?\d{2})?$/
 
 function buildUTCDate(year, month, day) {
   if (month < 1 || month > 12) return null

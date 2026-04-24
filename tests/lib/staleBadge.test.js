@@ -31,6 +31,17 @@ describe('lib/staleBadge', () => {
     expect(state.status).toBe('stale')
   })
 
+  it('formats timezone-offset timestamps into relative age text', () => {
+    const state = resolveStaleBadgeResourceState({
+      resource: 'fundamentals',
+      updatedAt: '2026-04-23T16:00:00.000+08:00',
+      now: new Date('2026-04-24T12:30:00.000Z'),
+    })
+
+    expect(state.status).toBe('fresh')
+    expect(state.text).toBeTruthy()
+  })
+
   it('formats restore timestamps as exact Taipei time instead of relative ago text', () => {
     const text = formatStaleBadgeExactTimestamp('2026-04-24T10:30:00.000Z')
 

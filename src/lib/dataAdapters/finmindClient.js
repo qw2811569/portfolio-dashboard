@@ -132,7 +132,55 @@ function mergeRequestWithBoundaryOptions(request = {}, options = {}) {
   return merged
 }
 
-async function fetchFinMindWithBoundary(
+function classifyFinMindErrorMessage(message = '') {
+  const text = String(message || '').trim()
+  if (!text) return 'analysis-unavailable'
+  if (/quota|upper limit|rate limit|429|402|governor blocked/i.test(text)) {
+    return 'quota-exceeded'
+  }
+  if (/timeout|timed out|503|504|502|upstream_error/i.test(text)) {
+    return 'api-timeout'
+  }
+  return 'analysis-unavailable'
+}
+
+function normalizeFinMindStatePayload(payload = {}, { data, source = 'finmind' } = {}) {
+  const safeData = Array.isArray(data) ? data : Array.isArray(payload?.data) ? payload.data : []
+  const degradedMeta =
+    payload?.degradedMeta && typeof payload.degradedMeta === 'object' ? payload.degradedMeta : {}
+  const degraded = payload?.degraded === true
+  const reason =
+    String(degradedMeta.reason || payload?.reason || '').trim() ||
+    (degraded ? classifyFinMindErrorMessage(payload?.error || payload?.warning) : '')
+
+  return {
+    data: safeData,
+    isStale: degraded,
+    error:
+      degraded || reason
+        ? {
+            reason: reason || 'analysis-unavailable',
+            message:
+              String(degradedMeta.liveError || payload?.warning || payload?.error || '').trim() ||
+              null,
+            fallbackAt: String(degradedMeta.fallbackAt || '').trim() || null,
+            snapshotDate: String(degradedMeta.snapshotDate || '').trim() || null,
+            attempts: Number.isFinite(Number(degradedMeta.attempts))
+              ? Number(degradedMeta.attempts)
+              : null,
+          }
+        : null,
+    degraded,
+    fetchedAt: String(payload?.fetchedAt || '').trim() || null,
+    source: String(payload?.source || source).trim() || source,
+    fallbackSnapshot:
+      payload?.fallbackSnapshot && typeof payload.fallbackSnapshot === 'object'
+        ? payload.fallbackSnapshot
+        : null,
+  }
+}
+
+async function fetchFinMindWithBoundaryState(
   datasetKey,
   code,
   request = {},
@@ -152,7 +200,15 @@ async function fetchFinMindWithBoundary(
   const forceFresh = options?.forceFresh === true
   const cacheKey = getCacheKey(datasetKey, code, startDate, endDate, scope)
   const cached = forceFresh ? null : readCache(cacheKey)
-  if (cached) return cached
+  if (cached) {
+    return normalizeFinMindStatePayload(
+      {
+        data: cached,
+        source: 'cache',
+      },
+      { data: cached, source: 'cache' }
+    )
+  }
 
   const url =
     scope === 'upstream'
@@ -178,16 +234,35 @@ async function fetchFinMindWithBoundary(
 
     const json = await response.json()
     const data = Array.isArray(json?.data) ? json.data : []
+    const state = normalizeFinMindStatePayload(json, {
+      data,
+      source: scope === 'upstream' ? 'finmind-upstream' : 'finmind',
+    })
 
-    if (scope === 'route' && json?.degraded === true) {
-      return data
+    if (scope === 'route' && state.degraded) {
+      return state
     }
 
     writeCache(cacheKey, data)
-    return data
+    return state
   } finally {
     releaseFinMindSlot()
   }
+}
+
+async function fetchFinMindWithBoundary(
+  datasetKey,
+  code,
+  request = {},
+  options = {},
+  scope = 'route'
+) {
+  const state = await fetchFinMindWithBoundaryState(datasetKey, code, request, options, scope)
+  return state.data
+}
+
+export async function fetchFinMindDatasetState(datasetKey, code, request = {}, options = {}) {
+  return fetchFinMindWithBoundaryState(datasetKey, code, request, options, 'route')
 }
 
 export async function fetchFinMindDataset(datasetKey, code, request = {}, options = {}) {

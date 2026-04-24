@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   FINMIND_DATASET_KEYS,
+  FINMIND_DOSSIER_DATASET_PLAN,
   fetchBalanceSheet,
+  fetchCapitalReductionReferencePrices,
   fetchCashFlowStatements,
   fetchDividendResults,
   fetchShareholdingHistory,
@@ -90,6 +92,32 @@ describe('lib/dataAdapters/finmindAdapter', () => {
     expect(news[0]).toMatchObject({ dataset: 'news', startDate: '2026-03-26' })
   })
 
+  it('supports capital reduction reference price queries without adding them to dossier fan-out', async () => {
+    global.fetch = vi.fn(async (input) => {
+      const url = new URL(String(input), 'http://localhost')
+      return {
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              dataset: url.searchParams.get('dataset'),
+              startDate: url.searchParams.get('start_date'),
+            },
+          ],
+        }),
+      }
+    })
+
+    const rows = await fetchCapitalReductionReferencePrices('2327', 365)
+
+    expect(getDatasetFromCall(0)).toBe('capitalReductionReferencePrice')
+    expect(rows[0]).toMatchObject({ dataset: 'capitalReductionReferencePrice' })
+    expect(FINMIND_DATASET_KEYS).toContain('capitalReductionReferencePrice')
+    expect(FINMIND_DOSSIER_DATASET_PLAN.map((item) => item.datasetKey)).not.toContain(
+      'capitalReductionReferencePrice'
+    )
+  })
+
   it('returns all dossier datasets and degrades failed requests to empty arrays', async () => {
     global.fetch = vi.fn(async (input) => {
       const url = new URL(String(input), 'http://localhost')
@@ -115,7 +143,7 @@ describe('lib/dataAdapters/finmindAdapter', () => {
     const result = await fetchStockDossierData('2330')
 
     expect(global.fetch).toHaveBeenCalledTimes(11)
-    expect(Object.keys(result)).toEqual(FINMIND_DATASET_KEYS)
+    expect(Object.keys(result)).toEqual(FINMIND_DOSSIER_DATASET_PLAN.map((item) => item.datasetKey))
     expect(result).toEqual({
       institutional: [{ dataset: 'institutional' }],
       margin: [{ dataset: 'margin' }],

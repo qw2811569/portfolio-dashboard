@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react'
-import { fetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
+import { fetchStockDossierDataState } from '../lib/dataAdapters/finmindAdapter.js'
 import { fetchCronTargets, isCronTargetUsable } from '../lib/dataAdapters/cronTargetsAdapter.js'
 import { normalizeDataError } from '../lib/dataError.js'
 import { mapFinMindToFundamentals } from '../lib/dataAdapters/finmindFundamentalsMapper.js'
@@ -8,6 +8,8 @@ import { computeFreshnessGrade, TARGETS_FRESHNESS_THRESHOLDS } from '../lib/date
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import { classifyStock, mergeClassification } from '../lib/stockClassifier.js'
 import { buildReportRefreshCandidates } from '../lib/reportRefreshRuntime.js'
+import { normalizeFundamentalsEntry } from '../lib/dossierUtils.js'
+import { formatStaleBadgeRelativeLabel } from '../lib/staleBadge.js'
 import { resolveViewMode } from '../lib/viewModeContract.js'
 
 function buildAggregateConsensusTargets(snapshot) {
@@ -101,6 +103,81 @@ function buildPortfolioTodayMetrics(holdings = [], priceMap = {}, getHoldingMark
     todayTopContributor: todayTopContributor?.pnl > 0 ? todayTopContributor : null,
     todayTopDrag: todayTopDrag?.pnl < 0 ? todayTopDrag : null,
   }
+}
+
+function appendSnapshotFallbackNote(note = '', snapshotDate = '') {
+  const fallbackNote = snapshotDate ? `snapshot fallback=${snapshotDate}` : 'snapshot fallback'
+  return [String(note || '').trim(), fallbackNote].filter(Boolean).join(' | ')
+}
+
+function resolveFallbackTargetsEntry(fallbackSnapshot = null) {
+  if (!fallbackSnapshot || typeof fallbackSnapshot !== 'object') return null
+  if (fallbackSnapshot.targetsEntry && typeof fallbackSnapshot.targetsEntry === 'object') {
+    return fallbackSnapshot.targetsEntry
+  }
+  return null
+}
+
+function resolveFallbackTargetReports(fallbackSnapshot = null) {
+  const dossierTargets = Array.isArray(fallbackSnapshot?.dossier?.targets)
+    ? fallbackSnapshot.dossier.targets
+    : []
+  if (dossierTargets.length > 0) return dossierTargets
+
+  const targetsEntry = resolveFallbackTargetsEntry(fallbackSnapshot)
+  return Array.isArray(targetsEntry?.reports) ? targetsEntry.reports : []
+}
+
+function toDateMillis(value) {
+  const text = String(value || '').trim()
+  if (!text) return null
+  const parsed = Date.parse(text.replace(/\//g, '-'))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function pickLatestTimestamp(values = []) {
+  let latestValue = null
+  let latestMs = -Infinity
+
+  for (const value of Array.isArray(values) ? values : []) {
+    const normalized = String(value || '').trim()
+    if (!normalized) continue
+    const ms = toDateMillis(normalized)
+    if (ms == null) {
+      if (!latestValue) latestValue = normalized
+      continue
+    }
+    if (ms >= latestMs) {
+      latestMs = ms
+      latestValue = normalized
+    }
+  }
+
+  return latestValue || null
+}
+
+function resolveFallbackUpdatedAt(fallbackSnapshot = null) {
+  const latestTargetDate = pickLatestTimestamp(
+    resolveFallbackTargetReports(fallbackSnapshot).map((report) =>
+      String(report?.date || '').trim()
+    )
+  )
+
+  return pickLatestTimestamp([
+    fallbackSnapshot?.updatedAt,
+    fallbackSnapshot?.dossier?.fundamentals?.updatedAt,
+    fallbackSnapshot?.fundamentals?.updatedAt,
+    resolveFallbackTargetsEntry(fallbackSnapshot)?.updatedAt,
+    latestTargetDate,
+    fallbackSnapshot?.exportedAt,
+    fallbackSnapshot?.snapshotDate,
+  ])
+}
+
+function buildStaleRefreshCopy(updatedAt, { now = new Date() } = {}) {
+  const ageLabel = formatStaleBadgeRelativeLabel(updatedAt, { now })
+  if (!ageLabel) return ''
+  return `這裡的數字是 ${ageLabel} · 現在的盤還沒拉到。`
 }
 
 export function usePortfolioDerivedData({
@@ -289,13 +366,13 @@ export function usePortfolioDerivedData({
         const underlying = underlyingByCode.get(code)
         const fetchCode = underlying ? underlying.code : code
         const [fmResult, cronResult] = await Promise.allSettled([
-          fetchStockDossierData(fetchCode),
+          fetchStockDossierDataState(fetchCode),
           fetchCronTargets(fetchCode),
         ])
 
         return {
           code,
-          fm: fmResult.status === 'fulfilled' ? fmResult.value : null,
+          fmState: fmResult.status === 'fulfilled' ? fmResult.value : null,
           cronSnapshot: cronResult.status === 'fulfilled' ? cronResult.value : null,
           targetFetchError:
             cronResult.status === 'rejected'
@@ -309,12 +386,43 @@ export function usePortfolioDerivedData({
       const fulfilled = results
         .filter((result) => result.status === 'fulfilled')
         .map((result) => result.value)
-      const fmMap = new Map(fulfilled.map((item) => [item.code, item.fm]))
+      const fmStateMap = new Map(fulfilled.map((item) => [item.code, item.fmState]))
       const cronMap = new Map(fulfilled.map((item) => [item.code, item.cronSnapshot]))
       const targetErrorMap = new Map(fulfilled.map((item) => [item.code, item.targetFetchError]))
       const underlyingMap = new Map(fulfilled.map((item) => [item.code, item.underlying]))
+      const now = new Date()
       const enriched = D.map((d) => {
-        const fm = fmMap.get(d.code) || d.finmind
+        const fmState = fmStateMap.get(d.code) || null
+        const fallbackSnapshot = fmState?.fallbackSnapshot || null
+        const fallbackDossier =
+          fallbackSnapshot?.dossier && typeof fallbackSnapshot.dossier === 'object'
+            ? fallbackSnapshot.dossier
+            : null
+        const fallbackFundamentals = normalizeFundamentalsEntry(
+          fallbackSnapshot?.fundamentals || fallbackDossier?.fundamentals || null
+        )
+        const fallbackTargetsEntry = resolveFallbackTargetsEntry(fallbackSnapshot)
+        const fallbackTargets = resolveFallbackTargetReports(fallbackSnapshot)
+        const fallbackUpdatedAt = resolveFallbackUpdatedAt(fallbackSnapshot)
+        const fallbackStaleCopy = buildStaleRefreshCopy(
+          fallbackUpdatedAt || fallbackFundamentals?.updatedAt,
+          { now }
+        )
+        const finmindDegraded = fmState?.error?.reason
+          ? {
+              reason: fmState.error.reason,
+              message: fmState.error.message || null,
+              fallbackAt: fallbackUpdatedAt || fmState.error.fallbackAt || null,
+              snapshotDate: fallbackSnapshot?.snapshotDate || fmState.error.snapshotDate || null,
+              fallbackAgeLabel: formatStaleBadgeRelativeLabel(
+                fallbackUpdatedAt || fmState.error.fallbackAt,
+                { now }
+              ),
+              staleCopy: fallbackStaleCopy || null,
+              hasFallbackSnapshot: Boolean(fallbackSnapshot),
+            }
+          : null
+        const fm = fmState?.data || fallbackDossier?.finmind || d.finmind || null
         const cronSnapshot = cronMap.get(d.code) || null
         const targetFetchError = targetErrorMap.get(d.code) || null
         const underlying = underlyingMap.get(d.code) || null
@@ -322,34 +430,44 @@ export function usePortfolioDerivedData({
           ...d,
           finmind: fm,
           targetFetchError,
+          finmindDegraded,
           ...(underlying
             ? { underlyingCode: underlying.code, underlyingName: underlying.name }
             : {}),
         }
-        if (!fm) return next
+        const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
         // Derive fundamentals + freshness from FinMind when available. Partial
         // coverage (revenue only) maps to freshness='aging' which clears the
         // missing/stale backlog without claiming fully fresh financials; full
         // coverage maps to 'fresh'. The completeness grade is preserved in the
         // entry note so downstream consumers can trace partial fills.
-        const mapped = mapFinMindToFundamentals(fm, { code: d.code })
-        if (!mapped) return next
-        const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
-        const fundamentalsEntry = {
-          ...mapped.entry,
-          note: [mapped.entry.note, `finmind completeness=${mapped.completeness}`]
-            .filter(Boolean)
-            .join(' | '),
+        const mapped = fm ? mapFinMindToFundamentals(fm, { code: d.code }) : null
+        let resolvedFundamentals = d.fundamentals || null
+        if (mapped) {
+          const fundamentalsEntry = {
+            ...mapped.entry,
+            note: [mapped.entry.note, `finmind completeness=${mapped.completeness}`]
+              .filter(Boolean)
+              .join(' | '),
+          }
+          resolvedFundamentals = resolvedFundamentals || fundamentalsEntry
+        } else if (!resolvedFundamentals && fallbackFundamentals) {
+          resolvedFundamentals = {
+            ...fallbackFundamentals,
+            note: appendSnapshotFallbackNote(
+              fallbackFundamentals.note,
+              fallbackSnapshot?.snapshotDate
+            ),
+          }
         }
-        const resolvedFundamentals = d.fundamentals || fundamentalsEntry
         // Freshness comes from the entry's updatedAt timestamp via the shared
         // date-based grade helper. This respects completeness implicitly:
         // a partial entry that pulled fresh revenue data is still 'fresh'
         // because it was computed just now. Stale local entries (manual RSS+AI
         // path) age out naturally through the same grading thresholds.
         const derivedFundamentalFreshness = computeFreshnessGrade(
-          [resolvedFundamentals?.updatedAt],
-          { now: new Date() }
+          [resolvedFundamentals?.updatedAt || fallbackUpdatedAt],
+          { now }
         )
         const nextFreshness =
           existingFreshness.fundamentals && existingFreshness.fundamentals !== 'missing'
@@ -362,8 +480,8 @@ export function usePortfolioDerivedData({
         const hasExistingTargets = Array.isArray(d.targets) && d.targets.length > 0
         let nextTargets = d.targets
         let nextTargetsFreshness = existingFreshness.targets
-        let nextTargetSource = hasExistingTargets ? 'seed' : null
-        let nextTargetAggregate = d.targetAggregate || null
+        let nextTargetSource = d.targetSource || (hasExistingTargets ? 'seed' : null)
+        let nextTargetAggregate = d.targetAggregate || fallbackDossier?.targetAggregate || null
         if (!hasExistingTargets) {
           // Daily target-price cron pipeline: prefer fresh analyst targets
           // collected by api/cron/collect-target-prices.js over PER-band.
@@ -379,16 +497,27 @@ export function usePortfolioDerivedData({
             nextTargetSource = String(cronSnapshot?.targets?.source || '').trim() || 'analyst'
             nextTargetsFreshness = computeFreshnessGrade(
               nextTargets.map((report) => report.date),
-              { now: new Date(), thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+              { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
             )
           } else {
-            const perBand = mapFinMindToPerBandTargets(fm, { code: d.code })
+            const perBand = fm ? mapFinMindToPerBandTargets(fm, { code: d.code }) : null
             if (perBand && perBand.reports.length > 0) {
               nextTargets = perBand.reports
               nextTargetSource = 'per-band'
               nextTargetsFreshness = computeFreshnessGrade(
                 perBand.reports.map((report) => report.date),
-                { now: new Date(), thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+                { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+              )
+            } else if (fallbackTargets.length > 0) {
+              nextTargets = fallbackTargets
+              nextTargetSource =
+                fallbackDossier?.targetSource ||
+                String(fallbackTargetsEntry?.source || '').trim() ||
+                'snapshot'
+              nextTargetAggregate = nextTargetAggregate || fallbackTargetsEntry?.aggregate || null
+              nextTargetsFreshness = computeFreshnessGrade(
+                nextTargets.map((report) => report.date || fallbackUpdatedAt),
+                { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
               )
             }
           }
@@ -404,6 +533,12 @@ export function usePortfolioDerivedData({
             ...existingFreshness,
             fundamentals: nextFreshness,
             targets: nextTargetsFreshness || existingFreshness.targets,
+            fallback:
+              finmindDegraded?.hasFallbackSnapshot ||
+              fallbackTargets.length > 0 ||
+              fallbackFundamentals
+                ? 'snapshot'
+                : existingFreshness.fallback,
           },
         }
       })
@@ -432,6 +567,7 @@ export function usePortfolioDerivedData({
       return {
         ...d,
         finmind: enriched.finmind ?? d.finmind,
+        finmindDegraded: enriched.finmindDegraded ?? d.finmindDegraded ?? null,
         fundamentals: enriched.fundamentals ?? d.fundamentals,
         targets: enriched.targets ?? d.targets,
         targetAggregate: enriched.targetAggregate ?? d.targetAggregate,
@@ -835,13 +971,17 @@ export function usePortfolioDerivedData({
         .map((dossier) => {
           const targetStatus = dossier?.freshness?.targets || 'missing'
           const fundamentalStatus = dossier?.freshness?.fundamentals || 'missing'
+          const finmindDegraded =
+            dossier?.finmindDegraded && typeof dossier.finmindDegraded === 'object'
+              ? dossier.finmindDegraded
+              : null
           const weight = (status) => {
             if (status === 'failed') return 3
             if (status === 'missing') return 2
             if (status === 'stale' || status === 'aging') return 1
             return 0
           }
-          const severity = weight(targetStatus) + weight(fundamentalStatus)
+          const baseSeverity = weight(targetStatus) + weight(fundamentalStatus)
           // Target source label for UI distinction (Task 7):
           // 'analyst' = cron-collected broker report, 'per-band' = PER-band estimate,
           // 'seed' = manually seeded, null = no targets yet
@@ -867,6 +1007,21 @@ export function usePortfolioDerivedData({
             lowConfidenceFields.length > 0
               ? `這檔還在補標籤：${lowConfidenceFields.join('、')}`
               : null
+          const staleUpdatedAt =
+            finmindDegraded?.fallbackAt ||
+            dossier?.fundamentals?.updatedAt ||
+            topTarget?.date ||
+            null
+          const staleCopy =
+            finmindDegraded?.staleCopy ||
+            ((targetStatus === 'stale' ||
+              targetStatus === 'aging' ||
+              fundamentalStatus === 'stale' ||
+              fundamentalStatus === 'aging') &&
+            staleUpdatedAt
+              ? buildStaleRefreshCopy(staleUpdatedAt)
+              : '')
+          const severity = finmindDegraded?.reason ? Math.max(baseSeverity, 2) : baseSeverity
           return {
             code: dossier.code,
             name: dossier.name,
@@ -876,11 +1031,16 @@ export function usePortfolioDerivedData({
             targetSource,
             targetLabel,
             classificationNote,
-            targetUpdatedAt: dossier.targets?.updatedAt || null,
+            degradedReason: finmindDegraded?.reason || '',
+            degradedMessage: finmindDegraded?.message || '',
+            staleCopy,
+            fallbackAt: finmindDegraded?.fallbackAt || null,
+            fallbackAgeLabel: finmindDegraded?.fallbackAgeLabel || '',
+            targetUpdatedAt: dossier.targets?.updatedAt || topTarget?.date || null,
             fundamentalsUpdatedAt: dossier.fundamentals?.updatedAt || null,
           }
         })
-        .filter((item) => item.severity > 0 || item.classificationNote)
+        .filter((item) => item.severity > 0 || item.classificationNote || item.degradedReason)
         .sort((a, b) => b.severity - a.severity || String(a.code).localeCompare(String(b.code))),
     [dossiersToUse]
   )

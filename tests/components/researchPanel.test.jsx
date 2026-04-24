@@ -353,4 +353,40 @@ describe('components/ResearchPanel', () => {
 
     expect(onResearch).toHaveBeenCalledWith('single', { code: '2330', name: '台積電' })
   })
+
+  it('renders FinMind degraded copy when research falls back to snapshot data', () => {
+    render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          dataRefreshRows: [
+            {
+              code: '2330',
+              name: '台積電',
+              fundamentalStatus: 'stale',
+              targetStatus: 'stale',
+              degradedReason: 'quota-exceeded',
+              fallbackAgeLabel: '昨天',
+              staleCopy: '這裡的數字是 昨天 · 現在的盤還沒拉到。',
+            },
+          ],
+          researchResults: {
+            timestamp: 10,
+            code: '2330',
+            name: '台積電',
+            mode: 'single',
+            date: '2026-04-24',
+            summary: '研究摘要',
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute(
+      'data-reason',
+      'quota-exceeded'
+    )
+    expect(screen.getByText(/FinMind 額度/)).toBeInTheDocument()
+    expect(screen.getByText('這裡的數字是 昨天 · 現在的盤還沒拉到。')).toBeInTheDocument()
+  })
 })

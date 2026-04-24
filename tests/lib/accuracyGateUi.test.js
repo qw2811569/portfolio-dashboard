@@ -4,6 +4,7 @@ import {
   containsInsiderActionCue,
   resolveDashboardAccuracyGate,
   resolveDailyAccuracyGate,
+  resolveHoldingsAccuracyGate,
   resolveResearchAccuracyGate,
 } from '../../src/lib/accuracyGateUi.js'
 
@@ -98,6 +99,51 @@ describe('lib/accuracyGateUi', () => {
     })
   })
 
+  it('uses FinMind degraded reasons for research gates when fallback is active', () => {
+    const gate = resolveResearchAccuracyGate({
+      results: {
+        code: '2330',
+        name: '台積電',
+        mode: 'single',
+        summary: '研究摘要',
+      },
+      dataRefreshRows: [
+        {
+          code: '2330',
+          name: '台積電',
+          fundamentalStatus: 'stale',
+          degradedReason: 'api-timeout',
+          fallbackAgeLabel: '昨天',
+        },
+      ],
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'api-timeout',
+      resource: 'research',
+      context: {
+        provider: 'FinMind',
+        fallbackAgeLabel: '昨天',
+      },
+    })
+  })
+
+  it('builds softer FinMind quota copy for data-source degraded states', () => {
+    const copy = buildAccuracyGateBlockModel({
+      reason: 'quota-exceeded',
+      resource: 'research',
+      context: {
+        provider: 'FinMind',
+        code: '2330',
+        name: '台積電',
+        fallbackAgeLabel: '昨天',
+      },
+    })
+
+    expect(copy.body).toContain('FinMind')
+    expect(copy.body).toContain('昨天')
+  })
+
   it('resolves dashboard gates only when every dossier is stale or missing', () => {
     const blocked = resolveDashboardAccuracyGate({
       holdingDossiers: [
@@ -120,5 +166,49 @@ describe('lib/accuracyGateUi', () => {
       resource: 'dashboard',
     })
     expect(passthrough).toBeNull()
+  })
+
+  it('prefers FinMind degraded reasons for dashboard blocks when all dossiers are stale', () => {
+    const gate = resolveDashboardAccuracyGate({
+      holdingDossiers: [
+        { code: '2330', freshness: { fundamentals: 'missing' } },
+        { code: '2454', freshness: { fundamentals: 'aging' } },
+      ],
+      dataRefreshRows: [
+        { code: '2330', degradedReason: 'quota-exceeded', fallbackAgeLabel: '昨天' },
+        { code: '2454', degradedReason: 'quota-exceeded', fallbackAgeLabel: '昨天' },
+      ],
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'quota-exceeded',
+      resource: 'dashboard',
+      context: {
+        provider: 'FinMind',
+      },
+    })
+  })
+
+  it('resolves holdings gates from dossier-level FinMind degraded state', () => {
+    const gate = resolveHoldingsAccuracyGate({
+      holdingDossiers: [
+        {
+          code: '2330',
+          finmindDegraded: {
+            reason: 'api-timeout',
+            fallbackAgeLabel: '昨天',
+          },
+        },
+      ],
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'api-timeout',
+      resource: 'thesis',
+      context: {
+        provider: 'FinMind',
+        fallbackAgeLabel: '昨天',
+      },
+    })
   })
 })

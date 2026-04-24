@@ -41,4 +41,36 @@ describe('components/HoldingDrillPane', () => {
 
     expect(screen.getByTestId('holding-targets-stale-badge-2330')).toHaveTextContent('9 天前')
   })
+
+  it('shows degraded FinMind stale copy when fallback timestamps use timezone offsets', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        status: 304,
+        ok: false,
+        json: async () => ({}),
+      }))
+    )
+
+    render(
+      <HoldingDrillPane
+        viewMode="retail"
+        holding={{ code: '2308', name: '台達電', price: 1440, type: '股票' }}
+        dossier={{
+          code: '2308',
+          name: '台達電',
+          position: { price: 1440, type: '股票' },
+          targets: [],
+          fundamentals: { updatedAt: '2026-03-20T16:00:00.000+08:00' },
+          finmindDegraded: {
+            reason: 'api-timeout',
+            fallbackAt: '2026-04-23T16:00:00.000+08:00',
+            staleCopy: '這裡的數字是 昨天 · 現在的盤還沒拉到。',
+          },
+        }}
+      />
+    )
+
+    expect(screen.getByText('這裡的數字是 昨天 · 現在的盤還沒拉到。')).toBeInTheDocument()
+  })
 })

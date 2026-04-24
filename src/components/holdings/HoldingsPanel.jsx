@@ -2,8 +2,9 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
-import { Card, DataError, OperatingContextCard } from '../common'
+import { AccuracyGateBlock, Card, DataError, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
+import { resolveHoldingsAccuracyGate } from '../../lib/accuracyGateUi.js'
 import Md from '../Md.jsx'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
 
@@ -532,11 +533,21 @@ export function HoldingsPanel({
   children,
 }) {
   const targetFetchError = getHoldingTargetError(holdingDossiers)
+  const holdingsAccuracyGate = resolveHoldingsAccuracyGate({ holdingDossiers })
 
   return h(
     'div',
     { 'data-testid': 'holdings-panel' },
     h(OperatingContextCard, { context: operatingContext, variant: 'home' }),
+    holdingsAccuracyGate &&
+      h(AccuracyGateBlock, {
+        reason: holdingsAccuracyGate.reason,
+        resource: holdingsAccuracyGate.resource,
+        context: holdingsAccuracyGate.context,
+        onRetry: () => {
+          if (typeof window !== 'undefined') window.location.reload()
+        },
+      }),
     targetFetchError &&
       h(DataError, {
         status: targetFetchError.status,

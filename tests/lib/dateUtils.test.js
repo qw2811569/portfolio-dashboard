@@ -40,6 +40,12 @@ describe('lib/dateUtils', () => {
       expect(d.getUTCDate()).toBe(27)
     })
 
+    it('parses full ISO string with timezone offset', () => {
+      const d = parseFlexibleDate('2026-04-23T16:00:00.000+08:00')
+      expect(d).toBeInstanceOf(Date)
+      expect(d.toISOString()).toBe('2026-04-23T08:00:00.000Z')
+    })
+
     it('returns null for empty string', () => {
       expect(parseFlexibleDate('')).toBeNull()
     })
@@ -117,6 +123,14 @@ describe('lib/dateUtils', () => {
 
     it('returns "fresh" when the most recent parsed date is ≤30 days old', () => {
       expect(computeFreshnessGrade(['2026/03/20'], { now: NOW })).toBe('fresh')
+    })
+
+    it('treats timezone-offset ISO timestamps as valid freshness inputs', () => {
+      expect(
+        computeFreshnessGrade(['2026-04-10T16:00:00.000+08:00'], {
+          now: NOW,
+        })
+      ).toBe('fresh')
     })
 
     it('returns "aging" when the most recent parsed date is 31-90 days old', () => {

@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const list = vi.fn()
+const get = vi.fn()
+
+vi.mock('@vercel/blob', () => ({
+  list,
+  get,
+}))
+
 function createMockResponse() {
   return {
     statusCode: 200,
@@ -27,20 +35,25 @@ describe('api/finmind', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-02T07:00:00.000Z'))
     vi.restoreAllMocks()
+    list.mockReset()
+    get.mockReset()
+    process.env.BLOB_READ_WRITE_TOKEN = 'blob-token'
   })
 
   afterEach(() => {
     vi.useRealTimers()
     global.fetch = originalFetch
+    delete process.env.BLOB_READ_WRITE_TOKEN
   })
 
-  it('returns empty degraded payload instead of 500 when FinMind rate limits', async () => {
+  it('returns degraded payload instead of 500 when FinMind rate limits', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 402,
       text: async () =>
         '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
     })
+    list.mockResolvedValue({ blobs: [], cursor: null })
 
     vi.resetModules()
     const { default: handler } = await import('../../api/finmind.js')
@@ -57,11 +70,15 @@ describe('api/finmind', () => {
     expect(res.payload).toMatchObject({
       success: true,
       degraded: true,
-      reason: 'rate_limited',
+      source: 'finmind-degraded',
       dataset: 'balanceSheet',
       code: '2308',
       count: 0,
       data: [],
+      degradedMeta: {
+        reason: 'quota-exceeded',
+        hasFallbackSnapshot: false,
+      },
     })
   })
 
@@ -72,6 +89,7 @@ describe('api/finmind', () => {
       text: async () =>
         '{"msg":"Requests reach the upper limit. https://finmindtrade.com/","status":402}',
     })
+    list.mockResolvedValue({ blobs: [], cursor: null })
 
     vi.resetModules()
     const { default: handler } = await import('../../api/finmind.js')
@@ -96,18 +114,22 @@ describe('api/finmind', () => {
     expect(secondRes.statusCode).toBe(200)
     expect(secondRes.payload).toMatchObject({
       degraded: true,
-      reason: 'rate_limited',
+      degradedMeta: {
+        reason: 'quota-exceeded',
+      },
       count: 0,
       data: [],
     })
   })
 
-  it('still surfaces unexpected upstream failures as 500', async () => {
+  it('degrades transient upstream failures after retries instead of surfacing 500', async () => {
+    vi.useRealTimers()
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
       text: async () => 'server exploded',
     })
+    list.mockResolvedValue({ blobs: [], cursor: null })
 
     vi.resetModules()
     const { default: handler } = await import('../../api/finmind.js')
@@ -120,10 +142,89 @@ describe('api/finmind', () => {
 
     await handler(req, res)
 
-    expect(res.statusCode).toBe(500)
+    expect(res.statusCode).toBe(200)
     expect(res.payload).toMatchObject({
-      error: 'FinMind TaiwanStockPER failed (500): server exploded',
-      source: 'finmind',
+      degraded: true,
+      source: 'finmind-degraded',
+      degradedMeta: {
+        reason: 'api-timeout',
+        attempts: 3,
+      },
+    })
+    expect(global.fetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('attaches latest daily snapshot fallback metadata when degraded', async () => {
+    vi.useRealTimers()
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => 'upstream unavailable',
+    })
+    list.mockResolvedValue({
+      blobs: [
+        {
+          pathname: 'snapshot/localStorage-checkpoint/2026-04-01.json',
+          uploadedAt: '2026-04-01T22:10:00.000Z',
+        },
+      ],
+      cursor: null,
+    })
+    get.mockResolvedValue({
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              JSON.stringify({
+                exportedAt: '2026-04-01T22:09:00.000Z',
+                storage: {
+                  'pf-portfolios-v1': [{ id: 'me', name: '我', isOwner: true }],
+                  'pf-me-fundamentals-v1': {
+                    2308: {
+                      code: '2308',
+                      revenueMonth: '2026-02',
+                      revenueYoY: 12.3,
+                      updatedAt: '2026-03-31T16:00:00.000+08:00',
+                    },
+                  },
+                },
+              })
+            )
+          )
+          controller.close()
+        },
+      }),
+    })
+
+    vi.resetModules()
+    const { default: handler } = await import('../../api/finmind.js')
+
+    const req = {
+      method: 'GET',
+      query: { dataset: 'revenue', code: '2308', start_date: '2026-01-01' },
+    }
+    const res = createMockResponse()
+
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload).toMatchObject({
+      degraded: true,
+      source: 'snapshot-fallback',
+      degradedMeta: {
+        reason: 'api-timeout',
+        hasFallbackSnapshot: true,
+        snapshotDate: '2026-04-01',
+        portfolioId: 'me',
+      },
+      fallbackSnapshot: {
+        snapshotDate: '2026-04-01',
+        portfolioId: 'me',
+        fundamentals: {
+          code: '2308',
+          revenueMonth: '2026-02',
+        },
+      },
     })
   })
 

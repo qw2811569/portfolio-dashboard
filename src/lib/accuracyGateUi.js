@@ -78,10 +78,38 @@ function buildResearchFundamentalsBody(context = {}) {
   return `${stockLabel} 這輪先停在這裡，財報 / 營收欄位還沒補齊${targetNote}。我先不把 thesis 硬湊完整，等資料回來再看。`
 }
 
+function buildFinMindFallbackPhrase(context = {}) {
+  const ageLabel = toText(context.fallbackAgeLabel)
+  if (ageLabel) return `我先用 ${ageLabel} 前那份數字先撐`
+  return '我先用前一版數字先撐'
+}
+
+function buildFinMindQuotaBody(context = {}) {
+  const subject =
+    context.name && context.code
+      ? `${context.name} (${context.code})`
+      : context.name || context.code || '這段 FinMind 資料'
+  return `今天 FinMind 查詢到上限，${subject}先停在這裡。${buildFinMindFallbackPhrase(context)}，剩的資料明天補。`
+}
+
+function buildFinMindTimeoutBody(context = {}) {
+  const subject =
+    context.name && context.code
+      ? `${context.name} (${context.code})`
+      : context.name || context.code || 'FinMind 資料源'
+  return `${subject}現在有點卡住，${buildFinMindFallbackPhrase(context)}，稍後補正。`
+}
+
 function buildDashboardBody(reason, context = {}) {
   const holdingCount = Math.max(0, Number(context.holdingCount) || 0)
   const lead =
     holdingCount > 0 ? `目前有 ${holdingCount} 檔持倉的首頁依據還沒站穩` : '首頁依據還沒站穩'
+  if (context.provider === 'FinMind' && reason === 'quota-exceeded') {
+    return `今天 FinMind 查詢到上限，首頁先不把結論講滿。${buildFinMindFallbackPhrase(context)}，剩的資料明天補。`
+  }
+  if (context.provider === 'FinMind' && reason === 'api-timeout') {
+    return `FinMind 資料源現在有點卡住，首頁先不把結論講滿。${buildFinMindFallbackPhrase(context)}，稍後補正。`
+  }
   if (reason === 'fundamentals-incomplete') {
     return `${lead}，財報 / 營收欄位還在補齊。我先不把首頁 headline 講滿，等資料回來再看。`
   }
@@ -132,6 +160,10 @@ export function buildAccuracyGateBlockModel({ reason = '', resource = '', contex
     body = `${label}碰到 insider 合規邊界，我先只留狀態與風險，不把語氣往買賣建議延伸。`
   } else if (normalizedResource === 'dashboard') {
     body = buildDashboardBody(normalizedReason, context)
+  } else if (context.provider === 'FinMind' && normalizedReason === 'quota-exceeded') {
+    body = buildFinMindQuotaBody(context)
+  } else if (context.provider === 'FinMind' && normalizedReason === 'api-timeout') {
+    body = buildFinMindTimeoutBody(context)
   } else if (normalizedReason === 'prompt-injection-detected') {
     body = '這輪輸入混進了不該跟著走的指令片段，我先把分析停在這裡，避免把外來要求誤當成事實。'
   } else if (normalizedReason === 'quota-exceeded') {
@@ -234,7 +266,21 @@ export function resolveResearchAccuracyGate({
     (item) => toText(item?.code) && toText(item?.code) === toText(results.code)
   )
 
-  if (matchedRow && toText(matchedRow.fundamentalStatus) !== '新鮮') {
+  if (matchedRow && readFundamentalFreshness(matchedRow.fundamentalStatus) !== 'fresh') {
+    if (matchedRow.degradedReason) {
+      return {
+        reason: matchedRow.degradedReason,
+        resource: 'research',
+        context: {
+          provider: 'FinMind',
+          code: matchedRow.code,
+          name: matchedRow.name || results.name,
+          fallbackAgeLabel: matchedRow.fallbackAgeLabel,
+          fallbackAt: matchedRow.fallbackAt,
+        },
+      }
+    }
+
     return {
       reason: 'fundamentals-incomplete',
       resource: 'research',
@@ -253,7 +299,37 @@ export function resolveResearchAccuracyGate({
 function readFundamentalFreshness(value = '') {
   const normalized = toText(value).toLowerCase()
   if (!normalized) return 'missing'
+  if (['fresh', '新鮮', '已補', 'ok', '正常'].includes(normalized)) return 'fresh'
+  if (['aging', 'stale', '有點舊了', '過期'].includes(normalized)) return 'stale'
+  if (['missing', '缺失', '缺少', '還在補'].includes(normalized)) return 'missing'
   return normalized
+}
+
+export function resolveHoldingsAccuracyGate({ holdingDossiers = [] } = {}) {
+  const safeDossiers = Array.isArray(holdingDossiers) ? holdingDossiers.filter(Boolean) : []
+  const degraded = safeDossiers
+    .map((item) =>
+      item?.finmindDegraded && typeof item.finmindDegraded === 'object'
+        ? item.finmindDegraded
+        : null
+    )
+    .filter(Boolean)
+
+  if (degraded.length === 0) return null
+
+  const quotaCount = degraded.filter((item) => item.reason === 'quota-exceeded').length
+  const primary = degraded[0] || null
+
+  return {
+    reason: quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
+    resource: 'thesis',
+    context: {
+      provider: 'FinMind',
+      holdingCount: safeDossiers.length,
+      fallbackAgeLabel: primary?.fallbackAgeLabel || '',
+      fallbackAt: primary?.fallbackAt || null,
+    },
+  }
 }
 
 export function resolveDashboardAccuracyGate({ holdingDossiers = [], dataRefreshRows = [] } = {}) {
@@ -268,6 +344,26 @@ export function resolveDashboardAccuracyGate({ holdingDossiers = [], dataRefresh
   const blockedCount = missingCount + staleCount
 
   if (blockedCount !== safeDossiers.length) return null
+
+  const degradedRows = (Array.isArray(dataRefreshRows) ? dataRefreshRows : []).filter((item) =>
+    toText(item?.degradedReason)
+  )
+  if (degradedRows.length > 0) {
+    const quotaCount = degradedRows.filter(
+      (item) => item.degradedReason === 'quota-exceeded'
+    ).length
+    return {
+      reason: quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
+      resource: 'dashboard',
+      context: {
+        provider: 'FinMind',
+        holdingCount: safeDossiers.length,
+        pendingCount: Array.isArray(dataRefreshRows) ? dataRefreshRows.length : 0,
+        fallbackAgeLabel: degradedRows[0]?.fallbackAgeLabel || '',
+        fallbackAt: degradedRows[0]?.fallbackAt || null,
+      },
+    }
+  }
 
   return {
     reason: missingCount > 0 ? 'fundamentals-incomplete' : 'stale-data',

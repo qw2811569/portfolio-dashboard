@@ -406,6 +406,42 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                 'div',
                 { style: { fontSize: 11, color: C.textSec, marginTop: 4, fontStyle: 'italic' } },
                 item.classificationNote
+              ),
+            item.degradedReason &&
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    flexWrap: 'wrap',
+                    fontSize: 11,
+                    color: C.textSec,
+                    marginTop: 4,
+                  },
+                },
+                h(
+                  'span',
+                  {
+                    style: {
+                      padding: '4px 8px',
+                      borderRadius: 999,
+                      background: alpha(C.amber, '14'),
+                      border: `1px solid ${alpha(C.amber, '28')}`,
+                    },
+                  },
+                  item.degradedReason === 'quota-exceeded' ? 'FinMind 額度' : 'FinMind 卡住'
+                ),
+                item.fallbackAgeLabel
+                  ? `先用 ${item.fallbackAgeLabel} 前那份數字撐著看`
+                  : '先用前一版數字撐著看'
+              ),
+            item.staleCopy &&
+              h(
+                'div',
+                { style: { fontSize: 11, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+                item.staleCopy
               )
           )
         )

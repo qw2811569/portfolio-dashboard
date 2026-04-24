@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { DataError, SoftMessage, StaleBadge } from '../common/index.js'
+import { formatStaleBadgeRelativeLabel } from '../../lib/staleBadge.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 import { normalizeDataError } from '../../lib/dataError.js'
 
@@ -625,6 +626,16 @@ function FreshnessCard({ dossier, holding }) {
   const thesisUpdatedAt = formatDateLabel(dossier?.thesis?.updatedAt || dossier?.thesis?.createdAt)
   const fundamentalsUpdatedAt = formatDateLabel(dossier?.fundamentals?.updatedAt)
   const holdingType = String(holding?.type || dossier?.position?.type || '').trim()
+  const staleUpdatedAt =
+    dossier?.finmindDegraded?.fallbackAt || dossier?.fundamentals?.updatedAt || null
+  const staleAgeLabel = formatStaleBadgeRelativeLabel(staleUpdatedAt)
+  const staleCopy =
+    dossier?.finmindDegraded?.staleCopy ||
+    ((dossier?.freshness?.fundamentals === 'stale' ||
+      dossier?.freshness?.fundamentals === 'aging') &&
+    staleAgeLabel
+      ? `這裡的數字是 ${staleAgeLabel} · 現在的盤還沒拉到。`
+      : '')
 
   return (
     <div style={panelCard}>
@@ -642,6 +653,7 @@ function FreshnessCard({ dossier, holding }) {
           field="fundamentals"
           label="財報"
           title="fundamentals freshness"
+          data-testid={`holding-fundamentals-stale-badge-${holding?.code || 'unknown'}`}
           style={{ textTransform: 'none' }}
         />
       </div>
@@ -656,6 +668,7 @@ function FreshnessCard({ dossier, holding }) {
           <div style={{ color: C.textMute }}>thesis 更新 · {thesisUpdatedAt}</div>
         ) : null}
         {holdingType ? <div style={{ color: C.textMute }}>部位類型 · {holdingType}</div> : null}
+        {staleCopy ? <SoftMessage style={{ marginTop: 4 }}>{staleCopy}</SoftMessage> : null}
         {!targetSourceLabel && !fundamentalsUpdatedAt && !thesisUpdatedAt && !holdingType ? (
           <SoftMessage style={{ marginTop: 4 }}>
             這檔的 metadata 還在慢慢補，先把已知資訊擺在前面。
@@ -706,6 +719,7 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
           field="fundamentals"
           label="財報"
           title="fundamentals freshness"
+          data-testid={`holding-fundamentals-stale-badge-${holding?.code || 'unknown'}`}
           style={{ textTransform: 'none' }}
         />
       </div>

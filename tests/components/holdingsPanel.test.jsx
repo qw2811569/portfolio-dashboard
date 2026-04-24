@@ -119,6 +119,29 @@ describe('components/HoldingsPanel', () => {
     expect(container.textContent).toContain('無券商目標價')
   })
 
+  it('renders an accuracy gate block when FinMind fallback is carrying holdings data', () => {
+    render(
+      <HoldingsPanel
+        {...buildProps({
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              finmindDegraded: {
+                reason: 'api-timeout',
+                fallbackAgeLabel: '昨天',
+              },
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('accuracy-gate-block')).toBeInTheDocument()
+    expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute('data-reason', 'api-timeout')
+    expect(screen.getByText(/FinMind/i)).toBeInTheDocument()
+  })
+
   it('renders tracked-stocks auth error state when the latest sync failed', () => {
     Object.defineProperty(globalThis, 'localStorage', {
       value: {

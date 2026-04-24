@@ -6,6 +6,8 @@ import { resolveDailyAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
 import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
 import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
+import { pfKey, readStorageValue } from '../../lib/portfolioUtils.js'
+import { normalizeAnalysisHistoryEntries } from '../../lib/reportUtils.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
 const lbl = {
@@ -1906,6 +1908,14 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
   )
 }
 
+function resolvePersistedAnalysisHistory(portfolioId) {
+  const normalizedPortfolioId = String(portfolioId || '').trim()
+  if (!normalizedPortfolioId || typeof localStorage === 'undefined') return []
+  return normalizeAnalysisHistoryEntries(
+    readStorageValue(pfKey(normalizedPortfolioId, 'analysis-history-v1'))
+  )
+}
+
 /**
  * Main Daily Report Panel
  */
@@ -1974,6 +1984,14 @@ export function DailyReportPanel({
       }),
     [autoConfirmState, dailyReport, staleStatus, viewMode]
   )
+  const resolvedAnalysisHistory = useMemo(() => {
+    const normalized = Array.isArray(analysisHistory)
+      ? normalizeAnalysisHistoryEntries(analysisHistory)
+      : []
+    if (normalized.length > 0) return normalized
+    if (!dailyReport) return normalized
+    return resolvePersistedAnalysisHistory(operatingContext?.portfolio?.id)
+  }, [analysisHistory, dailyReport, operatingContext?.portfolio?.id])
   const dailyAccuracyGateKey = dailyAccuracyGate
     ? [
         dailyAccuracyGate.resource,
@@ -2117,7 +2135,11 @@ export function DailyReportPanel({
         h(AnalysisStageCard, { report: dailyReport }),
         h(RitualModeCard, { report: dailyReport }),
         isPreliminaryReport && !analyzing && h(AutoConfirmCard, { state: autoConfirmState }),
-        h(SameDayDiffCard, { report: dailyReport, analysisHistory, viewMode }),
+        h(SameDayDiffCard, {
+          report: dailyReport,
+          analysisHistory: resolvedAnalysisHistory,
+          viewMode,
+        }),
         h(WeeklyExportNarrativeCard, { report: dailyReport }),
 
         h(DailyReportSummary, {

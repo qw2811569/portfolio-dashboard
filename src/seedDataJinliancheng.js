@@ -176,3 +176,78 @@ export const INIT_TARGETS_JINLIANCHENG = {
     isNew: true,
   },
 }
+
+export const INIT_ANALYSIS_REPORT_T0_JINLIANCHENG = {
+  id: 2026042401,
+  date: '2026/04/24',
+  time: '14:03',
+  totalTodayPnl: 38420,
+  changes: [],
+  anomalies: [],
+  eventCorrelations: [],
+  eventAssessments: [],
+  needsReview: [],
+  aiInsight: '收盤快版先維持 aggregate 觀察，盤後再確認資金回補是否延續。',
+  analysisStage: 't0-preliminary',
+  analysisStageLabel: '收盤快版',
+  analysisVersion: 1,
+  finmindDataCount: 3,
+  finmindConfirmation: {
+    expectedMarketDate: '2026-04-24',
+    status: 'preliminary',
+    pendingCodes: [],
+  },
+  ritualMode: {
+    mode: 'post-close',
+    label: '收盤後儀式模式',
+    triggerSource: 'seed-fixture',
+  },
+}
+
+export const INIT_ANALYSIS_REPORT_T1_JINLIANCHENG = {
+  id: 2026042402,
+  date: '2026/04/24',
+  time: '18:40',
+  totalTodayPnl: 52180,
+  changes: [],
+  anomalies: [],
+  eventCorrelations: [],
+  eventAssessments: [
+    {
+      eventId: 'jinliancheng-close-check',
+      title: '盤後現金流確認',
+      todayImpact: 'positive',
+      summary: '資料確認版顯示組合層級現金流支撐優於盤中估計，隔日優先觀察延續性。',
+    },
+  ],
+  needsReview: [
+    {
+      id: 'jinliancheng-next-open',
+      title: '隔日開盤觀察',
+      summary: '優先確認回補動能是否延續，暫不下沉到個股細節。',
+    },
+  ],
+  aiInsight: '資料確認後，組合層級結論上修為現金流支撐優於盤中估計，明日先看延續性。',
+  analysisStage: 't1-confirmed',
+  analysisStageLabel: '資料確認版',
+  analysisVersion: 2,
+  rerunReason: 'finmind-confirmed',
+  finmindDataCount: 11,
+  finmindConfirmation: {
+    expectedMarketDate: '2026-04-24',
+    status: 'confirmed',
+    pendingCodes: [],
+  },
+  ritualMode: {
+    mode: 'post-close-confirmed',
+    label: '資料確認版',
+    triggerSource: 'seed-fixture',
+  },
+}
+
+export const INIT_ANALYSIS_HISTORY_JINLIANCHENG = [
+  INIT_ANALYSIS_REPORT_T1_JINLIANCHENG,
+  INIT_ANALYSIS_REPORT_T0_JINLIANCHENG,
+]
+
+export const INIT_DAILY_REPORT_JINLIANCHENG = INIT_ANALYSIS_REPORT_T1_JINLIANCHENG

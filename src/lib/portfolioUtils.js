@@ -17,7 +17,12 @@ import {
   TRADE_BACKFILL_PATCHES,
   VIEW_MODE_KEY,
 } from '../constants.js'
-import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../seedDataJinliancheng.js'
+import {
+  INIT_ANALYSIS_HISTORY_JINLIANCHENG,
+  INIT_DAILY_REPORT_JINLIANCHENG,
+  INIT_HOLDINGS_JINLIANCHENG,
+  INIT_TARGETS_JINLIANCHENG,
+} from '../seedDataJinliancheng.js'
 import { applyTradeEntryToHoldings, buildHoldingPriceHints, normalizeHoldings } from './holdings.js'
 import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'
@@ -411,14 +416,42 @@ export async function repairPersistedHoldingsIfNeeded() {
   return repaired
 }
 
+async function seedJinlianchengReportsIfNeeded(portfolioId) {
+  const analysisHistory = await loadPortfolioData(portfolioId, 'analysis-history-v1', [])
+  const hasAnalysisHistory = Array.isArray(analysisHistory) && analysisHistory.length > 0
+  const nextAnalysisHistory = hasAnalysisHistory
+    ? analysisHistory
+    : INIT_ANALYSIS_HISTORY_JINLIANCHENG
+
+  if (!hasAnalysisHistory) {
+    await savePortfolioData(portfolioId, 'analysis-history-v1', nextAnalysisHistory)
+  }
+
+  const dailyReport = await loadPortfolioData(portfolioId, 'daily-report-v1', null)
+  if (!dailyReport) {
+    await savePortfolioData(
+      portfolioId,
+      'daily-report-v1',
+      nextAnalysisHistory[0] || INIT_DAILY_REPORT_JINLIANCHENG
+    )
+  }
+}
+
 export async function seedJinlianchengIfNeeded() {
   const portfolios = await load(PORTFOLIOS_KEY, [])
   const existing = portfolios.find((portfolio) => portfolio.name === '金聯成')
   if (existing) {
     const holdings = await loadPortfolioData(existing.id, 'holdings-v2', [])
-    if (holdings.length > 0) return
-    await savePortfolioData(existing.id, 'holdings-v2', INIT_HOLDINGS_JINLIANCHENG)
-    await savePortfolioData(existing.id, 'targets-v1', INIT_TARGETS_JINLIANCHENG)
+    if (holdings.length === 0) {
+      await savePortfolioData(existing.id, 'holdings-v2', INIT_HOLDINGS_JINLIANCHENG)
+    }
+
+    const targets = await loadPortfolioData(existing.id, 'targets-v1', {})
+    if (!targets || Object.keys(targets).length === 0) {
+      await savePortfolioData(existing.id, 'targets-v1', INIT_TARGETS_JINLIANCHENG)
+    }
+
+    await seedJinlianchengReportsIfNeeded(existing.id)
     return
   }
 
@@ -435,6 +468,7 @@ export async function seedJinlianchengIfNeeded() {
   }
   await savePortfolioData(newPortfolio.id, 'holdings-v2', INIT_HOLDINGS_JINLIANCHENG)
   await savePortfolioData(newPortfolio.id, 'targets-v1', INIT_TARGETS_JINLIANCHENG)
+  await seedJinlianchengReportsIfNeeded(newPortfolio.id)
 }
 
 export async function ensurePortfolioRegistry() {

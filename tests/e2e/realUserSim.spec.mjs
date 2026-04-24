@@ -136,6 +136,16 @@ async function routeTodayInMarketsFeed(page, payload) {
   })
 }
 
+async function routeTwseQuotes(page, payload = { msgArray: [] }) {
+  await page.route('**/api/twse**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(payload),
+    })
+  })
+}
+
 async function saveShot(page, testInfo, fileName, options = {}) {
   ensureEvidenceDirs()
   const targetPath = buildEvidenceShotPath(testInfo, fileName)
@@ -923,6 +933,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
   test.setTimeout(12 * 60 * 1000)
   ensureEvidenceDirs()
   await installClipboardCapture(page)
+  await routeTwseQuotes(page)
 
   const state = createState(testInfo)
   installRuntimeCapture(page, testInfo, state)
@@ -1018,24 +1029,24 @@ test('real user simulation covers golden path, clipboard/download correctness, b
 
   await runStep(state, page, testInfo, {
     id: '05',
-    label: 'Open daily diff pane when present',
+    label: 'Open aggregate-only daily diff pane for 金聯成',
     screenshotName: '12-daily-diff.png',
-    optional: true,
     action: async () => {
       await clickTab(page, 'daily', '收盤分析')
+      const diffCard = page.getByTestId('daily-diff-card').first()
       const diffButton = page.getByTestId('daily-diff-toggle').first()
-      if ((await diffButton.count()) === 0) {
-        return {
-          status: 'blocked',
-          note: 'daily diff toggle is not present for the current live portfolio state',
-        }
-      }
 
+      await expect(diffButton).toBeVisible()
+      await expect(diffCard).toContainText(/\d+\s*項更新/)
+      await expect(diffCard).not.toContainText('本日無差異')
       await diffButton.scrollIntoViewIfNeeded()
       await diffButton.click()
-      await expect(page.getByTestId('daily-diff-pane')).toBeVisible()
+      const diffPane = page.getByTestId('daily-diff-pane').first()
+      await expect(diffPane).toBeVisible()
+      await expect(diffPane).toContainText('t0/t1 差異為 aggregate · 不顯示個股細節')
 
-      const text = String((await page.getByTestId('daily-diff-pane').textContent()) || '')
+      const text = String((await diffPane.textContent()) || '')
+      expect(text).not.toMatch(/AI 總結|2489|1799|瑞軒|易威/)
       return {
         metadata: {
           preview: text.slice(0, 240),

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DailyReportPanel } from '../../src/components/reports/DailyReportPanel.jsx'
 
 const baseProps = {
@@ -24,7 +24,7 @@ const baseProps = {
   setExpandedStock: vi.fn(),
   strategyBrain: {},
   staleStatus: 'fresh',
-  operatingContext: { portfolioLabel: '組合 7865' },
+  operatingContext: { portfolio: { id: '7865' }, portfolioLabel: '組合 7865' },
 }
 
 function buildDailyReport() {
@@ -94,6 +94,10 @@ function buildSameDayHistory() {
 }
 
 describe('components/DailyReportPanel viewMode', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('hides per-stock daily rows in insider-compressed mode', () => {
     const { container } = render(
       <DailyReportPanel

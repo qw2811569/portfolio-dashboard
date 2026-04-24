@@ -5,6 +5,7 @@ import {
   APPLIED_TRADE_PATCHES_KEY,
   OWNER_PORTFOLIO_ID,
   PORTFOLIO_ALIAS_TO_SUFFIX,
+  PORTFOLIOS_KEY,
 } from '../../src/constants.js'
 import {
   applyTradeBackfillPatchesIfNeeded,
@@ -12,6 +13,7 @@ import {
   pfKey,
   readStorageValue,
   savePortfolioData,
+  seedJinlianchengIfNeeded,
 } from '../../src/lib/portfolioUtils.js'
 
 function createStorageMock(seed = {}) {
@@ -132,5 +134,70 @@ describe('lib/portfolioUtils.js applyTradeBackfillPatchesIfNeeded', () => {
         scKey: 'positive',
       }),
     ])
+  })
+
+  it('creates the Jinliancheng bootstrap portfolio with staged daily fixtures', async () => {
+    localStorage.setItem(
+      PORTFOLIOS_KEY,
+      JSON.stringify([{ id: 'me', name: '我', isOwner: true, createdAt: '2026-04-24' }])
+    )
+
+    await seedJinlianchengIfNeeded()
+
+    const portfolios = readStorageValue(PORTFOLIOS_KEY)
+    const insiderPortfolio = portfolios.find((portfolio) => portfolio.name === '金聯成')
+    expect(insiderPortfolio).toBeTruthy()
+
+    const history = readStorageValue(
+      pfKey(insiderPortfolio.id, PORTFOLIO_ALIAS_TO_SUFFIX.analysisHistory)
+    )
+    const dailyReport = readStorageValue(
+      pfKey(insiderPortfolio.id, PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport)
+    )
+
+    expect(history).toHaveLength(2)
+    expect(history.map((entry) => entry.analysisStage)).toEqual(['t1-confirmed', 't0-preliminary'])
+    expect(history[0].aiInsight).not.toBe(history[1].aiInsight)
+    expect(history[0].totalTodayPnl).not.toBe(history[1].totalTodayPnl)
+    expect(dailyReport).toMatchObject({
+      analysisStage: 't1-confirmed',
+      analysisVersion: 2,
+      rerunReason: 'finmind-confirmed',
+    })
+  })
+
+  it('backfills missing Jinliancheng staged reports without overwriting existing holdings', async () => {
+    localStorage.setItem(
+      PORTFOLIOS_KEY,
+      JSON.stringify([
+        { id: 'me', name: '我', isOwner: true, createdAt: '2026-04-24' },
+        { id: '7865', name: '金聯成', isOwner: false, createdAt: '2026-04-24' },
+      ])
+    )
+
+    await savePortfolioData('7865', PORTFOLIO_ALIAS_TO_SUFFIX.holdings, [
+      { code: '2489', name: '瑞軒', qty: 100, cost: 40, price: 42, type: '股票' },
+    ])
+    await savePortfolioData('7865', PORTFOLIO_ALIAS_TO_SUFFIX.analysisHistory, [])
+    await savePortfolioData('7865', PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport, null)
+
+    await seedJinlianchengIfNeeded()
+
+    const holdings = readStorageValue(pfKey('7865', PORTFOLIO_ALIAS_TO_SUFFIX.holdings))
+    const history = readStorageValue(pfKey('7865', PORTFOLIO_ALIAS_TO_SUFFIX.analysisHistory))
+    const dailyReport = readStorageValue(pfKey('7865', PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport))
+
+    expect(holdings).toEqual([
+      expect.objectContaining({
+        code: '2489',
+        qty: 100,
+      }),
+    ])
+    expect(history).toHaveLength(2)
+    expect(history.map((entry) => entry.analysisStage)).toEqual(['t1-confirmed', 't0-preliminary'])
+    expect(dailyReport).toMatchObject({
+      analysisStage: 't1-confirmed',
+      analysisVersion: 2,
+    })
   })
 })

@@ -208,10 +208,47 @@ describe('components/NewsFeedSection', () => {
 
     await waitFor(() => {
       expect(screen.getByText('服務暫時不穩 · 正在重試')).toBeInTheDocument()
+      expect(screen.getByText('新聞源暫時打不開，以下先顯示目前可讀版本。')).toBeInTheDocument()
+    })
+  })
+
+  it('removes the preview fallback debug label from the mobile error notice', async () => {
+    mockMatchMedia(true)
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network error'))
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330']} />)
+    })
+
+    await waitFor(() => {
       expect(
-        screen.getByText('新聞源暫時打不開，以下先用 preview fallback 撐住畫面。')
+        screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')
       ).toBeInTheDocument()
     })
+
+    expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
+  })
+
+  it('keeps headline counters aligned with the filtered news cards', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: MOCK_NEWS_ITEMS }),
+    })
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330', '2454']} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '2330 台積電' }))
+
+    expect(screen.getByText('1 則相關新聞')).toBeInTheDocument()
+    expect(screen.getByText('未讀 1 則')).toBeInTheDocument()
+    expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    expect(screen.queryByText('聯發科5G晶片出貨成長')).not.toBeInTheDocument()
   })
 
   it('renders nothing when holdingCodes is empty', () => {
@@ -310,7 +347,8 @@ describe('components/NewsFeedSection', () => {
       expect(screen.getByTestId('news-mobile-error-notice')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('preview fallback')).toBeInTheDocument()
+    expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
+    expect(screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')).toBeInTheDocument()
     expect(screen.getByText('再試一次')).toBeInTheDocument()
   })
 })

@@ -576,11 +576,13 @@ export function NewsFeedSection({
     return sourceOk && impactOk && tickerOk
   })
 
-  const unreadCount = filteredItems.filter(
+  const visibleItems = filteredItems
+  const visibleItemCount = visibleItems.length
+  const unreadCount = visibleItems.filter(
     (item, index) => !readIds.has(getItemId(item, index))
   ).length
   const showTickerSideNotes = isViewModeEnabled('showTickerSideNotes', viewMode)
-  const aggregateClusters = buildAggregateNewsClusters(filteredItems)
+  const aggregateClusters = buildAggregateNewsClusters(visibleItems)
   const showFilterBody = !isMobile || !isMobileFilterCollapsed
   const activeFilterCount = countActiveFilters({ sourceFilter, impactFilter, tickerFilter })
   const hasActiveFilters = activeFilterCount > 0
@@ -924,7 +926,7 @@ export function NewsFeedSection({
             fontFamily: TOKENS.fontBody,
           },
         },
-        buildTrendSummary(filteredItems)
+        buildTrendSummary(visibleItems)
       )
     )
   )
@@ -1033,7 +1035,7 @@ export function NewsFeedSection({
                   marginTop: 16,
                 },
               },
-              renderChip(`${filteredItems.length} 則相關新聞`, {
+              renderChip(`${visibleItemCount} 則相關新聞`, {
                 ...(isMobile
                   ? mobileResultChipStyle
                   : {
@@ -1048,7 +1050,7 @@ export function NewsFeedSection({
                 color: TOKENS.charcoal,
               }),
               isMobile &&
-                renderChip(`today ${filteredItems.length}`, {
+                renderChip(`today ${visibleItemCount}`, {
                   background: alpha(TOKENS.charcoal, '06'),
                   border: `1px solid ${TOKENS.boneDeep}`,
                   color: TOKENS.iron,
@@ -1096,7 +1098,7 @@ export function NewsFeedSection({
                     fontVariantNumeric: 'tabular-nums',
                   },
                 },
-                filteredItems.length
+                visibleItemCount
               ),
               h(
                 'div',
@@ -1156,15 +1158,9 @@ export function NewsFeedSection({
                     fontFamily: TOKENS.fontBody,
                   },
                 },
-                '新聞源暫時打不開，先用 preview fallback，不擋住你先讀重點。'
+                '新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。'
               )
             ),
-            renderChip('preview fallback', {
-              background: alpha(TOKENS.warning, '18'),
-              border: `1px solid ${alpha(TOKENS.warning, '24')}`,
-              color: TOKENS.ink,
-            })
-          ),
           h(
             Button,
             {
@@ -1179,6 +1175,7 @@ export function NewsFeedSection({
             '再試一次'
           )
         ),
+      ),
       error &&
         !isMobile &&
         h(
@@ -1190,7 +1187,7 @@ export function NewsFeedSection({
               color: TOKENS.iron,
             },
           },
-          '新聞源暫時打不開，以下先用 preview fallback 撐住畫面。'
+          '新聞源暫時打不開，以下先顯示目前可讀版本。'
         ),
       h(
         Card,
@@ -1203,12 +1200,12 @@ export function NewsFeedSection({
             overflow: 'hidden',
           },
         },
-        filteredItems.map((item, i) =>
+        visibleItems.map((item, i) =>
           h(NewsFeedCard, {
             key: getItemId(item, i),
             item,
             isRead: readIds.has(getItemId(item, i)),
-            isLast: i === filteredItems.length - 1,
+            isLast: i === visibleItems.length - 1,
             isMobile,
             onToggleRead: () => handleToggleRead(item, i),
             onNavigateDaily,
@@ -1278,7 +1275,7 @@ export function NewsFeedSection({
                         alignItems: 'center',
                       },
                     },
-                    renderChip(`${filteredItems.length} 則`, mobileResultChipStyle),
+                    renderChip(`${visibleItemCount} 則`, mobileResultChipStyle),
                     renderChip(hasActiveFilters ? `${activeFilterCount} 個篩選中` : '預設狀態', {
                       background: hasActiveFilters
                         ? alpha(TOKENS.positive, '12')

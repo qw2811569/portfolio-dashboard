@@ -26,6 +26,15 @@ function describeRuleFreshness(status) {
   return status || ''
 }
 
+function resolveDailyPanelFreshnessLabel(status) {
+  if (status === 'fresh') return '資料正常'
+  if (status === 'aging') return '資料有點舊'
+  if (status === 'stale') return '資料需更新'
+  if (status === 'missing') return '資料還在補'
+  if (status === 'failed') return '同步失敗'
+  return ''
+}
+
 function appendKnowledgeFeedback({ analysisId, signal, date, injectedKnowledgeIds = [] }) {
   const log = JSON.parse(localStorage.getItem('kb-feedback-log') || '[]')
   log.push({
@@ -2058,7 +2067,11 @@ export function DailyReportPanel({
         style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' },
       },
       h('div', { style: { fontSize: 12, color: C.textMute, fontWeight: 600 } }, '資料狀態'),
-      h(StaleBadge, { status: staleStatus, title: 'daily panel freshness' })
+      h(StaleBadge, {
+        status: staleStatus,
+        label: resolveDailyPanelFreshnessLabel(staleStatus),
+        title: 'daily panel freshness',
+      })
     ),
     // Morning note (always shown when available)
     h(MorningNoteSection, { morningNote, viewMode }),

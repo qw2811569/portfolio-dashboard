@@ -148,4 +148,18 @@ describe('components/DailyReportPanel viewMode', () => {
     expect(screen.getByText('聯發科')).toBeInTheDocument()
     expect(screen.queryByTestId('viewmode-compliance-note')).not.toBeInTheDocument()
   })
+
+  it('localizes the top freshness badge when daily data is still missing', () => {
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        viewMode="retail"
+        staleStatus="missing"
+        dailyReport={buildDailyReport()}
+      />
+    )
+
+    expect(screen.getByTitle('daily panel freshness')).toHaveTextContent('資料還在補')
+    expect(screen.getByTitle('daily panel freshness')).not.toHaveTextContent('missing')
+  })
 })

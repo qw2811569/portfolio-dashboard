@@ -19,6 +19,12 @@ function truncate(text, max = 120) {
   return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized
 }
 
+function formatAttentionBadgeLabel(attentionCount = 0) {
+  const count = Math.max(0, Number(attentionCount) || 0)
+  if (count <= 0) return ''
+  return `需留意 ${count} 檔持股`
+}
+
 export function OperatingContextCard({ context, variant = 'default' }) {
   if (!context) return null
 
@@ -139,7 +145,8 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
             activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
             pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
-            attentionCount > 0 && h(Badge, { color: 'iron' }, `需注意 ${attentionCount}`),
+            attentionCount > 0 &&
+              h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount)),
             autoReviewedCount > 0 &&
               h(
                 Badge,
@@ -279,7 +286,8 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
         pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
-        attentionCount > 0 && h(Badge, { color: 'iron' }, `需注意 ${attentionCount}`),
+        attentionCount > 0 &&
+          h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount)),
         refreshBacklogCount > 0 &&
           h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&

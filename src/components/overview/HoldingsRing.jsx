@@ -11,17 +11,34 @@ const RING_COLORS = [
   'var(--positive-soft)',
 ]
 
-export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
-  const rows = (Array.isArray(holdings) ? holdings : [])
-    .map((holding) => {
-      const value = Number(holding?.value) || getHoldingMarketValue(holding)
-      return {
-        code: String(holding?.code || '').trim(),
-        name: String(holding?.name || holding?.code || '未命名持倉').trim(),
-        value,
-      }
+function aggregateHoldingsByCode(holdings = []) {
+  const aggregated = new Map()
+
+  for (const holding of Array.isArray(holdings) ? holdings : []) {
+    const value = Number(holding?.value) || getHoldingMarketValue(holding)
+    const code = String(holding?.code || '').trim()
+    const name = String(holding?.name || holding?.code || '未命名持倉').trim()
+
+    if (!code || value <= 0) continue
+
+    const current = aggregated.get(code)
+    if (!current) {
+      aggregated.set(code, { code, name, value })
+      continue
+    }
+
+    aggregated.set(code, {
+      code,
+      name: current.name && current.name !== code ? current.name : name,
+      value: current.value + value,
     })
-    .filter((holding) => holding.code && holding.value > 0)
+  }
+
+  return Array.from(aggregated.values())
+}
+
+export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
+  const rows = aggregateHoldingsByCode(holdings)
     .sort((a, b) => b.value - a.value)
 
   const total = totalVal > 0 ? totalVal : rows.reduce((sum, holding) => sum + holding.value, 0)

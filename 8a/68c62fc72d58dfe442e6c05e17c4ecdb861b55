@@ -1,0 +1,533 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "a72c0257-ba16-4d1a-aeba-d4e98c59a8f1",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bl3ym09by</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "Gemini R8 audit done · Codex 確認 **1 real race + 0 critical crash regression**：\n\n## 🔴 真 race · 已修（`4d0879b`）\n\n`tracked-stocks/<portfolio>/latest.json` · 2 tabs 同時 sync 會互蓋 · 丟 stock。\n- 修法：ETag + `ifMatch` + retry `BlobPreconditionFailedError`\n- Test: `tests/api/tracked-stocks.test.js` retry 測試\n- Gemini 這條抓對了\n\n## 🟡 Theoretical · 非 ship blocker\n\n- `daily-events/latest.json` · dual writer（Vercel cron UTC 0800 + VM worker 10 4 Asia/Taipei）· 不同時間 · 不撞 · 但未來要挑 1 owner\n- 其他 4 個 theoretical\n\n## 🟡 Try-catch regression\n- **0 critical** · Gemini 過慮\n- 1 defensive fix（tw-events-worker failure-marker call signature 錯用 · observability loss 不 crash）\n\n## Ship readiness\n\n| | 狀態 |\n|---|---|\n| R140 5 bug | ✅ |\n| Blob race | ✅（`4d0879b`）|\n| Try-catch regression | ✅ no critical |\n| **UX-25-bug-4 fixture** | 🟡 Codex 跑中 |\n| L8-h + Exit signoff | 👤 等你手動 |\n\nCron 3 min 再自檢 · 等 UX-25-bug-4 回來。回完 loop 關 · 通知 ship ready。",
+      "prompt_hash": "sha256:abfd1b40522778b13ae1431768e313559880294c97f07111b3bec6fb2ba25cef",
+      "message_count": 8309,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-24T05:37:34.901Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T05:37:44.354Z",
+      "session_duration_secs": 780386,
+      "ai_response_time_secs": 11.353609093429444,
+      "prompt_submitted_at": "2026-04-24T05:37:35.159360Z",
+      "prompt_duration_secs": 37,
+      "accepted_lines": 6401,
+      "overridden_lines": 606,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "src/components/Header.jsx",
+      "line_range": [
+        59,
+        1170
+      ],
+      "files_changed": [
+        {
+          "path": "src/components/Header.jsx",
+          "line_range": [
+            59,
+            1170
+          ],
+          "blob_hash": "8f84312dfd691e801dd6515f41293b320ad38e4b",
+          "additions": 204,
+          "deletions": 37
+        },
+        {
+          "path": "src/components/common/OperatingContextCard.jsx",
+          "line_range": [
+            22,
+            292
+          ],
+          "blob_hash": "ef08d24eb87ecbabb6eee4ebacfeecd4941a3713",
+          "additions": 6,
+          "deletions": 4
+        },
+        {
+          "path": "src/components/holdings/HoldingsTable.jsx",
+          "line_range": [
+            18,
+            818
+          ],
+          "blob_hash": "6092feef52945677591c8f498319d99e02ed3f2e",
+          "additions": 441,
+          "deletions": 121
+        },
+        {
+          "path": "src/hooks/useAppRuntimeArgs.js",
+          "line_range": [
+            109,
+            109
+          ],
+          "blob_hash": "7511d4e49169c100792fe074f10d56bf2b512d4a",
+          "additions": 1
+        },
+        {
+          "path": "src/hooks/useAppRuntimeComposer.panels.js",
+          "line_range": [
+            33,
+            33
+          ],
+          "blob_hash": "9f076a6a4af944aab48f0bce7a81414f8b92b697",
+          "additions": 1
+        },
+        {
+          "path": "src/hooks/useAppRuntimeWorkflows.js",
+          "line_range": [
+            74,
+            450
+          ],
+          "blob_hash": "eec493b2df3d116536e611ea23a7ed71d9cbc02c",
+          "additions": 2
+        },
+        {
+          "path": "src/hooks/usePortfolioDerivedData.js",
+          "line_range": [
+            966,
+            1124
+          ],
+          "blob_hash": "b62c6cf60ed649d4bc40ab2d7c9ed4095027bbf1",
+          "additions": 13
+        },
+        {
+          "path": "src/hooks/usePortfolioPanelsContextComposer.js",
+          "line_range": [
+            46,
+            283
+          ],
+          "blob_hash": "eadecb844a93b88fd05cbf7f4a6dc4c8747dccec",
+          "additions": 3
+        },
+        {
+          "path": "src/lib/knowledge-base/chip-analysis.json",
+          "line_range": [
+            12,
+            2082
+          ],
+          "blob_hash": "b17b2a453d5609cff5e137a4a782671f353c0b85",
+          "additions": 452,
+          "deletions": 87
+        },
+        {
+          "path": "src/lib/portfolioUtils.js",
+          "line_range": [
+            20,
+            471
+          ],
+          "blob_hash": "e8c5b6842f382aea5842c708661d5ee0c887575a",
+          "additions": 38,
+          "deletions": 4
+        },
+        {
+          "path": "src/seedDataJinliancheng.js",
+          "line_range": [
+            179,
+            255
+          ],
+          "blob_hash": "435bb08c1afbe9471b9143bf75a4dd51fabe6504",
+          "additions": 77
+        },
+        {
+          "path": "tests/components/Header.test.jsx",
+          "line_range": [
+            5,
+            207
+          ],
+          "blob_hash": "11eabc4940b467cc57017fed7eeec87692050458",
+          "additions": 73
+        },
+        {
+          "path": "tests/components/OperatingContextCard.test.jsx",
+          "line_range": [
+            19,
+            44
+          ],
+          "blob_hash": "be05c3648219c35c35a87d6bcf5dadd0c4ea8777",
+          "additions": 11,
+          "deletions": 3
+        },
+        {
+          "path": "tests/e2e/realUserSim.spec.mjs",
+          "line_range": [
+            1021,
+            1038
+          ],
+          "blob_hash": "89f5837a932e90f0ed47f54b668b7dd051d43860",
+          "additions": 10,
+          "deletions": 10
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1fd9d633e424c53fd414d33ee11092f2bed701a0"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b45a76832675bef55fa9527adf7580836b727d3d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6a04fe2f25a48e2e966beda30a39d79e599b94ea"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "117591fb4a082ffa822da0ecace03754e1bb45fc"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fe0b2a5e8a50d50bc5207c7241cf5f98df7d4e59"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "d21c3560d421776dc5517e316c7c78b4e8b7f2bd"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "25b28bd84524a88c8bd3e4514f6effc152caf774"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "359b1915a0cec5a9e7a2d537844ff46b6f5fbcf9"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "cdbf53f78ef9d07825079d28668543a5cbf87b67"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3246b3720f17cd38aa03babbe3ed6d6b006496f3"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "19e09b00d60e8970b5abb953819951ede4d17be6"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "290d6556958737c698427fb2d3001d33a9e8cfa9"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-01.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "70f3c49f59fb3dddac7bfabb48c8c508c985d357"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-02.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "80a5a6f3ec5015c6429076177cec3447f97d1992"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-03.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "43b49e697138fbc2d12445578ce862be7075da73"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-04.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "eead5690f832ed379563d16a8226520865657aae"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-05.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "5914d2146e6aeda4714a36529dc7f0851ea34eba"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9861154d0365d283946906df7d4f186ebfe52ead"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "046ce4b8608678bef133c0885aa12fe8b9a45e65"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fdf747c3fb6758c97713f20c5e2aaf1c74200cd4"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ddbd8416b2929f5ad0c6d56827eff31e983ad4e8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3494995fdffae7c1b41203e694700f556f33f35d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e985975336d141bd1885b48f907bec9d573296bb"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de15a42e4d9ebd3c41f5ebe58e3f33326bd94a9d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de823080c425a47b5092b829fc4171b5b6bbe1f8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9aabbbb0447956d2053483e78813ef317f6a028f"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e41002f07b17a453ed52e3a181117d8388390776"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ec3cc1a424c448765f1a9dea708e1ee58c324ccc"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1e67844a7473eca13f08afcd660abd2943edc757"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e08b0f0874a3b15cd2986751707858680a93bfc5"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f459ac1785c2e642364040a69a543e05f712c0b7"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "a36163eac755f4344fca0aa533084b510c54b52b"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "289490e8a79170a42409b67d223f701b038386a2"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "aff3a5eecbe08f4b4560f9d9a0743510b66ea663"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8561701a84810f31efd3e7acd3bcce3e7f98f774"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1c3f10a317978bc47904a0c069906d3cf66bf3b3"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "65d294c008bf5181f3f6856110c8c14f30c53733"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f72de6f2d24c33317978f70e81009af53a146751"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "211146be516678a22f83419ff85f968bc36ca8fb"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ab388b4806243732155261e4db1242bbf1b75ebc"
+        },
+        {
+          "path": "tests/lib/portfolioUtils.test.js",
+          "line_range": [
+            8,
+            206
+          ],
+          "blob_hash": "1c16ddf3e728fd384cdff2cb3d69f53411618601",
+          "additions": 71
+        }
+      ],
+      "prompt_number": 737,
+      "total_additions": 1403,
+      "total_deletions": 266,
+      "tools_used": [
+        "Bash"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bl3ym09by</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch Gemini R8 concerns audit\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -60 .tmp/gemini-r8-concerns-audit/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"cat .tmp/gemini-r8-concerns-audit/blob-race-findings.md 2>/dev/null | head -50 &...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 3,
+          "role": "assistant",
+          "content": "Gemini R8 audit done · Codex 確認 **1 real race + 0 critical crash regression**：\n\n## 🔴 真 race · 已修（`4d0879b`）\n\n`tracked-stocks/<portfolio>/latest.json` · 2 tabs 同時 sync 會互蓋 · 丟 stock。\n- 修法：ETag + `ifMatch` + retry `BlobPreconditionFailedError`\n- Test: `tests/api/tracked-stocks.test.js` retry 測試\n- Gemini 這條抓對了\n\n## 🟡 Theoretical · 非 ship blocker\n\n- `daily-events/latest.json` · dual writer（Vercel cron UTC 0800 + VM worker 10 4 Asia/Taipei）· 不同時間 · 不撞 · 但未來要挑 1 owner\n- 其他 4 個 theoretical\n\n## 🟡 Try-catch regression\n- **0 critical** · Gemini 過慮\n- 1 defensive fix（tw-events-worker failure-marker call signature 錯用 · observability loss 不 crash）\n\n## Ship readiness\n\n| | 狀態 |\n|---|---|\n| R140 5 bug | ✅ |\n| Blob race | ✅（`4d0879b`）|\n| Try-catch regression | ✅ no critical |\n| **UX-25-bug-4 fixture** | 🟡 Codex 跑中 |\n| L8-h + Exit signoff | 👤 等你手動 |\n\nCron 3 min 再自檢 · 等 UX-25-bug-4 回來。回完 loop 關 · 通知 ship ready。"
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

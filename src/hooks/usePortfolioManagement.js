@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   OWNER_PORTFOLIO_ID,
   OVERVIEW_VIEW_MODE,
@@ -114,6 +114,7 @@ export const usePortfolioManagement = ({
     fromPid: initialActivePortfolioId,
     toPid: initialActivePortfolioId,
   })
+  const pendingPortfolioIdRef = useRef('')
 
   const emitSaved = useCallback(
     (message, timeout = STATUS_MESSAGE_TIMEOUT_MS.DEFAULT) => {
@@ -204,9 +205,17 @@ export const usePortfolioManagement = ({
    */
   const switchPortfolio = useCallback(
     async (pid) => {
-      if (!pid || portfolioSwitching) return
-      if (pid === activePortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return
+      if (!pid) return
+      if (portfolioSwitching) {
+        pendingPortfolioIdRef.current = pid
+        return
+      }
 
+      const resolvedPortfolioId =
+        String(portfolioTransitionRef.current?.toPid || '').trim() || activePortfolioId
+      if (pid === resolvedPortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return
+
+      pendingPortfolioIdRef.current = ''
       setPortfolioSwitching(true)
       portfolioTransitionRef.current = { isHydrating: true, fromPid: activePortfolioId, toPid: pid }
 
@@ -236,6 +245,23 @@ export const usePortfolioManagement = ({
       emitSaved,
     ]
   )
+
+  useEffect(() => {
+    if (portfolioSwitching) return
+
+    const queuedPid = String(pendingPortfolioIdRef.current || '').trim()
+    if (!queuedPid) return
+
+    const resolvedPortfolioId =
+      String(portfolioTransitionRef.current?.toPid || '').trim() || activePortfolioId
+    if (queuedPid === resolvedPortfolioId && viewMode === PORTFOLIO_VIEW_MODE) {
+      pendingPortfolioIdRef.current = ''
+      return
+    }
+
+    pendingPortfolioIdRef.current = ''
+    void switchPortfolio(queuedPid)
+  }, [activePortfolioId, portfolioSwitching, switchPortfolio, viewMode])
 
   /**
    * Create a new portfolio

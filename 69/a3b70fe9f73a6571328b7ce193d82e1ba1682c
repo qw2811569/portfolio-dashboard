@@ -1,0 +1,195 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "fb373b60-87a1-4dd3-8a21-d2f9076599a6",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>buz2jk7eg</task-id>\n<tool-use-id>toolu_01KBVpAK8DcoeszubBKGhmqu</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "C3 派出 · 2 parallel（C1c + C3）。Loop 繼續。P2 剩 C4 cleanup + docs mockup refresh。",
+      "prompt_hash": "sha256:7bd565eeeaa334698b4c9306b43afe006ac975f71843f5104a0fca3dd98fc662",
+      "message_count": 8099,
+      "cost_usd": 0.21046080000000003,
+      "input_tokens": 1,
+      "output_tokens": 2629,
+      "cache_read_tokens": 559301,
+      "cache_creation_tokens": 862,
+      "timestamp": "2026-04-24T00:35:20.684Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T00:36:09.565Z",
+      "session_duration_secs": 762291,
+      "ai_response_time_secs": 11.385255542922131,
+      "prompt_submitted_at": "2026-04-24T00:35:20.844658Z",
+      "prompt_duration_secs": 53,
+      "accepted_lines": 1830,
+      "overridden_lines": 260,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/c3-mirror-vercel-flag/brief.md",
+      "line_range": [
+        1,
+        101
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/c3-mirror-vercel-flag/brief.md",
+          "line_range": [
+            1,
+            101
+          ],
+          "blob_hash": "c0e5c700fa1ecb75102589a4476c553188f1e54a",
+          "additions": 101
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "fce64b31a1f338f629ba8d9729c3cf24425ae218",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "f67dd4d55cfbc0e9e0cbdc3d57aca85dc896200b",
+          "additions": 10,
+          "deletions": 7
+        },
+        {
+          "path": "src/components/events/EventsPanel.jsx",
+          "line_range": [
+            10,
+            369
+          ],
+          "blob_hash": "a731cd75c7dd18b28d14764914be2def095bfde2",
+          "additions": 5,
+          "deletions": 28
+        },
+        {
+          "path": "src/components/overview/ConcentrationDashboard.jsx",
+          "line_range": [
+            9,
+            13
+          ],
+          "blob_hash": "d2b66aecb8827fa8959c4457d7791ff9b77a601c",
+          "additions": 3,
+          "deletions": 3
+        },
+        {
+          "path": "src/components/watchlist/WatchlistPanel.jsx",
+          "line_range": [
+            3,
+            752
+          ],
+          "blob_hash": "f9a50990176661616f6bdbb950a18bf862681567",
+          "additions": 5,
+          "deletions": 14
+        },
+        {
+          "path": "src/hooks/useWatchlistActions.js",
+          "line_range": [
+            2,
+            21
+          ],
+          "blob_hash": "759ef2549d27f2342d94387cfe2ae455938e83cb",
+          "additions": 2,
+          "deletions": 1
+        },
+        {
+          "path": "src/lib/index.js",
+          "line_range": [
+            26,
+            26
+          ],
+          "blob_hash": "ebea9c91d0d5ddcd59ef1abdc9b84fd1d521ea11",
+          "additions": 1
+        },
+        {
+          "path": "src/lib/portfolioUtils.js",
+          "line_range": [
+            24,
+            171
+          ],
+          "blob_hash": "b44c4f6caa631f00d3a2bdd52f0f74f926126d96",
+          "additions": 4
+        },
+        {
+          "path": "src/lib/watchlistUtils.js",
+          "line_range": [
+            1,
+            20
+          ],
+          "blob_hash": "d91becadb1ba1f94cd0de7b6feb01eba1b4a70ad",
+          "additions": 3,
+          "deletions": 1
+        },
+        {
+          "path": "src/utils.js",
+          "line_range": [
+            115,
+            188
+          ],
+          "blob_hash": "76dc722f985efd2a5efcbc9a4d196df9557bb983",
+          "additions": 4
+        }
+      ],
+      "prompt_number": 715,
+      "total_additions": 416,
+      "total_deletions": 267,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>buz2jk7eg</task-id>\n<tool-use-id>toolu_01KBVpAK8DcoeszubBKGhmqu</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch M-EVENT-TW\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/m-event-tw/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "M-EVENT-TW done · `3cbaad8`. 派 **C3 `sync-to-vm-root --mirror-vercel` flag**："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/c3-mirror-vercel-flag/brief.md)\" 2>&1 |...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

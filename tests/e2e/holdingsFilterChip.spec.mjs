@@ -7,10 +7,11 @@ import {
 } from './support/qaHelpers.mjs'
 
 const PORTFOLIO_ID = 'me'
-const FILTER_STORAGE_KEY = `pf-${PORTFOLIO_ID}-holdings-filters-v1`
+const FILTER_STORAGE_KEY_V1 = `pf-${PORTFOLIO_ID}-holdings-filters-v1`
+const FILTER_STORAGE_KEY_V2 = `pf-${PORTFOLIO_ID}-holdings-filters-v2`
 const STEP_WAIT_MS = 1800
 
-const SEEDED_STORAGE = {
+const BASE_STORAGE = {
   'pf-portfolios-v1': [{ id: PORTFOLIO_ID, name: '我', isOwner: true, createdAt: '2026-04-24' }],
   'pf-active-portfolio-v1': PORTFOLIO_ID,
   'pf-view-mode-v1': 'portfolio',
@@ -25,7 +26,9 @@ const SEEDED_STORAGE = {
     {
       code: '2308',
       name: '台達電',
+      stockMeta: { industry: 'AI/伺服器', strategy: '成長股', themes: ['AI', '電源'] },
       thesis: {
+        statement: 'AI 電源與液冷主線還在',
         pillars: [{ id: 'p1', label: 'AI 伺服器與電源整合', status: 'on_track' }],
       },
       freshness: { fundamentals: 'fresh', targets: 'fresh' },
@@ -34,16 +37,20 @@ const SEEDED_STORAGE = {
     {
       code: '3017',
       name: '奇鋐',
+      stockMeta: { industry: 'AI/伺服器', strategy: '成長股', themes: ['AI', '散熱'] },
       thesis: {
+        statement: '散熱與 GB 機櫃主線先繼續追',
         pillars: [{ id: 'p2', label: '散熱與 GB 機櫃主線', status: 'watch' }],
       },
-      freshness: { fundamentals: 'fresh', targets: 'fresh' },
+      freshness: { fundamentals: 'stale', targets: 'fresh' },
       position: { price: 1905 },
     },
     {
       code: '4583',
       name: '台灣精銳',
+      stockMeta: { industry: '精密機械', strategy: '事件驅動', themes: ['機器人'] },
       thesis: {
+        statement: '法說催化若失靈就要動手',
         pillars: [{ id: 'p3', label: '訂單與法說催化', status: 'broken' }],
       },
       freshness: { fundamentals: 'fresh', targets: 'fresh' },
@@ -52,18 +59,30 @@ const SEEDED_STORAGE = {
   ],
   [`pf-${PORTFOLIO_ID}-news-events-v1`]: [
     {
-      id: 'evt-4583-upcoming',
+      id: 'evt-4583-earnings',
       status: 'pending',
-      eventDate: '2026-05-12',
+      eventDate: '2026-04-28',
       title: '台灣精銳法說',
       stocks: ['台灣精銳 4583'],
+      eventType: 'earnings',
+      type: 'earnings',
     },
     {
-      id: 'evt-4583-watch',
-      status: 'tracking',
-      eventDate: '2026-04-25',
-      title: '台灣精銳追蹤中',
-      stocks: ['台灣精銳 4583'],
+      id: 'evt-3017-news',
+      recordType: 'news',
+      source: 'finmind-news',
+      publishedAt: '2026-04-23',
+      title: '散熱族群近 3 日新聞',
+      stocks: ['奇鋐 3017'],
+    },
+    {
+      id: 'evt-00637L-dividend',
+      eventType: 'ex-dividend',
+      type: 'dividend',
+      source: 'finmind-dividend',
+      eventDate: '2026-04-30',
+      title: 'ETF 除權息窗口',
+      stocks: ['滬深300正2 00637L'],
     },
   ],
   [`pf-${PORTFOLIO_ID}-targets-v1`]: {},
@@ -83,7 +102,7 @@ async function settle(page, waitMs = STEP_WAIT_MS) {
   await page.waitForTimeout(waitMs)
 }
 
-async function seedStorage(page, storage = SEEDED_STORAGE) {
+async function seedStorage(page, storage = BASE_STORAGE) {
   await page.addInitScript((seed) => {
     if (window.sessionStorage.getItem('__holdings-filter-chip-seeded') === '1') return
     window.localStorage.clear()
@@ -146,55 +165,61 @@ test.afterEach(async ({}, testInfo) => {
   expectNoBlockingQaErrors(testInfo)
 })
 
-test('holdings chip bar filters growth holdings, persists per portfolio, and clears back to full table', async ({
+test('legacy v1 holdings filter migrates into the v2 intent/type schema without losing the filtered result', async ({
   page,
 }, testInfo) => {
-  mergeQaEvidence(testInfo, { scenario: 'holdings-filter-chip-bar' })
+  mergeQaEvidence(testInfo, { scenario: 'holdings-filter-v1-migration' })
   installQaMonitor(testInfo, page)
 
-  await seedStorage(page)
+  await seedStorage(page, {
+    ...BASE_STORAGE,
+    [FILTER_STORAGE_KEY_V1]: {
+      focusedPrimaryKey: 'growth',
+      selectedPrimaryKeys: ['growth'],
+      secondaryFilters: {
+        all: [],
+        growth: ['AI/伺服器'],
+        event: [],
+      },
+    },
+  })
   await stubCommonApis(page)
   await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
-  await settle(page, 2600)
-
-  await openHoldings(page)
-  await expect(page.getByTestId('holdings-filter-chip-bar')).toBeVisible()
-  await expect(page.getByTestId('holdings-filter-primary-row')).toBeVisible()
-
-  await page.getByTestId('holdings-filter-primary-growth').click()
-  await expect(page.getByText('持股明細 · 2檔')).toBeVisible()
-  await expect(page.getByRole('button', { name: /展開 台達電 明細|收合 台達電 明細/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /展開 奇鋐 明細|收合 奇鋐 明細/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /展開 台灣精銳 明細|收合 台灣精銳 明細/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /展開 滬深300正2 明細|收合 滬深300正2 明細/ })).toHaveCount(0)
-
-  const storedGrowthFilter = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) || '{}'), FILTER_STORAGE_KEY)
-  expect(storedGrowthFilter.selectedPrimaryKeys || []).toEqual(['growth'])
-  expect(storedGrowthFilter.focusedPrimaryKey).toBe('growth')
-
-  await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 })
   await settle(page, 2400)
+
   await openHoldings(page)
 
-  await expect(page.getByTestId('holdings-filter-primary-growth')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('holdings-filter-chip-bar')).toBeVisible()
+  await expect(page.getByTestId('holdings-filter-type-growth')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await expect(page.getByTestId('holdings-filter-sector-ai-伺服器')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
   await expect(page.getByText('持股明細 · 2檔')).toBeVisible()
 
-  await page.getByTestId('holdings-filter-clear').click()
-  await expect(page.getByText('持股明細 · 4檔')).toBeVisible()
-  await expect(page.getByTestId('holdings-filter-primary-growth')).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('button', { name: /展開 台灣精銳 明細|收合 台灣精銳 明細/ })).toHaveCount(1)
-  await expect(page.getByRole('button', { name: /展開 滬深300正2 明細|收合 滬深300正2 明細/ })).toHaveCount(1)
+  const storedV2 = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) || '{}'), FILTER_STORAGE_KEY_V2)
+  expect(storedV2.intentKey).toBe('all')
+  expect(storedV2.filterGroups.type || []).toEqual(['growth'])
+  expect(storedV2.filterGroups.sector || []).toEqual(['AI/伺服器'])
+
+  const mirroredV1 = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) || '{}'), FILTER_STORAGE_KEY_V1)
+  expect(mirroredV1.selectedPrimaryKeys || []).toEqual(['growth'])
 })
 
-test('mobile holdings chip rows keep horizontal scroll and 44px tap targets', async ({ page }, testInfo) => {
-  mergeQaEvidence(testInfo, { scenario: 'holdings-filter-chip-bar-mobile' })
+test('mobile intent bar keeps 44px tap targets and exposes the advanced drawer toggle', async ({
+  page,
+}, testInfo) => {
+  mergeQaEvidence(testInfo, { scenario: 'holdings-filter-mobile-contract' })
   installQaMonitor(testInfo, page)
 
   await page.setViewportSize({ width: 390, height: 844 })
   await seedStorage(page)
   await stubCommonApis(page)
   await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
-  await settle(page, 2600)
+  await settle(page, 2400)
 
   await openHoldings(page)
 
@@ -207,8 +232,14 @@ test('mobile holdings chip rows keep horizontal scroll and 44px tap targets', as
   }))
   expect(primaryRowMetrics.scrollWidth).toBeGreaterThan(primaryRowMetrics.clientWidth)
 
-  const growthChip = page.getByTestId('holdings-filter-primary-growth')
-  const growthBox = await growthChip.boundingBox()
-  expect(growthBox?.height || 0).toBeGreaterThanOrEqual(44)
-  expect(growthBox?.width || 0).toBeGreaterThanOrEqual(44)
+  const attentionChip = page.getByTestId('holdings-filter-primary-attention')
+  const attentionBox = await attentionChip.boundingBox()
+  expect(attentionBox?.height || 0).toBeGreaterThanOrEqual(44)
+  expect(attentionBox?.width || 0).toBeGreaterThanOrEqual(44)
+
+  const drawerToggle = page.getByTestId('holdings-filter-mobile-toggle')
+  const toggleBox = await drawerToggle.boundingBox()
+  expect(toggleBox?.height || 0).toBeGreaterThanOrEqual(44)
+  await drawerToggle.click()
+  await expect(page.getByTestId('holdings-filter-advanced-body')).toBeVisible()
 })

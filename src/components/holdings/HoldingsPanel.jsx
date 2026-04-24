@@ -1,8 +1,16 @@
-import { createElement as h } from 'react'
+import { createElement as h, useState } from 'react'
 import { A, C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
-import { AccuracyGateBlock, Card, DataError, MarkdownText, OperatingContextCard } from '../common'
+import {
+  AccuracyGateBlock,
+  Card,
+  DataError,
+  MarkdownText,
+  OperatingContextCard,
+  TextFieldDialog,
+} from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import { resolveHoldingsAccuracyGate } from '../../lib/accuracyGateUi.js'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
@@ -192,9 +200,28 @@ function renderChipButton({
   label,
   count,
   active = false,
-  focused = false,
+  tone = 'default',
   onClick = () => {},
 }) {
+  const toneMeta =
+    tone === 'intent'
+      ? {
+          activeBorder: alpha(C.cta, '5a'),
+          activeBackground: alpha(C.cta, '18'),
+          activeColor: C.ink,
+          idleBorder: alpha(C.cta, '22'),
+          idleBackground: alpha(C.card, 'f6'),
+          idleColor: C.text,
+        }
+      : {
+          activeBorder: alpha(C.cta, A.strongLine),
+          activeBackground: alpha(C.cta, '16'),
+          activeColor: C.ink,
+          idleBorder: alpha(C.charcoal, '26'),
+          idleBackground: C.bone,
+          idleColor: C.textSec,
+        }
+
   return h(
     'button',
     {
@@ -210,11 +237,9 @@ function renderChipButton({
         minHeight: 44,
         padding: '10px 14px',
         borderRadius: 999,
-        border: `1px solid ${
-          active ? alpha(C.cta, A.strongLine) : focused ? alpha(C.cta, '24') : alpha(C.iron, '1e')
-        }`,
-        background: active ? alpha(C.cta, '18') : C.bone,
-        color: active ? C.ink : C.iron,
+        border: `1px solid ${active ? toneMeta.activeBorder : toneMeta.idleBorder}`,
+        background: active ? toneMeta.activeBackground : toneMeta.idleBackground,
+        color: active ? toneMeta.activeColor : toneMeta.idleColor,
         fontSize: 12,
         lineHeight: 1.2,
         fontWeight: active ? 700 : 600,
@@ -237,8 +262,8 @@ function renderChipButton({
             height: 22,
             padding: '0 6px',
             borderRadius: 999,
-            background: active ? alpha(C.ink, '10') : alpha(C.iron, '12'),
-            color: active ? C.ink : C.iron,
+            background: active ? alpha(C.ink, '10') : alpha(C.charcoal, '10'),
+            color: active ? C.ink : C.textSec,
             fontSize: 11,
             fontWeight: 700,
           },
@@ -248,150 +273,340 @@ function renderChipButton({
   )
 }
 
-function HoldingsFilterChipBar({ filterBar }) {
-  const safeFilterBar = filterBar && typeof filterBar === 'object' ? filterBar : null
-  if (!safeFilterBar || safeFilterBar.totalCount === 0) return null
-
-  const primaryChips = Array.isArray(safeFilterBar.primaryChips) ? safeFilterBar.primaryChips : []
-  const secondaryChips = Array.isArray(safeFilterBar.secondaryChips)
-    ? safeFilterBar.secondaryChips
-    : []
-  const activeFilterCount = Number(safeFilterBar.activeFilterCount) || 0
+function renderFilterGroupRow(group) {
+  if (!group || !Array.isArray(group.chips) || group.chips.length === 0) return null
 
   return h(
-    Card,
+    'div',
     {
+      key: group.key,
+      'data-testid': `holdings-filter-group-${group.key}`,
       style: {
-        marginBottom: 8,
-        padding: '12px 12px 10px',
+        display: 'grid',
+        gap: 6,
       },
     },
     h(
       'div',
       {
-        'data-testid': 'holdings-filter-chip-bar',
         style: {
-          display: 'grid',
-          gap: 10,
+          fontSize: 11,
+          color: C.textMute,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+        },
+      },
+      group.label
+    ),
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          gap: 8,
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: 4,
+          scrollbarWidth: 'none',
+        },
+      },
+      group.chips.map((chip) =>
+        renderChipButton({
+          testId: `holdings-filter-${group.key}-${toFilterTestIdSegment(chip.key)}`,
+          label: chip.label,
+          count: chip.count,
+          active: chip.active,
+          tone: 'secondary',
+          onClick: chip.onClick,
+        })
+      )
+    )
+  )
+}
+
+function HoldingsFilterChipBar({ filterBar }) {
+  const isMobile = useIsMobile()
+  const [mobileAdvancedOpen, setMobileAdvancedOpen] = useState(false)
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [saveName, setSaveName] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const safeFilterBar = filterBar && typeof filterBar === 'object' ? filterBar : null
+  if (!safeFilterBar || safeFilterBar.totalCount === 0) return null
+
+  const primaryChips = Array.isArray(safeFilterBar.primaryChips) ? safeFilterBar.primaryChips : []
+  const filterGroups = Array.isArray(safeFilterBar.filterGroups) ? safeFilterBar.filterGroups : []
+  const savedFilters = Array.isArray(safeFilterBar.savedFilters) ? safeFilterBar.savedFilters : []
+  const activeFilterCount = Number(safeFilterBar.activeFilterCount) || 0
+  const showAdvancedBody = !isMobile || mobileAdvancedOpen
+
+  const handleSaveSubmit = () => {
+    const result = safeFilterBar.onSaveCurrentFilter?.(saveName)
+    if (!result?.ok) {
+      setSaveError(result?.error || '暫時存不起來，先檢查條件。')
+      return
+    }
+    setSaveDialogOpen(false)
+    setSaveName('')
+    setSaveError('')
+  }
+
+  const savedControls = h(
+    'div',
+    {
+      style: {
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: 8,
+        flexWrap: 'wrap',
+        justifyContent: isMobile ? 'space-between' : 'flex-end',
+        width: isMobile ? '100%' : 'auto',
+      },
+    },
+    savedFilters.length > 0 &&
+      h(
+        'label',
+        {
+          style: {
+            display: 'grid',
+            gap: 4,
+            fontSize: 11,
+            color: C.textMute,
+            minWidth: isMobile ? '100%' : 220,
+            flex: isMobile ? '1 1 100%' : '0 1 220px',
+          },
+        },
+        'Saved filter',
+        h(
+          'select',
+          {
+            'data-testid': 'holdings-filter-saved-select',
+            value: safeFilterBar.activeSavedFilterId || '',
+            onChange: (event) => safeFilterBar.onApplySavedFilter?.(event.target.value),
+            style: {
+              minHeight: 44,
+              borderRadius: 10,
+              border: `1px solid ${C.border}`,
+              background: C.card,
+              color: C.text,
+              padding: '0 12px',
+              fontSize: 12,
+              width: '100%',
+            },
+          },
+          h('option', { value: '' }, '套用已存 filter'),
+          savedFilters.map((item) => h('option', { key: item.id, value: item.id }, item.name))
+        )
+      ),
+    h(
+      'button',
+      {
+        type: 'button',
+        'data-testid': 'holdings-filter-save',
+        disabled: !safeFilterBar.canSaveCurrentFilter,
+        onClick: () => {
+          setSaveDialogOpen(true)
+          setSaveName('')
+          setSaveError('')
+        },
+        style: {
+          minHeight: 44,
+          padding: '10px 14px',
+          borderRadius: 999,
+          border: `1px solid ${alpha(C.cta, '32')}`,
+          background: safeFilterBar.canSaveCurrentFilter ? alpha(C.cta, '14') : alpha(C.iron, '10'),
+          color: safeFilterBar.canSaveCurrentFilter ? C.text : C.textMute,
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: safeFilterBar.canSaveCurrentFilter ? 'pointer' : 'not-allowed',
+          whiteSpace: 'nowrap',
+        },
+      },
+      '📌 存 filter'
+    )
+  )
+
+  const searchField = h(
+    'label',
+    {
+      style: {
+        display: 'grid',
+        gap: 4,
+        minWidth: 0,
+        flex: '1 1 280px',
+      },
+    },
+    h(
+      'span',
+      {
+        style: {
+          fontSize: 11,
+          color: C.textMute,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+        },
+      },
+      '搜尋 / Search'
+    ),
+    h('input', {
+      'data-testid': 'holdings-filter-search',
+      type: 'search',
+      value: safeFilterBar.searchQuery || '',
+      placeholder: '輸入 code / 股票名 / thesis 關鍵字，例如 2330、台積電、AI',
+      onChange: (event) => safeFilterBar.onSearchChange?.(event.target.value),
+      style: {
+        minHeight: 44,
+        width: '100%',
+        borderRadius: 10,
+        border: `1px solid ${C.border}`,
+        background: C.card,
+        color: C.text,
+        padding: '0 12px',
+        fontSize: 13,
+        boxSizing: 'border-box',
+      },
+    })
+  )
+
+  return h(
+    'div',
+    null,
+    h(
+      Card,
+      {
+        style: {
+          marginBottom: 8,
+          padding: '12px 12px 10px',
         },
       },
       h(
         'div',
         {
+          'data-testid': 'holdings-filter-chip-bar',
           style: {
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 8,
-            flexWrap: 'wrap',
+            display: 'grid',
+            gap: 12,
           },
         },
         h(
           'div',
           {
             style: {
-              display: 'grid',
-              gap: 4,
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'space-between',
+              gap: 10,
+              flexWrap: 'wrap',
             },
           },
-          h(
-            'div',
-            {
-              style: {
-                fontSize: 12,
-                color: C.text,
-                fontWeight: 700,
-              },
-            },
-            activeFilterCount > 0
-              ? `先看 ${safeFilterBar.filteredCount} / ${safeFilterBar.totalCount} 檔`
-              : `先保留全貌 · ${safeFilterBar.totalCount} 檔都在`
-          ),
-          h(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                flexWrap: 'wrap',
-                fontSize: 11,
-                color: C.textMute,
-              },
-            },
-            activeFilterCount > 0 &&
-              h(
-                'span',
-                {
-                  'data-testid': 'holdings-filter-active-count',
-                  style: {
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: 999,
-                    minHeight: 24,
-                    padding: '0 8px',
-                    background: alpha(C.cta, '16'),
-                    color: C.ink,
-                    fontWeight: 700,
-                  },
-                },
-                `${activeFilterCount} 個條件`
-              ),
-            safeFilterBar.secondaryLabel
-          )
+          searchField,
+          savedControls
         ),
-        activeFilterCount > 0 &&
-          h(
-            'button',
-            {
-              type: 'button',
-              'data-testid': 'holdings-filter-clear',
-              onClick: safeFilterBar.onClearAll,
-              style: {
-                minHeight: 44,
-                padding: '10px 14px',
-                borderRadius: 999,
-                border: `1px solid ${alpha(C.cta, A.strongLine)}`,
-                background: C.bone,
-                color: C.text,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              },
-            },
-            '清除所有篩選'
-          )
-      ),
-      h(
-        'div',
-        {
-          'data-testid': 'holdings-filter-primary-row',
-          style: {
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: 4,
-            scrollbarWidth: 'none',
-          },
-        },
-        primaryChips.map((chip) =>
-          renderChipButton({
-            testId: `holdings-filter-primary-${chip.key}`,
-            label: chip.label,
-            count: chip.key === 'all' ? null : chip.count,
-            active: chip.active,
-            focused: chip.focused,
-            onClick: chip.onClick,
-          })
-        )
-      ),
-      secondaryChips.length > 0 &&
         h(
           'div',
           {
-            'data-testid': 'holdings-filter-secondary-row',
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            {
+              style: {
+                display: 'grid',
+                gap: 4,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  color: C.text,
+                  fontWeight: 700,
+                },
+              },
+              activeFilterCount > 0 || safeFilterBar.debouncedSearchQuery
+                ? `可行動範圍 · ${safeFilterBar.filteredCount} / ${safeFilterBar.totalCount} 檔`
+                : `全部先攤開 · ${safeFilterBar.totalCount} 檔`
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexWrap: 'wrap',
+                  fontSize: 11,
+                  color: C.textMute,
+                },
+              },
+              activeFilterCount > 0 &&
+                h(
+                  'span',
+                  {
+                    'data-testid': 'holdings-filter-active-count',
+                    style: {
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      borderRadius: 999,
+                      minHeight: 24,
+                      padding: '0 8px',
+                      background: alpha(C.cta, '16'),
+                      color: C.ink,
+                      fontWeight: 700,
+                    },
+                  },
+                  `${activeFilterCount} 個條件`
+                ),
+              safeFilterBar.debouncedSearchQuery &&
+                h(
+                  'span',
+                  {
+                    style: {
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      borderRadius: 999,
+                      minHeight: 24,
+                      padding: '0 8px',
+                      background: alpha(C.iron, '10'),
+                    },
+                  },
+                  `搜尋：${safeFilterBar.debouncedSearchQuery}`
+                )
+            )
+          ),
+          activeFilterCount > 0 &&
+            h(
+              'button',
+              {
+                type: 'button',
+                'data-testid': 'holdings-filter-clear',
+                onClick: safeFilterBar.onClearAll,
+                style: {
+                  minHeight: 44,
+                  padding: '10px 14px',
+                  borderRadius: 999,
+                  border: `1px solid ${alpha(C.cta, A.strongLine)}`,
+                  background: C.bone,
+                  color: C.text,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                },
+              },
+              '清除所有篩選'
+            )
+        ),
+        h(
+          'div',
+          {
+            'data-testid': 'holdings-filter-primary-row',
             style: {
               display: 'flex',
               gap: 8,
@@ -401,18 +616,78 @@ function HoldingsFilterChipBar({ filterBar }) {
               scrollbarWidth: 'none',
             },
           },
-          secondaryChips.map((chip) =>
+          primaryChips.map((chip) =>
             renderChipButton({
-              testId: `holdings-filter-secondary-${safeFilterBar.focusedPrimaryKey}-${toFilterTestIdSegment(chip.key)}`,
+              testId: `holdings-filter-primary-${chip.key}`,
               label: chip.label,
               count: chip.count,
               active: chip.active,
-              focused: false,
+              tone: 'intent',
               onClick: chip.onClick,
             })
           )
-        )
-    )
+        ),
+        isMobile &&
+          filterGroups.some((group) => group.chips.length > 0) &&
+          h(
+            'button',
+            {
+              type: 'button',
+              'data-testid': 'holdings-filter-mobile-toggle',
+              'aria-expanded': showAdvancedBody,
+              'aria-controls': 'holdings-filter-advanced-body',
+              onClick: () => setMobileAdvancedOpen((open) => !open),
+              style: {
+                minHeight: 44,
+                padding: '10px 14px',
+                borderRadius: 999,
+                border: `1px solid ${alpha(C.amber, '32')}`,
+                background: alpha(C.amber, '10'),
+                color: C.text,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                justifySelf: 'start',
+              },
+            },
+            showAdvancedBody ? '收起進階篩選' : '展開進階篩選'
+          ),
+        showAdvancedBody &&
+          h(
+            'div',
+            {
+              id: 'holdings-filter-advanced-body',
+              'data-testid': 'holdings-filter-advanced-body',
+              style: {
+                display: 'grid',
+                gap: 12,
+              },
+            },
+            filterGroups.map(renderFilterGroupRow)
+          )
+      )
+    ),
+    h(TextFieldDialog, {
+      open: saveDialogOpen,
+      title: '儲存 holdings filter',
+      subtitle: '這裡只存主 / 副 chip 組合；搜尋字會另外處理。',
+      label: 'filter 名稱',
+      value: saveName,
+      onChange: (event) => {
+        setSaveName(event.target.value)
+        if (saveError) setSaveError('')
+      },
+      onSubmit: handleSaveSubmit,
+      onCancel: () => {
+        setSaveDialogOpen(false)
+        setSaveError('')
+        setSaveName('')
+      },
+      submitLabel: '儲存',
+      placeholder: '例：法說前先看 / 集中度檢查',
+      submitDisabled: !safeFilterBar.canSaveCurrentFilter,
+      error: saveError,
+    })
   )
 }
 

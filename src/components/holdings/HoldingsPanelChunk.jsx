@@ -1,27 +1,111 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  HOLDINGS_FILTER_PRIMARY_META,
+  applyHoldingsFilterStateToSearchParams,
   buildHoldingsFilterModel,
+  buildLegacyHoldingsFilterStateMirror,
   countActiveHoldingsFilters,
   createDefaultHoldingsFilterState,
   filterHoldingsByChipState,
   normalizeHoldingsFilterState,
+  readHoldingsFilterStateFromSearch,
 } from '../../lib/holdingsFilters.js'
 import { HoldingsPanel, HoldingsTable } from './index.js'
 
 const EMPTY_LIST = []
+const EMPTY_SAVED_FILTERS = []
+const SEARCH_DEBOUNCE_MS = 200
 
-function readStoredFilterState(storageKey) {
-  if (typeof window === 'undefined' || !window.localStorage || !storageKey) {
-    return createDefaultHoldingsFilterState()
+function serializeFilterState(state) {
+  const safeState = normalizeHoldingsFilterState(state)
+  return {
+    version: 2,
+    intentKey: safeState.intentKey,
+    filterGroups: {
+      sector: safeState.filterGroups.sector,
+      type: safeState.filterGroups.type,
+      eventWindow: safeState.filterGroups.eventWindow,
+      pnl: safeState.filterGroups.pnl,
+      risk: safeState.filterGroups.risk,
+    },
+    ...buildLegacyHoldingsFilterStateMirror(safeState),
   }
+}
+
+function stripFilterState(state) {
+  const serialized = serializeFilterState(state)
+  return {
+    version: serialized.version,
+    intentKey: serialized.intentKey,
+    filterGroups: serialized.filterGroups,
+  }
+}
+
+function areFilterStatesEqual(left, right) {
+  return JSON.stringify(stripFilterState(left)) === JSON.stringify(stripFilterState(right))
+}
+
+function normalizeSavedFilterEntry(raw, index) {
+  const name = String(raw?.name || '').trim()
+  if (!name) return null
+
+  return {
+    id: String(raw?.id || `saved-filter-${index}`),
+    name,
+    filterState: normalizeHoldingsFilterState(raw?.filterState || raw?.state || raw),
+  }
+}
+
+function readSavedFilters(storageKey) {
+  if (typeof window === 'undefined' || !window.localStorage || !storageKey)
+    return EMPTY_SAVED_FILTERS
 
   try {
     const raw = window.localStorage.getItem(storageKey)
-    return raw ? normalizeHoldingsFilterState(JSON.parse(raw)) : createDefaultHoldingsFilterState()
+    if (!raw) return EMPTY_SAVED_FILTERS
+
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return EMPTY_SAVED_FILTERS
+    return parsed.map(normalizeSavedFilterEntry).filter(Boolean)
   } catch {
-    return createDefaultHoldingsFilterState()
+    return EMPTY_SAVED_FILTERS
   }
+}
+
+function readFilterViewState({ storageKeyV2, legacyStorageKey }) {
+  const defaultFilterState = createDefaultHoldingsFilterState()
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return { filterState: defaultFilterState, searchQuery: '' }
+  }
+
+  const urlState = readHoldingsFilterStateFromSearch(window.location.search)
+  if (urlState.hasFilterParams) {
+    return {
+      filterState: normalizeHoldingsFilterState(urlState.filterState),
+      searchQuery: urlState.searchQuery,
+    }
+  }
+
+  try {
+    const rawV2 = storageKeyV2 ? window.localStorage.getItem(storageKeyV2) : ''
+    if (rawV2) {
+      return {
+        filterState: normalizeHoldingsFilterState(JSON.parse(rawV2)),
+        searchQuery: '',
+      }
+    }
+
+    const rawLegacy = legacyStorageKey ? window.localStorage.getItem(legacyStorageKey) : ''
+    if (rawLegacy) {
+      return {
+        filterState: normalizeHoldingsFilterState(JSON.parse(rawLegacy)),
+        searchQuery: '',
+      }
+    }
+  } catch {
+    return { filterState: defaultFilterState, searchQuery: '' }
+  }
+
+  return { filterState: defaultFilterState, searchQuery: '' }
 }
 
 export default function HoldingsPanelChunk({ panelProps, tableProps }) {
@@ -30,14 +114,42 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   const panelHoldings = panelProps?.holdings
   const panelHoldingDossiers = panelProps?.holdingDossiers
   const panelNewsEvents = panelProps?.newsEvents
-  const storageKey = activePortfolioId ? `pf-${activePortfolioId}-holdings-filters-v1` : ''
-  const [storedFilterState, setStoredFilterState] = useState(() => ({
-    storageKey,
-    value: readStoredFilterState(storageKey),
-  }))
-  const hydratedFilterState = useMemo(() => readStoredFilterState(storageKey), [storageKey])
-  const filterState =
-    storedFilterState.storageKey === storageKey ? storedFilterState.value : hydratedFilterState
+  const storageKeyV2 = activePortfolioId ? `pf-${activePortfolioId}-holdings-filters-v2` : ''
+  const legacyStorageKey = activePortfolioId ? `pf-${activePortfolioId}-holdings-filters-v1` : ''
+  const savedFiltersKey = activePortfolioId ? `pf-${activePortfolioId}-saved-filters-v1` : ''
+
+  const initialViewState = useMemo(
+    () => readFilterViewState({ storageKeyV2, legacyStorageKey }),
+    [legacyStorageKey, storageKeyV2]
+  )
+
+  const [filterState, setFilterState] = useState(() => initialViewState.filterState)
+  const [searchInput, setSearchInput] = useState(() => initialViewState.searchQuery)
+  const [savedFilters, setSavedFilters] = useState(() => readSavedFilters(savedFiltersKey))
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
+    () => initialViewState.searchQuery
+  )
+
+  useEffect(() => {
+    const nextViewState = readFilterViewState({ storageKeyV2, legacyStorageKey })
+    setFilterState(nextViewState.filterState)
+    setSearchInput(nextViewState.searchQuery)
+    setDebouncedSearchQuery(nextViewState.searchQuery)
+  }, [legacyStorageKey, storageKeyV2])
+
+  useEffect(() => {
+    setSavedFilters(readSavedFilters(savedFiltersKey))
+  }, [savedFiltersKey])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(
+      () => setDebouncedSearchQuery(String(searchInput || '').trim()),
+      SEARCH_DEBOUNCE_MS
+    )
+    return () => window.clearTimeout(timeoutId)
+  }, [searchInput])
+
+  const safeFilterState = useMemo(() => normalizeHoldingsFilterState(filterState), [filterState])
 
   const filterModel = useMemo(() => {
     const safeHoldings = Array.isArray(tableHoldings)
@@ -54,122 +166,169 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
       holdings: safeHoldings,
       holdingDossiers: safeHoldingDossiers,
       newsEvents: safeNewsEvents,
+      state: safeFilterState,
+      searchQuery: debouncedSearchQuery,
     })
-  }, [panelHoldingDossiers, panelHoldings, panelNewsEvents, tableHoldings])
+  }, [
+    debouncedSearchQuery,
+    panelHoldingDossiers,
+    panelHoldings,
+    panelNewsEvents,
+    safeFilterState,
+    tableHoldings,
+  ])
+
+  const visibleHoldings = useMemo(
+    () => filterHoldingsByChipState(filterModel.rows, safeFilterState, debouncedSearchQuery),
+    [debouncedSearchQuery, filterModel.rows, safeFilterState]
+  )
+
+  const activeFilterCount = useMemo(
+    () => countActiveHoldingsFilters(safeFilterState) + (debouncedSearchQuery ? 1 : 0),
+    [debouncedSearchQuery, safeFilterState]
+  )
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.localStorage || !storageKey) return
+    if (typeof window === 'undefined' || !window.localStorage || !storageKeyV2) return
+
+    window.localStorage.setItem(storageKeyV2, JSON.stringify(serializeFilterState(safeFilterState)))
+    if (legacyStorageKey) {
+      window.localStorage.setItem(
+        legacyStorageKey,
+        JSON.stringify(buildLegacyHoldingsFilterStateMirror(safeFilterState))
+      )
+    }
+  }, [legacyStorageKey, safeFilterState, storageKeyV2])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.localStorage || !savedFiltersKey) return
 
     window.localStorage.setItem(
-      storageKey,
-      JSON.stringify(normalizeHoldingsFilterState(filterState))
+      savedFiltersKey,
+      JSON.stringify(
+        savedFilters.map((item) => ({
+          id: item.id,
+          name: item.name,
+          filterState: stripFilterState(item.filterState),
+        }))
+      )
     )
-  }, [filterState, storageKey])
+  }, [savedFilters, savedFiltersKey])
 
-  const safeFilterState = useMemo(() => normalizeHoldingsFilterState(filterState), [filterState])
-  const activePrimaryKeys = useMemo(
-    () => new Set(safeFilterState.selectedPrimaryKeys),
-    [safeFilterState.selectedPrimaryKeys]
-  )
-  const focusedPrimaryKey = safeFilterState.focusedPrimaryKey
-  const visibleHoldings = useMemo(
-    () => filterHoldingsByChipState(filterModel.rows, safeFilterState),
-    [filterModel.rows, safeFilterState]
-  )
-  const activeFilterCount = useMemo(
-    () => countActiveHoldingsFilters(safeFilterState),
-    [safeFilterState]
-  )
-  const secondaryChips = filterModel.secondaryChips?.[focusedPrimaryKey] || []
-  const activeSecondaryKeys = new Set(safeFilterState.secondaryFilters?.[focusedPrimaryKey] || [])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const nextParams = applyHoldingsFilterStateToSearchParams(
+      new URLSearchParams(window.location.search),
+      safeFilterState,
+      debouncedSearchQuery
+    )
+    const nextSearch = nextParams.toString()
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash || ''}`
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash || ''}`
+    if (nextUrl === currentUrl) return
+    window.history.replaceState(window.history.state, '', nextUrl)
+  }, [debouncedSearchQuery, safeFilterState])
 
   const updateFilterState = (updater) => {
-    setStoredFilterState((current) => {
-      const baseState =
-        current.storageKey === storageKey ? current.value : readStoredFilterState(storageKey)
-
-      return {
-        storageKey,
-        value: normalizeHoldingsFilterState(updater(normalizeHoldingsFilterState(baseState))),
-      }
-    })
+    setFilterState((current) =>
+      normalizeHoldingsFilterState(updater(normalizeHoldingsFilterState(current)))
+    )
   }
 
-  const handlePrimaryToggle = (primaryKey) => {
-    if (primaryKey === 'all') {
-      updateFilterState((current) => ({
-        ...current,
-        focusedPrimaryKey: 'all',
-      }))
-      return
-    }
-
-    updateFilterState((current) => {
-      const isSelected = current.selectedPrimaryKeys.includes(primaryKey)
-
-      if (isSelected && current.focusedPrimaryKey !== primaryKey) {
-        return {
-          ...current,
-          focusedPrimaryKey: primaryKey,
-        }
-      }
-
-      const nextSelectedPrimaryKeys = isSelected
-        ? current.selectedPrimaryKeys.filter((key) => key !== primaryKey)
-        : [...current.selectedPrimaryKeys, primaryKey]
-      const nextFocusedPrimaryKey = isSelected
-        ? nextSelectedPrimaryKeys[nextSelectedPrimaryKeys.length - 1] || 'all'
-        : primaryKey
-
-      return {
-        ...current,
-        selectedPrimaryKeys: nextSelectedPrimaryKeys,
-        focusedPrimaryKey: nextFocusedPrimaryKey,
-      }
-    })
+  const handleIntentChange = (intentKey) => {
+    updateFilterState((current) => ({
+      ...current,
+      intentKey,
+    }))
   }
 
-  const handleSecondaryToggle = (secondaryKey) => {
-    if (!['all', 'growth', 'event'].includes(focusedPrimaryKey)) return
-
+  const handleGroupToggle = (groupKey, optionKey) => {
     updateFilterState((current) => {
-      const currentValues = current.secondaryFilters?.[focusedPrimaryKey] || []
-      const nextValues = currentValues.includes(secondaryKey)
-        ? currentValues.filter((value) => value !== secondaryKey)
-        : [...currentValues, secondaryKey]
+      const currentValues = current.filterGroups?.[groupKey] || []
+      const nextValues = currentValues.includes(optionKey)
+        ? currentValues.filter((value) => value !== optionKey)
+        : [...currentValues, optionKey]
 
       return {
         ...current,
-        secondaryFilters: {
-          ...current.secondaryFilters,
-          [focusedPrimaryKey]: nextValues,
+        filterGroups: {
+          ...current.filterGroups,
+          [groupKey]: nextValues,
         },
       }
     })
   }
 
+  const handleClearAll = () => {
+    setFilterState(createDefaultHoldingsFilterState())
+    setSearchInput('')
+    setDebouncedSearchQuery('')
+  }
+
+  const handleApplySavedFilter = (savedFilterId) => {
+    const matched = savedFilters.find((item) => item.id === savedFilterId)
+    if (!matched) return
+    setFilterState(normalizeHoldingsFilterState(matched.filterState))
+    setSearchInput('')
+    setDebouncedSearchQuery('')
+  }
+
+  const handleSaveCurrentFilter = (name) => {
+    const normalizedName = String(name || '').trim()
+    if (!normalizedName) return { ok: false, error: '請先命名這組篩選。' }
+    if (countActiveHoldingsFilters(safeFilterState) === 0) {
+      return { ok: false, error: '至少先選一個 intent 或副 chip。' }
+    }
+
+    const nextFilterState = stripFilterState(safeFilterState)
+    setSavedFilters((current) => {
+      const existing = current.find((item) => item.name === normalizedName)
+      const nextEntry = {
+        id: existing?.id || `saved-filter-${Date.now()}`,
+        name: normalizedName,
+        filterState: nextFilterState,
+      }
+      const withoutExisting = current.filter((item) => item.id !== existing?.id)
+      return [nextEntry, ...withoutExisting]
+    })
+
+    return { ok: true }
+  }
+
+  const activeSavedFilterId = useMemo(
+    () =>
+      savedFilters.find((item) => areFilterStatesEqual(item.filterState, safeFilterState))?.id ||
+      '',
+    [safeFilterState, savedFilters]
+  )
+
   const holdingsFilterBar = {
     activeFilterCount,
     filteredCount: visibleHoldings.length,
     totalCount: filterModel.rows.length,
-    focusedPrimaryKey,
-    secondaryLabel: HOLDINGS_FILTER_PRIMARY_META[focusedPrimaryKey]?.secondaryLabel || '',
+    searchQuery: searchInput,
+    debouncedSearchQuery,
     primaryChips: filterModel.primaryChips.map((chip) => ({
       ...chip,
-      active: chip.key === 'all' ? activePrimaryKeys.size === 0 : activePrimaryKeys.has(chip.key),
-      focused: focusedPrimaryKey === chip.key,
-      onClick: () => handlePrimaryToggle(chip.key),
+      active: safeFilterState.intentKey === chip.key,
+      onClick: () => handleIntentChange(chip.key),
     })),
-    secondaryChips: secondaryChips.map((chip) => ({
-      ...chip,
-      active: activeSecondaryKeys.has(chip.key),
-      onClick: () => handleSecondaryToggle(chip.key),
+    filterGroups: filterModel.filterGroups.map((group) => ({
+      ...group,
+      chips: group.chips.map((chip) => ({
+        ...chip,
+        active: (safeFilterState.filterGroups[group.key] || []).includes(chip.key),
+        onClick: () => handleGroupToggle(group.key, chip.key),
+      })),
     })),
-    onClearAll: () =>
-      setStoredFilterState({
-        storageKey,
-        value: createDefaultHoldingsFilterState(),
-      }),
+    savedFilters,
+    activeSavedFilterId,
+    canSaveCurrentFilter: countActiveHoldingsFilters(safeFilterState) > 0,
+    onSearchChange: setSearchInput,
+    onSaveCurrentFilter: handleSaveCurrentFilter,
+    onApplySavedFilter: handleApplySavedFilter,
+    onClearAll: handleClearAll,
   }
 
   return (

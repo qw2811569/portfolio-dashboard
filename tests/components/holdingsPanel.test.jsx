@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HoldingsPanel } from '../../src/components/holdings/HoldingsPanel.jsx'
 
 function buildProps(overrides = {}) {
@@ -166,5 +166,47 @@ describe('components/HoldingsPanel', () => {
     const { container } = render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
     expect(container.querySelector('[data-error="tracked-stocks"]')).toBeTruthy()
     expect(container.textContent).toContain('登入狀態已過期')
+  })
+
+  it('renders the retail-intent filter bar with search and saved controls', () => {
+    render(
+      <HoldingsPanel
+        {...buildProps({
+          holdingsFilterBar: {
+            totalCount: 3,
+            filteredCount: 2,
+            activeFilterCount: 2,
+            searchQuery: 'AI',
+            debouncedSearchQuery: 'AI',
+            primaryChips: [
+              { key: 'attention', label: '🔥 需關注', count: 1, active: false, onClick: vi.fn() },
+              { key: 'all', label: '📊 全部', count: 3, active: true, onClick: vi.fn() },
+            ],
+            filterGroups: [
+              {
+                key: 'type',
+                label: '類型',
+                chips: [
+                  { key: 'growth', label: '成長股', count: 2, active: true, onClick: vi.fn() },
+                ],
+              },
+            ],
+            savedFilters: [{ id: 'focus', name: '法說前先看', filterState: {} }],
+            activeSavedFilterId: '',
+            canSaveCurrentFilter: true,
+            onSearchChange: vi.fn(),
+            onSaveCurrentFilter: vi.fn(() => ({ ok: true })),
+            onApplySavedFilter: vi.fn(),
+            onClearAll: vi.fn(),
+          },
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('holdings-filter-chip-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('holdings-filter-search')).toHaveValue('AI')
+    expect(screen.getByTestId('holdings-filter-saved-select')).toBeInTheDocument()
+    expect(screen.getByTestId('holdings-filter-save')).toBeInTheDocument()
+    expect(screen.getByTestId('holdings-filter-type-growth')).toBeInTheDocument()
   })
 })

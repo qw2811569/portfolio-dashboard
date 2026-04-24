@@ -234,8 +234,9 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
-    expect(await screen.findByText('台積電')).toBeInTheDocument()
-    expect(await screen.findByText('測試紀錄')).toBeInTheDocument()
+    const logPanel = await screen.findByTestId('trade-log-panel')
+    expect(within(logPanel).getAllByText('台積電').length).toBeGreaterThan(0)
+    expect(within(logPanel).getAllByText('測試紀錄').length).toBeGreaterThan(0)
   })
 
   it('renders dashboard panel from portfolio panel context and reuses canonical navigation actions', async () => {

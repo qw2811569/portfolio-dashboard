@@ -417,6 +417,7 @@ export function usePortfolioPanelsContextComposer({
         ...tradeCapture,
       },
       log: {
+        portfolioId: activePortfolioId,
         tradeLog,
       },
       news: {

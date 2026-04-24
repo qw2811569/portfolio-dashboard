@@ -31,8 +31,94 @@ function formatMonthStamp(value = new Date()) {
   return normalizeIsoString(value).slice(0, 7)
 }
 
+const TRADE_AUDIT_FILE_REGEX = /^trade-audit-\d{4}-\d{2}\.jsonl$/u
+
 export function getTradeAuditLogPath(now = new Date()) {
   return path.join(resolveWorkspaceRoot(), 'logs', `trade-audit-${formatMonthStamp(now)}.jsonl`)
+}
+
+function normalizeTradeAuditReadLimit(value, fallback = 60) {
+  const parsed = Number.parseInt(String(value ?? ''), 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.min(parsed, 240)
+}
+
+function normalizeTradeAuditPortfolioFilter(value = '') {
+  return String(value || '').trim()
+}
+
+function parseTradeAuditJsonLine(line = '') {
+  const raw = String(line || '').trim()
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export async function listTradeAuditLogPaths({ root = resolveWorkspaceRoot() } = {}) {
+  const logsDir = path.join(root, 'logs')
+
+  try {
+    const fileNames = await fsPromises.readdir(logsDir)
+    return fileNames
+      .filter((fileName) => TRADE_AUDIT_FILE_REGEX.test(fileName))
+      .sort((left, right) => right.localeCompare(left))
+      .map((fileName) => path.join(logsDir, fileName))
+  } catch (error) {
+    if (error?.code === 'ENOENT') return []
+    throw error
+  }
+}
+
+export async function readTradeAuditEntries({
+  portfolioId = '',
+  limit = 60,
+  filePaths = null,
+} = {}) {
+  const normalizedPortfolioId = normalizeTradeAuditPortfolioFilter(portfolioId)
+  const normalizedLimit = normalizeTradeAuditReadLimit(limit)
+  const targetFilePaths =
+    Array.isArray(filePaths) && filePaths.length > 0 ? filePaths : await listTradeAuditLogPaths()
+  const entries = []
+
+  for (const filePath of targetFilePaths) {
+    let content = ''
+
+    try {
+      content = await fsPromises.readFile(filePath, 'utf8')
+    } catch (error) {
+      if (error?.code === 'ENOENT') continue
+      throw error
+    }
+
+    const lines = content.split(/\r?\n/u)
+
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      const parsed = parseTradeAuditJsonLine(lines[index])
+      if (!parsed) continue
+      if (
+        normalizedPortfolioId &&
+        normalizeTradeAuditPortfolioFilter(parsed?.portfolioId) !== normalizedPortfolioId
+      ) {
+        continue
+      }
+
+      entries.push({
+        ...parsed,
+        sourceFile: path.basename(filePath),
+      })
+
+      if (entries.length >= normalizedLimit) {
+        return entries
+      }
+    }
+  }
+
+  return entries
 }
 
 function resolveAuditUserId(portfolioId, requestUserId = '') {

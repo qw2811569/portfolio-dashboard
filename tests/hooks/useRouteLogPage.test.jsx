@@ -20,16 +20,17 @@ describe('hooks/useRouteLogPage.js', () => {
       { id: 't2', code: '2454', action: '賣出', qty: 200 },
     ]
 
-    mockUsePortfolioRouteContext.mockReturnValue({ tradeLog })
+    mockUsePortfolioRouteContext.mockReturnValue({ portfolioId: 'me', tradeLog })
 
     const { result } = renderHook(() => useRouteLogPage())
 
-    expect(result.current).toEqual({ tradeLog })
+    expect(result.current).toEqual({ portfolioId: 'me', tradeLog })
     expect(result.current.tradeLog).toBe(tradeLog)
   })
 
-  it('returns correct props structure with only tradeLog key', () => {
+  it('returns correct props structure with portfolioId and tradeLog keys', () => {
     mockUsePortfolioRouteContext.mockReturnValue({
+      portfolioId: 'me',
       tradeLog: [],
       holdings: [{ code: '2330' }],
       targets: {},
@@ -37,7 +38,7 @@ describe('hooks/useRouteLogPage.js', () => {
 
     const { result } = renderHook(() => useRouteLogPage())
 
-    expect(Object.keys(result.current)).toEqual(['tradeLog'])
+    expect(Object.keys(result.current)).toEqual(['portfolioId', 'tradeLog'])
   })
 
   it('defaults tradeLog to empty array when context provides nothing', () => {
@@ -45,6 +46,6 @@ describe('hooks/useRouteLogPage.js', () => {
 
     const { result } = renderHook(() => useRouteLogPage())
 
-    expect(result.current).toEqual({ tradeLog: [] })
+    expect(result.current).toEqual({ portfolioId: '', tradeLog: [] })
   })
 })

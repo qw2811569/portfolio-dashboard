@@ -23,6 +23,15 @@ function createMockResponse() {
   }
 }
 
+function createRequest({ method = 'GET', query = {}, headers = {}, body = {} } = {}) {
+  return {
+    method,
+    query,
+    headers,
+    body,
+  }
+}
+
 describe('api/trade-audit', () => {
   let workspaceRoot = ''
 
@@ -42,7 +51,7 @@ describe('api/trade-audit', () => {
     const res = createMockResponse()
 
     await handler(
-      {
+      createRequest({
         method: 'POST',
         headers: { host: 'localhost:3002' },
         body: {
@@ -59,7 +68,7 @@ describe('api/trade-audit', () => {
             appendedTradeLogEntries: [{ code: '2330', action: '買進', qty: 2, price: 950 }],
           },
         },
-      },
+      }),
       res
     )
 
@@ -91,5 +100,106 @@ describe('api/trade-audit', () => {
       },
     })
     expect(entry.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('returns reverse-chronological trade audit entries filtered by portfolioId', async () => {
+    const { appendTradeAuditEntry } = await import('../../api/_lib/trade-audit.js')
+    const { default: handler } = await import('../../api/trade-audit.js')
+
+    await appendTradeAuditEntry(
+      {
+        portfolioId: 'me',
+        ts: '2026-04-23T23:55:00.000Z',
+        action: 'trade.confirm',
+        before: { holdings: [], tradeLogCount: 2 },
+        after: {
+          holdings: [{ code: '2330', qty: 1 }],
+          tradeLogCount: 3,
+          appendedTradeLogEntries: [
+            {
+              id: 1,
+              action: '買進',
+              code: '2330',
+              name: '台積電',
+              qty: 1,
+              price: 950,
+              date: '2026/04/24',
+              time: '09:10',
+            },
+          ],
+        },
+      },
+      {
+        filePath: path.join(workspaceRoot, 'logs', 'trade-audit-2026-04.jsonl'),
+      }
+    )
+
+    await appendTradeAuditEntry(
+      {
+        portfolioId: 'me',
+        ts: '2026-03-31T15:30:00.000Z',
+        action: 'trade.confirm',
+        before: { holdings: [], tradeLogCount: 0 },
+        after: {
+          holdings: [{ code: '2454', qty: 2 }],
+          tradeLogCount: 1,
+          appendedTradeLogEntries: [
+            {
+              id: 2,
+              action: '買進',
+              code: '2454',
+              name: '聯發科',
+              qty: 2,
+              price: 1200,
+              date: '2026/04/01',
+              time: '09:25',
+            },
+          ],
+        },
+      },
+      {
+        filePath: path.join(workspaceRoot, 'logs', 'trade-audit-2026-03.jsonl'),
+      }
+    )
+
+    await appendTradeAuditEntry(
+      {
+        portfolioId: 'other',
+        ts: '2026-04-24T01:00:00.000Z',
+        action: 'trade.confirm',
+        before: { holdings: [], tradeLogCount: 0 },
+        after: { holdings: [], tradeLogCount: 0, appendedTradeLogEntries: [] },
+      },
+      {
+        filePath: path.join(workspaceRoot, 'logs', 'trade-audit-2026-04.jsonl'),
+      }
+    )
+
+    const res = createMockResponse()
+
+    await handler(
+      createRequest({
+        method: 'GET',
+        headers: { host: 'localhost:3002' },
+        query: { portfolioId: 'me', limit: '5' },
+      }),
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.payload.summary).toMatchObject({
+      portfolioId: 'me',
+      count: 2,
+      lastUpdatedAt: '2026-04-23T23:55:00.000Z',
+    })
+    expect(res.payload.entries).toHaveLength(2)
+    expect(res.payload.entries[0]).toMatchObject({
+      portfolioId: 'me',
+      sourceFile: 'trade-audit-2026-04.jsonl',
+    })
+    expect(res.payload.entries[1]).toMatchObject({
+      portfolioId: 'me',
+      sourceFile: 'trade-audit-2026-03.jsonl',
+    })
   })
 })

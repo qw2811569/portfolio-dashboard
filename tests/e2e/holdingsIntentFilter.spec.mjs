@@ -96,28 +96,28 @@ const SEEDED_STORAGE = {
     },
   ],
   [`pf-${PORTFOLIO_ID}-targets-v1`]: {
-    '2308': {
+    2308: {
       reports: [{ firm: '元大', target: 1650, date: '2026-04-23' }],
     },
-    '3017': {
+    3017: {
       reports: [{ firm: '凱基', target: 2200, date: '2026-04-20' }],
     },
-    '4583': {
+    4583: {
       reports: [{ firm: '群益', target: 760, date: '2026-04-20' }],
     },
   },
   [`pf-${PORTFOLIO_ID}-fundamentals-v1`]: {
-    '2308': {
+    2308: {
       updatedAt: '2026-04-21T08:00:00.000Z',
       revenueMonth: '2026-03',
       revenueYoY: 25.4,
     },
-    '3017': {
+    3017: {
       updatedAt: '2026-02-01T08:00:00.000Z',
       revenueMonth: '2026-01',
       revenueYoY: 18.1,
     },
-    '4583': {
+    4583: {
       updatedAt: '2026-04-20T08:00:00.000Z',
       revenueMonth: '2026-03',
       revenueYoY: 9.2,
@@ -247,7 +247,13 @@ async function clickHoldingsTab(page) {
 }
 
 async function openHoldings(page) {
-  if (await page.getByTestId('holdings-filter-chip-bar').isVisible().catch(() => false)) return
+  if (
+    await page
+      .getByTestId('holdings-filter-chip-bar')
+      .isVisible()
+      .catch(() => false)
+  )
+    return
   await clickHoldingsTab(page)
   await expect(page.getByTestId('holdings-panel')).toBeVisible()
 }
@@ -260,7 +266,32 @@ test.afterEach(async ({}, testInfo) => {
   expectNoBlockingQaErrors(testInfo)
 })
 
-test('intent chips switch between need-attention, stable, action, and all', async ({ page }, testInfo) => {
+test('fresh storage keeps the default holdings table visible instead of falling into onboarding empty state', async ({
+  page,
+}, testInfo) => {
+  mergeQaEvidence(testInfo, { scenario: 'holdings-intent-fresh-default-visible' })
+  installQaMonitor(testInfo, page)
+
+  await seedStorage(page)
+  await stubCommonApis(page)
+  await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await settle(page, 2600)
+  await openHoldings(page)
+
+  await expect(page.getByText(/持股明細 · 4檔/)).toBeVisible()
+  await expect(page.getByTestId('holding-open-detail-2308')).toBeVisible()
+  await expect(page.getByText('還沒加股')).toHaveCount(0)
+
+  const storedV2 = await page.evaluate(
+    (key) => JSON.parse(window.localStorage.getItem(key) || '{}'),
+    `pf-${PORTFOLIO_ID}-holdings-filters-v2`
+  )
+  expect(storedV2.intentKey).toBe('all')
+})
+
+test('intent chips switch between need-attention, stable, action, and all', async ({
+  page,
+}, testInfo) => {
   mergeQaEvidence(testInfo, { scenario: 'holdings-intent-primary-switch' })
   installQaMonitor(testInfo, page)
 
@@ -288,7 +319,9 @@ test('intent chips switch between need-attention, stable, action, and all', asyn
   await expect(page.getByText(/持股明細 · 4檔/)).toBeVisible()
 })
 
-test('secondary chips compose with AND logic and URL sync stays readable', async ({ page }, testInfo) => {
+test('secondary chips compose with AND logic and URL sync stays readable', async ({
+  page,
+}, testInfo) => {
   mergeQaEvidence(testInfo, { scenario: 'holdings-intent-secondary-and-url' })
   installQaMonitor(testInfo, page)
 
@@ -342,11 +375,73 @@ test('search stacks with chip filters and saved filters can be stored then re-ap
   await expect(page.getByText(/持股明細 · 1檔/)).toBeVisible()
   await expect(page.getByTestId('holding-open-detail-3017')).toBeVisible()
 
-  const savedFilters = await page.evaluate((key) => JSON.parse(window.localStorage.getItem(key) || '[]'), SAVED_FILTERS_KEY)
+  const savedFilters = await page.evaluate(
+    (key) => JSON.parse(window.localStorage.getItem(key) || '[]'),
+    SAVED_FILTERS_KEY
+  )
   expect(savedFilters.map((item) => item.name)).toContain('散熱先處理')
 })
 
-test('mobile advanced drawer opens cleanly and the filter bar passes axe', async ({ page }, testInfo) => {
+test('legacy v1 all-pillars state migrates to the all intent instead of hiding the table', async ({
+  page,
+}, testInfo) => {
+  mergeQaEvidence(testInfo, { scenario: 'holdings-intent-legacy-all-pillars' })
+  installQaMonitor(testInfo, page)
+
+  await seedStorage(page, {
+    ...SEEDED_STORAGE,
+    [`pf-${PORTFOLIO_ID}-holdings-filters-v1`]: {
+      focusedPrimaryKey: 'all',
+      selectedPrimaryKeys: [],
+      secondaryFilters: {
+        all: ['broken', 'weakened', 'intact'],
+        growth: [],
+        event: [],
+      },
+    },
+  })
+  await stubCommonApis(page)
+  await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await settle(page, 2600)
+  await openHoldings(page)
+
+  await expect(page.getByText(/持股明細 · 4檔/)).toBeVisible()
+  await expect(page.getByTestId('holding-open-detail-2308')).toBeVisible()
+  await expect(page.getByText('還沒加股')).toHaveCount(0)
+
+  const storedV2 = await page.evaluate(
+    (key) => JSON.parse(window.localStorage.getItem(key) || '{}'),
+    `pf-${PORTFOLIO_ID}-holdings-filters-v2`
+  )
+  expect(storedV2.intentKey).toBe('all')
+})
+
+test('zero-match results use the filtered empty state and can clear back to all holdings', async ({
+  page,
+}, testInfo) => {
+  mergeQaEvidence(testInfo, { scenario: 'holdings-intent-zero-match-empty-state' })
+  installQaMonitor(testInfo, page)
+
+  await seedStorage(page)
+  await stubCommonApis(page)
+  await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await settle(page, 2600)
+  await openHoldings(page)
+
+  await page.getByTestId('holdings-filter-type-growth').click()
+  await page.getByTestId('holdings-filter-eventWindow-monthdividend').click()
+
+  await expect(page.getByTestId('holdings-filtered-empty-state')).toBeVisible()
+  await expect(page.getByText('目前篩選沒符合')).toBeVisible()
+  await expect(page.getByText('還沒加股')).toHaveCount(0)
+
+  await page.getByTestId('holdings-filtered-empty-clear').click()
+  await expect(page.getByText(/持股明細 · 4檔/)).toBeVisible()
+})
+
+test('mobile advanced drawer opens cleanly and the filter bar passes axe', async ({
+  page,
+}, testInfo) => {
   mergeQaEvidence(testInfo, { scenario: 'holdings-intent-mobile-a11y' })
   installQaMonitor(testInfo, page)
 

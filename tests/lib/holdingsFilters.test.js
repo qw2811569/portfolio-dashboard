@@ -85,6 +85,27 @@ describe('lib/holdingsFilters', () => {
     expect(migrated.selectedPrimaryKeys).toEqual(['growth', 'event'])
   })
 
+  it('keeps legacy all-pillars selections at the v2 all-intent instead of collapsing to attention', () => {
+    const migrated = normalizeHoldingsFilterState({
+      focusedPrimaryKey: 'all',
+      selectedPrimaryKeys: [],
+      secondaryFilters: {
+        all: ['broken', 'weakened', 'intact'],
+        growth: [],
+        event: [],
+      },
+    })
+
+    expect(migrated.intentKey).toBe('all')
+    expect(migrated.filterGroups).toEqual({
+      sector: [],
+      type: [],
+      eventWindow: [],
+      pnl: [],
+      risk: [],
+    })
+  })
+
   it('filters holdings with intent + secondary AND search working together', () => {
     const holdings = [
       { code: '2308', name: '台達電', qty: 1, cost: 100, price: 120, value: 120, type: '股票' },

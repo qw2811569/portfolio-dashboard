@@ -101,6 +101,37 @@ describe('components/HoldingsTable', () => {
     expect(screen.getByText('聯發科')).toBeInTheDocument()
   })
 
+  it('renders a zero-match empty state with a clear-filters CTA when filters hide every holding', () => {
+    mockMatchMedia(false)
+    const onClearFilters = vi.fn()
+
+    render(
+      <HoldingsTableHarness
+        holdings={[]}
+        totalHoldingsCount={4}
+        hasActiveFilters
+        onClearFilters={onClearFilters}
+        dossierByCode={new Map()}
+      />
+    )
+
+    expect(screen.getByTestId('holdings-filtered-empty-state')).toBeInTheDocument()
+    expect(screen.getByText('目前篩選沒符合')).toBeInTheDocument()
+    expect(screen.queryByText('還沒加股')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('holdings-filtered-empty-clear'))
+    expect(onClearFilters).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the onboarding empty state only for truly empty portfolios', () => {
+    mockMatchMedia(false)
+
+    render(<HoldingsTableHarness holdings={[]} totalHoldingsCount={0} dossierByCode={new Map()} />)
+
+    expect(screen.getByText('還沒加股')).toBeInTheDocument()
+    expect(screen.queryByTestId('holdings-filtered-empty-state')).not.toBeInTheDocument()
+  })
+
   it('opens a quick thesis form from the row CTA and saves the minimal draft', async () => {
     mockMatchMedia(false)
     const onUpsertThesis = vi.fn(async () => ({ success: true }))

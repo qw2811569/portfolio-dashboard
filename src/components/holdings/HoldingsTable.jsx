@@ -1,6 +1,6 @@
 import { createElement as h, useEffect, useRef, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { Card, StaleBadge } from '../common'
+import { Button, Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Skeleton } from '../common/Skeleton.jsx'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
@@ -57,6 +57,92 @@ const badgeToneStyles = {
     background: C.downBg,
     borderColor: alpha(C.down, '28'),
   },
+}
+
+function HoldingsFilteredEmptyState({ hasActiveFilters = false, onClearFilters = () => {} }) {
+  const showClearAction = hasActiveFilters && typeof onClearFilters === 'function'
+
+  return h(
+    Card,
+    {
+      'data-testid': 'holdings-filtered-empty-state',
+      style: {
+        marginBottom: 8,
+        textAlign: 'center',
+        padding: '28px 20px',
+        borderStyle: 'solid',
+        borderColor: alpha(C.border, 'd8'),
+        background: `radial-gradient(circle at 50% 0%, ${alpha(C.amber, '10')}, transparent 46%), linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          justifyItems: 'center',
+          gap: 12,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 11,
+            color: C.textMute,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          },
+        },
+        'Filter result'
+      ),
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 24,
+            fontWeight: 600,
+            color: C.text,
+            lineHeight: 1.15,
+            fontFamily: 'var(--font-headline)',
+          },
+        },
+        '目前篩選沒符合'
+      ),
+      h(
+        'div',
+        {
+          style: {
+            maxWidth: 420,
+            fontSize: 12,
+            color: C.textSec,
+            lineHeight: 1.8,
+          },
+        },
+        showClearAction
+          ? '試試清除篩選、換一個 chip，或把搜尋字詞放寬一點。'
+          : '目前清單暫時沒有符合的持股，稍後重新整理再看一次。'
+      ),
+      showClearAction &&
+        h(
+          Button,
+          {
+            'data-testid': 'holdings-filtered-empty-clear',
+            onClick: onClearFilters,
+            style: {
+              marginTop: 4,
+              background: alpha(C.cta, '12'),
+              border: `1px solid ${alpha(C.cta, '28')}`,
+              color: C.text,
+              padding: '10px 16px',
+              textTransform: 'none',
+              letterSpacing: '0.02em',
+            },
+          },
+          '清除篩選'
+        )
+    )
+  )
 }
 
 function getThesisQuickDraft(dossier = null) {
@@ -1056,6 +1142,9 @@ function HoldingMobileCard({
 export function HoldingsTable({
   holdings = [],
   loading = false,
+  totalHoldingsCount = 0,
+  hasActiveFilters = false,
+  onClearFilters = () => {},
   dossierByCode = new Map(),
   expandedStock = null,
   setExpandedStock = () => {},
@@ -1214,6 +1303,9 @@ export function HoldingsTable({
   }
 
   if (!holdings || holdings.length === 0) {
+    if (Number(totalHoldingsCount) > 0 || hasActiveFilters) {
+      return h(HoldingsFilteredEmptyState, { hasActiveFilters, onClearFilters })
+    }
     return h(EmptyState, { resource: 'holdings', onAction: onAddHoldings })
   }
 

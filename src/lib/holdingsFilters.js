@@ -171,6 +171,12 @@ const LEGACY_EVENT_TO_WINDOW = Object.freeze({
   watch: 'news3d',
 })
 
+const LEGACY_PILLAR_TO_INTENT = Object.freeze({
+  broken: 'attention',
+  weakened: 'action',
+  intact: 'stable',
+})
+
 function normalizeLookupKey(value) {
   return String(value || '')
     .trim()
@@ -295,18 +301,18 @@ function buildBaseRetailState(overrides = {}) {
   }
 }
 
+function resolveLegacyIntentSelection(values = []) {
+  const selectedPillars = uniqueStrings(values).filter((key) => HOLDINGS_FILTER_PILLAR_META[key])
+  if (selectedPillars.length !== 1) return 'all'
+  return LEGACY_PILLAR_TO_INTENT[selectedPillars[0]] || 'all'
+}
+
 function migrateLegacyHoldingsFilterState(raw) {
   const selectedPrimaryKeys = uniqueStrings(raw?.selectedPrimaryKeys)
     .map((value) => LEGACY_PRIMARY_TO_TYPE[value] || '')
     .filter(Boolean)
 
-  const nextIntent = uniqueStrings(raw?.secondaryFilters?.all).includes('broken')
-    ? 'attention'
-    : uniqueStrings(raw?.secondaryFilters?.all).includes('weakened')
-      ? 'action'
-      : uniqueStrings(raw?.secondaryFilters?.all).includes('intact')
-        ? 'stable'
-        : 'all'
+  const nextIntent = resolveLegacyIntentSelection(raw?.secondaryFilters?.all)
 
   return buildBaseRetailState({
     intentKey: nextIntent,
@@ -344,7 +350,7 @@ function normalizeExplicitRetailState(raw) {
 }
 
 export function createDefaultHoldingsFilterState() {
-  return withLegacyMirror(buildBaseRetailState())
+  return withLegacyMirror(buildBaseRetailState({ intentKey: 'all' }))
 }
 
 export function normalizeHoldingsFilterState(raw) {

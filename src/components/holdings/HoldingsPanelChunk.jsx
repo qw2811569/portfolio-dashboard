@@ -15,6 +15,19 @@ const EMPTY_LIST = []
 const EMPTY_SAVED_FILTERS = []
 const SEARCH_DEBOUNCE_MS = 200
 
+function resolveFilterSourceHoldings(tableHoldings, panelHoldings) {
+  const safeTableHoldings = Array.isArray(tableHoldings) ? tableHoldings : null
+  const safePanelHoldings = Array.isArray(panelHoldings) ? panelHoldings : null
+
+  if (safeTableHoldings && (safeTableHoldings.length > 0 || !safePanelHoldings?.length)) {
+    return safeTableHoldings
+  }
+
+  if (safePanelHoldings) return safePanelHoldings
+  if (safeTableHoldings) return safeTableHoldings
+  return EMPTY_LIST
+}
+
 function serializeFilterState(state) {
   const safeState = normalizeHoldingsFilterState(state)
   return {
@@ -152,11 +165,7 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   const safeFilterState = useMemo(() => normalizeHoldingsFilterState(filterState), [filterState])
 
   const filterModel = useMemo(() => {
-    const safeHoldings = Array.isArray(tableHoldings)
-      ? tableHoldings
-      : Array.isArray(panelHoldings)
-        ? panelHoldings
-        : EMPTY_LIST
+    const safeHoldings = resolveFilterSourceHoldings(tableHoldings, panelHoldings)
     const safeHoldingDossiers = Array.isArray(panelHoldingDossiers)
       ? panelHoldingDossiers
       : EMPTY_LIST
@@ -187,6 +196,7 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
     () => countActiveHoldingsFilters(safeFilterState) + (debouncedSearchQuery ? 1 : 0),
     [debouncedSearchQuery, safeFilterState]
   )
+  const hasActiveFilters = activeFilterCount > 0
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage || !storageKeyV2) return
@@ -333,7 +343,13 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
 
   return (
     <HoldingsPanel {...panelProps} holdingsFilterBar={holdingsFilterBar}>
-      <HoldingsTable {...tableProps} holdings={visibleHoldings} />
+      <HoldingsTable
+        {...tableProps}
+        holdings={visibleHoldings}
+        totalHoldingsCount={filterModel.rows.length}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearAll}
+      />
     </HoldingsPanel>
   )
 }

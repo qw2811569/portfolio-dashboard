@@ -187,15 +187,13 @@ export default function AppShellFrame({
         }
       `}</style>
 
-      <header aria-label="持倉工作台頁首">
-        <ErrorBoundary
-          scope="header"
-          title={headerBoundaryCopy.title}
-          description={headerBoundaryCopy.description}
-        >
-          <Header {...headerProps} />
-        </ErrorBoundary>
-      </header>
+      <ErrorBoundary
+        scope="header"
+        title={headerBoundaryCopy.title}
+        description={headerBoundaryCopy.description}
+      >
+        <Header {...headerProps} />
+      </ErrorBoundary>
 
       <main className="app-shell" style={{ padding: '8px 12px' }} aria-label="持倉工作台主內容">
         <h1 style={visuallyHiddenStyle}>持倉工作台</h1>

@@ -1005,10 +1005,11 @@ export default function Header(props) {
 
   if (!isMobile)
     return h(
-      'div',
+      'header',
       {
         className: 'app-shell',
         'data-testid': 'header-root',
+        'aria-label': '持倉工作台頁首',
         style: {
           ...shellSurface,
           borderBottom: `1px solid ${C.borderSoft}`,
@@ -1108,10 +1109,11 @@ export default function Header(props) {
     'div',
     null,
     h(
-      'div',
+      'header',
       {
         className: 'app-shell',
         'data-testid': 'header-root',
+        'aria-label': '持倉工作台頁首',
         style: {
           position: 'fixed',
           top: 0,

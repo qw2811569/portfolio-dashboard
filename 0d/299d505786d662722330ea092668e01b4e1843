@@ -1,0 +1,432 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "90a9a337-cc10-46c7-bb86-2441897fc72c",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bn15e7pg5</task-id>\n<tool-use-id>toolu_01Gm6NtUt6rSCWTQNJKcCWY9</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "Log tab done · `f561ce3` · 整合 trade-audit JSONL · mobile + skeleton + stale badge all added · mirror 完。**SA §5-10 全 8 頁覆蓋完成**。\n\n背景 2 條：\n- **final-qa-aggregate**（Playwright cross-browser）\n- **hostile-qa-codex**（主動找 bug）\n\nHostile QA 會覆蓋我剛用 screenshot 找到的 9 個 bug（2330 duplicate / preview fallback / counter mismatch / missing / etc.）· 等它回來一次 fix。",
+      "prompt_hash": "sha256:1dc33c44e28ddcda6284eef4d5a90fe6f61c42c49025333afd9e351217282adc",
+      "message_count": 8223,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-24T03:12:06.563Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T03:12:12.092Z",
+      "session_duration_secs": 771654,
+      "ai_response_time_secs": 11.3870369955157,
+      "prompt_submitted_at": "2026-04-24T03:12:06.776426Z",
+      "prompt_duration_secs": 26,
+      "accepted_lines": 9066,
+      "overridden_lines": 20,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "package-lock.json",
+      "line_range": [
+        24,
+        2688
+      ],
+      "files_changed": [
+        {
+          "path": "package-lock.json",
+          "line_range": [
+            24,
+            2688
+          ],
+          "blob_hash": "050a8b8e19df0d6b7ea2b4995c04dcfafe768315",
+          "additions": 24
+        },
+        {
+          "path": "package.json",
+          "line_range": [
+            59,
+            59
+          ],
+          "blob_hash": "0a94fae5e2d3213a9549e8d18e9d92252698f16b",
+          "additions": 1
+        },
+        {
+          "path": "tests/e2e/accuracyGate.spec.mjs",
+          "line_range": [
+            2,
+            232
+          ],
+          "blob_hash": "9ca238187f45c192c16dfd7c3b191a541b351eb6",
+          "additions": 24,
+          "deletions": 3
+        },
+        {
+          "path": "tests/e2e/dailyPrincipleFreshness.spec.mjs",
+          "line_range": [
+            136,
+            136
+          ],
+          "blob_hash": "79e4c067324e5b7c19d0a7b6a8e529ea38e30c45",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "tests/e2e/dataErrorStates.spec.mjs",
+          "line_range": [
+            32,
+            34
+          ],
+          "blob_hash": "cdbdead57cebe7cff54eb04d67dd0763b74de435",
+          "additions": 3,
+          "deletions": 5
+        },
+        {
+          "path": "tests/e2e/keyboardNav.spec.mjs",
+          "line_range": [
+            84,
+            241
+          ],
+          "blob_hash": "a36dc6b03a37109cf943534ce796ecb360a46df2",
+          "additions": 122,
+          "deletions": 101
+        },
+        {
+          "path": "tests/e2e/mViewCompareStrip.spec.mjs",
+          "line_range": [
+            7,
+            127
+          ],
+          "blob_hash": "84bc2947f88e7a25cd74c503e11dfa8afab82ceb",
+          "additions": 11,
+          "deletions": 4
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "bb3c5a98ab5c63730fac2309699f36b1f460dcd8"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "77ed127b8edd943a234963b80985523fc912eb75"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8a781d1cd30736cffb53b501470e43ce0b01790b"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6dd56ca35a40b0f1fed45b3b6a678e612fa7de4a"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "326af13c0cbce2e72d456f1a49ad2423963c5a56"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "19e09b00d60e8970b5abb953819951ede4d17be6"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c946d76751781b16735dd3856920fdf76d1cc262"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-01.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "26078d06ddd3141cefd82d2bed969cd0ac6e76b0"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-02.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "edad58b41a2327c9deeb71bc08569dc80d1beadd"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-03.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "2f7ae188912c0092508f8b7ede4580bbf4b310bc"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-04.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c406143c889c799f3ffe34a16dd1c99ce8fae87c"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-05.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e23513fd557245e65113ecf3c136251d70118c22"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c032d9c1c6b9820450ad4ead2a25dcc1d7755543"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ca847815dd6785f30665bf319133e0ac147efb29"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fdf747c3fb6758c97713f20c5e2aaf1c74200cd4"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ddbd8416b2929f5ad0c6d56827eff31e983ad4e8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3494995fdffae7c1b41203e694700f556f33f35d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e985975336d141bd1885b48f907bec9d573296bb"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de15a42e4d9ebd3c41f5ebe58e3f33326bd94a9d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "84a0b48127f53e0c984d4a21165daf20f772573c"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8357e4c5aa7b48036f2e182f292505dafcbd2970"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8357e4c5aa7b48036f2e182f292505dafcbd2970"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ec3cc1a424c448765f1a9dea708e1ee58c324ccc"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "482b6d486e2d2f3ea4d954f79278d5df65c2b545"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "dbfa8e1606b784514818261a55c66c9b238db0ce"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b5c1f5ca3ceda78f009859b2fc22989cd189f17c"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "da24b6e310f955ad755ae9f28408fed72894ba9d"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "56e1c951dee6385dc1b05b73b944157e14bc58c9"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fd9017a99636f496bece2f61793750b9a3e7ecd3"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e3c785051b581dd74c2ad9e8723214a439b0ce45"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "80905a7dee4b2cc612ce2202961515eb8e5f815f"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "417412432bf32f14032085d18e789140af5ec680"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "417412432bf32f14032085d18e789140af5ec680"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "211146be516678a22f83419ff85f968bc36ca8fb"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "d2262396034338550eeb17a63027ba53af99f3ea"
+        },
+        {
+          "path": "tests/e2e/support/qaHelpers.mjs",
+          "line_range": [
+            22,
+            230
+          ],
+          "blob_hash": "ee06267e1163cd9b8b0f45d96b78b6d6abadba78",
+          "additions": 70
+        },
+        {
+          "path": "tests/e2e/tradeDisclaimer.spec.mjs",
+          "line_range": [
+            96,
+            165
+          ],
+          "blob_hash": "731590a00bb53d10b7115abf1ecee994f37c95a4",
+          "additions": 12,
+          "deletions": 7
+        }
+      ],
+      "prompt_number": 725,
+      "total_additions": 268,
+      "total_deletions": 121,
+      "tools_used": [
+        "Bash"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bn15e7pg5</task-id>\n<tool-use-id>toolu_01Gm6NtUt6rSCWTQNJKcCWY9</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch SA §5.10 Log audit\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/sa-5-10-log-audit/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "Log tab done · `f561ce3` · 整合 trade-audit JSONL · mobile + skeleton + stale badge all added · mirror 完。**SA §5-10 全 8 頁覆蓋完成**。\n\n背景 2 條：\n- **final-qa-aggregate**（Playwright cross-browser）\n- **hostile-qa-codex**（主動找 bug）\n\nHostile QA 會覆蓋我剛用 screenshot 找到的 9 個 bug（2330 duplicate / preview fallback / counter mismatch / missing / etc.）· 等它回來一次 fix。"
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

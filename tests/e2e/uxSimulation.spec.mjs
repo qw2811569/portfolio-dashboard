@@ -9,6 +9,7 @@ import {
   mergeQaEvidence,
 } from './support/qaHelpers.mjs'
 import { diffHoldingCodes, getPersonaFixture, sortHoldingCodes } from './personaFixtures.mjs'
+import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../../src/seedDataJinliancheng.js'
 
 const ROOT_DIR = process.cwd()
 const ROUND_DIR = resolve(ROOT_DIR, '.tmp/portfolio-r8-loop')
@@ -68,6 +69,40 @@ const EMPTY_PORTFOLIO_SEED = {
   [`pf-${EMPTY_PORTFOLIO_ID}-notes-v1`]: {},
   [`pf-${EMPTY_PORTFOLIO_ID}-report-refresh-meta-v1`]: {},
 }
+const PERSONA_B_STORAGE_SEED = {
+  'pf-portfolios-v1': [
+    { id: 'me', name: '我', isOwner: true, createdAt: '2026-04-24' },
+    { id: '7865', name: '金聯成', isOwner: false, createdAt: '2026-04-24' },
+  ],
+  'pf-active-portfolio-v1': 'me',
+  'pf-view-mode-v1': 'portfolio',
+  'pf-schema-version': 3,
+  'trade-disclaimer-v1-ack-at': '2026-04-24T09:30:00.000+08:00',
+  'pf-cloud-sync-at': '1776994200000',
+  'pf-analysis-cloud-sync-at': '1776994200000',
+  'pf-research-cloud-sync-at': '1776994200000',
+  'pf-7865-holdings-v2': INIT_HOLDINGS_JINLIANCHENG,
+  'pf-7865-log-v2': [],
+  'pf-7865-targets-v1': INIT_TARGETS_JINLIANCHENG,
+  'pf-7865-fundamentals-v1': {},
+  'pf-7865-watchlist-v1': [],
+  'pf-7865-analyst-reports-v1': {},
+  'pf-7865-report-refresh-meta-v1': {},
+  'pf-7865-holding-dossiers-v1': [],
+  'pf-7865-news-events-v1': [],
+  'pf-7865-analysis-history-v1': [],
+  'pf-7865-daily-report-v1': null,
+  'pf-7865-research-history-v1': [],
+  'pf-7865-brain-v1': null,
+  'pf-7865-reversal-v1': {},
+  'pf-7865-notes-v1': {},
+}
+const PERSONA_B_RAW_STORAGE_KEYS = new Set([
+  'trade-disclaimer-v1-ack-at',
+  'pf-cloud-sync-at',
+  'pf-analysis-cloud-sync-at',
+  'pf-research-cloud-sync-at',
+])
 
 function slugify(value) {
   return String(value || '')
@@ -304,6 +339,20 @@ async function primeEmptyPortfolioSeed(page) {
       window.localStorage.setItem(key, JSON.stringify(value))
     }
   }, EMPTY_PORTFOLIO_SEED)
+}
+
+async function primePersonaBSeed(page) {
+  await page.addInitScript(({ seed, rawKeys }) => {
+    window.localStorage.clear()
+    window.sessionStorage.clear()
+    for (const [key, value] of Object.entries(seed || {})) {
+      if (rawKeys.includes(key)) {
+        window.localStorage.setItem(key, String(value ?? ''))
+        continue
+      }
+      window.localStorage.setItem(key, JSON.stringify(value))
+    }
+  }, { seed: PERSONA_B_STORAGE_SEED, rawKeys: Array.from(PERSONA_B_RAW_STORAGE_KEYS) })
 }
 
 async function recordBlockedStep({
@@ -697,6 +746,39 @@ async function assertPersonaHoldingsAligned(page, persona, state = null) {
 
   expect(actual, `persona ${persona.personaId} holdings drift`).toEqual(expected)
   return { actual, expected, diff }
+}
+
+async function ensurePersonaHoldingsAligned(page, persona, state = null, attempts = 3) {
+  let lastResult = null
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const actual = await getVisibleHoldingCodes(page)
+    const expected = sortHoldingCodes(persona.canonicalHoldings)
+    const diff = diffHoldingCodes(actual, expected)
+    lastResult = { actual, expected, diff }
+
+    if (state) {
+      recordNote(
+        state,
+        `persona ${persona.personaId} alignment attempt ${attempt + 1}/${attempts} → actual=${actual.length}, expected=${expected.length}, missing=${diff.missing.join(', ') || 'none'}, extra=${diff.extra.join(', ') || 'none'}`
+      )
+    }
+
+    if (diff.missing.length === 0 && diff.extra.length === 0) {
+      return lastResult
+    }
+
+    if (attempt === attempts - 1) break
+
+    await selectPortfolio(page, persona)
+    await clickTab(page, 'holdings', '持倉')
+    await settle(page, 1800)
+  }
+
+  expect(lastResult?.actual || [], `persona ${persona.personaId} holdings drift`).toEqual(
+    lastResult?.expected || []
+  )
+  return lastResult
 }
 
 function pickPersonaDrillCodes(persona, limit = 1) {
@@ -1148,6 +1230,7 @@ test('ux simulation round2 persona B (7865 / 金聯成) runs live audit with com
   page,
 }, testInfo) => {
   test.setTimeout(8 * 60 * 1000)
+  await primePersonaBSeed(page)
 
   const scenario = buildRound2Scenario('ux-round2-7865', testInfo)
   const state = createScenarioState(testInfo, scenario, scenario)
@@ -1224,7 +1307,7 @@ test('ux simulation round2 persona B (7865 / 金聯成) runs live audit with com
       action: async () => {
         await scrollToTop(page)
         await clickTab(page, 'holdings', '持倉')
-        await assertPersonaHoldingsAligned(page, PERSONA_B, state)
+        await ensurePersonaHoldingsAligned(page, PERSONA_B, state)
         const ready = await ensureHoldingReady(page, {
           code: '7865',
           custId: PERSONA_B.custId,

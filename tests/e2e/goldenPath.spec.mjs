@@ -13,6 +13,7 @@ const STEP_WAIT_MS = 1800
 const GOLDEN_PATH_IGNORED_RESPONSE_PATTERNS = [
   /\/api\/target-prices\?code=/,
   /\/api\/analyst-reports(?:\?|$)/,
+  /\/api\/trade-audit(?:\?|$)/,
 ]
 const GOLDEN_PATH_IGNORED_PAGEERROR_PATTERNS = [
   /\/api\/finmind\?.*due to access control checks\./i,

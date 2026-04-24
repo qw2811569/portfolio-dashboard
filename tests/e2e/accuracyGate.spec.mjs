@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { PORTFOLIO_BASE_URL } from './support/qaHelpers.mjs'
+import { PORTFOLIO_BASE_URL, stubOwnerCloudBootstrap } from './support/qaHelpers.mjs'
 
 const SEEDED_PORTFOLIO_ID = 'me'
 const SEEDED_RESEARCH_RESULT = {
@@ -139,12 +139,28 @@ async function clickTab(page, label) {
   await settle(page, 1200)
 }
 
+async function clickFirstResearchHolding(page) {
+  const stockButton = page
+    .getByText('想先深挖哪一檔：')
+    .first()
+    .locator('..')
+    .getByRole('button')
+    .first()
+  await expect(stockButton).toBeVisible()
+  await stockButton.click()
+}
+
 test('accuracy gate hard-blocks only affected sections and keeps CTA flows working', async ({
   page,
 }) => {
   let researchRequestCount = 0
 
   await seedApp(page)
+  await stubOwnerCloudBootstrap(page, {
+    holdings: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-holdings-v2`],
+    events: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-news-events-v1`],
+    history: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-analysis-history-v1`],
+  })
   await page.route(RESEARCH_ROUTE_PATTERN, async (route) => {
     researchRequestCount += 1
     await route.fulfill({
@@ -177,7 +193,7 @@ test('accuracy gate hard-blocks only affected sections and keeps CTA flows worki
 
   await clickTab(page, '深度研究')
   const requestCountBeforeResearch = researchRequestCount
-  await page.getByRole('button', { name: '台積電', exact: true }).click()
+  await clickFirstResearchHolding(page)
 
   await expect.poll(() => researchRequestCount).toBeGreaterThan(requestCountBeforeResearch)
 
@@ -197,6 +213,11 @@ test('accuracy gate block does not cause horizontal overflow on mobile viewport'
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await seedApp(page)
+  await stubOwnerCloudBootstrap(page, {
+    holdings: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-holdings-v2`],
+    events: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-news-events-v1`],
+    history: SEEDED_STORAGE[`pf-${SEEDED_PORTFOLIO_ID}-analysis-history-v1`],
+  })
   await page.route(RESEARCH_ROUTE_PATTERN, async (route) => {
     await route.fulfill({
       status: 200,
@@ -208,7 +229,7 @@ test('accuracy gate block does not cause horizontal overflow on mobile viewport'
   await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
   await settle(page, 2200)
   await clickTab(page, '深度研究')
-  await page.getByRole('button', { name: '台積電', exact: true }).click()
+  await clickFirstResearchHolding(page)
 
   const researchBlock = page.locator(
     '[data-testid="accuracy-gate-block"][data-resource="research"]'

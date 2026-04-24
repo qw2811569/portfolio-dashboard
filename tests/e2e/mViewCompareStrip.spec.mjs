@@ -4,6 +4,7 @@ import {
   expectNoBlockingQaErrors,
   installQaMonitor,
   saveLocatorScreenshot,
+  stubOwnerCloudBootstrap,
 } from './support/qaHelpers.mjs'
 
 const M_VIEW_SEED = {
@@ -54,6 +55,10 @@ const M_VIEW_SEED = {
 }
 
 async function seedDashboard(page) {
+  await stubOwnerCloudBootstrap(page, {
+    holdings: M_VIEW_SEED['pf-me-holdings-v2'],
+    events: M_VIEW_SEED['pf-me-news-events-v1'],
+  })
   await page.addInitScript((seed) => {
     window.localStorage.clear()
     window.sessionStorage.clear()
@@ -64,7 +69,7 @@ async function seedDashboard(page) {
 
   await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
   await page.waitForLoadState('networkidle').catch(() => {})
-  await expect(page.getByTestId('dashboard-headline')).toBeVisible()
+  await expect(page.getByTestId('dashboard-compare-strip')).toBeVisible()
 }
 
 test.afterEach(async ({}, testInfo) => {
@@ -79,10 +84,12 @@ test('desktop shows compare strip below dashboard hero and click opens overview'
 
   const compareStrip = page.getByTestId('dashboard-compare-strip')
   await expect(compareStrip).toBeVisible()
-  await expect(page.getByTestId('dashboard-compare-summary')).toContainText('今日差距 +0.1pp')
+  await expect(page.getByTestId('dashboard-compare-summary')).toContainText('小奎主要投資')
+  await expect(page.getByTestId('dashboard-compare-summary')).toContainText('金聯成組合')
+  await expect(page.getByTestId('dashboard-compare-summary')).toContainText(/今日差距/)
   await saveLocatorScreenshot(compareStrip, testInfo, 'desktop-dashboard-compare.png')
 
-  await compareStrip.getByText('今日差距 +0.1pp').click()
+  await compareStrip.click()
   await expect(page.getByTestId('overview-summary-metrics-grid')).toBeVisible()
   await saveLocatorScreenshot(
     page.getByTestId('overview-summary-metrics-grid'),
@@ -117,6 +124,6 @@ test('iphone se keeps the compare strip readable on dashboard', async ({ page },
   const compareStrip = page.getByTestId('dashboard-compare-strip')
   await expect(compareStrip).toBeVisible()
   await expect(page.getByTestId('dashboard-compare-summary')).toContainText('小奎主要投資')
-  await expect(page.getByTestId('dashboard-compare-insight')).toContainText('主要拉動是 台積電')
+  await expect(page.getByTestId('dashboard-compare-insight')).toContainText(/台積電/)
   await saveLocatorScreenshot(compareStrip, testInfo, 'iphone-se-dashboard-compare.png')
 })

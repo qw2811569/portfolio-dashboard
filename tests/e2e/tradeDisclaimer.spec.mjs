@@ -93,8 +93,15 @@ async function openTradeRoute(page) {
     timeout: 120000,
   })
   await page.waitForLoadState('domcontentloaded')
-  await page.getByRole('button', { name: '上傳成交', exact: true }).click()
-  await expect(page.getByTestId('trade-panel')).toBeVisible()
+  const tradePanel = page.getByTestId('trade-panel')
+  const disclaimerModal = page.getByTestId('trade-disclaimer-modal')
+
+  if (!(await tradePanel.isVisible().catch(() => false))) {
+    if (!(await disclaimerModal.isVisible().catch(() => false))) {
+      await page.getByRole('button', { name: '上傳成交', exact: true }).click()
+    }
+    await expect(tradePanel).toBeVisible()
+  }
 }
 
 function readTradeAuditEntries() {
@@ -133,8 +140,7 @@ test('trade disclaimer appears on first visit, persists, and re-prompts after 90
   expect(acknowledgedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
 
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 })
-  await page.getByRole('button', { name: '上傳成交', exact: true }).click()
-  await expect(page.getByTestId('trade-panel')).toBeVisible()
+  await openTradeRoute(page)
   await expect(page.getByTestId('trade-disclaimer-modal')).toBeHidden()
 
   const rePromptAt = new Date(
@@ -142,8 +148,7 @@ test('trade disclaimer appears on first visit, persists, and re-prompts after 90
   ).toISOString()
   await mockDateOnNextNavigation(page, rePromptAt)
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 })
-  await page.getByRole('button', { name: '上傳成交', exact: true }).click()
-  await expect(page.getByTestId('trade-panel')).toBeVisible()
+  await openTradeRoute(page)
   await expect(page.getByTestId('trade-disclaimer-modal')).toBeVisible()
 })
 
@@ -157,7 +162,7 @@ test('trade preview-confirm flow appends an audit entry after disclaimer ack', a
   await openTradeRoute(page)
   await maybeAcceptTradeDisclaimer(page)
 
-  const tradeName = `E2E-${testInfo.project.name}`
+  const tradeName = `E2E-${testInfo.project.name}-${Date.now()}`
 
   await page.getByTestId('manual-trade-code-input').fill('9910')
   await page.getByTestId('manual-trade-name-input').fill(tradeName)

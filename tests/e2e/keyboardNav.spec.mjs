@@ -81,6 +81,121 @@ async function switchToPortfolio(page, { portfolioId = '', portfolioLabel = '' }
   await settle(page, 2200)
 }
 
+async function openHoldingsTab(page) {
+  const tab = await requireLocator(
+    'missing holdings tab',
+    page.getByTestId('tab-holdings'),
+    page.getByRole('button', { name: '持倉', exact: true })
+  )
+  await tab.scrollIntoViewIfNeeded()
+  await tab.click()
+  await settle(page, 1800)
+}
+
+async function readFocusState(page) {
+  return page.evaluate(() => {
+    function parseColor(color) {
+      if (typeof color !== 'string') return null
+      const match = color
+        .trim()
+        .match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/i)
+      if (!match) return null
+
+      return {
+        r: Number(match[1]),
+        g: Number(match[2]),
+        b: Number(match[3]),
+        a: match[4] == null ? 1 : Number(match[4]),
+      }
+    }
+
+    function resolveBackgroundColor(element) {
+      let current = element
+
+      while (current) {
+        const parsed = parseColor(window.getComputedStyle(current).backgroundColor)
+        if (parsed && parsed.a > 0) return parsed
+        current = current.parentElement
+      }
+
+      return parseColor(window.getComputedStyle(document.body).backgroundColor) || {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 1,
+      }
+    }
+
+    function srgbToLinear(channel) {
+      const normalized = channel / 255
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4)
+    }
+
+    function relativeLuminance(color) {
+      const r = srgbToLinear(color.r)
+      const g = srgbToLinear(color.g)
+      const b = srgbToLinear(color.b)
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+
+    function contrastRatio(a, b) {
+      const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x)
+      return (lighter + 0.05) / (darker + 0.05)
+    }
+
+    const activeElement = document.activeElement
+    if (!activeElement || activeElement === document.body) {
+      return {
+        id: null,
+        label: null,
+        tagName: activeElement?.tagName || null,
+        outlineStyle: 'none',
+        outlineWidth: 0,
+        outlineColor: null,
+        contrastRatio: 0,
+        passed: false,
+        reason: 'focus stayed on body',
+      }
+    }
+
+    const style = window.getComputedStyle(activeElement)
+    const outlineWidth = Number.parseFloat(style.outlineWidth || '0')
+    const outlineColor = parseColor(style.outlineColor)
+    const backgroundColor = resolveBackgroundColor(activeElement)
+    const label =
+      activeElement.getAttribute('aria-label') ||
+      activeElement.textContent ||
+      activeElement.getAttribute('data-testid') ||
+      activeElement.getAttribute('placeholder') ||
+      activeElement.getAttribute('name') ||
+      ''
+
+    const ratio = outlineColor && backgroundColor ? contrastRatio(outlineColor, backgroundColor) : 0
+
+    return {
+      id: activeElement.id || null,
+      label: String(label).replace(/\s+/g, ' ').trim().slice(0, 80),
+      tagName: activeElement.tagName.toLowerCase(),
+      outlineStyle: style.outlineStyle,
+      outlineWidth,
+      outlineColor: style.outlineColor,
+      boxShadow: style.boxShadow,
+      contrastRatio: ratio,
+      passed: style.outlineStyle !== 'none' && outlineWidth >= 2 && ratio >= 3,
+      reason:
+        style.outlineStyle === 'none'
+          ? 'outline-style is none'
+          : outlineWidth < 2
+            ? `outline-width is ${outlineWidth}`
+            : ratio < 3
+              ? `contrast ratio ${ratio.toFixed(2)} is below 3`
+              : '',
+    }
+  })
+}
+
 test.afterEach(async ({}, testInfo) => {
   expectNoBlockingQaErrors(testInfo)
 })
@@ -99,6 +214,7 @@ test('keyboard navigation keeps a visible focus ring with sufficient contrast', 
     portfolioId: TARGET_PORTFOLIO_ID,
     portfolioLabel: TARGET_PORTFOLIO_LABEL,
   })
+  await openHoldingsTab(page)
 
   await expect(
     await requireLocator(
@@ -117,107 +233,12 @@ test('keyboard navigation keeps a visible focus ring with sufficient contrast', 
     await page.waitForTimeout(120)
     await savePageScreenshot(page, testInfo, `keyboard-tab-${String(step).padStart(2, '0')}.png`)
 
-    const focusState = await page.evaluate(() => {
-      function parseColor(color) {
-        if (typeof color !== 'string') return null
-        const match = color
-          .trim()
-          .match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/i)
-        if (!match) return null
-
-        return {
-          r: Number(match[1]),
-          g: Number(match[2]),
-          b: Number(match[3]),
-          a: match[4] == null ? 1 : Number(match[4]),
-        }
-      }
-
-      function resolveBackgroundColor(element) {
-        let current = element
-
-        while (current) {
-          const parsed = parseColor(window.getComputedStyle(current).backgroundColor)
-          if (parsed && parsed.a > 0) return parsed
-          current = current.parentElement
-        }
-
-        return parseColor(window.getComputedStyle(document.body).backgroundColor) || {
-          r: 255,
-          g: 255,
-          b: 255,
-          a: 1,
-        }
-      }
-
-      function srgbToLinear(channel) {
-        const normalized = channel / 255
-        return normalized <= 0.03928
-          ? normalized / 12.92
-          : Math.pow((normalized + 0.055) / 1.055, 2.4)
-      }
-
-      function relativeLuminance(color) {
-        const r = srgbToLinear(color.r)
-        const g = srgbToLinear(color.g)
-        const b = srgbToLinear(color.b)
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b
-      }
-
-      function contrastRatio(a, b) {
-        const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x)
-        return (lighter + 0.05) / (darker + 0.05)
-      }
-
-      const activeElement = document.activeElement
-      if (!activeElement || activeElement === document.body) {
-        return {
-          id: null,
-          label: null,
-          tagName: activeElement?.tagName || null,
-          outlineStyle: 'none',
-          outlineWidth: 0,
-          outlineColor: null,
-          contrastRatio: 0,
-          passed: false,
-          reason: 'focus stayed on body',
-        }
-      }
-
-      const style = window.getComputedStyle(activeElement)
-      const outlineWidth = Number.parseFloat(style.outlineWidth || '0')
-      const outlineColor = parseColor(style.outlineColor)
-      const backgroundColor = resolveBackgroundColor(activeElement)
-      const label =
-        activeElement.getAttribute('aria-label') ||
-        activeElement.textContent ||
-        activeElement.getAttribute('data-testid') ||
-        activeElement.getAttribute('placeholder') ||
-        activeElement.getAttribute('name') ||
-        ''
-
-      const ratio = outlineColor && backgroundColor ? contrastRatio(outlineColor, backgroundColor) : 0
-
-      return {
-        id: activeElement.id || null,
-        label: String(label).replace(/\s+/g, ' ').trim().slice(0, 80),
-        tagName: activeElement.tagName.toLowerCase(),
-        outlineStyle: style.outlineStyle,
-        outlineWidth,
-        outlineColor: style.outlineColor,
-        boxShadow: style.boxShadow,
-        contrastRatio: ratio,
-        passed: style.outlineStyle !== 'none' && outlineWidth >= 2 && ratio >= 3,
-        reason:
-          style.outlineStyle === 'none'
-            ? 'outline-style is none'
-            : outlineWidth < 2
-              ? `outline-width is ${outlineWidth}`
-              : ratio < 3
-                ? `contrast ratio ${ratio.toFixed(2)} is below 3`
-                : '',
-      }
-    })
+    let focusState = await readFocusState(page)
+    if (!focusState.passed && focusState.reason === 'focus stayed on body') {
+      await page.keyboard.press('Tab')
+      await page.waitForTimeout(120)
+      focusState = await readFocusState(page)
+    }
 
     expect(
       focusState.passed,

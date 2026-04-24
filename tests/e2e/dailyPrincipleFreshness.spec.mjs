@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { PORTFOLIO_BASE_URL } from './support/qaHelpers.mjs'
+import { PORTFOLIO_BASE_URL, stubOwnerCloudBootstrap } from './support/qaHelpers.mjs'
 
 const PORTFOLIO_ID = 'me'
 const TARGET_STALE_AT = '2026-04-15'
@@ -133,27 +133,31 @@ async function routeFreshDailySnapshot(page) {
 async function routePendingValuation(page) {
   await page.route('**/api/valuation?code=*', async (route) => {
     await route.fulfill({
-      status: 304,
+      status: 200,
       contentType: 'application/json',
       body: JSON.stringify({}),
     })
   })
 }
 
-async function expandFirstHolding(page) {
-  const firstRow = page.locator('[data-holding-code]').first()
-  const code = String((await firstRow.getAttribute('data-holding-code')) || '').trim()
-  const toggle = firstRow.locator('button').last()
+async function expandHolding(page, code) {
+  const row = page.locator(`[data-holding-code="${code}"]`).first()
+  await expect(row).toBeVisible()
+  const toggle = row.locator('button').last()
   await toggle.scrollIntoViewIfNeeded()
   await toggle.click()
   await settle(page, 1200)
-  return code
 }
 
 test('dashboard principle and freshness badges follow the merged B5/B6 contract', async ({
   page,
 }) => {
   await seedApp(page)
+  await stubOwnerCloudBootstrap(page, {
+    holdings: SEEDED_STORAGE[`pf-${PORTFOLIO_ID}-holdings-v2`],
+    events: SEEDED_STORAGE[`pf-${PORTFOLIO_ID}-news-events-v1`],
+    history: SEEDED_STORAGE[`pf-${PORTFOLIO_ID}-analysis-history-v1`],
+  })
   await routeFreshDailySnapshot(page)
   await routePendingValuation(page)
 
@@ -165,10 +169,8 @@ test('dashboard principle and freshness badges follow the merged B5/B6 contract'
   await expect(page.getByTestId('today-in-markets-stale-badge')).toContainText(/昨天|\d+\s*天前/)
 
   await clickTab(page, '持倉')
-  const code = await expandFirstHolding(page)
-  await expect(page.getByTestId(`holding-targets-stale-badge-${code}`)).toContainText(
-    /\d+\s*天前/
-  )
+  await expandHolding(page, '2330')
+  await expect(page.getByTestId('holding-targets-stale-badge-2330')).toContainText(/\d+\s*天前/)
 
   await clickTab(page, '深度研究')
   await expect(page.getByTestId('research-fundamentals-stale-badge-2330')).toContainText(

@@ -19,6 +19,14 @@ export const DEFAULT_UPLOAD_FIXTURE_PATH = resolve(
 const DEFAULT_IGNORED_RESPONSE_PATTERNS = [/\/api\/target-prices\?code=/]
 const DEFAULT_IGNORED_PAGEERROR_PATTERNS = [/\/api\/finmind\?.*due to access control checks\./i]
 
+function buildJsonFulfillOptions(payload, status = 200) {
+  return {
+    status,
+    contentType: 'application/json',
+    body: JSON.stringify(payload),
+  }
+}
+
 function slugify(value) {
   return String(value || '')
     .toLowerCase()
@@ -157,4 +165,66 @@ export function expectNoBlockingQaErrors(testInfo) {
   const payload = finalizeQaEvidence(testInfo)
   expect(payload.blockingErrors).toEqual([])
   return payload
+}
+
+export async function stubOwnerCloudBootstrap(
+  page,
+  {
+    holdings = [],
+    events = [],
+    history = [],
+    reports = [],
+    brain = null,
+  } = {}
+) {
+  await page.route('**/api/brain**', async (route) => {
+    const request = route.request()
+    const method = request.method()
+    const url = new URL(request.url())
+
+    if (method === 'GET') {
+      const action = url.searchParams.get('action')
+      if (action === 'brain') {
+        await route.fulfill(buildJsonFulfillOptions({ brain }))
+        return
+      }
+      if (action === 'history') {
+        await route.fulfill(buildJsonFulfillOptions({ history }))
+        return
+      }
+    }
+
+    if (method === 'POST') {
+      let action = ''
+      try {
+        action = JSON.parse(request.postData() || '{}')?.action || ''
+      } catch {
+        action = ''
+      }
+
+      if (action === 'load-holdings') {
+        await route.fulfill(buildJsonFulfillOptions({ holdings }))
+        return
+      }
+      if (action === 'load-events') {
+        await route.fulfill(buildJsonFulfillOptions({ events }))
+        return
+      }
+      if (['save-holdings', 'save-events', 'save-brain'].includes(action)) {
+        await route.fulfill(buildJsonFulfillOptions({ ok: true }))
+        return
+      }
+    }
+
+    await route.continue()
+  })
+
+  await page.route('**/api/research*', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue()
+      return
+    }
+
+    await route.fulfill(buildJsonFulfillOptions({ reports }))
+  })
 }

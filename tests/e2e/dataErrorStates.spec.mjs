@@ -29,11 +29,9 @@ test('holdings page surfaces target-price 404 as visible error UI', async ({ pag
     })
   })
 
-  await page.goto(new URL('/portfolio/me/holdings', PORTFOLIO_BASE_URL).toString(), {
-    waitUntil: 'domcontentloaded',
-    timeout: 120000,
-  })
-  await settle(page, 2600)
+  await openPortfolioHome(page)
+  await clickTab(page, '持倉')
+  await expect(page.getByTestId('holdings-panel')).toBeVisible()
 
   await expect(page.locator('[data-error="target-prices"]').first()).toBeVisible({ timeout: 15000 })
   await expect(page.locator('[data-error="target-prices"]').first()).toContainText('無券商目標價')

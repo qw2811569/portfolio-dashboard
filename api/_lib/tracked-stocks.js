@@ -1,4 +1,4 @@
-import { list, put } from '@vercel/blob'
+import { head, list, put } from '@vercel/blob'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../../src/seedData.js'
 import { getPrivateBlobToken } from './blob-tokens.js'
 import { extractBlobPathname, fetchSignedBlobJson } from './signed-url.js'
@@ -212,36 +212,80 @@ function extractSnapshotDateFromPath(pathname = '') {
   return { portfolioId: match[1], date: match[2] }
 }
 
-export async function readTrackedStocksForPortfolio(
+export async function readTrackedStocksForPortfolio(portfolioId, options = {}) {
+  const snapshot = await readTrackedStocksSnapshotState(portfolioId, options)
+  return snapshot.record
+}
+
+export async function readTrackedStocksSnapshotState(
   portfolioId,
-  { token = getBlobToken(), listImpl = list, fetchImpl = fetch, origin, logger = console } = {}
+  { token = getBlobToken(), headImpl = head, fetchImpl = fetch, origin, logger = console } = {}
 ) {
   if (!token) return null
 
   const key = getTrackedStocksBlobKey(portfolioId)
 
   try {
-    const response = await listImpl({ prefix: key, token, limit: 1 })
-    const blob = Array.isArray(response?.blobs) ? response.blobs[0] : null
-    const pathname = pickBlobPathname(blob)
-    if (!pathname) return null
+    let blob = null
+
+    try {
+      blob = await headImpl(key, {
+        token,
+        access: 'private',
+      })
+    } catch (error) {
+      if (error?.name === 'BlobNotFoundError') {
+        return {
+          key,
+          pathname: key,
+          etag: null,
+          record: null,
+        }
+      }
+      throw error
+    }
+
+    const pathname = pickBlobPathname(blob) || key
+    if (!pathname) {
+      return {
+        key,
+        pathname: key,
+        etag: null,
+        record: null,
+      }
+    }
 
     const payload = await readBlobJson(pathname, { origin, fetchImpl })
     const trackedStocks = extractTrackedStocksFromPayload(payload)
     if (trackedStocks.length === 0) {
       logger.warn(`[tracked-stocks] blob ${key} did not contain a usable stock list`)
-      return null
+      return {
+        key,
+        pathname,
+        etag: String(blob?.etag || '').trim() || null,
+        record: null,
+      }
     }
 
-    return normalizeTrackedStocksRecord({
-      portfolioId,
-      trackedStocks,
-      source: 'live-sync',
-      lastSyncedAt: pickLastSyncedAt(payload, blob),
-    })
+    return {
+      key,
+      pathname,
+      etag: String(blob?.etag || '').trim() || null,
+      record: normalizeTrackedStocksRecord({
+        portfolioId,
+        trackedStocks,
+        source: 'live-sync',
+        lastSyncedAt: pickLastSyncedAt(payload, blob),
+      }),
+    }
   } catch (error) {
     logger.warn(`[tracked-stocks] portfolio blob read failed for ${key}:`, error)
-    return null
+    return {
+      key,
+      pathname: key,
+      etag: null,
+      record: null,
+    }
   }
 }
 
@@ -515,21 +559,26 @@ export function buildTrackedStocksSnapshot({
 export async function writeTrackedStocksSnapshot(
   portfolioId,
   snapshot,
-  { token = getBlobToken(), putImpl = put } = {}
+  { token = getBlobToken(), putImpl = put, ifMatch = null } = {}
 ) {
   if (!token) {
     throw new Error('BLOB_READ_WRITE_TOKEN is required for tracked-stocks writes')
   }
 
   const key = getTrackedStocksBlobKey(portfolioId)
-
-  await putImpl(key, JSON.stringify(snapshot, null, 2), {
+  const writeOptions = {
     token,
     addRandomSuffix: false,
-    allowOverwrite: true,
     access: 'private',
     contentType: 'application/json',
-  })
+  }
+
+  if (String(ifMatch || '').trim()) {
+    writeOptions.allowOverwrite = true
+    writeOptions.ifMatch = String(ifMatch).trim()
+  }
+
+  await putImpl(key, JSON.stringify(snapshot, null, 2), writeOptions)
 
   return snapshot
 }

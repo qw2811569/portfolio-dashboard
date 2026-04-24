@@ -151,6 +151,44 @@ describe('components/DashboardPanel', () => {
     expect(onNavigate).toHaveBeenCalledWith('overview')
   })
 
+  it('mounts the unified anxiety metrics panel below the dashboard hero', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 10, cost: 900, price: 950, value: 9500 }],
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              thesis: {
+                pillars: [{ id: 'p1', text: 'AI 需求', status: 'stable' }],
+              },
+              finmind: {
+                institutional: [
+                  { date: '2026-04-24', foreign: 100, investment: 20, dealer: 0 },
+                  { date: '2026-04-23', foreign: 50, investment: 10, dealer: 0 },
+                ],
+              },
+            },
+          ],
+          newsEvents: [
+            {
+              id: 'evt-1',
+              title: '台積電法說',
+              status: 'pending',
+              eventDate: '2026-04-25',
+              stocks: ['台積電 2330'],
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('anxiety-metrics-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('anxiety-metric-question-x1')).toHaveTextContent('今天漲跌正常嗎？')
+    expect(screen.getByTestId('anxiety-metric-question-x5')).toHaveTextContent('三天內有沒有事件？')
+  })
+
   it('surfaces the urgent alert summary when urgentCount is non-zero', () => {
     const { container } = render(
       <DashboardPanel

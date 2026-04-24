@@ -40,6 +40,7 @@ export function useRouteDashboardPage() {
       watchlist,
       holdingDossiers,
       dataRefreshRows,
+      dailyReport,
       todayTotalPnl,
       totalVal,
       totalCost,

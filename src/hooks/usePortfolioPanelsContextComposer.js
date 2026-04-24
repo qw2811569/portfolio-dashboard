@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { buildAnxietyMetrics } from '../lib/anxietyMetrics.js'
 import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import {
@@ -206,6 +207,22 @@ export function usePortfolioPanelsContextComposer({
     ]
   )
   const overviewLoading = ready === false && normalizedOverviewPortfolios.length === 0
+  const derivedAnxietyMetrics = useMemo(
+    () =>
+      buildAnxietyMetrics({
+        holdings: safeHoldings,
+        holdingDossiers: safeHoldingDossiers,
+        newsEvents: safeNewsEvents,
+        dailyReport,
+        stockMeta,
+        loading:
+          ready === false &&
+          safeHoldings.length === 0 &&
+          safeHoldingDossiers.length === 0 &&
+          safeNewsEvents.length === 0,
+      }),
+    [dailyReport, ready, safeHoldingDossiers, safeHoldings, safeNewsEvents, stockMeta]
+  )
 
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
@@ -294,6 +311,7 @@ export function usePortfolioPanelsContextComposer({
 
   const portfolioPanelsData = useMemo(
     () => ({
+      anxietyMetrics: derivedAnxietyMetrics,
       overview: {
         portfolioCount: normalizedOverviewPortfolios.length,
         totalValue: overviewTotalValue,
@@ -320,6 +338,7 @@ export function usePortfolioPanelsContextComposer({
         dataRefreshRows: safeDataRefreshRows,
         morningNote,
         dailySnapshotStatus,
+        dailyReport,
         todayTotalPnl,
         totalVal,
         totalCost,
@@ -333,11 +352,13 @@ export function usePortfolioPanelsContextComposer({
         portfolioName: activePortfolio?.displayName || activePortfolio?.name || '',
         viewMode: renderViewMode,
         compareStrip: overviewCompareStrip,
+        anxietyMetrics: derivedAnxietyMetrics,
       },
       holdings: {
         activePortfolioId,
         holdings: safeHoldings,
         holdingDossiers: safeHoldingDossiers,
+        newsEvents: safeNewsEvents,
         totalVal,
         totalCost,
         todayTotalPnl,
@@ -440,6 +461,7 @@ export function usePortfolioPanelsContextComposer({
       activePortfolio,
       activePortfolioId,
       analyzing,
+      derivedAnxietyMetrics,
       analyzeStep,
       attentionCount,
       catalystFilter,

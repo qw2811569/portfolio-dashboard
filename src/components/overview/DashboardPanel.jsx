@@ -9,6 +9,7 @@ import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { AccuracyGateBlock, Button, Card, MarkdownText, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
+import { AnxietyMetricsPanel } from './AnxietyMetricsPanel.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
 
@@ -2005,6 +2006,7 @@ export function DashboardPanel({
   dataRefreshRows = [],
   morningNote = null,
   dailySnapshotStatus = null,
+  dailyReport = null,
   todayTotalPnl = 0,
   totalVal = 0,
   totalCost = 0,
@@ -2018,6 +2020,8 @@ export function DashboardPanel({
   portfolioId = '',
   viewMode = 'retail',
   compareStrip = null,
+  anxietyMetrics = null,
+  stockMeta = null,
   onRefreshReminder = null,
   onNavigate = null,
 }) {
@@ -2087,6 +2091,15 @@ export function DashboardPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+    h(AnxietyMetricsPanel, {
+      anxietyMetrics,
+      holdings,
+      holdingDossiers,
+      newsEvents,
+      dailyReport,
+      stockMeta,
+      onNavigate,
+    }),
     h(PrincipleCards),
     h(DailySnapshotStatusCard, { dailySnapshotStatus }),
     h(MorningNoteCard, { morningNote, onNavigate }),

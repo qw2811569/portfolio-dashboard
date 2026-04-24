@@ -1,0 +1,423 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "9ded3cfe-3c61-4025-b798-afeb7ba98092",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "每三分鐘回報，你沒做到",
+      "response_summary": "抱歉 · 先前 kill loop 太早。新 cron `e6a28f99` · 3 min 一報。\n\n## 現在 state\n\n- R140 task `brkt1mrcx` · output 0 bytes · 剛派 5 min\n- 45 commits ahead of origin（final-qa 收的 7 個 + 之前 38）\n- VM: `index-CD36fYcO.js`（final-qa 後對齊）\n\n3 min 後下次 check 自動。",
+      "prompt_hash": "sha256:90ea019ce16b974b5eab8f34ef37b3ba3016021729a7fad33568f14bfc6a9f2b",
+      "message_count": 8273,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-24T05:08:24.345Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T05:08:46.206Z",
+      "session_duration_secs": 778648,
+      "ai_response_time_secs": 11.365057644110278,
+      "prompt_submitted_at": "2026-04-24T05:08:24.598718Z",
+      "prompt_duration_secs": 37,
+      "accepted_lines": 16,
+      "overridden_lines": 0,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "src/components/news/NewsPanel.jsx",
+      "line_range": [
+        1164,
+        1178
+      ],
+      "files_changed": [
+        {
+          "path": "src/components/news/NewsPanel.jsx",
+          "line_range": [
+            1164,
+            1178
+          ],
+          "blob_hash": "1303d1999c8ee47d4b8cce6e906ea670cb4bc6da",
+          "additions": 12,
+          "deletions": 12
+        },
+        {
+          "path": "src/components/overview/HoldingsRing.jsx",
+          "line_range": [
+            41,
+            41
+          ],
+          "blob_hash": "985527c0d442d073b56506a0ddfb8b98c67c50fd",
+          "additions": 1,
+          "deletions": 2
+        },
+        {
+          "path": "tests/components/newsAnalysisPanel.test.jsx",
+          "line_range": [
+            351,
+            353
+          ],
+          "blob_hash": "98e17e4ba5a010157b3d795a22ab4da34ac750ab",
+          "additions": 3,
+          "deletions": 1
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1fd9d633e424c53fd414d33ee11092f2bed701a0"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b45a76832675bef55fa9527adf7580836b727d3d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6a04fe2f25a48e2e966beda30a39d79e599b94ea"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "117591fb4a082ffa822da0ecace03754e1bb45fc"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fe0b2a5e8a50d50bc5207c7241cf5f98df7d4e59"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "d21c3560d421776dc5517e316c7c78b4e8b7f2bd"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "25b28bd84524a88c8bd3e4514f6effc152caf774"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "359b1915a0cec5a9e7a2d537844ff46b6f5fbcf9"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "cdbf53f78ef9d07825079d28668543a5cbf87b67"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3246b3720f17cd38aa03babbe3ed6d6b006496f3"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "19e09b00d60e8970b5abb953819951ede4d17be6"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "290d6556958737c698427fb2d3001d33a9e8cfa9"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-01.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "70f3c49f59fb3dddac7bfabb48c8c508c985d357"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-02.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "80a5a6f3ec5015c6429076177cec3447f97d1992"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-03.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "43b49e697138fbc2d12445578ce862be7075da73"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-04.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "eead5690f832ed379563d16a8226520865657aae"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-05.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "5914d2146e6aeda4714a36529dc7f0851ea34eba"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9861154d0365d283946906df7d4f186ebfe52ead"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "046ce4b8608678bef133c0885aa12fe8b9a45e65"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fdf747c3fb6758c97713f20c5e2aaf1c74200cd4"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ddbd8416b2929f5ad0c6d56827eff31e983ad4e8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3494995fdffae7c1b41203e694700f556f33f35d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e985975336d141bd1885b48f907bec9d573296bb"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de15a42e4d9ebd3c41f5ebe58e3f33326bd94a9d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de823080c425a47b5092b829fc4171b5b6bbe1f8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9aabbbb0447956d2053483e78813ef317f6a028f"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e41002f07b17a453ed52e3a181117d8388390776"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ec3cc1a424c448765f1a9dea708e1ee58c324ccc"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1e67844a7473eca13f08afcd660abd2943edc757"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e08b0f0874a3b15cd2986751707858680a93bfc5"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f459ac1785c2e642364040a69a543e05f712c0b7"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "a36163eac755f4344fca0aa533084b510c54b52b"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "289490e8a79170a42409b67d223f701b038386a2"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "aff3a5eecbe08f4b4560f9d9a0743510b66ea663"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8561701a84810f31efd3e7acd3bcce3e7f98f774"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1c3f10a317978bc47904a0c069906d3cf66bf3b3"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "65d294c008bf5181f3f6856110c8c14f30c53733"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f72de6f2d24c33317978f70e81009af53a146751"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "211146be516678a22f83419ff85f968bc36ca8fb"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ab388b4806243732155261e4db1242bbf1b75ebc"
+        }
+      ],
+      "prompt_number": 732,
+      "total_additions": 16,
+      "total_deletions": 15,
+      "tools_used": [
+        "Bash",
+        "CronCreate"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "每三分鐘回報，你沒做到"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "CronCreate()",
+          "tool_name": "CronCreate"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"ls -la [REDACTED_HIGH_ENTROPY]...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 3,
+          "role": "assistant",
+          "content": "抱歉 · 先前 kill loop 太早。新 cron `e6a28f99` · 3 min 一報。\n\n## 現在 state\n\n- R140 task `brkt1mrcx` · output 0 bytes · 剛派 5 min\n- 45 commits ahead of origin（final-qa 收的 7 個 + 之前 38）\n- VM: `index-CD36fYcO.js`（final-qa 後對齊）\n\n3 min 後下次 check 自動。"
+        }
+      ],
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

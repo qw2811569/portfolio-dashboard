@@ -104,7 +104,6 @@ export function useRouteDailyPage() {
       newsEvents,
       operatingContext,
       portfolioId,
-      portfolioName,
       runDailyAnalysis,
       runStressTest,
       setExpandedStock,

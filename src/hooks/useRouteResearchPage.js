@@ -199,7 +199,6 @@ export function useRouteResearchPage() {
       enrichingResearchCode,
       holdingDossiers,
       holdings,
-      portfolioName,
       reportRefreshing,
       reportRefreshStatus,
       reportRefreshMeta,

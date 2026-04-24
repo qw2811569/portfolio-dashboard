@@ -98,7 +98,6 @@ export function useRouteHoldingsPage() {
     holdingDossiers,
     holdings,
     portfolioId,
-    portfolioName,
     todayTotalPnl,
     reversalConditions,
     setExpandedStock,

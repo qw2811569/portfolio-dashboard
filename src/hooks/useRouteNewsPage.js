@@ -65,7 +65,6 @@ export function useRouteNewsPage() {
       createDefaultReviewForm,
       expandedNews,
       newsEvents,
-      portfolioName,
       reviewForm,
       reviewingEvent,
       submitReview,

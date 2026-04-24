@@ -6,11 +6,11 @@ import { calculateConcentration } from '../../lib/concentrationMetrics.js'
 function getRiskMeta(risk) {
   switch (risk) {
     case 'critical':
-      return { label: '高度集中', badgeColor: 'amber', accent: C.down }
+      return { label: '高度集中', badgeColor: 'warning', accent: C.down }
     case 'high':
-      return { label: '偏高', badgeColor: 'amber', accent: C.amber }
+      return { label: '偏高', badgeColor: 'warning', accent: C.warning }
     case 'moderate':
-      return { label: '中度集中', badgeColor: 'iron', accent: C.iron }
+      return { label: '中度集中', badgeColor: 'mute', accent: C.iron }
     default:
       return { label: '分散', badgeColor: 'positive', accent: C.positive }
   }

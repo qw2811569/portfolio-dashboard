@@ -22,16 +22,27 @@ const GOLDEN_PATH_IGNORED_PAGEERROR_PATTERNS = [
 const TARGET_PORTFOLIO_ID = String(process.env.GOLDEN_PATH_PORTFOLIO_ID || '7865').trim()
 const TARGET_PORTFOLIO_LABEL = String(
   process.env.GOLDEN_PATH_PORTFOLIO_LABEL ||
-    (TARGET_PORTFOLIO_ID === 'me' ? '我' : TARGET_PORTFOLIO_ID === '7865' ? '金聯成' : TARGET_PORTFOLIO_ID)
+    (TARGET_PORTFOLIO_ID === 'me'
+      ? '我'
+      : TARGET_PORTFOLIO_ID === '7865'
+        ? '金聯成'
+        : TARGET_PORTFOLIO_ID)
 ).trim()
 const TARGET_PORTFOLIO_SCENARIO = String(
   process.env.GOLDEN_PATH_SCENARIO ||
     `golden-path-${TARGET_PORTFOLIO_ID === 'me' ? 'me' : TARGET_PORTFOLIO_ID}`
 ).trim()
+const LEGACY_WATCHLIST_SEED_ENABLED =
+  String(process.env.GOLDEN_PATH_SEED_LEGACY_WATCHLIST || '').trim() === '1'
+const LEGACY_WATCHLIST_STORAGE_KEY = `pf-${TARGET_PORTFOLIO_ID}-watchlist-v1`
 
 async function settle(page, waitMs = STEP_WAIT_MS) {
   await page.waitForLoadState('domcontentloaded')
   await page.waitForTimeout(waitMs)
+}
+
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 async function firstExisting(...locators) {
@@ -99,17 +110,18 @@ async function clickTab(page, key, label) {
     page.getByTestId(`tab-${key}`),
     page.getByRole('button', { name: label, exact: true })
   )
-  if (!tab)
-    throw new Error(
-      `missing tab: ${key}`
-    )
+  if (!tab) throw new Error(`missing tab: ${key}`)
   await tab.scrollIntoViewIfNeeded()
   await tab.click()
   await settle(page)
 }
 
 async function getPortfolioSelect(page) {
-  return requireLocator('missing portfolio select', page.getByTestId('portfolio-select'), page.locator('select'))
+  return requireLocator(
+    'missing portfolio select',
+    page.getByTestId('portfolio-select'),
+    page.locator('select')
+  )
 }
 
 async function getSelectedOptionLabel(selectLocator) {
@@ -174,6 +186,29 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
   })
 
   await test.step('step 1: open home', async () => {
+    if (LEGACY_WATCHLIST_SEED_ENABLED) {
+      await page.addInitScript(
+        ({ storageKey }) => {
+          window.localStorage.setItem(
+            storageKey,
+            JSON.stringify([
+              {
+                code: '4588',
+                name: '玖鼎電力',
+                price: 69.1,
+                target: 154,
+                status: '持有中',
+                catalyst: '台電電表訂單',
+                scKey: 'olive',
+                note: 'legacy tone seed',
+              },
+            ])
+          )
+        },
+        { storageKey: LEGACY_WATCHLIST_STORAGE_KEY }
+      )
+    }
+
     await page.goto(PORTFOLIO_BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120000 })
     await settle(page, 2600)
     await expect(page).toHaveTitle(/持倉看板|Portfolio/)
@@ -185,7 +220,7 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
     const select = await getPortfolioSelect(page)
     await expect.soft(select).toBeVisible()
     expect(await getSelectedOptionLabel(select)).toMatch(
-      new RegExp(TARGET_PORTFOLIO_ID === 'me' ? '我' : TARGET_PORTFOLIO_LABEL)
+      new RegExp(escapeRegExp(TARGET_PORTFOLIO_LABEL))
     )
     await expect(await ensureDashboardOpen(page)).toBeVisible()
     await savePageScreenshot(page, testInfo, '01-home.png')
@@ -201,6 +236,33 @@ test('golden path smoke covers holdings, research, events, news, daily, log, upl
       )
     ).toBeVisible()
     await savePageScreenshot(page, testInfo, '02-owner-holdings.png')
+  })
+
+  await test.step('step 2a: verify watchlist shell and tone migration', async () => {
+    await clickTab(page, 'watchlist', '觀察股')
+    const watchlistPanel = await requireLocator(
+      'missing watchlist panel',
+      page.getByTestId('watchlist-panel'),
+      page.getByText(/這個組合目前沒有觀察股|新增觀察股|焦點觀察/)
+    )
+    await expect(watchlistPanel).toBeVisible()
+
+    if (LEGACY_WATCHLIST_SEED_ENABLED) {
+      await expect(page.locator('body')).toContainText('玖鼎電力', { timeout: 20000 })
+      const seededRow = page
+        .getByTestId('watchlist-panel')
+        .locator('div')
+        .filter({
+          hasText: '玖鼎電力',
+          has: page.getByRole('button', { name: '編輯', exact: true }),
+        })
+        .first()
+      await seededRow.getByRole('button', { name: '編輯', exact: true }).click()
+      await expect(page.getByTestId('watchlist-tone-select')).toHaveValue('positive')
+      await page.getByRole('button', { name: '取消', exact: true }).click()
+    }
+
+    await savePageScreenshot(page, testInfo, '02a-watchlist.png')
   })
 
   await test.step('step 3: deep research renders', async () => {

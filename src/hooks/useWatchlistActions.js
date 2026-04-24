@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { normalizeToneKey } from '../lib/toneResolver.js'
 import { normalizeWatchlist } from '../lib/watchlistUtils.js'
 
 export function useWatchlistActions({ setWatchlist = () => {} }) {
@@ -17,7 +18,7 @@ export function useWatchlistActions({ setWatchlist = () => {} }) {
         target: target > 0 ? target : 0,
         status: String(draft?.status || '').trim(),
         catalyst: String(draft?.catalyst || '').trim(),
-        scKey: typeof draft?.scKey === 'string' ? draft.scKey : 'blue',
+        scKey: normalizeToneKey(draft?.scKey, 'info'),
         note: String(draft?.note || '').trim(),
       }
 

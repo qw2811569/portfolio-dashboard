@@ -1,15 +1,10 @@
 import { createElement as h, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { CANONICAL_TONE_KEYS, normalizeToneKey, resolveTone } from '../../lib/toneResolver.js'
 import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
 
 const bgTints = [C.card, C.cardBlue, C.cardAmber]
-const WATCHLIST_SC_COLOR = Object.freeze({
-  blue: C.ink,
-  teal: C.positive,
-  amber: C.amber,
-  olive: C.iron,
-  lavender: C.lavender,
-})
+const WATCHLIST_TONE_OPTIONS = Object.freeze(CANONICAL_TONE_KEYS)
 const inputStyle = {
   width: '100%',
   padding: '8px 8px',
@@ -29,7 +24,7 @@ function createWatchlistForm(item = null) {
     target: item?.target != null && item.target !== 0 ? String(item.target) : '',
     status: item?.status || '',
     catalyst: item?.catalyst || '',
-    scKey: item?.scKey || 'blue',
+    scKey: normalizeToneKey(item?.scKey, 'info'),
     note: item?.note || '',
   }
 }
@@ -189,7 +184,7 @@ export function WatchlistRow({
   const w = item
   const upsideText = upside != null ? `${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%` : '—'
   const prog = w.target > 0 && w.price > 0 ? Math.min((w.price / w.target) * 100, 100) : 0
-  const sc = WATCHLIST_SC_COLOR[w.scKey] || C.ink
+  const sc = resolveTone(w.scKey, 'info')
   const isWExp = expanded
 
   return h(
@@ -752,13 +747,10 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
             {
               value: form.scKey,
               onChange: updateField('scKey'),
+              'data-testid': 'watchlist-tone-select',
               style: inputStyle,
             },
-            h('option', { value: 'blue' }, 'blue'),
-            h('option', { value: 'teal' }, 'teal'),
-            h('option', { value: 'amber' }, 'amber'),
-            h('option', { value: 'olive' }, 'olive'),
-            h('option', { value: 'lavender' }, 'lavender')
+            WATCHLIST_TONE_OPTIONS.map((tone) => h('option', { key: tone, value: tone }, tone))
           )
         )
       ),
@@ -869,7 +861,7 @@ export function WatchlistPanel({
 
   return h(
     'div',
-    null,
+    { 'data-testid': 'watchlist-panel' },
     h(OperatingContextCard, { context: operatingContext }),
     h(ConfirmDialog, {
       open: Boolean(pendingDeleteItem),

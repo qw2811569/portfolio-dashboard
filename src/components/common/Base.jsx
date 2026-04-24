@@ -1,5 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
+import { normalizeToneKey } from '../../lib/toneResolver.js'
 
 function extractTextContent(content) {
   if (content == null || typeof content === 'boolean') return ''
@@ -44,6 +45,11 @@ export function Card({ children, style = {}, highlighted = false, color = null, 
 export function MetricCard({ label, value, tone = 'default', style = {} }) {
   const toneColors = {
     default: C.text,
+    neutral: C.text,
+    info: C.text,
+    warning: C.text,
+    alert: C.text,
+    mute: C.textSec,
     up: C.text,
     down: C.down,
     muted: C.textSec,
@@ -52,6 +58,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
     amber: C.text,
     iron: C.textSec,
   }
+  const resolvedTone = toneColors[tone] ? tone : normalizeToneKey(tone, 'neutral')
 
   return h(
     'div',
@@ -85,7 +92,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
         style: {
           fontSize: 15,
           fontWeight: 600,
-          color: toneColors[tone] || toneColors.default,
+          color: toneColors[tone] || toneColors[resolvedTone] || toneColors.default,
           fontFamily: 'var(--font-num)',
         },
       },
@@ -97,6 +104,21 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
 export function Badge({ children, color = 'default', size = 'sm', style = {} }) {
   const colors = {
     default: { bg: C.card, text: C.textSec, border: C.border, dot: null },
+    neutral: { bg: C.card, text: C.textSec, border: C.border, dot: null },
+    info: {
+      bg: alpha(C.cta, '12'),
+      text: C.textSec,
+      border: alpha(C.cta, '25'),
+      dot: C.cta,
+    },
+    warning: { bg: C.amberBg, text: C.textSec, border: alpha(C.amber, '25'), dot: C.amber },
+    alert: {
+      bg: alpha(C.cta, '12'),
+      text: C.textSec,
+      border: alpha(C.cta, '25'),
+      dot: C.cta,
+    },
+    mute: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
     up: { bg: C.upBg, text: C.textSec, border: alpha(C.up, '20'), dot: C.up },
     down: { bg: C.downBg, text: C.down, border: alpha(C.down, '20') },
     teal: {
@@ -128,7 +150,8 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
     md: { padding: '4px 8px', fontSize: 11 },
   }
 
-  const selectedColor = colors[color] || colors.default
+  const resolvedColor = colors[color] ? color : normalizeToneKey(color, 'neutral')
+  const selectedColor = colors[color] || colors[resolvedColor] || colors.default
   const selectedSize = sizes[size] || sizes.sm
   const localizedStyle = getLocalizedMetaStyle(children, { uppercase: true })
 

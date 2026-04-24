@@ -112,6 +112,7 @@ import {
   brainRuleText,
   normalizeBrainRuleStaleness,
   normalizeBrainEvidenceRefs,
+  normalizeWatchlist,
   todayStorageDate,
 } from './lib/index.js'
 
@@ -181,6 +182,9 @@ export async function saveAppliedTradePatches(ids) {
 export function sanitizePortfolioField(suffix, data) {
   if (suffix === 'holdings-v2') {
     return normalizeHoldings(data, getPersistedMarketQuotes())
+  }
+  if (suffix === 'watchlist-v1') {
+    return normalizeWatchlist(data)
   }
   return data
 }

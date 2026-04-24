@@ -279,7 +279,7 @@ export function OverviewHeader({
           h(MetricCard, {
             label: '總市值',
             value: Math.round(totalValue).toLocaleString(),
-            tone: 'blue',
+            tone: 'info',
           }),
           h(MetricCard, {
             label: '總損益',

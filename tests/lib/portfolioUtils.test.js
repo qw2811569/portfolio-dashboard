@@ -8,6 +8,7 @@ import {
 } from '../../src/constants.js'
 import {
   applyTradeBackfillPatchesIfNeeded,
+  loadPortfolioData,
   pfKey,
   readStorageValue,
   savePortfolioData,
@@ -109,5 +110,27 @@ describe('lib/portfolioUtils.js applyTradeBackfillPatchesIfNeeded', () => {
       (item) => item?.patchId === '2026-03-25-sell-039108-5000'
     )
     expect(patchedEntries).toHaveLength(1)
+  })
+
+  it('normalizes legacy watchlist tone keys when reading persisted storage', async () => {
+    const watchlistKey = pfKey(OWNER_PORTFOLIO_ID, PORTFOLIO_ALIAS_TO_SUFFIX.watchlist)
+    localStorage.setItem(
+      watchlistKey,
+      JSON.stringify([{ code: '4588', name: '玖鼎電力', scKey: 'olive' }])
+    )
+
+    const watchlist = await loadPortfolioData(
+      OWNER_PORTFOLIO_ID,
+      PORTFOLIO_ALIAS_TO_SUFFIX.watchlist,
+      []
+    )
+
+    expect(watchlist).toEqual([
+      expect.objectContaining({
+        code: '4588',
+        name: '玖鼎電力',
+        scKey: 'positive',
+      }),
+    ])
   })
 })

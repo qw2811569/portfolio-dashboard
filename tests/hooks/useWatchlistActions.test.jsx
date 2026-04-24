@@ -8,8 +8,26 @@ describe('useWatchlistActions', () => {
 
   beforeEach(() => {
     watchlistState = [
-      { code: '2330', name: '台積電', price: 600, target: 700, status: '觀察', catalyst: 'AI 趨勢', scKey: 'blue', note: '' },
-      { code: '2382', name: '廣達', price: 1500, target: 1800, status: '買進', catalyst: 'AI 伺服器', scKey: 'green', note: '' },
+      {
+        code: '2330',
+        name: '台積電',
+        price: 600,
+        target: 700,
+        status: '觀察',
+        catalyst: 'AI 趨勢',
+        scKey: 'info',
+        note: '',
+      },
+      {
+        code: '2382',
+        name: '廣達',
+        price: 1500,
+        target: 1800,
+        status: '買進',
+        catalyst: 'AI 伺服器',
+        scKey: 'warning',
+        note: '',
+      },
     ]
     mockSetWatchlist = vi.fn((updater) => {
       if (typeof updater === 'function') {
@@ -39,7 +57,7 @@ describe('useWatchlistActions', () => {
       expect(success).toBe(true)
       expect(mockSetWatchlist).toHaveBeenCalled()
       expect(watchlistState).toHaveLength(3)
-      expect(watchlistState.find(i => i.code === '2454')).toBeDefined()
+      expect(watchlistState.find((i) => i.code === '2454')).toMatchObject({ scKey: 'info' })
     })
 
     it('should update existing watchlist item', () => {
@@ -51,7 +69,7 @@ describe('useWatchlistActions', () => {
         target: 750,
         status: '買進',
         catalyst: 'AI 伺服器爆發',
-        scKey: 'green',
+        scKey: 'teal',
         note: '更新',
       }
 
@@ -59,10 +77,10 @@ describe('useWatchlistActions', () => {
 
       expect(success).toBe(true)
       expect(watchlistState).toHaveLength(2)
-      const updated = watchlistState.find(i => i.code === '2330')
+      const updated = watchlistState.find((i) => i.code === '2330')
       expect(updated.price).toBe(650)
       expect(updated.target).toBe(750)
-      expect(updated.scKey).toBe('green')
+      expect(updated.scKey).toBe('positive')
     })
 
     it('should update with editingCode parameter', () => {
@@ -77,8 +95,8 @@ describe('useWatchlistActions', () => {
       result.current.upsertWatchlist(updatedItem, '2330')
 
       expect(watchlistState).toHaveLength(2)
-      expect(watchlistState.find(i => i.code === '2330')).toBeUndefined()
-      expect(watchlistState.find(i => i.code === '2330-updated')).toBeDefined()
+      expect(watchlistState.find((i) => i.code === '2330')).toBeUndefined()
+      expect(watchlistState.find((i) => i.code === '2330-updated')).toBeDefined()
     })
 
     it('should reject item without code', () => {
@@ -112,8 +130,8 @@ describe('useWatchlistActions', () => {
 
       result.current.upsertWatchlist(newItem)
 
-      expect(watchlistState.find(i => i.code === '1234').price).toBe(0)
-      expect(watchlistState.find(i => i.code === '1234').target).toBe(0)
+      expect(watchlistState.find((i) => i.code === '1234').price).toBe(0)
+      expect(watchlistState.find((i) => i.code === '1234').target).toBe(0)
     })
 
     it('should normalize watchlist after upsert', () => {
@@ -130,6 +148,20 @@ describe('useWatchlistActions', () => {
       expect(watchlistState).toBeDefined()
       expect(Array.isArray(watchlistState)).toBe(true)
     })
+
+    it('normalizes invalid scKey values to the canonical info fallback', () => {
+      const { result } = renderHook(() => useWatchlistActions({ setWatchlist: mockSetWatchlist }))
+
+      result.current.upsertWatchlist({
+        code: '6789',
+        name: 'Fallback Test',
+        price: 88,
+        target: 100,
+        scKey: 'green',
+      })
+
+      expect(watchlistState.find((item) => item.code === '6789')).toMatchObject({ scKey: 'info' })
+    })
   })
 
   describe('removeWatchlist', () => {
@@ -139,7 +171,7 @@ describe('useWatchlistActions', () => {
       result.current.removeWatchlist('2330')
 
       expect(watchlistState).toHaveLength(1)
-      expect(watchlistState.find(i => i.code === '2330')).toBeUndefined()
+      expect(watchlistState.find((i) => i.code === '2330')).toBeUndefined()
     })
 
     it('should handle non-existent code', () => {

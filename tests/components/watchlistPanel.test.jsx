@@ -2,7 +2,17 @@
 
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { WatchlistPanel } from '../../src/components/watchlist/WatchlistPanel.jsx'
+import { WatchlistPanel, WatchlistRow } from '../../src/components/watchlist/WatchlistPanel.jsx'
+import { resolveTone } from '../../src/lib/toneResolver.js'
+
+function toRgbTriplet(color) {
+  const normalized = String(color || '')
+    .trim()
+    .toLowerCase()
+  const match = normalized.match(/^#([0-9a-f]{6})$/)
+  if (!match) return normalized
+  return `${parseInt(match[1].slice(0, 2), 16)}, ${parseInt(match[1].slice(2, 4), 16)}, ${parseInt(match[1].slice(4, 6), 16)}`
+}
 
 function buildProps(overrides = {}) {
   return {
@@ -64,5 +74,39 @@ describe('components/WatchlistPanel', () => {
     const { container } = render(<WatchlistPanel {...buildProps({ watchlistFocus: focus })} />)
 
     expect(container.textContent).toContain('追蹤先進封裝材料龍頭')
+  })
+
+  it('uses the shared tone resolver for legacy scKey values', () => {
+    const { container } = render(
+      <WatchlistRow
+        item={{
+          code: '4588',
+          name: '玖鼎電力',
+          price: 69.1,
+          target: 154,
+          status: '持有中',
+          catalyst: '台電電表訂單',
+          scKey: 'olive',
+          note: '測試',
+        }}
+        index={0}
+        relatedEvents={[]}
+        hits={0}
+        misses={0}
+        pendingCount={0}
+        trackingCount={0}
+        upside={122.9}
+        expanded={false}
+        onToggle={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    )
+
+    const progressBarFill = Array.from(container.querySelectorAll('div')).find((node) =>
+      node.style.background.includes('linear-gradient')
+    )
+
+    expect(progressBarFill?.style.background).toContain(toRgbTriplet(resolveTone('olive')))
   })
 })

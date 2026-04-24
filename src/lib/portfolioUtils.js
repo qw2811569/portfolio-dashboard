@@ -21,6 +21,7 @@ import { INIT_HOLDINGS_JINLIANCHENG, INIT_TARGETS_JINLIANCHENG } from '../seedDa
 import { applyTradeEntryToHoldings, buildHoldingPriceHints, normalizeHoldings } from './holdings.js'
 import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'
+import { normalizeWatchlist } from './watchlistUtils.js'
 
 export function createDefaultPortfolios() {
   return [{ id: OWNER_PORTFOLIO_ID, name: '我', isOwner: true, createdAt: todayStorageDate() }]
@@ -164,6 +165,9 @@ export async function applyTradeBackfillPatchesIfNeeded({ fetchImpl = globalThis
 export function sanitizePortfolioField(suffix, data) {
   if (suffix === 'holdings-v2') {
     return normalizeHoldings(data, getPersistedMarketQuotes())
+  }
+  if (suffix === 'watchlist-v1') {
+    return normalizeWatchlist(data)
   }
   return data
 }

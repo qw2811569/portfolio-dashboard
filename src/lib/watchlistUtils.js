@@ -1,3 +1,5 @@
+import { normalizeToneKey } from './toneResolver.js'
+
 export function normalizeWatchlist(value) {
   if (!Array.isArray(value)) return []
   return value
@@ -15,7 +17,7 @@ export function normalizeWatchlist(value) {
         target: Number.isFinite(target) && target > 0 ? target : 0,
         status: typeof item.status === 'string' ? item.status.trim() : '',
         catalyst: typeof item.catalyst === 'string' ? item.catalyst.trim() : '',
-        scKey: typeof item.scKey === 'string' ? item.scKey : 'blue',
+        scKey: normalizeToneKey(item.scKey, 'info'),
         note: typeof item.note === 'string' ? item.note.trim() : '',
       }
     })

@@ -645,7 +645,7 @@ export const INIT_WATCHLIST = [
     target: 193,
     status: '等Q4財報',
     catalyst: '3–4月財報',
-    scKey: 'amber',
+    scKey: 'warning',
     note: '積極163–165元；保守155–160元；催化：台電GIS+台積電',
   },
   {
@@ -655,7 +655,7 @@ export const INIT_WATCHLIST = [
     target: 154,
     status: '持有中',
     catalyst: '台電電表訂單',
-    scKey: 'olive',
+    scKey: 'positive',
     note: '訂單排到2028；現價已偏高不追；持有者繼續抱',
   },
   {
@@ -665,7 +665,7 @@ export const INIT_WATCHLIST = [
     target: 710,
     status: '⚡法說追蹤',
     catalyst: '3/18法說+財報',
-    scKey: 'up',
+    scKey: 'positive',
     note: '成本507；毛利率回沖→補足2/3；展望差→停損430',
   },
 ]

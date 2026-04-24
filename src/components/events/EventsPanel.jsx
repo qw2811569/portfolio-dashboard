@@ -7,6 +7,7 @@ import { RELAY_PLAN } from '../../seedDataEvents.js'
 import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
 import { calculateEventCountdown } from '../../lib/eventCountdown.js'
+import { resolveTone } from '../../lib/toneResolver.js'
 import {
   ALL_EVENTS_FILTER_LABEL,
   EVENT_TYPE_META,
@@ -14,30 +15,6 @@ import {
   inferEventType,
   shouldCollapseEventByDefault,
 } from '../../lib/eventTypeMeta.js'
-
-const LEGACY_TONE_COLOR = Object.freeze({
-  up: C.up,
-  down: C.down,
-  amber: C.amber,
-  blue: C.ink,
-  teal: C.positive,
-  olive: C.iron,
-  cyan: C.positive,
-  ink: C.ink,
-  charcoal: C.charcoal,
-  iron: C.iron,
-  positive: C.positive,
-  cta: C.cta,
-  hot: C.hot,
-  warning: C.warning,
-  lavender: C.lavender,
-  choco: C.choco,
-  text: C.text,
-})
-
-function resolveToneColor(tone, fallback = C.text) {
-  return LEGACY_TONE_COLOR[tone] || fallback
-}
 
 const EVENT_TYPE_STYLE = Object.freeze({
   earnings: { color: C.positive, background: alpha(C.positive, '16') },
@@ -319,9 +296,9 @@ export function RelayPlanCard({ expanded, onToggle }) {
               fontSize: 11,
               padding: '4px 8px',
               borderRadius: 20,
-              background: alpha(resolveToneColor(item.tone), '15'),
+              background: alpha(resolveTone(item.tone), '15'),
               color: C.textSec,
-              border: `1px solid ${alpha(resolveToneColor(item.tone), '20')}`,
+              border: `1px solid ${alpha(resolveTone(item.tone), '20')}`,
             },
           },
           `${item.label} · ${item.text}`
@@ -348,7 +325,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
             style: {
               background: C.subtle,
               border: `1px solid ${C.border}`,
-              borderLeft: `2px solid ${alpha(resolveToneColor(leg.tone), '40')}`,
+              borderLeft: `2px solid ${alpha(resolveTone(leg.tone), '40')}`,
               borderRadius: 9,
               padding: '8px 8px',
             },
@@ -389,7 +366,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                   fontSize: 11,
                   padding: '4px 8px',
                   borderRadius: 20,
-                  background: alpha(resolveToneColor(leg.tone), '15'),
+                  background: alpha(resolveTone(leg.tone), '15'),
                   color: C.textSec,
                 },
               },

@@ -206,11 +206,14 @@ export function useRoutePortfolioRuntime() {
       marketPriceCache: initialMarketState.marketPriceCache,
     })
   )
+  const [portfolioSwitching, setPortfolioSwitching] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeStep, setAnalyzeStep] = useState('')
   const [researching, setResearching] = useState(false)
   const [researchTarget, setResearchTarget] = useState(null)
   const backupFileInputRef = useRef(null)
+  const requestedPortfolioIdRef = useRef(routePortfolioId)
+  const lastRoutePortfolioIdRef = useRef(routePortfolioId)
 
   useTrackedStocksSync({
     activePortfolioId: routePortfolioId,
@@ -238,7 +241,29 @@ export function useRoutePortfolioRuntime() {
   useEffect(() => {
     setPortfolios(readRuntimePortfolios())
     setRouteData(readPortfolioRuntimeSnapshot(routePortfolioId, { marketPriceCache }))
-  }, [routePortfolioId, marketPriceCache])
+
+    if (!portfolioSwitching) {
+      requestedPortfolioIdRef.current = routePortfolioId
+      lastRoutePortfolioIdRef.current = routePortfolioId
+      return
+    }
+
+    if (
+      routePortfolioId === lastRoutePortfolioIdRef.current &&
+      routePortfolioId !== requestedPortfolioIdRef.current
+    ) {
+      return
+    }
+
+    if (routePortfolioId !== requestedPortfolioIdRef.current) {
+      lastRoutePortfolioIdRef.current = routePortfolioId
+      navigate(buildPortfolioRoute(requestedPortfolioIdRef.current), { replace: true })
+      return
+    }
+
+    lastRoutePortfolioIdRef.current = routePortfolioId
+    setPortfolioSwitching(false)
+  }, [routePortfolioId, marketPriceCache, navigate, portfolioSwitching])
 
   const persistRouteField = useCallback(
     (field, suffix, valueOrUpdater, normalize = (value) => value) => {
@@ -659,11 +684,18 @@ export function useRoutePortfolioRuntime() {
 
   const switchPortfolio = useCallback(
     (nextPortfolioId) => {
-      if (!nextPortfolioId) return
+      const normalizedNextPortfolioId = String(nextPortfolioId || '').trim()
+      if (!normalizedNextPortfolioId) return
+      if (!portfolioSwitching && normalizedNextPortfolioId === routePortfolioId) return
+
+      requestedPortfolioIdRef.current = normalizedNextPortfolioId
       warnBlockedRouteWrite('switchPortfolio:session-save')
-      navigate(buildPortfolioRoute(nextPortfolioId))
+      if (portfolioSwitching) return
+
+      setPortfolioSwitching(true)
+      navigate(buildPortfolioRoute(normalizedNextPortfolioId))
     },
-    [navigate]
+    [navigate, portfolioSwitching, routePortfolioId]
   )
 
   const renamePortfolio = useCallback(async () => {
@@ -955,7 +987,7 @@ export function useRoutePortfolioRuntime() {
       activePortfolioId,
       switchPortfolio,
       ready: true,
-      portfolioSwitching: false,
+      portfolioSwitching,
       portfolioSummaries,
       createPortfolio,
       viewMode: PORTFOLIO_VIEW_MODE,
@@ -1012,6 +1044,7 @@ export function useRoutePortfolioRuntime() {
       displayedRetPct,
       activePortfolioId,
       switchPortfolio,
+      portfolioSwitching,
       portfolioSummaries,
       createPortfolio,
       exitOverview,

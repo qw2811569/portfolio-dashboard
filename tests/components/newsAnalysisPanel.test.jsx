@@ -207,12 +207,11 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('服務暫時不穩 · 正在重試')).toBeInTheDocument()
-      expect(screen.getByText('新聞源暫時打不開，以下先顯示目前可讀版本。')).toBeInTheDocument()
+      expect(screen.getByText('網路不穩 · 自動重連中')).toBeInTheDocument()
     })
   })
 
-  it('removes the preview fallback debug label from the mobile error notice', async () => {
+  it('uses DataError degraded copy on mobile and never leaks the preview fallback label', async () => {
     mockMatchMedia(true)
     vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network error'))
 
@@ -221,12 +220,46 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(
-        screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')
-      ).toBeInTheDocument()
+      expect(screen.getByText('網路不穩 · 自動重連中')).toBeInTheDocument()
     })
 
     expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
+  })
+
+  it('shows the loading skeleton again when a new fetch starts after holdings change', async () => {
+    const firstResponse = {
+      ok: true,
+      json: async () => ({ items: MOCK_NEWS_ITEMS }),
+    }
+    let resolveSecondFetch
+    const secondFetch = new Promise((resolve) => {
+      resolveSecondFetch = resolve
+    })
+
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(firstResponse)
+      .mockReturnValueOnce(secondFetch)
+
+    const { rerender } = render(<NewsFeedSection holdingCodes={['2330']} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    })
+
+    rerender(<NewsFeedSection holdingCodes={['2454']} />)
+
+    expect(screen.getByText('新聞脈絡整理中')).toBeInTheDocument()
+
+    await act(async () => {
+      resolveSecondFetch({
+        ok: true,
+        json: async () => ({ items: [MOCK_NEWS_ITEMS[1]] }),
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('聯發科5G晶片出貨成長')).toBeInTheDocument()
+    })
   })
 
   it('keeps headline counters aligned with the filtered news cards', async () => {
@@ -335,7 +368,7 @@ describe('components/NewsFeedSection', () => {
     expect(screen.getByTestId('news-filter-ticker-select')).toBeInTheDocument()
   })
 
-  it('renders a compact mobile error heads-up and retry action on fetch failure', async () => {
+  it('renders retry controls with DataError copy on mobile fetch failure', async () => {
     mockMatchMedia(true)
     vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network error'))
 
@@ -344,13 +377,10 @@ describe('components/NewsFeedSection', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId('news-mobile-error-notice')).toBeInTheDocument()
+      expect(screen.getByText('網路不穩 · 自動重連中')).toBeInTheDocument()
     })
 
     expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
-    expect(
-      screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')
-    ).toBeInTheDocument()
     expect(screen.getByText('再試一次')).toBeInTheDocument()
   })
 })

@@ -45,7 +45,7 @@ export function normalizeDataError(error, { resource = '', fallbackStatus = null
   if (!status) {
     const text = `${String(error?.name || '')} ${message}`.toLowerCase()
     if (
-      /failed to fetch|networkerror|network request failed|load failed|fetch failed|offline|disconnected/.test(
+      /failed to fetch|network error|networkerror|network request failed|load failed|fetch failed|offline|disconnected/.test(
         text
       )
     ) {

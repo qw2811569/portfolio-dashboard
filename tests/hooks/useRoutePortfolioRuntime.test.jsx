@@ -2,11 +2,15 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigateMock = vi.hoisted(() => vi.fn())
+const routeState = vi.hoisted(() => ({
+  portfolioId: 'me',
+  pathname: '/portfolio/me/holdings',
+}))
 
 // Mock all external dependencies before importing the hook
 vi.mock('react-router-dom', () => ({
-  useParams: () => ({ portfolioId: 'me' }),
-  useLocation: () => ({ pathname: '/portfolio/me/holdings' }),
+  useParams: () => ({ portfolioId: routeState.portfolioId }),
+  useLocation: () => ({ pathname: routeState.pathname }),
   useNavigate: () => navigateMock,
 }))
 
@@ -49,6 +53,8 @@ import { renderHook } from '@testing-library/react'
 
 describe('hooks/useRoutePortfolioRuntime.js', () => {
   beforeEach(() => {
+    routeState.portfolioId = 'me'
+    routeState.pathname = '/portfolio/me/holdings'
     window.localStorage.clear()
     window.localStorage.setItem(
       PORTFOLIOS_KEY,
@@ -240,6 +246,45 @@ describe('hooks/useRoutePortfolioRuntime.js', () => {
       expect(setItemSpy).not.toHaveBeenCalled()
       expect(navigateMock).not.toHaveBeenCalled()
       expect(warnSpy).not.toHaveBeenCalled()
+    })
+
+    it('keeps portfolioSwitching true until the latest requested portfolio wins', () => {
+      const { result, rerender } = renderHook(() => useRoutePortfolioRuntime())
+      const { warnSpy } = installWriteSpies()
+      navigateMock.mockClear()
+
+      act(() => {
+        result.current.headerProps.switchPortfolio('p-test')
+      })
+
+      expect(result.current.headerProps.portfolioSwitching).toBe(true)
+      expect(navigateMock).toHaveBeenCalledWith(expect.stringContaining('p-test'))
+
+      act(() => {
+        result.current.headerProps.switchPortfolio('me')
+      })
+
+      expect(result.current.headerProps.portfolioSwitching).toBe(true)
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+
+      routeState.portfolioId = 'p-test'
+      routeState.pathname = '/portfolio/p-test/holdings'
+      rerender()
+
+      expect(navigateMock).toHaveBeenCalledTimes(2)
+      expect(navigateMock).toHaveBeenLastCalledWith(expect.stringContaining('/portfolio/me'), {
+        replace: true,
+      })
+      expect(result.current.headerProps.portfolioSwitching).toBe(true)
+
+      routeState.portfolioId = 'me'
+      routeState.pathname = '/portfolio/me/holdings'
+      rerender()
+
+      expect(result.current.headerProps.portfolioSwitching).toBe(false)
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/\[route-shell\] write blocked: switchPortfolio/)
+      )
     })
 
     it('openOverview does not write VIEW_MODE_KEY but still navigates to /overview', () => {

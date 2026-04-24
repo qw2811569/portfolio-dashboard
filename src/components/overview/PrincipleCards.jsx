@@ -5,7 +5,7 @@ import { getDailyPrinciple } from '../../lib/dailyPrinciples.js'
 
 const CARD_LABEL_STYLE = {
   fontSize: 12,
-  color: C.textMute,
+  color: C.textSec,
   letterSpacing: '0.08em',
   fontWeight: 500,
   marginBottom: 8,
@@ -40,7 +40,7 @@ function PrincipleCard({ label, text }) {
         {
           style: {
             fontSize: 11,
-            color: C.textSec,
+            color: C.text,
             padding: '4px 8px',
             borderRadius: 999,
             background: alpha(C.ink, '08'),
@@ -71,7 +71,7 @@ function PrincipleCard({ label, text }) {
         style: {
           marginTop: 8,
           fontSize: 11,
-          color: C.textMute,
+          color: C.textSec,
           lineHeight: 1.7,
         },
       },

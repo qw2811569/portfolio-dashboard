@@ -516,9 +516,10 @@ export function NewsFeedSection({
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
 
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(() => codesKey.length > 0)
   const [error, setError] = useState(null)
   const [requestNonce, setRequestNonce] = useState(0)
+  const [settledRequestKey, setSettledRequestKey] = useState('')
+  const requestKey = `${codesKey}:${requestNonce}`
   const [sourceFilter, setSourceFilter] = useState('全部來源')
   const [impactFilter, setImpactFilter] = useState('全部影響')
   const [tickerFilter, setTickerFilter] = useState('全部持股')
@@ -528,18 +529,23 @@ export function NewsFeedSection({
 
   useEffect(() => {
     fetchedRef.current = false
-  }, [codesKey, requestNonce])
+  }, [requestKey])
 
   useEffect(() => {
     if (!codesKey || fetchedRef.current) return
     fetchedRef.current = true
+    const controller = new AbortController()
+    let cancelled = false
 
-    fetch(`/api/news-feed?codes=${encodeURIComponent(codesKey)}&days=3`)
+    fetch(`/api/news-feed?codes=${encodeURIComponent(codesKey)}&days=3`, {
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
       })
       .then((data) => {
+        if (cancelled) return
         const remoteItems = (data.items || []).map((item) => ({
           ...item,
           recordType: 'news',
@@ -547,13 +553,20 @@ export function NewsFeedSection({
         setItems(remoteItems.length ? remoteItems : buildPreviewNewsItems(holdingCodes))
       })
       .catch((err) => {
+        if (cancelled || err?.name === 'AbortError') return
         setError(normalizeDataError(err, { resource: 'news' }))
         setItems(buildPreviewNewsItems(holdingCodes))
       })
       .finally(() => {
-        setLoading(false)
+        if (cancelled) return
+        setSettledRequestKey(requestKey)
       })
-  }, [codesKey, holdingCodes, requestNonce])
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [codesKey, holdingCodes, requestKey])
 
   const sources = ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))]
   const impacts = ['全部影響', '利多', '利空', '中性']
@@ -587,6 +600,7 @@ export function NewsFeedSection({
   const activeFilterCount = countActiveFilters({ sourceFilter, impactFilter, tickerFilter })
   const hasActiveFilters = activeFilterCount > 0
   const activeFilterSummary = buildActiveFilterSummary({ sourceFilter, impactFilter, tickerFilter })
+  const loading = Boolean(codesKey) && settledRequestKey !== requestKey
 
   if (loading) {
     return h(
@@ -616,7 +630,6 @@ export function NewsFeedSection({
   }
 
   const handleRetryNewsFeed = () => {
-    setLoading(true)
     setError(null)
     setRequestNonce((current) => current + 1)
   }
@@ -946,7 +959,6 @@ export function NewsFeedSection({
       'div',
       null,
       error &&
-        !isMobile &&
         h(DataError, {
           status: error.status,
           resource: 'news',
@@ -1111,84 +1123,9 @@ export function NewsFeedSection({
                 },
                 '新增新聞數 N'
               )
-            )
+          )
         )
       ),
-      error &&
-        isMobile &&
-        h(
-          'div',
-          {
-            'data-testid': 'news-mobile-error-notice',
-            style: {
-              marginBottom: 12,
-              padding: '10px 12px',
-              borderRadius: 18,
-              background: alpha(TOKENS.warning, '12'),
-              border: `1px solid ${alpha(TOKENS.warning, '20')}`,
-              display: 'grid',
-              gap: 8,
-            },
-          },
-          h(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: 8,
-              },
-            },
-            h(
-              'div',
-              { style: { flex: 1, minWidth: 0 } },
-              h(
-                'div',
-                { style: { fontSize: 10, color: TOKENS.iron, marginBottom: 4 } },
-                'Heads-up'
-              ),
-              h(
-                'div',
-                {
-                  style: {
-                    fontSize: 12,
-                    color: TOKENS.ink,
-                    lineHeight: 1.7,
-                    fontFamily: TOKENS.fontBody,
-                  },
-                },
-                '新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。'
-              )
-            ),
-            h(
-              Button,
-              {
-                type: 'button',
-                size: 'xs',
-                onClick: handleRetryNewsFeed,
-                style: {
-                  textTransform: 'none',
-                  justifySelf: 'flex-start',
-                },
-              },
-              '再試一次'
-            )
-          )
-        ),
-      error &&
-        !isMobile &&
-        h(
-          'div',
-          {
-            style: {
-              marginBottom: 12,
-              fontSize: 11,
-              color: TOKENS.iron,
-            },
-          },
-          '新聞源暫時打不開，以下先顯示目前可讀版本。'
-        ),
       h(
         Card,
         {

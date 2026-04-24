@@ -10,12 +10,16 @@ function buildProps(overrides = {}) {
     totalVal: 0,
     totalCost: 0,
     todayTotalPnl: 0,
+    todayPnlHasPriceData: true,
+    todayPnlIsStale: false,
     winners: [],
     losers: [],
     top5: [],
     holdingsIntegrityIssues: [],
     latestInsight: null,
     operatingContext: null,
+    reportRefreshMeta: {},
+    marketPriceSync: null,
     ...overrides,
   }
 }
@@ -23,6 +27,7 @@ function buildProps(overrides = {}) {
 describe('components/HoldingsPanel', () => {
   afterEach(() => {
     cleanup()
+    vi.unstubAllGlobals()
   })
 
   it('renders without crashing when holdings is empty', () => {
@@ -79,21 +84,18 @@ describe('components/HoldingsPanel', () => {
   })
 
   it('renders tracked-stocks sync badge when local sync state exists', () => {
-    Object.defineProperty(globalThis, 'localStorage', {
-      value: {
-        getItem(key) {
-          if (key !== 'pf-me-tracked-sync-v1') return null
-          return JSON.stringify({
-            portfolioId: 'me',
-            status: 'fresh',
-            lastSyncedAt: '2026-04-19T06:00:00.000Z',
-            totalTracked: 2,
-            source: 'live-sync',
-          })
-        },
-        setItem() {},
+    vi.stubGlobal('localStorage', {
+      getItem(key) {
+        if (key !== 'pf-me-tracked-sync-v1') return null
+        return JSON.stringify({
+          portfolioId: 'me',
+          status: 'fresh',
+          lastSyncedAt: '2026-04-19T06:00:00.000Z',
+          totalTracked: 2,
+          source: 'live-sync',
+        })
       },
-      configurable: true,
+      setItem() {},
     })
 
     render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
@@ -143,29 +145,83 @@ describe('components/HoldingsPanel', () => {
   })
 
   it('renders tracked-stocks auth error state when the latest sync failed', () => {
-    Object.defineProperty(globalThis, 'localStorage', {
-      value: {
-        getItem(key) {
-          if (key !== 'pf-me-tracked-sync-v1') return null
-          return JSON.stringify({
-            portfolioId: 'me',
-            status: 'failed',
-            lastAttemptAt: '2026-04-19T06:00:00.000Z',
-            lastSyncedAt: '2026-04-18T06:00:00.000Z',
-            totalTracked: 2,
-            source: 'live-sync',
-            lastError: 'Unauthorized',
-            errorStatus: 401,
-          })
-        },
-        setItem() {},
+    vi.stubGlobal('localStorage', {
+      getItem(key) {
+        if (key !== 'pf-me-tracked-sync-v1') return null
+        return JSON.stringify({
+          portfolioId: 'me',
+          status: 'failed',
+          lastAttemptAt: '2026-04-19T06:00:00.000Z',
+          lastSyncedAt: '2026-04-18T06:00:00.000Z',
+          totalTracked: 2,
+          source: 'live-sync',
+          lastError: 'Unauthorized',
+          errorStatus: 401,
+        })
       },
-      configurable: true,
+      setItem() {},
     })
 
     const { container } = render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
     expect(container.querySelector('[data-error="tracked-stocks"]')).toBeTruthy()
-    expect(container.textContent).toContain('登入狀態已過期')
+    expect(container.textContent).toContain('登入 session 過期')
+  })
+
+  it('collapses multiple upstream failures into one global banner', () => {
+    vi.stubGlobal('localStorage', {
+      getItem(key) {
+        if (key !== 'pf-me-tracked-sync-v1') return null
+        return JSON.stringify({
+          portfolioId: 'me',
+          status: 'failed',
+          lastAttemptAt: '2026-04-19T06:00:00.000Z',
+          lastSyncedAt: '2026-04-18T06:00:00.000Z',
+          totalTracked: 2,
+          source: 'live-sync',
+          lastError: 'Unauthorized',
+          errorStatus: 401,
+        })
+      },
+      setItem() {},
+    })
+
+    const { container } = render(
+      <HoldingsPanel
+        {...buildProps({
+          activePortfolioId: 'me',
+          holdingDossiers: [
+            {
+              code: '2330',
+              name: '台積電',
+              finmindDegraded: { reason: 'auth-required' },
+              targetFetchError: { status: 401, message: 'Unauthorized' },
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('upstream-health-banner')).toBeInTheDocument()
+    expect(container.querySelector('[data-testid="accuracy-gate-block"]')).toBeFalsy()
+    expect(container.querySelector('[data-error="target-prices"]')).toBeFalsy()
+    expect(container.querySelector('[data-error="tracked-stocks"]')).toBeFalsy()
+  })
+
+  it('renders a stale placeholder instead of 0 when today pnl has no usable price data', () => {
+    render(
+      <HoldingsPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          totalVal: 950,
+          totalCost: 900,
+          todayTotalPnl: null,
+          todayPnlHasPriceData: false,
+          todayPnlIsStale: true,
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('holdings-summary-today-pnl')).toHaveTextContent('—')
   })
 
   it('renders the retail-intent filter bar with search and saved controls', () => {

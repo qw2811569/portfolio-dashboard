@@ -2,7 +2,7 @@ import { createElement as h, useState } from 'react'
 import { A, C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
-import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
+import { useUpstreamHealth } from '../../hooks/useUpstreamHealth.js'
 import {
   AccuracyGateBlock,
   Card,
@@ -10,9 +10,9 @@ import {
   MarkdownText,
   OperatingContextCard,
   TextFieldDialog,
+  UpstreamHealthBanner,
 } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
-import { resolveHoldingsAccuracyGate } from '../../lib/accuracyGateUi.js'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
 
 const lbl = {
@@ -56,10 +56,32 @@ const trackedSyncTone = {
 /**
  * Holdings Summary Metrics
  */
-export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl = 0 }) {
-  const todayPnlColor = todayTotalPnl > 0 ? C.text : todayTotalPnl < 0 ? C.down : C.textSec
-  const todayPnlText =
-    todayTotalPnl > 0
+export function HoldingsSummary({
+  holdings,
+  totalVal,
+  totalCost,
+  todayTotalPnl = 0,
+  todayPnlHasPriceData = true,
+  todayPnlIsStale = false,
+  marketPriceSync = null,
+}) {
+  const showStalePlaceholder = Boolean(
+    holdings.length > 0 &&
+    (todayPnlIsStale ||
+      !todayPnlHasPriceData ||
+      todayTotalPnl == null ||
+      (marketPriceSync?.status === 'failed' && Number(todayTotalPnl || 0) === 0))
+  )
+  const todayPnlColor = showStalePlaceholder
+    ? C.textMute
+    : todayTotalPnl > 0
+      ? C.text
+      : todayTotalPnl < 0
+        ? C.down
+        : C.textSec
+  const todayPnlText = showStalePlaceholder
+    ? '—'
+    : todayTotalPnl > 0
       ? `+${todayTotalPnl.toLocaleString()}`
       : todayTotalPnl < 0
         ? todayTotalPnl.toLocaleString()
@@ -85,6 +107,7 @@ export function HoldingsSummary({ holdings, totalVal, totalCost, todayTotalPnl =
         h(
           'div',
           {
+            'data-testid': label === '今日損益' ? 'holdings-summary-today-pnl' : undefined,
             className: 'tn',
             style: {
               fontSize: 14,
@@ -129,8 +152,7 @@ export function HoldingsIntegrityWarning({ issues }) {
   )
 }
 
-function TrackedStocksSyncBadge({ portfolioId = '' }) {
-  const { badge, syncState } = useTrackedStocksSyncStatus(portfolioId)
+function TrackedStocksSyncBadge({ badge = null, syncState = null, suppressErrorBanner = false }) {
   if (!badge && syncState?.status !== 'failed') return null
 
   const tone = trackedSyncTone[badge?.status] || trackedSyncTone.missing
@@ -147,6 +169,7 @@ function TrackedStocksSyncBadge({ portfolioId = '' }) {
       },
     },
     syncState?.status === 'failed' &&
+      !suppressErrorBanner &&
       h(DataError, {
         status: syncState?.errorStatus || 401,
         resource: 'tracked-stocks',
@@ -1032,6 +1055,8 @@ export function HoldingsPanel({
   totalVal = 0,
   totalCost = 0,
   todayTotalPnl = 0,
+  todayPnlHasPriceData = true,
+  todayPnlIsStale = false,
   winners = [],
   losers = [],
   top5: _top5 = [],
@@ -1041,17 +1066,36 @@ export function HoldingsPanel({
   reversalConditions: _reversalConditions = {},
   latestInsight = null,
   operatingContext = null,
+  reportRefreshMeta = {},
+  marketPriceSync = null,
   holdingsFilterBar = null,
   children,
 }) {
   const targetFetchError = getHoldingTargetError(holdingDossiers)
-  const holdingsAccuracyGate = resolveHoldingsAccuracyGate({ holdingDossiers })
+  const upstreamHealth = useUpstreamHealth({
+    panel: 'holdings',
+    activePortfolioId,
+    holdingDossiers,
+    marketPriceSync,
+    reportRefreshMeta,
+  })
+  const holdingsAccuracyGate = upstreamHealth.accuracyGate
+  const handleRetryAll = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
 
   return h(
     'div',
     { 'data-testid': 'holdings-panel' },
     h(OperatingContextCard, { context: operatingContext, variant: 'home' }),
-    holdingsAccuracyGate &&
+    h(UpstreamHealthBanner, {
+      banner: upstreamHealth.banner,
+      onRetryAll: handleRetryAll,
+    }),
+    !upstreamHealth.shouldCollapseBanners &&
+      holdingsAccuracyGate &&
       h(AccuracyGateBlock, {
         reason: holdingsAccuracyGate.reason,
         resource: holdingsAccuracyGate.resource,
@@ -1060,7 +1104,8 @@ export function HoldingsPanel({
           if (typeof window !== 'undefined') window.location.reload()
         },
       }),
-    targetFetchError &&
+    !upstreamHealth.shouldCollapseBanners &&
+      targetFetchError &&
       h(DataError, {
         status: targetFetchError.status,
         resource: 'target-prices',
@@ -1085,8 +1130,20 @@ export function HoldingsPanel({
         'div',
         { style: { minWidth: 0 } },
         // Summary metrics
-        h(HoldingsSummary, { holdings, totalVal, totalCost, todayTotalPnl }),
-        h(TrackedStocksSyncBadge, { portfolioId: activePortfolioId })
+        h(HoldingsSummary, {
+          holdings,
+          totalVal,
+          totalCost,
+          todayTotalPnl,
+          todayPnlHasPriceData,
+          todayPnlIsStale,
+          marketPriceSync,
+        }),
+        h(TrackedStocksSyncBadge, {
+          badge: upstreamHealth.badge,
+          syncState: upstreamHealth.syncState,
+          suppressErrorBanner: upstreamHealth.shouldCollapseBanners,
+        })
       ),
       h(
         Card,

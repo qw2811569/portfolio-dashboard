@@ -144,6 +144,36 @@ describe('lib/accuracyGateUi', () => {
     expect(copy.body).toContain('昨天')
   })
 
+  it('maps 401-style errors to auth-required instead of api-timeout', () => {
+    const gate = resolveDailyAccuracyGate({
+      report: {
+        id: 'daily-auth',
+        date: '2026/04/24',
+        aiError: 'Unauthorized (401)',
+      },
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'auth-required',
+      resource: 'daily',
+    })
+  })
+
+  it('builds login guidance for auth-required accuracy gates', () => {
+    const copy = buildAccuracyGateBlockModel({
+      reason: 'auth-required',
+      resource: 'thesis',
+      context: {
+        provider: 'FinMind',
+        fallbackAgeLabel: '昨天',
+      },
+    })
+
+    expect(copy.headline).toBe('需要重新登入 · 前往登入')
+    expect(copy.requiresLogin).toBe(true)
+    expect(copy.body).toContain('重新登入後會自動補正')
+  })
+
   it('resolves dashboard gates only when every dossier is stale or missing', () => {
     const blocked = resolveDashboardAccuracyGate({
       holdingDossiers: [
@@ -209,6 +239,24 @@ describe('lib/accuracyGateUi', () => {
         provider: 'FinMind',
         fallbackAgeLabel: '昨天',
       },
+    })
+  })
+
+  it('prefers auth-required for holdings gates when FinMind returns 401-style degraded state', () => {
+    const gate = resolveHoldingsAccuracyGate({
+      holdingDossiers: [
+        {
+          code: '2330',
+          finmindDegraded: {
+            reason: 'auth-required',
+          },
+        },
+      ],
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'auth-required',
+      resource: 'thesis',
     })
   })
 })

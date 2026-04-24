@@ -135,6 +135,9 @@ function mergeRequestWithBoundaryOptions(request = {}, options = {}) {
 function classifyFinMindErrorMessage(message = '') {
   const text = String(message || '').trim()
   if (!text) return 'analysis-unavailable'
+  if (/unauthorized|forbidden|401|auth/i.test(text)) {
+    return 'auth-required'
+  }
   if (/quota|upper limit|rate limit|429|402|governor blocked/i.test(text)) {
     return 'quota-exceeded'
   }

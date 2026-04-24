@@ -29,6 +29,8 @@ function buildProps(overrides = {}) {
     holdings: [],
     morningNote: null,
     todayTotalPnl: 0,
+    todayPnlHasPriceData: true,
+    todayPnlIsStale: false,
     totalVal: 0,
     totalCost: 0,
     winners: [],
@@ -37,6 +39,8 @@ function buildProps(overrides = {}) {
     newsEvents: [],
     urgentCount: 0,
     todayAlertSummary: '',
+    reportRefreshMeta: {},
+    marketPriceSync: null,
     ...overrides,
   }
 }
@@ -45,6 +49,7 @@ describe('components/DashboardPanel', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
     if (typeof originalMatchMedia === 'function') {
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,
@@ -67,6 +72,24 @@ describe('components/DashboardPanel', () => {
     const { container } = render(<DashboardPanel {...buildProps({ todayTotalPnl: 1234 })} />)
     // TodayPnlHero formats with thousands separators — check for '1,234'
     expect(container.textContent).toContain('1,234')
+  })
+
+  it('renders a stale placeholder when today pnl is still waiting on price data', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          totalVal: 950,
+          totalCost: 900,
+          todayTotalPnl: null,
+          todayPnlHasPriceData: false,
+          todayPnlIsStale: true,
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('dashboard-today-pnl-value')).toHaveTextContent('—')
+    expect(screen.getByTestId('dashboard-today-pnl-stale-copy')).toHaveTextContent('資料補齊中')
   })
 
   it('renders the daily principle copy near the dashboard hero', () => {
@@ -120,6 +143,41 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('dashboard-reminder-drawer')).toBeInTheDocument()
     expect(screen.getByText('聯發科 (2454)')).toBeInTheDocument()
+  })
+
+  it('collapses multi-source auth failures into one global banner on dashboard', () => {
+    vi.stubGlobal('localStorage', {
+      getItem(key) {
+        if (key !== 'pf-me-tracked-sync-v1') return null
+        return JSON.stringify({
+          portfolioId: 'me',
+          status: 'failed',
+          lastAttemptAt: '2026-04-19T06:00:00.000Z',
+          totalTracked: 2,
+          source: 'live-sync',
+          lastError: 'Unauthorized',
+          errorStatus: 401,
+        })
+      },
+      setItem() {},
+    })
+
+    const { container } = render(
+      <DashboardPanel
+        {...buildProps({
+          portfolioId: 'me',
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          totalVal: 950,
+          totalCost: 900,
+          holdingDossiers: [{ code: '2330', freshness: { fundamentals: 'missing' } }],
+          dataRefreshRows: [{ code: '2330', degradedReason: 'auth-required' }],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('upstream-health-banner')).toBeInTheDocument()
+    expect(container.querySelector('[data-testid="accuracy-gate-block"]')).toBeFalsy()
+    expect(container.querySelector('[data-testid="dashboard-reminder-toggle"]')).toBeFalsy()
   })
 
   it('renders the overview compare strip below the hero and jumps to overview on click', () => {

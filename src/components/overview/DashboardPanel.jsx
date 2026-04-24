@@ -1,13 +1,20 @@
 import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { resolveDashboardAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { normalizeEventType } from '../../lib/eventTypeMeta.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
-import { AccuracyGateBlock, Button, Card, MarkdownText, StaleBadge } from '../common'
+import { useUpstreamHealth } from '../../hooks/useUpstreamHealth.js'
+import {
+  AccuracyGateBlock,
+  Button,
+  Card,
+  MarkdownText,
+  StaleBadge,
+  UpstreamHealthBanner,
+} from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { AnxietyMetricsPanel } from './AnxietyMetricsPanel.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
@@ -504,22 +511,39 @@ function DashboardCompareStrip({ compareStrip = null, onNavigate = null }) {
 function TodayPnlHero({
   totalVal = 0,
   todayTotalPnl = 0,
+  todayPnlHasPriceData = true,
+  todayPnlIsStale = false,
+  marketPriceSync = null,
   holdings = [],
   watchlist = [],
   portfolioName = '',
   headline = '',
   headlineTone = 'calm',
   headlineGate = null,
+  collapseUpstreamBanners = false,
   dataRefreshRows = [],
   onRefreshReminder = null,
   onNavigate = null,
 }) {
   const [isReminderOpen, setIsReminderOpen] = useState(false)
   const [dismissedGateKey, setDismissedGateKey] = useState('')
-  const color = todayTotalPnl > 0 ? C.up : todayTotalPnl < 0 ? C.down : C.textSec
-  const sign = todayTotalPnl > 0 ? '+' : ''
+  const showStalePnl = Boolean(
+    holdings.length > 0 &&
+    (todayPnlIsStale ||
+      !todayPnlHasPriceData ||
+      todayTotalPnl == null ||
+      (marketPriceSync?.status === 'failed' && Number(todayTotalPnl || 0) === 0))
+  )
+  const color = showStalePnl
+    ? C.textMute
+    : todayTotalPnl > 0
+      ? C.up
+      : todayTotalPnl < 0
+        ? C.down
+        : C.textSec
+  const sign = showStalePnl ? '' : todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
-  const pnlText = `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
+  const pnlText = showStalePnl ? '—' : `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
   const submetrics = buildSubmetrics({ holdings, watchlist })
   const portfolioLabel = displayPortfolioName({ displayName: portfolioName }) || '目前組合'
   const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
@@ -527,7 +551,9 @@ function TodayPnlHero({
   const headlineGateKey = headlineGate
     ? [headlineGate.resource, headlineGate.reason, portfolioLabel].filter(Boolean).join(':')
     : ''
-  const showHeadlineGate = Boolean(headlineGate && dismissedGateKey !== headlineGateKey)
+  const showHeadlineGate = Boolean(
+    headlineGate && !collapseUpstreamBanners && dismissedGateKey !== headlineGateKey
+  )
   const safeHeadlineText = headlineGate ? '首頁 headline 稍後再補' : headlineText
   const headlineColor =
     headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
@@ -582,6 +608,7 @@ function TodayPnlHero({
               },
             },
             safeRefreshRows.length > 0 &&
+              !collapseUpstreamBanners &&
               h(
                 'div',
                 { style: { position: 'relative' } },
@@ -889,6 +916,7 @@ function TodayPnlHero({
           h(
             'div',
             {
+              'data-testid': 'dashboard-today-pnl-value',
               className: 'tn',
               style: {
                 fontSize: 22,
@@ -900,7 +928,20 @@ function TodayPnlHero({
               },
             },
             pnlText
-          )
+          ),
+          showStalePnl &&
+            h(
+              'div',
+              {
+                'data-testid': 'dashboard-today-pnl-stale-copy',
+                style: {
+                  fontSize: 11,
+                  color: C.textMute,
+                  lineHeight: 1.6,
+                },
+              },
+              '資料補齊中'
+            )
         ),
         h(
           'div',
@@ -2008,6 +2049,8 @@ export function DashboardPanel({
   dailySnapshotStatus = null,
   dailyReport = null,
   todayTotalPnl = 0,
+  todayPnlHasPriceData = true,
+  todayPnlIsStale = false,
   totalVal = 0,
   totalCost = 0,
   winners = [],
@@ -2022,6 +2065,8 @@ export function DashboardPanel({
   compareStrip = null,
   anxietyMetrics = null,
   stockMeta = null,
+  reportRefreshMeta = {},
+  marketPriceSync = null,
   onRefreshReminder = null,
   onNavigate = null,
 }) {
@@ -2029,12 +2074,24 @@ export function DashboardPanel({
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
     [holdingDossiers, viewMode]
   )
-  const dashboardHeadlineGate = useMemo(
-    () => resolveDashboardAccuracyGate({ holdingDossiers, dataRefreshRows }),
-    [dataRefreshRows, holdingDossiers]
-  )
+  const upstreamHealth = useUpstreamHealth({
+    panel: 'dashboard',
+    activePortfolioId: portfolioId,
+    holdingDossiers,
+    dataRefreshRows,
+    marketPriceSync,
+    reportRefreshMeta,
+  })
+  const dashboardHeadlineGate = upstreamHealth.accuracyGate
   const showHoldingsEmptyState =
     holdings.length === 0 && totalVal === 0 && totalCost === 0 && todayTotalPnl === 0
+  const handleRetryAll = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+      return
+    }
+    onRefreshReminder?.()
+  }
 
   if (showHoldingsEmptyState) {
     return h(
@@ -2057,6 +2114,10 @@ export function DashboardPanel({
   return h(
     'div',
     null,
+    h(UpstreamHealthBanner, {
+      banner: upstreamHealth.banner,
+      onRetryAll: handleRetryAll,
+    }),
     h(
       'div',
       { className: 'dashboard-hero' },
@@ -2069,11 +2130,15 @@ export function DashboardPanel({
           headline: dashboardHeadline.headline,
           headlineTone: dashboardHeadline.tone,
           headlineGate: dashboardHeadlineGate,
+          collapseUpstreamBanners: upstreamHealth.shouldCollapseBanners,
           dataRefreshRows,
           onRefreshReminder,
           onNavigate,
           totalVal,
           todayTotalPnl,
+          todayPnlHasPriceData,
+          todayPnlIsStale,
+          marketPriceSync,
           portfolioName: displayPortfolioName({ displayName: portfolioName, id: portfolioId }),
         }),
         h(DashboardCompareStrip, { compareStrip, onNavigate })

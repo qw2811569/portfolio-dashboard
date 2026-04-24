@@ -299,7 +299,7 @@ describe('components/ResearchPanel', () => {
     )
 
     expect(container.querySelector('[data-error="analyst-reports"]')).toBeTruthy()
-    expect(container.textContent).toContain('此帳號暫無分析師報告存取權限')
+    expect(container.textContent).toContain('需要重新登入')
     expect(container.textContent).toContain('這輪卡在 台積電 (2330)')
   })
 

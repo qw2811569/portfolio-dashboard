@@ -1,10 +1,12 @@
 const ACCURACY_GATE_HEADLINE = '這段分析暫時不給 · 為避免幻覺'
 const LONG_RETRY_BACKOFF_MS = 5 * 60 * 1000
+const AUTH_REQUIRED_HEADLINE = '需要重新登入 · 前往登入'
 
 const INSIDER_ACTION_CUE =
   /(操作建議|買賣策略|買進|買入|賣出|加碼|減碼|停損|出場|持倉調整|資金調度|最需要行動|布局|佈局|續抱|\bbuy\b|\bsell\b|\btrim\b|\bexit\b|\baccumulate\b|\brebalance\b|\baction\b|\blong\b|\bshort\b)/iu
 
 const REASON_LABELS = {
+  'auth-required': '需要重新登入',
   'stale-data': '資料還在補齊',
   'fundamentals-incomplete': '財報 / 營收未齊',
   'insider-compliance': '合規邊界',
@@ -100,10 +102,21 @@ function buildFinMindTimeoutBody(context = {}) {
   return `${subject}現在有點卡住，${buildFinMindFallbackPhrase(context)}，稍後補正。`
 }
 
+function buildAuthRequiredBody(context = {}) {
+  if (context.provider === 'FinMind') {
+    return `這輪登入 session 沒帶到 FinMind 資料，${buildFinMindFallbackPhrase(context)}，重新登入後會自動補正。`
+  }
+
+  return '這輪登入 session 沒跟上，我先沿用前一版數字，重新登入後會自動補正。'
+}
+
 function buildDashboardBody(reason, context = {}) {
   const holdingCount = Math.max(0, Number(context.holdingCount) || 0)
   const lead =
     holdingCount > 0 ? `目前有 ${holdingCount} 檔持倉的首頁依據還沒站穩` : '首頁依據還沒站穩'
+  if (reason === 'auth-required') {
+    return `首頁這輪沒帶到可用的登入 session，${buildFinMindFallbackPhrase(context)}，重新登入後會自動補正。`
+  }
   if (context.provider === 'FinMind' && reason === 'quota-exceeded') {
     return `今天 FinMind 查詢到上限，首頁先不把結論講滿。${buildFinMindFallbackPhrase(context)}，剩的資料明天補。`
   }
@@ -123,6 +136,9 @@ export function containsInsiderActionCue(value = '') {
 export function classifyAccuracyGateReasonFromError(value = '') {
   const text = toText(value)
   if (!text) return 'analysis-unavailable'
+  if (/unauthorized|forbidden|401|登入|session/i.test(text)) {
+    return 'auth-required'
+  }
   if (/prompt-injection|blocked prompt-injection|不安全/i.test(text)) {
     return 'prompt-injection-detected'
   }
@@ -147,8 +163,15 @@ export function buildAccuracyGateBlockModel({ reason = '', resource = '', contex
   const normalizedResource = RESOURCE_LABELS[resource] ? resource : 'thesis'
 
   let body = '這輪資料還沒整理到可以安心下結論的程度，我先停在這裡。'
+  let headline = ACCURACY_GATE_HEADLINE
 
-  if (normalizedReason === 'stale-data' && normalizedResource === 'daily') {
+  if (normalizedReason === 'auth-required') {
+    headline = AUTH_REQUIRED_HEADLINE
+    body =
+      normalizedResource === 'dashboard'
+        ? buildDashboardBody(normalizedReason, context)
+        : buildAuthRequiredBody(context)
+  } else if (normalizedReason === 'stale-data' && normalizedResource === 'daily') {
     body = buildDailyStaleBody(context)
   } else if (
     normalizedReason === 'fundamentals-incomplete' &&
@@ -173,13 +196,14 @@ export function buildAccuracyGateBlockModel({ reason = '', resource = '', contex
   }
 
   return {
-    headline: ACCURACY_GATE_HEADLINE,
+    headline,
     body,
     reason: normalizedReason,
     resource: normalizedResource,
     reasonLabel: REASON_LABELS[normalizedReason],
     resourceLabel: RESOURCE_LABELS[normalizedResource],
     retryDisabled: shouldDisableAccuracyGateRetry(context),
+    requiresLogin: normalizedReason === 'auth-required',
   }
 }
 
@@ -317,11 +341,12 @@ export function resolveHoldingsAccuracyGate({ holdingDossiers = [] } = {}) {
 
   if (degraded.length === 0) return null
 
+  const authCount = degraded.filter((item) => item.reason === 'auth-required').length
   const quotaCount = degraded.filter((item) => item.reason === 'quota-exceeded').length
   const primary = degraded[0] || null
 
   return {
-    reason: quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
+    reason: authCount > 0 ? 'auth-required' : quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
     resource: 'thesis',
     context: {
       provider: 'FinMind',
@@ -349,11 +374,12 @@ export function resolveDashboardAccuracyGate({ holdingDossiers = [], dataRefresh
     toText(item?.degradedReason)
   )
   if (degradedRows.length > 0) {
+    const authCount = degradedRows.filter((item) => item.degradedReason === 'auth-required').length
     const quotaCount = degradedRows.filter(
       (item) => item.degradedReason === 'quota-exceeded'
     ).length
     return {
-      reason: quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
+      reason: authCount > 0 ? 'auth-required' : quotaCount > 0 ? 'quota-exceeded' : 'api-timeout',
       resource: 'dashboard',
       context: {
         provider: 'FinMind',

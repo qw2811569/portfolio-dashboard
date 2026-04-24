@@ -63,22 +63,56 @@ function readHoldingMarketValue(holding, getHoldingMarketValue) {
   return qty * price
 }
 
+function readTodayQuoteSnapshot(quote = null) {
+  const safeQuote = quote && typeof quote === 'object' ? quote : null
+  const price = toFiniteNumber(safeQuote?.price)
+  const yesterday = toFiniteNumber(safeQuote?.yesterday)
+  const change = toFiniteNumber(safeQuote?.change)
+  const changePct = toFiniteNumber(safeQuote?.changePct)
+  const hasQuote = price != null && price > 0
+  const hasUsableDelta = Boolean(
+    hasQuote &&
+    ((yesterday != null && yesterday > 0) ||
+      (change != null && change !== 0) ||
+      (changePct != null && changePct !== 0))
+  )
+
+  return {
+    hasQuote,
+    hasUsableDelta,
+    change: change != null ? change : 0,
+  }
+}
+
 function buildPortfolioTodayMetrics(holdings = [], priceMap = {}, getHoldingMarketValue) {
   const safeHoldings = Array.isArray(holdings) ? holdings : []
   const safePriceMap = priceMap && typeof priceMap === 'object' ? priceMap : {}
+  if (safeHoldings.length === 0) {
+    return {
+      todayTotalPnl: 0,
+      todayRetPct: 0,
+      todayTopContributor: null,
+      todayTopDrag: null,
+      hasPriceData: false,
+      isStale: false,
+    }
+  }
 
   let todayTotalPnl = 0
   let priorCloseValue = 0
   let todayTopContributor = null
   let todayTopDrag = null
+  let hasPriceData = false
 
   for (const holding of safeHoldings) {
     const code = String(holding?.code || '').trim()
     const qty = toFiniteNumber(holding?.qty, 0)
-    const quoteChange = toFiniteNumber(safePriceMap?.[code]?.change, 0)
+    const quoteSnapshot = readTodayQuoteSnapshot(safePriceMap?.[code])
+    const quoteChange = quoteSnapshot.hasUsableDelta ? quoteSnapshot.change : 0
     const holdingTodayPnl = quoteChange * qty
     const currentValue = readHoldingMarketValue(holding, getHoldingMarketValue)
     const previousValue = Math.max(0, currentValue - holdingTodayPnl)
+    if (quoteSnapshot.hasUsableDelta) hasPriceData = true
 
     todayTotalPnl += holdingTodayPnl
     priorCloseValue += previousValue
@@ -98,10 +132,13 @@ function buildPortfolioTodayMetrics(holdings = [], priceMap = {}, getHoldingMark
   }
 
   return {
-    todayTotalPnl: Math.round(todayTotalPnl),
-    todayRetPct: priorCloseValue > 0 ? (todayTotalPnl / priorCloseValue) * 100 : 0,
-    todayTopContributor: todayTopContributor?.pnl > 0 ? todayTopContributor : null,
-    todayTopDrag: todayTopDrag?.pnl < 0 ? todayTopDrag : null,
+    todayTotalPnl: hasPriceData ? Math.round(todayTotalPnl) : null,
+    todayRetPct:
+      hasPriceData && priorCloseValue > 0 ? (todayTotalPnl / priorCloseValue) * 100 : null,
+    todayTopContributor: hasPriceData && todayTopContributor?.pnl > 0 ? todayTopContributor : null,
+    todayTopDrag: hasPriceData && todayTopDrag?.pnl < 0 ? todayTopDrag : null,
+    hasPriceData,
+    isStale: !hasPriceData,
   }
 }
 
@@ -625,19 +662,11 @@ export function usePortfolioDerivedData({
   )
   const totalPnl = totalVal - totalCost
   const retPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
-  const todayTotalPnl = useMemo(() => {
-    const prices = marketPriceCache?.prices
-    if (!prices || H.length === 0) return 0
-    return Math.round(
-      H.reduce((sum, item) => {
-        const quote = prices[item.code]
-        if (!quote) return sum
-        const change = Number(quote.change)
-        const qty = Number(item.qty) || 0
-        return sum + (Number.isFinite(change) ? change * qty : 0)
-      }, 0)
-    )
-  }, [H, marketPriceCache])
+  const todayMetrics = useMemo(
+    () => buildPortfolioTodayMetrics(H, marketPriceCache?.prices, getHoldingMarketValue),
+    [H, marketPriceCache, getHoldingMarketValue]
+  )
+  const todayTotalPnl = todayMetrics.todayTotalPnl
   const todayMarketClock = getTaipeiClock(new Date())
   const activeMarketDate = marketPriceSync?.marketDate || marketPriceCache?.marketDate || null
   const activePriceSyncAt = parseStoredDate(
@@ -1092,9 +1121,12 @@ export function usePortfolioDerivedData({
     totalCost,
     totalPnl,
     todayTotalPnl,
+    todayPnlHasPriceData: todayMetrics.hasPriceData,
+    todayPnlIsStale: todayMetrics.isStale,
     retPct,
     todayMarketClock,
     activeMarketDate,
+    marketPriceSync,
     activePriceSyncAt,
     priceSyncStatusLabel,
     priceSyncStatusTone,

@@ -10,10 +10,10 @@ describe('components/DataError', () => {
     vi.useRealTimers()
   })
 
-  it('renders soft copy for analyst report auth failures', () => {
+  it('renders soft copy for auth failures with login guidance', () => {
     render(<DataError status={401} resource="analyst-reports" onRetry={vi.fn()} />)
 
-    expect(screen.getByText('此帳號暫無分析師報告存取權限')).toBeInTheDocument()
+    expect(screen.getByText('需要重新登入 · 前往登入')).toBeInTheDocument()
     expect(screen.getByText('重新登入')).toBeInTheDocument()
     expect(screen.getByText('重新整理')).toBeInTheDocument()
   })

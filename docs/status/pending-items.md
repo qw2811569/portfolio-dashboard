@@ -125,3 +125,14 @@
 | UX-25-bug-4 insider fixture / daily diff toggle | `✅` `f94e77d`                              |
 | UX-24 wrapper 本體                              | `✅` `3d52e65`（但 auth 還不是 green）      |
 | Blob race 真正紅燈                              | `✅` `4d0879b` 已修 tracked-stocks CAS race |
+
+## R143 follow-up backlog
+
+- VM URL 跨域 auth
+  選項：
+  a. CORS + Bearer token（SPA 從 VM config localStorage 讀 token）
+  b. VM nginx reverse proxy `/api/*` 到 Vercel · 帶 VM 自己的 service token
+  c. Domain 統一（VM + Vercel 都 CNAME 到 apex · 共享 cookie domain）
+  目前 VM 用戶 = 匿名 → 所有 fail-closed API 被擋。
+  短期：登入頁 clearly 說「VM 是 dogfood surface · 需要從 Vercel domain 登一次 · 或輸入 bearer token」。
+  長期：選一種方案實作。

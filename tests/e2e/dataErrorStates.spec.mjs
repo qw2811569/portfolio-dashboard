@@ -56,7 +56,7 @@ test('research page surfaces analyst-report 401 as visible error UI', async ({ p
     timeout: 15000,
   })
   await expect(page.locator('[data-error="analyst-reports"]').first()).toContainText(
-    '此帳號暫無分析師報告存取權限'
+    '需要重新登入'
   )
 })
 
@@ -95,6 +95,6 @@ test('tracked-stocks 401 becomes visible on holdings after a failed sync attempt
     timeout: 15000,
   })
   await expect(page.locator('[data-error="tracked-stocks"]').first()).toContainText(
-    '登入狀態已過期'
+    '登入 session 過期'
   )
 })

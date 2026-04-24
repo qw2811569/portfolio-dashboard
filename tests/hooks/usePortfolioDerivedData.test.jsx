@@ -193,9 +193,12 @@ describe('usePortfolioDerivedData', () => {
         'retPct',
         'todayMarketClock',
         'activeMarketDate',
+        'marketPriceSync',
         'activePriceSyncAt',
         'priceSyncStatusLabel',
         'priceSyncStatusTone',
+        'todayPnlHasPriceData',
+        'todayPnlIsStale',
         'holdingsIntegrityIssues',
         'missingTrackedQuoteCodes',
         'shouldTriggerPostCloseSelfHeal',
@@ -264,6 +267,25 @@ describe('usePortfolioDerivedData', () => {
     it('retPct is 0 when totalCost is 0', () => {
       const { result } = renderHook(() => usePortfolioDerivedData(defaultProps({ holdings: [] })))
       expect(result.current.retPct).toBe(0)
+    })
+
+    it('returns a stale today pnl state when price data has no usable day deltas', () => {
+      const { result } = renderHook(() =>
+        usePortfolioDerivedData(
+          defaultProps({
+            holdings: [{ code: '2330', name: '台積電', qty: 10, cost: 90, price: 100 }],
+            marketPriceCache: {
+              prices: {
+                2330: { price: 100, change: 0, changePct: 0, yesterday: null },
+              },
+            },
+          })
+        )
+      )
+
+      expect(result.current.todayTotalPnl).toBeNull()
+      expect(result.current.todayPnlHasPriceData).toBe(false)
+      expect(result.current.todayPnlIsStale).toBe(true)
     })
   })
 

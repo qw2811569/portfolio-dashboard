@@ -125,11 +125,13 @@ export async function fetchStockDossierDataState(code, options = {}) {
           isStale: false,
           error: message
             ? {
-                reason: /quota|upper limit|rate limit|429|402/i.test(message)
-                  ? 'quota-exceeded'
-                  : /timeout|timed out|503|504|502/i.test(message)
-                    ? 'api-timeout'
-                    : 'analysis-unavailable',
+                reason: /unauthorized|forbidden|401|auth/i.test(message)
+                  ? 'auth-required'
+                  : /quota|upper limit|rate limit|429|402/i.test(message)
+                    ? 'quota-exceeded'
+                    : /timeout|timed out|503|504|502/i.test(message)
+                      ? 'api-timeout'
+                      : 'analysis-unavailable',
                 message,
               }
             : null,

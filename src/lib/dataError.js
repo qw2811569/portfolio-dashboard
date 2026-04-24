@@ -81,9 +81,8 @@ export function getSoftErrorCopy(status, resource = '') {
   if (normalizedStatus === '5xx') return '服務暫時不穩 · 正在重試'
 
   if (normalizedStatus === 401) {
-    if (normalizedResource === 'analyst-reports') return '此帳號暫無分析師報告存取權限'
-    if (normalizedResource === 'tracked-stocks') return '登入狀態已過期 · 重新登入後再同步一次'
-    return '請重新登入 / 權限不足'
+    if (normalizedResource === 'tracked-stocks') return '登入 session 過期 · 重新登入後再同步一次'
+    return '需要重新登入 · 前往登入'
   }
 
   if (normalizedStatus === 404) {

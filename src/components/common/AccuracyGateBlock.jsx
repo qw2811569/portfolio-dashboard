@@ -1,4 +1,4 @@
-import { createElement as h } from 'react'
+import { createElement as h, useMemo } from 'react'
 import { C, alpha } from '../../theme.js'
 import { buildAccuracyGateBlockModel } from '../../lib/accuracyGateUi.js'
 import { Button, Card } from './Base.jsx'
@@ -15,9 +15,11 @@ export function AccuracyGateBlock({
   reason,
   resource,
   onRetry,
+  onLogin,
   onDismiss,
   context = {},
   retryDisabled = false,
+  loginHref = '',
 }) {
   const copy = buildAccuracyGateBlockModel({
     reason,
@@ -27,6 +29,11 @@ export function AccuracyGateBlock({
       retryDisabled: retryDisabled || context.retryDisabled,
     },
   })
+  const resolvedLoginHref = useMemo(() => {
+    if (loginHref) return loginHref
+    if (typeof window === 'undefined') return ''
+    return window.location.href
+  }, [loginHref])
 
   return h(
     Card,
@@ -110,22 +117,63 @@ export function AccuracyGateBlock({
         },
         '晚一點再看'
       ),
-      h(
-        Button,
-        {
-          'data-testid': 'accuracy-gate-retry',
-          onClick: () => onRetry?.(),
-          disabled: copy.retryDisabled || typeof onRetry !== 'function',
-          variant: 'ghost',
-          color: 'amber',
-          size: 'sm',
-          style: {
-            minHeight: 44,
-            padding: '10px 14px',
-          },
-        },
-        copy.retryDisabled ? '稍後再試' : '重試'
-      )
+      copy.requiresLogin
+        ? resolvedLoginHref
+          ? h(
+              'a',
+              {
+                'data-testid': 'accuracy-gate-login',
+                href: resolvedLoginHref,
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 44,
+                  minHeight: 44,
+                  padding: '10px 14px',
+                  borderRadius: 999,
+                  border: `1px solid ${alpha(C.amber, '2a')}`,
+                  background: alpha(C.amber, '12'),
+                  color: C.textSec,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textDecoration: 'none',
+                },
+              },
+              '前往登入'
+            )
+          : h(
+              Button,
+              {
+                'data-testid': 'accuracy-gate-login',
+                onClick: () => onLogin?.(),
+                variant: 'ghost',
+                color: 'amber',
+                size: 'sm',
+                style: {
+                  minHeight: 44,
+                  padding: '10px 14px',
+                },
+              },
+              '前往登入'
+            )
+        : h(
+            Button,
+            {
+              'data-testid': 'accuracy-gate-retry',
+              onClick: () => onRetry?.(),
+              disabled: copy.retryDisabled || typeof onRetry !== 'function',
+              variant: 'ghost',
+              color: 'amber',
+              size: 'sm',
+              style: {
+                minHeight: 44,
+                padding: '10px 14px',
+              },
+            },
+            copy.retryDisabled ? '稍後再試' : '重試'
+          )
     )
   )
 }

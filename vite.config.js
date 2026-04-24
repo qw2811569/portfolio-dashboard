@@ -79,6 +79,70 @@ const LOCAL_API_ROUTE_MODULES = {
   '/api/valuation': './api/valuation.js',
 }
 
+const SOURCE_CHUNK_RULES = [
+  {
+    name: 'seed-data',
+    patterns: ['/src/seedData.js', '/src/seedDataEvents.js'],
+  },
+  {
+    name: 'app-runtime',
+    patterns: [
+      '/src/hooks/useAppRuntime',
+      '/src/hooks/useAppPanelsRuntime.js',
+      '/src/hooks/usePortfolioPanelsContextComposer.js',
+      '/src/lib/appShellRuntime.js',
+    ],
+  },
+  {
+    name: 'route-overview',
+    patterns: ['/src/components/overview/index.js'],
+  },
+  {
+    name: 'route-holdings',
+    patterns: ['/src/components/holdings/HoldingsPanelChunk.jsx'],
+  },
+  {
+    name: 'route-watchlist',
+    patterns: ['/src/components/watchlist/index.js'],
+  },
+  {
+    name: 'route-events',
+    patterns: ['/src/components/events/index.js'],
+  },
+  {
+    name: 'route-daily',
+    patterns: ['/src/components/reports/index.js'],
+  },
+  {
+    name: 'route-research',
+    patterns: ['/src/components/research/index.js'],
+  },
+  {
+    name: 'route-trade',
+    patterns: ['/src/components/trade/index.js'],
+  },
+  {
+    name: 'route-log',
+    patterns: ['/src/components/log/index.js'],
+  },
+  {
+    name: 'route-news',
+    patterns: ['/src/components/news/index.js'],
+  },
+]
+
+function resolveSourceChunk(id) {
+  if (!id.includes('/src/')) return null
+
+  for (const rule of SOURCE_CHUNK_RULES) {
+    if (rule.patterns.some((pattern) => id.includes(pattern))) {
+      return rule.name
+    }
+  }
+
+  return null
+}
+
 function localApiBridgePlugin() {
   const handlerPromiseByPrefix = new Map()
 
@@ -166,6 +230,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          const sourceChunk = resolveSourceChunk(id)
+          if (sourceChunk) return sourceChunk
+
           if (!id.includes('node_modules')) return
 
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) {

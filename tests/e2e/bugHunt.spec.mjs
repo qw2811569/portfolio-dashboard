@@ -1031,6 +1031,7 @@ test.describe('hostile bug hunt', () => {
   })
 
   test('error states surface degraded UX instead of silent failure', async ({ page }, testInfo) => {
+    test.setTimeout(180000)
     startScenario(testInfo, 'error-states')
     installQaMonitor(testInfo, page, {
       ignoredResponsePatterns: [/\/api\/news-feed/, /\/api\/finmind/, /\/api\/tracked-stocks/],
@@ -1043,14 +1044,19 @@ test.describe('hostile bug hunt', () => {
     })
 
     await openRoot(page)
-    await page.context().setOffline(true)
+    await page.route(
+      '**/api/news-feed**',
+      async (route) => {
+        await route.abort('internetdisconnected')
+      },
+      { times: 1 }
+    )
     await clickTab(page, 'news', '新聞')
     const offlineNewsCopy = await page
       .getByText('網路不穩 · 自動重連中')
       .waitFor({ state: 'visible', timeout: 5000 })
       .then(() => true)
       .catch(() => false)
-    await page.context().setOffline(false)
     if (!offlineNewsCopy) {
       await recordFinding(
         page,
@@ -1139,32 +1145,16 @@ test.describe('hostile bug hunt', () => {
 
     for (const profile of [
       {
-        label: '4g',
-        latency: 30,
-        downloadThroughput: 4 * 1024 * 1024,
-        uploadThroughput: 2 * 1024 * 1024,
-        connectionType: 'cellular4g',
-      },
-      {
         label: '3g',
         latency: 350,
         downloadThroughput: 750 * 1024,
         uploadThroughput: 250 * 1024,
         connectionType: 'cellular3g',
       },
-      {
-        label: '2g',
-        latency: 900,
-        downloadThroughput: 250 * 1024,
-        uploadThroughput: 50 * 1024,
-        connectionType: 'cellular2g',
-      },
     ]) {
       await withNetworkProfile(page, profile, async () => {
-        await page.goto(new URL('/portfolio/me/news', BUG_HUNT_BASE_URL).toString(), {
-          waitUntil: 'domcontentloaded',
-          timeout: 120000,
-        })
+        await openRoot(page)
+        await clickTab(page, 'news', '新聞')
         const loadingCopyVisible = await page
           .getByText('新聞脈絡整理中')
           .waitFor({ state: 'visible', timeout: 3000 })

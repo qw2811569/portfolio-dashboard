@@ -1,0 +1,284 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "02e7e659-eaad-4321-82a8-45d539eea152",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bikudc6ck</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "C1c 派出 · 2 parallel（M-EVENT-TW + C1c）。Loop 繼續。\n\nP2 剩：C3 mirror-vercel flag / C4 cleanup / docs mockup refresh。C2 backup delete 要等 2026-05-01。",
+      "prompt_hash": "sha256:5e42b4e60795fc3924b8cd32f07499d02bb192bd27dce3af588cc0b334b3ce93",
+      "message_count": 8090,
+      "cost_usd": 0.21179895,
+      "input_tokens": 1,
+      "output_tokens": 2845,
+      "cache_read_tokens": 554974,
+      "cache_creation_tokens": 701,
+      "timestamp": "2026-04-24T00:26:59.492Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T00:27:48.799Z",
+      "session_duration_secs": 761790,
+      "ai_response_time_secs": 11.38900711237555,
+      "prompt_submitted_at": "2026-04-24T00:26:59.701778Z",
+      "prompt_duration_secs": 55,
+      "accepted_lines": 5708,
+      "overridden_lines": 269,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/c1c-tone-enum-seed/brief.md",
+      "line_range": [
+        1,
+        135
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/c1c-tone-enum-seed/brief.md",
+          "line_range": [
+            1,
+            135
+          ],
+          "blob_hash": "b618e93fc35baf68badc7a2f72df0951e17fea57",
+          "additions": 135
+        },
+        {
+          "path": "agent-bridge-standalone/data/tasks.json",
+          "line_range": [
+            28,
+            1695
+          ],
+          "blob_hash": "1d71527d0346c1018130325cd516b70e66c29807",
+          "additions": 146,
+          "deletions": 81
+        },
+        {
+          "path": "api/event-calendar.js",
+          "line_range": [
+            3,
+            1573
+          ],
+          "blob_hash": "92276987ceeab79d0168eec61037143201d8a26f",
+          "additions": 526,
+          "deletions": 155
+        },
+        {
+          "path": "docs/status/ai-activity-log.json",
+          "line_range": [
+            2,
+            321
+          ],
+          "blob_hash": "495380d6892357c3cec8111fe5d9a38da284b9f4",
+          "additions": 132,
+          "deletions": 132
+        },
+        {
+          "path": "docs/status/ai-activity.json",
+          "line_range": [
+            2,
+            45
+          ],
+          "blob_hash": "b0486b1816be0a80666f36d49f444978beb02972",
+          "additions": 10,
+          "deletions": 7
+        },
+        {
+          "path": "ops/cron/backup-to-vm.cron",
+          "line_range": [
+            4,
+            4
+          ],
+          "blob_hash": "216c38e528303f6568ba89b99857d4a57d973406",
+          "additions": 1
+        },
+        {
+          "path": "package.json",
+          "line_range": [
+            27,
+            27
+          ],
+          "blob_hash": "1834b345f8bff7999843338cb5ab0a4d12f3f222",
+          "additions": 1
+        },
+        {
+          "path": "src/components/events/EventsPanel.jsx",
+          "line_range": [
+            1,
+            1016
+          ],
+          "blob_hash": "2eb2dc8b619b41b60bd350d7a39e2ed15e50b8d6",
+          "additions": 239,
+          "deletions": 20
+        },
+        {
+          "path": "src/components/events/EventsTimeline.jsx",
+          "line_range": [
+            5,
+            63
+          ],
+          "blob_hash": "3d25486176c80bcb4b4562c5968813d6b2f3718b",
+          "additions": 10,
+          "deletions": 2
+        },
+        {
+          "path": "src/components/overview/DashboardPanel.jsx",
+          "line_range": [
+            7,
+            264
+          ],
+          "blob_hash": "6e8f427710ba21a270c8611c10038c40a5020af9",
+          "additions": 14,
+          "deletions": 1
+        },
+        {
+          "path": "src/lib/appShellRuntime.js",
+          "line_range": [
+            1,
+            57
+          ],
+          "blob_hash": "cc853304b484fef40861d9a9171e068d88074976",
+          "additions": 8,
+          "deletions": 1
+        },
+        {
+          "path": "src/lib/contracts/index.js",
+          "line_range": [
+            7,
+            91
+          ],
+          "blob_hash": "288c85cf1c9765d372627635fc28d01947154a68",
+          "additions": 16
+        },
+        {
+          "path": "src/lib/contracts/index.mjs",
+          "line_range": [
+            7,
+            91
+          ],
+          "blob_hash": "26dec5413c45039921aa0ad0451056f4a48056de",
+          "additions": 16
+        },
+        {
+          "path": "src/lib/dailyAnalysisRuntime.js",
+          "line_range": [
+            2,
+            453
+          ],
+          "blob_hash": "7b21c245ef270d383b836d9e3084b5bd8b1eff70",
+          "additions": 6,
+          "deletions": 2
+        },
+        {
+          "path": "src/lib/dataAdapters/finmindDatasetRegistry.js",
+          "line_range": [
+            66,
+            106
+          ],
+          "blob_hash": "9ac6ad405ad7d99772effc0bfa73d9eeb0c19601",
+          "additions": 12,
+          "deletions": 1
+        },
+        {
+          "path": "src/lib/eventUtils.js",
+          "line_range": [
+            4,
+            439
+          ],
+          "blob_hash": "8b861074d4c24c0120cfe2bd5ef94fc122a6d51d",
+          "additions": 30,
+          "deletions": 3
+        },
+        {
+          "path": "src/lib/events.js",
+          "line_range": [
+            8,
+            302
+          ],
+          "blob_hash": "d54323b46a3abfb3087305332c29099f4150f3a0",
+          "additions": 6,
+          "deletions": 44
+        },
+        {
+          "path": "tests/api/event-calendar.test.js",
+          "line_range": [
+            4,
+            418
+          ],
+          "blob_hash": "fe5dd8584542d0a3c087a20848e83599de41943a",
+          "additions": 77,
+          "deletions": 20
+        },
+        {
+          "path": "tests/components/eventsPanel.test.jsx",
+          "line_range": [
+            3,
+            184
+          ],
+          "blob_hash": "30a10f7f376f5a3f3f53cea765883d4d71a43660",
+          "additions": 72,
+          "deletions": 5
+        },
+        {
+          "path": "tests/lib/appShellRuntime.test.js",
+          "line_range": [
+            38,
+            59
+          ],
+          "blob_hash": "8bff5059f28697a2e25f7d80087dbce8dba72e92",
+          "additions": 4,
+          "deletions": 4
+        },
+        {
+          "path": "tests/lib/catalystType.test.js",
+          "line_range": [
+            3,
+            175
+          ],
+          "blob_hash": "6adadcef40aa6ab5efa8f359457892c7c5e75dd6",
+          "additions": 43,
+          "deletions": 1
+        }
+      ],
+      "prompt_number": 714,
+      "total_additions": 1504,
+      "total_deletions": 479,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>bikudc6ck</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch UX-28 FinMind degraded\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/ux-28-finmind-degraded/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "UX-28 done · `a06e809`. 派 **C1c tone enum / seed key migration**（C1b 完 · C1c 是最後 migration 層）："
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Write(file: \"brief.md\"), Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/c1c-tone-enum-seed/brief.md)\" 2>&1 | te...\")",
+          "files_touched": [
+            "brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

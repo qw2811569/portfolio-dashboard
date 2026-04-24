@@ -72,7 +72,7 @@ R108 已把產品階段鎖定成 **internal beta**：先交付能安全示範、
 
 | ID  | Title                                                                                               | Category | Est. h | Depends         | Blocks          | Risk | Ship-level |
 | --- | --------------------------------------------------------------------------------------------------- | -------- | ------ | --------------- | --------------- | ---- | ---------- |
-| T03 | Upgrade Daily Principle card to contextual quote + copy/share                                       | Product  | 4      | —               | T04,T22         | Low  | beta+1     |
+| T03 | Upgrade Daily Principle card to contextual quote **(copy-only · Q-P4 no share)**                    | Product  | 4      | —               | T04,T22         | Low  | beta+1     |
 | T05 | Surface anxiety indicators X1-X5 across dashboard/holdings/detail                                   | Product  | 12     | T08,T30,T31,T33 | T16,T24         | High | beta+1     |
 | T06 | Finish multi-portfolio switcher smoke + edge states                                                 | Product  | 4      | T55             | T07,T24         | Med  | beta+1     |
 | T07 | Complete multi-level holdings filters                                                               | Product  | 8      | T06,T08         | T24,T26         | Med  | beta+1     |

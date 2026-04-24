@@ -1,5 +1,5 @@
 import { createElement as h } from 'react'
-import { C, alpha } from '../../theme.js'
+import { A, C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
 import { AccuracyGateBlock, Card, DataError, MarkdownText, OperatingContextCard } from '../common'
@@ -177,6 +177,243 @@ function getHoldingTargetError(holdingDossiers = []) {
   return (Array.isArray(holdingDossiers) ? holdingDossiers : []).find(
     (dossier) => dossier?.targetFetchError?.status
   )?.targetFetchError
+}
+
+function toFilterTestIdSegment(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function renderChipButton({
+  testId,
+  label,
+  count,
+  active = false,
+  focused = false,
+  onClick = () => {},
+}) {
+  return h(
+    'button',
+    {
+      key: testId,
+      type: 'button',
+      'data-testid': testId,
+      'aria-pressed': active,
+      onClick,
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        minHeight: 44,
+        padding: '10px 14px',
+        borderRadius: 999,
+        border: `1px solid ${
+          active ? alpha(C.cta, A.strongLine) : focused ? alpha(C.cta, '24') : alpha(C.iron, '1e')
+        }`,
+        background: active ? alpha(C.cta, '18') : C.bone,
+        color: active ? C.ink : C.iron,
+        fontSize: 12,
+        lineHeight: 1.2,
+        fontWeight: active ? 700 : 600,
+        whiteSpace: 'nowrap',
+        cursor: 'pointer',
+        boxShadow: active ? `${C.insetLine}, 0 6px 14px ${alpha(C.cta, '10')}` : 'none',
+        flexShrink: 0,
+      },
+    },
+    h('span', null, label),
+    typeof count === 'number' &&
+      h(
+        'span',
+        {
+          style: {
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: 22,
+            height: 22,
+            padding: '0 6px',
+            borderRadius: 999,
+            background: active ? alpha(C.ink, '10') : alpha(C.iron, '12'),
+            color: active ? C.ink : C.iron,
+            fontSize: 11,
+            fontWeight: 700,
+          },
+        },
+        count
+      )
+  )
+}
+
+function HoldingsFilterChipBar({ filterBar }) {
+  const safeFilterBar = filterBar && typeof filterBar === 'object' ? filterBar : null
+  if (!safeFilterBar || safeFilterBar.totalCount === 0) return null
+
+  const primaryChips = Array.isArray(safeFilterBar.primaryChips) ? safeFilterBar.primaryChips : []
+  const secondaryChips = Array.isArray(safeFilterBar.secondaryChips)
+    ? safeFilterBar.secondaryChips
+    : []
+  const activeFilterCount = Number(safeFilterBar.activeFilterCount) || 0
+
+  return h(
+    Card,
+    {
+      style: {
+        marginBottom: 8,
+        padding: '12px 12px 10px',
+      },
+    },
+    h(
+      'div',
+      {
+        'data-testid': 'holdings-filter-chip-bar',
+        style: {
+          display: 'grid',
+          gap: 10,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              display: 'grid',
+              gap: 4,
+            },
+          },
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 12,
+                color: C.text,
+                fontWeight: 700,
+              },
+            },
+            activeFilterCount > 0
+              ? `先看 ${safeFilterBar.filteredCount} / ${safeFilterBar.totalCount} 檔`
+              : `先保留全貌 · ${safeFilterBar.totalCount} 檔都在`
+          ),
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                fontSize: 11,
+                color: C.textMute,
+              },
+            },
+            activeFilterCount > 0 &&
+              h(
+                'span',
+                {
+                  'data-testid': 'holdings-filter-active-count',
+                  style: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    borderRadius: 999,
+                    minHeight: 24,
+                    padding: '0 8px',
+                    background: alpha(C.cta, '16'),
+                    color: C.ink,
+                    fontWeight: 700,
+                  },
+                },
+                `${activeFilterCount} 個條件`
+              ),
+            safeFilterBar.secondaryLabel
+          )
+        ),
+        activeFilterCount > 0 &&
+          h(
+            'button',
+            {
+              type: 'button',
+              'data-testid': 'holdings-filter-clear',
+              onClick: safeFilterBar.onClearAll,
+              style: {
+                minHeight: 44,
+                padding: '10px 14px',
+                borderRadius: 999,
+                border: `1px solid ${alpha(C.cta, A.strongLine)}`,
+                background: C.bone,
+                color: C.text,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              },
+            },
+            '清除所有篩選'
+          )
+      ),
+      h(
+        'div',
+        {
+          'data-testid': 'holdings-filter-primary-row',
+          style: {
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 4,
+            scrollbarWidth: 'none',
+          },
+        },
+        primaryChips.map((chip) =>
+          renderChipButton({
+            testId: `holdings-filter-primary-${chip.key}`,
+            label: chip.label,
+            count: chip.key === 'all' ? null : chip.count,
+            active: chip.active,
+            focused: chip.focused,
+            onClick: chip.onClick,
+          })
+        )
+      ),
+      secondaryChips.length > 0 &&
+        h(
+          'div',
+          {
+            'data-testid': 'holdings-filter-secondary-row',
+            style: {
+              display: 'flex',
+              gap: 8,
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              paddingBottom: 4,
+              scrollbarWidth: 'none',
+            },
+          },
+          secondaryChips.map((chip) =>
+            renderChipButton({
+              testId: `holdings-filter-secondary-${safeFilterBar.focusedPrimaryKey}-${toFilterTestIdSegment(chip.key)}`,
+              label: chip.label,
+              count: chip.count,
+              active: chip.active,
+              focused: false,
+              onClick: chip.onClick,
+            })
+          )
+        )
+    )
+  )
 }
 
 /**
@@ -529,6 +766,7 @@ export function HoldingsPanel({
   reversalConditions: _reversalConditions = {},
   latestInsight = null,
   operatingContext = null,
+  holdingsFilterBar = null,
   children,
 }) {
   const targetFetchError = getHoldingTargetError(holdingDossiers)
@@ -585,6 +823,9 @@ export function HoldingsPanel({
         h(HoldingsRing, { holdings, totalVal })
       )
     ),
+
+    // Filter chip bar
+    h(HoldingsFilterChipBar, { filterBar: holdingsFilterBar }),
 
     // Daily insight card
     h(DailyInsightCard, { latestInsight }),

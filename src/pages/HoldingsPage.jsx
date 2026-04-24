@@ -1,10 +1,10 @@
 import { createElement as h } from 'react'
-import { HoldingsPanel, HoldingsTable } from '../components/holdings/index.js'
+import HoldingsPanelChunk from '../components/holdings/HoldingsPanelChunk.jsx'
 import { useRouteHoldingsPage } from '../hooks/useRouteHoldingsPage.js'
 
 export function HoldingsPage() {
   const { panelProps, tableProps } = useRouteHoldingsPage()
 
-  return h(HoldingsPanel, panelProps, h(HoldingsTable, tableProps))
+  return h(HoldingsPanelChunk, { panelProps, tableProps })
 }
 export default HoldingsPage

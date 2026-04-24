@@ -17,6 +17,7 @@ export function useRouteHoldingsPage() {
     portfolioName = '',
     holdings = [],
     holdingDossiers = [],
+    newsEvents = [],
     todayTotalPnl = 0,
     reversalConditions = {},
   } = usePortfolioRouteContext()
@@ -72,6 +73,7 @@ export function useRouteHoldingsPage() {
         activePortfolioId: portfolioId,
         holdings,
         holdingDossiers,
+        newsEvents,
         totalVal,
         totalCost,
         todayTotalPnl,
@@ -99,6 +101,7 @@ export function useRouteHoldingsPage() {
     expandedStock,
     holdingDossiers,
     holdings,
+    newsEvents,
     portfolioId,
     todayTotalPnl,
     reversalConditions,

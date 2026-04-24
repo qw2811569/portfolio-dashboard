@@ -87,6 +87,7 @@ export function useAppRuntimeWorkflows({
 
   const {
     tab,
+    detailStockCode,
     filterType,
     catalystFilter,
     scanQuery,
@@ -144,6 +145,7 @@ export function useAppRuntimeWorkflows({
     setScanFilter,
     setSortBy,
     setExpandedStock,
+    setDetailStockCode,
     setRelayPlanExpanded,
     setFilterType,
     setCatalystFilter,
@@ -459,6 +461,7 @@ export function useAppRuntimeWorkflows({
       scanFilter,
       sortBy,
       expandedStock,
+      detailStockCode,
       watchlistFocus,
       watchlistRows,
       showRelayPlan,
@@ -499,6 +502,7 @@ export function useAppRuntimeWorkflows({
       setScanFilter,
       setSortBy,
       setExpandedStock,
+      setDetailStockCode,
       setRelayPlanExpanded,
       setFilterType,
       setCatalystFilter,

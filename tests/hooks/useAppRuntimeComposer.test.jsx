@@ -764,6 +764,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
         scanFilter: '',
         sortBy: 'pnl',
         expandedStock: null,
+        detailStockCode: '2330',
         watchlistFocus: '',
         watchlistRows: [],
         showRelayPlan: false,
@@ -804,6 +805,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
         setScanFilter: vi.fn(),
         setSortBy: vi.fn(),
         setExpandedStock: vi.fn(),
+        setDetailStockCode: vi.fn(),
         setRelayPlanExpanded: vi.fn(),
         setFilterType: vi.fn(),
         setCatalystFilter: vi.fn(),
@@ -841,6 +843,7 @@ describe('hooks/useAppRuntimeComposer.js', () => {
     expect(researchArgs.notifySaved).toBe(flashSaved)
     expect(backupArgs.requestConfirmation).toBeTypeOf('function')
     expect(panelsInput.activePortfolioId).toBe('me')
+    expect(panelsInput.detailStockCode).toBe('2330')
 
     tradeArgs.afterSubmit({ remainingUploads: 0 })
     expect(setTab).toHaveBeenCalledWith('holdings')

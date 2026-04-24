@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { buildAnxietyMetrics } from '../lib/anxietyMetrics.js'
 import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
+import { buildHoldingDetailDossier } from '../lib/holdingDetailDossier.js'
 import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import {
   buildDashboardCompareStrip,
@@ -51,6 +52,7 @@ export function usePortfolioPanelsContextComposer({
   scanFilter,
   sortBy,
   expandedStock,
+  detailStockCode,
   watchlistFocus,
   watchlistRows,
   showRelayPlan,
@@ -98,6 +100,7 @@ export function usePortfolioPanelsContextComposer({
   setScanFilter,
   setSortBy,
   setExpandedStock,
+  setDetailStockCode,
   updateTargetPrice,
   updateAlert,
   upsertThesis,
@@ -136,6 +139,8 @@ export function usePortfolioPanelsContextComposer({
   const safeWatchlist = Array.isArray(watchlist) ? watchlist : EMPTY_LIST
   const safeHoldingDossiers = Array.isArray(holdingDossiers) ? holdingDossiers : EMPTY_LIST
   const safeNewsEvents = Array.isArray(newsEvents) ? newsEvents : EMPTY_LIST
+  const safeAnalysisHistory = Array.isArray(analysisHistory) ? analysisHistory : EMPTY_LIST
+  const safeResearchHistory = Array.isArray(researchHistory) ? researchHistory : EMPTY_LIST
   const safeDataRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : EMPTY_LIST
   const latestInsight = dailyReport?.insight || dailyReport?.aiInsight || null
   const dossierByCode = useMemo(
@@ -231,6 +236,29 @@ export function usePortfolioPanelsContextComposer({
       safeNewsEvents,
       stockMeta,
       x1BenchmarkState,
+    ]
+  )
+  const detailDossier = useMemo(
+    () =>
+      buildHoldingDetailDossier({
+        code: detailStockCode,
+        holdings: safeHoldings,
+        holdingDossiers: safeHoldingDossiers,
+        dailyReport,
+        analysisHistory: safeAnalysisHistory,
+        researchHistory: safeResearchHistory,
+        newsEvents: safeNewsEvents,
+        strategyBrain,
+      }),
+    [
+      detailStockCode,
+      dailyReport,
+      safeAnalysisHistory,
+      safeHoldings,
+      safeHoldingDossiers,
+      safeNewsEvents,
+      safeResearchHistory,
+      strategyBrain,
     ]
   )
 
@@ -392,6 +420,8 @@ export function usePortfolioPanelsContextComposer({
       holdingsTable: {
         holdings: safeHoldings,
         expandedStock,
+        detailStockCode,
+        detailDossier,
         dossierByCode,
         staleStatus: sharedStaleStatus,
         viewMode: renderViewMode,
@@ -416,7 +446,7 @@ export function usePortfolioPanelsContextComposer({
       daily: {
         morningNote,
         dailyReport,
-        analysisHistory: Array.isArray(analysisHistory) ? analysisHistory : EMPTY_LIST,
+        analysisHistory: safeAnalysisHistory,
         analyzing,
         analyzeStep,
         stressResult,
@@ -440,7 +470,7 @@ export function usePortfolioPanelsContextComposer({
         reportRefreshMeta,
         dataRefreshRows: safeDataRefreshRows,
         researchResults,
-        researchHistory,
+        researchHistory: safeResearchHistory,
         analystReports,
         enrichingResearchCode,
         proposalActionId,
@@ -477,7 +507,9 @@ export function usePortfolioPanelsContextComposer({
       catalystFilter,
       dailyExpanded,
       dailyReport,
-      analysisHistory,
+      detailDossier,
+      detailStockCode,
+      safeAnalysisHistory,
       safeDataRefreshRows,
       dossierByCode,
       enrichingResearchCode,
@@ -510,7 +542,7 @@ export function usePortfolioPanelsContextComposer({
       reportRefreshStatus,
       reportRefreshMeta,
       analystReports,
-      researchHistory,
+      safeResearchHistory,
       researchResults,
       researchTarget,
       researching,
@@ -568,6 +600,8 @@ export function usePortfolioPanelsContextComposer({
       },
       holdingsTable: {
         setExpandedStock,
+        onOpenDetail: setDetailStockCode,
+        onCloseDetail: () => setDetailStockCode(null),
         onUpdateTarget: updateTargetPrice,
         onUpdateAlert: updateAlert,
         onUpsertThesis: upsertThesis,
@@ -654,6 +688,7 @@ export function usePortfolioPanelsContextComposer({
       setDailyExpanded,
       setExpandedNews,
       setExpandedStock,
+      setDetailStockCode,
       setFilterType,
       setRelayPlanExpanded,
       setResearchResults,

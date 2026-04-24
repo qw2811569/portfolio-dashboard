@@ -387,6 +387,7 @@ export function useAppRuntime() {
     },
     ui: {
       tab: appUiState.tab,
+      detailStockCode: appUiState.detailStockCode,
       filterType: appUiState.filterType,
       catalystFilter: appUiState.catalystFilter,
       scanQuery: appUiState.scanQuery,
@@ -433,6 +434,7 @@ export function useAppRuntime() {
       setScanFilter: appUiState.setScanFilter,
       setSortBy: appUiState.setSortBy,
       setExpandedStock: appUiState.setExpandedStock,
+      setDetailStockCode: appUiState.setDetailStockCode,
       setRelayPlanExpanded: appUiState.setRelayPlanExpanded,
       setFilterType: appUiState.setFilterType,
       setCatalystFilter: appUiState.setCatalystFilter,

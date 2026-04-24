@@ -1,4 +1,4 @@
-import { createElement as h, useState } from 'react'
+import { createElement as h, useEffect, useRef, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
@@ -9,6 +9,7 @@ import { THESIS_FORM_FIELDS, validateThesisForm } from '../../hooks/useThesisTra
 import { PeerRankingBadge } from './PeerRankingBadge.jsx'
 import HoldingSparkline from './HoldingSparkline.jsx'
 import HoldingDrillPane from './HoldingDrillPane.jsx'
+import HoldingDetailPane from './HoldingDetailPane.jsx'
 import { SupplyChainView } from './SupplyChainView.jsx'
 import {
   getHoldingMarketValue,
@@ -392,12 +393,15 @@ export function HoldingRow({
   holding,
   dossier = null,
   expanded = false,
+  detailOpen = false,
   onToggle = () => {},
+  onOpenDetail = () => {},
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   viewMode = 'retail',
   thesisWriteEnabled = false,
   onOpenThesisQuickForm = () => {},
+  detailButtonRef = null,
   thesisQuickForm = null,
   thesisQuickFormErrors = {},
   thesisSaving = false,
@@ -427,7 +431,7 @@ export function HoldingRow({
         'data-holding-code': holding.code,
         style: {
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 44px',
+          gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
           gap: 8,
           alignItems: 'center',
           padding: '12px',
@@ -596,32 +600,65 @@ export function HoldingRow({
         )
       ),
 
-      // Expand button
       h(
-        'button',
+        'div',
         {
-          type: 'button',
-          'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
-          onClick: onToggle,
           style: {
-            width: 44,
-            height: 44,
-            minWidth: 44,
-            minHeight: 44,
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             justifySelf: 'end',
-            padding: 0,
-            borderRadius: 999,
-            background: expanded ? alpha(C.ink, '10') : C.subtle,
-            border: `1px solid ${expanded ? alpha(C.ink, '24') : C.border}`,
-            color: C.textMute,
-            cursor: 'pointer',
-            fontSize: 14,
+            gap: 6,
           },
         },
-        expanded ? '▲' : '▼'
+        h(
+          'button',
+          {
+            ref: detailButtonRef,
+            type: 'button',
+            'data-testid': `holding-open-detail-${holding.code}`,
+            'aria-label': `打開 ${holding.name} 詳情`,
+            onClick: onOpenDetail,
+            style: {
+              minWidth: 58,
+              minHeight: 44,
+              padding: '0 12px',
+              borderRadius: 999,
+              background: detailOpen ? alpha(C.fillTeal, '18') : alpha(C.card, 'f4'),
+              border: `1px solid ${detailOpen ? alpha(C.fillTeal, '32') : C.border}`,
+              color: detailOpen ? C.text : C.textSec,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            },
+          },
+          '詳情'
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
+            onClick: onToggle,
+            style: {
+              width: 44,
+              height: 44,
+              minWidth: 44,
+              minHeight: 44,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+              borderRadius: 999,
+              background: expanded ? alpha(C.ink, '10') : C.subtle,
+              border: `1px solid ${expanded ? alpha(C.ink, '24') : C.border}`,
+              color: C.textMute,
+              cursor: 'pointer',
+              fontSize: 14,
+            },
+          },
+          expanded ? '▲' : '▼'
+        )
       )
     ),
 
@@ -660,12 +697,15 @@ function HoldingMobileCard({
   holding,
   dossier = null,
   expanded = false,
+  detailOpen = false,
   onToggle = () => {},
+  onOpenDetail = () => {},
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   viewMode = 'retail',
   thesisWriteEnabled = false,
   onOpenThesisQuickForm = () => {},
+  detailButtonRef = null,
   thesisQuickForm = null,
   thesisQuickFormErrors = {},
   thesisSaving = false,
@@ -810,29 +850,66 @@ function HoldingMobileCard({
           h(PeerRankingBadge, { holding })
         ),
         h(
-          'button',
+          'div',
           {
-            type: 'button',
-            'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
-            onClick: onToggle,
             style: {
-              minWidth: 44,
-              minHeight: 44,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px 12px',
-              borderRadius: 999,
-              background: expanded ? alpha(C.ink, '10') : C.subtle,
-              border: `1px solid ${expanded ? alpha(C.ink, '24') : C.border}`,
-              color: C.textSec,
-              cursor: 'pointer',
-              fontSize: 11,
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
+              display: 'grid',
+              gap: 8,
+              justifyItems: 'end',
             },
           },
-          expanded ? '收合明細' : '展開明細'
+          h(
+            'button',
+            {
+              ref: detailButtonRef,
+              type: 'button',
+              'data-testid': `holding-open-detail-${holding.code}`,
+              'aria-label': `打開 ${holding.name} 詳情`,
+              onClick: onOpenDetail,
+              style: {
+                minWidth: 64,
+                minHeight: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: 999,
+                background: detailOpen ? alpha(C.fillTeal, '18') : alpha(C.card, 'f4'),
+                border: `1px solid ${detailOpen ? alpha(C.fillTeal, '32') : C.border}`,
+                color: detailOpen ? C.text : C.textSec,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+              },
+            },
+            '詳情'
+          ),
+          h(
+            'button',
+            {
+              type: 'button',
+              'aria-label': `${expanded ? '收合' : '展開'} ${holding.name} 明細`,
+              onClick: onToggle,
+              style: {
+                minWidth: 80,
+                minHeight: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRadius: 999,
+                background: expanded ? alpha(C.ink, '10') : C.subtle,
+                border: `1px solid ${expanded ? alpha(C.ink, '24') : C.border}`,
+                color: C.textSec,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              },
+            },
+            expanded ? '收合明細' : '展開明細'
+          )
         )
       ),
       h(HoldingSparkline, { history: sparklineHistory }),
@@ -982,6 +1059,10 @@ export function HoldingsTable({
   dossierByCode = new Map(),
   expandedStock = null,
   setExpandedStock = () => {},
+  detailStockCode = null,
+  detailDossier = null,
+  onOpenDetail = () => {},
+  onCloseDetail = () => {},
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   staleStatus = 'fresh',
@@ -997,6 +1078,21 @@ export function HoldingsTable({
   const [thesisQuickFormErrors, setThesisQuickFormErrors] = useState({})
   const [thesisSaving, setThesisSaving] = useState(false)
   const thesisQuickFormCode = thesisQuickForm?.code || ''
+  const detailTriggerRefs = useRef(new Map())
+  const lastDetailTriggerCodeRef = useRef('')
+  const pendingDetailFocusReturnRef = useRef(false)
+
+  useEffect(() => {
+    if (detailStockCode || !pendingDetailFocusReturnRef.current) return
+
+    pendingDetailFocusReturnRef.current = false
+    const node = detailTriggerRefs.current.get(lastDetailTriggerCodeRef.current)
+    if (node && typeof node.focus === 'function') {
+      window.requestAnimationFrame(() => {
+        node.focus()
+      })
+    }
+  }, [detailStockCode])
 
   const closeThesisQuickForm = () => {
     setThesisQuickForm(null)
@@ -1069,6 +1165,31 @@ export function HoldingsTable({
     }
   }
 
+  const handleOpenDetail = (code) => {
+    const normalizedCode = String(code || '').trim()
+    if (!normalizedCode) return
+    lastDetailTriggerCodeRef.current = normalizedCode
+    pendingDetailFocusReturnRef.current = true
+    onOpenDetail(normalizedCode)
+  }
+
+  const handleCloseDetail = () => {
+    const normalizedCode = String(detailStockCode || '').trim()
+    if (normalizedCode) {
+      lastDetailTriggerCodeRef.current = normalizedCode
+      pendingDetailFocusReturnRef.current = true
+    }
+    onCloseDetail()
+  }
+
+  const registerDetailTriggerRef = (code) => (node) => {
+    if (!node) {
+      detailTriggerRefs.current.delete(code)
+      return
+    }
+    detailTriggerRefs.current.set(code, node)
+  }
+
   if (loading) {
     return h(
       Card,
@@ -1128,6 +1249,85 @@ export function HoldingsTable({
 
   if (isMobile) {
     return h(
+      'div',
+      null,
+      h(
+        Card,
+        null,
+        h(
+          'style',
+          null,
+          `@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 ${alpha(C.up, 0.18)}; } 50% { box-shadow: 0 0 0 5px ${alpha(C.up, 0.06)}; } 100% { box-shadow: 0 0 0 0 ${alpha(C.up, 0)}; } }`
+        ),
+        h(
+          'div',
+          {
+            style: {
+              ...lbl,
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+            },
+          },
+          `持股明細 · ${holdings.length}檔`,
+          h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
+        ),
+        h(
+          'div',
+          {
+            'data-testid': 'holdings-mobile-card-list',
+            style: {
+              display: 'grid',
+              gap: 8,
+            },
+          },
+          sorted.map((holding) =>
+            h(HoldingMobileCard, {
+              key: holding.code,
+              holding,
+              dossier: dossierByCode.get(holding.code) || null,
+              expanded: expandedStock === holding.code,
+              detailOpen: detailStockCode === holding.code,
+              onToggle: () => toggleExpandedStock(holding.code),
+              onOpenDetail: () => handleOpenDetail(holding.code),
+              onUpdateTarget,
+              onUpdateAlert,
+              viewMode,
+              thesisWriteEnabled,
+              onOpenThesisQuickForm: openThesisQuickForm,
+              detailButtonRef: registerDetailTriggerRef(holding.code),
+              thesisQuickForm:
+                thesisQuickFormCode === holding.code
+                  ? {
+                      reason: thesisQuickForm.reason,
+                      expectation: thesisQuickForm.expectation,
+                      invalidation: thesisQuickForm.invalidation,
+                    }
+                  : null,
+              thesisQuickFormErrors:
+                thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
+              thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
+              onChangeThesisQuickForm: handleThesisQuickFormChange,
+              onSaveThesisQuickForm: handleThesisQuickFormSave,
+              onCancelThesisQuickForm: closeThesisQuickForm,
+            })
+          )
+        )
+      ),
+      h(HoldingDetailPane, {
+        open: Boolean(detailStockCode && detailDossier),
+        detail: detailDossier,
+        onClose: handleCloseDetail,
+      })
+    )
+  }
+
+  return h(
+    'div',
+    null,
+    h(
       Card,
       null,
       h(
@@ -1150,27 +1350,48 @@ export function HoldingsTable({
         `持股明細 · ${holdings.length}檔`,
         h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
       ),
+
+      // Header
       h(
         'div',
         {
-          'data-testid': 'holdings-mobile-card-list',
           style: {
             display: 'grid',
+            gridTemplateColumns: '2fr 1fr 1fr 1fr 110px',
             gap: 8,
+            padding: '8px 12px',
+            fontSize: 11,
+            color: C.textMute,
+            fontWeight: 500,
+            letterSpacing: '0.08em',
           },
         },
+        h('div', null, '股票'),
+        h('div', null, '數量 / 成本'),
+        h('div', null, '股價 / 市值'),
+        h('div', null, '損益'),
+        h('div', { style: { textAlign: 'right' } }, '操作')
+      ),
+
+      // Rows
+      h(
+        'div',
+        null,
         sorted.map((holding) =>
-          h(HoldingMobileCard, {
+          h(HoldingRow, {
             key: holding.code,
             holding,
             dossier: dossierByCode.get(holding.code) || null,
             expanded: expandedStock === holding.code,
+            detailOpen: detailStockCode === holding.code,
             onToggle: () => toggleExpandedStock(holding.code),
+            onOpenDetail: () => handleOpenDetail(holding.code),
             onUpdateTarget,
             onUpdateAlert,
             viewMode,
             thesisWriteEnabled,
             onOpenThesisQuickForm: openThesisQuickForm,
+            detailButtonRef: registerDetailTriggerRef(holding.code),
             thesisQuickForm:
               thesisQuickFormCode === holding.code
                 ? {
@@ -1188,86 +1409,11 @@ export function HoldingsTable({
           })
         )
       )
-    )
-  }
-
-  return h(
-    Card,
-    null,
-    h(
-      'style',
-      null,
-      `@keyframes holding-price-deviation-pulse { 0% { box-shadow: 0 0 0 0 ${alpha(C.up, 0.18)}; } 50% { box-shadow: 0 0 0 5px ${alpha(C.up, 0.06)}; } 100% { box-shadow: 0 0 0 0 ${alpha(C.up, 0)}; } }`
     ),
-    h(
-      'div',
-      {
-        style: {
-          ...lbl,
-          marginBottom: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-        },
-      },
-      `持股明細 · ${holdings.length}檔`,
-      h(StaleBadge, { status: staleStatus, title: 'holdings panel freshness' })
-    ),
-
-    // Header
-    h(
-      'div',
-      {
-        style: {
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr 40px',
-          gap: 8,
-          padding: '8px 12px',
-          fontSize: 11,
-          color: C.textMute,
-          fontWeight: 500,
-          letterSpacing: '0.08em',
-        },
-      },
-      h('div', null, '股票'),
-      h('div', null, '數量 / 成本'),
-      h('div', null, '股價 / 市值'),
-      h('div', null, '損益'),
-      h('div', null, '')
-    ),
-
-    // Rows
-    h(
-      'div',
-      null,
-      sorted.map((holding) =>
-        h(HoldingRow, {
-          key: holding.code,
-          holding,
-          dossier: dossierByCode.get(holding.code) || null,
-          expanded: expandedStock === holding.code,
-          onToggle: () => toggleExpandedStock(holding.code),
-          onUpdateTarget,
-          onUpdateAlert,
-          viewMode,
-          thesisWriteEnabled,
-          onOpenThesisQuickForm: openThesisQuickForm,
-          thesisQuickForm:
-            thesisQuickFormCode === holding.code
-              ? {
-                  reason: thesisQuickForm.reason,
-                  expectation: thesisQuickForm.expectation,
-                  invalidation: thesisQuickForm.invalidation,
-                }
-              : null,
-          thesisQuickFormErrors: thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
-          thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
-          onChangeThesisQuickForm: handleThesisQuickFormChange,
-          onSaveThesisQuickForm: handleThesisQuickFormSave,
-          onCancelThesisQuickForm: closeThesisQuickForm,
-        })
-      )
-    )
+    h(HoldingDetailPane, {
+      open: Boolean(detailStockCode && detailDossier),
+      detail: detailDossier,
+      onClose: handleCloseDetail,
+    })
   )
 }

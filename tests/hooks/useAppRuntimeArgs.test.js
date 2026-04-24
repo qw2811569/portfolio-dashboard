@@ -128,6 +128,7 @@ describe('hooks/useAppRuntimeArgs', () => {
       },
       ui: {
         tab: 'news',
+        detailStockCode: '2330',
         filterType: 'all',
         catalystFilter: '全部',
         scanQuery: '',
@@ -187,6 +188,7 @@ describe('hooks/useAppRuntimeArgs', () => {
         setScanFilter: vi.fn(),
         setSortBy: vi.fn(),
         setExpandedStock: vi.fn(),
+        setDetailStockCode: vi.fn(),
         setRelayPlanExpanded: vi.fn(),
         setFilterType: vi.fn(),
         setCatalystFilter: vi.fn(),
@@ -221,6 +223,7 @@ describe('hooks/useAppRuntimeArgs', () => {
     expect(workflowArgs.state.canUseCloud).toBe(true)
     expect(workflowArgs.derived.watchlistRows).toEqual([])
     expect(workflowArgs.ui.tab).toBe('news')
+    expect(workflowArgs.ui.detailStockCode).toBe('2330')
     expect(workflowArgs.refs.priceSelfHealRef.current).toBeNull()
     expect(typeof workflowArgs.helpers.resolveHoldingPrice).toBe('function')
   })

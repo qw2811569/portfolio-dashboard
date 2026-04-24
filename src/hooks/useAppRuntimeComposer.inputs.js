@@ -62,6 +62,7 @@ export function composeAppRuntimeWorkflowInput({
     derived: portfolioDerived,
     ui: {
       tab: uiState.tab,
+      detailStockCode: uiState.detailStockCode,
       filterType: uiState.filterType,
       catalystFilter: uiState.catalystFilter,
       scanQuery: uiState.scanQuery,
@@ -101,6 +102,7 @@ export function composeAppRuntimeWorkflowInput({
       setScanFilter: uiState.setScanFilter,
       setSortBy: uiState.setSortBy,
       setExpandedStock: uiState.setExpandedStock,
+      setDetailStockCode: uiState.setDetailStockCode,
       setRelayPlanExpanded: uiState.setRelayPlanExpanded,
       setFilterType: uiState.setFilterType,
       setCatalystFilter: uiState.setCatalystFilter,

@@ -119,6 +119,7 @@ export function useAppRuntimeWorkflowArgs({
     },
     ui: {
       tab: ui.tab,
+      detailStockCode: ui.detailStockCode,
       filterType: ui.filterType,
       catalystFilter: ui.catalystFilter,
       scanQuery: ui.scanQuery,
@@ -179,6 +180,7 @@ export function useAppRuntimeWorkflowArgs({
       setScanFilter: setters.setScanFilter,
       setSortBy: setters.setSortBy,
       setExpandedStock: setters.setExpandedStock,
+      setDetailStockCode: setters.setDetailStockCode,
       setRelayPlanExpanded: setters.setRelayPlanExpanded,
       setFilterType: setters.setFilterType,
       setCatalystFilter: setters.setCatalystFilter,

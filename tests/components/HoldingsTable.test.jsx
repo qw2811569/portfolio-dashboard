@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HoldingsTable } from '../../src/components/holdings/HoldingsTable.jsx'
+import { buildHoldingDetailDossier } from '../../src/lib/holdingDetailDossier.js'
 
 const originalMatchMedia = window.matchMedia
 
@@ -26,8 +27,28 @@ function mockMatchMedia(matches) {
 
 function HoldingsTableHarness(props) {
   const [expandedStock, setExpandedStock] = useState(null)
+  const [detailStockCode, setDetailStockCode] = useState(null)
+  const detailDossier = buildHoldingDetailDossier({
+    code: detailStockCode,
+    holdings: props.holdings,
+    holdingDossiers: Array.from((props.dossierByCode || new Map()).values()),
+    dailyReport: props.dailyReport || null,
+    analysisHistory: props.analysisHistory || [],
+    researchHistory: props.researchHistory || [],
+    newsEvents: props.newsEvents || [],
+    strategyBrain: props.strategyBrain || null,
+  })
+
   return (
-    <HoldingsTable {...props} expandedStock={expandedStock} setExpandedStock={setExpandedStock} />
+    <HoldingsTable
+      {...props}
+      expandedStock={expandedStock}
+      setExpandedStock={setExpandedStock}
+      detailStockCode={detailStockCode}
+      detailDossier={detailDossier}
+      onOpenDetail={setDetailStockCode}
+      onCloseDetail={() => setDetailStockCode(null)}
+    />
   )
 }
 
@@ -143,6 +164,100 @@ describe('components/HoldingsTable', () => {
     )
     await waitFor(() =>
       expect(screen.queryByTestId('holding-thesis-quick-form-2330')).not.toBeInTheDocument()
+    )
+  })
+
+  it('opens the detail pane and returns focus to the trigger when closed', async () => {
+    mockMatchMedia(false)
+
+    render(
+      <HoldingsTableHarness
+        holdings={[
+          {
+            code: '2330',
+            name: '台積電',
+            qty: 10,
+            cost: 900,
+            price: 950,
+            value: 9500,
+            type: '股票',
+          },
+        ]}
+        dossierByCode={
+          new Map([
+            [
+              '2330',
+              {
+                code: '2330',
+                name: '台積電',
+                thesis: { summary: 'AI 需求延續' },
+                fundamentals: { updatedAt: '2026-04-24T01:00:00.000Z' },
+                freshness: { targets: 'fresh', fundamentals: 'fresh' },
+              },
+            ],
+          ])
+        }
+        dailyReport={{
+          date: '2026-04-24',
+          changes: [{ code: '2330', price: 950, changePct: 1.2 }],
+        }}
+      />
+    )
+
+    const openButton = screen.getByTestId('holding-open-detail-2330')
+    openButton.focus()
+    fireEvent.click(openButton)
+
+    expect(screen.getByRole('dialog', { name: '台積電' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('holding-detail-pane-close-top'))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '台積電' })).not.toBeInTheDocument()
+    )
+    await waitFor(() => expect(openButton).toHaveFocus())
+  })
+
+  it('closes the detail pane on Escape', async () => {
+    mockMatchMedia(false)
+
+    render(
+      <HoldingsTableHarness
+        holdings={[
+          {
+            code: '2330',
+            name: '台積電',
+            qty: 10,
+            cost: 900,
+            price: 950,
+            value: 9500,
+            type: '股票',
+          },
+        ]}
+        dossierByCode={
+          new Map([
+            [
+              '2330',
+              {
+                code: '2330',
+                name: '台積電',
+                thesis: { summary: 'AI 需求延續' },
+                fundamentals: { updatedAt: '2026-04-24T01:00:00.000Z' },
+                freshness: { targets: 'fresh', fundamentals: 'fresh' },
+              },
+            ],
+          ])
+        }
+      />
+    )
+
+    fireEvent.click(screen.getByTestId('holding-open-detail-2330'))
+    expect(screen.getByRole('dialog', { name: '台積電' })).toBeInTheDocument()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '台積電' })).not.toBeInTheDocument()
     )
   })
 })

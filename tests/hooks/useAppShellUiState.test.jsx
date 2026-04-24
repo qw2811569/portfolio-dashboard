@@ -36,6 +36,7 @@ describe('hooks/useAppShellUiState.js', () => {
     installStorage({
       [ACTIVE_PORTFOLIO_KEY]: JSON.stringify('me'),
     })
+    window.history.replaceState({}, '', '/')
   })
 
   afterEach(() => {
@@ -126,5 +127,37 @@ describe('hooks/useAppShellUiState.js', () => {
     const { result } = renderHook(() => useAppShellUiState())
 
     expect(result.current.tab).toBe('dashboard')
+  })
+
+  it('hydrates holdings detail state from pathname and query, then syncs browser history on open / close', () => {
+    window.history.replaceState({}, '', '/portfolio/me/holdings?stock=2330')
+
+    const { result } = renderHook(() => useAppShellUiState())
+
+    expect(result.current.tab).toBe('holdings')
+    expect(result.current.detailStockCode).toBe('2330')
+
+    act(() => {
+      result.current.setDetailStockCode('2454')
+    })
+
+    expect(window.location.pathname).toBe('/portfolio/me/holdings')
+    expect(window.location.search).toBe('?stock=2454')
+    expect(result.current.detailStockCode).toBe('2454')
+
+    act(() => {
+      result.current.setDetailStockCode(null)
+    })
+
+    expect(window.location.search).toBe('')
+    expect(result.current.detailStockCode).toBe(null)
+
+    act(() => {
+      window.history.pushState({}, '', '/portfolio/me/holdings?stock=2330')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    expect(result.current.tab).toBe('holdings')
+    expect(result.current.detailStockCode).toBe('2330')
   })
 })

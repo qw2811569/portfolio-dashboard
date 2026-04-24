@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockUsePortfolioRouteContext = vi.fn()
 const mockUseBrainStore = vi.fn()
+const mockUseLocation = vi.fn()
+const mockNavigate = vi.fn()
 
 vi.mock('../../src/pages/usePortfolioRouteContext.js', () => ({
   usePortfolioRouteContext: () => mockUsePortfolioRouteContext(),
@@ -12,11 +14,20 @@ vi.mock('../../src/stores/brainStore.js', () => ({
   useBrainStore: (selector) => mockUseBrainStore(selector),
 }))
 
+vi.mock('react-router-dom', () => ({
+  useLocation: () => mockUseLocation(),
+  useNavigate: () => mockNavigate,
+}))
+
 import { useRouteHoldingsPage } from '../../src/hooks/useRouteHoldingsPage.js'
 
 describe('hooks/useRouteHoldingsPage.js', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseLocation.mockReturnValue({
+      pathname: '/portfolio/me/holdings',
+      search: '',
+    })
   })
 
   it('renders without crashing and returns correct props structure', () => {
@@ -77,6 +88,7 @@ describe('hooks/useRouteHoldingsPage.js', () => {
     expect(tableProps.holdings).toHaveLength(2)
     expect(tableProps.expandedStock).toBe('2330')
     expect(tableProps.setExpandedStock).toBe(setExpandedStock)
+    expect(tableProps.detailStockCode).toBe(null)
     expect(typeof tableProps.onUpdateTarget).toBe('function')
     expect(typeof tableProps.onUpdateAlert).toBe('function')
     expect(tableProps.onUpdateTarget).not.toBe(updateTargetPrice)
@@ -123,6 +135,62 @@ describe('hooks/useRouteHoldingsPage.js', () => {
 
     expect(result.current.panelProps.holdingsIntegrityIssues).toHaveLength(1)
     expect(result.current.panelProps.holdingsIntegrityIssues[0].code).toBe('2330')
+  })
+
+  it('derives detail pane state from ?stock= and syncs open / close through router navigation', () => {
+    mockUseLocation.mockReturnValue({
+      pathname: '/portfolio/me/holdings',
+      search: '?stock=2330',
+    })
+    mockUsePortfolioRouteContext.mockReturnValue({
+      holdings: [{ code: '2330', name: '台積電', qty: 100, cost: 900, value: 95000, price: 950 }],
+      holdingDossiers: [
+        {
+          code: '2330',
+          name: '台積電',
+          thesis: { summary: 'AI 需求延續' },
+          freshness: { targets: 'fresh', fundamentals: 'fresh' },
+        },
+      ],
+      dailyReport: {
+        date: '2026-04-24',
+        changes: [{ code: '2330', price: 950, changePct: 1.2 }],
+      },
+      analysisHistory: [],
+      researchHistory: [],
+      newsEvents: [],
+      strategyBrain: null,
+      reversalConditions: {},
+    })
+    mockUseBrainStore.mockImplementation((selector) =>
+      selector({ expandedStock: null, setExpandedStock: vi.fn() })
+    )
+
+    const { result } = renderHook(() => useRouteHoldingsPage())
+
+    expect(result.current.tableProps.detailStockCode).toBe('2330')
+    expect(result.current.tableProps.detailDossier).toMatchObject({
+      code: '2330',
+      displayName: '台積電',
+    })
+
+    result.current.tableProps.onOpenDetail('2454')
+    expect(mockNavigate).toHaveBeenCalledWith(
+      {
+        pathname: '/portfolio/me/holdings',
+        search: '?stock=2454',
+      },
+      { replace: false }
+    )
+
+    result.current.tableProps.onCloseDetail()
+    expect(mockNavigate).toHaveBeenCalledWith(
+      {
+        pathname: '/portfolio/me/holdings',
+        search: '',
+      },
+      { replace: false }
+    )
   })
 
   it('blocks holdings data writes while keeping the table readable', () => {

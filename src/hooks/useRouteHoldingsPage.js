@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useBrainStore } from '../stores/brainStore.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 import { resolveViewMode } from '../lib/viewModeContract.js'
+import { buildHoldingDetailDossier } from '../lib/holdingDetailDossier.js'
 
 function warnBlockedRouteWrite(actionName) {
   if (process.env.NODE_ENV !== 'production') {
@@ -12,12 +14,18 @@ function warnBlockedRouteWrite(actionName) {
 }
 
 export function useRouteHoldingsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const {
     portfolioId = '',
     portfolioName = '',
     holdings = [],
     holdingDossiers = [],
     newsEvents = [],
+    dailyReport = null,
+    analysisHistory = [],
+    researchHistory = [],
+    strategyBrain = null,
     todayTotalPnl = 0,
     reversalConditions = {},
   } = usePortfolioRouteContext()
@@ -33,6 +41,10 @@ export function useRouteHoldingsPage() {
     },
     currentUser: 'me',
   })
+  const detailStockCode = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return String(params.get('stock') || '').trim() || null
+  }, [location.search])
 
   return useMemo(() => {
     const blockUpdateTargetPrice = (..._args) => {
@@ -67,6 +79,29 @@ export function useRouteHoldingsPage() {
         dossier,
       ])
     )
+    const detailDossier = buildHoldingDetailDossier({
+      code: detailStockCode,
+      holdings,
+      holdingDossiers,
+      dailyReport,
+      analysisHistory,
+      researchHistory,
+      newsEvents,
+      strategyBrain,
+    })
+    const updateStockSearchParam = (nextCode = null) => {
+      const params = new URLSearchParams(location.search)
+      if (nextCode) params.set('stock', nextCode)
+      else params.delete('stock')
+      const search = params.toString()
+      navigate(
+        {
+          pathname: location.pathname,
+          search: search ? `?${search}` : '',
+        },
+        { replace: false }
+      )
+    }
 
     return {
       panelProps: {
@@ -90,6 +125,10 @@ export function useRouteHoldingsPage() {
         dossierByCode,
         expandedStock,
         setExpandedStock,
+        detailStockCode,
+        detailDossier,
+        onOpenDetail: (code) => updateStockSearchParam(String(code || '').trim() || null),
+        onCloseDetail: () => updateStockSearchParam(null),
         onUpdateTarget: blockUpdateTargetPrice,
         onUpdateAlert: blockUpdateAlert,
         thesisWriteEnabled: false,
@@ -99,9 +138,17 @@ export function useRouteHoldingsPage() {
     }
   }, [
     expandedStock,
+    detailStockCode,
+    dailyReport,
+    analysisHistory,
     holdingDossiers,
     holdings,
     newsEvents,
+    researchHistory,
+    strategyBrain,
+    location.pathname,
+    location.search,
+    navigate,
     portfolioId,
     todayTotalPnl,
     reversalConditions,

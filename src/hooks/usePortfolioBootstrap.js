@@ -126,6 +126,10 @@ export function usePortfolioBootstrap({
       let previousMark = `pf-bootstrap:${runId}:start`
       markPerformance(previousMark)
       updateBootstrapState(setBootstrapState, runId, 'starting', 0)
+      const isStillActivePortfolio = (targetPid) => {
+        if (cancelled) return false
+        return bootRuntimeRef.current?.activePortfolioId === targetPid
+      }
 
       const runStep = async (phase, work, context = {}) => {
         updateBootstrapState(setBootstrapState, runId, phase, getNow() - startedAt)
@@ -175,7 +179,9 @@ export function usePortfolioBootstrap({
 
       if (!cancelled && postReadyBackfillChanges > 0) {
         snapshot = await loadPortfolioSnapshot(pid)
-        applyPortfolioSnapshot(snapshot)
+        if (isStillActivePortfolio(pid)) {
+          applyPortfolioSnapshot(snapshot)
+        }
       }
 
       const lastCloudSyncAt = readSyncAt('pf-cloud-sync-at')
@@ -221,23 +227,27 @@ export function usePortfolioBootstrap({
                 fallbackRows: getPortfolioFallback(pid, 'holdings-v2'),
               })
             )
-            snapshot.holdings = normalizedCloudHoldings
-            setHoldings(normalizedCloudHoldings)
             savePortfolioData(pid, 'holdings-v2', normalizedCloudHoldings)
+            if (isStillActivePortfolio(pid)) {
+              snapshot.holdings = normalizedCloudHoldings
+              setHoldings(normalizedCloudHoldings)
+            }
           }
         } catch {
           // localStorage fallback keeps app usable offline
         }
 
-        cloudSyncStateRef.current = {
-          enabled: true,
-          syncedAt: readSyncAt('pf-cloud-sync-at'),
-        }
-        setCloudSync(true)
-        portfolioTransitionRef.current = {
-          isHydrating: false,
-          fromPid: pid,
-          toPid: pid,
+        if (isStillActivePortfolio(pid)) {
+          cloudSyncStateRef.current = {
+            enabled: true,
+            syncedAt: readSyncAt('pf-cloud-sync-at'),
+          }
+          setCloudSync(true)
+          portfolioTransitionRef.current = {
+            isHydrating: false,
+            fromPid: pid,
+            toPid: pid,
+          }
         }
         return
       }
@@ -278,8 +288,10 @@ export function usePortfolioBootstrap({
 
         if (cloudBrain.brain && !snapshot.strategyBrain) {
           const normalizedBrain = normalizeStrategyBrain(cloudBrain.brain)
-          setStrategyBrain(normalizedBrain)
           savePortfolioData(pid, 'brain-v1', normalizedBrain)
+          if (isStillActivePortfolio(pid)) {
+            setStrategyBrain(normalizedBrain)
+          }
         }
 
         const cloudEventRows = ensureArray(cloudEvents?.events)
@@ -288,8 +300,10 @@ export function usePortfolioBootstrap({
           (!snapshot.newsEvents || snapshot.newsEvents.length === 0)
         ) {
           const normalizedEvents = normalizeNewsEvents(cloudEventRows)
-          setNewsEvents(normalizedEvents)
           savePortfolioData(pid, 'news-events-v1', normalizedEvents)
+          if (isStillActivePortfolio(pid)) {
+            setNewsEvents(normalizedEvents)
+          }
         }
 
         const cloudRows = ensureArray(cloudHoldings?.holdings)
@@ -302,9 +316,11 @@ export function usePortfolioBootstrap({
               fallbackRows: getPortfolioFallback(pid, 'holdings-v2'),
             })
           )
-          snapshot.holdings = normalizedCloudHoldings
-          setHoldings(normalizedCloudHoldings)
           savePortfolioData(pid, 'holdings-v2', normalizedCloudHoldings)
+          if (isStillActivePortfolio(pid)) {
+            snapshot.holdings = normalizedCloudHoldings
+            setHoldings(normalizedCloudHoldings)
+          }
         }
 
         const cloudHistoryRows = ensureArray(cloudHistory?.history)
@@ -313,10 +329,12 @@ export function usePortfolioBootstrap({
             ...(snapshot.analysisHistory || []),
             ...cloudHistoryRows,
           ])
-          setAnalysisHistory(uniqueHistory)
           savePortfolioData(pid, 'analysis-history-v1', uniqueHistory)
+          if (isStillActivePortfolio(pid)) {
+            setAnalysisHistory(uniqueHistory)
+          }
           writeSyncAt('pf-analysis-cloud-sync-at', Date.now())
-          if (!snapshot.dailyReport && uniqueHistory.length > 0) {
+          if (isStillActivePortfolio(pid) && !snapshot.dailyReport && uniqueHistory.length > 0) {
             setDailyReport(normalizeDailyReportEntry(uniqueHistory[0]))
           }
         }
@@ -330,33 +348,39 @@ export function usePortfolioBootstrap({
             )
             .sort((a, b) => b.timestamp - a.timestamp)
             .slice(0, 30)
-          setResearchHistory(uniqueReports)
           savePortfolioData(pid, 'research-history-v1', uniqueReports)
+          if (isStillActivePortfolio(pid)) {
+            setResearchHistory(uniqueReports)
+          }
           writeSyncAt('pf-research-cloud-sync-at', Date.now())
         }
 
         const syncedAt = Date.now()
-        cloudSyncStateRef.current = {
-          enabled: true,
-          syncedAt,
-        }
         writeSyncAt('pf-cloud-sync-at', syncedAt)
-        setCloudSync(true)
+        if (isStillActivePortfolio(pid)) {
+          cloudSyncStateRef.current = {
+            enabled: true,
+            syncedAt,
+          }
+          setCloudSync(true)
+        }
       } catch (syncErr) {
         console.warn('Cloud full sync failed, localStorage fallback:', syncErr)
       } finally {
         // 無論 full sync 成功或失敗，都啟用 cloud sync 以確保後續改動能存上去
-        if (!cancelled) {
+        if (isStillActivePortfolio(pid)) {
           cloudSyncStateRef.current = {
             enabled: true,
             syncedAt: cloudSyncStateRef.current.syncedAt || Date.now(),
           }
           setCloudSync(true)
         }
-        portfolioTransitionRef.current = {
-          isHydrating: false,
-          fromPid: pid,
-          toPid: pid,
+        if (isStillActivePortfolio(pid)) {
+          portfolioTransitionRef.current = {
+            isHydrating: false,
+            fromPid: pid,
+            toPid: pid,
+          }
         }
       }
     }

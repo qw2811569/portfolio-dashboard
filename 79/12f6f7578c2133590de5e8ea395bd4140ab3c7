@@ -1,0 +1,34 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "8298779c-571b-44ec-8b9a-4b309ba85c4e",
+      "provider": "claude",
+      "model": "claude-opus-4-6",
+      "session_id": "2f01aa36-29f8-4b56-a6ac-65e90fbd1110",
+      "prompt_summary": "一樣運用專案的能力，去調查4/23跟24的大盤為何這樣波動，給聽眾一個安心的答案\n然後再集中看晟銘電跟三集瑞還有長興的盤勢與籌碼面，不要去動程式碼，但可以運用專案的api與所有知識庫或者資源",
+      "prompt_hash": "sha256:2423c54016d91ea4010fd5f38f0a57ac53ebff2eb229f5d58c2e41123a6c5eb8",
+      "message_count": 1081,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-24T05:13:11.588389Z",
+      "session_start": "2026-04-12T12:38:16.528Z",
+      "prompt_submitted_at": "2026-04-24T05:13:11.588390Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 94,
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

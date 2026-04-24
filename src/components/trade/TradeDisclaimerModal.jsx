@@ -26,6 +26,24 @@ export function TradeDisclaimerModal({
     if (!open) return undefined
 
     const getDialogElement = () => document.querySelector('[data-testid="trade-disclaimer-dialog"]')
+    const focusPreferredControl = () => {
+      const dialogElement = getDialogElement()
+      if (!dialogElement) return
+
+      const preferredTarget =
+        dialogElement.querySelector('[data-testid="trade-disclaimer-checkbox"]') ||
+        dialogElement.querySelector('[data-testid="trade-disclaimer-enter-btn"]')
+
+      const fallbackTarget = resolveFocusable()[0]
+      const target = preferredTarget || fallbackTarget
+      if (!target || typeof target.focus !== 'function') return
+
+      try {
+        target.focus({ preventScroll: true })
+      } catch {
+        target.focus()
+      }
+    }
 
     const resolveFocusable = () => {
       const dialogElement = getDialogElement()
@@ -49,6 +67,7 @@ export function TradeDisclaimerModal({
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()
+        focusPreferredControl()
         return
       }
 
@@ -79,8 +98,7 @@ export function TradeDisclaimerModal({
     window.addEventListener('keydown', handleKeyDown, true)
 
     const frame = window.requestAnimationFrame(() => {
-      const focusable = resolveFocusable()
-      focusable[0]?.focus?.()
+      focusPreferredControl()
     })
 
     return () => {

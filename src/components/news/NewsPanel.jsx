@@ -690,6 +690,7 @@ export function NewsFeedSection({
                 'select',
                 {
                   'data-testid': 'news-filter-ticker-select',
+                  'aria-label': '依持股篩選新聞',
                   value: tickerFilter,
                   onChange: (event) => handleTickerFilterChange(event.target.value),
                   style: {

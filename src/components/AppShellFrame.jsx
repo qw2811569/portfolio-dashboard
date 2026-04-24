@@ -21,6 +21,17 @@ export default function AppShellFrame({
   confirmDialogProps,
 }) {
   const panelRootRef = useRef(null)
+  const visuallyHiddenStyle = {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    padding: 0,
+    margin: -1,
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    whiteSpace: 'nowrap',
+    border: 0,
+  }
   const cmdK = useCmdK({
     headerProps,
     panelsActions,
@@ -176,21 +187,24 @@ export default function AppShellFrame({
         }
       `}</style>
 
-      <ErrorBoundary
-        scope="header"
-        title={headerBoundaryCopy.title}
-        description={headerBoundaryCopy.description}
-      >
-        <Header {...headerProps} />
-      </ErrorBoundary>
+      <header aria-label="持倉工作台頁首">
+        <ErrorBoundary
+          scope="header"
+          title={headerBoundaryCopy.title}
+          description={headerBoundaryCopy.description}
+        >
+          <Header {...headerProps} />
+        </ErrorBoundary>
+      </header>
 
-      <div className="app-shell" style={{ padding: '8px 12px' }}>
+      <main className="app-shell" style={{ padding: '8px 12px' }} aria-label="持倉工作台主內容">
+        <h1 style={visuallyHiddenStyle}>持倉工作台</h1>
         <div ref={panelRootRef}>
           <PortfolioPanelsProvider data={panelsData} actions={panelsActions}>
             <AppPanels {...panelsProps} />
           </PortfolioPanelsProvider>
         </div>
-      </div>
+      </main>
 
       <CmdKPalette
         open={cmdK.open}

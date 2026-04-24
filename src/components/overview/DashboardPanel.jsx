@@ -1827,8 +1827,9 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
                 style: {
                   fontSize: 11,
                   fontWeight: 600,
-                  color: isToday ? C.amber : C.textMute,
-                  background: isToday ? alpha(C.amber, '10') : 'transparent',
+                  color: isToday ? C.textSec : C.textMute,
+                  background: isToday ? C.amberBg : 'transparent',
+                  border: isToday ? `1px solid ${alpha(C.amber, '24')}` : 'none',
                   borderRadius: 999,
                   padding: isToday ? '4px 8px' : 0,
                   flexShrink: 0,

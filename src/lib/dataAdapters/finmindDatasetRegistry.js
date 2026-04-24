@@ -63,6 +63,15 @@ export const FINMIND_DATASET_REGISTRY = Object.freeze({
     defaultRequest: Object.freeze({ days: 1825 }),
     dossierRequest: Object.freeze({ days: 1825 }),
   }),
+  capitalReductionReferencePrice: Object.freeze({
+    key: 'capitalReductionReferencePrice',
+    finmindDataset: 'TaiwanStockCapitalReductionReferencePrice',
+    requestKind: 'days',
+    defaultWindowDays: 1825,
+    defaultRequest: Object.freeze({ days: 1825 }),
+    dossierRequest: Object.freeze({ days: 1825 }),
+    includeInDossier: false,
+  }),
   revenue: Object.freeze({
     key: 'revenue',
     finmindDataset: 'TaiwanStockMonthRevenue',
@@ -92,7 +101,9 @@ export const FINMIND_DATASET_REGISTRY = Object.freeze({
 export const FINMIND_DATASET_KEYS = Object.freeze(Object.keys(FINMIND_DATASET_REGISTRY))
 
 export const FINMIND_DOSSIER_DATASET_PLAN = Object.freeze(
-  FINMIND_DATASET_KEYS.map((datasetKey) =>
+  FINMIND_DATASET_KEYS.filter(
+    (datasetKey) => FINMIND_DATASET_REGISTRY[datasetKey]?.includeInDossier !== false
+  ).map((datasetKey) =>
     Object.freeze({
       datasetKey,
       request: Object.freeze({

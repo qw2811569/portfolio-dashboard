@@ -5,6 +5,10 @@
  */
 
 import { EVENT_HISTORY_LIMIT, CLOSED_EVENT_STATUSES } from '../constants.js'
+import {
+  normalizeEventRecord as normalizeEventRecordCore,
+  normalizeNewsEvents as normalizeNewsEventsCore,
+} from './eventUtils.js'
 
 // ── Event status helpers ──────────────────────────────────────────────
 
@@ -288,56 +292,14 @@ export function formatEventStockOutcomeLine(outcome) {
  * Normalize event record
  */
 export function normalizeEventRecord(event) {
-  if (!event || typeof event !== 'object') return null
-
-  const status =
-    event.status === 'tracking' ? 'tracking' : isClosedEvent(event) ? 'closed' : 'pending'
-  const priceAtEvent = normalizePriceRecord(event.priceAtEvent, event)
-  const priceAtExit = normalizePriceRecord(event.priceAtExit, event)
-  const reviewDate = event.reviewDate || null
-
-  const eventDate =
-    event.eventDate || (status === 'closed' ? event.date || reviewDate || null : null)
-  const trackingStart = event.trackingStart || eventDate || null
-  const exitDate = event.exitDate || (status === 'closed' ? reviewDate || null : null)
-
-  const actual = ['up', 'down', 'neutral'].includes(event.actual)
-    ? event.actual
-    : inferEventActual(priceAtEvent, priceAtExit)
-
-  const stockOutcomes =
-    Array.isArray(event.stockOutcomes) && event.stockOutcomes.length > 0
-      ? event.stockOutcomes.map((item) => normalizeEventStockOutcome(item, event)).filter(Boolean)
-      : status === 'closed'
-        ? buildEventStockOutcomes({ ...event, priceAtEvent, priceAtExit, actual })
-        : []
-
-  return {
-    ...event,
-    label: String(event.label || event.title || '').trim(),
-    sub: String(event.sub || event.detail || '').trim(),
-    status,
-    stocks: buildEventStockDescriptors(event).map((item) => `${item.name} ${item.code}`),
-    eventDate,
-    trackingStart,
-    exitDate,
-    priceAtEvent,
-    priceAtExit,
-    priceHistory: normalizePriceHistory(event.priceHistory, event),
-    actual: actual || null,
-    actualNote: event.actualNote || '',
-    stockOutcomes,
-    correct: typeof event.correct === 'boolean' ? event.correct : null,
-    lessons: event.lessons || '',
-    reviewDate,
-  }
+  return normalizeEventRecordCore(event)
 }
 
 /**
  * Normalize multiple news events
  */
 export function normalizeNewsEvents(items) {
-  return (Array.isArray(items) ? items : []).map(normalizeEventRecord).filter(Boolean)
+  return normalizeNewsEventsCore(items)
 }
 
 /**

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EventsPanel } from '../../src/components/events/EventsPanel.jsx'
 
@@ -9,7 +9,7 @@ function buildProps(overrides = {}) {
     showRelayPlan: false,
     relayPlanExpanded: false,
     setRelayPlanExpanded: vi.fn(),
-    filterType: 'all',
+    filterType: '全部',
     setFilterType: vi.fn(),
     filteredEvents: [],
     catalystFilter: '全部',
@@ -52,7 +52,7 @@ describe('components/EventsPanel', () => {
       {
         title: '台積電法說會',
         date: '2026-04-15',
-        type: '法說',
+        eventType: 'earnings',
         impact: 'high',
         stock: { code: '2330', name: '台積電' },
       },
@@ -70,7 +70,7 @@ describe('components/EventsPanel', () => {
         id: 'event-1',
         title: '台積電法說會',
         date: '2026-04-15',
-        type: '法說',
+        eventType: 'earnings',
         impact: 'high',
         pred: 'up',
         recordType: 'event',
@@ -102,7 +102,7 @@ describe('components/EventsPanel', () => {
               id: 'event-1',
               title: '聯發科法說會',
               date: '2026-04-10',
-              type: '法說',
+              eventType: 'earnings',
               impact: 'high',
               pred: 'up',
               recordType: 'event',
@@ -114,5 +114,72 @@ describe('components/EventsPanel', () => {
 
     expect(screen.getByText('已過 6 天 · 待復盤')).toBeInTheDocument()
     expect(screen.getByText('📋 待復盤')).toBeInTheDocument()
+  })
+
+  it('renders TW-specific filter chips', () => {
+    render(<EventsPanel {...buildProps()} />)
+
+    expect(screen.getByRole('button', { name: '🔵 earnings' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '🟢 ex-dividend' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '🟡 shareholding-meeting' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '🔴 strategic' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '⚪ informational' })).toBeInTheDocument()
+  })
+
+  it('collapses informational events by default on the all-events view', () => {
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-div',
+              title: '台積電除息',
+              date: '2026-05-15',
+              eventType: 'ex-dividend',
+              recordType: 'event',
+              cashDividend: 4,
+              stocks: ['台積電 2330'],
+            },
+            {
+              id: 'evt-info',
+              title: '台積電紀念品領取提醒',
+              date: '2026-05-18',
+              eventType: 'informational',
+              recordType: 'event',
+              stocks: ['台積電 2330'],
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByText('台積電除息')).toBeInTheDocument()
+    expect(screen.queryByText('台積電紀念品領取提醒')).not.toBeInTheDocument()
+    expect(screen.getByTestId('events-informational-collapse')).toBeInTheDocument()
+  })
+
+  it('expands the informational section on demand', () => {
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-info',
+              title: '台積電紀念品領取提醒',
+              date: '2026-05-18',
+              eventType: 'informational',
+              recordType: 'event',
+              stocks: ['台積電 2330'],
+            },
+          ],
+        })}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '展開資訊型' }))
+    expect(screen.getByText('台積電紀念品領取提醒')).toBeInTheDocument()
+    expect(screen.getByText('資訊備查')).toBeInTheDocument()
   })
 })

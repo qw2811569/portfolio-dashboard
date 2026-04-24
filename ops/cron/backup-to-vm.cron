@@ -1,3 +1,4 @@
 CRON_TZ=Asia/Taipei
 0 3 * * * /bin/zsh -lc 'cd /Users/chenkuichen/app/test && node scripts/backup-to-vm.mjs >> .tmp/localstorage-backups/cron.log 2>&1'
 30 3 * * * /bin/zsh -lc 'cd /Users/chenkuichen/app/test && node --env-file=.env.local scripts/audit-data-coverage.mjs >> .tmp/localstorage-backups/cron.log 2>&1'
+10 4 * * * /bin/zsh -lc 'cd /Users/chenkuichen/app/test && node --env-file=.env.local agent-bridge-standalone/workers/tw-events-worker.mjs >> .tmp/localstorage-backups/cron.log 2>&1'

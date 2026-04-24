@@ -1,4 +1,4 @@
-import { createElement as h } from 'react'
+import { createElement as h, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard, StaleBadge } from '../common'
@@ -7,6 +7,13 @@ import { RELAY_PLAN } from '../../seedDataEvents.js'
 import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
 import { calculateEventCountdown } from '../../lib/eventCountdown.js'
+import {
+  ALL_EVENTS_FILTER_LABEL,
+  EVENT_TYPE_META,
+  PRIMARY_EVENT_FILTERS,
+  inferEventType,
+  shouldCollapseEventByDefault,
+} from '../../lib/eventTypeMeta.js'
 
 const LEGACY_TONE_COLOR = Object.freeze({
   up: C.up,
@@ -32,15 +39,17 @@ function resolveToneColor(tone, fallback = C.text) {
   return LEGACY_TONE_COLOR[tone] || fallback
 }
 
-const TYPE_COLOR = {
-  法說: C.up,
-  財報: C.positive,
-  營收: C.iron,
-  催化: C.amber,
-  操作: C.text,
-  總經: C.lavender,
-  權證: C.choco,
-}
+const EVENT_TYPE_STYLE = Object.freeze({
+  earnings: { color: C.positive, background: alpha(C.positive, '16') },
+  'ex-dividend': { color: C.up, background: alpha(C.up, '14') },
+  'shareholding-meeting': { color: C.amber, background: alpha(C.amber, '18') },
+  strategic: { color: C.down, background: alpha(C.down, '12') },
+  informational: { color: C.textMute, background: alpha(C.textMute, '12') },
+  macro: { color: C.lavender, background: alpha(C.lavender, '18') },
+  market: { color: C.choco, background: alpha(C.choco, '18') },
+  technical: { color: C.text, background: alpha(C.text, '08') },
+  other: { color: C.iron, background: alpha(C.iron, '18') },
+})
 
 const CATALYST_LABELS = {
   earnings: '財報',
@@ -63,13 +72,23 @@ function formatEventSource(source) {
   if (!source) return '手動'
   if (source === 'auto-calendar') return '行事曆'
   if (source === 'finmind-news') return 'FinMind'
+  if (source === 'finmind-dividend') return 'FinMind'
+  if (source === 'finmind-capital-reduction') return 'FinMind'
+  if (source === 'mops-shareholder') return 'MOPS'
+  if (source === 'shareholder-announcement') return 'MOPS'
+  if (source === 'tw-events-worker') return 'Worker'
   return '手動'
 }
 
 function buildEventKey(event, index) {
   const base =
     event?.id ||
-    [event?.date, event?.type, event?.title || event?.label, (event?.stocks || []).join(',')]
+    [
+      event?.date,
+      event?.eventType || event?.type,
+      event?.title || event?.label,
+      (event?.stocks || []).join(','),
+    ]
       .filter(Boolean)
       .join('|') ||
     'event'
@@ -101,6 +120,118 @@ function getReviewMeta(event) {
     return { label: '追蹤中', color: C.textSec, bg: alpha(C.positive, '16') }
   }
   return { label: '待觀察', color: C.textSec, bg: alpha(C.amber, '16') }
+}
+
+function getEventStyle(event) {
+  const eventType = inferEventType(event)
+  return EVENT_TYPE_STYLE[eventType] || EVENT_TYPE_STYLE.other
+}
+
+function formatShortDate(value) {
+  const raw = String(value || '')
+    .trim()
+    .replace(/\//g, '-')
+  const matched = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (!matched) return raw || '--/--'
+  return `${matched[2].padStart(2, '0')}/${matched[3].padStart(2, '0')}`
+}
+
+function extractPrimaryCode(event) {
+  const stocks = Array.isArray(event?.stocks) ? event.stocks : []
+  const matched = stocks
+    .map((stock) => String(stock || '').match(/\d{4,6}[A-Z]?L?/i)?.[0] || '')
+    .find(Boolean)
+  return matched || String(event?.code || event?.ticker || '').trim()
+}
+
+function formatDividendSummary(event) {
+  const cashDividend = Number(event?.cashDividend)
+  const stockDividend = Number(event?.stockDividend)
+  const labels = []
+  if (Number.isFinite(cashDividend) && cashDividend > 0) {
+    labels.push(`預計配息 ${cashDividend.toFixed(1)} 元 / 股`)
+  }
+  if (Number.isFinite(stockDividend) && stockDividend > 0) {
+    labels.push(`預計配股 ${stockDividend.toFixed(2)} 股 / 股`)
+  }
+  if (labels.length > 0) return labels.join(' · ')
+  return event?.detail || '持股當日價格會依參考價調整。'
+}
+
+function renderEventContext(event) {
+  const eventType = inferEventType(event)
+  const code = extractPrimaryCode(event)
+  const dateLabel = formatShortDate(event?.date || event?.eventDate)
+  const blockStyle = {
+    marginTop: 8,
+    padding: '8px 8px',
+    borderRadius: 8,
+    border: `1px solid ${C.borderSub}`,
+    background: C.subtle,
+    fontSize: 12,
+    color: C.textSec,
+    lineHeight: 1.65,
+  }
+
+  if (eventType === 'earnings') {
+    return h(
+      'div',
+      { style: blockStyle },
+      `${code || '全市場'} · ${dateLabel} 財報 / 法說窗口`,
+      h('br'),
+      '這類事件通常直接牽動 thesis 驗證，結果出來後應該回頭重看。'
+    )
+  }
+
+  if (eventType === 'ex-dividend') {
+    const scheduleLabel =
+      event?.eventSubType === 'ex-rights'
+        ? '除權'
+        : event?.eventSubType === 'capital-reduction'
+          ? '減資恢復買賣'
+          : '除息'
+    return h(
+      'div',
+      { style: blockStyle },
+      `${code || '持股'} · ${dateLabel} ${scheduleLabel} · ${formatDividendSummary(event)}`,
+      h('br'),
+      '持股當日價格會按參考價調整；若 thesis 依賴殖利率或填息敘事，這天值得重看。'
+    )
+  }
+
+  if (eventType === 'shareholding-meeting') {
+    const souvenir = String(event?.souvenir || event?.gift || '').trim()
+    return h(
+      'div',
+      { style: blockStyle },
+      `${code || '公司'} · ${dateLabel} 股東會`,
+      souvenir ? ` · 紀念品 ${souvenir}` : '',
+      h('br'),
+      '股東會屬時間點事件；若只是紀念品資訊，不直接等於 thesis 改變。'
+    )
+  }
+
+  if (eventType === 'strategic') {
+    return h(
+      'div',
+      { style: blockStyle },
+      '新聞驅動的策略節點。',
+      h('br'),
+      '只有真的牽動管理層、資本配置、產品方向或政策框架時，才應升級成 thesis review event。'
+    )
+  }
+
+  if (eventType === 'informational') {
+    return h(
+      'div',
+      { style: blockStyle },
+      '資訊型提醒，預設摺疊。',
+      h('br'),
+      '保留時間點與備查資訊，但不主張重看 thesis，也不輸出買賣語氣。'
+    )
+  }
+
+  return null
 }
 
 /**
@@ -456,7 +587,9 @@ export function RelayPlanCard({ expanded, onToggle }) {
 }
 
 export function NewsEventCard({ event, onReview, onToggle }) {
-  const typeColor = TYPE_COLOR[event.type] || C.textMute
+  const eventType = inferEventType(event)
+  const eventMeta = EVENT_TYPE_META[eventType] || EVENT_TYPE_META.other
+  const typeStyle = getEventStyle(event)
   const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
   const predictionMeta = getPredictionMeta(event)
   const reviewMeta = getReviewMeta(event)
@@ -470,7 +603,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
     {
       style: {
         marginBottom: 8,
-        borderLeft: `2px solid ${event.urgent ? C.up : alpha(impactMeta.color || typeColor, '40')}`,
+        borderLeft: `2px solid ${event.urgent ? C.up : alpha(impactMeta.color || typeStyle.color, '40')}`,
         cursor: onToggle ? 'pointer' : 'default',
       },
       onClick: onToggle,
@@ -487,7 +620,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
           'div',
           {
             style: {
-              background: event.urgent ? C.upBg : alpha(typeColor, '15'),
+              background: event.urgent ? C.upBg : typeStyle.background,
               color: C.textSec,
               fontSize: 11,
               fontWeight: 600,
@@ -497,7 +630,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               marginBottom: 4,
             },
           },
-          event.type
+          eventMeta.label
         ),
         h(
           'div',
@@ -529,6 +662,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               subtitle
             )
           : null,
+        renderEventContext(event),
         h(
           'div',
           {
@@ -598,6 +732,20 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               },
               '📋 待復盤'
             ),
+          h(
+            'span',
+            {
+              style: {
+                fontSize: 11,
+                padding: '4px 8px',
+                borderRadius: 999,
+                background: event?.needsThesisReview ? alpha(C.hot, '12') : alpha(C.textMute, '12'),
+                color: event?.needsThesisReview ? C.hot : C.textMute,
+                fontWeight: 600,
+              },
+            },
+            event?.needsThesisReview ? '需要重看 thesis' : '資訊備查'
+          ),
           h(
             'span',
             {
@@ -686,12 +834,13 @@ export function EventsFilter({ filterType, setFilterType }) {
   return h(
     'div',
     { style: { display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 } },
-    ['全部', ...Object.keys(TYPE_COLOR)].map((t) =>
+    [ALL_EVENTS_FILTER_LABEL, ...PRIMARY_EVENT_FILTERS].map((t) =>
       h(
         Button,
         {
           key: t,
           onClick: () => setFilterType(t),
+          'data-testid': `events-filter-${t}`,
           style: {
             background: filterType === t ? C.subtleElev : 'transparent',
             color: filterType === t ? C.text : C.textMute,
@@ -703,7 +852,7 @@ export function EventsFilter({ filterType, setFilterType }) {
             cursor: 'pointer',
           },
         },
-        t
+        t === ALL_EVENTS_FILTER_LABEL ? '全部' : EVENT_TYPE_META[t]?.filterLabel || t
       )
     )
   )
@@ -754,9 +903,15 @@ export function EventsPanel({
   staleStatus = 'fresh',
   operatingContext = null,
 }) {
+  const [showInformational, setShowInformational] = useState(false)
   const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
     (event) => event?.recordType !== 'news'
   )
+  const informationalCards = eventCards.filter((event) => shouldCollapseEventByDefault(event))
+  const primaryCards =
+    filterType === ALL_EVENTS_FILTER_LABEL
+      ? eventCards.filter((event) => !shouldCollapseEventByDefault(event))
+      : eventCards
 
   return h(
     'div',
@@ -786,14 +941,82 @@ export function EventsPanel({
     h(EventsTimeline, { events: eventCards }),
 
     // Events list — empty state
-    eventCards.length === 0 && h(EmptyState, { resource: 'events' }),
+    primaryCards.length === 0 &&
+      informationalCards.length === 0 &&
+      h(EmptyState, { resource: 'events' }),
+
+    filterType === ALL_EVENTS_FILTER_LABEL &&
+      informationalCards.length > 0 &&
+      h(
+        Card,
+        {
+          style: {
+            marginBottom: 8,
+            borderLeft: `2px solid ${alpha(C.textMute, '38')}`,
+            background: alpha(C.subtle, 'f6'),
+          },
+          'data-testid': 'events-informational-collapse',
+        },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+            },
+          },
+          h(
+            'div',
+            null,
+            h(
+              'div',
+              { style: { fontSize: 12, fontWeight: 600, color: C.text } },
+              `⚪ informational · ${informationalCards.length} 則`
+            ),
+            h(
+              'div',
+              { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
+              '資訊型提醒預設摺疊，因為它們通常只需要備查，不需要重看 thesis。'
+            )
+          ),
+          h(
+            Button,
+            {
+              onClick: () => setShowInformational((value) => !value),
+              style: {
+                borderRadius: 20,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: `1px solid ${C.border}`,
+                background: showInformational ? C.subtleElev : 'transparent',
+                color: C.textSec,
+              },
+            },
+            showInformational ? '收合資訊型' : '展開資訊型'
+          )
+        )
+      ),
 
     // Events list
-    eventCards.map((event, index) =>
+    primaryCards.map((event, index) =>
       h(EventCard, {
         key: buildEventKey(event, index),
         event,
       })
-    )
+    ),
+
+    filterType === ALL_EVENTS_FILTER_LABEL &&
+      showInformational &&
+      informationalCards.map((event, index) =>
+        h(EventCard, {
+          key: `${buildEventKey(event, index)}::informational`,
+          event,
+        })
+      )
   )
 }

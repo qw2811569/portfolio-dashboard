@@ -1,3 +1,5 @@
+import { normalizeEventType } from './eventTypeMeta.js'
+
 export function buildLivePortfolioSnapshot({
   holdings = null,
   tradeLog = null,
@@ -47,5 +49,12 @@ export function filterEventsByType({
 }) {
   const resolvedEvents = resolveRuntimeNewsEvents(newsEvents, fallbackEvents)
   if (filterType === allFilterLabel) return resolvedEvents
-  return resolvedEvents.filter((event) => event.type === filterType)
+  const exactTypeMatches = resolvedEvents.filter((event) => event?.type === filterType)
+  if (exactTypeMatches.length > 0) return exactTypeMatches
+  const normalizedFilterType = normalizeEventType(filterType)
+  return resolvedEvents.filter((event) => {
+    const eventType = normalizeEventType(event?.eventType || event?.type)
+    if (normalizedFilterType) return eventType === normalizedFilterType
+    return event?.type === filterType
+  })
 }

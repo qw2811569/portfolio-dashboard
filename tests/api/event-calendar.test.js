@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   buildDgbasMacroCalendarEvents,
+  buildFinMindDividendEventsFromRows,
   buildTwseExRightsEventsFromResponse,
   parseMofNextTradeRelease,
   parseRocDateString,
@@ -89,6 +90,54 @@ describe('event-calendar.js - TW official calendar helpers', () => {
     ])
   })
 
+  it('builds FinMind dividend and capital reduction schedules as canonical TW event records', () => {
+    const events = buildFinMindDividendEventsFromRows(
+      [
+        {
+          stock_id: '2330',
+          stock_name: '台積電',
+          year: '115年',
+          CashEarningsDistribution: 4,
+          StockEarningsDistribution: 0,
+          CashExDividendTradingDate: '2026-05-15',
+          StockExDividendTradingDate: '',
+          AnnouncementDate: '2026-04-10',
+        },
+        {
+          stock_id: '2454',
+          stock_name: '聯發科',
+          year: '115年',
+          CashEarningsDistribution: 0,
+          StockEarningsDistribution: 0.4,
+          CashExDividendTradingDate: '',
+          StockExDividendTradingDate: '2026-05-20',
+          AnnouncementDate: '2026-04-12',
+        },
+      ],
+      {
+        today: new Date('2026-04-24T00:00:00.000Z'),
+        rangeDays: 45,
+      }
+    )
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        source: 'finmind-dividend',
+        eventType: 'ex-dividend',
+        eventSubType: 'ex-dividend',
+        date: '2026-05-15',
+        cashDividend: 4,
+      }),
+      expect.objectContaining({
+        source: 'finmind-dividend',
+        eventType: 'ex-dividend',
+        eventSubType: 'ex-rights',
+        date: '2026-05-20',
+        stockDividend: 0.4,
+      }),
+    ])
+  })
+
   it('parses the Ministry of Finance next trade release timestamp', () => {
     const parsed = parseMofNextTradeRelease(`
       海關進出口貿易初步統計
@@ -109,12 +158,11 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     vi.clearAllMocks()
   })
 
-  it('should filter conference events from news titles', async () => {
+  it('derives shareholder meeting events from news titles and meeting dates', async () => {
     const mockNews = {
       data: [
-        { date: '2026-04-01', title: '台達電法說會 4/1 登場', description: '' },
+        { date: '2026-04-01', title: '台達電股東常會 4 月 6 日召開', description: '紀念品 保溫瓶' },
         { date: '2026-04-01', title: '一般財報新聞', description: '' },
-        { date: '2026-04-01', title: '台達電 Q1 營收成長', description: '' },
       ],
     }
 
@@ -130,16 +178,18 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     expect(events).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          type: 'conference',
+          eventType: 'shareholding-meeting',
           stocks: ['2308'],
+          date: '2026-04-06',
+          souvenir: '保溫瓶',
         }),
       ])
     )
   })
 
-  it('should filter shareholder events from news titles', async () => {
+  it('derives strategic events from news titles', async () => {
     const mockNews = {
-      data: [{ date: '2026-04-01', title: '台積電股東常會 6 月舉行', description: '' }],
+      data: [{ date: '2026-04-01', title: '台積電宣布重大併購與策略轉型', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -152,12 +202,16 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     })
 
     expect(events).toHaveLength(1)
-    expect(events[0].type).toBe('shareholder')
+    expect(events[0]).toMatchObject({
+      eventType: 'strategic',
+      source: 'finmind-news',
+      stocks: ['2330'],
+    })
   })
 
-  it('should filter dividend events from news titles', async () => {
+  it('keeps pure souvenir reminders as informational rows', async () => {
     const mockNews = {
-      data: [{ date: '2026-04-01', title: '聯發科除權息旺季來臨', description: '' }],
+      data: [{ date: '2026-04-01', title: '聯發科股東禮公告', description: '紀念品 全家禮券' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -170,7 +224,7 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     })
 
     expect(events).toHaveLength(1)
-    expect(events[0].type).toBe('dividend')
+    expect(events[0].eventType).toBe('informational')
   })
 
   it('should filter out irrelevant news', async () => {
@@ -191,8 +245,7 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     })
 
     // Should filter out all irrelevant news
-    expect(events).toHaveLength(1)
-    expect(events[0].type).toBe('earnings')
+    expect(events).toHaveLength(0)
   })
 
   it('should handle API errors gracefully', async () => {
@@ -215,9 +268,9 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
     expect(events).toHaveLength(0)
   })
 
-  it('should keep same-day FinMind news even when current time is after midnight', async () => {
+  it('should keep same-day strategic FinMind news even when current time is after midnight', async () => {
     const mockNews = {
-      data: [{ date: '2026-04-01', title: '台達電法說會 4/1 登場', description: '' }],
+      data: [{ date: '2026-04-01', title: '台達電高層換將啟動新策略', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -234,7 +287,7 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
 
     expect(events).toHaveLength(1)
     expect(events[0]).toMatchObject({
-      type: 'conference',
+      eventType: 'strategic',
       source: 'finmind-news',
       stocks: ['2308'],
     })
@@ -242,10 +295,10 @@ describe('event-calendar.js - fetchFinMindNewsEvents', () => {
 
   it('should handle multiple stocks and aggregate events', async () => {
     const mockNews2308 = {
-      data: [{ date: '2026-04-01', title: '台達電法說會', description: '' }],
+      data: [{ date: '2026-04-01', title: '台達電重大併購案', description: '' }],
     }
     const mockNews2330 = {
-      data: [{ date: '2026-04-01', title: '台積電股東會', description: '' }],
+      data: [{ date: '2026-04-01', title: '台積電股東常會 4 月 5 日召開', description: '' }],
     }
 
     fetch.mockResolvedValueOnce({
@@ -335,7 +388,8 @@ describe('event-calendar.js - Gemini event filtering', () => {
     expect(events).toEqual([
       expect.objectContaining({
         source: 'gemini-research',
-        type: 'conference',
+        type: 'earnings',
+        eventType: 'earnings',
         stocks: ['2308'],
         date: '2026-04-10',
       }),
@@ -346,19 +400,22 @@ describe('event-calendar.js - Gemini event filtering', () => {
     const rows = dedupeCalendarEvents([
       {
         date: '2026-04-10',
-        type: 'conference',
-        title: '台達電(2308) 法說會',
-        stocks: ['2308'],
-      },
-      {
-        date: '2026-04-10',
-        type: 'conference',
+        type: 'earnings',
+        eventType: 'earnings',
         title: '台達電(2308) 法說會',
         stocks: ['2308'],
       },
       {
         date: '2026-04-10',
         type: 'earnings',
+        eventType: 'earnings',
+        title: '台達電(2308) 法說會',
+        stocks: ['2308'],
+      },
+      {
+        date: '2026-04-10',
+        type: 'earnings',
+        eventType: 'earnings',
         title: '營收公布',
         stocks: ['2308'],
       },

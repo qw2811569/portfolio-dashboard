@@ -76,6 +76,7 @@ describe('dataAdapters', () => {
         'cashFlow',
         'dividend',
         'dividendResult',
+        'capitalReductionReferencePrice',
         'revenue',
         'shareholding',
         'news',

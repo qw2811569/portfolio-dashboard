@@ -1,6 +1,7 @@
 import { CLOSED_EVENT_STATUSES, DEFAULT_REVIEW_FORM, EVENT_HISTORY_LIMIT } from '../constants.js'
 import { STOCK_META } from '../seedData.js'
 import { normalizeBrainEvidenceRefs } from './brainRuntime.js'
+import { getEventTypeLabel, inferEventType, shouldEventNeedThesisReview } from './eventTypeMeta.js'
 
 export function createDefaultReviewForm(overrides = {}) {
   return { ...DEFAULT_REVIEW_FORM, ...overrides }
@@ -322,7 +323,18 @@ export function formatEventStockOutcomeLine(outcome) {
  * @returns {'earnings'|'corporate'|'industry'|'macro'|'technical'|null}
  */
 export function inferCatalystType(event) {
-  const text = (event?.title || '').toLowerCase()
+  const text = `${event?.title || ''} ${event?.detail || ''}`.toLowerCase()
+  const eventType = inferEventType(event)
+  if (eventType === 'earnings') return 'earnings'
+  if (eventType === 'ex-dividend' || eventType === 'shareholding-meeting') return 'corporate'
+  if (eventType === 'macro') return 'macro'
+  if (eventType === 'technical') return 'technical'
+  if (eventType === 'strategic') {
+    if (/政策|法規|關稅|補助|央行|利率/.test(text)) return 'macro'
+    if (/產能|訂單|供應鏈|技術|製程|平台|ai/.test(text)) return 'industry'
+    return 'corporate'
+  }
+  if (eventType === 'informational') return 'corporate'
   if (!text) return null
   if (/營收|財報|eps|法說|季報|年報/.test(text)) return 'earnings'
   if (/併購|增資|庫藏|董事|除權|除息/.test(text)) return 'corporate'
@@ -337,6 +349,10 @@ export function inferCatalystType(event) {
  * @returns {'high'|'medium'|'low'|null}
  */
 export function inferImpact(event) {
+  const eventType = inferEventType(event)
+  if (eventType === 'earnings' || eventType === 'strategic') return 'high'
+  if (eventType === 'ex-dividend' || eventType === 'shareholding-meeting') return 'medium'
+  if (eventType === 'informational') return 'low'
   const type = event?.catalystType
   if (!type) return null
   if (type === 'earnings') return 'high'
@@ -365,7 +381,7 @@ export function normalizeEventRecord(event) {
         ? buildEventStockOutcomes({ ...event, priceAtEvent, priceAtExit, actual })
         : []
   const catalystType = event.catalystType || inferCatalystType(event)
-  const impact = event.impact || inferImpact({ catalystType })
+  const eventType = inferEventType(event)
 
   // Discriminator: items with pred (directional hypothesis) are 'event',
   // pure informational items are 'news'. Uses `recordType` (not `type`) because
@@ -386,11 +402,18 @@ export function normalizeEventRecord(event) {
   // absent — matching the same shape as seed events that omit the field.
   const RECORD_TYPE_COLLISION = new Set(['event', 'news'])
   const sanitizedType = RECORD_TYPE_COLLISION.has(event.type) ? undefined : event.type
+  const needsThesisReview =
+    typeof event.needsThesisReview === 'boolean'
+      ? event.needsThesisReview
+      : recordType === 'event' && shouldEventNeedThesisReview({ ...event, eventType })
 
   return {
     ...event,
     type: sanitizedType,
     recordType,
+    eventType,
+    eventTypeLabel: getEventTypeLabel(eventType),
+    needsThesisReview,
     label: String(event.label || event.title || '').trim(),
     sub: String(event.sub || event.detail || '').trim(),
     status,
@@ -409,7 +432,7 @@ export function normalizeEventRecord(event) {
     reviewDate,
     // Catalyst fields (backward compatible)
     catalystType: catalystType || null,
-    impact: impact || null,
+    impact: event.impact || inferImpact({ ...event, catalystType, eventType }) || null,
     relatedThesisIds: Array.isArray(event.relatedThesisIds) ? event.relatedThesisIds : [],
     pillarImpact: event.pillarImpact || null,
   }

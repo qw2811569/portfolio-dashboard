@@ -4,6 +4,17 @@ const TrimmedString = z.string().trim()
 const NonEmptyString = z.string().trim().min(1)
 const NullableString = z.union([z.string().trim(), z.null()]).optional()
 const NumericLike = z.union([z.number(), z.string()]).pipe(z.coerce.number())
+const KnownEventTypeSchema = z.enum([
+  'earnings',
+  'ex-dividend',
+  'shareholding-meeting',
+  'strategic',
+  'informational',
+  'macro',
+  'market',
+  'technical',
+  'other',
+])
 const ArrayOf = (schema) =>
   z
     .union([z.array(schema), z.null(), z.undefined()])
@@ -73,6 +84,11 @@ export const CatalystEventSchema = z
     code: NullableString,
     date: NullableString,
     title: NonEmptyString,
+    recordType: z.union([z.enum(['event', 'news']), z.null()]).optional(),
+    eventType: z.union([KnownEventTypeSchema, z.string().trim(), z.null()]).optional(),
+    eventSubType: NullableString,
+    eventTypeLabel: NullableString,
+    needsThesisReview: z.boolean().optional(),
     catalystType: NullableString,
     impact: NullableString,
     relatedThesisIds: ArrayOf(TrimmedString),

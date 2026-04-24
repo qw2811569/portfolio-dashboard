@@ -1,5 +1,6 @@
 import { buildInternalAuthHeaders, withApiAuth } from './_lib/auth-middleware.js'
 import { queryFinMindDataset } from './_lib/finmind-governor.js'
+import { inferEventType } from '../src/lib/eventTypeMeta.js'
 // Vercel Serverless Function — 自動事件行事曆 API
 // 整合多種來源產生投資事件：
 // 1. MOPS 重大訊息（法說會、股利、重訊）
@@ -55,7 +56,7 @@ export function parseRocDateString(value) {
     return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
   }
 
-  const rocMatch = raw.match(/(\d{2,3})年\s*(\d{1,2})月\s*(\d{1,2})日/)
+  const rocMatch = raw.match(/(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/)
   if (rocMatch) {
     const year = Number(rocMatch[1]) + 1911
     const month = Number(rocMatch[2])
@@ -151,6 +152,9 @@ function createCalendarEvent({
   detail = '',
   source = 'auto-calendar',
   type = 'macro',
+  eventType = '',
+  eventSubType = '',
+  recordType = 'event',
   stocks = [],
   status = 'pending',
   pred = 'neutral',
@@ -160,15 +164,24 @@ function createCalendarEvent({
   link = '',
   time = '',
   marketSegment = '',
+  canonicalSource = '',
+  needsThesisReview,
+  sourceUpdatedAt = '',
+  ...rest
 }) {
   const normalizedDate = parseRocDateString(date) || String(date || '').trim()
   if (!normalizedDate) return null
+  const resolvedEventType =
+    eventType || inferEventType({ type, title, detail, source, catalystType })
 
   return {
     id,
     date: normalizedDate,
     eventDate: normalizedDate,
     type,
+    eventType: resolvedEventType,
+    eventSubType: String(eventSubType || '').trim() || null,
+    recordType,
     source,
     title,
     detail,
@@ -181,7 +194,78 @@ function createCalendarEvent({
     link,
     time,
     marketSegment,
+    canonicalSource: String(canonicalSource || '').trim() || null,
+    needsThesisReview:
+      typeof needsThesisReview === 'boolean'
+        ? needsThesisReview
+        : recordType === 'event' && resolvedEventType !== 'informational',
+    sourceUpdatedAt: String(sourceUpdatedAt || '').trim() || null,
+    ...rest,
   }
+}
+
+function toStartOfDay(value = new Date()) {
+  const date = value instanceof Date ? new Date(value) : new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+function formatDateForFinMind(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toISOString().slice(0, 10)
+}
+
+function coerceMonthDayToIso(month, day, baseDate = new Date()) {
+  const normalizedBase = toStartOfDay(baseDate)
+  if (!normalizedBase) return null
+  const currentYear = normalizedBase.getFullYear()
+  const candidate = new Date(currentYear, month - 1, day)
+  candidate.setHours(0, 0, 0, 0)
+  if (candidate < shiftDate(normalizedBase, -30)) {
+    candidate.setFullYear(candidate.getFullYear() + 1)
+  }
+  return formatIsoDate(candidate.getFullYear(), candidate.getMonth() + 1, candidate.getDate())
+}
+
+function extractIsoDateFromText(text = '', baseDate = new Date()) {
+  const raw = normalizeText(text)
+  if (!raw) return null
+
+  const isoMatch = raw.match(/(20\d{2})[\/-](\d{1,2})[\/-](\d{1,2})/)
+  if (isoMatch) {
+    return formatIsoDate(Number(isoMatch[1]), Number(isoMatch[2]), Number(isoMatch[3]))
+  }
+
+  const rocMatch = raw.match(/(\d{2,3})年\s*(\d{1,2})月\s*(\d{1,2})日/)
+  if (rocMatch) {
+    return formatIsoDate(Number(rocMatch[1]) + 1911, Number(rocMatch[2]), Number(rocMatch[3]))
+  }
+
+  const rocSlashMatch = raw.match(/(\d{2,3})\/(\d{1,2})\/(\d{1,2})/)
+  if (rocSlashMatch) {
+    return formatIsoDate(
+      Number(rocSlashMatch[1]) + 1911,
+      Number(rocSlashMatch[2]),
+      Number(rocSlashMatch[3])
+    )
+  }
+
+  const monthDayMatch = raw.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/)
+  if (monthDayMatch) {
+    return coerceMonthDayToIso(Number(monthDayMatch[1]), Number(monthDayMatch[2]), baseDate)
+  }
+
+  return null
+}
+
+function extractSouvenirText(text = '') {
+  const raw = normalizeText(text)
+  if (!raw) return ''
+  const souvenirMatch =
+    raw.match(/紀念品(?:為|：|:)?\s*([^，。；]+)/) || raw.match(/贈品(?:為|：|:)?\s*([^，。；]+)/)
+  return normalizeText(souvenirMatch?.[1] || '')
 }
 
 async function fetchText(url, timeoutMs = 4500) {
@@ -409,6 +493,113 @@ export function buildTwseExRightsEventsFromResponse(
     .map((item) => item.event)
 }
 
+export function buildFinMindDividendEventsFromRows(
+  rows = [],
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  const endDate = shiftDate(today, rangeDays)
+
+  return (Array.isArray(rows) ? rows : [])
+    .flatMap((row) => {
+      const code = normalizeText(row?.stock_id)
+      const name = normalizeText(row?.stock_name) || normalizeText(row?.stock_name_tw) || code
+      const year = normalizeText(row?.year)
+      const cashDividend = Number(row?.CashEarningsDistribution)
+      const stockDividend = Number(row?.StockEarningsDistribution)
+      const announcementDate = String(row?.AnnouncementDate || row?.date || '').trim() || null
+
+      const entries = [
+        {
+          eventSubType: 'ex-dividend',
+          date: String(row?.CashExDividendTradingDate || '').trim(),
+          titleSuffix: '除息',
+        },
+        {
+          eventSubType: 'ex-rights',
+          date: String(row?.StockExDividendTradingDate || '').trim(),
+          titleSuffix: '除權',
+        },
+      ]
+
+      return entries
+        .map((entry) => {
+          if (!isIsoDateInWindow(entry.date, today, endDate)) return null
+          const detailParts = []
+          if (Number.isFinite(cashDividend) && cashDividend > 0) {
+            detailParts.push(`預計配息 ${cashDividend.toFixed(1)} 元 / 股`)
+          }
+          if (Number.isFinite(stockDividend) && stockDividend > 0) {
+            detailParts.push(`預計配股 ${stockDividend.toFixed(2)} 股 / 股`)
+          }
+
+          return createCalendarEvent({
+            id: `finmind-dividend-${code}-${entry.eventSubType}-${entry.date}`,
+            date: entry.date,
+            type: 'dividend',
+            eventType: 'ex-dividend',
+            eventSubType: entry.eventSubType,
+            source: 'finmind-dividend',
+            canonicalSource: 'TaiwanStockDividend',
+            title: `${name}(${code}) ${entry.titleSuffix}`,
+            detail:
+              detailParts.join(' · ') ||
+              '除權息日期以 FinMind canonical source 為準，持股價格會在當日做參考調整。',
+            predReason: 'FinMind TaiwanStockDividend',
+            catalystType: 'corporate',
+            impact: entry.eventSubType === 'ex-dividend' ? 'medium' : 'high',
+            marketSegment: 'calendar',
+            stocks: code ? [code] : [],
+            cashDividend: Number.isFinite(cashDividend) ? cashDividend : null,
+            stockDividend: Number.isFinite(stockDividend) ? stockDividend : null,
+            dividendYear: year || null,
+            announcementDate,
+          })
+        })
+        .filter(Boolean)
+    })
+    .sort((left, right) => String(left.date || '').localeCompare(String(right.date || '')))
+}
+
+export function buildCapitalReductionEventsFromRows(
+  rows = [],
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  const endDate = shiftDate(today, rangeDays)
+
+  return (Array.isArray(rows) ? rows : [])
+    .map((row) => {
+      const date = String(row?.date || '').trim()
+      if (!isIsoDateInWindow(date, today, endDate)) return null
+
+      const code = normalizeText(row?.stock_id)
+      const reason = normalizeText(row?.ReasonforCapitalReduction) || 'Capital reduction'
+      const postReductionReferencePrice = Number(row?.PostReductionReferencePrice)
+
+      return createCalendarEvent({
+        id: `finmind-capital-reduction-${code}-${date}`,
+        date,
+        type: 'dividend',
+        eventType: 'ex-dividend',
+        eventSubType: 'capital-reduction',
+        source: 'finmind-capital-reduction',
+        canonicalSource: 'TaiwanStockCapitalReductionReferencePrice',
+        title: `${code} 減資恢復買賣`,
+        detail: `減資原因 ${reason}${Number.isFinite(postReductionReferencePrice) ? ` · 參考價 ${postReductionReferencePrice.toFixed(2)}` : ''}`,
+        predReason: 'FinMind TaiwanStockCapitalReductionReferencePrice',
+        catalystType: 'corporate',
+        impact: 'high',
+        marketSegment: 'calendar',
+        stocks: code ? [code] : [],
+        reasonForCapitalReduction: reason,
+        postReductionReferencePrice: Number.isFinite(postReductionReferencePrice)
+          ? postReductionReferencePrice
+          : null,
+      })
+    })
+    .filter(Boolean)
+    .sort((left, right) => String(left.date || '').localeCompare(String(right.date || '')))
+}
+
 export function parseMofNextTradeRelease(html = '') {
   const compact = html.replace(/\s+/g, ' ')
   const match = compact.match(
@@ -584,6 +775,310 @@ async function fetchTwseExRightsEvents(today, rangeDays) {
   }
 }
 
+async function fetchFinMindDividendEvents(today, rangeDays, stockCodes = []) {
+  if (stockCodes.length === 0) return []
+
+  const startDate = `${today.getFullYear() - 1}-01-01`
+  const dividendTasks = stockCodes.map(async (code) => {
+    try {
+      const rows = await queryFinMindDataset('dividend', {
+        code,
+        startDate,
+        timeoutMs: 3500,
+      })
+      return buildFinMindDividendEventsFromRows(rows, { today, rangeDays })
+    } catch (error) {
+      console.warn('[event-calendar] FinMind dividend failed:', code, error?.message)
+      return []
+    }
+  })
+
+  const capitalReductionTasks = stockCodes.map(async (code) => {
+    try {
+      const rows = await queryFinMindDataset('capitalReductionReferencePrice', {
+        code,
+        startDate,
+        timeoutMs: 3500,
+      })
+      return buildCapitalReductionEventsFromRows(rows, { today, rangeDays })
+    } catch (error) {
+      console.warn('[event-calendar] FinMind capital reduction failed:', code, error?.message)
+      return []
+    }
+  })
+
+  const settled = await Promise.allSettled([...dividendTasks, ...capitalReductionTasks])
+  return settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+}
+
+function buildDerivedFinMindEvent({
+  code = '',
+  date = '',
+  title = '',
+  detail = '',
+  link = '',
+  source = 'finmind-news',
+  eventType = 'strategic',
+  eventSubType = '',
+  catalystType = 'corporate',
+  impact = 'medium',
+  souvenir = '',
+  eventDate = '',
+}) {
+  const normalizedDate = eventDate || date
+  const eventTitle = String(title || '').trim()
+  if (!normalizedDate || !eventTitle) return null
+
+  return createCalendarEvent({
+    id: `${source}-${code}-${eventType}-${normalizedDate}-${eventTitle.slice(0, 24)}`,
+    date: normalizedDate,
+    type: eventType,
+    eventType,
+    eventSubType,
+    source,
+    canonicalSource: source === 'mops-shareholder' ? 'MOPS announcement' : 'TaiwanStockNews',
+    title: eventTitle,
+    detail,
+    predReason:
+      source === 'mops-shareholder' ? 'MOPS 公告衍生事件' : 'FinMind TaiwanStockNews 衍生事件',
+    catalystType,
+    impact,
+    link,
+    marketSegment: 'calendar',
+    stocks: code ? [code] : [],
+    souvenir,
+  })
+}
+
+function deriveEventsFromNewsRows(
+  rows = [],
+  code = '',
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  const endDate = shiftDate(today, rangeDays)
+  const startDate = toStartOfDay(today)
+  const events = []
+  const strategicPattern =
+    /併購|收購|合併|策略聯盟|轉型|換將|董事長|總經理|執行長|主管|重大投資|擴產|減產|政策|法規|補助|關稅/u
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const title = normalizeText(row?.title)
+    const description = normalizeText(row?.description)
+    const combinedText = `${title} ${description}`.trim()
+    if (!combinedText) continue
+
+    const newsDate = String(row?.date || '')
+      .trim()
+      .slice(0, 10)
+    const extractedEventDate = extractIsoDateFromText(combinedText, today)
+    const souvenir = extractSouvenirText(combinedText)
+    const hasShareholderKeyword = /股東(?:常)?會|股東臨時會/u.test(combinedText)
+    const hasInformationalKeyword = /紀念品|股東贈品|股東禮/u.test(combinedText)
+    const hasStrategicKeyword = strategicPattern.test(combinedText)
+
+    if (hasShareholderKeyword) {
+      const eventDate = extractedEventDate || newsDate
+      if (isIsoDateInWindow(eventDate, today, endDate)) {
+        events.push(
+          buildDerivedFinMindEvent({
+            code,
+            date: newsDate,
+            eventDate,
+            title: `${code} ${title}`.trim(),
+            detail: description || title,
+            link: String(row?.link || '').trim(),
+            source: 'finmind-news',
+            eventType: 'shareholding-meeting',
+            catalystType: 'corporate',
+            impact: souvenir ? 'medium' : 'high',
+            souvenir,
+          })
+        )
+      } else if (
+        hasInformationalKeyword &&
+        newsDate &&
+        isIsoDateInWindow(newsDate, startDate, endDate)
+      ) {
+        events.push(
+          buildDerivedFinMindEvent({
+            code,
+            date: newsDate,
+            title: `${code} ${title}`.trim(),
+            detail: description || title,
+            link: String(row?.link || '').trim(),
+            source: 'finmind-news',
+            eventType: 'informational',
+            catalystType: 'corporate',
+            impact: 'low',
+            souvenir,
+          })
+        )
+      }
+      continue
+    }
+
+    if (hasInformationalKeyword) {
+      if (!newsDate || !isIsoDateInWindow(newsDate, startDate, endDate)) continue
+      events.push(
+        buildDerivedFinMindEvent({
+          code,
+          date: newsDate,
+          title: `${code} ${title}`.trim(),
+          detail: description || title,
+          link: String(row?.link || '').trim(),
+          source: 'finmind-news',
+          eventType: 'informational',
+          catalystType: 'corporate',
+          impact: 'low',
+          souvenir,
+        })
+      )
+      continue
+    }
+
+    if (!hasStrategicKeyword) continue
+    if (!newsDate || !isIsoDateInWindow(newsDate, startDate, endDate)) continue
+
+    events.push(
+      buildDerivedFinMindEvent({
+        code,
+        date: newsDate,
+        title: `${code} ${title}`.trim(),
+        detail: description || title,
+        link: String(row?.link || '').trim(),
+        source: 'finmind-news',
+        eventType: 'strategic',
+        catalystType: /政策|法規|補助|關稅/u.test(combinedText) ? 'macro' : 'corporate',
+        impact: 'high',
+      })
+    )
+  }
+
+  return events.filter(Boolean)
+}
+
+async function fetchFinMindDerivedEvents(
+  stockCodes = [],
+  { today = new Date(), rangeDays = 30 } = {}
+) {
+  if (stockCodes.length === 0) return []
+
+  const startDate = formatDateForFinMind(shiftDate(today, 90 * -1))
+  const tasks = stockCodes.map(async (code) => {
+    try {
+      const rows = await queryFinMindDataset('news', {
+        code,
+        startDate,
+        timeoutMs: 3000,
+      })
+      return deriveEventsFromNewsRows(rows, code, { today, rangeDays })
+    } catch (error) {
+      console.warn('[event-calendar] FinMind news derived events failed:', code, error?.message)
+      return []
+    }
+  })
+
+  const settled = await Promise.allSettled(tasks)
+  return settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+}
+
+async function fetchMopsDerivedEvents(today, rangeDays, stockCodes, req) {
+  if (stockCodes.length === 0) return []
+
+  const startDate = toStartOfDay(today)
+  const lookbackDays = Math.min(Math.max(rangeDays, 10), 21)
+  const events = []
+
+  for (let offset = 0; offset < lookbackDays; offset += 1) {
+    const cursor = shiftDate(today, offset * -1)
+    const dateKey = formatDate(cursor).replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3')
+    const protocol = req.headers['x-forwarded-proto'] || 'http'
+    const host = req.headers.host || '127.0.0.1:3002'
+    const params = new URLSearchParams({ date: formatDate(cursor), codes: stockCodes.join(',') })
+
+    try {
+      const response = await fetch(
+        `${protocol}://${host}/api/mops-announcements?${params.toString()}`,
+        {
+          signal: AbortSignal.timeout(3000),
+          headers: buildInternalAuthHeaders(),
+        }
+      )
+      if (!response.ok) continue
+
+      const payload = await response.json()
+      for (const announcement of payload?.announcements || []) {
+        const title = normalizeText(announcement?.title)
+        const combinedText = `${title} ${announcement?.name || ''}`.trim()
+        const code = normalizeText(announcement?.code)
+        if (!code || !title) continue
+
+        if (announcement?.type === 'shareholder') {
+          const eventDate = extractIsoDateFromText(title, today) || dateKey
+          if (!isIsoDateInWindow(eventDate, today, shiftDate(today, rangeDays))) continue
+          events.push(
+            buildDerivedFinMindEvent({
+              code,
+              date: dateKey,
+              eventDate,
+              title: `${announcement?.name || code}(${code}) 股東會`,
+              detail: title,
+              source: 'mops-shareholder',
+              eventType: 'shareholding-meeting',
+              catalystType: 'corporate',
+              impact: extractSouvenirText(title) ? 'medium' : 'high',
+              souvenir: extractSouvenirText(title),
+              link: String(announcement?.link || '').trim(),
+            })
+          )
+          continue
+        }
+
+        if (/紀念品/u.test(combinedText)) {
+          events.push(
+            buildDerivedFinMindEvent({
+              code,
+              date: dateKey,
+              title: `${announcement?.name || code}(${code}) ${title}`,
+              detail: title,
+              source: 'shareholder-announcement',
+              eventType: 'informational',
+              catalystType: 'corporate',
+              impact: 'low',
+              souvenir: extractSouvenirText(title),
+              link: String(announcement?.link || '').trim(),
+            })
+          )
+          continue
+        }
+
+        if (
+          /(併購|收購|合併|轉型|換將|董事長|總經理|執行長|重大投資|政策|法規|補助)/u.test(title)
+        ) {
+          if (!isIsoDateInWindow(dateKey, startDate, shiftDate(today, rangeDays))) continue
+          events.push(
+            buildDerivedFinMindEvent({
+              code,
+              date: dateKey,
+              title: `${announcement?.name || code}(${code}) ${title}`,
+              detail: title,
+              source: 'mops-shareholder',
+              eventType: 'strategic',
+              catalystType: /(政策|法規|補助)/u.test(title) ? 'macro' : 'corporate',
+              impact: 'high',
+              link: String(announcement?.link || '').trim(),
+            })
+          )
+        }
+      }
+    } catch {
+      // Best effort fallback only.
+    }
+  }
+
+  return events.filter(Boolean)
+}
+
 async function fetchMofTradeReleaseEvents(today, rangeDays) {
   try {
     const html = await fetchText(MOF_TRADE_NEWS_URL, 3500)
@@ -648,8 +1143,10 @@ async function handler(req, res) {
       cbcFxEvents,
       cbcAnnouncementEvents,
       fscAnnouncementEvents,
-      twseExRightsEvents,
+      finmindDividendEvents,
       mofTradeReleaseEvents,
+      finmindDerivedEvents,
+      mopsDerivedEvents,
     ] = await Promise.allSettled([
       fetchText(DGBAS_RELEASE_CALENDAR_URL, 3500).then((html) =>
         buildDgbasMacroCalendarEvents(html, { today, rangeDays: fixedLookaheadDays })
@@ -658,8 +1155,10 @@ async function handler(req, res) {
       fetchCbcFxCalendarEvents(today, fixedLookaheadDays),
       fetchCbcAnnouncementEvents(today, fixedLookaheadDays),
       fetchFscAnnouncementEvents(today, fixedLookaheadDays),
-      fetchTwseExRightsEvents(today, fixedLookaheadDays),
+      fetchFinMindDividendEvents(today, fixedLookaheadDays, stockCodes),
       fetchMofTradeReleaseEvents(today, fixedLookaheadDays),
+      fetchFinMindDerivedEvents(stockCodes, { today, rangeDays }),
+      fetchMopsDerivedEvents(today, rangeDays, stockCodes, req),
     ])
 
     for (const result of [
@@ -668,8 +1167,10 @@ async function handler(req, res) {
       cbcFxEvents,
       cbcAnnouncementEvents,
       fscAnnouncementEvents,
-      twseExRightsEvents,
+      finmindDividendEvents,
       mofTradeReleaseEvents,
+      finmindDerivedEvents,
+      mopsDerivedEvents,
     ]) {
       if (result.status === 'fulfilled') {
         events.push(...(result.value || []))
@@ -680,27 +1181,9 @@ async function handler(req, res) {
     const dividendEvents = generateDividendSeasonEvents(today, fixedLookaheadDays, stockCodes)
     events.push(...dividendEvents)
 
-    // ── 5. MOPS 法說會 ── 已停用（需要瀏覽器會話）
+    // ── 5. MOPS 事件衍生 / FinMind news-derived events ──
 
-    // ── 6. FinMind 個股新聞（直接呼叫外部 API，不走 self-request）──
-    let finmindNewsEvents = []
-    if (stockCodes.length > 0) {
-      try {
-        console.debug(
-          '[event-calendar] FinMind news: querying',
-          stockCodes.length,
-          'stocks, token:',
-          process.env.FINMIND_TOKEN ? 'SET' : 'MISSING'
-        )
-        finmindNewsEvents = await fetchFinMindNewsDirectly(stockCodes)
-        console.debug('[event-calendar] FinMind news: got', finmindNewsEvents.length, 'events')
-      } catch (finmindError) {
-        console.warn('[event-calendar] FinMind news failed:', finmindError.message)
-      }
-    }
-    events.push(...finmindNewsEvents)
-
-    // ── 7. Gemini 蒐集的已確認事件（即時 API fallback） ──
+    // ── 6. Gemini 蒐集的已確認事件（即時 API fallback） ──
     let geminiEvents = []
     try {
       geminiEvents = await loadGeminiCalendarEvents(today, geminiLookaheadDays, stockCodes)
@@ -735,14 +1218,19 @@ async function handler(req, res) {
         fscAnnouncementEvents.status === 'fulfilled' && fscAnnouncementEvents.value?.length > 0
           ? 'fsc-rss'
           : null,
-        twseExRightsEvents.status === 'fulfilled' && twseExRightsEvents.value?.length > 0
-          ? 'twse-ex-rights'
+        finmindDividendEvents.status === 'fulfilled' && finmindDividendEvents.value?.length > 0
+          ? 'finmind-dividend'
           : null,
         mofTradeReleaseEvents.status === 'fulfilled' && mofTradeReleaseEvents.value?.length > 0
           ? 'mof-calendar'
           : null,
         'dividend-season',
-        finmindNewsEvents.length > 0 ? 'finmind-news' : null,
+        finmindDerivedEvents.status === 'fulfilled' && finmindDerivedEvents.value?.length > 0
+          ? 'finmind-news'
+          : null,
+        mopsDerivedEvents.status === 'fulfilled' && mopsDerivedEvents.value?.length > 0
+          ? 'mops'
+          : null,
         geminiEvents.length > 0 ? 'gemini-research' : null,
       ].filter(Boolean),
       generatedAt,
@@ -780,6 +1268,7 @@ function generateRevenueAnnouncementEvents(today, rangeDays, stockCodes) {
       id: `rev-${deadline.toISOString().slice(0, 10)}`,
       date: deadline.toISOString().slice(0, 10),
       type: 'revenue',
+      eventType: 'earnings',
       source: 'auto-calendar',
       title: `${monthLabel} 月營收公布截止`,
       detail:
@@ -823,6 +1312,7 @@ function generateFixedCalendarEvents(today, rangeDays) {
         id: `fomc-${dateStr}`,
         date: dateStr,
         type: 'macro',
+        eventType: 'macro',
         source: 'auto-calendar',
         title: 'FOMC 利率決議',
         detail: '聯準會利率決議公布，影響全球股債市場。升息利空成長股、降息利多',
@@ -851,6 +1341,7 @@ function generateFixedCalendarEvents(today, rangeDays) {
         id: `earnings-${item.date}`,
         date: item.date,
         type: 'earnings',
+        eventType: 'earnings',
         source: 'auto-calendar',
         title: item.label,
         detail: '財報公布截止日，關注持股財報是否優於預期',
@@ -881,6 +1372,7 @@ function generateDividendSeasonEvents(today, rangeDays, stockCodes) {
       id: `div-season-${year}`,
       date: divStart.toISOString().slice(0, 10),
       type: 'dividend',
+      eventType: 'ex-dividend',
       source: 'auto-calendar',
       title: `${year} 除權息旺季開始`,
       detail:
@@ -937,6 +1429,7 @@ async function fetchMopsConferenceEvents(today, rangeDays, stockCodes, req) {
           id: `mops-conf-${ann.code}-${dateStr}`,
           date: d.toISOString().slice(0, 10),
           type: 'conference',
+          eventType: 'earnings',
           source: 'mops',
           title: `${ann.name}(${ann.code}) 法說會`,
           detail: ann.title,
@@ -965,26 +1458,15 @@ function formatDate(d) {
 // ── FinMind 個股新聞事件 ──
 export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) {
   if (stockCodes.length === 0) return []
-
   const events = []
-  const startDate = new Date(today)
-  startDate.setHours(0, 0, 0, 0)
-
-  const endDate = new Date(today)
-  endDate.setHours(23, 59, 59, 999)
-  endDate.setDate(endDate.getDate() + rangeDays)
-
-  const conferencePattern = /法說/
-  const shareholderPattern = /股東(?:常)?會/
-  const dividendPattern = /除權|除息/
-  const earningsPattern = /財報|營收/
 
   try {
-    // 對每檔持股查詢新聞
     for (const code of stockCodes) {
       const protocol = req.headers['x-forwarded-proto'] || 'http'
       const host = req.headers.host || '127.0.0.1:3002'
-      const newsUrl = `${protocol}://${host}/api/finmind?dataset=news&code=${code}&start_date=${formatDateForFinMind(today)}`
+      const newsUrl = `${protocol}://${host}/api/finmind?dataset=news&code=${code}&start_date=${formatDateForFinMind(
+        shiftDate(today, -90)
+      )}`
 
       const newsRes = await fetch(newsUrl, {
         signal: AbortSignal.timeout(5000),
@@ -994,62 +1476,19 @@ export async function fetchFinMindNewsEvents(today, rangeDays, stockCodes, req) 
 
       const newsData = await newsRes.json()
       const news = newsData.data || []
-
-      // 篩選含事件關鍵字的新聞
-      for (const item of news) {
-        const title = String(item.title || '')
-        const hasEventKeyword =
-          conferencePattern.test(title) ||
-          shareholderPattern.test(title) ||
-          dividendPattern.test(title) ||
-          earningsPattern.test(title)
-        if (!hasEventKeyword) continue
-
-        const newsDate = new Date(item.date)
-        if (newsDate < startDate || newsDate > endDate) continue
-
-        // 判斷事件類型
-        let type = 'news'
-        if (conferencePattern.test(title)) type = 'conference'
-        else if (shareholderPattern.test(title)) type = 'shareholder'
-        else if (dividendPattern.test(title)) type = 'dividend'
-        else if (earningsPattern.test(title)) type = 'earnings'
-
-        events.push({
-          id: `finmind-news-${code}-${item.date}`,
-          date: item.date,
-          type: type,
-          source: 'finmind-news',
-          title: `${item.title}`,
-          detail: item.description || item.link || '',
-          stocks: [code],
-          status: 'pending',
-          pred: 'neutral',
-          predReason: '新聞事件待觀察',
-          catalystType:
-            type === 'conference'
-              ? 'conference'
-              : type === 'shareholder'
-                ? 'shareholder'
-                : type === 'dividend'
-                  ? 'dividend'
-                  : 'earnings',
-          impact: type === 'conference' || type === 'earnings' ? 'high' : 'medium',
-          link: item.link,
-        })
-      }
+      events.push(...deriveEventsFromNewsRows(news, code, { today, rangeDays }))
     }
   } catch (err) {
     console.warn('FinMind news fetch error:', err.message)
   }
 
-  return events
+  return dedupeCalendarEvents(events)
 }
 
 function buildCalendarEventDedupeKey(event) {
   return [
     String(event?.date || ''),
-    String(event?.type || ''),
+    String(event?.eventType || event?.type || ''),
     String(event?.title || ''),
     (Array.isArray(event?.stocks) ? event.stocks : []).join(','),
   ].join('|')
@@ -1070,10 +1509,14 @@ export function dedupeCalendarEvents(events) {
 }
 
 function mapGeminiType(geminiType) {
-  if (geminiType.includes('法說')) return 'conference'
-  if (geminiType.includes('股東')) return 'shareholder'
-  if (geminiType.includes('財報')) return 'earnings'
-  if (geminiType.includes('除權') || geminiType.includes('除息')) return 'dividend'
+  if (geminiType.includes('法說') || geminiType.includes('財報') || geminiType.includes('營收')) {
+    return 'earnings'
+  }
+  if (geminiType.includes('股東')) return 'shareholding-meeting'
+  if (geminiType.includes('除權') || geminiType.includes('除息')) return 'ex-dividend'
+  if (/(併購|收購|合併|轉型|換將|重大投資|政策|法規|補助)/u.test(geminiType)) {
+    return 'strategic'
+  }
   return 'other'
 }
 
@@ -1096,6 +1539,7 @@ export function mapGeminiFactsToEvents(facts = [], today, rangeDays, stockCodes 
       id: `gemini-${fact.code}-${fact.date}-${type}`,
       date: fact.date,
       type,
+      eventType: type,
       source: 'gemini-research',
       title: `${fact.name}(${fact.code}) ${fact.eventType}`,
       detail: fact.source || 'Gemini 事件蒐集',
@@ -1104,17 +1548,17 @@ export function mapGeminiFactsToEvents(facts = [], today, rangeDays, stockCodes 
       pred: 'neutral',
       predReason: '已確認事件，待觀察實際影響',
       catalystType:
-        type === 'conference'
-          ? 'conference'
-          : type === 'shareholder'
-            ? 'shareholder'
-            : type === 'dividend'
-              ? 'dividend'
-              : type === 'earnings'
-                ? 'earnings'
-                : 'other',
+        type === 'earnings'
+          ? 'earnings'
+          : type === 'shareholding-meeting' || type === 'ex-dividend'
+            ? 'corporate'
+            : type === 'strategic'
+              ? 'corporate'
+              : 'other',
       impact:
-        type === 'conference' || type === 'earnings' || type === 'shareholder' ? 'high' : 'medium',
+        type === 'earnings' || type === 'shareholding-meeting' || type === 'strategic'
+          ? 'high'
+          : 'medium',
       citation: fact.source || '',
       link: fact.source || '',
     })
@@ -1143,61 +1587,6 @@ export async function loadGeminiCalendarEvents(today, rangeDays, stockCodes = []
     console.warn('Gemini event file load error:', error.message)
     return []
   }
-}
-
-function formatDateForFinMind(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-// ── 直接呼叫 FinMind governor 邊界 ──
-// 取最近 3 天的持股新聞作為行事曆事件
-async function fetchFinMindNewsDirectly(stockCodes) {
-  const today = new Date()
-  const startDate = new Date(today)
-  startDate.setDate(startDate.getDate() - 3)
-  const startStr = formatDateForFinMind(startDate)
-  const limitedCodes = (Array.isArray(stockCodes) ? stockCodes : []).filter(Boolean).slice(0, 12)
-
-  const perCodeTasks = limitedCodes.map(async (code) => {
-    try {
-      return (
-        await queryFinMindDataset('news', {
-          code,
-          startDate: startStr,
-          timeoutMs: 2500,
-        })
-      )
-        .slice(0, 2) // 每檔最多 2 則最新，避免事件過多拖慢 response
-        .map((item) => {
-          const title = String(item.title || '')
-          if (!title || title.length < 10) return null
-          return {
-            id: `finmind-news-${code}-${item.date?.slice(0, 10) || 'unknown'}-${title.slice(0, 12)}`,
-            date: item.date?.slice(0, 10) || formatDateForFinMind(today),
-            type: 'news',
-            source: 'finmind-news',
-            title: `${code} ${title.slice(0, 60)}`,
-            detail: title,
-            stocks: [code],
-            status: 'closed',
-            pred: 'neutral',
-            predReason: '持股相關新聞',
-            catalystType: 'news',
-            impact: 'low',
-            link: item.link || '',
-          }
-        })
-        .filter(Boolean)
-    } catch {
-      return []
-    }
-  })
-
-  const settled = await Promise.allSettled(perCodeTasks)
-  return settled.flatMap((item) => (item.status === 'fulfilled' ? item.value : []))
 }
 
 export default withApiAuth(handler)

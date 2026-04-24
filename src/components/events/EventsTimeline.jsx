@@ -2,6 +2,7 @@ import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card } from '../common/index.js'
 import { usePortfolioRouteContext } from '../../pages/usePortfolioRouteContext.js'
+import { getEventTypeLabel, inferEventType } from '../../lib/eventTypeMeta.js'
 
 const WINDOW_DAYS = 30
 const TOTAL_DAYS = WINDOW_DAYS * 2
@@ -39,7 +40,7 @@ function formatShortDate(value) {
 }
 
 function formatEventLabel(event) {
-  return event?.type || '事件'
+  return getEventTypeLabel(event?.eventType || inferEventType(event))
 }
 
 function buildTooltip(event, daysFromToday) {
@@ -52,7 +53,14 @@ function buildTooltip(event, daysFromToday) {
         ? `${daysFromToday} 天後`
         : `${Math.abs(daysFromToday)} 天前`
 
-  return [title, event?.date, relative, event?.type, stocks, event?.detail || event?.sub]
+  return [
+    title,
+    event?.date,
+    relative,
+    getEventTypeLabel(event?.eventType || inferEventType(event)),
+    stocks,
+    event?.detail || event?.sub,
+  ]
     .filter(Boolean)
     .join('\n')
 }

@@ -4,6 +4,7 @@ import { resolveDashboardAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
 import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
+import { normalizeEventType } from '../../lib/eventTypeMeta.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { AccuracyGateBlock, Button, Card, StaleBadge } from '../common'
@@ -158,6 +159,7 @@ function parseEventTimestamp(value) {
 }
 
 function resolveTodayInMarketsCategory(event = {}) {
+  const eventType = normalizeEventType(event?.eventType || event?.type)
   const type = String(event?.type || '')
     .trim()
     .toLowerCase()
@@ -198,8 +200,16 @@ function resolveTodayInMarketsCategory(event = {}) {
   if (
     segment === 'calendar' ||
     source === 'auto-calendar' ||
-    source === 'twse-ex-rights' ||
+    [
+      'twse-ex-rights',
+      'finmind-dividend',
+      'finmind-capital-reduction',
+      'mops-shareholder',
+    ].includes(source) ||
     ['revenue', 'conference', 'earnings', 'dividend', 'shareholder'].includes(type) ||
+    ['earnings', 'ex-dividend', 'shareholding-meeting', 'strategic'].includes(
+      String(eventType || '')
+    ) ||
     ['earnings', 'dividend', 'conference'].includes(catalystType)
   ) {
     return { key: 'calendar', ...TODAY_IN_MARKETS_CATEGORY_META.calendar }
@@ -246,8 +256,14 @@ function resolveTodayInMarketsCopy(event, category) {
   }
 
   if (category?.key === 'calendar') {
+    if (normalizeEventType(event?.eventType || event?.type) === 'strategic') {
+      return '策略變動這類新聞若真的牽動管理層或資本配置，通常要立刻回頭重看 thesis。'
+    }
     if (/除權|除息/.test(text)) {
       return '除權息時程靠近時，殖利率與填息題材通常會重新回到盤面。'
+    }
+    if (/股東會|紀念品/.test(text)) {
+      return '股東會本身是時間點事件；若只是紀念品資訊，通常偏資訊備查，不直接改 thesis。'
     }
     if (/營收/.test(text)) {
       return '營收公布日靠近時，市場通常會先看強勢股能不能把節奏延續下去。'

@@ -35,8 +35,8 @@ describe('lib/appShellRuntime.js', () => {
 
   it('resolves runtime events and filters by type with fallback rows', () => {
     const fallbackEvents = [
-      { id: 'a', type: 'earnings' },
-      { id: 'b', type: 'news' },
+      { id: 'a', eventType: 'earnings' },
+      { id: 'b', eventType: 'strategic' },
     ]
 
     expect(resolveRuntimeNewsEvents(null, fallbackEvents)).toEqual(fallbackEvents)
@@ -53,9 +53,9 @@ describe('lib/appShellRuntime.js', () => {
       filterEventsByType({
         newsEvents: null,
         fallbackEvents,
-        filterType: 'news',
+        filterType: 'strategic',
         allFilterLabel: '全部',
       })
-    ).toEqual([{ id: 'b', type: 'news' }])
+    ).toEqual([{ id: 'b', eventType: 'strategic' }])
   })
 })

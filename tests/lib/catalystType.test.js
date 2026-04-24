@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { inferCatalystType, inferImpact, normalizeEventRecord } from '../../src/lib/eventUtils.js'
+import { inferEventType } from '../../src/lib/eventTypeMeta.js'
 
 describe('inferCatalystType', () => {
   it('detects earnings events', () => {
@@ -49,9 +50,19 @@ describe('inferCatalystType', () => {
   })
 })
 
+describe('inferEventType', () => {
+  it('maps TW-specific event categories into canonical eventType values', () => {
+    expect(inferEventType({ title: '台積電法說會' })).toBe('earnings')
+    expect(inferEventType({ title: '2330 5/15 除息' })).toBe('ex-dividend')
+    expect(inferEventType({ title: '2330 股東常會 6 月 10 日召開' })).toBe('shareholding-meeting')
+    expect(inferEventType({ title: '2330 宣布策略轉型與併購' })).toBe('strategic')
+    expect(inferEventType({ title: '2330 股東會紀念品公告' })).toBe('shareholding-meeting')
+  })
+})
+
 describe('inferImpact', () => {
   it('returns high for earnings type', () => {
-    expect(inferImpact({ catalystType: 'earnings' })).toBe('high')
+    expect(inferImpact({ catalystType: 'earnings', eventType: 'earnings' })).toBe('high')
   })
 
   it('returns medium for corporate type', () => {
@@ -68,6 +79,10 @@ describe('inferImpact', () => {
 
   it('returns low for technical type', () => {
     expect(inferImpact({ catalystType: 'technical' })).toBe('low')
+  })
+
+  it('returns low for informational type', () => {
+    expect(inferImpact({ eventType: 'informational' })).toBe('low')
   })
 
   it('returns null for unknown type', () => {
@@ -89,6 +104,7 @@ describe('normalizeEventRecord catalyst fields', () => {
   it('auto-infers catalystType from title', () => {
     const result = normalizeEventRecord(baseEvent)
     expect(result.catalystType).toBe('earnings')
+    expect(result.eventType).toBe('earnings')
   })
 
   it('auto-infers impact from catalystType', () => {
@@ -129,6 +145,32 @@ describe('normalizeEventRecord catalyst fields', () => {
     })
     expect(result.label).toBe('台積電3月營收公布')
     expect(result.sub).toBe('關鍵觀察 3 月營收是否優於市場預期')
+  })
+
+  it('keeps informational events out of thesis-review flow by default', () => {
+    const result = normalizeEventRecord({
+      id: 'evt-info',
+      title: '2330 股東會紀念品公告',
+      date: '2026/04/28',
+      detail: '紀念品 超商禮券',
+      recordType: 'event',
+    })
+
+    expect(result.eventType).toBe('shareholding-meeting')
+    expect(result.needsThesisReview).toBe(true)
+  })
+
+  it('marks pure informational rows as info-only when explicitly typed', () => {
+    const result = normalizeEventRecord({
+      id: 'evt-info-2',
+      title: '2330 紀念品領取提醒',
+      date: '2026/04/28',
+      eventType: 'informational',
+      recordType: 'event',
+    })
+
+    expect(result.eventType).toBe('informational')
+    expect(result.needsThesisReview).toBe(false)
   })
 
   it('sets catalystType to null for unclassifiable events', () => {

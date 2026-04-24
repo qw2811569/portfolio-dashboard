@@ -1,4 +1,5 @@
 import { applyAccuracyGatePrompt } from './accuracyGate.js'
+import { normalizeEventType } from './eventTypeMeta.js'
 
 const BLIND_PREDICTION_SYSTEM_PROMPT = `你是台股策略分析師。以下是持股 dossier（不含今日價格變動）。
 請基於 thesis、催化劑、事件時程、財報趨勢，對每檔持股做出今日方向預判。
@@ -398,7 +399,10 @@ export function buildTaiwanMarketSignals({
       const codeHit = (Array.isArray(event?.stocks) ? event.stocks : []).some((stock) =>
         String(stock || '').includes(holding.code)
       )
-      const typeHit = ['conference', 'earnings', 'dividend'].includes(String(event?.type || ''))
+      const eventType = normalizeEventType(event?.eventType || event?.type)
+      const typeHit = ['earnings', 'ex-dividend', 'shareholding-meeting', 'strategic'].includes(
+        String(eventType || '')
+      )
       return (
         codeHit &&
         typeHit &&
@@ -446,7 +450,7 @@ export function formatTaiwanMarketSignals(signals = []) {
         : `月營收YoY: ${signal.revenueYoY >= 0 ? '+' : ''}${signal.revenueYoY}%`
     const eventText = signal.eventWindow?.length
       ? `事件窗口: ${signal.eventWindow.join('；')}`
-      : '事件窗口: 近7日無法說/財報/除權息'
+      : '事件窗口: 近7日無財報/策略/除權息'
     const targetText =
       signal.targetFreshnessDays == null
         ? '目標價新鮮度: 無資料'

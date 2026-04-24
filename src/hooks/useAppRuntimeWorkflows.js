@@ -108,6 +108,7 @@ export function useAppRuntimeWorkflows({
     updateReversal,
     updateTargetPrice,
     updateAlert,
+    upsertThesis,
     handleWatchlistUpsert,
     handleWatchlistDelete,
     cancelReview,
@@ -507,6 +508,7 @@ export function useAppRuntimeWorkflows({
     actions: {
       updateTargetPrice,
       updateAlert,
+      upsertThesis,
       handleWatchlistUpsert,
       handleWatchlistDelete,
       formatEventStockOutcomeLine,

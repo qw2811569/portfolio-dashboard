@@ -147,6 +147,7 @@ export function useAppRuntimeWorkflowArgs({
       updateReversal: actions.updateReversal,
       updateTargetPrice: actions.updateTargetPrice,
       updateAlert: actions.updateAlert,
+      upsertThesis: actions.upsertThesis,
       handleWatchlistUpsert: actions.handleWatchlistUpsert,
       handleWatchlistDelete: actions.handleWatchlistDelete,
       cancelReview: actions.cancelReview,

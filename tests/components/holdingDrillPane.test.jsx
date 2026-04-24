@@ -73,4 +73,62 @@ describe('components/HoldingDrillPane', () => {
 
     expect(screen.getByText('這裡的數字是 昨天 · 現在的盤還沒拉到。')).toBeInTheDocument()
   })
+
+  it('shows thesis content when the dossier has a thesis statement', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        status: 304,
+        ok: false,
+        json: async () => ({}),
+      }))
+    )
+
+    render(
+      <HoldingDrillPane
+        viewMode="retail"
+        holding={{ code: '2330', name: '台積電', price: 950 }}
+        dossier={{
+          code: '2330',
+          name: '台積電',
+          position: { price: 950 },
+          thesis: { summary: 'AI 需求延續', pillars: [{ text: '先進製程需求', status: 'stable' }] },
+          targets: [],
+          fundamentals: { updatedAt: new Date().toISOString() },
+        }}
+      />
+    )
+
+    expect(screen.getByText('當初買進理由')).toBeInTheDocument()
+    expect(screen.getByText('AI 需求延續')).toBeInTheDocument()
+  })
+
+  it('hides the thesis section completely when the dossier has no thesis content', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        status: 304,
+        ok: false,
+        json: async () => ({}),
+      }))
+    )
+
+    render(
+      <HoldingDrillPane
+        viewMode="retail"
+        holding={{ code: '2454', name: '聯發科', price: 1400 }}
+        dossier={{
+          code: '2454',
+          name: '聯發科',
+          position: { price: 1400 },
+          thesis: null,
+          targets: [],
+          fundamentals: { updatedAt: new Date().toISOString() },
+        }}
+      />
+    )
+
+    expect(screen.queryByText('當初買進理由')).not.toBeInTheDocument()
+    expect(screen.queryByText(/還沒整理成卡片/)).not.toBeInTheDocument()
+  })
 })

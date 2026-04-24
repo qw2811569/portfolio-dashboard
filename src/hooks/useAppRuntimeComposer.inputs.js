@@ -83,6 +83,7 @@ export function composeAppRuntimeWorkflowInput({
       updateReversal: coreLifecycle.updateReversal,
       updateTargetPrice: coreLifecycle.updateTargetPrice,
       updateAlert: coreLifecycle.updateAlert,
+      upsertThesis: runtime.upsertThesis,
       handleWatchlistUpsert: coreLifecycle.handleWatchlistUpsert,
       handleWatchlistDelete: coreLifecycle.handleWatchlistDelete,
       cancelReview: coreLifecycle.cancelReview,

@@ -1,10 +1,11 @@
-import { createElement as h } from 'react'
+import { createElement as h, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { Card, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Skeleton } from '../common/Skeleton.jsx'
 import { buildThemeChips, buildFinMindChipContext } from '../../lib/dossierUtils.js'
 import { buildPriceDeviationBadgeMeta } from '../../lib/priceDeviation.js'
+import { THESIS_FORM_FIELDS, validateThesisForm } from '../../hooks/useThesisTracking.js'
 import { PeerRankingBadge } from './PeerRankingBadge.jsx'
 import HoldingSparkline from './HoldingSparkline.jsx'
 import HoldingDrillPane from './HoldingDrillPane.jsx'
@@ -27,6 +28,7 @@ const lbl = {
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
+const THESIS_QUICK_FORM_FIELDS = ['reason', 'expectation', 'invalidation']
 
 const badgeToneStyles = {
   muted: {
@@ -56,12 +58,194 @@ const badgeToneStyles = {
   },
 }
 
+function getThesisQuickDraft(dossier = null) {
+  const thesis = dossier?.thesis || {}
+  return {
+    reason: String(thesis.reason || thesis.statement || thesis.summary || '').trim(),
+    expectation: String(thesis.expectation || '').trim(),
+    invalidation: String(thesis.invalidation || '').trim(),
+  }
+}
+
+function hasHoldingThesis(dossier = null) {
+  const thesis = dossier?.thesis
+  const statement = String(
+    thesis?.statement ||
+      thesis?.reason ||
+      thesis?.summary ||
+      thesis?.text ||
+      thesis?.expectation ||
+      ''
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
+  const pillars = Array.isArray(thesis?.pillars)
+    ? thesis.pillars.filter((pillar) => String(pillar?.label || pillar?.text || '').trim())
+    : []
+
+  return Boolean(statement || pillars.length > 0)
+}
+
+function ThesisQuickFormCard({
+  code = '',
+  name = '',
+  values = {},
+  errors = {},
+  saving = false,
+  onChange = () => {},
+  onSave = () => {},
+  onCancel = () => {},
+}) {
+  return h(
+    'div',
+    {
+      'data-testid': `holding-thesis-quick-form-${code || 'unknown'}`,
+      style: {
+        marginTop: 8,
+        padding: '12px 12px',
+        borderRadius: 12,
+        border: `1px solid ${alpha(C.fillTeal, '28')}`,
+        background: `linear-gradient(180deg, ${alpha(C.fillTeal, '08')}, ${C.card})`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 11,
+          color: C.textMute,
+          letterSpacing: '0.08em',
+          fontWeight: 700,
+          marginBottom: 6,
+        },
+      },
+      '寫理由'
+    ),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 12,
+          color: C.textSec,
+          lineHeight: 1.7,
+          marginBottom: 10,
+        },
+      },
+      `${name || code} 還沒整理 thesis，先補最小版本也夠用。`
+    ),
+    ...THESIS_QUICK_FORM_FIELDS.map((fieldKey) => {
+      const field = THESIS_FORM_FIELDS[fieldKey]
+      const error = String(errors?.[fieldKey] || '').trim()
+      return h(
+        'label',
+        {
+          key: fieldKey,
+          style: {
+            display: 'grid',
+            gap: 6,
+            marginBottom: 10,
+            fontSize: 12,
+            color: C.textSec,
+          },
+        },
+        field.label,
+        h('textarea', {
+          value: values?.[fieldKey] || '',
+          rows: fieldKey === 'expectation' ? 2 : 3,
+          placeholder: field.placeholder,
+          onChange: (event) => onChange(fieldKey, event.target.value),
+          style: {
+            width: '100%',
+            resize: 'vertical',
+            background: C.card,
+            border: `1px solid ${error ? alpha(C.down, '36') : C.border}`,
+            borderRadius: 10,
+            padding: '10px 12px',
+            color: C.text,
+            fontSize: 13,
+            lineHeight: 1.6,
+            boxSizing: 'border-box',
+          },
+        }),
+        error
+          ? h(
+              'span',
+              {
+                style: {
+                  fontSize: 11,
+                  color: C.down,
+                },
+              },
+              error
+            )
+          : null
+      )
+    }),
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 8,
+          flexWrap: 'wrap',
+        },
+      },
+      h(
+        'button',
+        {
+          type: 'button',
+          onClick: onCancel,
+          style: {
+            minHeight: 40,
+            padding: '8px 12px',
+            borderRadius: 999,
+            border: `1px solid ${C.border}`,
+            background: C.card,
+            color: C.textSec,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 600,
+          },
+        },
+        '先收起'
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          disabled: saving,
+          onClick: onSave,
+          style: {
+            minHeight: 40,
+            padding: '8px 14px',
+            borderRadius: 999,
+            border: 'none',
+            background: saving ? C.subtle : alpha(C.fillTeal, '36'),
+            color: saving ? C.textMute : C.onFill,
+            cursor: saving ? 'not-allowed' : 'pointer',
+            fontSize: 12,
+            fontWeight: 700,
+          },
+        },
+        saving ? '儲存中...' : '存成 thesis'
+      )
+    )
+  )
+}
+
 function HoldingExpandedDetails({
   holding,
   dossier = null,
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   viewMode = 'retail',
+  thesisQuickForm = null,
+  thesisQuickFormErrors = {},
+  thesisSaving = false,
+  onChangeThesisQuickForm = () => {},
+  onSaveThesisQuickForm = () => {},
+  onCancelThesisQuickForm = () => {},
 }) {
   const showPerStockDiff = isViewModeEnabled('showPerStockDiff', viewMode)
 
@@ -95,6 +279,17 @@ function HoldingExpandedDetails({
         : null
     })(),
     h(HoldingDrillPane, { holding, dossier, viewMode }),
+    thesisQuickForm &&
+      h(ThesisQuickFormCard, {
+        code: holding.code,
+        name: holding.name,
+        values: thesisQuickForm,
+        errors: thesisQuickFormErrors,
+        saving: thesisSaving,
+        onChange: onChangeThesisQuickForm,
+        onSave: onSaveThesisQuickForm,
+        onCancel: onCancelThesisQuickForm,
+      }),
     showPerStockDiff &&
       h(
         'div',
@@ -201,6 +396,14 @@ export function HoldingRow({
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   viewMode = 'retail',
+  thesisWriteEnabled = false,
+  onOpenThesisQuickForm = () => {},
+  thesisQuickForm = null,
+  thesisQuickFormErrors = {},
+  thesisSaving = false,
+  onChangeThesisQuickForm = () => {},
+  onSaveThesisQuickForm = () => {},
+  onCancelThesisQuickForm = () => {},
 }) {
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
@@ -288,6 +491,28 @@ export function HoldingRow({
               title: 'fundamentals freshness',
               style: { textTransform: 'none' },
             }),
+            thesisWriteEnabled &&
+              !hasHoldingThesis(dossier) &&
+              h(
+                'button',
+                {
+                  type: 'button',
+                  'data-testid': `holding-write-thesis-${holding.code}`,
+                  onClick: () => onOpenThesisQuickForm(holding, dossier),
+                  style: {
+                    minHeight: 28,
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    border: `1px solid ${alpha(C.fillTeal, '32')}`,
+                    background: alpha(C.fillTeal, '10'),
+                    color: C.textSec,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  },
+                },
+                '寫理由'
+              ),
             deviationBadge &&
               h(
                 'span',
@@ -420,6 +645,12 @@ export function HoldingRow({
           onUpdateTarget,
           onUpdateAlert,
           viewMode,
+          thesisQuickForm,
+          thesisQuickFormErrors,
+          thesisSaving,
+          onChangeThesisQuickForm,
+          onSaveThesisQuickForm,
+          onCancelThesisQuickForm,
         })
       )
   )
@@ -433,6 +664,14 @@ function HoldingMobileCard({
   onUpdateTarget = () => {},
   onUpdateAlert = () => {},
   viewMode = 'retail',
+  thesisWriteEnabled = false,
+  onOpenThesisQuickForm = () => {},
+  thesisQuickForm = null,
+  thesisQuickFormErrors = {},
+  thesisSaving = false,
+  onChangeThesisQuickForm = () => {},
+  onSaveThesisQuickForm = () => {},
+  onCancelThesisQuickForm = () => {},
 }) {
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
@@ -524,6 +763,28 @@ function HoldingMobileCard({
               title: 'fundamentals freshness',
               style: { textTransform: 'none' },
             }),
+            thesisWriteEnabled &&
+              !hasHoldingThesis(dossier) &&
+              h(
+                'button',
+                {
+                  type: 'button',
+                  'data-testid': `holding-write-thesis-${holding.code}`,
+                  onClick: () => onOpenThesisQuickForm(holding, dossier),
+                  style: {
+                    minHeight: 28,
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    border: `1px solid ${alpha(C.fillTeal, '32')}`,
+                    background: alpha(C.fillTeal, '10'),
+                    color: C.textSec,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  },
+                },
+                '寫理由'
+              ),
             deviationBadge &&
               h(
                 'span',
@@ -701,6 +962,12 @@ function HoldingMobileCard({
           onUpdateTarget,
           onUpdateAlert,
           viewMode,
+          thesisQuickForm,
+          thesisQuickFormErrors,
+          thesisSaving,
+          onChangeThesisQuickForm,
+          onSaveThesisQuickForm,
+          onCancelThesisQuickForm,
         })
       )
   )
@@ -722,8 +989,85 @@ export function HoldingsTable({
   sortDir = 'asc',
   viewMode = 'retail',
   onAddHoldings = null,
+  thesisWriteEnabled = false,
+  onUpsertThesis = async () => ({ success: false }),
 }) {
   const isMobile = useIsMobile()
+  const [thesisQuickForm, setThesisQuickForm] = useState(null)
+  const [thesisQuickFormErrors, setThesisQuickFormErrors] = useState({})
+  const [thesisSaving, setThesisSaving] = useState(false)
+  const thesisQuickFormCode = thesisQuickForm?.code || ''
+
+  const closeThesisQuickForm = () => {
+    setThesisQuickForm(null)
+    setThesisQuickFormErrors({})
+    setThesisSaving(false)
+  }
+
+  const openThesisQuickForm = (holding, dossier = null) => {
+    setExpandedStock(holding?.code || null)
+    setThesisQuickForm({
+      code: holding?.code || '',
+      name: holding?.name || '',
+      ...getThesisQuickDraft(dossier),
+    })
+    setThesisQuickFormErrors({})
+  }
+
+  const handleThesisQuickFormChange = (fieldKey, value) => {
+    setThesisQuickForm((current) =>
+      current
+        ? {
+            ...current,
+            [fieldKey]: value,
+          }
+        : current
+    )
+    setThesisQuickFormErrors((current) => {
+      if (!current?.[fieldKey]) return current
+      return {
+        ...current,
+        [fieldKey]: '',
+      }
+    })
+  }
+
+  const handleThesisQuickFormSave = async () => {
+    if (!thesisQuickFormCode || !thesisWriteEnabled) return
+
+    const payload = {
+      reason: String(thesisQuickForm?.reason || '').trim(),
+      expectation: String(thesisQuickForm?.expectation || '').trim(),
+      invalidation: String(thesisQuickForm?.invalidation || '').trim(),
+    }
+    const validation = validateThesisForm(payload)
+    if (!validation.valid) {
+      setThesisQuickFormErrors(validation.errors)
+      return
+    }
+
+    setThesisSaving(true)
+    try {
+      const result = await onUpsertThesis(thesisQuickFormCode, payload)
+      if (result === false || result?.success === false) {
+        setThesisQuickFormErrors({
+          reason: '這次沒有存進去，稍後再試一次。',
+        })
+        return
+      }
+      closeThesisQuickForm()
+    } finally {
+      setThesisSaving(false)
+    }
+  }
+
+  const toggleExpandedStock = (code) => {
+    const nextCode = expandedStock === code ? null : code
+    setExpandedStock(nextCode)
+    if (nextCode !== code && thesisQuickFormCode === code) {
+      closeThesisQuickForm()
+    }
+  }
 
   if (loading) {
     return h(
@@ -821,10 +1165,26 @@ export function HoldingsTable({
             holding,
             dossier: dossierByCode.get(holding.code) || null,
             expanded: expandedStock === holding.code,
-            onToggle: () => setExpandedStock(expandedStock === holding.code ? null : holding.code),
+            onToggle: () => toggleExpandedStock(holding.code),
             onUpdateTarget,
             onUpdateAlert,
             viewMode,
+            thesisWriteEnabled,
+            onOpenThesisQuickForm: openThesisQuickForm,
+            thesisQuickForm:
+              thesisQuickFormCode === holding.code
+                ? {
+                    reason: thesisQuickForm.reason,
+                    expectation: thesisQuickForm.expectation,
+                    invalidation: thesisQuickForm.invalidation,
+                  }
+                : null,
+            thesisQuickFormErrors:
+              thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
+            thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
+            onChangeThesisQuickForm: handleThesisQuickFormChange,
+            onSaveThesisQuickForm: handleThesisQuickFormSave,
+            onCancelThesisQuickForm: closeThesisQuickForm,
           })
         )
       )
@@ -887,10 +1247,25 @@ export function HoldingsTable({
           holding,
           dossier: dossierByCode.get(holding.code) || null,
           expanded: expandedStock === holding.code,
-          onToggle: () => setExpandedStock(expandedStock === holding.code ? null : holding.code),
+          onToggle: () => toggleExpandedStock(holding.code),
           onUpdateTarget,
           onUpdateAlert,
           viewMode,
+          thesisWriteEnabled,
+          onOpenThesisQuickForm: openThesisQuickForm,
+          thesisQuickForm:
+            thesisQuickFormCode === holding.code
+              ? {
+                  reason: thesisQuickForm.reason,
+                  expectation: thesisQuickForm.expectation,
+                  invalidation: thesisQuickForm.invalidation,
+                }
+              : null,
+          thesisQuickFormErrors: thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
+          thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
+          onChangeThesisQuickForm: handleThesisQuickFormChange,
+          onSaveThesisQuickForm: handleThesisQuickFormSave,
+          onCancelThesisQuickForm: closeThesisQuickForm,
         })
       )
     )

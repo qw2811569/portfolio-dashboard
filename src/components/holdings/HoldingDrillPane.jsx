@@ -102,7 +102,14 @@ function getCurrentPrice(holding, dossier) {
 }
 
 function getThesisStatement(thesis) {
-  return String(thesis?.statement || thesis?.reason || thesis?.expectation || '')
+  return String(
+    thesis?.statement ||
+      thesis?.reason ||
+      thesis?.summary ||
+      thesis?.text ||
+      thesis?.expectation ||
+      ''
+  )
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -307,6 +314,9 @@ function ThesisCard({ dossier }) {
         .filter((pillar) => pillar.label)
         .slice(0, 3)
     : []
+  const hasThesis = Boolean(statement || pillars.length > 0)
+
+  if (!hasThesis) return null
 
   return (
     <div style={{ ...panelCard, minHeight: 148 }}>
@@ -323,9 +333,7 @@ function ThesisCard({ dossier }) {
         >
           {statement}
         </p>
-      ) : (
-        <SoftMessage>這檔當初買進理由還沒整理成卡片，先留一個位置等 thesis 補齊。</SoftMessage>
-      )}
+      ) : null}
       {pillars.length > 0 ? (
         <div
           style={{

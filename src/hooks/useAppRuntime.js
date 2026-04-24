@@ -239,7 +239,7 @@ export function useAppRuntime() {
 
   const activePortfolioName =
     portfolios.find((portfolio) => portfolio?.id === activePortfolioId)?.name || ''
-  const { theses } = useThesisTracking(activePortfolioId)
+  const { theses, addThesis, updateThesis, getThesisByStock } = useThesisTracking(activePortfolioId)
   const morningNote = useMorningNoteRuntime({
     portfolioId: activePortfolioId,
     portfolioName: activePortfolioName,
@@ -250,6 +250,29 @@ export function useAppRuntime() {
     watchlist,
   })
   const dailySnapshotStatus = useDailySnapshotStatus()
+
+  const upsertThesis = useCallback(
+    async (stockId, values = {}) => {
+      const normalizedStockId = String(stockId || '').trim()
+      if (!normalizedStockId) return { success: false }
+
+      const payload = {
+        stockId: normalizedStockId,
+        reason: String(values.reason || '').trim(),
+        expectation: String(values.expectation || '').trim(),
+        invalidation: String(values.invalidation || '').trim(),
+        updatedAt: new Date().toISOString(),
+      }
+      const existing = getThesisByStock(normalizedStockId)
+
+      if (existing?.id) {
+        return updateThesis(existing.id, payload)
+      }
+
+      return addThesis(payload)
+    },
+    [addThesis, getThesisByStock, updateThesis]
+  )
 
   usePostCloseSilentSync({
     ready,
@@ -392,6 +415,7 @@ export function useAppRuntime() {
       updateReversal,
       updateTargetPrice,
       updateAlert,
+      upsertThesis,
       handleWatchlistUpsert,
       handleWatchlistDelete,
       cancelReview,

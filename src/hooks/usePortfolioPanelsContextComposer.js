@@ -98,6 +98,7 @@ export function usePortfolioPanelsContextComposer({
   setExpandedStock,
   updateTargetPrice,
   updateAlert,
+  upsertThesis,
   handleWatchlistUpsert,
   handleWatchlistDelete,
   formatEventStockOutcomeLine,
@@ -363,6 +364,8 @@ export function usePortfolioPanelsContextComposer({
         dossierByCode,
         staleStatus: sharedStaleStatus,
         viewMode: renderViewMode,
+        thesisWriteEnabled: typeof upsertThesis === 'function',
+        onUpsertThesis: upsertThesis,
       },
       watchlist: {
         watchlistFocus,
@@ -508,6 +511,7 @@ export function usePortfolioPanelsContextComposer({
       watchlistFocus,
       watchlistRows,
       winners,
+      upsertThesis,
     ]
   )
 
@@ -534,6 +538,7 @@ export function usePortfolioPanelsContextComposer({
         setExpandedStock,
         onUpdateTarget: updateTargetPrice,
         onUpdateAlert: updateAlert,
+        onUpsertThesis: upsertThesis,
       },
       watchlist: {
         setExpandedStock,
@@ -634,6 +639,7 @@ export function usePortfolioPanelsContextComposer({
       updateAlert,
       updateReversal,
       updateTargetPrice,
+      upsertThesis,
     ]
   )
 

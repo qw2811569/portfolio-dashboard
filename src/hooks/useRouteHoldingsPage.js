@@ -90,6 +90,8 @@ export function useRouteHoldingsPage() {
         setExpandedStock,
         onUpdateTarget: blockUpdateTargetPrice,
         onUpdateAlert: blockUpdateAlert,
+        thesisWriteEnabled: false,
+        onUpsertThesis: () => false,
         viewMode,
       },
     }

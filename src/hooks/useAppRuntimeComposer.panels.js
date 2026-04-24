@@ -85,6 +85,7 @@ export function composePortfolioPanelsContextInput({
     setExpandedStock: controls.setExpandedStock,
     updateTargetPrice: actions.updateTargetPrice,
     updateAlert: actions.updateAlert,
+    upsertThesis: actions.upsertThesis,
     handleWatchlistUpsert: actions.handleWatchlistUpsert,
     handleWatchlistDelete: actions.handleWatchlistDelete,
     formatEventStockOutcomeLine: actions.formatEventStockOutcomeLine,

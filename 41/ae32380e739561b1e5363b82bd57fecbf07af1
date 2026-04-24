@@ -1,0 +1,510 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "9e713a70-10e6-479a-8a24-927bafb6ab9e",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "恩你也同步作業",
+      "response_summary": "Commit `0ef6613`。現在**就 1 條 Codex 還在跑**（R141c detail pane）· 剛也更新 X1 commit `a21cbb3` · X1-X5 5/5 全 live。\n\nShip readiness 目前：\n- 標準 1/2/3/5 · ✅ 100%\n- 標準 4 · 🟡 95%（R141c 收完 100%）\n\n等 R141c 即最後一塊。",
+      "prompt_hash": "sha256:2321a452b772df3c51d89bce9a616901fb060e6a966d314ee69d67521382ea73",
+      "message_count": 8482,
+      "cost_usd": 0.2417094,
+      "input_tokens": 1,
+      "output_tokens": 875,
+      "cache_read_tokens": 742138,
+      "cache_creation_tokens": 1584,
+      "timestamp": "2026-04-24T07:15:44.182Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T07:17:43.337Z",
+      "session_duration_secs": 786385,
+      "ai_response_time_secs": 11.339588843537411,
+      "accepted_lines": 3341,
+      "overridden_lines": 512,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "docs/status/sa-acceptance-mapping.md",
+      "line_range": [
+        1,
+        128
+      ],
+      "files_changed": [
+        {
+          "path": "docs/status/sa-acceptance-mapping.md",
+          "line_range": [
+            1,
+            128
+          ],
+          "blob_hash": "9a8492c31bd08deb9e515a038d315d7b68ff5926",
+          "additions": 128
+        },
+        {
+          "path": "docs/portfolio-spec-report/architecture.md",
+          "line_range": [
+            228,
+            228
+          ],
+          "blob_hash": "66103f31af2f6ccde024a15528cbce06bd987ca3",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "docs/portfolio-spec-report/todo.md",
+          "line_range": [
+            75,
+            75
+          ],
+          "blob_hash": "43ba19447ebfaabb2bb0582c29fc1e5946dbd34c",
+          "additions": 1,
+          "deletions": 1
+        },
+        {
+          "path": "src/components/holdings/HoldingsTable.jsx",
+          "line_range": [
+            1,
+            1408
+          ],
+          "blob_hash": "ad1cb9ba4f2e90025584b84126fdea416af2fddc",
+          "additions": 259,
+          "deletions": 122
+        },
+        {
+          "path": "src/hooks/useRouteHoldingsPage.js",
+          "line_range": [
+            2,
+            151
+          ],
+          "blob_hash": "4e3b63d18e8f9f9abcad50e3c76197fc36df80ec",
+          "additions": 47
+        },
+        {
+          "path": "src/lib/knowledge-base/chip-analysis.json",
+          "line_range": [
+            12,
+            2082
+          ],
+          "blob_hash": "b17b2a453d5609cff5e137a4a782671f353c0b85",
+          "additions": 452,
+          "deletions": 87
+        },
+        {
+          "path": "tests/components/HoldingsTable.test.jsx",
+          "line_range": [
+            7,
+            262
+          ],
+          "blob_hash": "d59512fa5b66fb6bd23678465bf1a3d12ec7545f",
+          "additions": 116,
+          "deletions": 1
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1fd9d633e424c53fd414d33ee11092f2bed701a0"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b45a76832675bef55fa9527adf7580836b727d3d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "6a04fe2f25a48e2e966beda30a39d79e599b94ea"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "117591fb4a082ffa822da0ecace03754e1bb45fc"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fe0b2a5e8a50d50bc5207c7241cf5f98df7d4e59"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "d21c3560d421776dc5517e316c7c78b4e8b7f2bd"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "25b28bd84524a88c8bd3e4514f6effc152caf774"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "359b1915a0cec5a9e7a2d537844ff46b6f5fbcf9"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "cdbf53f78ef9d07825079d28668543a5cbf87b67"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3246b3720f17cd38aa03babbe3ed6d6b006496f3"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "19e09b00d60e8970b5abb953819951ede4d17be6"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "73c4816108f1d78625fd676cae88a7401b96900d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-01.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c14fb8d99da4e78ef69c7efbf76058e2cd1c7430"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-02.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c29455175a6b067cd2c3b7bb9d0240fe909db52d"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-03.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "16970e23cb9c57ad5612054593730448060352bb"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-04.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "c0ae58a154ad49146bd348e9787c492ab5b1a2af"
+        },
+        {
+          "path": "tests/e2e/snapshots/chromium/keyboard-tab-05.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "b3a481d1080ad91ffa4a378618ab172f64930b04"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9861154d0365d283946906df7d4f186ebfe52ead"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "046ce4b8608678bef133c0885aa12fe8b9a45e65"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/02a-watchlist.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "fdf747c3fb6758c97713f20c5e2aaf1c74200cd4"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ddbd8416b2929f5ad0c6d56827eff31e983ad4e8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "3494995fdffae7c1b41203e694700f556f33f35d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e985975336d141bd1885b48f907bec9d573296bb"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de15a42e4d9ebd3c41f5ebe58e3f33326bd94a9d"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "de823080c425a47b5092b829fc4171b5b6bbe1f8"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "9aabbbb0447956d2053483e78813ef317f6a028f"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e41002f07b17a453ed52e3a181117d8388390776"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "ec3cc1a424c448765f1a9dea708e1ee58c324ccc"
+        },
+        {
+          "path": "tests/e2e/snapshots/ios-safari/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "155b792be80c0a56a253a1c46b0a80e6bce68149"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/01-home.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "e08b0f0874a3b15cd2986751707858680a93bfc5"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/02-owner-holdings.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f459ac1785c2e642364040a69a543e05f712c0b7"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/03-research.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "a36163eac755f4344fca0aa533084b510c54b52b"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/04-events.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "289490e8a79170a42409b67d223f701b038386a2"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/05-news.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "aff3a5eecbe08f4b4560f9d9a0743510b66ea663"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/06-daily.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "8561701a84810f31efd3e7acd3bcce3e7f98f774"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/07-trade-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "1c3f10a317978bc47904a0c069906d3cf66bf3b3"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/08-upload-log.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "65d294c008bf5181f3f6856110c8c14f30c53733"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/09-logout.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "f72de6f2d24c33317978f70e81009af53a146751"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-01-hero.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "211146be516678a22f83419ff85f968bc36ca8fb"
+        },
+        {
+          "path": "tests/e2e/snapshots/webkit/agent-02-focus.png",
+          "line_range": [
+            0,
+            0
+          ],
+          "blob_hash": "58877c9d69bc17ebf6c39f9b58ba468475528adf"
+        },
+        {
+          "path": "tests/hooks/useRouteHoldingsPage.test.jsx",
+          "line_range": [
+            6,
+            195
+          ],
+          "blob_hash": "28e1d058396eb311c4a049324cef8dae81242191",
+          "additions": 68
+        }
+      ],
+      "prompt_number": 751,
+      "total_additions": 1072,
+      "total_deletions": 212,
+      "tools_used": [
+        "Bash",
+        "Edit",
+        "Read",
+        "Write"
+      ],
+      "concurrent_tool_calls": 2,
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "恩你也同步作業"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Write(file: \"sa-acceptance-mapping.md\")",
+          "tool_name": "Write",
+          "files_touched": [
+            "sa-acceptance-mapping.md"
+          ]
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Bash(command: \"grep -rnE \"copy.*share|Daily Principle.*share|share.*card.*principle|share.*imag...\"), Read(file: \"architecture.md\")",
+          "files_touched": [
+            "architecture.md"
+          ]
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Edit(file: \"architecture.md\"), Read(file: \"todo.md\")",
+          "files_touched": [
+            "architecture.md",
+            "todo.md"
+          ]
+        },
+        {
+          "turn": 4,
+          "role": "tool",
+          "content": "Edit(file: \"todo.md\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "todo.md"
+          ]
+        },
+        {
+          "turn": 5,
+          "role": "tool",
+          "content": "Bash(command: \"tail -40 .tmp/ux-29-x1-benchmark/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 6,
+          "role": "assistant",
+          "content": "X1 benchmark done · `a21cbb3` · **X1-X5 now 5/5 live**（`0050` FinMind TaiwanStockPrice benchmark · VM snapshot worker + API + anxietyMetrics 整合）。\n\n順手做 Claude 自己的 parallel 工作：\n- SA §2.2 五條驗收標準 mapping 文件建好\n- Daily Principle stale share-card 敘事清 2 處（conflicts.md #4）\n\ncommit："
+        },
+        {
+          "turn": 7,
+          "role": "tool",
+          "content": "Bash(command: \"git add docs/status/sa-acceptance-mapping.md docs/portfolio-spec-report/architec...\")",
+          "tool_name": "Bash"
+        }
+      ],
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

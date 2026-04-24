@@ -137,6 +137,37 @@ describe('components/DailyReportPanel viewMode', () => {
     expect(screen.queryByText('AI 總結')).not.toBeInTheDocument()
   })
 
+  it('renders same-day diff markdown as semantic structure instead of raw syntax', () => {
+    const currentReport = {
+      ...buildDailyReport(),
+      aiInsight:
+        '## 今日總結\n**本次建議** 先看法說。\n\n| 代號 | 重點 |\n| --- | --- |\n| 2330 | 法說 |',
+    }
+    const previousReport = {
+      ...buildSameDayHistory()[1],
+      aiInsight: '## 今日總結\n先看收盤快版。',
+    }
+
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        viewMode="retail"
+        analysisHistory={[currentReport, previousReport]}
+        dailyReport={currentReport}
+      />
+    )
+
+    fireEvent.click(screen.getByTestId('daily-diff-toggle'))
+
+    const diffPane = screen.getByTestId('daily-diff-pane')
+
+    expect(diffPane.querySelector('h2')).toHaveTextContent('今日總結')
+    expect(diffPane.querySelector('strong')).toHaveTextContent('本次建議')
+    expect(diffPane.querySelector('table')).toBeInTheDocument()
+    expect(diffPane.textContent).not.toContain('## ')
+    expect(diffPane.textContent).not.toContain('**')
+  })
+
   it('renders per-stock daily rows in owner mode', () => {
     render(<DailyReportPanel {...baseProps} viewMode="owner" dailyReport={buildDailyReport()} />)
 

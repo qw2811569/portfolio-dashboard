@@ -7,9 +7,8 @@ import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { normalizeEventType } from '../../lib/eventTypeMeta.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
-import { AccuracyGateBlock, Button, Card, StaleBadge } from '../common'
+import { AccuracyGateBlock, Button, Card, MarkdownText, StaleBadge } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
-import Md from '../Md.jsx'
 import HoldingsRing from './HoldingsRing.jsx'
 import { PrincipleCards } from './PrincipleCards.jsx'
 
@@ -962,7 +961,7 @@ function AiQuickSummary({ latestInsight }) {
       },
       'AI 快評'
     ),
-    h(Md, { text: summary, color: C.textSec })
+    h(MarkdownText, { text: summary, color: C.textSec })
   )
 }
 
@@ -1123,7 +1122,10 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             marginBottom: 8,
           },
         },
-        [morningNote.summary, morningNote.lead].filter(Boolean).join(' ')
+        h(MarkdownText, {
+          text: [morningNote.summary, morningNote.lead].filter(Boolean).join('\n\n'),
+          color: C.textSec,
+        })
       ),
     morningNote.blockedReason &&
       h(
@@ -1159,7 +1161,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             padding: '10px 12px',
           },
         },
-        morningNote.fallbackMessage
+        h(MarkdownText, { text: morningNote.fallbackMessage, color: C.textSec })
       ),
     focusPoints.length > 0 &&
       h(
@@ -1210,7 +1212,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                   lineHeight: 1.7,
                 },
               },
-              item.body
+              h(MarkdownText, { text: item.body, color: C.textSec })
             )
           )
         )

@@ -6,11 +6,11 @@ import {
   Button,
   DataError,
   DataSourceBadge,
+  MarkdownText,
   OperatingContextCard,
 } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Skeleton } from '../common/Skeleton.jsx'
-import Md from '../Md.jsx'
 import { SeasonalityHeatmap } from './SeasonalityHeatmap.jsx'
 import { resolveResearchAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
@@ -1240,7 +1240,7 @@ export function ResearchResults({
           },
           `Round ${i + 1}：${round.title}`
         ),
-        h(Md, { text: round.content, color: C.textSec })
+        h(MarkdownText, { text: round.content, color: C.textSec })
       )
     )
   )

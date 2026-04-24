@@ -2,10 +2,9 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { IND_COLOR, STOCK_META } from '../../seedData.js'
 import { useTrackedStocksSyncStatus } from '../../hooks/useTrackedStocksSyncStatus.js'
-import { AccuracyGateBlock, Card, DataError, OperatingContextCard } from '../common'
+import { AccuracyGateBlock, Card, DataError, MarkdownText, OperatingContextCard } from '../common'
 import { getHoldingMarketValue, getHoldingReturnPct } from '../../lib/holdings.js'
 import { resolveHoldingsAccuracyGate } from '../../lib/accuracyGateUi.js'
-import Md from '../Md.jsx'
 import HoldingsRing from '../overview/HoldingsRing.jsx'
 
 const lbl = {
@@ -507,7 +506,7 @@ function DailyInsightCard({ latestInsight }) {
       },
       'AI 今日快評'
     ),
-    h(Md, { text: summary, color: C.textSec })
+    h(MarkdownText, { text: summary, color: C.textSec })
   )
 }
 

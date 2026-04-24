@@ -13,6 +13,28 @@ function buildNoteResponse(note) {
   }
 }
 
+async function installDashboardBackgroundRoutes(page) {
+  await page.route('**/api/event-calendar**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ events: [] }),
+    })
+  })
+
+  await page.route('**/api/twse**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ msgArray: [] }),
+    })
+  })
+}
+
+async function expectMorningNoteVisible(page) {
+  await expect(page.getByText('Morning Note')).toBeVisible({ timeout: 15000 })
+}
+
 async function selectPortfolioByLabel(page, labelPattern) {
   const select = page.getByTestId('portfolio-select').or(page.locator('select')).first()
   await expect(select).toBeVisible()
@@ -32,6 +54,7 @@ async function selectPortfolioByLabel(page, labelPattern) {
 test('dashboard shows pre-open morning note content and insider copy stays compliance-safe', async ({
   page,
 }) => {
+  await installDashboardBackgroundRoutes(page)
   await page.route('**/api/morning-note?**', async (route) => {
     const url = new URL(route.request().url())
     const portfolioId = String(url.searchParams.get('portfolioId') || 'me').trim()
@@ -110,7 +133,7 @@ test('dashboard shows pre-open morning note content and insider copy stays compl
   await page.goto(BASE_URL)
   await maybeAcceptTradeDisclaimer(page)
 
-  await expect(page.getByText('Morning Note')).toBeVisible()
+  await expectMorningNoteVisible(page)
   await expect(page.getByTestId('morning-note-headline')).toContainText('今天先把節奏排好')
   await expect(page.getByTestId('morning-note-lead')).toContainText('08:30 後先看法說')
 
@@ -125,6 +148,7 @@ test('dashboard shows pre-open morning note content and insider copy stays compl
 test('dashboard shows fallback copy instead of blank when today has no pre-open snapshot', async ({
   page,
 }) => {
+  await installDashboardBackgroundRoutes(page)
   await page.route('**/api/morning-note?**', async (route) => {
     await route.fulfill({
       status: 200,
@@ -153,9 +177,49 @@ test('dashboard shows fallback copy instead of blank when today has no pre-open 
   await page.goto(BASE_URL)
   await maybeAcceptTradeDisclaimer(page)
 
-  await expect(page.getByText('Morning Note')).toBeVisible()
+  await expectMorningNoteVisible(page)
   await expect(page.getByTestId('morning-note-fallback')).toContainText(
     '今日無 pre-open 更新 · 請等開盤 T1'
   )
   await expect(page.getByTitle('morning note freshness')).toContainText('missing')
+})
+
+test('dashboard renders markdown morning note fields as real structure without raw tokens', async ({
+  page,
+}) => {
+  await installDashboardBackgroundRoutes(page)
+  await page.route('**/api/morning-note?**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        buildNoteResponse({
+          portfolioId: 'me',
+          date: '2026/04/24',
+          headline: '今天先把節奏排好',
+          summary: '## 近期預測反思\n**本次建議** 先看法說。',
+          lead: '| 代號 | 重點 |\n| --- | --- |\n| 2330 | 法說 |',
+          focusPoints: [],
+          sections: {
+            todayEvents: [],
+            holdingStatus: [],
+            watchlistAlerts: [],
+            announcements: [],
+          },
+        })
+      ),
+    })
+  })
+
+  await page.goto(BASE_URL)
+  await maybeAcceptTradeDisclaimer(page)
+  await expectMorningNoteVisible(page)
+
+  const lead = page.getByTestId('morning-note-lead')
+
+  await expect(lead.locator('h2')).toHaveText('近期預測反思')
+  await expect(lead.locator('strong')).toHaveText('本次建議')
+  await expect(lead.locator('table')).toBeVisible()
+  await expect(lead).not.toContainText('## 近期預測反思')
+  await expect(lead).not.toContainText('**本次建議**')
 })

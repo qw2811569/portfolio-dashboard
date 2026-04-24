@@ -2,9 +2,10 @@ import { createElement as h } from 'react'
 import { C } from '../theme.js'
 
 // ── 輕量 Markdown → React 渲染器 ────────────────────────────────
-export default function Md({ text, color }) {
-  if (!text) return null
-  const lines = text.split('\n')
+export default function Md({ text, color, children = null }) {
+  const source = typeof text === 'string' ? text : typeof children === 'string' ? children : ''
+  if (!source) return null
+  const lines = source.split('\n')
   const els = []
   let listItems = []
   const textColor = color || C.textSec
@@ -66,9 +67,10 @@ export default function Md({ text, color }) {
       const txt = line.replace(/^#+\s*/, '')
       const sz = lvl === 1 ? 18 : lvl === 2 ? 14 : 12
       const headingMarginTop = lvl === 1 ? 12 : 8
+      const headingTag = `h${Math.min(Math.max(lvl, 1), 3)}`
       els.push(
         h(
-          'div',
+          headingTag,
           {
             key: `h-${i}`,
             style: {
@@ -81,6 +83,18 @@ export default function Md({ text, color }) {
           },
           renderInline(txt)
         )
+      )
+    } else if (/^---+$/.test(line.trim())) {
+      flushList()
+      els.push(
+        h('hr', {
+          key: `hr-${i}`,
+          style: {
+            border: 0,
+            borderTop: `1px solid ${C.borderSub}`,
+            margin: '8px 0',
+          },
+        })
       )
     } else if (/^[-*]\s/.test(line.trim())) {
       listItems.push(line.trim().replace(/^[-*]\s*/, ''))

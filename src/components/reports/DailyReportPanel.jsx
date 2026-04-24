@@ -1,7 +1,14 @@
 import { createElement as h, useEffect, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
-import { AccuracyGateBlock, Card, Button, Badge, OperatingContextCard, StaleBadge } from '../common'
-import Md from '../Md.jsx'
+import {
+  AccuracyGateBlock,
+  Card,
+  Button,
+  Badge,
+  MarkdownText,
+  OperatingContextCard,
+  StaleBadge,
+} from '../common'
 import { resolveDailyAccuracyGate } from '../../lib/accuracyGateUi.js'
 import { buildDailyEventCollections } from '../../lib/dailyAnalysisRuntime.js'
 import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
@@ -784,7 +791,7 @@ function DiffValue({ value, format = 'text' }) {
           lineHeight: 1.7,
         },
       },
-      h(Md, null, String(value || '').trim() || '無')
+      h(MarkdownText, { text: String(value || '').trim() || '無', color: C.text })
     )
   }
 
@@ -1650,7 +1657,7 @@ export function AIInsightSection({
           `${date} ${time}`
         )
       ),
-      h(Md, { text: insight, color: C.textSec }),
+      h(MarkdownText, { text: insight, color: C.textSec }),
       // Feedback buttons
       h(
         'div',

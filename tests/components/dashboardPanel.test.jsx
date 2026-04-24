@@ -335,6 +335,37 @@ describe('components/DashboardPanel', () => {
     expect(onNavigate.mock.calls).toEqual([['events'], ['holdings'], ['daily']])
   })
 
+  it('renders markdown morning note copy as semantic elements instead of raw tokens', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          morningNote: {
+            date: '2026/04/18',
+            headline: '今天先把節奏排好',
+            summary: '## 近期預測反思\n**本次建議** 先看法說。',
+            lead: '| 代號 | 重點 |\n| --- | --- |\n| 2330 | 法說 |',
+            focusPoints: [],
+            sections: {
+              todayEvents: [],
+              holdingStatus: [],
+              watchlistAlerts: [],
+              announcements: [],
+            },
+          },
+        })}
+      />
+    )
+
+    const lead = screen.getByTestId('morning-note-lead')
+
+    expect(lead.querySelector('h2')).toHaveTextContent('近期預測反思')
+    expect(lead.querySelector('strong')).toHaveTextContent('本次建議')
+    expect(lead.querySelector('table')).toBeInTheDocument()
+    expect(lead.textContent).not.toContain('## ')
+    expect(lead.textContent).not.toContain('**')
+  })
+
   it('renders fallback copy and stale badge when pre-open note is missing', () => {
     render(
       <DashboardPanel

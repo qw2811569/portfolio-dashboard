@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-from-vercel/
 .env
 .env.local
 .DS_Store

@@ -25,14 +25,68 @@ export function TradeDisclaimerModal({
   useEffect(() => {
     if (!open) return undefined
 
+    const getDialogElement = () => document.querySelector('[data-testid="trade-disclaimer-dialog"]')
+
+    const resolveFocusable = () => {
+      const dialogElement = getDialogElement()
+      if (!dialogElement) return []
+      return Array.from(
+        dialogElement.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(
+        (element) =>
+          Boolean(element) &&
+          !element.hasAttribute('disabled') &&
+          element.getAttribute('aria-hidden') !== 'true' &&
+          (element.offsetWidth > 0 ||
+            element.offsetHeight > 0 ||
+            element.getClientRects().length > 0)
+      )
+    }
+
     const handleKeyDown = (event) => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      event.stopPropagation()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const focusable = resolveFocusable()
+      if (focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const activeElement = document.activeElement
+      const isInsideDialog = getDialogElement()?.contains(activeElement)
+
+      if (event.shiftKey) {
+        if (activeElement === first || !isInsideDialog) {
+          event.preventDefault()
+          last.focus()
+        }
+        return
+      }
+
+      if (activeElement === last || !isInsideDialog) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
+
+    const frame = window.requestAnimationFrame(() => {
+      const focusable = resolveFocusable()
+      focusable[0]?.focus?.()
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('keydown', handleKeyDown, true)
+    }
   }, [open])
 
   if (!open) return null
@@ -55,6 +109,7 @@ export function TradeDisclaimerModal({
     h(
       'div',
       {
+        'data-testid': 'trade-disclaimer-dialog',
         role: 'dialog',
         'aria-modal': 'true',
         'aria-labelledby': 'trade-disclaimer-title',

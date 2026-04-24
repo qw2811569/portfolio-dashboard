@@ -543,14 +543,19 @@ export default function Header(props) {
       style: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 },
     },
     h(
-      'span',
-      { style: { fontSize: 11, color: C.textMute, fontWeight: 600, letterSpacing: '0.05em' } },
+      'label',
+      {
+        htmlFor: 'header-portfolio-select',
+        style: { fontSize: 11, color: C.textMute, fontWeight: 600, letterSpacing: '0.05em' },
+      },
       '目前組合'
     ),
     h(
       'select',
       {
+        id: 'header-portfolio-select',
         'data-testid': 'portfolio-select',
+        'aria-label': '切換目前組合',
         value: activePortfolioId,
         onChange: (e) => switchPortfolio(e.target.value),
         disabled: !ready || portfolioSwitching,

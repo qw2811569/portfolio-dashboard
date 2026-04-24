@@ -72,6 +72,7 @@ export function useTradeCaptureRuntime({
   )
   const uploadIdRef = useRef(0)
   const uploadsRef = useRef([])
+  const submittingTradeRef = useRef(false)
 
   useEffect(() => {
     uploadsRef.current = tradeEditorState.uploads
@@ -223,6 +224,7 @@ export function useTradeCaptureRuntime({
     })
     setDragOver(false)
     setParsing(false)
+    submittingTradeRef.current = false
   }, [createDefaultFundamentalDraft])
 
   const setParsed = useCallback(
@@ -452,7 +454,8 @@ export function useTradeCaptureRuntime({
 
   const finalizeTradeSubmit = useCallback(
     async (memoAnswers) => {
-      if (!activeUpload?.parsed?.trades?.length || submittingTrade) return
+      if (!activeUpload?.parsed?.trades?.length || submittingTradeRef.current) return
+      submittingTradeRef.current = true
       setSubmittingTrade(true)
 
       try {
@@ -503,6 +506,7 @@ export function useTradeCaptureRuntime({
         console.error('trade audit append failed:', error)
         flashSaved(`❌ ${error?.message || '交易稽核寫入失敗，這筆交易尚未送出。'}`, 4200)
       } finally {
+        submittingTradeRef.current = false
         setSubmittingTrade(false)
       }
     },
@@ -518,7 +522,6 @@ export function useTradeCaptureRuntime({
       removeUpload,
       setHoldings,
       setTradeLog,
-      submittingTrade,
       toSlashDate,
       tradeEditorState.uploads.length,
       tradeLog,
@@ -564,8 +567,13 @@ export function useTradeCaptureRuntime({
   }, [activeUpload, memoQuestions, updateActiveUpload])
 
   const confirmTradePreview = useCallback(async () => {
-    if (!activeUpload?.parsed?.trades?.length || !activeUpload?.isPreviewReady || submittingTrade)
+    if (
+      !activeUpload?.parsed?.trades?.length ||
+      !activeUpload?.isPreviewReady ||
+      submittingTradeRef.current
+    ) {
       return
+    }
 
     const currentAckedAt = tradeDisclaimer.ackedAt || readTradeDisclaimerAckAt()
     if (shouldPromptTradeDisclaimer(currentAckedAt)) {
@@ -579,7 +587,6 @@ export function useTradeCaptureRuntime({
     finalizeTradeSubmit,
     memoQuestions,
     openTradeDisclaimer,
-    submittingTrade,
     tradeDisclaimer.ackedAt,
   ])
 

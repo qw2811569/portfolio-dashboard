@@ -991,6 +991,24 @@ export function ParseResults({
   )
 }
 
+function normalizeManualTradeCode(value) {
+  return String(value || '').trim()
+}
+
+function isValidManualTradeCode(value) {
+  return /^\d{4,6}$/.test(normalizeManualTradeCode(value))
+}
+
+function isPositiveIntegerField(value) {
+  const normalized = String(value || '').trim()
+  return /^\d+$/.test(normalized) && Number(normalized) > 0
+}
+
+function isPositivePriceField(value) {
+  const normalized = String(value || '').trim()
+  return /^(?:\d+)(?:\.\d+)?$/.test(normalized) && Number(normalized) > 0
+}
+
 /**
  * Manual Trade Entry — 手動輸入買進/賣出
  */
@@ -1000,16 +1018,21 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
   const [action, setAction] = useState('賣出')
   const [qty, setQty] = useState('')
   const [price, setPrice] = useState('')
+  const normalizedCode = normalizeManualTradeCode(code)
+  const canSubmit =
+    isValidManualTradeCode(normalizedCode) &&
+    isPositiveIntegerField(qty) &&
+    isPositivePriceField(price)
 
   const handleSubmit = () => {
-    const q = parseInt(qty, 10)
-    const p = parseFloat(price)
-    if (!code.trim() || !q || !p) return
+    if (!canSubmit) return
+    const q = Number.parseInt(String(qty).trim(), 10)
+    const p = Number.parseFloat(String(price).trim())
     setParsed({
       trades: [
         {
-          code: code.trim(),
-          name: name.trim() || code.trim(),
+          code: normalizedCode,
+          name: name.trim() || normalizedCode,
           action,
           qty: q,
           price: p,
@@ -1047,6 +1070,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
         style: inputStyle,
         placeholder: '股票代碼',
         value: code,
+        inputMode: 'numeric',
         onChange: (e) => setCode(e.target.value),
       }),
       h('input', {
@@ -1060,6 +1084,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
         'select',
         {
           'data-testid': 'manual-trade-action-select',
+          'aria-label': '手動交易方向',
           style: { ...inputStyle, cursor: 'pointer' },
           value: action,
           onChange: (e) => setAction(e.target.value),
@@ -1088,6 +1113,7 @@ export function ManualTradeEntry({ setParsed, toSlashDate }) {
         Button,
         {
           'data-testid': 'manual-trade-submit-btn',
+          disabled: !canSubmit,
           onClick: handleSubmit,
           style: { fontSize: 11, padding: '4px 12px' },
         },

@@ -1,0 +1,59 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "dcfd435c-552e-4a58-ad70-b1fe4f2a6b43",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>blwvaoxrl</task-id>\n<tool-use-id>toolu_01U2FdC4ZnUt3GtriwCHvqmC</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY]",
+      "response_summary": "C4 done · commit `74f4081` · 4 個 runtime file 全 gitignored + policy doc 加進 decisions。工作樹只剩 untracked `logs/`（Codex 沒動 · 應該是 trade-audit 寫的 JSONL · 屬 C4 policy 待決）。\n\n只剩 **docs mockup refresh** 一個 background · P2 最後一條。收完 loop 自動 kill。",
+      "prompt_hash": "sha256:cb0ea0c9c53800c2cb34038ba2fc2944454c75a428baed679b7b92594bf8df58",
+      "message_count": 8121,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-24T00:57:41.470Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-24T00:57:48.003Z",
+      "session_duration_secs": 763590,
+      "ai_response_time_secs": 11.37536585365855,
+      "prompt_submitted_at": "2026-04-24T00:57:41.641686Z",
+      "prompt_duration_secs": 14,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 718,
+      "tools_used": [
+        "Bash"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "<task-notification>\n<task-id>blwvaoxrl</task-id>\n<tool-use-id>toolu_01U2FdC4ZnUt3GtriwCHvqmC</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch C4 cleanup\" completed (exit code 0)</summary>\n</task-notification>"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"tail -30 .tmp/c4-activity-cleanup/launch.log | grep -v \"^+\\|^-\"\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "assistant",
+          "content": "C4 done · commit `74f4081` · 4 個 runtime file 全 gitignored + policy doc 加進 decisions。工作樹只剩 untracked `logs/`（Codex 沒動 · 應該是 trade-audit 寫的 JSONL · 屬 C4 policy 待決）。\n\n只剩 **docs mockup refresh** 一個 background · P2 最後一條。收完 loop 自動 kill。"
+        }
+      ],
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

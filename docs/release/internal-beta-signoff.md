@@ -17,8 +17,8 @@ Status: `pending-signoff`
 - cust_id: `7865`
 - compliance mode: `insider`
 - candidate version: `1.0.0`
-- candidate sha: `ab20a48` (origin/main · reflects R137+R138 post-cleanup HEAD)
-- pending local: `b8eb2ec` (UX-21 mobile sticky shrink; to be promoted after push)
+- candidate sha: `509c3df` (current committed HEAD on this branch)
+- candidate note: includes `f94e77d` (UX-25-bug-4 fixture), `3b2584d` (markdown render), `509c3df` (thesis empty hide + write-reason CTA); excludes later uncommitted local WIP
 
 ## Ship-Before 30 條 Checklist
 
@@ -64,11 +64,11 @@ Summary:
 
 ## Manual 演練記錄
 
-| Gate                                | 用途                                   | 演練日期     | 結果                  | 證據 path                                                   | 備註                                                                                                             |
-| ----------------------------------- | -------------------------------------- | ------------ | --------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `T64` restore drill                 | restore / rollback / MDD recovery      |              |                       | `docs/runbooks/restore-drill.md`（runbook · L8-e）          | runbook 完成 · 實跑推 ship 後 monthly rehearsal（R120 Q-I3）                                                     |
-| `Q06` iOS Safari                    | owner 實機 smoke                       | `2026-04-24` | pending M-U3 findings | `.tmp/m-u3-iphone-smoke/findings.md` + screenshots（L8 派） | M-U3 Codex 跑中 · 3 critical route + interaction（SA §5.3/5.4/5.7）· 覆蓋 Playwright 10% 實機缺口                |
-| `M-U1` cert / secret rotate confirm | external ops confirmation for beta cut | `2026-04-24` | `n/a`                 | `docs/decisions/2026-04-24-r120-scope-batch.md`（Q-I1）     | 依 R120 Q-I1 + `memory/project_secret_rotation_deferred.md`：內部 beta 不 rotate · 正式產品上線前由 owner 親手換 |
+| Gate                                | 用途                                   | 演練日期     | 結果                                                    | 證據 path                                                   | 備註                                                                                                             |
+| ----------------------------------- | -------------------------------------- | ------------ | ------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `T64` restore drill                 | restore / rollback / MDD recovery      |              |                                                         | `docs/runbooks/restore-drill.md`（runbook · L8-e）          | runbook 完成 · 實跑推 ship 後 monthly rehearsal（R120 Q-I3）                                                     |
+| `Q06` iOS Safari                    | owner 實機 smoke                       | `2026-04-24` | emulation evidence logged; true-device decision pending | `.tmp/m-u3-iphone-smoke/findings.md` + screenshots（L8 派） | 已有 3 critical route findings，但這輪明確只有 Playwright iPhone emulation；是否仍要求 owner 真機證據待決策      |
+| `M-U1` cert / secret rotate confirm | external ops confirmation for beta cut | `2026-04-24` | `n/a`                                                   | `docs/decisions/2026-04-24-r120-scope-batch.md`（Q-I1）     | 依 R120 Q-I1 + `memory/project_secret_rotation_deferred.md`：內部 beta 不 rotate · 正式產品上線前由 owner 親手換 |
 
 ## 自動 QA 證據
 
@@ -129,8 +129,8 @@ Summary:
   - `UX-25-bug-1` iOS mobile header lost stickiness during scroll → fixed in `src/components/Header.jsx`
   - `UX-25-bug-2` analyst report refresh emitted `console.error` on expected misses → fixed in `src/hooks/useReportRefreshWorkflow.js`
   - `UX-25-bug-3` backup import dialog emitted React key warning → fixed in `src/components/common/Dialogs.jsx`
-- remaining live issues:
-  - `UX-25-bug-4` live `daily-diff-toggle` absent for 金聯成 flow across all three projects; step 05 stayed blocked
+- issues captured in the 2026-04-23 evidence bundle:
+  - `UX-25-bug-4` live `daily-diff-toggle` absent for 金聯成 flow across all three projects; this was later fixed in `f94e77d`, so the captured bundle is now historically useful but not the latest truth
   - live API noise remains in `network-errors.jsonl`: `finmind 503`, `target-prices 500/503`, `news-feed 500`, `tracked-stocks 404`, `brain 503`, `research 503`
 - summary: `.tmp/ux-25-e2e-real-user-sim/evidence-20260423T204857Z/summary.md`
 
@@ -147,14 +147,14 @@ Summary:
   - 草稿：Vercel（美國 region）+ GCP VM（asia-east1 / 台灣）· FinMind 資料 API 走亞太；內部 beta 階段不涉跨境監管要求
 - [ ] Audit pack 已附齊
   - 參照：[Audit Pack Template](./internal-beta-checklist.md#audit-pack-template)
-  - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + 本輪 commit list (`ab20a48` .. `b8eb2ec`)
+  - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + 本輪 commit list (`ab20a48` .. `509c3df`)
 
 ## Signoff Block
 
 - signoff date:（owner 填）
 - owner signature:（owner 填）
 - signed version: `1.0.0`
-- signed sha: 預設 `b8eb2ec`（UX-21 push 後 promote · 若 UX-22a 在 signoff 前收口 · 用該 SHA）
+- signed sha: 預設 `509c3df`（current committed HEAD；若 signoff 前再落新 commit，需同步更新）
 - demo evidence bundle: `docs/release/internal-beta-v1.md` §8 + `.tmp/m-u3-iphone-smoke/screenshots/`
 - decision: `ship` / `hold`（owner 填）
 

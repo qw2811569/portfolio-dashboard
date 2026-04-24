@@ -1,8 +1,8 @@
 # Internal Beta v1 · Release Note
 
 **版本**：`1.0.0` internal beta
-**Candidate SHA**：`ab20a48`（origin/main post-R138）
-**Pending local**：`b8eb2ec`（UX-21 mobile sticky · 待 push 後 promote）
+**Candidate SHA**：`509c3df`（current committed HEAD）
+**Candidate note**：包含 `f94e77d`（UX-25-bug-4）、`3b2584d`（markdown render）、`509c3df`（thesis empty hide）
 **日期**：2026-04-24
 **來源依據**：SA §2.2 五條驗收標準 · `internal-beta-checklist.md` · `internal-beta-signoff.md`
 
@@ -72,6 +72,7 @@
 - UX-01b/c/d/e facade alias consumer migration（C1b/c · 29 檔 / 215 hit）
 - `sync-to-vm-root --mirror-vercel` flag（C3 · 等第二次 hash 漂移再開）
 - Recurring Ops Overlay（R121 §11）· cron + monthly restore rehearsal ship 後排
+- R141 #3 Holdings multi-level filter + detail pane（R6.10 / SA §5.4 carry-over）
 
 ---
 
@@ -86,15 +87,15 @@
 
 ### 跨瀏覽器矩陣
 
-見 `docs/qa/cross-browser-matrix.md`（L8-d · Codex 產中）。
+見 `docs/qa/cross-browser-matrix.md`（L8-d 已建；內容仍需跟 current HEAD 同步刷新）。
 
 ### 真機 smoke
 
-見 `.tmp/m-u3-iphone-smoke/findings.md`（L8-g · Codex 產中 · 採 SA §5.3/5.4/5.7 三 critical route）。
+見 `.tmp/m-u3-iphone-smoke/findings.md`（已有 emulation evidence；是否仍要求 owner 真機 smoke 待 `Q06` decision）。
 
 ### Restore drill
 
-見 `docs/runbooks/restore-drill.md`（L8-e · Codex 產中 · 架構 Flow C canonical）。
+見 `docs/runbooks/restore-drill.md`（L8-e 已建；monthly evidence cadence 仍待累積）。
 
 ---
 
@@ -127,13 +128,13 @@
 
 ## 6 · Release Candidate SHA → Production SHA
 
-| Stage     | SHA       | 描述                                                  |
-| --------- | --------- | ----------------------------------------------------- |
-| Candidate | `ab20a48` | origin/main post-R137+R138 · UX-01~20 + chore cleanup |
-| Pending   | `b8eb2ec` | UX-21 local · 待 push 後 promote                      |
-| Anchor    | `c0d92c6` | backup/pre-r138-20260424-011724 · rollback target     |
+| Stage     | SHA       | 描述                                               |
+| --------- | --------- | -------------------------------------------------- |
+| Candidate | `509c3df` | current committed HEAD · 含 `f94e77d` + R141 #1/#2 |
+| Previous  | `ab20a48` | origin/main post-R137+R138 · 保留 audit trace      |
+| Anchor    | `c0d92c6` | backup/pre-r138-20260424-011724 · rollback target  |
 
-UX-21 push 後此檔更新 Production SHA。
+若 signoff 前再有新 commit，需更新 Candidate SHA。
 
 ---
 

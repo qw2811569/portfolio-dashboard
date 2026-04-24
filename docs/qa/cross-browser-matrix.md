@@ -10,11 +10,11 @@ SA §2.3 已把「Web，優先考慮 iOS Safari」寫成產品定位；SA §3.3 
 
 `playwright.config.mjs` 目前只定義三個 project：`chromium` = `Desktop Chrome`、`webkit` = `Desktop Safari`、`ios-safari` = `iPhone 14`。本機實際 Playwright 版本為 `1.59.1`；實際 browser version 由本機 Playwright binary 啟動後取得：Chromium `147.0.7727.15`、WebKit `26.4`。
 
-| Browser             | Version                                                                   | Engine | 覆蓋範圍                                                                                             | 狀態                                                                                                                     |
-| ------------------- | ------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Chromium（desktop） | `147.0.7727.15` · `Desktop Chrome` · viewport `1280x720`                  | Blink  | SA §5.3-§5.10 八頁 `goldenPath` smoke；目前 Playwright suite discovery 的 8 個 spec 都掛在此 project | ✅                                                                                                                       |
-| iOS Safari          | `26.4` · `iPhone 14` preset · viewport `390x664` · UA 含 `iPhone OS 16_0` | WebKit | `goldenPath` 8-route smoke + Q06 priority lane（Dashboard / Holdings / Daily）                       | 🟡 `UX-22a` 前破；`scripts/full-smoke.mjs:221` 仍明寫「Playwright webkit + iOS viewport cover 90% · 剩實機 10% pending」 |
-| WebKit（desktop）   | `26.4` · `Desktop Safari` · viewport `1280x720`                           | WebKit | SA §5.3-§5.10 八頁 `goldenPath` smoke；目前 Playwright suite discovery 的 8 個 spec 都掛在此 project | ✅                                                                                                                       |
+| Browser             | Version                                                                   | Engine | 覆蓋範圍                                                                                             | 狀態                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chromium（desktop） | `147.0.7727.15` · `Desktop Chrome` · viewport `1280x720`                  | Blink  | SA §5.3-§5.10 八頁 `goldenPath` smoke；目前 Playwright suite discovery 的 8 個 spec 都掛在此 project | ✅                                                                                                                                                     |
+| iOS Safari          | `26.4` · `iPhone 14` preset · viewport `390x664` · UA 含 `iPhone OS 16_0` | WebKit | `goldenPath` 8-route smoke + Q06 priority lane（Dashboard / Holdings / Daily）                       | 🟡 code path 已收 `UX-22a` / `UX-22b` / `UX-21b`，但 committed direct baseline 尚未全面刷新；`scripts/full-smoke.mjs:221` 仍保留「剩實機 10% pending」 |
+| WebKit（desktop）   | `26.4` · `Desktop Safari` · viewport `1280x720`                           | WebKit | SA §5.3-§5.10 八頁 `goldenPath` smoke；目前 Playwright suite discovery 的 8 個 spec 都掛在此 project | ✅                                                                                                                                                     |
 
 補充：
 
@@ -129,19 +129,19 @@ npx playwright test tests/e2e --reporter=html,json
 
 `todo.md:472` 明寫 Q06 需要「Three critical routes have explicit pass/fail evidence slots」。本 repo 目前的 manual slot 應如下固定：
 
-| Critical route | SA   | Persona      | Evidence slot                                                                        | 目前狀態     |
-| -------------- | ---- | ------------ | ------------------------------------------------------------------------------------ | ------------ |
-| Dashboard      | §5.3 | `me`, `7865` | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 1 · Dashboard` + 同目錄 screenshots | pending M-U3 |
-| Holdings       | §5.4 | `me`         | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 2 · Holdings` + 同目錄 screenshots  | pending M-U3 |
-| Daily          | §5.7 | `7865`       | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 3 · Daily` + 同目錄 screenshots     | pending M-U3 |
+| Critical route | SA   | Persona      | Evidence slot                                                                        | 目前狀態                  |
+| -------------- | ---- | ------------ | ------------------------------------------------------------------------------------ | ------------------------- |
+| Dashboard      | §5.3 | `me`, `7865` | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 1 · Dashboard` + 同目錄 screenshots | emulation findings logged |
+| Holdings       | §5.4 | `me`         | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 2 · Holdings` + 同目錄 screenshots  | emulation findings logged |
+| Daily          | §5.7 | `7865`       | `.tmp/m-u3-iphone-smoke/findings.md` → `## Route 3 · Daily` + 同目錄 screenshots     | emulation findings logged |
 
 ## 4. 已知 gap
 
-| Gap                                      | 依據                                                                                                                                                                                        | 狀態                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `UX-22a` NewsPanel mobile collapse       | `docs/decisions/2026-04-24-mobile-sticky-policy.md` 已把 `NewsPanel.jsx:707` 列為違反 mobile sticky policy；現有 `tests/e2e/snapshots/ios-safari/05-news.png` 仍是 2026-04-19 修前 baseline | pending · 本 L8 前修                    |
-| `UX-21` iPad `768` / landscape edge case | `docs/portfolio-spec-report/sd.md:666-672` 的 QA gate 明寫要做 `iPad 768 實測`；目前 `ux-21-verify` 只有 `iphone-se`、`iphone-14`、`desktop-1280`，沒有 iPad row                            | pending · audit 中                      |
-| 真機觸控 / Safari dynamic toolbar        | Playwright `ios-safari` project 只能覆蓋 WebKit + iPhone 14 preset；`docs/release/internal-beta-checklist.md:29` 與 `docs/release/internal-beta-signoff.md:70` 都明文保留 real-device gate  | M-U3 smoke scope · 非 Playwright 可覆蓋 |
+| Gap                                             | 依據                                                                                                                                                                                       | 狀態                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| Committed direct baseline 仍停在 pre-refresh 圖 | `tests/e2e/snapshots/ios-safari/05-news.png` 等 committed baseline 仍主要是 2026-04-19 wave；雖然 code path 已收 `UX-22a` / `UX-22b` / `UX-21b`，但 matrix 內 direct baseline 還沒全面刷新 | baseline refresh pending |
+| `Q06` 驗收真相未決                              | `docs/release/internal-beta-signoff.md` 與 project memory 對 manual true-device 的要求仍未完全一致                                                                                         | decision pending         |
+| 真機觸控 / Safari dynamic toolbar               | Playwright `ios-safari` project 只能覆蓋 WebKit + iPhone 14 preset；仍無法取代 true Safari chrome / safe-area 驗證                                                                         | 非 Playwright 可覆蓋     |
 
 ## 5. 維護
 

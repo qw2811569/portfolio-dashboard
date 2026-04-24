@@ -1161,21 +1161,21 @@ export function NewsFeedSection({
                 '新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。'
               )
             ),
-          h(
-            Button,
-            {
-              type: 'button',
-              size: 'xs',
-              onClick: handleRetryNewsFeed,
-              style: {
-                textTransform: 'none',
-                justifySelf: 'flex-start',
+            h(
+              Button,
+              {
+                type: 'button',
+                size: 'xs',
+                onClick: handleRetryNewsFeed,
+                style: {
+                  textTransform: 'none',
+                  justifySelf: 'flex-start',
+                },
               },
-            },
-            '再試一次'
+              '再試一次'
+            )
           )
         ),
-      ),
       error &&
         !isMobile &&
         h(

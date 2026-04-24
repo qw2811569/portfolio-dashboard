@@ -38,8 +38,7 @@ function aggregateHoldingsByCode(holdings = []) {
 }
 
 export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
-  const rows = aggregateHoldingsByCode(holdings)
-    .sort((a, b) => b.value - a.value)
+  const rows = aggregateHoldingsByCode(holdings).sort((a, b) => b.value - a.value)
 
   const total = totalVal > 0 ? totalVal : rows.reduce((sum, holding) => sum + holding.value, 0)
   const topFive = rows.slice(0, 5).map((holding) => ({

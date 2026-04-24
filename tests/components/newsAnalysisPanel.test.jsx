@@ -348,7 +348,9 @@ describe('components/NewsFeedSection', () => {
     })
 
     expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
-    expect(screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')).toBeInTheDocument()
+    expect(
+      screen.getByText('新聞源暫時打不開，先用目前可讀版本撐住畫面，不擋住你先讀重點。')
+    ).toBeInTheDocument()
     expect(screen.getByText('再試一次')).toBeInTheDocument()
   })
 })

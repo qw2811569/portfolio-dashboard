@@ -339,12 +339,11 @@ async function getPortfolioSelect(page) {
 async function switchPortfolioFast(page, values = []) {
   const select = await firstExisting(page.getByTestId('portfolio-select'), page.locator('select'))
   if (select) {
-    await select.evaluate((element, nextValues) => {
-      for (const value of nextValues) {
-        element.value = value
-        element.dispatchEvent(new Event('change', { bubbles: true }))
-      }
-    }, values)
+    for (const value of values) {
+      await expect(select).toBeEnabled({ timeout: 10000 })
+      await select.selectOption(value)
+      await page.waitForTimeout(120)
+    }
     return true
   }
 
@@ -375,12 +374,19 @@ async function fillManualTrade(page, { code = '', name = '', action = '買進', 
 
 async function submitManualTrade(page) {
   const submitButton = page.getByTestId('manual-trade-submit-btn')
-  const isDisabled = await submitButton.isDisabled().catch(() => false)
-  if (isDisabled) {
+  const isEnabled = await submitButton.isEnabled().catch(() => false)
+  if (!isEnabled) {
     return { submitted: false, disabled: true }
   }
 
-  await submitButton.click()
+  try {
+    await submitButton.click({ timeout: 1000 })
+  } catch (error) {
+    if (/not enabled|element is not enabled/i.test(String(error?.message || ''))) {
+      return { submitted: false, disabled: true }
+    }
+    throw error
+  }
   await page.waitForTimeout(200)
   return { submitted: true, disabled: false }
 }

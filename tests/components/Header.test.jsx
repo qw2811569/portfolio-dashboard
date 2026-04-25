@@ -1,15 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import Header from '../../src/components/Header.jsx'
+import Header, { COMPACT_LANDSCAPE_MEDIA_QUERY } from '../../src/components/Header.jsx'
 
 const originalMatchMedia = window.matchMedia
 
 function mockMatchMedia(matches) {
+  mockMatchMediaResolver(() => matches)
+}
+
+function mockMatchMediaResolver(resolver) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
     value: vi.fn().mockImplementation((query) => ({
-      matches,
+      matches: Boolean(resolver(query)),
       media: query,
       onchange: null,
       addEventListener: vi.fn(),
@@ -204,5 +208,17 @@ describe('components/Header.jsx', () => {
     fireEvent.click(screen.getByTestId('tab-research'))
 
     expect(setTab).toHaveBeenCalledWith('research')
+  })
+
+  it('collapses the landscape mobile header down to title and tabs only', () => {
+    mockMatchMediaResolver(
+      (query) => query === COMPACT_LANDSCAPE_MEDIA_QUERY || query.includes('max-width: 768px')
+    )
+
+    render(<Header {...buildProps()} />)
+
+    expect(screen.getByText('持倉看板')).toBeInTheDocument()
+    expect(screen.queryByText('+12')).not.toBeInTheDocument()
+    expect(screen.getByTestId('header-scroll-zone').style.padding).toBe('78px 12px 0px')
   })
 })

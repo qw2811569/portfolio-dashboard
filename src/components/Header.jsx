@@ -4,6 +4,8 @@ import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { C, A, alpha } from '../theme.js'
 import { ConfirmDialog, TextFieldDialog } from './common/index.js'
 
+export const COMPACT_LANDSCAPE_MEDIA_QUERY = '(max-height: 500px) and (orientation: landscape)'
+
 export default function Header(props) {
   const {
     cloudSync,
@@ -59,6 +61,7 @@ export default function Header(props) {
   const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false)
   const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false)
   const isMobile = useIsMobile()
+  const isCompactLandscape = useIsMobile(COMPACT_LANDSCAPE_MEDIA_QUERY)
   const activePortfolioSummary =
     safePortfolioSummaries.find((portfolio) => portfolio.id === activePortfolioId) || null
   const activePortfolioLabel = displayPortfolioName(
@@ -128,7 +131,7 @@ export default function Header(props) {
     'span',
     {
       style: {
-        fontSize: 20,
+        fontSize: isCompactLandscape ? 18 : 20,
         fontWeight: 700,
         color: C.text,
         fontFamily: 'var(--font-headline)',
@@ -499,9 +502,9 @@ export default function Header(props) {
       style: {
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: isCompactLandscape ? 'center' : 'flex-start',
         gap: 12,
-        marginBottom: viewMode === OVERVIEW_VIEW_MODE ? 0 : 4,
+        marginBottom: viewMode === OVERVIEW_VIEW_MODE ? 0 : isCompactLandscape ? 2 : 4,
       },
     },
     h(
@@ -510,18 +513,18 @@ export default function Header(props) {
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
-          rowGap: 8,
+          gap: isCompactLandscape ? 6 : 8,
+          rowGap: isCompactLandscape ? 4 : 8,
           flex: 1,
           minWidth: 0,
-          flexWrap: 'wrap',
+          flexWrap: isCompactLandscape ? 'nowrap' : 'wrap',
         },
       },
       cloudIndicator,
       titleText,
-      savedLabel
+      isCompactLandscape ? null : savedLabel
     ),
-    pnlSummary
+    isCompactLandscape ? null : pnlSummary
   )
   const renderTabButton = (tabItem, { compact = false, fill = false } = {}) =>
     h(
@@ -1091,7 +1094,7 @@ export default function Header(props) {
         style: {
           display: 'grid',
           gap: 6,
-          padding: isMobile ? '0 0 8px' : '4px 0 4px',
+          padding: isMobile ? (isCompactLandscape ? '0 0 4px' : '0 0 8px') : '4px 0 4px',
           position: 'relative',
         },
       },
@@ -1309,7 +1312,7 @@ export default function Header(props) {
       {
         'data-testid': 'header-scroll-zone',
         style: {
-          padding: `${viewMode === OVERVIEW_VIEW_MODE ? 84 : 108}px 12px 0`,
+          padding: `${viewMode === OVERVIEW_VIEW_MODE ? 84 : isCompactLandscape ? 78 : 108}px 12px 0`,
         },
       },
       mobileActionsRow,

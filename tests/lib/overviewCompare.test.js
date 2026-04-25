@@ -72,4 +72,38 @@ describe('lib/overviewCompare', () => {
 
     expect(strip).toBeNull()
   })
+
+  it('keeps the strip rendered on weekends with 今日休市 placeholder instead of disappearing', () => {
+    const saturday = new Date('2026-04-25T08:00:00.000+08:00')
+    const strip = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: null },
+        { id: '7865', name: '金聯成', todayRetPct: null },
+      ],
+      { activePortfolioId: 'me', now: saturday }
+    )
+
+    expect(strip).not.toBeNull()
+    expect(strip.marketClosed).toBe(true)
+    expect(strip.summaryText).toContain('今日休市')
+    expect(strip.insightText).toContain('今日休市')
+    expect(strip.deltaPp).toBeNull()
+    expect(strip.deltaText).toBe('')
+    expect(strip.pendingDataPortfolios).toEqual(['小奎主要投資', '金聯成組合'])
+  })
+
+  it('keeps the strip rendered pre-open on weekdays with 盤前 placeholder', () => {
+    const weekdayPreOpen = new Date('2026-04-21T01:30:00.000+08:00')
+    const strip = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: null },
+        { id: '7865', name: '金聯成', todayRetPct: null },
+      ],
+      { activePortfolioId: 'me', now: weekdayPreOpen }
+    )
+
+    expect(strip).not.toBeNull()
+    expect(strip.marketClosed).toBe(true)
+    expect(strip.insightText).toContain('今日休市')
+  })
 })

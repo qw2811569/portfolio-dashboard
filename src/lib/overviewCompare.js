@@ -1,6 +1,7 @@
 import { displayPortfolioName } from './portfolioDisplay.js'
 
 function toFiniteNumber(value, fallback = null) {
+  if (value === null || value === undefined || value === '') return fallback
   const number = Number(value)
   return Number.isFinite(number) ? number : fallback
 }
@@ -109,24 +110,60 @@ function buildCompareInsight(primary, secondary, deltaPp) {
   }
 }
 
+function isMarketClosedDay(now = new Date()) {
+  const taipeiHour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Taipei',
+      hour: 'numeric',
+      hour12: false,
+    }).format(now)
+  )
+  const taipeiWeekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    weekday: 'short',
+  }).format(now)
+  if (taipeiWeekday === 'Sat' || taipeiWeekday === 'Sun') return true
+  if (Number.isFinite(taipeiHour) && (taipeiHour < 9 || taipeiHour >= 14)) return true
+  return false
+}
+
 export function buildDashboardCompareStrip(
   portfolios = [],
-  { activePortfolioId = '', staleStatus = '' } = {}
+  { activePortfolioId = '', staleStatus = '', now = new Date() } = {}
 ) {
   const [primary, secondary] = pickComparePair(portfolios, activePortfolioId)
   if (!primary || !secondary) return null
 
   const bothLoaded = primary.hasTodayData && secondary.hasTodayData
   const someLoaded = primary.hasTodayData || secondary.hasTodayData
-  if (!someLoaded) return null
+  const marketClosed = isMarketClosedDay(now)
 
-  const deltaPp = primary.todayRetPct - secondary.todayRetPct
-  const insight = bothLoaded
-    ? buildCompareInsight(primary, secondary, deltaPp)
-    : { tone: 'calm', text: '今日對比資料還在更新 · 補齊後會自動切換口徑' }
+  // Strip stays rendered even when neither portfolio has fresh today data —
+  // this is the canonical "我 vs 金聯成" surface and silently disappearing on
+  // weekends / pre-open hurts dogfooding more than showing a "等開盤" placeholder.
+  // (R151 fix: previous early-return on !someLoaded hid strip on Sat/Sun /
+  // pre-open / public holiday because every portfolio's todayRetPct was null.)
 
-  const formatPortfolioPct = (portfolio) =>
-    portfolio.hasTodayData ? formatSignedPercent(portfolio.todayRetPct) : '資料補齊中'
+  const deltaPp =
+    primary.hasTodayData && secondary.hasTodayData
+      ? primary.todayRetPct - secondary.todayRetPct
+      : null
+
+  let insight
+  if (bothLoaded) {
+    insight = buildCompareInsight(primary, secondary, deltaPp)
+  } else if (someLoaded) {
+    insight = { tone: 'calm', text: '今日對比資料還在更新 · 補齊後會自動切換口徑' }
+  } else if (marketClosed) {
+    insight = { tone: 'calm', text: '今日休市 · 兩組合都先停在前一個交易日的收盤價' }
+  } else {
+    insight = { tone: 'calm', text: '盤前 · 兩組合的今日報價尚未進場' }
+  }
+
+  const formatPortfolioPct = (portfolio) => {
+    if (portfolio.hasTodayData) return formatSignedPercent(portfolio.todayRetPct)
+    return marketClosed ? '今日休市' : '盤前'
+  }
   const summaryText = bothLoaded
     ? `${primary.label} ${formatPortfolioPct(primary)} · ${secondary.label} ${formatPortfolioPct(secondary)} · 今日差距 ${formatSignedDeltaPp(deltaPp)}`
     : `${primary.label} ${formatPortfolioPct(primary)} · ${secondary.label} ${formatPortfolioPct(secondary)}`
@@ -134,7 +171,7 @@ export function buildDashboardCompareStrip(
   return {
     primary,
     secondary,
-    deltaPp: bothLoaded ? deltaPp : null,
+    deltaPp,
     deltaText: bothLoaded ? formatSignedDeltaPp(deltaPp) : '',
     summaryText,
     insightText: insight.text,
@@ -142,6 +179,7 @@ export function buildDashboardCompareStrip(
     staleStatus: String(staleStatus || '')
       .trim()
       .toLowerCase(),
+    marketClosed,
     pendingDataPortfolios: [
       primary.hasTodayData ? null : primary.label,
       secondary.hasTodayData ? null : secondary.label,

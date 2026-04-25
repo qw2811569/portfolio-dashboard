@@ -407,7 +407,7 @@ export default function Header(props) {
                   h(
                     'div',
                     { style: { fontSize: 12, color: C.textSec, lineHeight: 1.6 } },
-                    item.targetLabel || item.classificationNote || '資料還在補齊中'
+                    item.targetLabel || item.classificationNote || '尚未取得目標價'
                   )
                 )
               )

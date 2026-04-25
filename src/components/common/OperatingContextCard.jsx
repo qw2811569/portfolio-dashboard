@@ -11,10 +11,24 @@ const lbl = {
   marginBottom: 4,
 }
 
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/(\*\*|__)(.+?)\1/g, '$2')
+    .replace(/(\*|_)(.+?)\1/g, '$2')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/^\s*-{3,}\s*$/gm, ' ')
+    .replace(/\|/g, ' ')
+}
+
 function truncate(text, max = 120) {
-  const normalized = String(text || '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const normalized = stripMarkdown(text).replace(/\s+/g, ' ').trim()
   if (!normalized) return ''
   return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized
 }
@@ -220,7 +234,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                 lineHeight: 1.7,
               },
             },
-            `目前有 ${refreshBacklogCount} 檔資料還在補齊中，右上角鈴鐺可以查看明細。`
+            `目前還有 ${refreshBacklogCount} 檔尚未取得目標價，右上角鈴鐺可以查看明細。`
           )
       )
     )

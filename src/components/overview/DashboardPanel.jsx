@@ -717,7 +717,7 @@ function TodayPnlHero({
                           h(
                             'div',
                             { style: { fontSize: 12, color: C.textSec, lineHeight: 1.6 } },
-                            item.targetLabel || item.classificationNote || '資料還在補齊中'
+                            item.targetLabel || item.classificationNote || '尚未取得目標價'
                           )
                         )
                       )
@@ -1150,7 +1150,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             marginBottom: 8,
           },
         },
-        morningNote.headline
+        h(MarkdownText, { text: morningNote.headline, color: C.text })
       ),
     (morningNote.summary || morningNote.lead) &&
       h(

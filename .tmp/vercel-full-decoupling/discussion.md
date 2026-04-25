@@ -618,3 +618,15 @@ CAS retry 行為：
 - 2a migration 可以 overwrite verified singleton；2b migration 嚴格 create-only，目的不是同步最新值，而是安全建立初始 GCS 副本，遇到已存在物件一律 skip，不覆蓋較新的 secondary。
 
 - 給 Codex B QA 的 hint：我最不確定的是 cross-backend shadow-read 的「version 一致」定義。Vercel `etag` 和 GCS `generation` 不是同一個 version domain，所以我採 payload hash 為 divergence 主判準，version 只記錄 presence/hash metadata，不拿 raw token equality 當 mismatch 條件；這塊請優先 challenge。
+
+## Round 17 · Codex A · fix round 2 · 2026-04-25 17:51
+
+- commit SHA: `0a11bc7`
+- 我選 **A**。原因：這個 regression 的根因就是 shadow reconcile retry 只刷新 secondary token，沒有刷新 primary payload；在 retry 稀少的前提下，多一次 primary read 成本低、實作面最小，也不需要 metadata sidecar 或 per-key queue。
+- 修後 reconcile 邏輯：background shadow write 第一次若因 `VERSION_CONFLICT` 失敗，不再重播原先 capture 的 payload；而是先對 primary backend 做一次 fresh read 取得「當下最新」payload，再重讀 secondary 最新 `versionToken`，最後用 `write(descriptor, latestPrimaryPayload, latestShadowToken)` 重試一次。這樣舊 task 晚到時，只會把 secondary 往最新 primary 收斂，不會把已經寫進 primary / shadow 的 v12 退化回自己手上的 v11。
+- 新補 test：`tests/api/tracked-stocks-store.test.js` 新增兩段 coverage。第一段把既有 single-conflict test 改成 stateful primary，確認 retry 真的讀 primary latest；第二段直接重建「舊 task 先讀 shadow / 新 task 先寫完 / 舊 task 後 reconcile」的 interleaving，驗證最終 shadow 仍停在 payload v12，不會退化。
+- 驗證：
+  - `npm run typecheck` ✅
+  - `npm run lint` ✅（有既存 warning：`src/lib/dashboardHeadline.js:54 no-unused-vars`，非本輪引入）
+  - `npm run test:run -- tests/api/tracked-stocks-store.test.js tests/api/gcs-storage.test.js tests/scripts/migrate-tracked-stocks-to-gcs.test.js --run` ✅（`26 passed`）
+- 信心預測：CAS adapter `5/10 -> 7/10`

@@ -33,9 +33,24 @@ export async function runMigration(options = {}, deps = {}) {
 }
 
 export async function main(argv = process.argv.slice(2), deps = {}) {
-  const nextArgv = argv.some((arg) => String(arg || '').startsWith('--keyspace='))
-    ? argv
-    : [`--keyspace=${SNAPSHOT_RESEARCH_KEYSPACE}`, ...argv]
+  const nextArgv = []
+
+  for (const rawArg of argv) {
+    const arg = String(rawArg || '').trim()
+    if (!arg.startsWith('--keyspace=')) {
+      nextArgv.push(rawArg)
+      continue
+    }
+
+    const keyspace = arg.slice('--keyspace='.length).trim()
+    if (keyspace && keyspace !== SNAPSHOT_RESEARCH_KEYSPACE) {
+      throw new Error(
+        'research shim only supports snapshot.research; use migrate-prefix-keyspace-to-gcs.mjs --keyspace=... instead'
+      )
+    }
+  }
+
+  nextArgv.unshift(`--keyspace=${SNAPSHOT_RESEARCH_KEYSPACE}`)
   return runGenericMain(nextArgv, deps)
 }
 

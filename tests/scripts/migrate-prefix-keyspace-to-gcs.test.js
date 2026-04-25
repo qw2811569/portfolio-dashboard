@@ -8,6 +8,7 @@ import {
   loadKeyInventory,
   runMigration,
 } from '../../scripts/migrate-prefix-keyspace-to-gcs.mjs'
+import { main as researchMain } from '../../scripts/migrate-snapshot-research-to-gcs.mjs'
 
 const RESEARCH_KEYSPACE = 'snapshot.research'
 
@@ -130,6 +131,12 @@ describe('scripts/migrate-prefix-keyspace-to-gcs.mjs', () => {
     delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH
     delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_BRAIN
     delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_PORTFOLIO_STATE
+  })
+
+  it('rejects non-research keyspace overrides in the research shim', async () => {
+    await expect(researchMain(['--keyspace=snapshot.brain'])).rejects.toThrow(
+      'research shim only supports snapshot.research; use migrate-prefix-keyspace-to-gcs.mjs --keyspace=... instead'
+    )
   })
 
   it('lists snapshot.research inventory with cursor pagination from the Blob prefix', async () => {

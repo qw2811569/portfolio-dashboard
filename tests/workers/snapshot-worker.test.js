@@ -3,6 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { snapshotPortfolioStateStore } from '../../api/_lib/snapshot-portfolio-state-store.js'
 const { queryFinMindDataset } = vi.hoisted(() => ({
   queryFinMindDataset: vi.fn(),
 }))
@@ -218,6 +219,64 @@ describe('snapshot-worker', () => {
     )
     expect(logger.info).toHaveBeenCalledWith(
       '[snapshot-worker] purged 3 daily snapshot artifact(s) older than 30 days'
+    )
+  })
+
+  it('purges snapshot.portfolio-state objects through the prefix-store deleteMany path', async () => {
+    const delImpl = vi.fn(async () => undefined)
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const deleteManySpy = vi.spyOn(snapshotPortfolioStateStore, 'deleteMany')
+    const expectedKeys = [
+      'snapshot/portfolio-state/2026-01-01/me/holdings.json',
+      'snapshot/portfolio-state/2026-01-01/me/tradeLog.json',
+    ]
+    const listImpl = vi.fn(async ({ prefix, cursor }) => {
+      if (prefix === 'snapshot/portfolio-state/' && !cursor) {
+        return {
+          blobs: [
+            { pathname: expectedKeys[0] },
+            { pathname: expectedKeys[1] },
+            { pathname: 'snapshot/portfolio-state/2026-04-01/me/holdings.json' },
+          ],
+          cursor: null,
+        }
+      }
+
+      return {
+        blobs: [],
+        cursor: null,
+      }
+    })
+
+    const result = await purgeExpiredDailySnapshots({
+      now: new Date('2026-04-24T03:00:00+08:00'),
+      token: 'blob-token',
+      keepDays: 30,
+      listImpl,
+      delImpl,
+      logger,
+    })
+
+    expect(result).toMatchObject({
+      dryRun: false,
+      deletedCount: 2,
+      deletedPathnames: expectedKeys,
+    })
+    expect(deleteManySpy).toHaveBeenCalledTimes(1)
+    expect(deleteManySpy).toHaveBeenCalledWith(
+      expectedKeys,
+      expect.objectContaining({
+        token: 'blob-token',
+        listImpl,
+        delImpl,
+        logger,
+      })
+    )
+    expect(delImpl.mock.calls).toEqual(
+      expect.arrayContaining([
+        [expectedKeys[0], { token: 'blob-token' }],
+        [expectedKeys[1], { token: 'blob-token' }],
+      ])
     )
   })
 })

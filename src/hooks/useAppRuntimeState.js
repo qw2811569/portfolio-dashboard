@@ -4,6 +4,11 @@ import { createEmptyBrainValidationStore } from '../lib/brainRuntime.js'
 import { clonePortfolioNotes } from '../lib/portfolioUtils.js'
 import { APP_BOOTSTRAP_LOADING_STATE } from '../lib/appMessages.js'
 
+const createHistorySyncStatus = () => ({
+  status: 'idle',
+  message: '',
+})
+
 export function useAppRuntimeState() {
   const [ready, setReady] = useState(false)
   const [bootstrapState, setBootstrapState] = useState(() => APP_BOOTSTRAP_LOADING_STATE)
@@ -21,6 +26,7 @@ export function useAppRuntimeState() {
   const [analyzeStep, setAnalyzeStep] = useState('')
   const [dailyReport, setDailyReport] = useState(null)
   const [analysisHistory, setAnalysisHistory] = useState(null)
+  const [analysisHistoryStatus, setAnalysisHistoryStatus] = useState(createHistorySyncStatus)
   const [newsEvents, setNewsEvents] = useState(null)
   const [reversalConditions, setReversalConditions] = useState(null)
   const [strategyBrain, setStrategyBrain] = useState(null)
@@ -29,6 +35,7 @@ export function useAppRuntimeState() {
   const [cloudSync, setCloudSync] = useState(false)
   const [researching, setResearching] = useState(false)
   const [researchHistory, setResearchHistory] = useState(null)
+  const [researchHistoryStatus, setResearchHistoryStatus] = useState(createHistorySyncStatus)
 
   const cloudSaveTimersRef = useRef({})
   const cloudSyncStateRef = useRef({ enabled: false, syncedAt: 0 })
@@ -56,11 +63,13 @@ export function useAppRuntimeState() {
     reportRefreshMeta,
     holdingDossiers,
     analysisHistory,
+    analysisHistoryStatus,
     dailyReport,
     reversalConditions,
     strategyBrain,
     brainValidation,
     researchHistory,
+    researchHistoryStatus,
     portfolioNotes,
   }
 
@@ -78,10 +87,12 @@ export function useAppRuntimeState() {
     setHoldingDossiers,
     setNewsEvents,
     setAnalysisHistory,
+    setAnalysisHistoryStatus,
     setReversalConditions,
     setStrategyBrain,
     setBrainValidation,
     setResearchHistory,
+    setResearchHistoryStatus,
     setPortfolioNotes,
     setDailyReport,
   }
@@ -115,6 +126,7 @@ export function useAppRuntimeState() {
     setAnalyzeStep,
     dailyReport,
     analysisHistory,
+    analysisHistoryStatus,
     newsEvents,
     reversalConditions,
     strategyBrain,
@@ -124,6 +136,7 @@ export function useAppRuntimeState() {
     researching,
     setResearching,
     researchHistory,
+    researchHistoryStatus,
     runtimeState,
     runtimeSetters,
     refs,

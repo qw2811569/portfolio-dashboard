@@ -68,6 +68,26 @@ describe('components/ResearchPanel', () => {
     expect(container.textContent).toContain('研究資料整理中')
   })
 
+  it('shows a retryable error state when research history sync fails instead of falling through to empty state', () => {
+    const { container } = render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電' }],
+          researchHistory: [],
+          researchHistoryStatus: {
+            status: 'error',
+            message: '資料來源暫時不穩，請稍後重試。',
+          },
+        })}
+      />
+    )
+
+    expect(container.querySelector('[data-testid="research-history-error"]')).toBeTruthy()
+    expect(container.querySelector('[data-empty-state="research"]')).toBeFalsy()
+    expect(container.textContent).toContain('資料源暫時不通')
+    expect(screen.getByRole('button', { name: '重試' })).toBeInTheDocument()
+  })
+
   it('hides the research empty state once researchResults exists', () => {
     const results = {
       timestamp: 1,

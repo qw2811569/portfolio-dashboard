@@ -73,6 +73,56 @@ function ViewModeNotice({ note }) {
   )
 }
 
+function ResearchHistoryErrorState({ message = '', onRetry = null }) {
+  return h(
+    Card,
+    {
+      'data-testid': 'research-history-error',
+      style: {
+        marginBottom: 8,
+        borderLeft: `3px solid ${alpha(C.down, '40')}`,
+      },
+    },
+    h('div', { style: { ...lbl, color: C.down } }, '研究資料同步失敗'),
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 12,
+          color: C.textSec,
+          lineHeight: 1.7,
+          marginBottom: onRetry ? 10 : 0,
+        },
+      },
+      '資料源暫時不通，這次沒有成功拉到研究歷史。'
+    ),
+    message &&
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 11,
+            color: C.textMute,
+            lineHeight: 1.7,
+            marginBottom: onRetry ? 10 : 0,
+          },
+        },
+        message
+      ),
+    typeof onRetry === 'function' &&
+      h(
+        Button,
+        {
+          color: 'amber',
+          size: 'sm',
+          style: { textTransform: 'none' },
+          onClick: onRetry,
+        },
+        '重試'
+      )
+  )
+}
+
 function buildCompressedResearchNarrative(results) {
   const summary = String(results?.summary || '').trim()
   if (summary) return summary
@@ -1312,6 +1362,7 @@ export function ResearchPanel({
   dataRefreshRows,
   researchResults,
   researchHistory,
+  researchHistoryStatus = null,
   analystReports,
   enrichingResearchCode,
   proposalActionId,
@@ -1349,11 +1400,19 @@ export function ResearchPanel({
   const showResearchAccuracyGate = Boolean(
     researchAccuracyGate && dismissedAccuracyGateKey !== researchAccuracyGateKey
   )
+  const effectiveResearchHistoryStatus =
+    researchHistoryStatus?.status ||
+    (researchHistory == null ? (hasHoldings ? 'loading' : 'idle') : 'success')
+  const researchHistoryErrorMessage = String(researchHistoryStatus?.message || '').trim()
   const isResearchHistoryLoading =
-    researchHistory == null && hasHoldings && !researchResults && !researching
+    !researching && !researchResults && hasHoldings && effectiveResearchHistoryStatus === 'loading'
+  const showResearchHistoryError =
+    !researching && !researchResults && effectiveResearchHistoryStatus === 'error'
   const showResearchEmpty =
     !researching &&
     !researchResults &&
+    effectiveResearchHistoryStatus !== 'loading' &&
+    effectiveResearchHistoryStatus !== 'error' &&
     ((Array.isArray(researchHistory) && researchHistory.length === 0) ||
       (!hasHoldings && researchHistory == null))
 
@@ -1376,6 +1435,16 @@ export function ResearchPanel({
     }
 
     if (typeof onRefresh === 'function') onRefresh()
+  }
+
+  const retryResearchHistorySync = () => {
+    if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
+      window.location.reload()
+      return
+    }
+    if (typeof onRefresh === 'function') {
+      onRefresh()
+    }
   }
 
   return h(
@@ -1442,6 +1511,11 @@ export function ResearchPanel({
         ),
         h(Skeleton, { variant: 'card', count: 1 })
       ),
+    showResearchHistoryError &&
+      h(ResearchHistoryErrorState, {
+        message: researchHistoryErrorMessage,
+        onRetry: retryResearchHistorySync,
+      }),
     h(ConsensusHighlights, {
       holdings,
       analystReports,

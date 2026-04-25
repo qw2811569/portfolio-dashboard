@@ -13,6 +13,8 @@ describe('hooks/useAppRuntimeState.js', () => {
     expect(result.current.cloudSync).toBe(false)
     expect(result.current.analyzing).toBe(false)
     expect(result.current.researching).toBe(false)
+    expect(result.current.analysisHistoryStatus).toEqual({ status: 'idle', message: '' })
+    expect(result.current.researchHistoryStatus).toEqual({ status: 'idle', message: '' })
     expect(result.current.brainValidation).toEqual(createEmptyBrainValidationStore())
     expect(result.current.portfolioNotes).toEqual(clonePortfolioNotes())
     expect(result.current.runtimeState.portfolioNotes).toEqual(clonePortfolioNotes())
@@ -29,6 +31,7 @@ describe('hooks/useAppRuntimeState.js', () => {
       result.current.runtimeSetters.setReady(true)
       result.current.runtimeSetters.setPortfolioNotes({ customNotes: 'next step' })
       result.current.runtimeSetters.setDailyReport({ summary: 'done' })
+      result.current.runtimeSetters.setResearchHistoryStatus({ status: 'error', message: 'retry' })
     })
 
     expect(result.current.ready).toBe(true)
@@ -36,5 +39,9 @@ describe('hooks/useAppRuntimeState.js', () => {
     expect(result.current.portfolioNotes).toEqual({ customNotes: 'next step' })
     expect(result.current.runtimeState.portfolioNotes).toEqual({ customNotes: 'next step' })
     expect(result.current.runtimeState.dailyReport).toEqual({ summary: 'done' })
+    expect(result.current.runtimeState.researchHistoryStatus).toEqual({
+      status: 'error',
+      message: 'retry',
+    })
   })
 })

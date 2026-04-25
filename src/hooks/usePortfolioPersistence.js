@@ -7,6 +7,7 @@ import {
   PORTFOLIO_ALIAS_TO_SUFFIX,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
+import { createDataError, normalizeDataError } from '../lib/dataError.js'
 import { STOCK_META } from '../seedData.js'
 import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 
@@ -22,6 +23,27 @@ function mergeResearchHistory(existingReports, incomingReports) {
 
 function ensureArray(value) {
   return Array.isArray(value) ? value : []
+}
+
+function buildHistorySyncStatus(status = 'idle', message = '') {
+  return { status, message }
+}
+
+async function fetchJsonOrThrow(url, options = {}, failureMessage = 'cloud sync failed') {
+  const response = await fetch(url, options)
+  if (!response.ok) {
+    throw createDataError(response.status, failureMessage)
+  }
+  return response.json()
+}
+
+function resolveHistorySyncErrorMessage(error, fallbackMessage) {
+  const normalizedError = normalizeDataError(error)
+  if (normalizedError?.status === 'offline') return '網路連線不穩，稍後再試。'
+  if (normalizedError?.status === 401) return '登入狀態已過期，重新整理後再試。'
+  if (normalizedError?.status === 404) return '資料來源暫時不可用，晚點再試。'
+  if (normalizedError?.status === '5xx') return '資料來源暫時不穩，請稍後重試。'
+  return fallbackMessage
 }
 
 export function usePortfolioPersistence({
@@ -49,7 +71,9 @@ export function usePortfolioPersistence({
   marketPriceSync,
   setHoldingDossiers,
   setAnalysisHistory,
+  setAnalysisHistoryStatus,
   setResearchHistory,
+  setResearchHistoryStatus,
   setSaved,
   notifySaved = null,
   cloudSyncStateRef,
@@ -253,13 +277,21 @@ export function usePortfolioPersistence({
       canUseCloud &&
       (tab === 'daily' || tab === 'log') &&
       (!lastAnalysisSyncAt || Date.now() - lastAnalysisSyncAt > CLOUD_SYNC_TTL)
-    if (!shouldFetchAnalysis) return
+    if (!shouldFetchAnalysis) return undefined
 
-    fetch(`${API_ENDPOINTS.BRAIN}?action=history`)
-      .then((res) => res.json())
+    let active = true
+    const controller = typeof AbortController === 'function' ? new AbortController() : null
+
+    setAnalysisHistoryStatus(buildHistorySyncStatus('loading'))
+
+    fetchJsonOrThrow(
+      `${API_ENDPOINTS.BRAIN}?action=history`,
+      { signal: controller?.signal },
+      'analysis history sync failed'
+    )
       .then((data) => {
+        if (!active) return
         const historyRows = ensureArray(data?.history)
-        if (historyRows.length === 0) return
         setAnalysisHistory((prev) => {
           const uniqueHistory = normalizeAnalysisHistoryEntries([...(prev || []), ...historyRows])
           savePortfolioData(
@@ -269,15 +301,30 @@ export function usePortfolioPersistence({
           )
           return uniqueHistory
         })
+        setAnalysisHistoryStatus(buildHistorySyncStatus('success'))
         writeSyncAt('pf-analysis-cloud-sync-at', Date.now())
       })
-      .catch(() => {})
+      .catch((error) => {
+        if (!active || error?.name === 'AbortError') return
+        setAnalysisHistoryStatus(
+          buildHistorySyncStatus(
+            'error',
+            resolveHistorySyncErrorMessage(error, '收盤分析歷史同步失敗，請稍後重試。')
+          )
+        )
+      })
+
+    return () => {
+      active = false
+      controller?.abort()
+    }
   }, [
     activePortfolioId,
     canUseCloud,
     tab,
     readSyncAt,
     setAnalysisHistory,
+    setAnalysisHistoryStatus,
     normalizeAnalysisHistoryEntries,
     savePortfolioData,
     writeSyncAt,
@@ -289,15 +336,24 @@ export function usePortfolioPersistence({
       canUseCloud &&
       tab === 'research' &&
       (!lastResearchSyncAt || Date.now() - lastResearchSyncAt > CLOUD_SYNC_TTL)
-    if (!shouldFetchResearch) return
+    if (!shouldFetchResearch) return undefined
 
-    fetch(API_ENDPOINTS.RESEARCH)
-      .then((res) => res.json())
+    let active = true
+    const controller = typeof AbortController === 'function' ? new AbortController() : null
+
+    setResearchHistoryStatus(buildHistorySyncStatus('loading'))
+
+    fetchJsonOrThrow(
+      API_ENDPOINTS.RESEARCH,
+      { signal: controller?.signal },
+      'research history sync failed'
+    )
       .then((data) => {
+        if (!active) return
         const reportRows = ensureArray(data?.reports)
-        if (reportRows.length === 0) return
         const uniqueReports = mergeResearchHistory(researchHistory, reportRows)
         setResearchHistory(uniqueReports)
+        setResearchHistoryStatus(buildHistorySyncStatus('success'))
         savePortfolioData(
           activePortfolioId,
           PORTFOLIO_ALIAS_TO_SUFFIX.researchHistory,
@@ -305,7 +361,20 @@ export function usePortfolioPersistence({
         )
         writeSyncAt('pf-research-cloud-sync-at', Date.now())
       })
-      .catch(() => {})
+      .catch((error) => {
+        if (!active || error?.name === 'AbortError') return
+        setResearchHistoryStatus(
+          buildHistorySyncStatus(
+            'error',
+            resolveHistorySyncErrorMessage(error, '研究歷史同步失敗，請稍後重試。')
+          )
+        )
+      })
+
+    return () => {
+      active = false
+      controller?.abort()
+    }
   }, [
     activePortfolioId,
     canUseCloud,
@@ -313,6 +382,7 @@ export function usePortfolioPersistence({
     tab,
     readSyncAt,
     setResearchHistory,
+    setResearchHistoryStatus,
     savePortfolioData,
     writeSyncAt,
   ])

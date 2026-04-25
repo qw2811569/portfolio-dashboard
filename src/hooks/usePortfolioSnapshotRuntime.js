@@ -39,10 +39,12 @@ export function usePortfolioSnapshotRuntime({
   setHoldingDossiers,
   setNewsEvents,
   setAnalysisHistory,
+  setAnalysisHistoryStatus,
   setReversalConditions,
   setStrategyBrain,
   setBrainValidation,
   setResearchHistory,
+  setResearchHistoryStatus,
   setPortfolioNotes,
   setDailyReport,
   normalizeAnalysisHistoryEntries,
@@ -75,10 +77,12 @@ export function usePortfolioSnapshotRuntime({
       setHoldingDossiers(normalizeHoldingDossiers(snapshot.holdingDossiers))
       setNewsEvents(normalizeNewsEvents(snapshot.newsEvents))
       setAnalysisHistory(normalizedAnalysisHistory)
+      setAnalysisHistoryStatus({ status: 'success', message: '' })
       setReversalConditions(snapshot.reversalConditions)
       setStrategyBrain(normalizeStrategyBrain(snapshot.strategyBrain))
       setBrainValidation(normalizeBrainValidationStore(snapshot.brainValidation))
       setResearchHistory(snapshot.researchHistory)
+      setResearchHistoryStatus({ status: 'success', message: '' })
       setPortfolioNotes(snapshot.portfolioNotes || clonePortfolioNotes())
       setDailyReport(
         normalizeDailyReportEntry(snapshot.dailyReport) ||
@@ -100,6 +104,7 @@ export function usePortfolioSnapshotRuntime({
       normalizeStrategyBrain,
       normalizeWatchlist,
       setAnalysisHistory,
+      setAnalysisHistoryStatus,
       setAnalystReports,
       setBrainValidation,
       setDailyReport,
@@ -110,6 +115,7 @@ export function usePortfolioSnapshotRuntime({
       setPortfolioNotes,
       setReportRefreshMeta,
       setResearchHistory,
+      setResearchHistoryStatus,
       setReversalConditions,
       setStrategyBrain,
       setTargets,

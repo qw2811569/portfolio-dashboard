@@ -78,8 +78,10 @@ export function usePortfolioBootstrap({
   setStrategyBrain,
   setNewsEvents,
   setAnalysisHistory,
+  setAnalysisHistoryStatus,
   setDailyReport,
   setResearchHistory,
+  setResearchHistoryStatus,
   restoreTabForPortfolio = () => {},
   migrateLegacyPortfolioStorageIfNeeded,
   seedJinlianchengIfNeeded,
@@ -332,6 +334,7 @@ export function usePortfolioBootstrap({
           savePortfolioData(pid, 'analysis-history-v1', uniqueHistory)
           if (isStillActivePortfolio(pid)) {
             setAnalysisHistory(uniqueHistory)
+            setAnalysisHistoryStatus({ status: 'success', message: '' })
           }
           writeSyncAt('pf-analysis-cloud-sync-at', Date.now())
           if (isStillActivePortfolio(pid) && !snapshot.dailyReport && uniqueHistory.length > 0) {
@@ -351,6 +354,7 @@ export function usePortfolioBootstrap({
           savePortfolioData(pid, 'research-history-v1', uniqueReports)
           if (isStillActivePortfolio(pid)) {
             setResearchHistory(uniqueReports)
+            setResearchHistoryStatus({ status: 'success', message: '' })
           }
           writeSyncAt('pf-research-cloud-sync-at', Date.now())
         }
@@ -400,8 +404,10 @@ export function usePortfolioBootstrap({
     setStrategyBrain,
     setNewsEvents,
     setAnalysisHistory,
+    setAnalysisHistoryStatus,
     setDailyReport,
     setResearchHistory,
+    setResearchHistoryStatus,
     restoreTabForPortfolio,
     migrateLegacyPortfolioStorageIfNeeded,
     seedJinlianchengIfNeeded,

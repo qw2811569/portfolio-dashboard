@@ -23,6 +23,8 @@ function formatSignedDeltaPp(value, digits = 1) {
 function normalizeComparePortfolio(portfolio) {
   if (!portfolio || typeof portfolio !== 'object') return null
 
+  if (portfolio.todayHasPriceData === false) return null
+
   const todayRetPct = toFiniteNumber(portfolio.todayRetPct)
   if (todayRetPct == null) return null
 

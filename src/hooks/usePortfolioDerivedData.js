@@ -748,6 +748,7 @@ export function usePortfolioDerivedData({
         todayRetPct: todayMetrics.todayRetPct,
         todayTopContributor: todayMetrics.todayTopContributor,
         todayTopDrag: todayMetrics.todayTopDrag,
+        todayHasPriceData: todayMetrics.hasPriceData,
       }
     })
   }, [

@@ -60,4 +60,16 @@ describe('lib/overviewCompare', () => {
       tone: 'watch',
     })
   })
+
+  it('drops portfolios whose today price data is unavailable so the strip does not fake a 0.0% compare', () => {
+    const strip = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: 0, todayHasPriceData: false },
+        { id: '7865', name: '金聯成', todayRetPct: 0.12, todayHasPriceData: true },
+      ],
+      { activePortfolioId: 'me' }
+    )
+
+    expect(strip).toBeNull()
+  })
 })

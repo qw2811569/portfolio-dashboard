@@ -5,10 +5,9 @@ import { resolveSignedBlobOrigin } from './_lib/signed-url.js'
 import {
   buildTrackedStocksSnapshot,
   dedupeTrackedStocks,
-  getBlobToken,
-  readTrackedStocksSnapshotState,
-  writeTrackedStocksSnapshot,
+  extractTrackedStocksFromPayload,
 } from './_lib/tracked-stocks.js'
+import { readTrackedStocks, writeTrackedStocksIfVersion } from './_lib/tracked-stocks-store.js'
 
 const TRACKED_STOCKS_WRITE_RETRY_LIMIT = 3
 const TRACKED_STOCKS_WRITE_RETRY_BASE_MS = 25
@@ -37,9 +36,7 @@ function buildLocalDevPortfolio(portfolioId) {
 }
 
 function isTrackedStocksWriteConflict(error) {
-  return ['BlobPreconditionFailedError', 'BlobAlreadyExistsError'].includes(
-    String(error?.name || '').trim()
-  )
+  return error?.code === 'VERSION_CONFLICT'
 }
 
 function sleep(ms) {
@@ -50,11 +47,6 @@ function sleep(ms) {
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  const token = getBlobToken()
-  if (!token) {
-    return res.status(500).json({ error: 'blob token not configured' })
-  }
 
   const portfolioId = resolvePortfolioId(req)
   let portfolio = null
@@ -89,13 +81,12 @@ async function handler(req, res) {
     const origin = resolveSignedBlobOrigin(req)
 
     for (let attempt = 1; attempt <= TRACKED_STOCKS_WRITE_RETRY_LIMIT; attempt += 1) {
-      const current = await readTrackedStocksSnapshotState(portfolio.id, {
-        token,
+      const current = await readTrackedStocks(portfolio.id, {
         origin,
         logger: console,
       })
       const mergedStocks = dedupeTrackedStocks([
-        ...(current?.record?.trackedStocks || []),
+        ...extractTrackedStocksFromPayload(current?.payload),
         ...incomingStocks,
       ])
       const snapshot = buildTrackedStocksSnapshot({
@@ -106,9 +97,9 @@ async function handler(req, res) {
       })
 
       try {
-        await writeTrackedStocksSnapshot(portfolio.id, snapshot, {
-          token,
-          ifMatch: current?.etag || null,
+        await writeTrackedStocksIfVersion(portfolio.id, snapshot, current?.versionToken || null, {
+          origin,
+          logger: console,
         })
 
         return res.status(200).json({

@@ -1,10 +1,14 @@
-import { appendFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { createHash } from 'node:crypto'
-import { fileURLToPath } from 'node:url'
 import { get, list, put } from '@vercel/blob'
 import { getPrivateBlobToken } from './blob-tokens.js'
 import { gcsRead, gcsWrite } from './gcs-storage.js'
+import {
+  appendStorageDivergenceMetric,
+  bufferToUtf8,
+  defaultScheduleBackgroundTask,
+  sha256,
+  stableJsonStringify,
+} from './storage-divergence-log.js'
 
 const DEFAULT_PRIMARY_STORE = 'vercel'
 const PRIMARY_STORES = new Set(['vercel', 'gcs'])
@@ -23,12 +27,6 @@ const LEGACY_PRIMARY_MODES = Object.freeze({
   'gcs-only': Object.freeze({ primary: 'gcs', shadowRead: false, shadowWrite: false }),
 })
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const DEFAULT_DIVERGENCE_LOG_DIR = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  'logs'
-)
 const warnedMessages = new Set()
 
 const LAST_SUCCESS_SCOPE_CONFIG = Object.freeze({
@@ -202,36 +200,6 @@ function resolveComparableText(value, descriptor) {
   if (value == null) return null
   if (descriptor.format === 'text') return String(value)
   return stableJsonStringify(value)
-}
-
-function bufferToUtf8(value) {
-  if (value == null) return ''
-  if (typeof value === 'string') return value
-  if (Buffer.isBuffer(value)) return value.toString('utf8')
-  if (value instanceof Uint8Array) return Buffer.from(value).toString('utf8')
-  return String(value)
-}
-
-function stableJsonStringify(value) {
-  return JSON.stringify(sortJsonValue(value))
-}
-
-function sortJsonValue(value) {
-  if (Array.isArray(value)) return value.map(sortJsonValue)
-  if (!value || typeof value !== 'object') return value
-
-  return Object.keys(value)
-    .sort((left, right) => left.localeCompare(right))
-    .reduce((accumulator, key) => {
-      accumulator[key] = sortJsonValue(value[key])
-      return accumulator
-    }, {})
-}
-
-function sha256(value) {
-  return createHash('sha256')
-    .update(String(value || ''), 'utf8')
-    .digest('hex')
 }
 
 function parseStoredBody(rawBody, descriptor) {
@@ -474,24 +442,6 @@ function assertValidPayload(payload, descriptor) {
   if (payload == null) throw createInvalidPayloadError(descriptor)
 }
 
-function defaultScheduleBackgroundTask(task) {
-  const runner = () => {
-    void Promise.resolve().then(task)
-  }
-
-  if (typeof setImmediate === 'function') {
-    setImmediate(runner)
-    return
-  }
-
-  if (typeof queueMicrotask === 'function') {
-    queueMicrotask(runner)
-    return
-  }
-
-  setTimeout(runner, 0)
-}
-
 function classifyShadowRead(primaryResult, shadowResult) {
   if (!primaryResult && !shadowResult) {
     return { matches: true, result: 'match', primaryHash: null, shadowHash: null }
@@ -524,28 +474,6 @@ function classifyShadowRead(primaryResult, shadowResult) {
     primaryHash,
     shadowHash,
   }
-}
-
-async function appendDivergenceMetric(
-  record,
-  {
-    now = new Date(),
-    logDir = DEFAULT_DIVERGENCE_LOG_DIR,
-    appendMetricImpl = appendFile,
-    mkdirImpl = mkdir,
-  } = {}
-) {
-  const monthStamp = new Date(now).toISOString().slice(0, 7)
-  const filePath = path.join(logDir, `storage-divergence-${monthStamp}.jsonl`)
-  await mkdirImpl(path.dirname(filePath), { recursive: true })
-  await appendMetricImpl(
-    filePath,
-    `${JSON.stringify({
-      ts: new Date(now).toISOString(),
-      ...record,
-    })}\n`,
-    'utf8'
-  )
 }
 
 export function getLastSuccessStorageMode(override) {
@@ -600,7 +528,7 @@ export async function readLastSuccess(scope, date, options = {}) {
       const comparison = classifyShadowRead(primaryResult, shadowResult)
 
       try {
-        await appendDivergenceMetric(
+        await appendStorageDivergenceMetric(
           {
             keyspace: descriptor.keyspace,
             scope: descriptor.scope,

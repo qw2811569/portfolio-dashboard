@@ -60,6 +60,35 @@ describe('api/_lib/gcs-storage.js', () => {
     })
   })
 
+  it('reads an object with generation metadata for CAS callers', async () => {
+    const file = createFileMock({
+      getMetadata: vi.fn().mockResolvedValue([
+        {
+          contentType: 'application/json',
+          generation: '123',
+        },
+      ]),
+      download: vi.fn().mockResolvedValue([Buffer.from('{"ok":true}')]),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsReadWithVersion } = await import('../../api/_lib/gcs-storage.js')
+    await expect(
+      gcsReadWithVersion('jcv-dev-private', 'tracked-stocks/me/latest.json')
+    ).resolves.toEqual({
+      body: Buffer.from('{"ok":true}'),
+      contentType: 'application/json',
+      generation: '123',
+    })
+  })
+
   it('returns null for missing reads and heads', async () => {
     const missingError = Object.assign(new Error('missing'), { code: 404 })
     const file = createFileMock({
@@ -79,6 +108,25 @@ describe('api/_lib/gcs-storage.js', () => {
 
     await expect(gcsRead('jcv-dev-private', 'missing.json')).resolves.toBeNull()
     await expect(gcsHead('jcv-dev-private', 'missing.json')).resolves.toBeNull()
+  })
+
+  it('returns null for missing versioned reads', async () => {
+    const missingError = Object.assign(new Error('missing'), { code: 404 })
+    const file = createFileMock({
+      getMetadata: vi.fn().mockRejectedValue(missingError),
+      download: vi.fn().mockRejectedValue(missingError),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsReadWithVersion } = await import('../../api/_lib/gcs-storage.js')
+    await expect(gcsReadWithVersion('jcv-dev-private', 'missing.json')).resolves.toBeNull()
   })
 
   it('writes an object with content metadata', async () => {
@@ -162,6 +210,118 @@ describe('api/_lib/gcs-storage.js', () => {
       preconditionOpts: {
         ifGenerationMatch: 0,
       },
+    })
+  })
+
+  it('writes with explicit generation preconditions for CAS callers', async () => {
+    const file = createFileMock({
+      getMetadata: vi.fn().mockResolvedValue([
+        {
+          etag: 'etag-4',
+          generation: '790',
+          contentType: 'application/json',
+          cacheControl: 'no-store',
+        },
+      ]),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsWriteIfGeneration } = await import('../../api/_lib/gcs-storage.js')
+    const result = await gcsWriteIfGeneration(
+      'jcv-dev-private',
+      'tracked-stocks/me/latest.json',
+      '{"ok":true}',
+      123,
+      {
+        contentType: 'application/json',
+        cacheControl: 'no-store',
+      }
+    )
+
+    expect(file.save).toHaveBeenCalledWith('{"ok":true}', {
+      resumable: false,
+      metadata: {
+        contentType: 'application/json',
+        cacheControl: 'no-store',
+      },
+      preconditionOpts: {
+        ifGenerationMatch: 123,
+      },
+    })
+    expect(result).toMatchObject({
+      generation: '790',
+      etag: 'etag-4',
+    })
+  })
+
+  it('supports create-only generation=0 writes for CAS create paths', async () => {
+    const file = createFileMock({
+      getMetadata: vi.fn().mockResolvedValue([
+        {
+          generation: '1',
+          contentType: 'application/json',
+        },
+      ]),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsWriteIfGeneration } = await import('../../api/_lib/gcs-storage.js')
+    await gcsWriteIfGeneration(
+      'jcv-dev-private',
+      'tracked-stocks/new/latest.json',
+      '{"ok":true}',
+      0,
+      {
+        contentType: 'application/json',
+      }
+    )
+
+    expect(file.save).toHaveBeenCalledWith('{"ok":true}', {
+      resumable: false,
+      metadata: {
+        contentType: 'application/json',
+      },
+      preconditionOpts: {
+        ifGenerationMatch: 0,
+      },
+    })
+  })
+
+  it('normalizes HTTP 412 conflicts into PRECONDITION_FAILED errors', async () => {
+    const conflictError = Object.assign(new Error('precondition failed'), { code: 412 })
+    const file = createFileMock({
+      save: vi.fn().mockRejectedValue(conflictError),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsWriteIfGeneration } = await import('../../api/_lib/gcs-storage.js')
+    await expect(
+      gcsWriteIfGeneration('jcv-dev-private', 'tracked-stocks/me/latest.json', '{"ok":true}', 123)
+    ).rejects.toMatchObject({
+      name: 'ConditionFailed',
+      code: 'PRECONDITION_FAILED',
+      status: 412,
     })
   })
 

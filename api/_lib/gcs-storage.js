@@ -71,17 +71,84 @@ function normalizeLastModified(value) {
   return Number.isNaN(lastModified.getTime()) ? null : lastModified
 }
 
+function normalizeIfGenerationMatch(value) {
+  if (value == null) return undefined
+  if (value === 0 || Number.isFinite(Number(value))) {
+    return Number(value)
+  }
+  throw new Error(`[gcs-storage] ifGenerationMatch must be a number; received "${value}"`)
+}
+
+function createReadResult(metadata, body) {
+  return {
+    body,
+    etag: metadata.etag || null,
+    contentType: metadata.contentType || null,
+    generation: metadata.generation || null,
+  }
+}
+
+function createWriteResult(metadata, bucketName, key, opts = {}) {
+  return {
+    key,
+    bucketName,
+    contentType: metadata.contentType || opts.contentType || null,
+    cacheControl: metadata.cacheControl || opts.cacheControl || null,
+    public: Boolean(opts.public),
+    etag: metadata.etag || null,
+    generation: metadata.generation || null,
+  }
+}
+
+function createConditionFailedError(bucketName, key, error) {
+  const conditionFailed = new Error(
+    `[gcs-storage] precondition failed for gs://${bucketName}/${key}`
+  )
+  conditionFailed.name = 'ConditionFailed'
+  conditionFailed.code = 'PRECONDITION_FAILED'
+  conditionFailed.status = 412
+  conditionFailed.cause = error
+  return conditionFailed
+}
+
+async function readGcsFile(bucketName, key) {
+  const file = getBucket(bucketName).file(key)
+  const [[metadata], [body]] = await Promise.all([file.getMetadata(), file.download()])
+  return createReadResult(metadata, body)
+}
+
+async function writeGcsFile(bucketName, key, body, opts = {}) {
+  const file = getBucket(bucketName).file(key)
+  const contentType = String(opts.contentType || '').trim() || undefined
+  const cacheControl = String(opts.cacheControl || '').trim() || undefined
+  const ifGenerationMatch = normalizeIfGenerationMatch(opts.ifGenerationMatch)
+
+  await file.save(body, {
+    resumable: false,
+    metadata: {
+      ...(contentType ? { contentType } : {}),
+      ...(cacheControl ? { cacheControl } : {}),
+    },
+    ...(ifGenerationMatch != null
+      ? {
+          preconditionOpts: {
+            ifGenerationMatch,
+          },
+        }
+      : {}),
+  })
+
+  const [metadata] = await file.getMetadata()
+  return createWriteResult(metadata, bucketName, key, {
+    contentType,
+    cacheControl,
+    public: opts.public,
+  })
+}
+
 export async function gcsRead(bucketName, key) {
   try {
-    const file = getBucket(bucketName).file(key)
-    const [[metadata], [body]] = await Promise.all([file.getMetadata(), file.download()])
-
-    return {
-      body,
-      etag: metadata.etag || null,
-      contentType: metadata.contentType || null,
-      generation: metadata.generation || null,
-    }
+    return await readGcsFile(bucketName, key)
   } catch (error) {
     const normalized = normalizeGcsError(error, bucketName, key)
     if (normalized === null) return null
@@ -89,43 +156,38 @@ export async function gcsRead(bucketName, key) {
   }
 }
 
+export async function gcsReadWithVersion(bucketName, key) {
+  const result = await gcsRead(bucketName, key)
+  if (!result) return null
+
+  return {
+    body: result.body,
+    contentType: result.contentType,
+    generation: result.generation,
+  }
+}
+
 export async function gcsWrite(bucketName, key, body, opts = {}) {
-  const file = getBucket(bucketName).file(key)
-  const contentType = String(opts.contentType || '').trim() || undefined
-  const cacheControl = String(opts.cacheControl || '').trim() || undefined
-  const ifGenerationMatch =
-    opts.ifGenerationMatch === 0 || Number.isFinite(Number(opts.ifGenerationMatch))
-      ? Number(opts.ifGenerationMatch)
-      : undefined
-
   try {
-    await file.save(body, {
-      resumable: false,
-      metadata: {
-        ...(contentType ? { contentType } : {}),
-        ...(cacheControl ? { cacheControl } : {}),
-      },
-      ...(ifGenerationMatch != null
-        ? {
-            preconditionOpts: {
-              ifGenerationMatch,
-            },
-          }
-        : {}),
-    })
-
-    const [metadata] = await file.getMetadata()
-
-    return {
-      key,
-      bucketName,
-      contentType: metadata.contentType || contentType || null,
-      cacheControl: metadata.cacheControl || cacheControl || null,
-      public: Boolean(opts.public),
-      etag: metadata.etag || null,
-      generation: metadata.generation || null,
-    }
+    return await writeGcsFile(bucketName, key, body, opts)
   } catch (error) {
+    const normalized = normalizeGcsError(error, bucketName, key)
+    if (normalized === null) return null
+    throw normalized
+  }
+}
+
+export async function gcsWriteIfGeneration(bucketName, key, body, expectedGeneration, opts = {}) {
+  try {
+    return await writeGcsFile(bucketName, key, body, {
+      ...opts,
+      ifGenerationMatch: expectedGeneration,
+    })
+  } catch (error) {
+    if (error?.code === 412) {
+      throw createConditionFailedError(bucketName, key, error)
+    }
+
     const normalized = normalizeGcsError(error, bucketName, key)
     if (normalized === null) return null
     throw normalized

@@ -89,11 +89,13 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
 
   beforeEach(() => {
     process.env.GCS_BUCKET_PRIVATE = 'jcv-dev-private'
+    process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH = 'true'
   })
 
   afterEach(() => {
     process.chdir(originalCwd)
     delete process.env.GCS_BUCKET_PRIVATE
+    delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH
   })
 
   it('lists snapshot.research inventory with cursor pagination from the Blob prefix', async () => {
@@ -249,6 +251,49 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       expect.objectContaining({
         key: 'snapshot/research/2026-04-24/research-index.json',
         status: 'skipped-existing-present',
+      }),
+    ])
+    expect(reverseManifest.items).toEqual([])
+  })
+
+  it('marks the item stale when the source changes after the copy verify step', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'snapshot-research-migrate-stale-source-'))
+    const paths = buildPaths(tempDir)
+    const destinations = createDestinationStore()
+    const gcsWriteIfGenerationImpl = vi.fn(async (bucketName, key, body, expectedGeneration) =>
+      destinations.writeIfGeneration(bucketName, key, body, expectedGeneration)
+    )
+
+    const { summary } = await runMigration(paths, {
+      consoleImpl: createConsoleSpy(),
+      loadKeyInventoryImpl: vi.fn(async () => [
+        {
+          key: 'snapshot/research/2026-04-24/research-index.json',
+          access: 'private',
+          bucketName: 'jcv-dev-private',
+        },
+      ]),
+      readSourceImpl: vi
+        .fn()
+        .mockResolvedValueOnce(createSourceRecord('{"schemaVersion":1,"items":[{"id":"stale"}]}'))
+        .mockResolvedValueOnce(createSourceRecord('{"schemaVersion":1,"items":[{"id":"fresh"}]}')),
+      readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+      gcsWriteIfGenerationImpl,
+    })
+
+    const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
+    const reverseManifest = JSON.parse(await readFile(paths.reverseManifestPath, 'utf8'))
+
+    expect(summary).toMatchObject({
+      totalItems: 1,
+      done: 0,
+      staleSourceChanged: 1,
+    })
+    expect(gcsWriteIfGenerationImpl).toHaveBeenCalledTimes(1)
+    expect(state.items).toEqual([
+      expect.objectContaining({
+        key: 'snapshot/research/2026-04-24/research-index.json',
+        status: 'stale-source-changed',
       }),
     ])
     expect(reverseManifest.items).toEqual([])

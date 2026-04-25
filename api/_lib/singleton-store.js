@@ -13,6 +13,7 @@ import {
 
 export const DEFAULT_PRIMARY_STORE = 'vercel'
 export const PRIMARY_STORES = new Set(['vercel', 'gcs'])
+const DEFAULT_SHADOW_SAMPLE_SIZE = 5
 
 function getPublicBlobToken() {
   return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
@@ -310,6 +311,34 @@ function normalizeListedKeys(items = []) {
   ).sort((left, right) => left.localeCompare(right))
 }
 
+function resolveShadowSampleSize(value = process.env.STORAGE_SHADOW_SAMPLE_SIZE) {
+  if (value == null || value === '') return DEFAULT_SHADOW_SAMPLE_SIZE
+
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric < 0) return DEFAULT_SHADOW_SAMPLE_SIZE
+  return Math.trunc(numeric)
+}
+
+function pickSampleKeys(keys = [], sampleSize, randomImpl = Math.random) {
+  if (sampleSize <= 0) return []
+
+  const remaining = Array.from(
+    new Set(
+      (Array.isArray(keys) ? keys : [])
+        .map((key) => String(key || '').trim())
+        .filter(Boolean)
+    )
+  )
+  const samples = []
+
+  while (remaining.length > 0 && samples.length < sampleSize) {
+    const index = Math.max(0, Math.min(remaining.length - 1, Math.floor(randomImpl() * remaining.length)))
+    samples.push(remaining.splice(index, 1)[0])
+  }
+
+  return samples.sort((left, right) => left.localeCompare(right))
+}
+
 function classifyShadowList(primaryItems, shadowItems) {
   const primaryKeys = normalizeListedKeys(primaryItems)
   const shadowKeys = normalizeListedKeys(shadowItems)
@@ -317,6 +346,7 @@ function classifyShadowList(primaryItems, shadowItems) {
   const primaryKeySet = new Set(primaryKeys)
   const primaryOnlyKeys = primaryKeys.filter((key) => !shadowKeySet.has(key))
   const shadowOnlyKeys = shadowKeys.filter((key) => !primaryKeySet.has(key))
+  const sharedKeys = primaryKeys.filter((key) => shadowKeySet.has(key))
   const matches = primaryOnlyKeys.length === 0 && shadowOnlyKeys.length === 0
 
   let result = 'match'
@@ -336,6 +366,7 @@ function classifyShadowList(primaryItems, shadowItems) {
     shadowCount: shadowKeys.length,
     primaryOnlyKeys,
     shadowOnlyKeys,
+    sharedKeys,
   }
 }
 
@@ -667,6 +698,69 @@ export function createSingletonStore({
     }
   }
 
+  function buildListSampleDescriptor(descriptor, key) {
+    return normalizeDescriptor(
+      {
+        ...descriptor,
+        key,
+        vercelKey: key,
+        gcsKey: key,
+        prefix: null,
+      },
+      keyspaceId
+    )
+  }
+
+  async function sampleShadowListReads(descriptor, sharedKeys, primary, shadow, options = {}) {
+    const sampleKeys = pickSampleKeys(sharedKeys, resolveShadowSampleSize(options.shadowSampleSize))
+    if (!shadow || sampleKeys.length === 0) return
+
+    const logger = options.logger || console
+
+    for (const key of sampleKeys) {
+      const sampleDescriptor = buildListSampleDescriptor(descriptor, key)
+
+      try {
+        const [primaryResult, shadowResult] = await Promise.all([
+          readFromStore(primary, sampleDescriptor, options),
+          readFromStore(shadow, sampleDescriptor, options),
+        ])
+        const comparison = classifyShadowRead(primaryResult, shadowResult)
+        if (comparison.matches) continue
+
+        try {
+          await appendStorageDivergenceMetric(
+            {
+              type: 'read-divergence',
+              keyspace: sampleDescriptor.keyspace,
+              key,
+              primary,
+              shadow,
+              op: 'read',
+              result: comparison.result,
+              primaryHash: comparison.primaryHash,
+              shadowHash: comparison.shadowHash,
+              ...(sampleDescriptor.scope ? { scope: sampleDescriptor.scope } : {}),
+              ...(sampleDescriptor.date ? { date: sampleDescriptor.date } : {}),
+            },
+            options
+          )
+        } catch (error) {
+          logger.warn?.(
+            `[${loggerPrefix}] failed to append sampled read divergence metric for ${key}:`,
+            error
+          )
+        }
+
+        logger.warn?.(
+          `[${loggerPrefix}] shadow sampled read divergence for ${key}: ${primary}=${comparison.primaryHash || 'miss'} ${shadow}=${comparison.shadowHash || 'miss'}`
+        )
+      } catch (error) {
+        logger.warn?.(`[${loggerPrefix}] shadow list sample compare failed for ${key}:`, error)
+      }
+    }
+  }
+
   return {
     async read(params, options = {}) {
       const descriptor = descriptorResolver.resolve(params)
@@ -794,6 +888,7 @@ export function createSingletonStore({
           }
 
           const comparison = classifyShadowList(primaryItems, shadowOutcome)
+          await sampleShadowListReads(descriptor, comparison.sharedKeys, primary, shadow, options)
           if (comparison.matches) return
 
           try {

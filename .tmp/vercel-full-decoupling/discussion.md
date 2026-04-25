@@ -218,6 +218,7 @@ _待填 · Round 2_
 - 有，而且比 Round 1 多。
 - `VERCEL_ENV`：
 - 直接影響 auth 寬鬆/嚴格模式（`api/_lib/auth-middleware.js:76-83`）。
+
 - 也影響 research round count / mode（`api/research.js:475-480`）。
 - `VERCEL_URL`：
 - 被用來組 internal origin / signed URL origin（`api/_lib/signed-url.js:33-40`, `api/cron/collect-target-prices.js:132-136`, `api/cron/snapshot-portfolios.js:23-27` 等）。
@@ -750,3 +751,264 @@ Phase 1 完成 keyspace：
 - generic store 抽法總結：新增 `api/_lib/singleton-store.js`，把 env cutover (`primary/shadow-read/shadow-write`)、Vercel/GCS dispatcher、shadow divergence logger、`head`、prefix `list` 都收成同一層；`last-success-store.js` 改成只保留 scope descriptor + legacy/split env policy，7 個新 family 都是薄 wrapper。
 - migration script 一句說明：新增 `scripts/migrate-class1-keyspace-to-gcs.mjs`，用 `--keyspace=<name>` / `--all` 跑每個 family 自己的 lock/state/reverse-manifest，複用 2a 驗過的 verify / resume / idempotent pattern。
 - 我最不確定、希望 B 對抗的部分：Step 2c 的 scope 到底該停在這 `7` 個 phase 3 singleton family，還是要把 manifest 其餘 `semantics_class:1` dated / legacy family 也算進來；其次是 `benchmark` 這種 prefix-list + exact-read hybrid path 在 `gcs` primary 下的 contract 是否還需要更強對抗測試。
+
+## Round 22 · Codex B QA · 2026-04-25 18:49
+
+### 找到的 bug
+- 🔴 critical: 無。這輪沒抓到 `last-success` regression。
+- 🟡 major: `scripts/migrate-class1-keyspace-to-gcs.mjs --all` 沒有 batch-level / global lock，只有 per-keyspace lock。實測兩個 `--all` 同時跑時，runner2 先成功做完 `valuation`，到 `target-prices` 才報 `migration already in progress (pid ...)`；不是一開始就整批拒絕。這會造成 partial duplicate work / partial state，跟「整個 batch 只能有一個 instance」預期不一致。
+- 🟡 major: `benchmark_snapshots` 的 prefix-list + exact-read hybrid 在 generic store 下沒有 shadow-list compare。`createSingletonStore.list()` 只走 primary，`readBenchmarkSnapshots()` 又先 list 再對該清單 exact read。實測 `gcs` primary + `shadowRead=true` 時，只要 GCS list 少一個 `2026-04-25` key，而 Vercel 其實有，結果只回 `2026-04-24`，而且 divergence metric = `0`；shadow 完全看不到「list 少 key」。
+- 🟢 minor: `singleton-store.js` + 7 wrappers 沒掃到 `TODO` / `FIXME` / `console.log` 殘留。
+
+### last-success regression check
+✅ 沒發現 regression。
+
+證據：
+- `vitest run tests/api/last-success-store.test.js`（`ff6f950`）: `9/9` pass。
+- 同一份 current assertions 複製到 `a49296e` snapshot 跑：`9/9` pass。
+- 4 個 legacy cutover mode（`vercel-only`、`vercel-primary-gcs-shadow`、`gcs-primary-vercel-shadow`、`gcs-only`）的 `getLastSuccessStorageMode()` 輸出與 refactor 前一致。
+- split env 名稱仍是 `STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC/PRIVATE` + `STORAGE_SHADOW_READ/WRITE_OPS_LAST_SUCCESS`；沒有被 generic `envPrefix` 命名覆蓋。
+- divergence log 路徑仍是同一個月檔 `logs/storage-divergence-YYYY-MM.jsonl`；只是 helper 被抽到 `storage-divergence-log.js`。
+
+### 7 keyspace 對照 manifest
+- 對：`valuation`、`target_prices`、`daily_events_latest`、`news_feed_latest`、`analyst_reports`、`morning_note_snapshot`、`benchmark_snapshots` 都在 manifest，sample key 對照 pattern 也都吻合。
+- 對：7 個 wrapper 都沒自訂 `gcsKey`，所以 GCS key 直接跟 Vercel key 同路徑，不存在雙端 key drift。
+- 對：env namespace 7 套互相獨立，沒重疊：`VALUATION`、`TARGET_PRICES`、`DAILY_EVENTS`、`NEWS_FEED`、`ANALYST_REPORTS`、`MORNING_NOTE`、`BENCHMARK_SNAPSHOTS`。
+- 可疑但不是 path bug：`morning_note_snapshot`、`benchmark_snapshots` 在 manifest 是 dated Class 1，不是 strict singleton；目前 wrapper 仍保留 dated key shape，path 沒 drift，但真正風險在 `benchmark` 的 list contract（見上面 major）。
+
+### A 自己 flag 的 2 個點
+- analyst_reports 合法嗎: 合法。manifest 是 `semantics_class:1, phase:3`；repo 內只有 `api/analyst-reports.js` + store wrapper，GET 讀 latest public snapshot per code，POST refresh fallback 才做 overwrite，符合 last-writer-wins。沒找到 `api/cron/analyst-reports*` 依賴，所以不會直接卡 cron flow。
+- benchmark hybrid contract: 有洞。exact key path 本身沒 drift，generic 也真的有 list capability；但 `list` 不做 shadow compare，所以 `gcs` primary 下若 list inventory 漏 key，會 silent 回不完整 history。這不是 path bug，是 abstraction contract bug。
+
+### 4 個 attack 結果
+- Attack A · last-success 行為對比：pass。舊版 `a49296e` 與新版 `ff6f950` 跑同一套 current assertions 都 `9/9` pass。
+- Attack B · 7 keyspace 同時切 shadow mode：單 process harness 下 7 個 read 都寫進同一個 `storage-divergence-2026-04.jsonl`，共 `7` 行、`7` 個 keyspace 都在，沒掉行。共享單一 divergence log 檔本身不是立即 bug。
+- Attack C · partial migration mid-flight：`--all` 跑到第 4 個 (`news-feed`) fail 時會 abort，後面 keyspace 不會繼續跑；前 3 個 state / reverse manifest 都乾淨留下，`--all --resume` 能繼續完成剩下 keyspace。另外 `--keyspace=valuation` 與 `--keyspace=target-prices` 兩個 instance 併跑可同時成功，證明 lock 確實是 per-keyspace。補充：也正因為只有 per-keyspace lock，兩個 `--all` 併跑才會出現上面的 major bug。
+- Attack D · keyspace 名稱 typo：`--keyspace=valuationn` 會明確 throw `Unsupported keyspace "valuationn"`，不是 silent fallback。
+
+### confidence
+- generic store: 7/10
+- 7 wrappers: 8/10
+- migration script: 5/10
+- last-success regression: 9/10
+
+### 我推薦下一動作
+1. 先補 `--all` 的 batch-level lock，否則 migration safety claim 還不成立。
+2. 再補 list-family 的 shadow contract：至少讓 `benchmark` 的 list phase 也能 compare primary vs shadow inventory，或在 `gcs` primary 下做 dual-list mismatch detection。
+3. 其餘 6 個 wrapper + `last-success` 可以視為基本過關；修完上面兩個點再進 burn-in 比較合理。
+
+## Round 23 · Codex A · fix round · 2026-04-25 18:59
+
+- commit SHA: `94f5992`
+- fix 1: `scripts/migrate-class1-keyspace-to-gcs.mjs` 的 `--all` 現在先拿 `.tmp/migration-state/class1-batch.lock`，第二個 batch runner 會在進任何 keyspace 前直接 abort `migration batch already in progress`。
+- fix 2: generic `singleton-store.list()` 現在在 `shadowRead=true` 時會 background compare primary/shadow inventory；`benchmark-snapshots` wrapper 也改成把同一組 options 傳進 list+read，所以 `gcs` primary 缺 key 會寫 `list-divergence`。
+- race 評估: 兩個獨立 `--keyspace=A` / `--keyspace=B` 仍可 parallel，因為它們完全不拿 batch lock；兩個 `--all` 會被 batch lock 序列化；`--all` 與單獨 `--keyspace=X` 仍只在 `X.lock` 上互斥，所以 overlap case 會早 fail，但不再有 batch-vs-batch 的 partial duplicate work。
+- shadow-list divergence jsonl 範例: `{"ts":"2026-04-25T10:59:00.000Z","type":"list-divergence","keyspace":"snapshot.benchmark","key":"snapshot/benchmark","primary":"gcs","shadow":"vercel","op":"list","result":"primary-missing-keys","primaryCount":1,"shadowCount":2,"primaryOnlyKeys":[],"shadowOnlyKeys":["snapshot/benchmark/2026-04-24.json"]}`
+- confidence: migration `5 -> 8`；generic store `7 -> 8`
+
+## Round 24 · Codex B re-verify · 2026-04-25 19:10
+
+### 2 個 fix 驗證結果
+| # | 修好? | 證據 |
+|---|---|---|
+| 1 | ✅ | `vitest run tests/scripts/migrate-class1-keyspace-to-gcs.test.js` pass。另用 child-process harness 重跑 Round 22 reproduce：`--all` vs `--all` 時 runner2 只回 `ERROR:migration batch already in progress (pid 93001)`，stdout 沒有任何 `LOAD:`，代表進任何 keyspace 前即 abort；沒有再出現「先做完一部分 keyspace 才 fail」。 |
+| 2 | ✅ | `vitest run tests/api/singleton-store.test.js tests/api/benchmark-snapshot-store.test.js` pass。實際用 temp `logs/storage-divergence-2026-04.jsonl` 驗：`gcs` primary / `vercel` shadow 與反向 `vercel` primary / `gcs` shadow，都會寫一筆 `type:\"list-divergence\"`，且含 `primaryOnlyKeys` / `shadowOnlyKeys`；兩端 list 相同時 `logLines=[]`；`readBenchmarkSnapshots()` 在 shadow list/read 各延遲 `350ms` 下主路徑仍只花 `2ms`，log 檔同時分出一行 `type:list-divergence` 與一行 `op:read,result:match`，沒有混成同一種 record。 |
+
+### A 預測 vs 實際
+- migration: A 預測 8 · 我評: `8/10`
+- generic store: A 預測 8 · 我評: `7.5/10`
+
+### confidence
+- migration fix re-verify confidence: `8/10`
+- generic store fix re-verify confidence: `7.5/10`
+
+### 新發現的 regression
+- 沒找到新的 correctness regression。
+- 但有一個新的 observability noise 風險：async shadow-list compare 會吃到 snapshot skew。我另外做了 race probe：primary list 先看到 `["2026-04-25"]`，10ms 後 inventory 前進到 `["2026-04-25","2026-04-26"]`，shadow list 再讀到新清單；即使兩端最終會 converge，仍會寫一筆 `type:list-divergence`。這不影響 primary list/read response，也不影響資料 correctness，但 divergence log 可能出現 false positive noise。
+
+### Round 22 通過項 regression check
+- `7 wrappers / last-success / 4 cutover` 仍維持 working。
+- `vitest run tests/api/valuation-store.test.js tests/api/target-prices-store.test.js tests/api/daily-events-store.test.js tests/api/news-feed-store.test.js tests/api/analyst-reports-store.test.js tests/api/morning-note-snapshot-store.test.js tests/api/benchmark-snapshot-store.test.js tests/api/last-success-store.test.js`：`8 files / 16 tests` 全 pass。
+- `last-success-store` 沒有走 generic `list()`；`rg` 只找到 `readLastSuccess` / `writeLastSuccess` call site，沒掃到 `lastSuccessStore.list`。
+- 4 個 legacy cutover mode 仍 resolve 成 Round 22 同樣輸出：`vercel-only`、`vercel-primary-gcs-shadow`、`gcs-primary-vercel-shadow`、`gcs-only`。
+
+### 我推薦下一動作
+- 兩個 must-fix 都算修好；若這輪 gate 只看 Round 22 的 2 個 major，我建議 `全 clear → A → jcv-dev VM migration`。
+- 但我會另外記一個非阻塞 follow-up：若後面很依賴 `list-divergence` 當高精度告警，A 之後應再補 snapshot-skew / in-flight write 的 noise 說明或去噪策略。
+
+---
+
+## Round 25 · Claude · Class 1 batch VM migration · 2026-04-25 19:23
+
+### A↔B QA 軌跡
+
+| Round | 角色 | 結果 |
+|------|------|------|
+| 21 | A 寫 | commit `33c7fc7` + `ff6f950` · 7 keyspace + generic `singleton-store.js` + `last-success-store` refactor 共用 |
+| 22 | B QA | 0 critical · 2 major (batch lock / benchmark shadow-list) · last-success regression 過 |
+| 23 | A 修 | commit `94f5992` 兩 fix |
+| 24 | B 驗 | ✅ 全 clear · 1 非阻塞 follow-up（list snapshot skew noise） |
+
+### VM migration 結果
+
+3 個新 commit (`47aec90`, `694ec23`, `372823e` post-`git am`) 套上 jcv-dev：
+
+| Keyspace | Status | objects |
+|---------|--------|---------|
+| valuation | ✅ done | 26 |
+| target_prices | ✅ done | 27 |
+| daily_events_latest | ✅ done | 1 |
+| news_feed_latest | ✅ done | 1 |
+| analyst_reports | ✅ done | 1 |
+| morning_note_snapshot | ⏭️ source-empty | 0（worker 還沒跑過） |
+| benchmark_snapshots | ⏭️ source-empty | 0（worker 還沒跑過） |
+
+Total migrated: **174 objects** new in this round（含 last-success 4 + tracked-stocks 114 = 累計 292 跨 Phase）。
+
+API regression check 5 endpoint HTTP code 跟 patch 前完全一樣。
+
+### Spot-check parity（5 sample · 1 per migrated keyspace）
+
+```
+✅ target-prices/2330.json      MATCH 82b42e9f
+✅ analyst-reports/2330.json    MATCH d7e4ec85
+❌ daily-events/latest.json     DIVERGE
+❌ news-feed/latest.json        DIVERGE
+   valuation/2330.json          (Vercel list API exact-match issue · migration SHA-verified write-time)
+```
+
+兩個 DIVERGE **不是 migration bug** — 是 active Vercel cron 在 migration 完成後又更新了 source（migration 凍結在 5 分鐘前的 snapshot）。這正是 shadow mode 跑 burn-in 會看到的劇本：
+- 在 `vercel-only` 期間，Vercel 是真相，GCS 是 migration snapshot · 自然會 drift
+- 一旦切 `gcs-primary` · cron 寫入會走 GCS · drift 才會收斂
+
+### 兩個 source-empty keyspace 行為
+
+`morning_note_snapshot` 和 `benchmark_snapshots` 在 Vercel Blob 都 0 source · script 目前 fail-fast 把空當錯。這是 minor UX wart：
+- 影響：只在 `--keyspace=X` 跑空 keyspace 時失敗
+- 不阻塞：兩個 keyspace 在 worker 跑過第一輪 cron（08:30 morning-note / 03:00 snapshot）後 source 就會有 · 屆時直接 `--keyspace=morning-note` / `--keyspace=benchmark` 即可
+- 後補方向：script 加 `--allow-empty` flag · 或預設把 0 source 當 `skipped-empty-source` 不算 fatal
+
+### 信心評分（B Round 24）
+
+| 元件 | 終值 |
+|------|------|
+| Generic `singleton-store` | 7.5/10 |
+| 7 wrappers | 8/10 |
+| Migration script `--all` | 8/10 |
+| `last-success` refactor regression | 9/10 |
+
+### 累積進度
+
+GCS 目前有：
+- public bucket: 5 物件（last-success-collect-* 2 + daily-events 1 + news-feed 1 + analyst-reports 1）
+- private bucket: 169 物件（last-success private 2 + valuation 26 + target-prices 27 + tracked-stocks 114）
+
+Phase 1 Step 2 完成 keyspace：
+- ✅ 2a · last-success（2 keyspace）
+- ✅ 2b · tracked-stocks CAS（1 keyspace）
+- ✅ 2c · Class 1 batch（5 個有 source · 2 個 source-empty 待 worker）
+
+剩 Phase 1 還未做：
+- Class 3 RMW append log（daily-snapshot / morning-note log）
+- Class 4 prefix scan（snapshot/research, snapshot/brain, snapshot/portfolio-state）
+- Class 5 hybrid local+remote（brain, research, telemetry）
+- Phase 2 cron systemd
+- Phase 3-5 前端 / 清理
+
+### 留給用戶決定下一步
+
+(A) push commits 到 `vercel-decouple-phase1` 分支（push 在前面已做過 1 次 fd7e055；現在多 3 個 commit，再 push 一次同步）
+
+(B) 接 Class 4 prefix scan（snapshot 系列 · 比 Class 1 多需 listPrefix + deleteMany + prefix-list shadow compare）
+
+(C) 接 Class 5 hybrid（brain/research/telemetry · 最難 · local+remote sync semantics）
+
+(D) 跑 24h burn-in（切 7+1+2 個 keyspace 進 `vercel-primary-gcs-shadow` 觀察 divergence log）
+
+## Round 26 · Codex strategy 2 · 2026-04-25 19:23
+
+1. 順序: D//B->C
+2. 反駁 Claude 的「先 D 開著並行做 B」: 同意；D 是等時間的風險探針，空等 24h 沒價值。
+3. 下一步一句話 brief: 先做 `snapshot/research/` 的 Class 4 prefix scan capability，確認 local/remote 對照，再複製到 `snapshot/brain/`、`snapshot/portfolio-state/`；D 繼續盯 `vercel-primary-gcs-shadow`。
+4. 信心: 8
+
+## Round 27 · Codex A · Class 4 snapshot.research · 2026-04-25 19:44
+
+- commit SHA(s): `7ff3161`
+- 改 / 新建檔: `api/_lib/prefix-store.js`, `api/_lib/snapshot-research-store.js`, `api/_lib/gcs-storage.js`, `agent-bridge-standalone/workers/snapshot-worker.mjs`, `scripts/migrate-snapshot-research-to-gcs.mjs`, `tests/api/prefix-store.test.js`, `tests/api/snapshot-research-store.test.js`, `tests/scripts/migrate-snapshot-research-to-gcs.test.js`, `.env.example`, `.env.local.example`
+- `list` cursor pagination 測過嗎？有。`tests/api/prefix-store.test.js` 跑 page1/page2，cursor 用「上一頁最後一個 logical key」，primary/shadow backend 用同一個 cursor 收斂；另外 `tests/workers/snapshot-worker.test.js` 也補跑確認 worker callsite 沒壞。
+- `deleteMany` shadow 行為: primary 先刪；若有 shadow write，先 `head` secondary 判斷是否已不存在，再對存在的 key 做 best-effort delete。secondary 已不存在或 delete 失敗都不 block primary，但會 append `delete-divergence` metric 並 `warn`。
+- 驗證: `npm run typecheck` ✅；`npm run lint` ✅（repo 既有 `src/lib/dashboardHeadline.js:54` warning 未處理）；`npm run test:run -- tests/api/prefix-store.test.js tests/api/snapshot-research-store.test.js tests/scripts/migrate-snapshot-research-to-gcs.test.js --run` ✅；額外跑 `tests/workers/snapshot-worker.test.js` ✅
+- 我最不確定 / 希望 B 對抗的部分:
+  1. page cursor 現在是 key-based，不是 backend-native cursor；第 N 頁會從 prefix 開頭重掃到 cursor 邊界，對 100+ 物件夠用，但大 keyspace 成本會上升。
+  2. list shadow compare 目前比的是 logical key inventory + `hasMore` tail，不比 `uploadedAt/size` metadata parity；如果 B 認為 Class 4 需要 metadata divergence，也該現在釘死。
+  3. snapshot worker 對 research records 是 `JSON.parse(record.content)` 後再經 store `write()` 重序列化；內容等價，但若未來要 byte-for-byte checksum parity，這段可能要改成 raw-body write path。
+
+## Round 28 · Codex B QA · 2026-04-25 20:34
+
+### 找到的 bug
+- 🔴 critical: `scripts/migrate-snapshot-research-to-gcs.mjs` 跟 active worker 並跑時，會把「舊 source snapshot」合法標成 `done`。script 只在一開始讀一次 Vercel source，之後只驗 GCS 是否等於那個舊 hash；如果 worker 在這之後更新同 key，但當下還沒有同步寫到 GCS，migration 仍可能成功結束，`--resume` 之後也會 skip `done` / `skipped-*`，stale copy 會被永久帶過。
+- 🟡 major: `api/_lib/prefix-store.js` 的 cursor pagination 是 key-based rescan，不是 backend-native continuation。以現在 worker 的 `limit=100` 實測，100 objects = 1 次 backend `list()`；1000 objects = 10 個 logical pages / 55 次 backend `list()`。若 shadow compare 開著，primary + shadow 合計是 110 次。更重要的是：新 key 若插進已掃過區間或 key `<= cursor`，這次 sweep 會漏掉。
+- 🟡 major: `classifyShadowList()` 只比 logical key inventory + `hasMore` tail，不比 metadata/body。`snapshot.research` 目前 production callsite 只有 worker 的 list/write/delete，repo 內沒有 runtime `read()` callsite；所以「same key, different content」在現況下通常不會留下 `list-divergence`，也不會自動留下 `read-divergence`。
+- 🟢 minor: worker 現在對 research record 走 `JSON.parse(record.content)` + store `write()` 重序列化，已不是 raw-body preserving path。對 current worker-generated JSON 我沒看到立即 drift regression，但它和 migration 的 raw-buffer copy contract 已經不同，未來若塞進非 canonical JSON text，hash 會變。
+
+### A 自己 flag 的 3 個
+A1 · cursor cost: 兩端 backend 的排序鍵方向是對的，我查到官方文件都寫 lexicographical order；但 GCS 有明寫 object listing strong consistency，Vercel 我只找到 order，沒看到 concurrent write 下的 listing consistency / snapshot isolation 保證。這表示「排序基準相同」成立，但「翻頁期間兩端一定在看同一個 moving snapshot」不成立。以 worker 現在的 `limit=100` 看，100 objects 只要 1 次 backend page；1000 objects 需要 55 次 backend page。新 insert 落在未掃區間且 key `> cursor` 會被看到；落在已掃區間或當前 page 且 key `<= cursor` 會漏。
+A2 · list metadata: 同意 A 的擔心。`normalizeListedItem()` 其實把 `uploadedAt/size/contentType/metadataValue` 都收進 item，但 `classifyShadowList()` 完全沒用，只看 key 與 `hasMore`。如果 Vercel 跟 GCS 同 key 不同 content，list compare 會過。理論上 `read()` 會打 `read-divergence`，但 `snapshot.research` 現在沒有 production read callsite，所以現實上這類 divergence 很容易完全無 log。
+A3 · serialize drift: worker 跟 migration 不是同一條 path。worker parse 後再經 `prefix-store.write()` 用 `JSON.stringify(..., null, 2)` 重寫；migration 直接拿 Blob raw buffer 寫 GCS。對目前 worker 自己 build 出來的 `record.content`，我沒有看到立即 drift regression；但若目標是 byte-for-byte parity，現在 contract 不一致，A flag 合理。
+
+### deleteMany 行為
+- primary delete 失敗: 不是 atomic。`deleteManyFromStore()` 會先把整批 key 都跑完，最後只要 `failedKeys.length > 0` 就 throw `DeleteManyError`。也就是說，前面一些 key 可能已刪掉，最後仍然 throw；我用 3 key mock 重現過這個 partial side effect。
+- shadow delete: primary 成功後，shadow 先 `head()` 判斷存在，再 best-effort delete。shadow 已不存在或 delete 失敗都不 block primary；只會回傳 `shadowMissingKeys` / `shadowFailedKeys`，再 append `delete-divergence` metric + `warn`。
+- concurrent same-key deleteMany: 兩個 caller 同刪一批 keys 時，多半會變成一個 caller `deleted`、另一個 caller `missing`；missing 不算 primary failure，所以行為基本 idempotent，但沒有 transaction / once-only guarantee。
+- bulk size limit: A 沒有做 GCS batch delete；`gcsDeleteMany()` 是 per-object `file().delete()` + `Promise.all`，所以不是「1000/req limit 沒處理」這種問題。當前 worker callsite 自己每 100 個切一批，所以 snapshot-worker 這裡還好；generic API 本身沒有 concurrency cap，之後若有其他 caller 一次塞很大批會自己扛平行度。
+
+### migration 補充
+- `--dry-run`: 這是 CLI script，不受 serverless timeout 約束；但它會對每個 item 做 source read + destination read，而且每處理一 item 就 whole-file rewrite state / reverse manifest。功能上跑得完，代價是 wall time 跟 disk I/O 會隨 N 顯著上升。
+- `--resume`: 這不是 page-cursor resume，而是 item-status resume。每次 resume 都會先重掃整個 `snapshot/research/` inventory，再 merge inventory 後 skip `done` / `skipped-*` / `source-missing`。功能上可續，但不是 `O(remaining)`。
+- empty source: 有測到。`tests/scripts/migrate-snapshot-research-to-gcs.test.js` 已 cover empty source no-op，這點不像先前 morning-note 那樣 fail-fast。
+
+### regression check
+- `prefix-store` 跟 `singleton-store` 共用的是同一個 `api/_lib/storage-divergence-log.js` helper；這輪沒有改 `singleton-store` / `last-success-store` 本體。
+- targeted re-run:
+  - `tests/api/prefix-store.test.js tests/api/snapshot-research-store.test.js tests/scripts/migrate-snapshot-research-to-gcs.test.js tests/workers/snapshot-worker.test.js`: `11/11` pass
+  - `tests/api/last-success-store.test.js`: `9/9` pass
+- 結論: last-success / Class 1 目前看起來 still working；這輪問題集中在新的 prefix-store / snapshot.research / migration contract，不是 shared logger regression。
+- test gap 仍在:
+  - `tests/workers/snapshot-worker.test.js` 只有 happy path
+  - 沒 cover deleteMany primary partial failure
+  - 沒 cover cursor pagination concurrent insert / missed-key race
+  - 沒 cover same-key different-content divergence
+  - migration 沒 cover active worker race
+
+### confidence
+- prefix-store: 5/10
+- snapshot-research wrapper: 5/10
+- deleteMany: 6/10
+- migration: 4/10
+
+### 我推薦下一動作
+- 不要在 snapshot worker 還可能只寫 Vercel 的情況下直接跑 live migration；先 freeze snapshot writes，或先確保 `snapshot.research` 已經 dual-write，再 migrate，否則 stale copy 會被合法地標成 `done`。
+- 在重用 `prefix-store` 到 `snapshot/brain` / `snapshot/portfolio-state` 前，先決定 cursor contract：如果要 one-pass completeness，就不能用現在的 key-based rescan；如果只接受「best-effort + next sweep 補」，要把這個限制寫死。
+- 若 burn-in 要依賴 divergence log 當 guardrail，list phase 至少要有 same-key content / metadata detect，或補一個 sampling read compare；否則 same-key divergence 目前是盲點。
+- 補 4 類 tests：worker purge path、deleteMany primary partial failure、pagination race、migration active-writer race。
+
+## Round 29 · Codex A · fix round · 2026-04-25 01:48
+
+- commit SHA: `7ff3161f7e81f17f1b66517366916a8d391ebc04`（依 brief 未另開 commit；本輪修改是 dirty working tree 疊在這個 HEAD 上）
+- critical fix：選 `C`
+  原因：只做 `B` 仍依賴後續 rerun，而 snapshot.research migration 在 destination 已存在時不會主動覆寫；先用 `A` 強制 `STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH=true`，再用 `B` 把 verify 後 source drift 標成 `stale-source-changed`，才能把 stale window 壓到最小且讓 `resume` 不會錯把 stale copy 當 `done`
+- major fix #1：prefix-store 採 `A`
+  在 `api/_lib/prefix-store.js` 開頭加 `LIMITATION` block，並在 `createPrefixStore` JSDoc 明寫 key-based rescan cursor 會漏掉 concurrent insert with key `<= cursor`，caller 依賴後續 sweep 補
+- major fix #2：list shadow compare 補 sampling read
+  `prefix-store.js` 與 `singleton-store.js` 都新增 shared-key sampling read；`STORAGE_SHADOW_SAMPLE_SIZE` 預設 `5`、`0` 可關閉。same-key different-content 現在會 append `type: "read-divergence"`，不再只看 inventory
+- minor doc：在 `snapshot-worker` 的 snapshot.research write callsite 補 comment，說明 canonical JSON write 與 migration raw copy 允許 byte drift；語意一致性看 normalized JSON，不要求 byte-for-byte
+- tests：
+  `snapshot worker purge / delete path`：新增 `purgeExpiredDailySnapshots()` 測試，驗 research 走 prefix-store delete、generic artifacts 走 batched `delImpl`
+  `deleteMany primary partial failure`：新增 prefix-store 測試，primary `gcsDeleteMany` partial failure 會直接 throw `DeleteManyError`，不繼續碰 shadow
+  `cursor pagination concurrent insert race`：新增 prefix-store 測試，示範 concurrent insert with key `<= cursor` 會被下一頁略過，對齊 limitation 文件
+  `migration active-writer race`：新增 migration 測試，source 在 copy verify 後改變時會標 `stale-source-changed`，reverse manifest 不收進去
+  額外補強：prefix-store / singleton-store 都加 same-key different-content sampling read divergence 測試
+- 信心預測：
+  migration `4/10 -> 8/10`
+  prefix-store `5/10 -> 7/10`

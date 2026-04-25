@@ -533,6 +533,10 @@ async function writeSnapshotArtifacts(records, { token, putImpl = put } = {}) {
 
   for (const record of records) {
     const result = record.pathname.startsWith('snapshot/research/')
+      // Intentional: snapshot.research writes go through canonical JSON
+      // serialization here. Migration may raw-copy historical bytes into GCS,
+      // so byte equality is not guaranteed even when the JSON payload matches.
+      // Cross-backend drift checks should compare normalized JSON semantics.
       ? await writeSnapshotResearchObject(record.pathname, JSON.parse(record.content), {
           token,
           putImpl,

@@ -32,6 +32,7 @@ describe('api/_lib/prefix-store.js', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.GCS_BUCKET_PRIVATE = 'jcv-dev-private'
+    process.env.STORAGE_SHADOW_SAMPLE_SIZE = '0'
   })
 
   afterEach(() => {
@@ -39,6 +40,7 @@ describe('api/_lib/prefix-store.js', () => {
     delete process.env.STORAGE_PRIMARY_TEST_PREFIX_STORE
     delete process.env.STORAGE_SHADOW_READ_TEST_PREFIX_STORE
     delete process.env.STORAGE_SHADOW_WRITE_TEST_PREFIX_STORE
+    delete process.env.STORAGE_SHADOW_SAMPLE_SIZE
   })
 
   it('supports the four cutover shapes for exact reads/writes and prefix listing', async () => {
@@ -325,6 +327,74 @@ describe('api/_lib/prefix-store.js', () => {
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
+  it('documents the logical cursor race when a concurrent insert lands before the cursor', async () => {
+    const store = createStore()
+
+    const listImpl = vi
+      .fn()
+      .mockResolvedValueOnce({
+        blobs: [
+          { pathname: 'snapshot/research/a.json' },
+          { pathname: 'snapshot/research/c.json' },
+        ],
+        cursor: 'vercel-page-2',
+      })
+      .mockResolvedValueOnce({
+        blobs: [{ pathname: 'snapshot/research/d.json' }],
+        cursor: null,
+      })
+      .mockResolvedValueOnce({
+        blobs: [
+          { pathname: 'snapshot/research/b.json' },
+          { pathname: 'snapshot/research/d.json' },
+        ],
+        cursor: null,
+      })
+
+    const firstPage = await store.list(
+      {
+        prefix: '',
+        limit: 2,
+      },
+      {
+        token: 'blob-token',
+        storagePolicyOverride: {
+          primary: 'vercel',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+        listImpl,
+      }
+    )
+
+    const secondPage = await store.list(
+      {
+        prefix: '',
+        cursor: firstPage.nextCursor,
+        limit: 2,
+      },
+      {
+        token: 'blob-token',
+        storagePolicyOverride: {
+          primary: 'vercel',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+        listImpl,
+      }
+    )
+
+    expect(firstPage.items.map((item) => item.key)).toEqual([
+      'snapshot/research/a.json',
+      'snapshot/research/c.json',
+    ])
+    expect(firstPage).toMatchObject({
+      hasMore: true,
+      nextCursor: 'snapshot/research/c.json',
+    })
+    expect(secondPage.items.map((item) => item.key)).toEqual(['snapshot/research/d.json'])
+  })
+
   it('records deleteMany shadow divergence when the secondary key is already gone', async () => {
     const store = createStore()
     const appendMetricImpl = vi.fn().mockResolvedValue(undefined)
@@ -383,6 +453,52 @@ describe('api/_lib/prefix-store.js', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('shadow delete divergence for snapshot.research: missing=1 failed=0')
     )
+  })
+
+  it('throws immediately when the primary deleteMany call partially fails', async () => {
+    const store = createStore()
+    const headImpl = vi.fn()
+    const delImpl = vi.fn()
+
+    await expect(
+      store.deleteMany(
+        [
+          '2026-04-24/research-index.json',
+          '2026-04-24/portfolio-me-research-history.json',
+        ],
+        {
+          token: 'blob-token',
+          storagePolicyOverride: {
+            primary: 'gcs',
+            shadowRead: false,
+            shadowWrite: true,
+          },
+          gcsDeleteManyImpl: vi.fn().mockResolvedValue({
+            deletedKeys: ['snapshot/research/2026-04-24/research-index.json'],
+            missingKeys: [],
+            failedKeys: [
+              {
+                key: 'snapshot/research/2026-04-24/portfolio-me-research-history.json',
+                error: new Error('primary delete failed'),
+              },
+            ],
+          }),
+          headImpl,
+          delImpl,
+        }
+      )
+    ).rejects.toMatchObject({
+      name: 'DeleteManyError',
+      code: 'DELETE_MANY_FAILED',
+      failures: [
+        expect.objectContaining({
+          key: 'snapshot/research/2026-04-24/portfolio-me-research-history.json',
+        }),
+      ],
+    })
+
+    expect(headImpl).not.toHaveBeenCalled()
+    expect(delImpl).not.toHaveBeenCalled()
   })
 
   it('records a list divergence when the shadow backend has an extra tail page', async () => {
@@ -449,6 +565,71 @@ describe('api/_lib/prefix-store.js', () => {
     })
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('shadow list divergence for snapshot/research/')
+    )
+  })
+
+  it('samples shared list keys and records read divergence when content differs', async () => {
+    process.env.STORAGE_SHADOW_SAMPLE_SIZE = '1'
+
+    const store = createStore()
+    const appendMetricImpl = vi.fn().mockResolvedValue(undefined)
+    const logger = { warn: vi.fn() }
+    let backgroundPromise = Promise.resolve()
+
+    const page = await store.list(
+      {
+        prefix: '',
+        limit: 1,
+      },
+      {
+        token: 'blob-token',
+        storagePolicyOverride: {
+          primary: 'gcs',
+          shadowRead: true,
+          shadowWrite: false,
+        },
+        gcsListPrefixImpl: vi.fn().mockResolvedValue({
+          items: [{ key: 'snapshot/research/2026-04-24/research-index.json' }],
+          cursor: null,
+        }),
+        listImpl: vi.fn().mockResolvedValue({
+          blobs: [{ pathname: 'snapshot/research/2026-04-24/research-index.json' }],
+          cursor: null,
+        }),
+        gcsReadImpl: vi.fn().mockResolvedValue({
+          body: Buffer.from('{"backend":"gcs"}'),
+        }),
+        getImpl: vi.fn().mockResolvedValue({
+          stream: createJsonStream({ backend: 'vercel' }),
+        }),
+        appendMetricImpl,
+        mkdirImpl: vi.fn().mockResolvedValue(undefined),
+        logger,
+        scheduleBackgroundTask(task) {
+          backgroundPromise = Promise.resolve().then(task)
+        },
+      }
+    )
+
+    await backgroundPromise
+
+    expect(page.items).toEqual([
+      expect.objectContaining({
+        key: 'snapshot/research/2026-04-24/research-index.json',
+      }),
+    ])
+    expect(appendMetricImpl).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(appendMetricImpl.mock.calls[0][1].trim())).toMatchObject({
+      type: 'read-divergence',
+      keyspace: 'snapshot.research',
+      key: 'snapshot/research/2026-04-24/research-index.json',
+      primary: 'gcs',
+      shadow: 'vercel',
+      op: 'read',
+      result: 'mismatch',
+    })
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('shadow sampled read divergence for snapshot/research/2026-04-24/research-index.json')
     )
   })
 })

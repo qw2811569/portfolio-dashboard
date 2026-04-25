@@ -11,7 +11,10 @@ vi.mock('../../api/_lib/finmind-governor.js', () => ({
   queryFinMindDataset,
 }))
 
-import { runSnapshotWorker } from '../../agent-bridge-standalone/workers/snapshot-worker.mjs'
+import {
+  purgeExpiredDailySnapshots,
+  runSnapshotWorker,
+} from '../../agent-bridge-standalone/workers/snapshot-worker.mjs'
 
 async function writeJson(targetPath, payload) {
   await fsPromises.mkdir(path.dirname(targetPath), { recursive: true })
@@ -153,6 +156,68 @@ describe('snapshot-worker', () => {
           schemaVersion: 1,
         }),
       ])
+    )
+  })
+
+  it('purges snapshot.research objects through the prefix-store path and batches generic blob deletes', async () => {
+    const delImpl = vi.fn(async () => undefined)
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const listImpl = vi.fn(async ({ prefix, cursor }) => {
+      if (prefix === 'snapshot/research/' && !cursor) {
+        return {
+          blobs: [
+            { pathname: 'snapshot/research/2026-01-01/research-index.json' },
+            { pathname: 'snapshot/research/2026-01-01/portfolio-me-research-history.json' },
+          ],
+          cursor: null,
+        }
+      }
+
+      if (prefix === 'snapshot/brain/' && !cursor) {
+        return {
+          blobs: [{ pathname: 'snapshot/brain/2026-01-01/strategy-brain.json' }],
+          cursor: null,
+        }
+      }
+
+      return {
+        blobs: [],
+        cursor: null,
+      }
+    })
+
+    const result = await purgeExpiredDailySnapshots({
+      now: new Date('2026-04-24T03:00:00+08:00'),
+      token: 'blob-token',
+      keepDays: 30,
+      listImpl,
+      delImpl,
+      logger,
+    })
+
+    expect(result).toMatchObject({
+      dryRun: false,
+      deletedCount: 3,
+    })
+    expect(result.deletedPathnames).toEqual(
+      expect.arrayContaining([
+        'snapshot/research/2026-01-01/research-index.json',
+        'snapshot/research/2026-01-01/portfolio-me-research-history.json',
+        'snapshot/brain/2026-01-01/strategy-brain.json',
+      ])
+    )
+    expect(delImpl.mock.calls).toEqual(
+      expect.arrayContaining([
+        ['snapshot/research/2026-01-01/research-index.json', { token: 'blob-token' }],
+        [
+          'snapshot/research/2026-01-01/portfolio-me-research-history.json',
+          { token: 'blob-token' },
+        ],
+        [['snapshot/brain/2026-01-01/strategy-brain.json'], { token: 'blob-token' }],
+      ])
+    )
+    expect(logger.info).toHaveBeenCalledWith(
+      '[snapshot-worker] purged 3 daily snapshot artifact(s) older than 30 days'
     )
   })
 })

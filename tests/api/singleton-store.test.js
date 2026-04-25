@@ -32,6 +32,7 @@ describe('api/_lib/singleton-store.js', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.GCS_BUCKET_PRIVATE = 'jcv-dev-private'
+    process.env.STORAGE_SHADOW_SAMPLE_SIZE = '0'
   })
 
   afterEach(() => {
@@ -39,6 +40,7 @@ describe('api/_lib/singleton-store.js', () => {
     delete process.env.STORAGE_PRIMARY_TEST_SINGLETON
     delete process.env.STORAGE_SHADOW_READ_TEST_SINGLETON
     delete process.env.STORAGE_SHADOW_WRITE_TEST_SINGLETON
+    delete process.env.STORAGE_SHADOW_SAMPLE_SIZE
   })
 
   it('uses the env cutover flags for primary read and shadow write', async () => {
@@ -308,6 +310,68 @@ describe('api/_lib/singleton-store.js', () => {
     expect(items).toHaveLength(2)
     expect(appendMetricImpl).not.toHaveBeenCalled()
     expect(logger.warn).not.toHaveBeenCalled()
+  })
+
+  it('samples shared singleton list keys and records read divergence when content differs', async () => {
+    process.env.STORAGE_SHADOW_SAMPLE_SIZE = '1'
+
+    const appendMetricImpl = vi.fn().mockResolvedValue(undefined)
+    const logger = { warn: vi.fn() }
+    let backgroundPromise = Promise.resolve()
+    const store = createStore()
+
+    const items = await store.list(
+      {},
+      {
+        token: 'blob-token',
+        storagePolicyOverride: {
+          primary: 'gcs',
+          shadowRead: true,
+          shadowWrite: false,
+        },
+        gcsListPrefixImpl: vi.fn().mockResolvedValue({
+          items: [{ key: 'test/2026-04-25.json' }],
+          cursor: null,
+        }),
+        listImpl: vi.fn().mockResolvedValue({
+          blobs: [{ pathname: 'test/2026-04-25.json' }],
+          cursor: null,
+        }),
+        gcsReadImpl: vi.fn().mockResolvedValue({
+          body: Buffer.from('{"backend":"gcs"}'),
+        }),
+        getImpl: vi.fn().mockResolvedValue({
+          stream: createJsonStream({ backend: 'vercel' }),
+        }),
+        appendMetricImpl,
+        mkdirImpl: vi.fn().mockResolvedValue(undefined),
+        logger,
+        scheduleBackgroundTask(task) {
+          backgroundPromise = Promise.resolve().then(task)
+        },
+      }
+    )
+
+    await backgroundPromise
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        key: 'test/2026-04-25.json',
+      }),
+    ])
+    expect(appendMetricImpl).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(appendMetricImpl.mock.calls[0][1].trim())).toMatchObject({
+      type: 'read-divergence',
+      keyspace: 'test.singleton',
+      key: 'test/2026-04-25.json',
+      primary: 'gcs',
+      shadow: 'vercel',
+      op: 'read',
+      result: 'mismatch',
+    })
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('shadow sampled read divergence for test/2026-04-25.json')
+    )
   })
 
   it('lets benchmark snapshot reads use generic shadow list and shadow read paths together', async () => {

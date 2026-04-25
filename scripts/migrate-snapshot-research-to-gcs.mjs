@@ -26,6 +26,7 @@ export const DEFAULT_REVERSE_MANIFEST_PATH = path.resolve(
 export const DEFAULT_LOCK_PATH = path.resolve('.tmp/migration-state/snapshot-research.lock')
 
 const SNAPSHOT_RESEARCH_PREFIX = 'snapshot/research/'
+const SNAPSHOT_RESEARCH_ENV_PREFIX = 'SNAPSHOT_RESEARCH'
 const SNAPSHOT_RESEARCH_KEY_PATTERN =
   /^snapshot\/research\/\d{4}-\d{2}-\d{2}\/(?:research-index|portfolio-[^/]+-research-history)\.json$/
 
@@ -44,6 +45,20 @@ function parseGeneration(value) {
 
 function getBucketName() {
   return String(process.env.GCS_BUCKET_PRIVATE || '').trim()
+}
+
+function isShadowWriteEnabled(envPrefix = SNAPSHOT_RESEARCH_ENV_PREFIX) {
+  return String(process.env[`STORAGE_SHADOW_WRITE_${envPrefix}`] || '')
+    .trim()
+    .toLowerCase() === 'true'
+}
+
+function assertShadowWriteEnabled() {
+  if (isShadowWriteEnabled()) return
+
+  throw new Error(
+    'STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH=true is required before migrating snapshot.research; enable shadow-write so workers dual-write to GCS, then rerun the migration'
+  )
 }
 
 function resolvePaths(options = {}) {
@@ -276,6 +291,20 @@ export async function migrateItem(item, options, deps = {}) {
     throw new Error(`verify failed for gs://${item.bucketName}/${item.key}: payload mismatch`)
   }
 
+  const verifiedSource = await readSourceImpl(item)
+  const verifiedSourceHash = verifiedSource ? sha256(verifiedSource.buffer) : null
+
+  if (verifiedSourceHash !== sourceHash) {
+    return {
+      status: 'stale-source-changed',
+      bytes: source.bytes,
+      sourceHash,
+      destinationHash: verifiedDestinationHash,
+      generation: verifiedDestination.generation || null,
+      contentType: source.contentType,
+    }
+  }
+
   return {
     status: 'done',
     bytes: source.bytes,
@@ -308,6 +337,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
   const migrateItemImpl = deps.migrateItemImpl || migrateItem
   const bucketName = getBucketName()
 
+  assertShadowWriteEnabled()
   assertSafeBuckets([{ bucketName }])
 
   const releaseLock = await lock({
@@ -418,6 +448,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
         .length,
       skippedExistingPresent: state.items.filter((item) => item.status === 'skipped-existing-present')
         .length,
+      staleSourceChanged: state.items.filter((item) => item.status === 'stale-source-changed').length,
       missing: state.items.filter((item) => item.status === 'source-missing').length,
       dryRunCopy: state.items.filter((item) => item.status === 'dry-run-copy').length,
       dryRunSkip: state.items.filter((item) => item.status === 'dry-run-skip').length,

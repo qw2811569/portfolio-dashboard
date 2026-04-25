@@ -18,6 +18,13 @@ import {
 
 const DEFAULT_LIST_LIMIT = 100
 const MAX_LIST_LIMIT = 1000
+const DEFAULT_SHADOW_SAMPLE_SIZE = 5
+
+// LIMITATION:
+// `list()` uses a logical key cursor and rescans by key instead of persisting
+// backend-native cursors. Concurrent inserts with keys <= the returned cursor
+// can be skipped on the next page and are expected to be recovered by a later
+// sweep. Callers should not treat the cursor as an exactly-once scan boundary.
 
 function getBucketName(bucketClass) {
   switch (bucketClass) {
@@ -221,6 +228,34 @@ function normalizeListedKeys(items = []) {
   ).sort((left, right) => left.localeCompare(right))
 }
 
+function resolveShadowSampleSize(value = process.env.STORAGE_SHADOW_SAMPLE_SIZE) {
+  if (value == null || value === '') return DEFAULT_SHADOW_SAMPLE_SIZE
+
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric < 0) return DEFAULT_SHADOW_SAMPLE_SIZE
+  return Math.trunc(numeric)
+}
+
+function pickSampleKeys(keys = [], sampleSize, randomImpl = Math.random) {
+  if (sampleSize <= 0) return []
+
+  const remaining = Array.from(
+    new Set(
+      (Array.isArray(keys) ? keys : [])
+        .map((key) => String(key || '').trim())
+        .filter(Boolean)
+    )
+  )
+  const samples = []
+
+  while (remaining.length > 0 && samples.length < sampleSize) {
+    const index = Math.max(0, Math.min(remaining.length - 1, Math.floor(randomImpl() * remaining.length)))
+    samples.push(remaining.splice(index, 1)[0])
+  }
+
+  return samples.sort((left, right) => left.localeCompare(right))
+}
+
 function classifyShadowList(primaryPage, shadowPage) {
   const primaryKeys = normalizeListedKeys(primaryPage?.items)
   const shadowKeys = normalizeListedKeys(shadowPage?.items)
@@ -228,6 +263,7 @@ function classifyShadowList(primaryPage, shadowPage) {
   const primaryKeySet = new Set(primaryKeys)
   const primaryOnlyKeys = primaryKeys.filter((key) => !shadowKeySet.has(key))
   const shadowOnlyKeys = shadowKeys.filter((key) => !primaryKeySet.has(key))
+  const sharedKeys = primaryKeys.filter((key) => shadowKeySet.has(key))
   const sameItems = primaryOnlyKeys.length === 0 && shadowOnlyKeys.length === 0
   const sameTail = Boolean(primaryPage?.hasMore) === Boolean(shadowPage?.hasMore)
   const matches = sameItems && sameTail
@@ -253,6 +289,7 @@ function classifyShadowList(primaryPage, shadowPage) {
     shadowHasMore: Boolean(shadowPage?.hasMore),
     primaryOnlyKeys,
     shadowOnlyKeys,
+    sharedKeys,
   }
 }
 
@@ -537,6 +574,14 @@ function createDeleteManyError(keyspaceId, failedKeys) {
   return error
 }
 
+/**
+ * Create a keyspace-scoped prefix store backed by Vercel Blob and/or GCS.
+ *
+ * Limitation:
+ * `list()` cursors are logical key rescans, not backend-native cursors.
+ * Concurrent inserts with keys <= the returned cursor can be missed on the
+ * next page and are expected to be recovered by a later sweep.
+ */
 export function createPrefixStore({
   keyspaceId,
   loggerPrefix = 'prefix-store',
@@ -641,6 +686,57 @@ export function createPrefixStore({
       limit: normalizeListLimit(params.limit),
       cursorKey,
       metadataKey,
+    }
+  }
+
+  async function sampleShadowListReads(descriptor, sharedKeys, primary, shadow, options = {}) {
+    const sampleKeys = pickSampleKeys(sharedKeys, resolveShadowSampleSize(options.shadowSampleSize))
+    if (!shadow || sampleKeys.length === 0) return
+
+    const logger = options.logger || console
+
+    for (const key of sampleKeys) {
+      const sampleDescriptor = buildObjectDescriptor(key)
+
+      try {
+        const [primaryResult, shadowResult] = await Promise.all([
+          readFromStore(primary, sampleDescriptor, options),
+          readFromStore(shadow, sampleDescriptor, options),
+        ])
+        const comparison = classifyShadowRead(primaryResult, shadowResult)
+        if (comparison.matches) continue
+
+        try {
+          await appendStorageDivergenceMetric(
+            {
+              type: 'read-divergence',
+              keyspace: sampleDescriptor.keyspace,
+              key: sampleDescriptor.key,
+              primary,
+              shadow,
+              op: 'read',
+              result: comparison.result,
+              primaryHash: comparison.primaryHash,
+              shadowHash: comparison.shadowHash,
+            },
+            options
+          )
+        } catch (error) {
+          logger.warn?.(
+            `[${loggerPrefix}] failed to append sampled read divergence metric for ${sampleDescriptor.key}:`,
+            error
+          )
+        }
+
+        logger.warn?.(
+          `[${loggerPrefix}] shadow sampled read divergence for ${sampleDescriptor.key}: ${primary}=${comparison.primaryHash || 'miss'} ${shadow}=${comparison.shadowHash || 'miss'}`
+        )
+      } catch (error) {
+        logger.warn?.(
+          `[${loggerPrefix}] shadow list sample compare failed for ${sampleDescriptor.key}:`,
+          error
+        )
+      }
     }
   }
 
@@ -793,6 +889,7 @@ export function createPrefixStore({
           }
 
           const comparison = classifyShadowList(primaryPage, shadowOutcome)
+          await sampleShadowListReads(descriptor, comparison.sharedKeys, primary, shadow, options)
           if (comparison.matches) return
 
           try {

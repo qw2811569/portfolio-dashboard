@@ -14,10 +14,12 @@ describe('hooks/usePortfolioSnapshotRuntime.js', () => {
     const setHoldingDossiers = vi.fn()
     const setNewsEvents = vi.fn()
     const setAnalysisHistory = vi.fn()
+    const setAnalysisHistoryStatus = vi.fn()
     const setReversalConditions = vi.fn()
     const setStrategyBrain = vi.fn()
     const setBrainValidation = vi.fn()
     const setResearchHistory = vi.fn()
+    const setResearchHistoryStatus = vi.fn()
     const setPortfolioNotes = vi.fn()
     const setDailyReport = vi.fn()
 
@@ -54,10 +56,12 @@ describe('hooks/usePortfolioSnapshotRuntime.js', () => {
         setHoldingDossiers,
         setNewsEvents,
         setAnalysisHistory,
+        setAnalysisHistoryStatus,
         setReversalConditions,
         setStrategyBrain,
         setBrainValidation,
         setResearchHistory,
+        setResearchHistoryStatus,
         setPortfolioNotes,
         setDailyReport,
         normalizeAnalysisHistoryEntries: (items) => items || [],
@@ -146,10 +150,12 @@ describe('hooks/usePortfolioSnapshotRuntime.js', () => {
         setHoldingDossiers: vi.fn(),
         setNewsEvents: vi.fn(),
         setAnalysisHistory: vi.fn(),
+        setAnalysisHistoryStatus: vi.fn(),
         setReversalConditions: vi.fn(),
         setStrategyBrain: vi.fn(),
         setBrainValidation: vi.fn(),
         setResearchHistory: vi.fn(),
+        setResearchHistoryStatus: vi.fn(),
         setPortfolioNotes: vi.fn(),
         setDailyReport: vi.fn(),
         normalizeAnalysisHistoryEntries: (items) => items || [],
@@ -220,10 +226,12 @@ describe('hooks/usePortfolioSnapshotRuntime.js', () => {
         setHoldingDossiers: vi.fn(),
         setNewsEvents: vi.fn(),
         setAnalysisHistory,
+        setAnalysisHistoryStatus: vi.fn(),
         setReversalConditions: vi.fn(),
         setStrategyBrain: vi.fn(),
         setBrainValidation: vi.fn(),
         setResearchHistory: vi.fn(),
+        setResearchHistoryStatus: vi.fn(),
         setPortfolioNotes: vi.fn(),
         setDailyReport,
         normalizeAnalysisHistoryEntries: () => [],

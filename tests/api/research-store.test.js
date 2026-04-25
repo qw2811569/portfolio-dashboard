@@ -9,6 +9,8 @@ import {
   getResearchArtifactKey,
   getResearchPrefix,
   listResearchObjects,
+  readResearchIndex,
+  upsertResearchIndexReport,
   writeResearchArtifact,
 } from '../../api/_lib/research-store.js'
 
@@ -69,6 +71,36 @@ describe('api/_lib/research-store.js', () => {
           public: false,
         })
       )
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  it('uses CAS retry so concurrent research index updates do not drop entries', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'research-index-cas-'))
+    const originalCwd = process.cwd()
+    process.chdir(tempDir)
+
+    try {
+      const options = {
+        getImpl: vi.fn().mockResolvedValue(null),
+        putImpl: vi.fn().mockResolvedValue({ ok: true }),
+        storagePolicyOverride: {
+          primary: 'vercel',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+      }
+
+      await Promise.all([
+        upsertResearchIndexReport({ timestamp: 1, scope: 'a' }, options),
+        upsertResearchIndexReport({ timestamp: 2, scope: 'b' }, options),
+      ])
+
+      expect(await readResearchIndex(options)).toEqual([
+        expect.objectContaining({ timestamp: 2, scope: 'b' }),
+        expect.objectContaining({ timestamp: 1, scope: 'a' }),
+      ])
     } finally {
       process.chdir(originalCwd)
     }

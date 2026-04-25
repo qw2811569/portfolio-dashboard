@@ -4,9 +4,11 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { updateAnalysisHistoryIndex } from '../../api/_lib/analysis-history.js'
 import {
   getAnalysisHistoryKey,
   listAnalysisHistoryObjects,
+  readAnalysisHistoryIndex,
   readAnalysisHistoryRecord,
 } from '../../api/_lib/analysis-history-store.js'
 
@@ -51,6 +53,36 @@ describe('api/_lib/analysis-history-store.js', () => {
       ])
       expect(payload).toEqual({ id: '1' })
       expect(gcsReadImpl).toHaveBeenCalledWith('jcv-dev-private', key)
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  it('uses CAS retry so concurrent analysis-history index updates do not drop entries', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'analysis-history-cas-'))
+    const originalCwd = process.cwd()
+    process.chdir(tempDir)
+
+    try {
+      const options = {
+        gcsReadImpl: vi.fn().mockResolvedValue(null),
+        gcsWriteImpl: vi.fn().mockResolvedValue({ generation: '1' }),
+        storagePolicyOverride: {
+          primary: 'gcs',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+      }
+
+      await Promise.all([
+        updateAnalysisHistoryIndex({ id: 1, date: '2026-04-24' }, options),
+        updateAnalysisHistoryIndex({ id: 2, date: '2026-04-25' }, options),
+      ])
+
+      expect(await readAnalysisHistoryIndex(options)).toEqual([
+        expect.objectContaining({ id: 2, date: '2026-04-25' }),
+        expect.objectContaining({ id: 1, date: '2026-04-24' }),
+      ])
     } finally {
       process.chdir(originalCwd)
     }

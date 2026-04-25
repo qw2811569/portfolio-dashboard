@@ -4,7 +4,13 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { readBrain, writeBrain } from '../../api/_lib/brain-store.js'
+import {
+  LEGACY_EVENTS_KEY,
+  LEGACY_HOLDINGS_KEY,
+  readBrain,
+  writeBrain,
+  writeBrainObject,
+} from '../../api/_lib/brain-store.js'
 
 describe('api/_lib/brain-store.js', () => {
   beforeEach(() => {
@@ -19,6 +25,12 @@ describe('api/_lib/brain-store.js', () => {
     delete process.env.STORAGE_PRIMARY_BRAIN
     delete process.env.STORAGE_SHADOW_READ_BRAIN
     delete process.env.STORAGE_SHADOW_WRITE_BRAIN
+    delete process.env.STORAGE_PRIMARY_PORTFOLIO_EVENTS
+    delete process.env.STORAGE_SHADOW_READ_PORTFOLIO_EVENTS
+    delete process.env.STORAGE_SHADOW_WRITE_PORTFOLIO_EVENTS
+    delete process.env.STORAGE_PRIMARY_PORTFOLIO_HOLDINGS
+    delete process.env.STORAGE_SHADOW_READ_PORTFOLIO_HOLDINGS
+    delete process.env.STORAGE_SHADOW_WRITE_PORTFOLIO_HOLDINGS
   })
 
   it('routes strategy-brain reads and writes through the brain env prefix', async () => {
@@ -44,6 +56,44 @@ describe('api/_lib/brain-store.js', () => {
         expect.objectContaining({
           public: false,
         })
+      )
+    } finally {
+      process.chdir(originalCwd)
+    }
+  })
+
+  it('routes legacy events and holdings through separate portfolio env prefixes', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'brain-portfolio-store-'))
+    const originalCwd = process.cwd()
+    process.chdir(tempDir)
+
+    try {
+      process.env.STORAGE_PRIMARY_BRAIN = 'vercel'
+      process.env.STORAGE_PRIMARY_PORTFOLIO_EVENTS = 'gcs'
+      process.env.STORAGE_PRIMARY_PORTFOLIO_HOLDINGS = 'gcs'
+      const brainPutImpl = vi.fn().mockResolvedValue({ ok: true })
+      const gcsWriteImpl = vi.fn().mockResolvedValue({ generation: '1' })
+
+      await writeBrain({ version: 6 }, { putImpl: brainPutImpl, token: 'blob-token' })
+      await writeBrainObject(LEGACY_EVENTS_KEY, [{ id: 'event-1' }], { gcsWriteImpl })
+      await writeBrainObject(LEGACY_HOLDINGS_KEY, [{ code: '2330' }], { gcsWriteImpl })
+
+      expect(brainPutImpl).toHaveBeenCalledWith(
+        'strategy-brain.json',
+        expect.any(String),
+        expect.objectContaining({ access: 'private' })
+      )
+      expect(gcsWriteImpl).toHaveBeenCalledWith(
+        'jcv-dev-private',
+        'events.json',
+        expect.any(String),
+        expect.objectContaining({ public: false })
+      )
+      expect(gcsWriteImpl).toHaveBeenCalledWith(
+        'jcv-dev-private',
+        'holdings.json',
+        expect.any(String),
+        expect.objectContaining({ public: false })
       )
     } finally {
       process.chdir(originalCwd)

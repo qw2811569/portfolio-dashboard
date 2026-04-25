@@ -10,6 +10,7 @@ import {
   listResearchObjects,
   readResearchIndex,
   readResearchObject,
+  upsertResearchIndexReport,
   writeBrainProposal,
   writeResearchIndex,
   writeResearchObject,
@@ -86,11 +87,7 @@ dossier 第一行「持倉：<type> | ...」已標示型別，請依型別切換
 - PEG、營收月增、法人連續買超、目標價 freshness 等皆適用`
 
 async function updateResearchIndex(report) {
-  const current = (await readResearchIndex()) || []
-  const next = [report, ...current.filter((item) => item.timestamp !== report.timestamp)]
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 30)
-  await writeResearchIndex(next)
+  await upsertResearchIndexReport(report)
 }
 
 function buildBrainProposal({

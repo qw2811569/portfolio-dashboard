@@ -4,8 +4,10 @@ import {
   deleteAnalysisHistoryObject,
   getAnalysisHistoryKey,
   listAnalysisHistoryObjects,
+  readAnalysisHistoryIndexWithVersion,
   readAnalysisHistoryIndex,
   readAnalysisHistoryObject,
+  writeAnalysisHistoryIndexIfVersion,
   writeAnalysisHistoryIndex,
   writeAnalysisHistoryRecord,
 } from './analysis-history-store.js'
@@ -69,10 +71,20 @@ export async function readRecentAnalysisHistory(options = {}) {
 }
 
 export async function updateAnalysisHistoryIndex(report, options = {}) {
-  const current = (await readAnalysisHistoryIndex(options)) || []
-  const next = normalizeHistoryReports([report, ...current])
-  await writeAnalysisHistoryIndex(next, options)
-  return next
+  let attempts = 0
+  while (attempts++ < 3) {
+    const current = await readAnalysisHistoryIndexWithVersion(options)
+    const next = normalizeHistoryReports([report, ...(current?.payload || [])])
+    try {
+      await writeAnalysisHistoryIndexIfVersion(next, current?.versionToken || null, options)
+      return next
+    } catch (error) {
+      if (error?.code === 'VERSION_CONFLICT' && attempts < 3) continue
+      throw error
+    }
+  }
+
+  throw new Error('[analysis-history] failed to update analysis history index after CAS retries')
 }
 
 export async function deleteAnalysisHistoryReportsByDate(date, keepId, options = {}) {

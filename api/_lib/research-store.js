@@ -65,6 +65,38 @@ export async function writeResearchIndex(payload, options = {}) {
   return researchStore.write(RESEARCH_INDEX_KEY, payload, options)
 }
 
+export async function readResearchIndexWithVersion(options = {}) {
+  return researchStore.readWithVersion(RESEARCH_INDEX_KEY, options)
+}
+
+export async function writeResearchIndexIfVersion(payload, versionToken, options = {}) {
+  return researchStore.writeIfVersion(RESEARCH_INDEX_KEY, payload, versionToken, options)
+}
+
+function mergeResearchIndex(currentPayload, report) {
+  const current = Array.isArray(currentPayload) ? currentPayload : []
+  return [report, ...current.filter((item) => item.timestamp !== report.timestamp)]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 30)
+}
+
+export async function upsertResearchIndexReport(report, options = {}) {
+  let attempts = 0
+  while (attempts++ < 3) {
+    const current = await readResearchIndexWithVersion(options)
+    const next = mergeResearchIndex(current?.payload, report)
+    try {
+      await writeResearchIndexIfVersion(next, current?.versionToken || null, options)
+      return next
+    } catch (error) {
+      if (error?.code === 'VERSION_CONFLICT' && attempts < 3) continue
+      throw error
+    }
+  }
+
+  throw new Error('[research-store] failed to update research index after CAS retries')
+}
+
 export async function readResearchObject(key, options = {}) {
   return researchStore.read(normalizeKey(key), options)
 }

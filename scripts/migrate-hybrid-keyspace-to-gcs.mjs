@@ -20,7 +20,7 @@ import {
 } from './migrate-last-success-to-gcs.mjs'
 
 function getPublicBlobToken() {
-  return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+  return getTelemetryBlobToken()
 }
 
 export const HYBRID_KEYSPACE_CONFIGS = Object.freeze({
@@ -246,7 +246,9 @@ export async function readSource(item, deps = {}) {
   if (item.access === 'public') {
     const token = String((deps.getPublicBlobTokenImpl || getPublicBlobToken)() || '').trim()
     if (!token) {
-      throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for public hybrid migration reads')
+      throw new Error(
+        'PUB_BLOB_TELEMETRY_TOKEN or PUB_BLOB_READ_WRITE_TOKEN is required for public hybrid migration reads'
+      )
     }
 
     const page = await (deps.listImpl || list)({

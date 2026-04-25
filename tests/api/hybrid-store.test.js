@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -341,5 +341,124 @@ describe('api/_lib/hybrid-store.js', () => {
     await expect(stat(resolveDataPath('strategy-brain.json'))).rejects.toMatchObject({ code: 'ENOENT' })
     expect(delImpl).toHaveBeenCalledWith('strategy-brain.json', { token: 'blob-token' })
     expect(gcsDeleteManyImpl).toHaveBeenCalledWith('jcv-dev-private', ['strategy-brain.json'])
+  })
+
+  it('keeps a tombstone when a remote delete fails so shadow stale data is not promoted', async () => {
+    const dataDir = await createDataDir()
+    const resolveDataPath = createFlatDataPathResolver(dataDir)
+    const store = createStore(dataDir)
+    const delImpl = vi.fn().mockResolvedValue(undefined)
+    const gcsDeleteManyImpl = vi.fn().mockResolvedValue({
+      deletedKeys: [],
+      missingKeys: [],
+      failedKeys: [
+        {
+          key: 'strategy-brain.json',
+          error: new Error('shadow delete failed'),
+        },
+      ],
+    })
+
+    await writeLocalPayload(dataDir, 'strategy-brain.json', { version: 4 })
+    const result = await store.delete('strategy-brain.json', {
+      delImpl,
+      gcsDeleteManyImpl,
+      storagePolicyOverride: {
+        primary: 'vercel',
+        shadowRead: true,
+        shadowWrite: false,
+      },
+    })
+
+    expect(result.remoteErrors).toHaveLength(1)
+    await expect(stat(resolveDataPath('strategy-brain.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(stat(`${resolveDataPath('strategy-brain.json')}.tombstone`)).resolves.toBeTruthy()
+
+    const getImpl = vi.fn().mockResolvedValue(null)
+    const gcsReadImpl = vi.fn().mockResolvedValue(createGcsReadResult({ source: 'stale-shadow' }))
+    const payload = await store.read('strategy-brain.json', {
+      getImpl,
+      gcsReadImpl,
+      storagePolicyOverride: {
+        primary: 'vercel',
+        shadowRead: true,
+        shadowWrite: false,
+      },
+    })
+
+    expect(payload).toBeNull()
+    expect(getImpl).not.toHaveBeenCalled()
+    expect(gcsReadImpl).not.toHaveBeenCalled()
+  })
+
+  it('uses atomic local replacement and rejects corrupt local JSON without remote fallback', async () => {
+    const dataDir = await createDataDir()
+    const resolveDataPath = createFlatDataPathResolver(dataDir)
+    const store = createStore(dataDir)
+    const getImpl = vi.fn().mockResolvedValue({
+      stream: createJsonStream({ source: 'remote-stale' }),
+    })
+
+    await writeFile(resolveDataPath('research-index.json'), '{"partial"', 'utf8')
+
+    await expect(
+      store.read('research-index.json', {
+        getImpl,
+        storagePolicyOverride: {
+          primary: 'vercel',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+      })
+    ).rejects.toMatchObject({ code: 'LOCAL_CORRUPT' })
+    expect(getImpl).not.toHaveBeenCalled()
+
+    await store.write('research-index.json', [{ timestamp: 1 }], {
+      putImpl: vi.fn().mockResolvedValue({ ok: true }),
+      storagePolicyOverride: {
+        primary: 'vercel',
+        shadowRead: false,
+        shadowWrite: false,
+      },
+    })
+
+    expect(JSON.parse(await readFile(resolveDataPath('research-index.json'), 'utf8'))).toEqual([
+      { timestamp: 1 },
+    ])
+    expect((await readdir(dataDir)).some((entry) => entry.endsWith('.tmp'))).toBe(false)
+  })
+
+  it('detects local version conflicts for concurrent CAS writes', async () => {
+    const dataDir = await createDataDir()
+    const store = createStore(dataDir)
+    const putImpl = vi.fn().mockResolvedValue({ ok: true })
+    const read = await store.readWithVersion('research-index.json', {
+      getImpl: vi.fn().mockResolvedValue(null),
+      storagePolicyOverride: {
+        primary: 'vercel',
+        shadowRead: false,
+        shadowWrite: false,
+      },
+    })
+
+    await store.writeIfVersion('research-index.json', [{ id: 'a' }], read?.versionToken || null, {
+      putImpl,
+      storagePolicyOverride: {
+        primary: 'vercel',
+        shadowRead: false,
+        shadowWrite: false,
+      },
+    })
+
+    await expect(
+      store.writeIfVersion('research-index.json', [{ id: 'b' }], read?.versionToken || null, {
+        putImpl,
+        storagePolicyOverride: {
+          primary: 'vercel',
+          shadowRead: false,
+          shadowWrite: false,
+        },
+      })
+    ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' })
   })
 })

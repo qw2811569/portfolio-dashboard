@@ -69,6 +69,14 @@ export async function writeAnalysisHistoryIndex(payload, options = {}) {
   return writeAnalysisHistoryObject(ANALYSIS_HISTORY_INDEX_KEY, payload, options)
 }
 
+export async function readAnalysisHistoryIndexWithVersion(options = {}) {
+  return analysisHistoryStore.readWithVersion(ANALYSIS_HISTORY_INDEX_KEY, options)
+}
+
+export async function writeAnalysisHistoryIndexIfVersion(payload, versionToken, options = {}) {
+  return analysisHistoryStore.writeIfVersion(ANALYSIS_HISTORY_INDEX_KEY, payload, versionToken, options)
+}
+
 export async function readAnalysisHistoryRecord(reportOrDate, reportId, options = {}) {
   return readAnalysisHistoryObject(getAnalysisHistoryKey(reportOrDate, reportId), options)
 }

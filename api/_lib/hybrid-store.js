@@ -1,5 +1,6 @@
 import { del, get, list, put } from '@vercel/blob'
-import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { createHash, randomUUID } from 'node:crypto'
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { getPrivateBlobToken } from './blob-tokens.js'
@@ -48,13 +49,58 @@ function defaultLocalKeyFromFilePath(filePath, rootPath) {
 }
 
 async function readJsonFile(filePath, { logger = console, loggerPrefix = 'hybrid-store' } = {}) {
+  const result = await readJsonFileWithVersion(filePath, { logger, loggerPrefix })
+  return result?.payload ?? null
+}
+
+function serializePayload(payload) {
+  return JSON.stringify(payload, null, 2)
+}
+
+function createLocalVersionToken(raw) {
+  return `local:${createHash('sha256').update(raw).digest('hex')}`
+}
+
+function normalizeVersionToken(value) {
+  const token = String(value || '').trim()
+  return token || null
+}
+
+function createLocalCorruptError(filePath, error) {
+  const corrupt = new Error(`[hybrid-store] local JSON is corrupt for ${filePath}`)
+  corrupt.name = 'LocalCorruptError'
+  corrupt.code = 'LOCAL_CORRUPT'
+  corrupt.cause = error
+  return corrupt
+}
+
+function createVersionConflictError(key, error) {
+  const conflict = new Error(`[hybrid-store] version conflict for ${key}`)
+  conflict.name = 'VersionConflictError'
+  conflict.code = 'VERSION_CONFLICT'
+  conflict.status = 409
+  conflict.cause = error
+  return conflict
+}
+
+async function readJsonFileWithVersion(
+  filePath,
+  { logger = console, loggerPrefix = 'hybrid-store' } = {}
+) {
   try {
     const raw = await readFile(filePath, 'utf8')
-    return JSON.parse(raw)
+    try {
+      return {
+        payload: JSON.parse(raw),
+        versionToken: createLocalVersionToken(raw),
+      }
+    } catch (error) {
+      throw createLocalCorruptError(filePath, error)
+    }
   } catch (error) {
     if (error?.code === 'ENOENT') return null
     logger.warn?.(`[${loggerPrefix}] local read failed for ${filePath}:`, error)
-    return null
+    throw error
   }
 }
 
@@ -63,14 +109,20 @@ async function writeJsonFile(
   payload,
   { logger = console, loggerPrefix = 'hybrid-store' } = {}
 ) {
+  const raw = serializePayload(payload)
+  const tmpPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`
+
   try {
     await mkdir(path.dirname(filePath), { recursive: true })
-    await writeFile(filePath, JSON.stringify(payload, null, 2), 'utf8')
+    await writeFile(tmpPath, raw, 'utf8')
+    await rename(tmpPath, filePath)
     return {
       status: 'written',
       filePath,
+      versionToken: createLocalVersionToken(raw),
     }
   } catch (error) {
+    await unlink(tmpPath).catch(() => {})
     logger.warn?.(`[${loggerPrefix}] local write failed for ${filePath}:`, error)
     throw error
   }
@@ -94,6 +146,60 @@ async function deleteLocalFile(
       }
     }
     logger.warn?.(`[${loggerPrefix}] local delete failed for ${filePath}:`, error)
+    throw error
+  }
+}
+
+function getTombstonePath(filePath) {
+  return `${filePath}.tombstone`
+}
+
+async function hasLocalTombstone(filePath) {
+  try {
+    await stat(getTombstonePath(filePath))
+    return true
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false
+    throw error
+  }
+}
+
+async function writeLocalTombstone(
+  filePath,
+  { logger = console, loggerPrefix = 'hybrid-store' } = {}
+) {
+  const tombstonePath = getTombstonePath(filePath)
+  try {
+    await mkdir(path.dirname(tombstonePath), { recursive: true })
+    await writeFile(
+      tombstonePath,
+      JSON.stringify({ deletedAt: new Date().toISOString() }, null, 2),
+      'utf8'
+    )
+    return {
+      status: 'written',
+      filePath: tombstonePath,
+    }
+  } catch (error) {
+    logger.warn?.(`[${loggerPrefix}] local tombstone write failed for ${filePath}:`, error)
+    throw error
+  }
+}
+
+async function clearLocalTombstone(filePath) {
+  try {
+    await unlink(getTombstonePath(filePath))
+    return {
+      status: 'deleted',
+      filePath: getTombstonePath(filePath),
+    }
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return {
+        status: 'missing',
+        filePath: getTombstonePath(filePath),
+      }
+    }
     throw error
   }
 }
@@ -133,6 +239,28 @@ function createInvalidPayloadError(keyspaceId, key) {
   error.name = 'InvalidPayload'
   error.code = 'INVALID_PAYLOAD'
   return error
+}
+
+const localCasQueues = new Map()
+
+async function withLocalCasLock(lockKey, task) {
+  const previous = localCasQueues.get(lockKey) || Promise.resolve()
+  let release
+  const current = new Promise((resolve) => {
+    release = resolve
+  })
+  const queued = previous.then(() => current, () => current)
+  localCasQueues.set(lockKey, queued)
+
+  try {
+    await previous.catch(() => {})
+    return await task()
+  } finally {
+    release()
+    if (localCasQueues.get(lockKey) === queued) {
+      localCasQueues.delete(lockKey)
+    }
+  }
 }
 
 export function createFlatDataPathResolver(dataDir) {
@@ -482,6 +610,32 @@ export function createHybridStore({
     }
   }
 
+  async function readLocalWithVersion(descriptor, options = {}) {
+    if (authoritySource === 'local' && (await hasLocalTombstone(descriptor.localFilePath))) {
+      return null
+    }
+    return readJsonFileWithVersion(descriptor.localFilePath, options)
+  }
+
+  async function readRemoteWithVersion(storeName, descriptor, options = {}) {
+    const payload = await readFromRemote(storeName, descriptor, options)
+    if (payload == null) return null
+
+    if (promoteOnFallback) {
+      const localResult = await writeJsonFile(descriptor.localFilePath, payload, options)
+      await clearLocalTombstone(descriptor.localFilePath).catch(() => {})
+      return {
+        payload,
+        versionToken: localResult.versionToken,
+      }
+    }
+
+    return {
+      payload,
+      versionToken: createLocalVersionToken(serializePayload(payload)),
+    }
+  }
+
   async function listLocal(descriptor) {
     const rootPath =
       String(localRootPath || '').trim() || path.resolve(String(localPath('') || '').trim())
@@ -489,6 +643,7 @@ export function createHybridStore({
     const items = []
 
     for (const filePath of files) {
+      if (filePath.endsWith('.tombstone')) continue
       const key = normalizeLogicalKey(localKeyFromFilePath(filePath, rootPath), {
         allowEmpty: true,
         label: 'local key',
@@ -545,6 +700,8 @@ export function createHybridStore({
       return readJsonFile(descriptor.localFilePath, options)
     }
 
+    if (await hasLocalTombstone(descriptor.localFilePath)) return null
+
     const local = await readJsonFile(descriptor.localFilePath, options)
     if (local != null) return local
 
@@ -563,6 +720,30 @@ export function createHybridStore({
     return shadowRemote
   }
 
+  async function readWithVersionViaAuthority(primaryBackend, shadowBackend, descriptor, options = {}) {
+    if (authoritySource === 'remote') {
+      const primaryRemote = await readRemoteWithVersion(primaryBackend, descriptor, options)
+      if (primaryRemote) return primaryRemote
+
+      if (shadowBackend) {
+        const shadowRemote = await readRemoteWithVersion(shadowBackend, descriptor, options)
+        if (shadowRemote) return shadowRemote
+      }
+
+      return readJsonFileWithVersion(descriptor.localFilePath, options)
+    }
+
+    const local = await readLocalWithVersion(descriptor, options)
+    if (local) return local
+    if (await hasLocalTombstone(descriptor.localFilePath)) return null
+
+    const primaryRemote = await readRemoteWithVersion(primaryBackend, descriptor, options)
+    if (primaryRemote) return primaryRemote
+
+    if (!shadowBackend) return null
+    return readRemoteWithVersion(shadowBackend, descriptor, options)
+  }
+
   function descriptorAccessLabel(targetBucketClass) {
     return targetBucketClass === 'public' ? 'public' : 'private'
   }
@@ -578,13 +759,83 @@ export function createHybridStore({
       })
     },
 
+    async readWithVersion(params, options = {}) {
+      const descriptor = resolveDescriptor(params)
+      const policy = getPolicy(options)
+      const shadowBackend = policy.shadowRead ? resolveShadowBackendName(policy.primary) : null
+      return readWithVersionViaAuthority(policy.primary, shadowBackend, descriptor, {
+        loggerPrefix,
+        ...options,
+      })
+    },
+
     async write(params, payload, options = {}) {
       const descriptor = resolveDescriptor(params)
       validatePayload(payload, descriptor)
 
-      await writeJsonFile(descriptor.localFilePath, payload, {
+      const localResult = await writeJsonFile(descriptor.localFilePath, payload, {
         loggerPrefix,
         ...options,
+      })
+      await clearLocalTombstone(descriptor.localFilePath)
+
+      const policy = getPolicy(options)
+      const backends = [policy.primary]
+      if (policy.shadowWrite) backends.push(resolveShadowBackendName(policy.primary))
+
+      const remoteErrors = []
+      const remoteResults = []
+      const logger = options.logger || console
+
+      for (const backend of backends) {
+        try {
+          remoteResults.push(await writeToRemote(backend, descriptor, payload, options))
+        } catch (error) {
+          remoteErrors.push({
+            backend,
+            error,
+          })
+          logger.warn?.(
+            `[${loggerPrefix}] remote write failed for ${descriptor.key} (${backend}):`,
+            error
+          )
+        }
+      }
+
+      return {
+        key: descriptor.key,
+        localPath: descriptor.localFilePath,
+        localResult,
+        remoteResults,
+        remoteErrors,
+      }
+    },
+
+    async writeIfVersion(params, payload, expectedVersionToken, options = {}) {
+      const descriptor = resolveDescriptor(params)
+      validatePayload(payload, descriptor)
+
+      let localResult
+      await withLocalCasLock(descriptor.localFilePath, async () => {
+        const current =
+          authoritySource === 'local' && (await hasLocalTombstone(descriptor.localFilePath))
+            ? null
+            : await readJsonFileWithVersion(descriptor.localFilePath, {
+                loggerPrefix,
+                ...options,
+              })
+        const currentVersionToken = normalizeVersionToken(current?.versionToken)
+        const normalizedExpectedVersionToken = normalizeVersionToken(expectedVersionToken)
+
+        if (currentVersionToken !== normalizedExpectedVersionToken) {
+          throw createVersionConflictError(descriptor.key)
+        }
+
+        localResult = await writeJsonFile(descriptor.localFilePath, payload, {
+          loggerPrefix,
+          ...options,
+        })
+        await clearLocalTombstone(descriptor.localFilePath)
       })
 
       const policy = getPolicy(options)
@@ -613,6 +864,8 @@ export function createHybridStore({
       return {
         key: descriptor.key,
         localPath: descriptor.localFilePath,
+        localResult,
+        versionToken: localResult?.versionToken || null,
         remoteResults,
         remoteErrors,
       }
@@ -657,6 +910,13 @@ export function createHybridStore({
         loggerPrefix,
         ...options,
       })
+      const tombstoneResult =
+        authoritySource === 'local'
+          ? await writeLocalTombstone(descriptor.localFilePath, {
+              loggerPrefix,
+              ...options,
+            })
+          : null
 
       for (const backend of uniqueRemoteBackends) {
         try {
@@ -673,9 +933,18 @@ export function createHybridStore({
         }
       }
 
+      const allRemoteDeletesConfirmed =
+        remoteErrors.length === 0 &&
+        remoteResults.length === uniqueRemoteBackends.length &&
+        remoteResults.every((result) => ['deleted', 'missing'].includes(result?.status))
+      if (authoritySource === 'local' && allRemoteDeletesConfirmed) {
+        await clearLocalTombstone(descriptor.localFilePath)
+      }
+
       return {
         key: descriptor.key,
         localResult,
+        tombstoneResult,
         remoteResults,
         remoteErrors,
       }

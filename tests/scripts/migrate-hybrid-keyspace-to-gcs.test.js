@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   loadKeyInventory,
+  readSource,
   runMigration,
 } from '../../scripts/migrate-hybrid-keyspace-to-gcs.mjs'
 
@@ -291,6 +292,47 @@ describe('scripts/migrate-hybrid-keyspace-to-gcs.mjs', () => {
       total: 0,
       done: 0,
       errors: 0,
+    })
+  })
+
+  it('reads public telemetry sources with PUB_BLOB_TELEMETRY_TOKEN fallback during dry-run', async () => {
+    delete process.env.PUB_BLOB_READ_WRITE_TOKEN
+    process.env.PUB_BLOB_TELEMETRY_TOKEN = 'telemetry-token'
+
+    const listImpl = vi.fn().mockResolvedValue({
+      blobs: [{ pathname: 'telemetry-events.json', url: 'https://blob.example/telemetry-events.json' }],
+      cursor: null,
+    })
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn(() => 'application/json'),
+      },
+      arrayBuffer: vi.fn(async () => Buffer.from('{"entries":[]}')),
+    })
+
+    const source = await readSource(
+      {
+        key: 'telemetry-events.json',
+        access: 'public',
+        bucketName: 'jcv-dev-public',
+      },
+      {
+        listImpl,
+        fetchImpl,
+      }
+    )
+
+    expect(listImpl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        token: 'telemetry-token',
+        prefix: 'telemetry-events.json',
+      })
+    )
+    expect(source).toMatchObject({
+      key: 'telemetry-events.json',
+      bytes: Buffer.byteLength('{"entries":[]}'),
+      contentType: 'application/json',
     })
   })
 

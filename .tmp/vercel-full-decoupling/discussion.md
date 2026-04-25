@@ -1155,3 +1155,52 @@ D burn-in 在 jcv-dev 是「smoke test only」（證明 shadow flag 開了沒讓
 - 驗證：`npm run typecheck`、`npm run lint`、`npm run test:run -- tests/api/snapshot-brain-store.test.js tests/api/snapshot-portfolio-state-store.test.js tests/scripts/migrate-prefix-keyspace-to-gcs.test.js --run` 全過；另外補跑 `tests/workers/snapshot-worker.test.js` 也過。
 - 小坑：`discussion.md` 在 worktree 內已帶 Round 32/33 未提交 diff，所以 code 先獨立 commit；另外 `snapshot-worker` purge 以前對 brain/portfolio-state 直接走 raw Blob delete，切 wrapper 後 test 需要改成逐 key delete expectation。
 - 給 B QA 的 hint：最值得盯的是 generic migration 的 keyPattern 邊界，尤其 `snapshot.brain` 的 `analysis-history/...` nested path 與 `snapshot.portfolio_state/<portfolio>/...` inventory filter；其次看 `snapshot-worker.mjs` purge / write dispatch 是否完全覆蓋三個 prefix-store keyspace。
+
+## Round 35 · Codex B QA · 2026-04-25 14:27
+
+### 找到的 bug
+- 🔴 critical: 沒找到 generic migration race / `stale-source-changed` convergence 本體的新 regression。`npm run test:run -- tests/scripts/migrate-prefix-keyspace-to-gcs.test.js tests/api/prefix-store.test.js tests/api/snapshot-research-store.test.js tests/api/snapshot-brain-store.test.js tests/api/snapshot-portfolio-state-store.test.js tests/workers/snapshot-worker.test.js --run` 實跑 `23/23` pass。
+- 🟡 major: `scripts/migrate-snapshot-research-to-gcs.mjs` 不再 hard-pin `snapshot.research`。`loadKeyInventory()` / `runMigration()` 都寫成 `{ keyspace: SNAPSHOT_RESEARCH_KEYSPACE, ...options }`（`18-31`），`main()` 也在 argv 已帶 `--keyspace=` 時直接放行（`35-39`）。我做 ad hoc probe 跑 `researchMain(['--keyspace=snapshot.brain'])`，實際打到 `inventory:snapshot.brain`。舊 research-only script 的 CLI 會在 `scripts/migrate-last-success-to-gcs.mjs:20-38` 對未知 `--keyspace` 直接報 `Unknown argument`。這是 snapshot.research shim contract regression。
+- 🟢 minor: `tests/workers/snapshot-worker.test.js` 這輪 purge case 只實際斷言到 `snapshot.research` / `snapshot.brain`；`snapshot.portfolio_state` purge lane 目前是 code inspection + ad hoc inventory probe 通過，但沒有 dedicated worker regression test。
+
+### snapshot.research regression check
+❌ core migration hardening 本體還在，但 research-only shim contract 有 regression。
+
+證據：
+- 舊 `tests/scripts/migrate-snapshot-research-to-gcs.test.js` 已被 `tests/scripts/migrate-prefix-keyspace-to-gcs.test.js` 取代；新 generic test 仍 cover `snapshot.research` inventory pagination、idempotent rerun、`stale-source-changed` 標記、`--resume` force-overwrite convergence、empty-prefix no-op。
+- `scripts/migrate-prefix-keyspace-to-gcs.mjs:242-389,467-548` 的 copy/verify/`stale-source-changed`/resume skip list 邏輯跟 refactor 前 research script 對齊；Round 28 抓的 active-writer race 與 stale-source convergence 在 generic test 實跑仍成立。
+- pre-flight `shadow-write` requirement 還在：我把 `STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH` 關掉後，generic 與 shim 都回同一句 `STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH=true is required before migrating snapshot.research...`。
+- 但 shim 已不再是 research-only surface：`scripts/migrate-snapshot-research-to-gcs.mjs` 現在接受外部 `keyspace` override，這點是 refactor 新引入的 research regression。
+
+### keyPattern 邊界
+- nested path: ✅ `snapshot.brain` regex `^snapshot/brain/YYYY-MM-DD/.+\\.json$` 可吃 nested path；generic test 已 cover `analysis-history/2026/04/23-1.json`，我另外用 mixed-key `loadKeyInventory()` probe 也實際保留了這條 key。
+- 動態 portfolio ID: ✅ 對目前 slash-free ID 可 cover 全部 portfolio；ad hoc probe 保留了 `me` 與 `p-growth`。⚠️ 若未來 portfolio ID 本身允許 `/`，wrapper 不會擋，但 generic regex `[^/]+` 會漏；這是 assumption gap，不是這輪已觀察到的 live regression。
+- key 含 `/` 子路徑: ✅ relative path slash 會原樣進 object key；`api/_lib/gcs-storage.js` 直接拿 raw key 做 `file(key)` / `getFiles({ prefix })`，沒看到額外 escape 層，也沒看到 slash 轉義 bug。
+- prefix `snapshot/brain/` vs `snapshot/research/`: ✅ `loadKeyInventory()` 先用 `keyspaceConfig.prefix` list，再用 keyPattern filter；mixed-key probe 下兩邊互不干擾。
+
+### snapshot-worker 三 keyspace dispatch
+✅
+
+- write path：`agent-bridge-standalone/workers/snapshot-worker.mjs:588-605` 對 research / brain / portfolio-state 三條 path 都改走 wrapper。
+- purge path：`487-561` 也分三個 wrapper lane delete。
+- worker `purge` race / partial failure：primary `deleteMany` partial failure 會直接 throw，會讓 purge fail（`api/_lib/prefix-store.js:956-959`; `tests/api/prefix-store.test.js:458-502`）；shadow missing / failed delete 只記 divergence log，不會中斷 worker（`972-1008`; `398-456`）。相比舊 raw Blob purge，多了 shadow-head + shadow-delete 的 TOCTOU 視窗，所以 concurrent shadow disappearance 會轉成 `shadowMissingKeys` warning，但不是 hard fail。
+- `daily-snapshot.js` prefix helper 已委派 wrapper（`66-75`）；repo 內目前沒有其他 caller，code diff 看 return shape 沒變，仍是無 trailing slash。
+
+### confidence
+- generic migration: 8/10
+- snapshot-brain wrapper: 8/10
+- snapshot-portfolio-state wrapper: 7/10
+- snapshot-worker refactor: 7/10
+- snapshot.research regression: 6/10
+
+### 我推薦下一動作
+- 先修 `scripts/migrate-snapshot-research-to-gcs.mjs` shim：research shim 應該強制固定 `snapshot.research`，不該接受 override；同時補 test 驗 `--keyspace=` 會被拒絕或忽略。
+- 補 `snapshot-worker` 的 `snapshot.portfolio_state` purge regression test，讓第三條 dispatch lane 不只靠 code inspection。
+- 若團隊明確保證 portfolio ID 永不含 `/`，把 invariant 寫進 wrapper/test；否則 generic regex 與 wrapper normalization 要一起收斂。
+
+## Round 36 · Codex A · shim hardening · 2026-04-25 05:33
+
+- commit SHA: `06a06b5`
+- shim hardening：`migrate-snapshot-research-to-gcs.mjs` 現在一律 hard-pin `snapshot.research`；若 caller 帶其他 `--keyspace=`，直接 throw `research shim only supports snapshot.research; use migrate-prefix-keyspace-to-gcs.mjs --keyspace=... instead`。
+- portfolio-state test：補了 `purgeExpiredDailySnapshots()` regression case，模擬 retention purge 命中過期 `snapshot/portfolio-state/<date>/me/{holdings,tradeLog}.json`，並斷言 `snapshotPortfolioStateStore.deleteMany` 收到正確 keys。
+- 信心預測 snapshot.research regression：`6/10 -> 8/10`

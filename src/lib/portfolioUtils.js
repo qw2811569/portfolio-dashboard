@@ -27,6 +27,7 @@ import { applyTradeEntryToHoldings, buildHoldingPriceHints, normalizeHoldings } 
 import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'
 import { normalizeWatchlist } from './watchlistUtils.js'
+import { broadcastWatchlistSync } from './watchlistSync.js'
 
 export function createDefaultPortfolios() {
   return [{ id: OWNER_PORTFOLIO_ID, name: '我', isOwner: true, createdAt: todayStorageDate() }]
@@ -194,7 +195,14 @@ export const writeSyncAt = (key, value) => {
 }
 
 export async function savePortfolioData(pid, suffix, data) {
-  return save(pfKey(pid, suffix), sanitizePortfolioField(suffix, data))
+  const sanitized = sanitizePortfolioField(suffix, data)
+  await save(pfKey(pid, suffix), sanitized)
+
+  if (suffix === PORTFOLIO_ALIAS_TO_SUFFIX.watchlist) {
+    broadcastWatchlistSync({ portfolioId: pid, watchlist: sanitized })
+  }
+
+  return sanitized
 }
 
 export async function loadPortfolioData(pid, suffix, fallback) {

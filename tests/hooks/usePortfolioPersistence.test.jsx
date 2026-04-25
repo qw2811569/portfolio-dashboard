@@ -3,6 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLocalBackupWorkflow } from '../../src/hooks/useLocalBackupWorkflow.js'
 import { usePortfolioPersistence } from '../../src/hooks/usePortfolioPersistence.js'
 
+const expectAbortableFetch = (url) => {
+  expect(global.fetch).toHaveBeenCalledWith(
+    url,
+    expect.objectContaining({
+      signal: expect.any(AbortSignal),
+    })
+  )
+}
+
 function createPersistenceProps(overrides = {}) {
   return {
     activePortfolioId: 'me',
@@ -29,7 +38,9 @@ function createPersistenceProps(overrides = {}) {
     marketPriceSync: null,
     setHoldingDossiers: vi.fn(),
     setAnalysisHistory: vi.fn(),
+    setAnalysisHistoryStatus: vi.fn(),
     setResearchHistory: vi.fn(),
+    setResearchHistoryStatus: vi.fn(),
     setSaved: vi.fn(),
     cloudSyncStateRef: { current: { enabled: false, syncedAt: 0 } },
     cloudSaveTimersRef: { current: {} },
@@ -125,7 +136,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
 
     global.fetch = vi.fn(async (input) => {
       if (String(input) === '/api/brain?action=history') {
-        return { json: async () => ({ history: [{ id: 2, date: '2026-03-27' }] }) }
+        return { ok: true, json: async () => ({ history: [{ id: 2, date: '2026-03-27' }] }) }
       }
       throw new Error(`unexpected fetch: ${String(input)}`)
     })
@@ -133,7 +144,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/brain?action=history')
+      expectAbortableFetch('/api/brain?action=history')
     })
 
     expect(props.setAnalysisHistory).toHaveBeenCalled()
@@ -157,6 +168,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
     global.fetch = vi.fn(async (input) => {
       if (String(input) === '/api/research') {
         return {
+          ok: true,
           json: async () => ({
             reports: [
               { timestamp: 2, title: 'cloud-middle' },
@@ -171,7 +183,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/research')
+      expectAbortableFetch('/api/research')
     })
 
     expect(props.setResearchHistory).toHaveBeenCalledWith([
@@ -214,6 +226,21 @@ describe('hooks/usePortfolioPersistence.js', () => {
     expect(global.fetch.mock.calls.filter(([url]) => url === '/api/brain')).toHaveLength(1)
     expect(props.writeSyncAt).not.toHaveBeenCalled()
     expect(props.cloudSyncStateRef.current.syncedAt).toBe(0)
+  })
+
+  it('skips re-saving watchlist when synced state already matches local storage', () => {
+    const watchlist = [
+      { code: '2454', name: '聯發科', price: 1250, target: 1500, status: '觀察中' },
+    ]
+    localStorage.setItem('pf-me-watchlist-v1', JSON.stringify(watchlist))
+
+    const props = createPersistenceProps({
+      watchlist,
+    })
+
+    renderHook(() => usePortfolioPersistence(props))
+
+    expect(props.savePortfolioData).not.toHaveBeenCalledWith('me', 'watchlist-v1', watchlist)
   })
 
   it('cleans up pending cloud save timers on unmount', async () => {
@@ -263,7 +290,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
     expect(changedProps.setHoldingDossiers).toHaveBeenCalledWith(nextDossiers)
   })
 
-  it('ignores malformed analysis history payloads', async () => {
+  it('treats malformed analysis history payloads as an empty successful sync', async () => {
     const props = createPersistenceProps({
       canPersistPortfolioData: false,
       canUseCloud: true,
@@ -272,7 +299,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
 
     global.fetch = vi.fn(async (input) => {
       if (String(input) === '/api/brain?action=history') {
-        return { json: async () => ({ history: 'oops-not-an-array' }) }
+        return { ok: true, json: async () => ({ history: 'oops-not-an-array' }) }
       }
       throw new Error(`unexpected fetch: ${String(input)}`)
     })
@@ -280,22 +307,19 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/brain?action=history')
+      expectAbortableFetch('/api/brain?action=history')
     })
 
-    expect(props.setAnalysisHistory).not.toHaveBeenCalled()
+    expect(props.setAnalysisHistory).toHaveBeenCalledTimes(1)
     expect(props.savePortfolioData).not.toHaveBeenCalledWith(
       'me',
       'analysis-history-v1',
       expect.anything()
     )
-    expect(props.writeSyncAt).not.toHaveBeenCalledWith(
-      'pf-analysis-cloud-sync-at',
-      expect.any(Number)
-    )
+    expect(props.writeSyncAt).toHaveBeenCalledWith('pf-analysis-cloud-sync-at', expect.any(Number))
   })
 
-  it('ignores malformed research payloads', async () => {
+  it('keeps existing research history when the payload shape is malformed', async () => {
     const props = createPersistenceProps({
       canPersistPortfolioData: false,
       canUseCloud: true,
@@ -305,7 +329,7 @@ describe('hooks/usePortfolioPersistence.js', () => {
 
     global.fetch = vi.fn(async (input) => {
       if (String(input) === '/api/research') {
-        return { json: async () => ({ reports: { bad: true } }) }
+        return { ok: true, json: async () => ({ reports: { bad: true } }) }
       }
       throw new Error(`unexpected fetch: ${String(input)}`)
     })
@@ -313,19 +337,14 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/research')
+      expectAbortableFetch('/api/research')
     })
 
-    expect(props.setResearchHistory).not.toHaveBeenCalled()
-    expect(props.savePortfolioData).not.toHaveBeenCalledWith(
-      'me',
-      'research-history-v1',
-      expect.anything()
-    )
-    expect(props.writeSyncAt).not.toHaveBeenCalledWith(
-      'pf-research-cloud-sync-at',
-      expect.any(Number)
-    )
+    expect(props.setResearchHistory).toHaveBeenCalledWith([{ timestamp: 1, title: 'existing' }])
+    expect(props.savePortfolioData).toHaveBeenCalledWith('me', 'research-history-v1', [
+      { timestamp: 1, title: 'existing' },
+    ])
+    expect(props.writeSyncAt).toHaveBeenCalledWith('pf-research-cloud-sync-at', expect.any(Number))
   })
 
   it('rejects backup imports that do not carry schemaVersion', async () => {

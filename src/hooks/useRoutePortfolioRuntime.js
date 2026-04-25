@@ -4,6 +4,7 @@ import { useSavedToast } from './useSavedToast.js'
 import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 import { useTransientUiActions } from './useTransientUiActions.js'
 import { useWatchlistActions } from './useWatchlistActions.js'
+import { useWatchlistStorageSync } from './useWatchlistStorageSync.js'
 import {
   API_ENDPOINTS,
   buildPortfolioRoute,
@@ -291,6 +292,20 @@ export function useRoutePortfolioRuntime() {
       persistRouteField('watchlist', 'watchlist-v1', valueOrUpdater, normalizeWatchlist),
     [persistRouteField]
   )
+  const applySyncedWatchlist = useCallback(
+    (nextWatchlist) =>
+      setRouteData((prev) => ({
+        ...prev,
+        watchlist: normalizeWatchlist(nextWatchlist),
+      })),
+    []
+  )
+
+  useWatchlistStorageSync({
+    portfolioId: routePortfolioId,
+    enabled: true,
+    onWatchlistSync: applySyncedWatchlist,
+  })
 
   const setTargets = useCallback(
     (valueOrUpdater) =>

@@ -7,6 +7,7 @@ import { useWatchlistActions } from './useWatchlistActions.js'
 import { useTransientUiActions } from './useTransientUiActions.js'
 import { useAppRuntimeSyncRefs } from './useAppRuntimeSyncRefs.js'
 import { useAutoEventCalendar } from './useAutoEventCalendar.js'
+import { useWatchlistStorageSync } from './useWatchlistStorageSync.js'
 import {
   useAppBootRuntimeComposer,
   useAppLifecycleRuntimeComposer,
@@ -329,6 +330,11 @@ export function useAppRuntimeCoreLifecycle({ state, setters, ui, runtime, refs, 
   useAppRuntimeSyncRefs(runtimeSyncRefsArgs)
   usePortfolioBootstrap(portfolioBootstrapArgs)
   usePortfolioPersistence(portfolioPersistenceArgs)
+  useWatchlistStorageSync({
+    portfolioId: activePortfolioId,
+    enabled: ready && viewMode === PORTFOLIO_VIEW_MODE && !portfolioSwitching,
+    onWatchlistSync: setWatchlist,
+  })
 
   // 自動事件行事曆：boot 完成後載入公共事件（FOMC、央行、財報季、除權息）
   const { fetchAutoEvents } = useAutoEventCalendar({ setNewsEvents })

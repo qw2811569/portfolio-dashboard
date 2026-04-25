@@ -9,6 +9,8 @@ import {
 } from '../constants.js'
 import { createDataError, normalizeDataError } from '../lib/dataError.js'
 import { STOCK_META } from '../seedData.js'
+import { normalizeWatchlist } from '../lib/watchlistUtils.js'
+import { readStoredWatchlist } from '../lib/watchlistSync.js'
 import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 
 function mergeResearchHistory(existingReports, incomingReports) {
@@ -156,8 +158,13 @@ export function usePortfolioPersistence({
   }, [activePortfolioId, canPersistPortfolioData, fundamentals, savePortfolioData])
 
   useEffect(() => {
-    if (canPersistPortfolioData && watchlist)
-      savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.watchlist, watchlist)
+    if (canPersistPortfolioData && watchlist) {
+      const normalizedWatchlist = normalizeWatchlist(watchlist)
+      const persistedWatchlist = readStoredWatchlist(activePortfolioId)
+
+      if (JSON.stringify(persistedWatchlist) === JSON.stringify(normalizedWatchlist)) return
+      savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.watchlist, normalizedWatchlist)
+    }
   }, [activePortfolioId, canPersistPortfolioData, watchlist, savePortfolioData])
 
   useEffect(() => {

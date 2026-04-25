@@ -1,4 +1,4 @@
-import { createElement as h, useEffect, useMemo, useRef, useState } from 'react'
+import { createElement as h, useEffect, useMemo, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { TOKENS, alpha } from '../../theme.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
@@ -74,6 +74,10 @@ const PREVIEW_NEWS = [
   },
 ]
 
+const NEWS_FEED_SUCCESS_CACHE_TTL_MS = 5 * 60 * 1000
+const NEWS_FEED_ERROR_CACHE_TTL_MS = 15 * 1000
+const newsFeedRequestCache = new Map()
+
 function getItemId(item, index = 0) {
   return item.id || item.link || `${item.title || 'news'}-${item.pubDate || index}`
 }
@@ -114,6 +118,81 @@ function buildPreviewNewsItems(holdingCodes = []) {
     (item.relatedStocks || []).some((stock) => holdingCodes.includes(stock.code))
   )
   return filtered.length ? filtered : PREVIEW_NEWS.slice(0, 4)
+}
+
+function buildHoldingCodesFromKey(codesKey = '') {
+  return String(codesKey || '')
+    .split(',')
+    .map((code) => code.trim())
+    .filter(Boolean)
+}
+
+function buildNewsFeedResultPayload(data, holdingCodes = []) {
+  const remoteItems = (data?.items || []).map((item) => ({
+    ...item,
+    recordType: 'news',
+  }))
+  return {
+    error: null,
+    items: remoteItems.length ? remoteItems : buildPreviewNewsItems(holdingCodes),
+  }
+}
+
+function buildNewsFeedErrorPayload(error, holdingCodes = []) {
+  return {
+    error: normalizeDataError(error, { resource: 'news' }),
+    items: buildPreviewNewsItems(holdingCodes),
+  }
+}
+
+function readNewsFeedRequestCache(requestKey) {
+  const entry = newsFeedRequestCache.get(requestKey)
+  if (!entry) return null
+
+  if (entry.status === 'pending') return entry
+
+  if (!Number.isFinite(entry.expiresAt) || entry.expiresAt <= Date.now()) {
+    newsFeedRequestCache.delete(requestKey)
+    return null
+  }
+
+  return entry
+}
+
+function cacheResolvedNewsFeedRequest(requestKey, payload, ttlMs) {
+  newsFeedRequestCache.set(requestKey, {
+    status: 'resolved',
+    payload,
+    expiresAt: Date.now() + ttlMs,
+  })
+}
+
+function createNewsFeedRequest(requestKey, codesKey, holdingCodes = []) {
+  const pendingEntry = {
+    status: 'pending',
+    promise: fetch(`/api/news-feed?codes=${encodeURIComponent(codesKey)}&days=3`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
+      .then((data) => {
+        const payload = buildNewsFeedResultPayload(data, holdingCodes)
+        cacheResolvedNewsFeedRequest(requestKey, payload, NEWS_FEED_SUCCESS_CACHE_TTL_MS)
+        return payload
+      })
+      .catch((error) => {
+        const payload = buildNewsFeedErrorPayload(error, holdingCodes)
+        cacheResolvedNewsFeedRequest(requestKey, payload, NEWS_FEED_ERROR_CACHE_TTL_MS)
+        return payload
+      }),
+  }
+
+  newsFeedRequestCache.set(requestKey, pendingEntry)
+  return pendingEntry
+}
+
+export function __resetNewsFeedRequestCacheForTests() {
+  newsFeedRequestCache.clear()
 }
 
 function buildTrendSummary(items) {
@@ -514,6 +593,7 @@ export function NewsFeedSection({
 }) {
   const isMobile = useIsMobile()
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
+  const requestHoldingCodes = useMemo(() => buildHoldingCodesFromKey(codesKey), [codesKey])
 
   const [items, setItems] = useState([])
   const [error, setError] = useState(null)
@@ -525,69 +605,70 @@ export function NewsFeedSection({
   const [tickerFilter, setTickerFilter] = useState('全部持股')
   const [isMobileFilterCollapsed, setIsMobileFilterCollapsed] = useState(true)
   const [readIds, setReadIds] = useState(() => new Set())
-  const fetchedRef = useRef(false)
 
   useEffect(() => {
-    fetchedRef.current = false
-  }, [requestKey])
+    if (!codesKey) return undefined
 
-  useEffect(() => {
-    if (!codesKey || fetchedRef.current) return
-    fetchedRef.current = true
-    const controller = new AbortController()
-    let cancelled = false
+    let active = true
+    const cachedEntry = readNewsFeedRequestCache(requestKey)
+    const requestEntry =
+      cachedEntry && cachedEntry.status === 'pending'
+        ? cachedEntry
+        : cachedEntry || createNewsFeedRequest(requestKey, codesKey, requestHoldingCodes)
 
-    fetch(`/api/news-feed?codes=${encodeURIComponent(codesKey)}&days=3`, {
-      signal: controller.signal,
+    const applyPayload = (payload) => {
+      if (!active || !payload) return
+      setError(payload.error || null)
+      setItems(payload.items || [])
+      setSettledRequestKey(requestKey)
+    }
+
+    if (requestEntry.status === 'resolved') {
+      applyPayload(requestEntry.payload)
+      return () => {
+        active = false
+      }
+    }
+
+    requestEntry.promise.then((payload) => {
+      applyPayload(payload)
     })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
-        if (cancelled) return
-        const remoteItems = (data.items || []).map((item) => ({
-          ...item,
-          recordType: 'news',
-        }))
-        setItems(remoteItems.length ? remoteItems : buildPreviewNewsItems(holdingCodes))
-      })
-      .catch((err) => {
-        if (cancelled || err?.name === 'AbortError') return
-        setError(normalizeDataError(err, { resource: 'news' }))
-        setItems(buildPreviewNewsItems(holdingCodes))
-      })
-      .finally(() => {
-        if (cancelled) return
-        setSettledRequestKey(requestKey)
-      })
 
     return () => {
-      cancelled = true
-      controller.abort()
+      active = false
     }
-  }, [codesKey, holdingCodes, requestKey])
+  }, [codesKey, requestHoldingCodes, requestKey])
 
-  const sources = ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))]
+  const sources = useMemo(
+    () => ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))],
+    [items]
+  )
   const impacts = ['全部影響', '利多', '利空', '中性']
-  const tickers = [
-    '全部持股',
-    ...new Set(
-      items.flatMap((item) =>
-        (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
-      )
-    ),
-  ]
+  const tickers = useMemo(
+    () => [
+      '全部持股',
+      ...new Set(
+        items.flatMap((item) =>
+          (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
+        )
+      ),
+    ],
+    [items]
+  )
 
-  const filteredItems = items.filter((item) => {
-    const sourceLabel = normalizeSourceLabel(item.source)
-    const impactLabel = IMPACT_COPY[inferImpact(item)]
-    const itemTickers = (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
-    const sourceOk = sourceFilter === '全部來源' || sourceFilter === sourceLabel
-    const impactOk = impactFilter === '全部影響' || impactFilter === impactLabel
-    const tickerOk = tickerFilter === '全部持股' || itemTickers.includes(tickerFilter)
-    return sourceOk && impactOk && tickerOk
-  })
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const sourceLabel = normalizeSourceLabel(item.source)
+        const impactLabel = IMPACT_COPY[inferImpact(item)]
+        const itemTickers = (item.relatedStocks || []).map((stock) => `${stock.code} ${stock.name}`)
+        const sourceOk = sourceFilter === '全部來源' || sourceFilter === sourceLabel
+        const impactOk = impactFilter === '全部影響' || impactFilter === impactLabel
+        const tickerOk = tickerFilter === '全部持股' || itemTickers.includes(tickerFilter)
+        return sourceOk && impactOk && tickerOk
+      }),
+    [impactFilter, items, sourceFilter, tickerFilter]
+  )
 
   const visibleItems = filteredItems
   const visibleItemCount = visibleItems.length
@@ -595,7 +676,7 @@ export function NewsFeedSection({
     (item, index) => !readIds.has(getItemId(item, index))
   ).length
   const showTickerSideNotes = isViewModeEnabled('showTickerSideNotes', viewMode)
-  const aggregateClusters = buildAggregateNewsClusters(visibleItems)
+  const aggregateClusters = useMemo(() => buildAggregateNewsClusters(visibleItems), [visibleItems])
   const showFilterBody = !isMobile || !isMobileFilterCollapsed
   const activeFilterCount = countActiveFilters({ sourceFilter, impactFilter, tickerFilter })
   const hasActiveFilters = activeFilterCount > 0

@@ -2,7 +2,11 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NewsAnalysisPanel, NewsFeedSection } from '../../src/components/news/NewsPanel.jsx'
+import {
+  __resetNewsFeedRequestCacheForTests,
+  NewsAnalysisPanel,
+  NewsFeedSection,
+} from '../../src/components/news/NewsPanel.jsx'
 
 const originalMatchMedia = window.matchMedia
 
@@ -65,6 +69,7 @@ describe('components/NewsAnalysisPanel', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    __resetNewsFeedRequestCacheForTests()
     if (typeof originalMatchMedia === 'function') {
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,
@@ -123,6 +128,7 @@ describe('components/NewsFeedSection', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+    __resetNewsFeedRequestCacheForTests()
     if (typeof originalMatchMedia === 'function') {
       Object.defineProperty(window, 'matchMedia', {
         configurable: true,
@@ -224,6 +230,58 @@ describe('components/NewsFeedSection', () => {
     })
 
     expect(screen.queryByText('preview fallback')).not.toBeInTheDocument()
+  })
+
+  it('dedupes the same in-flight request across remounts', async () => {
+    let resolveFetch
+    const pendingFetch = new Promise((resolve) => {
+      resolveFetch = resolve
+    })
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockReturnValue(pendingFetch)
+
+    const firstRender = render(<NewsFeedSection holdingCodes={['2330', '2454']} />)
+
+    expect(screen.getByText('新聞脈絡整理中')).toBeInTheDocument()
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    firstRender.unmount()
+    render(<NewsFeedSection holdingCodes={['2454', '2330']} />)
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveFetch({
+        ok: true,
+        json: async () => ({ items: MOCK_NEWS_ITEMS }),
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    })
+  })
+
+  it('reuses the cached same-key result after remount instead of fetching again', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: MOCK_NEWS_ITEMS }),
+    })
+
+    const firstRender = render(<NewsFeedSection holdingCodes={['2330', '2454']} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('台積電法說會釋出樂觀展望')).toBeInTheDocument()
+    })
+
+    firstRender.unmount()
+    render(<NewsFeedSection holdingCodes={['2454', '2330']} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('聯發科5G晶片出貨成長')).toBeInTheDocument()
+    })
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('新聞脈絡整理中')).not.toBeInTheDocument()
   })
 
   it('shows the loading skeleton again when a new fetch starts after holdings change', async () => {

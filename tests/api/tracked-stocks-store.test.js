@@ -375,6 +375,13 @@ describe('api/_lib/tracked-stocks-store.js', () => {
   })
 
   it('reconciles one shadow version conflict so the secondary converges to the latest primary payload', async () => {
+    const primaryState = {
+      versionToken: '10',
+      payload: {
+        portfolioId: 'me',
+        stocks: [{ code: '2330', name: '台積電', type: '股票' }],
+      },
+    }
     const shadowState = {
       versionToken: 'etag-10',
       payload: {
@@ -402,10 +409,19 @@ describe('api/_lib/tracked-stocks-store.js', () => {
       }),
     })
     const gcsBackend = createBackend({
-      write: vi
-        .fn()
-        .mockResolvedValueOnce({ versionToken: '11' })
-        .mockResolvedValueOnce({ versionToken: '12' }),
+      read: vi.fn().mockImplementation(async () => ({
+        payload: primaryState.payload,
+        versionToken: primaryState.versionToken,
+      })),
+      write: vi.fn().mockImplementation(async (_descriptor, nextPayload, expectedVersionToken) => {
+        expect(expectedVersionToken).toBe(primaryState.versionToken)
+        primaryState.payload = nextPayload
+        primaryState.versionToken = `${Number(primaryState.versionToken) + 1}`
+        return {
+          payload: nextPayload,
+          versionToken: primaryState.versionToken,
+        }
+      }),
     })
     const appendMetricImpl = vi.fn().mockResolvedValue(undefined)
     const logger = { warn: vi.fn() }
@@ -470,6 +486,17 @@ describe('api/_lib/tracked-stocks-store.js', () => {
     )
     await backgroundPromise
 
+    expect(primaryState).toEqual({
+      versionToken: '12',
+      payload: {
+        portfolioId: 'me',
+        stocks: [
+          { code: '2330', name: '台積電', type: '股票' },
+          { code: '2317', name: '鴻海', type: '股票' },
+          { code: '2454', name: '聯發科', type: '股票' },
+        ],
+      },
+    })
     expect(shadowState).toEqual({
       versionToken: 'etag-12',
       payload: {
@@ -481,6 +508,158 @@ describe('api/_lib/tracked-stocks-store.js', () => {
         ],
       },
     })
+    expect(gcsBackend.read).toHaveBeenCalledTimes(1)
+    expect(vercelBackend.readVersion).toHaveBeenCalledTimes(3)
+    expect(vercelBackend.write).toHaveBeenCalledTimes(3)
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(appendMetricImpl).not.toHaveBeenCalled()
+  })
+
+  it('does not let an older shadow reconcile overwrite a newer primary payload', async () => {
+    const primaryState = {
+      versionToken: '10',
+      payload: {
+        portfolioId: 'me',
+        stocks: [{ code: '2330', name: '台積電', type: '股票' }],
+      },
+    }
+    const shadowState = {
+      versionToken: 'etag-10',
+      payload: {
+        portfolioId: 'me',
+        stocks: [{ code: '2330', name: '台積電', type: '股票' }],
+      },
+    }
+    const staleShadowWriteStarted = createDeferred()
+    const releaseStaleShadowWrite = createDeferred()
+    const backgroundPromises = []
+    const vercelBackend = createBackend({
+      readVersion: vi.fn().mockImplementation(async () => shadowState.versionToken),
+      write: vi.fn().mockImplementation(async (_descriptor, nextPayload, expectedVersionToken) => {
+        const stockCodes = nextPayload.stocks.map((stock) => stock.code).join(',')
+        if (stockCodes === '2330,2317' && expectedVersionToken === 'etag-10') {
+          staleShadowWriteStarted.resolve()
+          await releaseStaleShadowWrite.promise
+        }
+
+        if ((expectedVersionToken || null) !== shadowState.versionToken) {
+          throw Object.assign(new Error('shadow conflict'), {
+            code: 'VERSION_CONFLICT',
+          })
+        }
+
+        shadowState.payload = nextPayload
+        shadowState.versionToken = `etag-${Number(shadowState.versionToken.split('-')[1]) + 1}`
+        return {
+          payload: nextPayload,
+          versionToken: shadowState.versionToken,
+        }
+      }),
+    })
+    const gcsBackend = createBackend({
+      read: vi.fn().mockImplementation(async () => ({
+        payload: primaryState.payload,
+        versionToken: primaryState.versionToken,
+      })),
+      write: vi.fn().mockImplementation(async (_descriptor, nextPayload, expectedVersionToken) => {
+        expect(expectedVersionToken).toBe(primaryState.versionToken)
+        primaryState.payload = nextPayload
+        primaryState.versionToken = `${Number(primaryState.versionToken) + 1}`
+        return {
+          payload: nextPayload,
+          versionToken: primaryState.versionToken,
+        }
+      }),
+    })
+    const appendMetricImpl = vi.fn().mockResolvedValue(undefined)
+    const logger = { warn: vi.fn() }
+
+    await writeTrackedStocksIfVersion(
+      'me',
+      {
+        portfolioId: 'me',
+        stocks: [
+          { code: '2330', name: '台積電', type: '股票' },
+          { code: '2317', name: '鴻海', type: '股票' },
+        ],
+      },
+      '10',
+      {
+        storagePolicyOverride: {
+          primary: 'gcs',
+          shadowRead: false,
+          shadowWrite: true,
+        },
+        vercelBackend,
+        gcsBackend,
+        logger,
+        appendMetricImpl,
+        mkdirImpl: vi.fn().mockResolvedValue(undefined),
+        logDir: '/tmp/test-logs',
+        scheduleBackgroundTask(task) {
+          backgroundPromises.push(Promise.resolve().then(task))
+        },
+      }
+    )
+
+    await staleShadowWriteStarted.promise
+
+    await writeTrackedStocksIfVersion(
+      'me',
+      {
+        portfolioId: 'me',
+        stocks: [
+          { code: '2330', name: '台積電', type: '股票' },
+          { code: '2317', name: '鴻海', type: '股票' },
+          { code: '2454', name: '聯發科', type: '股票' },
+        ],
+      },
+      '11',
+      {
+        storagePolicyOverride: {
+          primary: 'gcs',
+          shadowRead: false,
+          shadowWrite: true,
+        },
+        vercelBackend,
+        gcsBackend,
+        logger,
+        appendMetricImpl,
+        mkdirImpl: vi.fn().mockResolvedValue(undefined),
+        logDir: '/tmp/test-logs',
+        scheduleBackgroundTask(task) {
+          backgroundPromises.push(Promise.resolve().then(task))
+        },
+      }
+    )
+
+    await backgroundPromises[1]
+    releaseStaleShadowWrite.resolve()
+    await backgroundPromises[0]
+
+    expect(primaryState).toEqual({
+      versionToken: '12',
+      payload: {
+        portfolioId: 'me',
+        stocks: [
+          { code: '2330', name: '台積電', type: '股票' },
+          { code: '2317', name: '鴻海', type: '股票' },
+          { code: '2454', name: '聯發科', type: '股票' },
+        ],
+      },
+    })
+    expect(shadowState).toEqual({
+      versionToken: 'etag-12',
+      payload: {
+        portfolioId: 'me',
+        stocks: [
+          { code: '2330', name: '台積電', type: '股票' },
+          { code: '2317', name: '鴻海', type: '股票' },
+          { code: '2454', name: '聯發科', type: '股票' },
+        ],
+      },
+    })
+    expect(gcsBackend.read).toHaveBeenCalledTimes(1)
     expect(vercelBackend.readVersion).toHaveBeenCalledTimes(3)
     expect(vercelBackend.write).toHaveBeenCalledTimes(3)
     expect(logger.warn).not.toHaveBeenCalled()

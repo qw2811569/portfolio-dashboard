@@ -475,6 +475,17 @@ async function readShadowVersionToken(shadowBackend, descriptor, options) {
   return normalizeVersionToken(shadowResult)
 }
 
+async function readLatestPrimaryPayload(primaryBackend, descriptor, options) {
+  const primaryResult = await primaryBackend.read(descriptor, options)
+  if (!primaryResult) {
+    throw new Error(
+      `[tracked-stocks-store] primary read returned no payload during shadow reconcile for ${descriptor.key}`
+    )
+  }
+
+  return primaryResult.payload
+}
+
 export async function readTrackedStocks(portfolioId, options = {}) {
   const descriptor = resolveDescriptor(portfolioId)
   const policy = resolveStoragePolicy(options)
@@ -571,15 +582,17 @@ export async function writeTrackedStocksIfVersion(
   scheduleBackgroundTask(async () => {
     const shadowBackend = getBackend(shadow, options)
     let shadowVersionToken = null
+    let shadowPayload = primaryResult?.payload ?? payload
 
     try {
       shadowVersionToken = await readShadowVersionToken(shadowBackend, descriptor, options)
-      await shadowBackend.write(descriptor, payload, shadowVersionToken, options)
+      await shadowBackend.write(descriptor, shadowPayload, shadowVersionToken, options)
     } catch (error) {
       if (error?.code === 'VERSION_CONFLICT') {
         try {
+          shadowPayload = await readLatestPrimaryPayload(primaryBackend, descriptor, options)
           shadowVersionToken = await readShadowVersionToken(shadowBackend, descriptor, options)
-          await shadowBackend.write(descriptor, payload, shadowVersionToken, options)
+          await shadowBackend.write(descriptor, shadowPayload, shadowVersionToken, options)
           return
         } catch (retryError) {
           error = retryError
@@ -592,7 +605,7 @@ export async function writeTrackedStocksIfVersion(
       )
       await appendDivergenceForShadowWrite(
         descriptor,
-        payload,
+        shadowPayload,
         primary,
         shadow,
         shadowVersionToken,

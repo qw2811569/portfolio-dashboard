@@ -130,6 +130,49 @@ GCS 真的比 VM 本機磁碟、MinIO、S3 好嗎？考慮：
 
 _待填 · Round 2_
 
+## Round 38 · Codex A · Class 5 hybrid · 2026-04-25 15:01
+
+- commit SHA(s)：base `39c6cb6` → this round final SHA is produced after this append because `discussion.md` itself is part of the commit; actual committed SHA is reported in the final handoff
+- 實作範圍：`api/_lib/hybrid-store.js` + `brain/research/telemetry/analysis-history` wrappers、caller refactor、`migrate-hybrid-keyspace-to-gcs.mjs`、對應 tests
+
+### 4 個 keyspace sync semantics
+
+- `brain`
+  - authority：`local`
+  - read：先讀 `data/strategy-brain.json`；local miss 才讀 remote primary；`shadowRead=true` 時 primary miss 再試 shadow；remote hit 會 promote 回 local
+  - write：local mandatory；remote primary best-effort；`shadowWrite=true` 時 dual-write 到另一個 remote backend
+  - 備註：為了把 `api/brain.js` 的 raw blob call 全收掉，legacy `events.json` / `holdings.json` 也走同一個 wrapper / envPrefix
+
+- `research`
+  - authority：`local`
+  - read：`research-index.json`、`research/<scope>/<ts>.json`、`brain-proposals/<id>.json` 都 local first；local miss 才 fallback remote；remote hit promote 回 local
+  - list：`research/` prefix 先掃 local flat cache；空了才列 remote primary，再視 `shadowRead` 決定是否試 shadow
+  - write：local mandatory；remote primary best-effort；`shadowWrite=true` 時 dual-write
+
+- `telemetry`
+  - authority：`local`
+  - read：先讀 local `telemetry-events.json`；local miss 才 fallback public Blob / public GCS；remote hit promote 回 local
+  - write：local mandatory；remote best-effort；Vercel `access: public`、GCS `public: true`
+  - 備註：token 走 `PUB_BLOB_TELEMETRY_TOKEN` fallback `PUB_BLOB_READ_WRITE_TOKEN`
+
+- `analysis-history`
+  - authority：`local`
+  - read：index `analysis-history-index.json` local first；若 index 缺失，改列 `analysis-history/` objects，逐筆 remote fallback read，之後回填 local index
+  - write：local mandatory；per-record file 與 index 都走同一套 hybrid semantics；remote best-effort + optional shadow write
+  - delete：刪 local 後同時清兩個 remote mirrors，避免未來 local miss 時被 stale shadow resurrect
+
+### delete-then-put → atomic fix
+
+- 舊 `api/brain.js` / `api/research.js` 是 `del()` 再 `put()`，中間有 failure window
+- 新 wrapper 對 Vercel 改成單次 `put(..., addRandomSuffix: false, allowOverwrite: true)`，直接覆蓋舊 object
+- GCS replace path 用 `gcsWrite(...)`；migration create path 用 `gcsWriteIfGeneration(..., 0)`，只在 `stale-source-changed` resume 時才 force overwrite
+- migration verify 保留 read-back hash、generation 檢查、single-run lock、`stale-source-changed` 收斂，不會因 empty source fail-fast
+
+### 最不確定的部分
+
+- manifest 原始 Class 5 表只列 `strategy-brain.json` / `research-*` / `telemetry-events.json` / `analysis-history-*`；這輪為了把 caller raw blob call 清乾淨，順手把 `events.json` / `holdings.json` / `brain-proposals/*.json` 也掛進 wrapper。同一個 envPrefix 是否要長期承擔這些 legacy lanes，我不完全確定；若你要更嚴格的 manifest purity，下一輪應把這三塊拆清楚。
+- `research-index.json` / `analysis-history-index.json` 的並行 write race 這輪沒有做 CAS，只是把 delete-then-put hole 補掉。low-frequency 情況可接受，但若未來 research / daily analysis 真有 multi-writer，應再補 versioned index update。
+
 ## Round 2 · Codex · 2026-04-24 23:13
 
 ### 先講結論
@@ -1204,3 +1247,47 @@ D burn-in 在 jcv-dev 是「smoke test only」（證明 shadow flag 開了沒讓
 - shim hardening：`migrate-snapshot-research-to-gcs.mjs` 現在一律 hard-pin `snapshot.research`；若 caller 帶其他 `--keyspace=`，直接 throw `research shim only supports snapshot.research; use migrate-prefix-keyspace-to-gcs.mjs --keyspace=... instead`。
 - portfolio-state test：補了 `purgeExpiredDailySnapshots()` regression case，模擬 retention purge 命中過期 `snapshot/portfolio-state/<date>/me/{holdings,tradeLog}.json`，並斷言 `snapshotPortfolioStateStore.deleteMany` 收到正確 keys。
 - 信心預測 snapshot.research regression：`6/10 -> 8/10`
+
+---
+
+## Round 37 · Claude · Step 2e VM deploy + summary · 2026-04-25 21:30
+
+### A↔B QA 軌跡（短·因為 prefix-store 框架已硬）
+| Round | 角色 | 結果 |
+|------|------|------|
+| 34 | A 寫 | commit `63054a5` · 2 wrapper + generic migration refactor |
+| 35 | B QA | 0 critical · 1 major (research shim contract) · 1 minor |
+| 36 | A 修 | commit `06a06b5` · shim hard-pin + portfolio-state purge test |
+
+### VM deploy
+- 4 commits 套上 jcv-dev (`dcffa48..08f3281`)
+- 6 新 env vars in `.env.local`
+- API regression 5 endpoint 全同
+- snapshot.brain / snapshot.portfolio_state dry-run 0 item（source empty · worker 沒寫 production data）
+
+### D' 大發現補記
+
+之前所有「burn-in 沒 divergence」是因為 pm2 process 沒讀 `.env`。`local-env.js` 只讀 `.env.local`。修了：33 個 STORAGE_*/GCS_* var 從 `.env` 搬到 `.env.local`。
+
+驗證：故意 corrupt GCS valuation/1799.json + curl 3 次 → divergence log 立刻寫入 3 筆 `result=mismatch` ✅
+
+**Pipeline 真的 work 了**。沒這次發現的話 · burn-in 一直在跑死的。
+
+### 累計進度
+
+| Step | Class | Keyspaces | Status |
+|------|-------|-----------|--------|
+| 2a | 1 LWW | last_success ×2 | ✅ migrated 4 |
+| 2b | 2 CAS | tracked_stocks | ✅ migrated 114 |
+| 2c | 1 LWW batch | 7 個 | ✅ migrated 56 (2 source-empty) |
+| 2d | 4 prefix scan | snapshot.research | ✅ deployed (source empty) |
+| 2e | 4 prefix scan | snapshot.brain + portfolio_state | ✅ deployed (source empty) |
+
+GCS 累計 **174 物件**。
+
+### 還沒做（Phase 1 Step 2 剩餘）
+
+- Class 3 RMW append log（daily-snapshot/morning-note JSONL）
+- **Class 5 hybrid**（brain.js / research.js / telemetry.js · 最難）
+
+Codex Round 33 strategy: D' → B' → **C** → E。D'+B' 都過 · 進 C。

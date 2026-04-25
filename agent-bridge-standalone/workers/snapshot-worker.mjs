@@ -13,13 +13,10 @@ import {
   DAILY_SNAPSHOT_TIMEZONE,
   extractPortfolioStateFromBackup,
   formatDailySnapshotDate,
-  getDailySnapshotBrainPrefix,
   getDailySnapshotDatedMarkerKey,
   getDailySnapshotLocalStorageKey,
   getDailySnapshotLogKey,
   getDailySnapshotManifestKey,
-  getDailySnapshotPortfolioStatePrefix,
-  getDailySnapshotResearchPrefix,
   inferArtifactSchemaVersion,
   readBlobText,
 } from '../../api/_lib/daily-snapshot.js'
@@ -35,7 +32,20 @@ import { getPrivateBlobToken } from '../../api/_lib/blob-tokens.js'
 import { queryFinMindDataset } from '../../api/_lib/finmind-governor.js'
 import { loadLocalEnvIfPresent } from '../../api/_lib/local-env.js'
 import {
+  deleteSnapshotBrainObjects,
+  getSnapshotBrainPrefix,
+  listSnapshotBrainObjects,
+  writeSnapshotBrainObject,
+} from '../../api/_lib/snapshot-brain-store.js'
+import {
+  deleteSnapshotPortfolioStateObjects,
+  getSnapshotPortfolioStatePrefix,
+  listSnapshotPortfolioStateObjects,
+  writeSnapshotPortfolioStateObject,
+} from '../../api/_lib/snapshot-portfolio-state-store.js'
+import {
   deleteSnapshotResearchObjects,
+  getSnapshotResearchPrefix,
   listSnapshotResearchObjects,
   writeSnapshotResearchObject,
 } from '../../api/_lib/snapshot-research-store.js'
@@ -154,12 +164,12 @@ async function listAllBlobs(prefix, { token, listImpl = list } = {}) {
   return blobs
 }
 
-async function listAllSnapshotResearchObjects({ token, listImpl = list } = {}) {
+async function listAllPrefixStoreObjects(listObjects, { token, listImpl = list } = {}) {
   const items = []
   let cursor = null
 
   do {
-    const page = await listSnapshotResearchObjects(
+    const page = await listObjects(
       {
         prefix: '',
         cursor,
@@ -250,10 +260,10 @@ function buildResearchArtifactRecords({
   researchIndex,
   backupState,
 }) {
-  const prefix = getDailySnapshotResearchPrefix(snapshotDate)
+  const prefix = getSnapshotResearchPrefix(snapshotDate)
   const records = [
     buildManifestFileRecord({
-      pathname: `${prefix}/research-index.json`,
+      pathname: `${prefix}research-index.json`,
       content: researchIndex,
       schemaVersion: inferJsonSchemaVersion(researchIndex),
       source: 'canonical:research-index.json',
@@ -264,7 +274,7 @@ function buildResearchArtifactRecords({
     const storageKey = `pf-${portfolioId}-research-history-v1`
     records.push(
       buildManifestFileRecord({
-        pathname: `${prefix}/portfolio-${portfolioId}-research-history.json`,
+        pathname: `${prefix}portfolio-${portfolioId}-research-history.json`,
         content: backupState.storage[storageKey] || [],
         schemaVersion: backupState.global.schemaVersion || DAILY_SNAPSHOT_SCHEMA_VERSION,
         source: `backup:${storageKey}`,
@@ -281,16 +291,16 @@ function buildBrainArtifactRecords({
   analysisHistoryIndex,
   analysisHistoryArtifacts,
 }) {
-  const prefix = getDailySnapshotBrainPrefix(snapshotDate)
+  const prefix = getSnapshotBrainPrefix(snapshotDate)
   const records = [
     buildManifestFileRecord({
-      pathname: `${prefix}/strategy-brain.json`,
+      pathname: `${prefix}strategy-brain.json`,
       content: strategyBrain,
       schemaVersion: inferJsonSchemaVersion(strategyBrain),
       source: 'canonical:strategy-brain.json',
     }),
     buildManifestFileRecord({
-      pathname: `${prefix}/analysis-history-index.json`,
+      pathname: `${prefix}analysis-history-index.json`,
       content: analysisHistoryIndex,
       schemaVersion: inferJsonSchemaVersion(analysisHistoryIndex),
       source: 'canonical:analysis-history-index.json',
@@ -301,7 +311,7 @@ function buildBrainArtifactRecords({
     const relativePath = artifact.pathname.replace(/^analysis-history\/?/, '')
     records.push(
       buildManifestFileRecord({
-        pathname: `${prefix}/analysis-history/${relativePath}`,
+        pathname: `${prefix}analysis-history/${relativePath}`,
         content: artifact.payload,
         schemaVersion: inferJsonSchemaVersion(artifact.payload),
         source: artifact.source,
@@ -313,7 +323,7 @@ function buildBrainArtifactRecords({
 }
 
 function buildPortfolioStateArtifactRecords({ snapshotDate, backupState }) {
-  const prefix = getDailySnapshotPortfolioStatePrefix(snapshotDate)
+  const prefix = getSnapshotPortfolioStatePrefix(snapshotDate)
   const records = []
 
   for (const portfolioId of backupState.portfolioIds) {
@@ -321,7 +331,7 @@ function buildPortfolioStateArtifactRecords({ snapshotDate, backupState }) {
     for (const [fileName, value] of Object.entries(files)) {
       records.push(
         buildManifestFileRecord({
-          pathname: `${prefix}/${portfolioId}/${fileName}`,
+          pathname: `${prefix}${portfolioId}/${fileName}`,
           content: value,
           schemaVersion: backupState.global.schemaVersion || DAILY_SNAPSHOT_SCHEMA_VERSION,
           source: `backup:pf-${portfolioId}-${fileName.replace(/\.json$/, '')}`,
@@ -403,6 +413,10 @@ function buildSnapshotManifest({
   files,
   retention,
 }) {
+  const researchPrefix = getSnapshotResearchPrefix(snapshotDate)
+  const brainPrefix = getSnapshotBrainPrefix(snapshotDate)
+  const portfolioStatePrefix = getSnapshotPortfolioStatePrefix(snapshotDate)
+
   return {
     schemaVersion: DAILY_SNAPSHOT_SCHEMA_VERSION,
     snapshotDate,
@@ -414,13 +428,10 @@ function buildSnapshotManifest({
     portfolios: backupState.portfolioIds,
     counts: {
       totalFiles: files.length,
-      researchFiles: files.filter((file) => file.pathname.startsWith(`snapshot/research/${snapshotDate}/`))
+      researchFiles: files.filter((file) => file.pathname.startsWith(researchPrefix)).length,
+      brainFiles: files.filter((file) => file.pathname.startsWith(brainPrefix)).length,
+      portfolioStateFiles: files.filter((file) => file.pathname.startsWith(portfolioStatePrefix))
         .length,
-      brainFiles: files.filter((file) => file.pathname.startsWith(`snapshot/brain/${snapshotDate}/`))
-        .length,
-      portfolioStateFiles: files.filter((file) =>
-        file.pathname.startsWith(`snapshot/portfolio-state/${snapshotDate}/`)
-      ).length,
       checkpointFiles: files.filter((file) => file.pathname === getDailySnapshotLocalStorageKey(snapshotDate))
         .length,
       benchmarkFiles: files.filter((file) => file.pathname === getBenchmarkSnapshotKey(snapshotDate)).length,
@@ -468,26 +479,43 @@ export async function purgeExpiredDailySnapshots({
   }
 
   const today = formatDailySnapshotDate(now)
-  const prefixes = [
-    'snapshot/brain/',
-    'snapshot/portfolio-state/',
-    'snapshot/benchmark/',
-    'snapshot/localStorage-checkpoint/',
-    'snapshot/daily-manifest/',
-    'last-success/daily-snapshot/',
-  ]
-
   const researchCandidates = []
+  const brainCandidates = []
+  const portfolioStateCandidates = []
   const genericCandidates = []
 
-  for (const item of await listAllSnapshotResearchObjects({ token, listImpl })) {
+  for (const item of await listAllPrefixStoreObjects(listSnapshotResearchObjects, { token, listImpl })) {
     const snapshotDate = parseDateFromPathname(item.pathname)
     if (!snapshotDate) continue
     if (daysBetween(snapshotDate, today) <= keepDays) continue
     researchCandidates.push(item.pathname)
   }
 
-  for (const prefix of prefixes) {
+  for (const item of await listAllPrefixStoreObjects(listSnapshotBrainObjects, { token, listImpl })) {
+    const snapshotDate = parseDateFromPathname(item.pathname)
+    if (!snapshotDate) continue
+    if (daysBetween(snapshotDate, today) <= keepDays) continue
+    brainCandidates.push(item.pathname)
+  }
+
+  for (const item of await listAllPrefixStoreObjects(listSnapshotPortfolioStateObjects, {
+    token,
+    listImpl,
+  })) {
+    const snapshotDate = parseDateFromPathname(item.pathname)
+    if (!snapshotDate) continue
+    if (daysBetween(snapshotDate, today) <= keepDays) continue
+    portfolioStateCandidates.push(item.pathname)
+  }
+
+  const genericPrefixes = [
+    'snapshot/benchmark/',
+    'snapshot/localStorage-checkpoint/',
+    'snapshot/daily-manifest/',
+    'last-success/daily-snapshot/',
+  ]
+
+  for (const prefix of genericPrefixes) {
     const blobs = await listAllBlobs(prefix, { token, listImpl })
     for (const blob of blobs) {
       const snapshotDate = parseDateFromPathname(blob.pathname)
@@ -497,11 +525,34 @@ export async function purgeExpiredDailySnapshots({
     }
   }
 
-  const candidates = [...researchCandidates, ...genericCandidates]
+  const candidates = [
+    ...researchCandidates,
+    ...brainCandidates,
+    ...portfolioStateCandidates,
+    ...genericCandidates,
+  ]
 
   if (!dryRun && candidates.length > 0) {
     for (let index = 0; index < researchCandidates.length; index += 100) {
       await deleteSnapshotResearchObjects(researchCandidates.slice(index, index + 100), {
+        token,
+        delImpl,
+        listImpl,
+        logger,
+      })
+    }
+
+    for (let index = 0; index < brainCandidates.length; index += 100) {
+      await deleteSnapshotBrainObjects(brainCandidates.slice(index, index + 100), {
+        token,
+        delImpl,
+        listImpl,
+        logger,
+      })
+    }
+
+    for (let index = 0; index < portfolioStateCandidates.length; index += 100) {
+      await deleteSnapshotPortfolioStateObjects(portfolioStateCandidates.slice(index, index + 100), {
         token,
         delImpl,
         listImpl,
@@ -532,22 +583,35 @@ async function writeSnapshotArtifacts(records, { token, putImpl = put } = {}) {
   const written = []
 
   for (const record of records) {
-    const result = record.pathname.startsWith('snapshot/research/')
-      // Intentional: snapshot.research writes go through canonical JSON
-      // serialization here. Migration may raw-copy historical bytes into GCS,
-      // so byte equality is not guaranteed even when the JSON payload matches.
-      // Cross-backend drift checks should compare normalized JSON semantics.
-      ? await writeSnapshotResearchObject(record.pathname, JSON.parse(record.content), {
-          token,
-          putImpl,
-        })
-      : await putImpl(record.pathname, record.content, {
-          token,
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          access: 'private',
-          contentType: record.contentType,
-        })
+    let result
+
+    if (record.pathname.startsWith('snapshot/research/')) {
+      // Intentional: prefix-store JSON writes canonicalize payloads.
+      // Migration may raw-copy historical bytes into GCS, so drift checks
+      // should compare normalized JSON semantics instead of raw bytes.
+      result = await writeSnapshotResearchObject(record.pathname, JSON.parse(record.content), {
+        token,
+        putImpl,
+      })
+    } else if (record.pathname.startsWith('snapshot/brain/')) {
+      result = await writeSnapshotBrainObject(record.pathname, JSON.parse(record.content), {
+        token,
+        putImpl,
+      })
+    } else if (record.pathname.startsWith('snapshot/portfolio-state/')) {
+      result = await writeSnapshotPortfolioStateObject(record.pathname, JSON.parse(record.content), {
+        token,
+        putImpl,
+      })
+    } else {
+      result = await putImpl(record.pathname, record.content, {
+        token,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        access: 'private',
+        contentType: record.contentType,
+      })
+    }
 
     written.push({
       ...record,

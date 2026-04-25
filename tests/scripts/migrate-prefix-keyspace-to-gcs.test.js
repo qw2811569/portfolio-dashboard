@@ -7,7 +7,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   loadKeyInventory,
   runMigration,
-} from '../../scripts/migrate-snapshot-research-to-gcs.mjs'
+} from '../../scripts/migrate-prefix-keyspace-to-gcs.mjs'
+
+const RESEARCH_KEYSPACE = 'snapshot.research'
+
+function resolvePathStem(keyspace = RESEARCH_KEYSPACE) {
+  switch (keyspace) {
+    case 'snapshot.brain':
+      return 'snapshot-brain'
+    case 'snapshot.portfolio_state':
+      return 'snapshot-portfolio-state'
+    case RESEARCH_KEYSPACE:
+    default:
+      return 'snapshot-research'
+  }
+}
+
+function withKeyspace(keyspace, options = {}) {
+  return {
+    keyspace,
+    ...options,
+  }
+}
 
 function createSourceRecord(body, contentType = 'application/json') {
   const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body)
@@ -84,31 +105,31 @@ function createDestinationStore(initialEntries = {}) {
   }
 }
 
-function buildPaths(tempDir) {
+function buildPaths(tempDir, keyspace = RESEARCH_KEYSPACE) {
+  const pathStem = resolvePathStem(keyspace)
   return {
-    statePath: path.join(tempDir, '.tmp', 'migration-state', 'snapshot-research.json'),
-    reverseManifestPath: path.join(
-      tempDir,
-      '.tmp',
-      'migration-state',
-      'snapshot-research.reverse.json'
-    ),
-    lockPath: path.join(tempDir, '.tmp', 'migration-state', 'snapshot-research.lock'),
+    statePath: path.join(tempDir, '.tmp', 'migration-state', `${pathStem}.json`),
+    reverseManifestPath: path.join(tempDir, '.tmp', 'migration-state', `${pathStem}.reverse.json`),
+    lockPath: path.join(tempDir, '.tmp', 'migration-state', `${pathStem}.lock`),
   }
 }
 
-describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
+describe('scripts/migrate-prefix-keyspace-to-gcs.mjs', () => {
   const originalCwd = process.cwd()
 
   beforeEach(() => {
     process.env.GCS_BUCKET_PRIVATE = 'jcv-dev-private'
     process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH = 'true'
+    process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_BRAIN = 'true'
+    process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_PORTFOLIO_STATE = 'true'
   })
 
   afterEach(() => {
     process.chdir(originalCwd)
     delete process.env.GCS_BUCKET_PRIVATE
     delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH
+    delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_BRAIN
+    delete process.env.STORAGE_SHADOW_WRITE_SNAPSHOT_PORTFOLIO_STATE
   })
 
   it('lists snapshot.research inventory with cursor pagination from the Blob prefix', async () => {
@@ -128,6 +149,7 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       })
 
     const items = await loadKeyInventory({
+      keyspace: RESEARCH_KEYSPACE,
       listImpl,
       getPrivateBlobTokenImpl: vi.fn(() => 'blob-token'),
     })
@@ -163,6 +185,97 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
     })
   })
 
+  it('supports snapshot.brain and snapshot.portfolio_state through the generic keyspace config', async () => {
+    const cases = [
+      {
+        keyspace: 'snapshot.brain',
+        listPrefix: 'snapshot/brain/',
+        key: 'snapshot/brain/2026-04-24/analysis-history/2026/04/23-1.json',
+        ignoredKey: 'snapshot/brain/not-a-date.json',
+        sourceBody: '{"schemaVersion":1,"id":"analysis-1"}',
+      },
+      {
+        keyspace: 'snapshot.portfolio_state',
+        listPrefix: 'snapshot/portfolio-state/',
+        key: 'snapshot/portfolio-state/2026-04-24/me/holdings.json',
+        ignoredKey: 'snapshot/portfolio-state/2026-04-24.json',
+        sourceBody: '[{"code":"2330","qty":1}]',
+      },
+    ]
+
+    for (const testCase of cases) {
+      const tempDir = await mkdtemp(
+        path.join(os.tmpdir(), `${testCase.keyspace.replace(/[._]/g, '-')}-migrate-`)
+      )
+      const paths = buildPaths(tempDir, testCase.keyspace)
+      const destinations = createDestinationStore()
+      const listImpl = vi.fn().mockResolvedValue({
+        blobs: [
+          { pathname: testCase.key },
+          { pathname: testCase.ignoredKey },
+          { pathname: 'snapshot/research/2026-04-24/research-index.json' },
+        ],
+        cursor: null,
+      })
+
+      const items = await loadKeyInventory({
+        keyspace: testCase.keyspace,
+        listImpl,
+        getPrivateBlobTokenImpl: vi.fn(() => 'blob-token'),
+      })
+      const gcsWriteIfGenerationImpl = vi.fn(async (bucketName, key, body, expectedGeneration) =>
+        destinations.writeIfGeneration(bucketName, key, body, expectedGeneration)
+      )
+
+      const { summary } = await runMigration(withKeyspace(testCase.keyspace, paths), {
+        consoleImpl: createConsoleSpy(),
+        loadKeyInventoryImpl: vi.fn(async () => items),
+        readSourceImpl: vi.fn(async () => createSourceRecord(testCase.sourceBody)),
+        readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+        gcsWriteIfGenerationImpl,
+      })
+
+      const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
+      const reverseManifest = JSON.parse(await readFile(paths.reverseManifestPath, 'utf8'))
+
+      expect(items).toEqual([
+        {
+          key: testCase.key,
+          access: 'private',
+          bucketName: 'jcv-dev-private',
+        },
+      ])
+      expect(listImpl).toHaveBeenCalledWith({
+        token: 'blob-token',
+        prefix: testCase.listPrefix,
+        cursor: undefined,
+        limit: 1000,
+      })
+      expect(summary).toMatchObject({
+        keyspace: testCase.keyspace,
+        totalItems: 1,
+        done: 1,
+      })
+      expect(gcsWriteIfGenerationImpl).toHaveBeenCalledTimes(1)
+      expect(state).toMatchObject({
+        keyspace: testCase.keyspace,
+      })
+      expect(state.items).toEqual([
+        expect.objectContaining({
+          key: testCase.key,
+          status: 'done',
+        }),
+      ])
+      expect(reverseManifest.items).toEqual([
+        expect.objectContaining({
+          key: testCase.key,
+          bucketName: 'jcv-dev-private',
+          status: 'done',
+        }),
+      ])
+    }
+  })
+
   it('is idempotent for matching destination payloads and writes a reverse manifest', async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'snapshot-research-migrate-idempotent-'))
     const paths = buildPaths(tempDir)
@@ -186,8 +299,8 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       gcsWriteIfGenerationImpl,
     }
 
-    const firstRun = await runMigration(paths, runtime)
-    const secondRun = await runMigration(paths, runtime)
+    const firstRun = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), runtime)
+    const secondRun = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), runtime)
     const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
     const reverseManifest = JSON.parse(await readFile(paths.reverseManifestPath, 'utf8'))
 
@@ -233,7 +346,7 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
     )
 
     const { summary } = await runMigration(
-      paths,
+      withKeyspace(RESEARCH_KEYSPACE, paths),
       {
         consoleImpl: createConsoleSpy(),
         loadKeyInventoryImpl: vi.fn(async () => [
@@ -277,7 +390,7 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       destinations.writeIfGeneration(bucketName, key, body, expectedGeneration)
     )
 
-    const { summary } = await runMigration(paths, {
+    const { summary } = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), {
       consoleImpl: createConsoleSpy(),
       loadKeyInventoryImpl: vi.fn(async () => [
         {
@@ -349,12 +462,12 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       gcsWriteIfGenerationImpl,
     }
 
-    const firstRun = await runMigration(paths, runtime)
+    const firstRun = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), runtime)
     const resumedRun = await runMigration(
-      {
+      withKeyspace(RESEARCH_KEYSPACE, {
         ...paths,
         resume: true,
-      },
+      }),
       runtime
     )
     const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
@@ -436,13 +549,13 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       gcsWriteIfGenerationImpl,
     }
 
-    const firstRun = await runMigration(paths, runtime)
+    const firstRun = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), runtime)
     destinations.write('jcv-dev-private', key, Buffer.from(freshBody))
     const resumedRun = await runMigration(
-      {
+      withKeyspace(RESEARCH_KEYSPACE, {
         ...paths,
         resume: true,
-      },
+      }),
       runtime
     )
     const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
@@ -473,7 +586,7 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'snapshot-research-migrate-empty-'))
     const paths = buildPaths(tempDir)
 
-    const { summary } = await runMigration(paths, {
+    const { summary } = await runMigration(withKeyspace(RESEARCH_KEYSPACE, paths), {
       consoleImpl: createConsoleSpy(),
       loadKeyInventoryImpl: vi.fn(async () => []),
       readSourceImpl: vi.fn(),

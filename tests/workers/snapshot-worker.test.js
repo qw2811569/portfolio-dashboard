@@ -213,7 +213,7 @@ describe('snapshot-worker', () => {
           'snapshot/research/2026-01-01/portfolio-me-research-history.json',
           { token: 'blob-token' },
         ],
-        [['snapshot/brain/2026-01-01/strategy-brain.json'], { token: 'blob-token' }],
+        ['snapshot/brain/2026-01-01/strategy-brain.json', { token: 'blob-token' }],
       ])
     )
     expect(logger.info).toHaveBeenCalledWith(

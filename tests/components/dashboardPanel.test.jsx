@@ -96,7 +96,7 @@ describe('components/DashboardPanel', () => {
     render(<DashboardPanel {...buildProps({ holdings: [{ code: '2330', name: '台積電' }] })} />)
 
     expect(screen.getByTestId('daily-principle-card')).toBeInTheDocument()
-    expect(screen.getByTestId('daily-principle-copy')).toHaveTextContent(getDailyPrinciple())
+    expect(screen.getByTestId('daily-principle-copy')).toHaveTextContent(getDailyPrinciple().quote)
   })
 
   it('renders a soft-language headline and demoted reminder bell from dossier state', () => {

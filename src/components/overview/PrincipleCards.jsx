@@ -11,14 +11,16 @@ const CARD_LABEL_STYLE = {
   marginBottom: 8,
 }
 
-function PrincipleCard({ label, text }) {
+function PrincipleCard({ label, entry }) {
+  const quote = entry?.quote || ''
+  const author = entry?.author || ''
+
   return h(
     Card,
     {
       'data-testid': 'daily-principle-card',
       style: {
         padding: '16px 16px',
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.cardBlue, 'e0')})`,
         minHeight: 118,
       },
     },
@@ -63,25 +65,28 @@ function PrincipleCard({ label, text }) {
           letterSpacing: '-0.01em',
         },
       },
-      `“${text}”`
+      `“${quote}”`
     ),
-    h(
-      'div',
-      {
-        style: {
-          marginTop: 8,
-          fontSize: 11,
-          color: C.textSec,
-          lineHeight: 1.7,
+    author &&
+      h(
+        'div',
+        {
+          'data-testid': 'daily-principle-author',
+          style: {
+            marginTop: 8,
+            fontSize: 12,
+            color: C.textSec,
+            lineHeight: 1.7,
+            fontStyle: 'italic',
+          },
         },
-      },
-      '今天只提醒一句，節奏放慢一點就好。'
-    )
+        `— ${author}`
+      )
   )
 }
 
 export function PrincipleCards({ date = new Date() }) {
-  const principle = getDailyPrinciple(date)
+  const entry = getDailyPrinciple(date)
 
   return h(
     'div',
@@ -90,6 +95,6 @@ export function PrincipleCards({ date = new Date() }) {
         marginBottom: 8,
       },
     },
-    h(PrincipleCard, { label: '心法', text: principle })
+    h(PrincipleCard, { label: '心法', entry })
   )
 }

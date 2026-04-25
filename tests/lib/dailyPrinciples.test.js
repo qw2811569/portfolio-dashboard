@@ -16,4 +16,23 @@ describe('lib/dailyPrinciples', () => {
 
     expect(getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'))).toBe(expected)
   })
+
+  it('returns entries with quote, author, and tag metadata', () => {
+    const entry = getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'))
+    expect(typeof entry.quote).toBe('string')
+    expect(typeof entry.author).toBe('string')
+    expect(Array.isArray(entry.tags)).toBe(true)
+  })
+
+  it('narrows the pool when portfolio context implies caution', () => {
+    const calmEntry = getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'), null)
+    const cautionEntry = getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'), {
+      todayRetPct: 2.5,
+      headlineTone: 'alert',
+    })
+    expect(cautionEntry.tags.some((tag) => ['caution', 'risk', 'humility'].includes(tag))).toBe(
+      true
+    )
+    expect(calmEntry).toBeTruthy()
+  })
 })

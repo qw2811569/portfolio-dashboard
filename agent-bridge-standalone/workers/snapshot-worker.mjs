@@ -34,6 +34,11 @@ import {
 import { getPrivateBlobToken } from '../../api/_lib/blob-tokens.js'
 import { queryFinMindDataset } from '../../api/_lib/finmind-governor.js'
 import { loadLocalEnvIfPresent } from '../../api/_lib/local-env.js'
+import {
+  deleteSnapshotResearchObjects,
+  listSnapshotResearchObjects,
+  writeSnapshotResearchObject,
+} from '../../api/_lib/snapshot-research-store.js'
 import { markCronFailure, markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
 const SNAPSHOT_JOB = 'daily-snapshot'
@@ -147,6 +152,30 @@ async function listAllBlobs(prefix, { token, listImpl = list } = {}) {
   } while (cursor)
 
   return blobs
+}
+
+async function listAllSnapshotResearchObjects({ token, listImpl = list } = {}) {
+  const items = []
+  let cursor = null
+
+  do {
+    const page = await listSnapshotResearchObjects(
+      {
+        prefix: '',
+        cursor,
+        limit: 100,
+      },
+      {
+        token,
+        listImpl,
+      }
+    )
+
+    items.push(...page.items)
+    cursor = page.nextCursor
+  } while (cursor)
+
+  return items
 }
 
 function analysisHistoryFileNameToPathname(fileName = '') {
@@ -440,7 +469,6 @@ export async function purgeExpiredDailySnapshots({
 
   const today = formatDailySnapshotDate(now)
   const prefixes = [
-    'snapshot/research/',
     'snapshot/brain/',
     'snapshot/portfolio-state/',
     'snapshot/benchmark/',
@@ -449,20 +477,40 @@ export async function purgeExpiredDailySnapshots({
     'last-success/daily-snapshot/',
   ]
 
-  const candidates = []
+  const researchCandidates = []
+  const genericCandidates = []
+
+  for (const item of await listAllSnapshotResearchObjects({ token, listImpl })) {
+    const snapshotDate = parseDateFromPathname(item.pathname)
+    if (!snapshotDate) continue
+    if (daysBetween(snapshotDate, today) <= keepDays) continue
+    researchCandidates.push(item.pathname)
+  }
+
   for (const prefix of prefixes) {
     const blobs = await listAllBlobs(prefix, { token, listImpl })
     for (const blob of blobs) {
       const snapshotDate = parseDateFromPathname(blob.pathname)
       if (!snapshotDate) continue
       if (daysBetween(snapshotDate, today) <= keepDays) continue
-      candidates.push(blob.pathname)
+      genericCandidates.push(blob.pathname)
     }
   }
 
+  const candidates = [...researchCandidates, ...genericCandidates]
+
   if (!dryRun && candidates.length > 0) {
-    for (let index = 0; index < candidates.length; index += 100) {
-      await delImpl(candidates.slice(index, index + 100), { token })
+    for (let index = 0; index < researchCandidates.length; index += 100) {
+      await deleteSnapshotResearchObjects(researchCandidates.slice(index, index + 100), {
+        token,
+        delImpl,
+        listImpl,
+        logger,
+      })
+    }
+
+    for (let index = 0; index < genericCandidates.length; index += 100) {
+      await delImpl(genericCandidates.slice(index, index + 100), { token })
     }
   }
 
@@ -484,13 +532,18 @@ async function writeSnapshotArtifacts(records, { token, putImpl = put } = {}) {
   const written = []
 
   for (const record of records) {
-    const result = await putImpl(record.pathname, record.content, {
-      token,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      access: 'private',
-      contentType: record.contentType,
-    })
+    const result = record.pathname.startsWith('snapshot/research/')
+      ? await writeSnapshotResearchObject(record.pathname, JSON.parse(record.content), {
+          token,
+          putImpl,
+        })
+      : await putImpl(record.pathname, record.content, {
+          token,
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          access: 'private',
+          contentType: record.contentType,
+        })
 
     written.push({
       ...record,

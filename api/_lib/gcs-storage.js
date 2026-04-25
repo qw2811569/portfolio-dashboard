@@ -71,6 +71,11 @@ function normalizeLastModified(value) {
   return Number.isNaN(lastModified.getTime()) ? null : lastModified
 }
 
+function normalizeSize(value) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : null
+}
+
 function normalizeIfGenerationMatch(value) {
   if (value == null) return undefined
   if (value === 0 || Number.isFinite(Number(value))) {
@@ -210,6 +215,53 @@ export async function gcsHead(bucketName, key) {
   }
 }
 
+export async function gcsDeleteMany(bucketName, keys = []) {
+  const uniqueKeys = Array.from(
+    new Set(
+      (Array.isArray(keys) ? keys : [])
+        .map((key) => String(key || '').trim())
+        .filter(Boolean)
+    )
+  )
+
+  const outcomes = await Promise.all(
+    uniqueKeys.map(async (key) => {
+      try {
+        await getBucket(bucketName).file(key).delete()
+        return {
+          key,
+          status: 'deleted',
+        }
+      } catch (error) {
+        const normalized = normalizeGcsError(error, bucketName, key)
+        if (normalized === null) {
+          return {
+            key,
+            status: 'missing',
+          }
+        }
+
+        return {
+          key,
+          status: 'error',
+          error: normalized,
+        }
+      }
+    })
+  )
+
+  return {
+    deletedKeys: outcomes.filter((outcome) => outcome.status === 'deleted').map((outcome) => outcome.key),
+    missingKeys: outcomes.filter((outcome) => outcome.status === 'missing').map((outcome) => outcome.key),
+    failedKeys: outcomes
+      .filter((outcome) => outcome.status === 'error')
+      .map((outcome) => ({
+        key: outcome.key,
+        error: outcome.error,
+      })),
+  }
+}
+
 export async function gcsListPrefix(bucketName, prefix, { cursor, limit = 1000 } = {}) {
   try {
     const [files, , apiResponse] = await getBucket(bucketName).getFiles({
@@ -223,6 +275,10 @@ export async function gcsListPrefix(bucketName, prefix, { cursor, limit = 1000 }
       items: (Array.isArray(files) ? files : []).map((file) => ({
         key: file.name,
         pathname: file.name,
+        uploadedAt: normalizeLastModified(file.metadata?.updated)?.toISOString() || null,
+        size: normalizeSize(file.metadata?.size),
+        sizeBytes: normalizeSize(file.metadata?.size),
+        contentType: file.metadata?.contentType || null,
       })),
       cursor: apiResponse?.nextPageToken || null,
     }

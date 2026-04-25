@@ -272,7 +272,11 @@ export function usePortfolioPanelsContextComposer({
     const autoReviewedCorrect = autoReviewedEvents.filter((event) => event?.correct === true).length
     const autoReviewedWrong = autoReviewedEvents.filter((event) => event?.correct === false).length
 
-    const refreshBacklogCount = safeDataRefreshRows.length
+    const actionableRefreshRows = safeDataRefreshRows.filter((row) => {
+      const status = String(row?.targetStatus || '').toLowerCase()
+      return status === 'missing' || status === 'failed'
+    })
+    const refreshBacklogCount = actionableRefreshRows.length
     const focusItem = watchlistFocus?.item || null
     const focusSummary = watchlistFocus?.summary || watchlistFocus?.action || ''
     const hasInsight = Boolean(latestInsight)
@@ -282,7 +286,7 @@ export function usePortfolioPanelsContextComposer({
 
     if (refreshBacklogCount > 0) {
       nextActionLabel = '資料補齊中 · 研究結論會跟著更新'
-      nextActionReason = `目前還有 ${refreshBacklogCount} 檔缺少最新目標價或財報資料。資料到位後，研究與事件判讀會更一致。`
+      nextActionReason = `目前還有 ${refreshBacklogCount} 檔尚未取得目標價。資料到位後，研究與事件判讀會更一致。`
     } else if (
       autoReviewedEvents.length > 0 &&
       pendingEventCount === 0 &&
@@ -315,7 +319,7 @@ export function usePortfolioPanelsContextComposer({
       autoReviewedCorrect,
       autoReviewedWrong,
       refreshBacklogCount,
-      refreshBacklogItems: safeDataRefreshRows,
+      refreshBacklogItems: actionableRefreshRows,
       headline: dashboardHeadline.headline,
       headlineTone: dashboardHeadline.tone,
       lastAnalysisLabel: dailyReport?.date

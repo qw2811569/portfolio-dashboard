@@ -13,7 +13,11 @@ const CARD_LABEL_STYLE = {
 
 function PrincipleCard({ label, entry }) {
   const quote = entry?.quote || ''
+  const quoteEn = entry?.quoteEn || ''
   const author = entry?.author || ''
+  const year = entry?.year || ''
+  const authorBrief = entry?.authorBrief || ''
+  const attribution = [author, year].filter(Boolean).join(' · ')
 
   return h(
     Card,
@@ -67,26 +71,54 @@ function PrincipleCard({ label, entry }) {
       },
       `“${quote}”`
     ),
-    author &&
+    quoteEn &&
       h(
         'div',
         {
-          'data-testid': 'daily-principle-author',
+          'data-testid': 'daily-principle-quote-en',
+          style: {
+            marginTop: 6,
+            fontSize: 12,
+            lineHeight: 1.6,
+            color: C.textSec,
+            fontStyle: 'italic',
+          },
+        },
+        `“${quoteEn}”`
+      ),
+    attribution &&
+      h(
+        'div',
+        {
+          'data-testid': 'daily-principle-attribution',
           style: {
             marginTop: 8,
             fontSize: 12,
             color: C.textSec,
-            lineHeight: 1.7,
-            fontStyle: 'italic',
+            fontWeight: 600,
           },
         },
-        `— ${author}`
+        `— ${attribution}`
+      ),
+    authorBrief &&
+      h(
+        'div',
+        {
+          'data-testid': 'daily-principle-author-brief',
+          style: {
+            marginTop: 4,
+            fontSize: 11,
+            color: C.textMute,
+            lineHeight: 1.6,
+          },
+        },
+        authorBrief
       )
   )
 }
 
-export function PrincipleCards({ date = new Date() }) {
-  const entry = getDailyPrinciple(date)
+export function PrincipleCards({ date = new Date(), context = null }) {
+  const entry = getDailyPrinciple(date, context)
 
   return h(
     'div',

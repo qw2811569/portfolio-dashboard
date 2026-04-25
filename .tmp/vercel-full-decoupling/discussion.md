@@ -1012,3 +1012,55 @@ A3 · serialize drift: worker 跟 migration 不是同一條 path。worker parse 
 - 信心預測：
   migration `4/10 -> 8/10`
   prefix-store `5/10 -> 7/10`
+
+## Round 30 · Codex B re-verify · 2026-04-26 01:54 CST
+
+實跑：
+- `npm run test:run -- tests/workers/snapshot-worker.test.js tests/api/prefix-store.test.js tests/scripts/migrate-snapshot-research-to-gcs.test.js` → 3 files / 14 tests pass
+- `npm run test:run -- tests/api/last-success-store.test.js tests/api/valuation-store.test.js tests/api/singleton-store.test.js` → 3 files / 18 tests pass
+- 另做 5 個 ad hoc node probes 驗 pre-flight abort、`--resume` redrive、sampling default/zero/randomness
+
+### 4 個 fix 驗證
+| # | 修好? | 證據 |
+|---|---|---|
+| 1 | ❌ | migration race 只修到一半。`STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH=false` 會在 `scripts/migrate-snapshot-research-to-gcs.mjs:56-61` 直接 abort，這點 ad hoc pass。active-writer race 也會標 `stale-source-changed`：`tests/scripts/migrate-snapshot-research-to-gcs.test.js:259-299` pass。`--resume` skip list 確實**不含** `stale-source-changed`（`scripts/migrate-snapshot-research-to-gcs.mjs:384-399`），我用 controlled probe 也驗到會重跑、`attempts=2`、可落 `done`。但我再做真實 storage 模擬時，若第一次 stale 之後 GCS 仍留舊 payload，第二次 `--resume` 會變 `skipped-existing-present`，不會 self-heal 到 `done`。也就是「會重跑」，但 migration 本身不保證收斂。 |
+| 2 | ✅ | `prefix-store.js` 檔頭 LIMITATION 在 `api/_lib/prefix-store.js:23-27`；`createPrefixStore` JSDoc LIMITATION 在 `api/_lib/prefix-store.js:578-584`。 |
+| 3 | ✅ | list shadow sampling read 行為成立。`prefix-store`/`singleton-store` 都有 default sample size 5 與 sampled read divergence append：`api/_lib/prefix-store.js:21,692-733`、`api/_lib/singleton-store.js:314-339,714-757`。Vitest pass：`tests/api/prefix-store.test.js:571-633`、`tests/api/singleton-store.test.js:315-374`。ad hoc 驗證：sample size `0` 時 extra reads = 0；預設值時每次 eligible list 固定 sample 5 keys；30 次重跑命中 10/10 不同 key，不是固定抽同一個。 |
+| 4 | ✅ | `snapshot-worker.mjs` 寫入 callsite comment 已補上，清楚說明 historical migration 可能 byte drift，但 drift check 應比 normalized JSON semantics：`agent-bridge-standalone/workers/snapshot-worker.mjs:536-539`。 |
+
+### 4 類 test cover
+- snapshot worker purge / delete path：✅ `tests/workers/snapshot-worker.test.js:162-221`
+- deleteMany primary partial failure：✅ `tests/api/prefix-store.test.js:458`
+- cursor pagination concurrent insert race：✅ `tests/api/prefix-store.test.js:330`
+- migration active-writer race：✅ `tests/scripts/migrate-snapshot-research-to-gcs.test.js:259-299`
+補充：
+`--resume` redrive 本身不是 vitest case，我另外用 ad hoc probe 驗到 `stale-source-changed` item 不會被 resume skip，`attempts=2`；但 end-to-end self-heal 仍有 issue，見上表 #1。
+
+### A 預測 vs 實際
+- migration 4→8 · 我評: 6/10
+- prefix-store 5→7 · 我評: 7/10
+- sampling read overhead: 不是「跑 1000 次 list 大概只 sample 5 次」，而是每次 eligible shadow list 都會抽 `min(sharedKeys, 5)` 個 key。shared keys 夠多時，每次 list 固定多 5 個 primary read + 5 個 shadow read；跑 1000 次 list 約是 10,000 次額外 object reads。`STORAGE_SHADOW_SAMPLE_SIZE=0` 才是完全關掉。
+
+### 新 regression
+- `singleton-store` / Class 1 wrappers 沒找到 regression。`tests/api/last-success-store.test.js`、`tests/api/valuation-store.test.js`、`tests/api/singleton-store.test.js` 全 pass。
+- 新 issue：migration `stale-source-changed` item 雖然會在 `--resume` 重跑，但如果第一次 stale copy 留下 divergent destination，且後續沒有 shadow-write 把 GCS 修到最新，retry 會卡在 `skipped-existing-present`。這表示 A 的 fix 對「偵測 race」沒問題，對「讓 migration 自己收斂」還不夠。
+
+### 我推薦下一動作
+- 還有 issue → A 再修。
+- 目標很具體：`stale-source-changed` item 在 `--resume` 時要能收斂，不該因為 destination 已存在但內容舊而停在 `skipped-existing-present`。
+- 其餘 cursor 文件化、sampling read、worker comment、singleton/Class 1 wrappers 我看可以先視為 clear。
+- migration 這點補掉後，再交 A 跑 `jcv-dev` VM migration（含 shadow-write 啟用流程）。
+
+## Round 31 · Codex A · stale-convergence fix · 2026-04-25 11:08
+
+- commit SHA: `7f5b0012e2bd782b7225369dedbb055797c5f70a`
+- diff stat: `2 files changed, 189 insertions(+), 10 deletions(-)`
+  `scripts/migrate-snapshot-research-to-gcs.mjs | 29 ++--`
+  `tests/scripts/migrate-snapshot-research-to-gcs.test.js | 170 +++++++++++++++++++++`
+- self-heal scenario:
+  migration 第 1 次寫入後若 post-verify 發現 source drift，state 留 `stale-source-changed`。
+  `--resume` 現在會把前次 `previousStatus` 帶進 `migrateItem`；若前次是 `stale-source-changed`，就略過一般 idempotent skip，改走不帶 generation precondition 的 `gcsWrite` force overwrite。
+  force-write 後再做 destination verify + source drift verify；source 穩定則收斂到 `done`，若又 drift 則再次標 `stale-source-changed`，不會卡死在 `skipped-existing-present`。
+  另外補了一個 case：就算 retry 前 destination 已經和 current source 等價，也仍走 force-write path，最後標 `done`，不會退化成 `skipped-existing-match`。
+- 驗證：`npm run test:run -- tests/scripts/migrate-snapshot-research-to-gcs.test.js --run` → pass（1 file / 7 tests）
+- 信心預測：migration `6/10 -> 8/10`

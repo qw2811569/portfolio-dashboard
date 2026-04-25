@@ -362,9 +362,10 @@ function readMetricValue(item, keys) {
   return null
 }
 
-function buildSubmetrics({ holdings = [], watchlist = [] }) {
+function buildSubmetrics({ holdings = [], watchlist = [], dataRefreshRows = [] }) {
   const safeHoldings = Array.isArray(holdings) ? holdings : []
   const safeWatchlist = Array.isArray(watchlist) ? watchlist : []
+  const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
 
   const hasWeekPnl = safeHoldings.some(
     (holding) => readMetricValue(holding, ['week_pnl', 'weekPnl', 'weeklyPnl']) != null
@@ -386,10 +387,9 @@ function buildSubmetrics({ holdings = [], watchlist = [] }) {
         0
       )
     : null
-  const missingTargetCount = safeHoldings.filter((holding) => {
-    if (isSkippedTargetPriceInstrumentType(holding)) return false
-    const targetPrice = Number(holding?.targetPrice)
-    return !Number.isFinite(targetPrice) || targetPrice <= 0
+  const missingTargetCount = safeRefreshRows.filter((row) => {
+    const status = String(row?.targetStatus || '').toLowerCase()
+    return status === 'missing' || status === 'failed'
   }).length
 
   return [
@@ -544,7 +544,7 @@ function TodayPnlHero({
   const sign = showStalePnl ? '' : todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
   const pnlText = showStalePnl ? '—' : `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
-  const submetrics = buildSubmetrics({ holdings, watchlist })
+  const submetrics = buildSubmetrics({ holdings, watchlist, dataRefreshRows })
   const portfolioLabel = displayPortfolioName({ displayName: portfolioName }) || '目前組合'
   const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
   const headlineText = String(headline || '').trim() || '今日持倉 overview'

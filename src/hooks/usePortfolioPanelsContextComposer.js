@@ -265,6 +265,15 @@ export function usePortfolioPanelsContextComposer({
     ]
   )
 
+  const actionableRefreshRows = useMemo(
+    () =>
+      safeDataRefreshRows.filter((row) => {
+        const status = String(row?.targetStatus || '').toLowerCase()
+        return status === 'missing' || status === 'failed'
+      }),
+    [safeDataRefreshRows]
+  )
+
   const operatingContext = useMemo(() => {
     const pendingEventCount = safeNewsEvents.filter((event) => event?.status === 'pending').length
     const trackingEventCount = safeNewsEvents.filter((event) => event?.status === 'tracking').length
@@ -272,10 +281,6 @@ export function usePortfolioPanelsContextComposer({
     const autoReviewedCorrect = autoReviewedEvents.filter((event) => event?.correct === true).length
     const autoReviewedWrong = autoReviewedEvents.filter((event) => event?.correct === false).length
 
-    const actionableRefreshRows = safeDataRefreshRows.filter((row) => {
-      const status = String(row?.targetStatus || '').toLowerCase()
-      return status === 'missing' || status === 'failed'
-    })
     const refreshBacklogCount = actionableRefreshRows.length
     const focusItem = watchlistFocus?.item || null
     const focusSummary = watchlistFocus?.summary || watchlistFocus?.action || ''
@@ -342,10 +347,10 @@ export function usePortfolioPanelsContextComposer({
     }
   }, [
     activePortfolio,
+    actionableRefreshRows,
     attentionCount,
     attentionSummary,
     dashboardHeadline,
-    safeDataRefreshRows,
     dailyReport,
     safeHoldings.length,
     latestInsight,
@@ -367,11 +372,7 @@ export function usePortfolioPanelsContextComposer({
         pendingItems: safeOverviewPendingItems,
         watchlistCount: Array.isArray(watchlistRows) ? watchlistRows.length : 0,
         staleStatus: sharedStaleStatus,
-        missingTargetCount: safeHoldings.filter((holding) => {
-          if (isSkippedTargetPriceInstrumentType(holding)) return false
-          const targetPrice = Number(holding?.targetPrice)
-          return !Number.isFinite(targetPrice) || targetPrice <= 0
-        }).length,
+        missingTargetCount: actionableRefreshRows.length,
         dashboardHeadline: overviewDashboardHeadline,
         compareStrip: overviewCompareStrip,
         loading: overviewLoading,
@@ -515,6 +516,7 @@ export function usePortfolioPanelsContextComposer({
     [
       activePortfolio,
       activePortfolioId,
+      actionableRefreshRows,
       analyzing,
       derivedAnxietyMetrics,
       analyzeStep,

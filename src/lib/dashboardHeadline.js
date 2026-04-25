@@ -63,12 +63,18 @@ function resolveFreshnessStatuses(dossier) {
     .filter(Boolean)
 }
 
+function resolveTargetFreshnessStatus(dossier) {
+  return String(dossier?.freshness?.targets || '')
+    .trim()
+    .toLowerCase()
+}
+
 function hasMissingData(dossier) {
-  return resolveFreshnessStatuses(dossier).some((status) => MISSING_DATA_STATUSES.has(status))
+  return MISSING_DATA_STATUSES.has(resolveTargetFreshnessStatus(dossier))
 }
 
 function hasStaleData(dossier) {
-  return resolveFreshnessStatuses(dossier).some((status) => STALE_DATA_STATUSES.has(status))
+  return STALE_DATA_STATUSES.has(resolveTargetFreshnessStatus(dossier))
 }
 
 function resolveUpperValuationRef(dossier) {

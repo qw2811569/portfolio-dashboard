@@ -437,13 +437,42 @@ async function appendDivergenceForShadowWrite(
 }
 
 export function getTrackedStocksStorageMode(override) {
-  return resolveStoragePolicy(
-    override == null
-      ? {}
-      : typeof override === 'string'
-        ? { storagePolicyOverride: override }
-        : override
+  const envPolicy = resolveStoragePolicy()
+  if (override == null) return envPolicy
+
+  if (typeof override === 'string') {
+    return normalizeStoragePolicy(
+      {
+        ...envPolicy,
+        primary: override,
+      },
+      { source: 'override' }
+    )
+  }
+
+  if (!override || typeof override !== 'object' || Array.isArray(override)) {
+    throw new Error('[tracked-stocks-store] override must be an object or string')
+  }
+
+  const hasOverride = (key) => Object.prototype.hasOwnProperty.call(override, key)
+
+  return normalizeStoragePolicy(
+    {
+      primary: hasOverride('primary') ? override.primary : envPolicy.primary,
+      shadowRead: hasOverride('shadowRead') ? override.shadowRead : envPolicy.shadowRead,
+      shadowWrite: hasOverride('shadowWrite') ? override.shadowWrite : envPolicy.shadowWrite,
+    },
+    { source: 'override' }
   )
+}
+
+async function readShadowVersionToken(shadowBackend, descriptor, options) {
+  const shadowResult =
+    typeof shadowBackend.readVersion === 'function'
+      ? await shadowBackend.readVersion(descriptor, options)
+      : (await shadowBackend.read(descriptor, options))?.versionToken || null
+
+  return normalizeVersionToken(shadowResult)
 }
 
 export async function readTrackedStocks(portfolioId, options = {}) {
@@ -544,13 +573,19 @@ export async function writeTrackedStocksIfVersion(
     let shadowVersionToken = null
 
     try {
-      shadowVersionToken =
-        typeof shadowBackend.readVersion === 'function'
-          ? await shadowBackend.readVersion(descriptor, options)
-          : (await shadowBackend.read(descriptor, options))?.versionToken || null
-
+      shadowVersionToken = await readShadowVersionToken(shadowBackend, descriptor, options)
       await shadowBackend.write(descriptor, payload, shadowVersionToken, options)
     } catch (error) {
+      if (error?.code === 'VERSION_CONFLICT') {
+        try {
+          shadowVersionToken = await readShadowVersionToken(shadowBackend, descriptor, options)
+          await shadowBackend.write(descriptor, payload, shadowVersionToken, options)
+          return
+        } catch (retryError) {
+          error = retryError
+        }
+      }
+
       logger.warn?.(
         `[tracked-stocks-store] shadow write failed for ${descriptor.key} (${primary} primary -> ${shadow} shadow):`,
         error

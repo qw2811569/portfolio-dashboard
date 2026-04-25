@@ -23,6 +23,15 @@ function sha256(value) {
   return createHash('sha256').update(value).digest('hex')
 }
 
+function parseGeneration(value) {
+  const normalized = String(value || '').trim()
+  if (!normalized) return null
+
+  const generation = Number(normalized)
+  if (!Number.isFinite(generation) || generation < 0) return null
+  return generation
+}
+
 function getBucketName() {
   return String(process.env.GCS_BUCKET_PRIVATE || '').trim()
 }
@@ -241,12 +250,15 @@ export async function migrateItem(item, options, deps = {}) {
     }
   }
 
+  let writtenGeneration = null
+
   try {
-    await gcsWriteIfGenerationImpl(item.bucketName, item.key, source.buffer, 0, {
+    const writeResult = await gcsWriteIfGenerationImpl(item.bucketName, item.key, source.buffer, 0, {
       contentType: source.contentType,
       cacheControl: 'no-store',
       public: false,
     })
+    writtenGeneration = parseGeneration(writeResult?.generation)
   } catch (error) {
     if (error?.code !== 'PRECONDITION_FAILED') throw error
 
@@ -266,13 +278,35 @@ export async function migrateItem(item, options, deps = {}) {
 
   const verifiedDestination = await readDestinationImpl(item)
   const verifiedDestinationHash = verifiedDestination ? sha256(verifiedDestination.body) : null
+  const verifiedGeneration = parseGeneration(verifiedDestination?.generation)
 
-  if (
-    !verifiedDestination ||
-    verifiedDestinationHash !== sourceHash ||
-    !String(verifiedDestination.generation || '').trim()
-  ) {
-    throw new Error(`verify failed for gs://${item.bucketName}/${item.key}`)
+  if (!verifiedDestination) {
+    throw new Error(`verify failed for gs://${item.bucketName}/${item.key}: not found`)
+  }
+
+  if (!verifiedGeneration) {
+    throw new Error(`verify failed for gs://${item.bucketName}/${item.key}: missing generation`)
+  }
+
+  if (writtenGeneration != null && verifiedGeneration > writtenGeneration) {
+    return {
+      status: 'skipped-raced-newer',
+      bytes: source.bytes,
+      sourceHash,
+      destinationHash: verifiedDestinationHash,
+      generation: verifiedDestination.generation || null,
+      contentType: source.contentType,
+    }
+  }
+
+  if (writtenGeneration != null && verifiedGeneration < writtenGeneration) {
+    throw new Error(
+      `verify failed for gs://${item.bucketName}/${item.key}: generation regressed from ${writtenGeneration} to ${verifiedGeneration}`
+    )
+  }
+
+  if (verifiedDestinationHash !== sourceHash) {
+    throw new Error(`verify failed for gs://${item.bucketName}/${item.key}: payload mismatch`)
   }
 
   return {
@@ -352,6 +386,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
         options.resume &&
         [
           'done',
+          'skipped-raced-newer',
           'skipped-existing-match',
           'skipped-existing-present',
           'source-missing',
@@ -396,6 +431,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
       resume: options.resume,
       totalItems: state.items.length,
       done: state.items.filter((item) => item.status === 'done').length,
+      skippedRacedNewer: state.items.filter((item) => item.status === 'skipped-raced-newer').length,
       skippedExistingMatch: state.items.filter((item) => item.status === 'skipped-existing-match')
         .length,
       skippedExistingPresent: state.items.filter((item) => item.status === 'skipped-existing-present')

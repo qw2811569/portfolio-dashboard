@@ -68,6 +68,23 @@ function createDestinationStore(initialEntries = {}) {
         generation: nextGeneration,
         contentType: opts.contentType || 'application/json',
       })
+
+      return {
+        generation: nextGeneration,
+      }
+    },
+    writeLatest(bucketName, key, body, opts = {}) {
+      const mapKey = `${bucketName}/${key}`
+      const nextGeneration = String(Number(store.get(mapKey)?.generation || 0) + 1)
+      store.set(mapKey, {
+        body: Buffer.from(body),
+        generation: nextGeneration,
+        contentType: opts.contentType || 'application/json',
+      })
+
+      return {
+        generation: nextGeneration,
+      }
     },
     dump() {
       return store
@@ -410,6 +427,54 @@ describe('scripts/migrate-tracked-stocks-to-gcs.mjs', () => {
         key: 'tracked-stocks/me/latest.json',
         status: 'skipped-existing-match',
         generation: '7',
+      }),
+    ])
+  })
+
+  it('treats write-then-worker verify races as skipped-raced-newer instead of fatal', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'tracked-stocks-migrate-race-success-'))
+    const paths = await createFixturePaths(tempDir)
+    const inventory = createInventory(['tracked-stocks/me/latest.json'])
+    const sourceBody =
+      '{"portfolioId":"me","stocks":[{"code":"2330","name":"台積電","type":"股票"}]}'
+    const sourceEntries = new Map([
+      ['tracked-stocks/me/latest.json', createSourceRecord(sourceBody)],
+    ])
+    const destinations = createDestinationStore()
+
+    const { summary } = await runMigration(paths, {
+      consoleImpl: createConsoleSpy(),
+      loadKeyInventoryImpl: vi.fn(async () => inventory),
+      readSourceImpl: vi.fn(async (item) => sourceEntries.get(item.key) || null),
+      readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+      gcsWriteIfGenerationImpl: vi.fn(async (bucketName, key, body, expectedGeneration, opts) => {
+        const writeResult = destinations.writeCreateOnly(
+          bucketName,
+          key,
+          body,
+          expectedGeneration,
+          opts
+        )
+        destinations.writeLatest(
+          bucketName,
+          key,
+          '{"portfolioId":"me","stocks":[{"code":"2454","name":"聯發科","type":"股票"}]}',
+          opts
+        )
+        return writeResult
+      }),
+    })
+    const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
+
+    expect(summary).toMatchObject({
+      done: 0,
+      skippedRacedNewer: 1,
+    })
+    expect(state.items).toEqual([
+      expect.objectContaining({
+        key: 'tracked-stocks/me/latest.json',
+        status: 'skipped-raced-newer',
+        generation: '2',
       }),
     ])
   })

@@ -1,6 +1,6 @@
 # Decision Log 索引
 
-**最後更新**：2026-04-24
+**最後更新**：2026-04-25
 
 **用途**：防止每次 session 重開舊討論。凡多 LLM 討論過 + 用戶拍板的主題，應先從這份索引找。
 
@@ -21,10 +21,11 @@
 
 ## 架構
 
-| Decision                                                                          | 日期       | 狀態                   | 摘要                                                                                                                        |
-| --------------------------------------------------------------------------------- | ---------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [2026-04-15-knowledge-api-blob-not-vm](./2026-04-15-knowledge-api-blob-not-vm.md) | 2026-04-15 | 🟡 設計完成 (v2 brief) | 知識庫搬 Vercel Blob（不 VM）+ 直連 Blob read + `/api/knowledge/update` write + manifest 原子切版 + dev local JSON fallback |
-| [2026-04-18-appshell-state-ownership](./2026-04-18-appshell-state-ownership.md)   | 2026-04-18 | ✅ 決議                | AppShell vs route-shell 的 state owner map、current/target/migration state machine、以及 cutover trigger 被正式寫死         |
+| Decision                                                                          | 日期       | 狀態                        | 摘要                                                                                                                                        |
+| --------------------------------------------------------------------------------- | ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-04-15-knowledge-api-blob-not-vm](./2026-04-15-knowledge-api-blob-not-vm.md) | 2026-04-15 | ⚰️ SUPERSEDED by 2026-04-25 | 知識庫搬 Vercel Blob（不 VM）+ 直連 Blob read + `/api/knowledge/update` write — **2026-04-25 因目標函數改為 single-cloud sovereignty 推翻** |
+| [2026-04-18-appshell-state-ownership](./2026-04-18-appshell-state-ownership.md)   | 2026-04-18 | ✅ 決議                     | AppShell vs route-shell 的 state owner map、current/target/migration state machine、以及 cutover trigger 被正式寫死                         |
+| [2026-04-25-vercel-full-decoupling](./2026-04-25-vercel-full-decoupling.md)       | 2026-04-25 | 🟡 Phase 0 進行中           | **全棄 Vercel** 拉到 VM 自有 stack（hosting / Blob / cron / runtime env 全搬 GCP）· 採 Codex 2a 6-phase 順序 · 推翻 04-15 / 04-16 兩份      |
 
 ## Multi-LLM 協作
 
@@ -36,14 +37,14 @@
 
 ## 產品策略
 
-| Decision                                                                                        | 日期       | 狀態      | 摘要                                                                                                                                          |
-| ----------------------------------------------------------------------------------------------- | ---------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [2026-04-16-product-stage-stability-first](./2026-04-16-product-stage-stability-first.md)       | 2026-04-16 | ✅ 決議   | 當前階段 prototype → internal beta。先穩定再談錢。VM/Vercel 照用不優化成本。Stripe/multi-tenant 延後。UX / 呈現層優先於 infra                 |
-| [2026-04-16-vm-maximization-roadmap](./2026-04-16-vm-maximization-roadmap.md)                   | 2026-04-16 | 🟡 執行中 | 能搬 VM 就搬：5 個 cron + analyst-reports + research job queue。Vercel 只留 CDN + 輕量 API。11 項 P0/P1/P2 清單                               |
-| [2026-04-16-naming-portfolio-vs-agent-bridge](./2026-04-16-naming-portfolio-vs-agent-bridge.md) | 2026-04-16 | ✅ 決議   | 持倉看板（Vercel 產品）vs Agent Bridge（VM LLM 面板）名稱統一，禁用 dashboard 單字                                                            |
-| [2026-04-16-vm-migration-url-plan](./2026-04-16-vm-migration-url-plan.md)                       | 2026-04-16 | ✅ 決議   | 穩了再買 domain：先 sslip.io 撐遷移期，VM ship 無回退 7 天 + atomic deploy 2 次成功 → 買 `.com` 走 Cloudflare                                 |
-| [2026-04-16-product-gap-and-arch-direction](./2026-04-16-product-gap-and-arch-direction.md)     | 2026-04-16 | ✅ 決議   | 產品化 gap 共識（距離 2-4 個月）+ 長期架構：Vercel=純 web server / VM=純 backend。cnyes aggregate fallback 工時 4-6h                          |
-| [2026-04-24-r120-scope-batch](./2026-04-24-r120-scope-batch.md)                                 | 2026-04-24 | ✅ 決議   | R119 executability 抽出 15 題一次拍板：contract strict、freshness 7/30/1d、signed URL 15m、hard-block、Morning Note 08:30、Q-I1 維持不 rotate |
+| Decision                                                                                        | 日期       | 狀態                        | 摘要                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------- | ---------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-04-16-product-stage-stability-first](./2026-04-16-product-stage-stability-first.md)       | 2026-04-16 | ✅ 決議                     | 當前階段 prototype → internal beta。先穩定再談錢。VM/Vercel 照用不優化成本。Stripe/multi-tenant 延後。UX / 呈現層優先於 infra                 |
+| [2026-04-16-vm-maximization-roadmap](./2026-04-16-vm-maximization-roadmap.md)                   | 2026-04-16 | ⚰️ SUPERSEDED by 2026-04-25 | 能搬 VM 就搬：5 個 cron + analyst-reports + research job queue。Vercel 只留 CDN + 輕量 API — **2026-04-25 升級為「全棄 Vercel」**             |
+| [2026-04-16-naming-portfolio-vs-agent-bridge](./2026-04-16-naming-portfolio-vs-agent-bridge.md) | 2026-04-16 | ✅ 決議                     | 持倉看板（Vercel 產品）vs Agent Bridge（VM LLM 面板）名稱統一，禁用 dashboard 單字                                                            |
+| [2026-04-16-vm-migration-url-plan](./2026-04-16-vm-migration-url-plan.md)                       | 2026-04-16 | ✅ 決議                     | 穩了再買 domain：先 sslip.io 撐遷移期，VM ship 無回退 7 天 + atomic deploy 2 次成功 → 買 `.com` 走 Cloudflare                                 |
+| [2026-04-16-product-gap-and-arch-direction](./2026-04-16-product-gap-and-arch-direction.md)     | 2026-04-16 | ✅ 決議                     | 產品化 gap 共識（距離 2-4 個月）+ 長期架構：Vercel=純 web server / VM=純 backend。cnyes aggregate fallback 工時 4-6h                          |
+| [2026-04-24-r120-scope-batch](./2026-04-24-r120-scope-batch.md)                                 | 2026-04-24 | ✅ 決議                     | R119 executability 抽出 15 題一次拍板：contract strict、freshness 7/30/1d、signed URL 15m、hard-block、Morning Note 08:30、Q-I1 維持不 rotate |
 
 ## 產品功能
 

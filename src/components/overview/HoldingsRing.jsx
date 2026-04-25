@@ -2,6 +2,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import { C } from '../../theme.js'
 import { getHoldingMarketValue } from '../../lib/holdings.js'
 
+const HOLDINGS_RING_INITIAL_DIMENSION = { width: 320, height: 260 }
+
 const RING_COLORS = [
   'var(--positive)',
   'var(--up)',
@@ -85,7 +87,11 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
           height: 260,
         }}
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          initialDimension={HOLDINGS_RING_INITIAL_DIMENSION}
+        >
           <PieChart accessibilityLayer={false} aria-hidden="true" focusable={false} tabIndex={-1}>
             <Pie
               data={chartData}

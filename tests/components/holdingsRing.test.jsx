@@ -5,8 +5,14 @@ import { describe, expect, it, vi } from 'vitest'
 import HoldingsRing from '../../src/components/overview/HoldingsRing.jsx'
 
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }) => (
-    <div data-testid="holdings-ring-container">{children}</div>
+  ResponsiveContainer: ({ children, initialDimension }) => (
+    <div
+      data-testid="holdings-ring-container"
+      data-initial-width={String(initialDimension?.width)}
+      data-initial-height={String(initialDimension?.height)}
+    >
+      {children}
+    </div>
   ),
   PieChart: (props) => (
     <div
@@ -35,6 +41,14 @@ describe('components/HoldingsRing.jsx', () => {
     )
 
     const chart = screen.getByTestId('holdings-ring-pie-chart')
+    expect(screen.getByTestId('holdings-ring-container')).toHaveAttribute(
+      'data-initial-width',
+      '320'
+    )
+    expect(screen.getByTestId('holdings-ring-container')).toHaveAttribute(
+      'data-initial-height',
+      '260'
+    )
     expect(chart.dataset.accessibilityLayer).toBe('false')
     expect(chart.dataset.ariaHidden).toBe('true')
     expect(chart.dataset.tabIndex).toBe('-1')

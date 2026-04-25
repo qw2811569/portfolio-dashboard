@@ -8,9 +8,13 @@ import HoldingSparkline, {
 } from '../../src/components/holdings/HoldingSparkline.jsx'
 
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }) => <div data-testid="sparkline-container">{children}</div>,
-  LineChart: ({ children, data }) => (
-    <div data-testid="sparkline-chart" data-points={Array.isArray(data) ? data.length : 0}>
+  LineChart: ({ children, data, width, height }) => (
+    <div
+      data-testid="sparkline-chart"
+      data-points={Array.isArray(data) ? data.length : 0}
+      data-width={String(width)}
+      data-height={String(height)}
+    >
       {children}
     </div>
   ),
@@ -37,6 +41,8 @@ describe('HoldingSparkline', () => {
     render(<HoldingSparkline history={buildHistory([10, 11, 12, 13, 14, 15])} />)
 
     expect(screen.getByTestId('sparkline-chart')).toHaveAttribute('data-points', '6')
+    expect(screen.getByTestId('sparkline-chart')).toHaveAttribute('data-width', '80')
+    expect(screen.getByTestId('sparkline-chart')).toHaveAttribute('data-height', '28')
     expect(screen.getByTestId('sparkline-line')).toBeInTheDocument()
   })
 

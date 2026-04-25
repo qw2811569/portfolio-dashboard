@@ -16,12 +16,24 @@ export function useRouteNewsPage() {
     portfolioId = 'me',
     portfolioName = '',
     newsEvents = [],
+    holdings = [],
+    holdingCodes = [],
+    operatingContext = null,
     createDefaultReviewForm = createDefaultReviewFormFallback,
   } = usePortfolioRouteContext()
 
   const [reviewingEvent, setReviewingEvent] = useState(null)
   const [reviewForm, setReviewForm] = useState(() => createDefaultReviewForm())
   const [expandedNews, setExpandedNews] = useState(() => new Set())
+  const resolvedHoldingCodes = useMemo(
+    () =>
+      Array.isArray(holdingCodes) && holdingCodes.length > 0
+        ? holdingCodes
+        : Array.isArray(holdings)
+          ? holdings.map((item) => item?.code).filter(Boolean)
+          : [],
+    [holdingCodes, holdings]
+  )
   const viewMode = resolveViewMode({
     portfolio: {
       id: portfolioId,
@@ -49,6 +61,8 @@ export function useRouteNewsPage() {
   return useMemo(
     () => ({
       newsEvents,
+      holdingCodes: resolvedHoldingCodes,
+      operatingContext,
       reviewingEvent,
       reviewForm,
       setReviewForm,
@@ -64,7 +78,9 @@ export function useRouteNewsPage() {
       cancelReview,
       createDefaultReviewForm,
       expandedNews,
+      resolvedHoldingCodes,
       newsEvents,
+      operatingContext,
       reviewForm,
       reviewingEvent,
       submitReview,

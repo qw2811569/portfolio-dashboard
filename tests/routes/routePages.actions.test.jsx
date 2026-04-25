@@ -518,6 +518,14 @@ describe('routes/page actions', () => {
       expect(screen.queryByRole('button', { name: '復盤' })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: '完成復盤' })).not.toBeInTheDocument()
 
+      await waitFor(() => {
+        expect(screen.queryByText('今天市場在說什麼')).not.toBeInTheDocument()
+        expect(screen.getByText('這些新聞跟你組合有關')).toBeInTheDocument()
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/news-feed?codes=2330&days=3')
+        )
+      })
+
       expect(localStorage.setItem).not.toHaveBeenCalled()
       expect(JSON.parse(localStorage.getItem(`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`))).toEqual([
         expect.objectContaining({

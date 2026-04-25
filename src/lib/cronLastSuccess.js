@@ -1,4 +1,4 @@
-import { get, list, put } from '@vercel/blob'
+import { readLastSuccess, writeLastSuccess } from '../../api/_lib/last-success-store.js'
 import { getTaipeiClock } from './datetime.js'
 
 const DEFAULT_WEEKDAY_SUCCESS_GAP = 1
@@ -60,41 +60,24 @@ export async function readLastSuccessMarker(
   {
     token,
     fetchImpl = fetch,
-    listImpl = list,
-    getImpl = get,
+    listImpl,
+    getImpl,
     logger = console,
-    access = 'public',
+    access,
+    readLastSuccessImpl = readLastSuccess,
   } = {}
 ) {
-  if (!token) return null
-
   const key = getLastSuccessBlobKey(job)
-  if (access === 'private') {
-    try {
-      const blobResult = await getImpl(key, {
-        access: 'private',
-        token,
-        useCache: false,
-      })
-      if (!blobResult) return null
-      return await new Response(blobResult.stream).json()
-    } catch (error) {
-      if (error?.name === 'BlobNotFoundError') return null
-      logger.warn(`[cron-monitor] failed to read ${key}:`, error)
-      return null
-    }
-  }
 
   try {
-    const { blobs } = await listImpl({ prefix: key, limit: 1, token })
-    if (!Array.isArray(blobs) || blobs.length === 0) return null
-
-    const response = await fetchImpl(blobs[0].url)
-    if (!response.ok) {
-      throw new Error(`marker read failed (${response.status})`)
-    }
-
-    return await response.json()
+    return await readLastSuccessImpl(job, null, {
+      token,
+      fetchImpl,
+      listImpl,
+      getImpl,
+      accessOverride: access,
+      logger,
+    })
   } catch (error) {
     logger.warn(`[cron-monitor] failed to read ${key}:`, error)
     return null
@@ -110,15 +93,12 @@ export async function writeLastSuccessMarker(
     maxWeekdayGap = DEFAULT_WEEKDAY_SUCCESS_GAP,
     maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
     previousMarker = null,
-    putImpl = put,
+    putImpl,
     logger = console,
-    access = 'public',
+    access,
+    writeLastSuccessImpl = writeLastSuccess,
   } = {}
 ) {
-  if (!token) {
-    throw new Error('blob token is required for last-success writes')
-  }
-
   const previousSuccessAt = String(previousMarker?.lastSuccessAt || '').trim()
   const normalizedCadence =
     expectedCadence === 'daily' || expectedCadence === 'calendar-daily' ? 'daily' : 'weekday-daily'
@@ -151,12 +131,11 @@ export async function writeLastSuccessMarker(
     },
   }
 
-  await putImpl(getLastSuccessBlobKey(job), JSON.stringify(payload, null, 2), {
+  await writeLastSuccessImpl(job, null, payload, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access,
-    contentType: 'application/json',
+    putImpl,
+    accessOverride: access,
+    logger,
   })
 
   return payload
@@ -170,11 +149,13 @@ export async function markCronSuccess(
     expectedCadence = 'weekday-daily',
     maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
     fetchImpl = fetch,
-    listImpl = list,
-    getImpl = get,
-    putImpl = put,
+    listImpl,
+    getImpl,
+    putImpl,
     logger = console,
-    access = 'public',
+    access,
+    readLastSuccessImpl = readLastSuccess,
+    writeLastSuccessImpl = writeLastSuccess,
   } = {}
 ) {
   const previousMarker = await readLastSuccessMarker(job, {
@@ -184,7 +165,9 @@ export async function markCronSuccess(
     getImpl,
     logger,
     access,
+    readLastSuccessImpl,
   })
+
   return writeLastSuccessMarker(job, {
     token,
     now,
@@ -194,29 +177,41 @@ export async function markCronSuccess(
     putImpl,
     logger,
     access,
+    writeLastSuccessImpl,
   })
 }
 
-export async function markCronFailure(
-  job,
-  {
+function normalizeFailureOptions(errorOrOptions = {}, maybeOptions = undefined) {
+  if (maybeOptions || errorOrOptions instanceof Error) {
+    return {
+      ...(maybeOptions || {}),
+      error:
+        maybeOptions?.error ||
+        (errorOrOptions instanceof Error ? errorOrOptions : maybeOptions?.error) ||
+        null,
+    }
+  }
+
+  return errorOrOptions || {}
+}
+
+export async function markCronFailure(job, errorOrOptions = {}, maybeOptions = undefined) {
+  const {
     token,
     now = new Date(),
     expectedCadence = 'weekday-daily',
     maxWeekdayGap = DEFAULT_WEEKDAY_SUCCESS_GAP,
     maxDayGap = DEFAULT_CALENDAR_SUCCESS_GAP,
     fetchImpl = fetch,
-    listImpl = list,
-    getImpl = get,
-    putImpl = put,
+    listImpl,
+    getImpl,
+    putImpl,
     logger = console,
-    access = 'public',
+    access,
     error = null,
-  } = {}
-) {
-  if (!token) {
-    throw new Error('blob token is required for last-success writes')
-  }
+    readLastSuccessImpl = readLastSuccess,
+    writeLastSuccessImpl = writeLastSuccess,
+  } = normalizeFailureOptions(errorOrOptions, maybeOptions)
 
   const previousMarker = await readLastSuccessMarker(job, {
     token,
@@ -225,6 +220,7 @@ export async function markCronFailure(
     getImpl,
     logger,
     access,
+    readLastSuccessImpl,
   })
 
   const previousSuccessAt = String(previousMarker?.lastSuccessAt || '').trim() || null
@@ -251,12 +247,11 @@ export async function markCronFailure(
     error: error?.message || null,
   }
 
-  await putImpl(getLastSuccessBlobKey(job), JSON.stringify(payload, null, 2), {
+  await writeLastSuccessImpl(job, null, payload, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access,
-    contentType: 'application/json',
+    putImpl,
+    accessOverride: access,
+    logger,
   })
 
   return payload

@@ -110,21 +110,28 @@ function buildCompareInsight(primary, secondary, deltaPp) {
   }
 }
 
+// 台股現貨交易時段 09:00-13:30 Asia/Taipei. National holidays are NOT detected
+// (would need TWSE calendar data) — accepted as known gap. Pre-open / post-close /
+// weekend all return true so compare strip falls into "今日休市" branch instead of
+// fake-rendering with empty data.
 function isMarketClosedDay(now = new Date()) {
-  const taipeiHour = Number(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Taipei',
-      hour: 'numeric',
-      hour12: false,
-    }).format(now)
-  )
-  const taipeiWeekday = new Intl.DateTimeFormat('en-US', {
+  const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Taipei',
     weekday: 'short',
-  }).format(now)
-  if (taipeiWeekday === 'Sat' || taipeiWeekday === 'Sun') return true
-  if (Number.isFinite(taipeiHour) && (taipeiHour < 9 || taipeiHour >= 14)) return true
-  return false
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+  const parts = formatter.formatToParts(now)
+  const weekday = parts.find((p) => p.type === 'weekday')?.value || ''
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value || NaN)
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value || NaN)
+  if (weekday === 'Sat' || weekday === 'Sun') return true
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false
+  const minutesSinceMidnight = hour * 60 + minute
+  const openMinutes = 9 * 60 // 09:00
+  const closeMinutes = 13 * 60 + 30 // 13:30
+  return minutesSinceMidnight < openMinutes || minutesSinceMidnight >= closeMinutes
 }
 
 export function buildDashboardCompareStrip(

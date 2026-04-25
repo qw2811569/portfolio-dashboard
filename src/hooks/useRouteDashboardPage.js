@@ -1,5 +1,10 @@
 import { useMemo } from 'react'
-import { buildResearchRefreshRows } from '../lib/routeRuntime.js'
+import {
+  buildOverviewRuntimeData,
+  buildResearchRefreshRows,
+  readRouteMarketState,
+} from '../lib/routeRuntime.js'
+import { buildDashboardCompareStrip } from '../lib/overviewCompare.js'
 import { usePortfolioRouteContext } from '../pages/usePortfolioRouteContext.js'
 import { resolveViewMode } from '../lib/viewModeContract.js'
 
@@ -35,6 +40,18 @@ export function useRouteDashboardPage() {
     const latestInsight = dailyReport?.insight || dailyReport?.aiInsight || null
     const dataRefreshRows = buildResearchRefreshRows({ holdings, targets, fundamentals })
 
+    // Build dashboard compare strip from overview portfolios so the route shell
+    // dashboard matches canonical AppShell behavior. Without this, the strip
+    // never renders even when both 我 + 金聯成 portfolios exist (R151 Codex QA).
+    const { marketPriceCache } = readRouteMarketState()
+    const { overviewPortfolios } = buildOverviewRuntimeData({ marketPriceCache })
+    const compareStrip =
+      overviewPortfolios.length >= 2
+        ? buildDashboardCompareStrip(overviewPortfolios, {
+            activePortfolioId: portfolioId,
+          })
+        : null
+
     return {
       holdings,
       watchlist,
@@ -52,6 +69,7 @@ export function useRouteDashboardPage() {
       todayAlertSummary,
       portfolioId,
       portfolioName,
+      compareStrip,
       viewMode: resolveViewMode({
         portfolio: {
           id: portfolioId,

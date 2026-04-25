@@ -105,7 +105,37 @@ export function readPortfolioRuntimeSnapshot(portfolioId, { marketPriceCache = n
   }
 }
 
-function buildPortfolioSummary(portfolio, snapshot) {
+function buildPortfolioTodayMetricsFromHoldings(holdings = [], priceMap = {}) {
+  const safeHoldings = Array.isArray(holdings) ? holdings : []
+  const safePriceMap = priceMap && typeof priceMap === 'object' ? priceMap : {}
+  if (safeHoldings.length === 0) {
+    return { todayTotalPnl: 0, todayRetPct: 0, todayHasPriceData: false }
+  }
+  let todayTotalPnl = 0
+  let priorCloseValue = 0
+  let hasPriceData = false
+  for (const holding of safeHoldings) {
+    const code = String(holding?.code || '').trim()
+    const qty = Number(holding?.qty) || 0
+    const quote = safePriceMap?.[code]
+    const change = Number(quote?.change)
+    const usable = Number.isFinite(change) && change !== 0
+    const holdingTodayPnl = usable ? change * qty : 0
+    if (usable) hasPriceData = true
+    const currentValue = getHoldingMarketValue(holding)
+    const previousValue = Math.max(0, currentValue - holdingTodayPnl)
+    todayTotalPnl += holdingTodayPnl
+    priorCloseValue += previousValue
+  }
+  return {
+    todayTotalPnl: hasPriceData ? Math.round(todayTotalPnl) : null,
+    todayRetPct:
+      hasPriceData && priorCloseValue > 0 ? (todayTotalPnl / priorCloseValue) * 100 : null,
+    todayHasPriceData: hasPriceData,
+  }
+}
+
+function buildPortfolioSummary(portfolio, snapshot, { marketPriceCache = null } = {}) {
   const holdings = Array.isArray(snapshot?.holdings) ? snapshot.holdings : []
   const pendingEvents = (Array.isArray(snapshot?.newsEvents) ? snapshot.newsEvents : []).filter(
     (event) => !isClosedEvent(event)
@@ -114,6 +144,10 @@ function buildPortfolioSummary(portfolio, snapshot) {
   const totalCost = holdings.reduce((sum, item) => sum + getHoldingCostBasis(item), 0)
   const totalPnl = totalValue - totalCost
   const retPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0
+  const todayMetrics = buildPortfolioTodayMetricsFromHoldings(
+    holdings,
+    marketPriceCache?.prices || null
+  )
 
   return {
     ...portfolio,
@@ -125,6 +159,9 @@ function buildPortfolioSummary(portfolio, snapshot) {
     totalValue,
     totalPnl,
     retPct,
+    todayTotalPnl: todayMetrics.todayTotalPnl,
+    todayRetPct: todayMetrics.todayRetPct,
+    todayHasPriceData: todayMetrics.todayHasPriceData,
   }
 }
 
@@ -140,7 +177,8 @@ export function buildPortfolioSummariesFromStorage({
   return runtimePortfolios.map((portfolio) =>
     buildPortfolioSummary(
       portfolio,
-      readPortfolioRuntimeSnapshot(portfolio.id, { marketPriceCache })
+      readPortfolioRuntimeSnapshot(portfolio.id, { marketPriceCache }),
+      { marketPriceCache }
     )
   )
 }

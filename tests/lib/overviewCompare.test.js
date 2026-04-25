@@ -92,8 +92,45 @@ describe('lib/overviewCompare', () => {
     expect(strip.pendingDataPortfolios).toEqual(['小奎主要投資', '金聯成組合'])
   })
 
-  it('keeps the strip rendered pre-open on weekdays with 盤前 placeholder', () => {
-    const weekdayPreOpen = new Date('2026-04-21T01:30:00.000+08:00')
+  it('keeps the strip rendered post-close on weekdays (after 13:30 Taipei time)', () => {
+    const weekdayPostClose = new Date('2026-04-21T13:35:00.000+08:00') // Tuesday 13:35
+    const strip = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: null },
+        { id: '7865', name: '金聯成', todayRetPct: null },
+      ],
+      { activePortfolioId: 'me', now: weekdayPostClose }
+    )
+
+    expect(strip).not.toBeNull()
+    expect(strip.marketClosed).toBe(true)
+    expect(strip.insightText).toContain('今日休市')
+  })
+
+  it('treats the 13:30 close minute precisely (open at 13:29, closed at 13:30 sharp)', () => {
+    const oneMinuteBeforeClose = new Date('2026-04-21T13:29:00.000+08:00')
+    const closeMinute = new Date('2026-04-21T13:30:00.000+08:00')
+    const stripBefore = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: null },
+        { id: '7865', name: '金聯成', todayRetPct: null },
+      ],
+      { activePortfolioId: 'me', now: oneMinuteBeforeClose }
+    )
+    const stripAtClose = buildDashboardCompareStrip(
+      [
+        { id: 'me', name: '我', todayRetPct: null },
+        { id: '7865', name: '金聯成', todayRetPct: null },
+      ],
+      { activePortfolioId: 'me', now: closeMinute }
+    )
+
+    expect(stripBefore.marketClosed).toBe(false)
+    expect(stripAtClose.marketClosed).toBe(true)
+  })
+
+  it('keeps the strip rendered with 盤前 copy in the early-morning weekday window (before 09:00)', () => {
+    const weekdayPreOpen = new Date('2026-04-21T08:30:00.000+08:00') // Tuesday 08:30
     const strip = buildDashboardCompareStrip(
       [
         { id: 'me', name: '我', todayRetPct: null },
@@ -104,6 +141,6 @@ describe('lib/overviewCompare', () => {
 
     expect(strip).not.toBeNull()
     expect(strip.marketClosed).toBe(true)
-    expect(strip.insightText).toContain('今日休市')
+    expect(strip.summaryText).toContain('今日休市')
   })
 })

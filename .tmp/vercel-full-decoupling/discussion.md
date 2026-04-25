@@ -1,0 +1,493 @@
+# 完全脫離 Vercel · 多 LLM 討論
+
+**日期**：2026-04-24
+**發起**：小奎 session
+**主題**：在現有 VM partial migration 之上 · 推進到「完全不依賴 Vercel」
+**狀態**：Round 1 (Claude) 起筆 · Round 2 待 Codex + Gemini append
+
+---
+
+## 0 · 背景 · 為何開這份
+
+本 session 今天已完成：
+
+1. 新開 GCP VM `jcv-dev` (35.194.207.76, asia-east1-b, project `jcv-dev-2026`)
+2. repo clone 過去、nginx + PM2 + `jcv-api` test env 上線（http://35.194.207.76/ HTTP 200）
+
+用戶接著問：「接下來該怎麼做，才能完全不用再依賴 Vercel？」
+
+Claude 一個人推了 5 層依賴盤點（Blob / Cron / Hosting / auth-middleware / @vercel/blob dep）跟 4 phase plan。但沒照 CLAUDE.md 走 multi-LLM。**這份是補流程**。
+
+## 1 · 與既有決議的衝突（必讀）
+
+兩份 decision 明文保留 Vercel Blob：
+
+- `docs/decisions/2026-04-15-knowledge-api-blob-not-vm.md`
+  - 關鍵：Knowledge API read 直連 Blob public URL、write 走 `/api/knowledge/update` + ifMatch、blob cache 60s
+  - 理由：read-heavy、write-rarely、檔小（432KB）、fs.watch 有邊界 case、VM cold restart 造 memory cache 空洞
+- `docs/decisions/2026-04-16-vm-maximization-roadmap.md`
+  - 關鍵：VM = 重活 / cron / AI / LLM orchestration；Vercel = 前端 CDN + 輕量 API + Auth；**Blob 是明定例外**
+  - 架構原則 §3：「VM 寫 Blob、Vercel 讀 Blob」
+
+**本討論默認使用者的意圖是推翻這兩份**，因為完全脫離 Vercel 必須也搬 Blob。若 Codex/Gemini 認為不該推翻 · 請在 Round 2 明確寫下理由。
+
+## 2 · Vercel 依賴盤點（Claude Round 1）
+
+| # | 依賴層 | 現況 call site | 難度 | 若脫離需做 |
+|---|--------|---------------|------|-----------|
+| 1 | **Vercel Blob** (`@vercel/blob`) | 7+ keyspace、5 個 API endpoint、3 個 worker 在寫 | ⭐⭐⭐⭐ | 替換儲存後端 + migration |
+| 2 | **Vercel Cron** (`vercel.json`) | 5 個 cron（valuation / news / events / target-prices / snapshot） | ⭐⭐ | systemd timer 全接 |
+| 3 | **Vercel Hosting** (`jiucaivoice-dashboard.vercel.app`) | production 前端 CDN | ⭐⭐ | 搬 VM + HTTPS + DNS |
+| 4 | **`api/_lib/auth-middleware.js`** 的 `VERCEL_ENV` 分支 | 設錯 401 storm | ⭐ | 重構成 VM-native |
+| 5 | **`@vercel/blob` npm dep + `VERCEL_OIDC_TOKEN`** | 依 #1 完成後 | ⭐ | package.json + env 清理 |
+
+## 3 · Claude Round 1 · 3 個建議
+
+### 建議 A · Blob 後端用 GCS（Google Cloud Storage）
+
+**理由**：
+- VM 已在 GCP (`jcv-dev-2026` project)、natural fit
+- bucket ACL 直接對應 private/public
+- Signed URL 比 Vercel Blob token 更細粒度
+- `@google-cloud/storage` SDK 成熟
+- 費用低（storage + egress）
+
+**對手選項**：
+- (b) VM 本機磁碟：最簡單但單點、無 replication、multi-VM scale 死路
+- (c) MinIO / 自架 S3：多一層要維運
+
+### 建議 B · 寫 `api/_lib/storage.js` 抽象層
+
+**理由**：
+- 所有 `@vercel/blob` call site 改呼叫這層
+- 未來換後端（GCS → S3 → MinIO）不用改 call site
+- ETag / ifMatch / cacheControl 的語意統一在抽象層
+
+**API 草案**：
+```js
+export async function putObject(key, body, opts = {}) // { acl, cacheMaxAge, ifMatch }
+export async function getObject(key) // returns { body, etag, contentType }
+export async function headObject(key) // returns { etag, lastModified }
+export async function deleteObject(key)
+export function signedUrl(key, opts) // for public read with TTL
+```
+
+### 建議 C · 分 4 phase 執行（~3-5 天）
+
+- Phase 1 · Blob → GCS migration（storage.js + migration script + 全 call site 改）
+- Phase 2 · cron 上 systemd（5 個 timer + 1 個 valuation worker 從零寫）
+- Phase 3 · 前端搬 VM + HTTPS（sslip.io + Let's Encrypt）
+- Phase 4 · 清 code（刪 vercel.json、拔 @vercel/blob、重構 auth-middleware）
+
+## 4 · 要 Codex / Gemini 反駁的問題
+
+請 Round 2 各自回覆這 5 點（同意 / 反駁 / 補充都可）：
+
+**Q1 · 推翻既有 decision 合理嗎？**
+既有決議「Blob 保留 Vercel」理由明確（read-heavy、write-rarely、fs.watch 邊界案、cold restart memory cache 空洞）。用戶想完全脫離 Vercel 的動機是否足以推翻？若動機成立 · 新決策與舊決策的**具體差異**是什麼？
+
+**Q2 · GCS vs 其他儲存後端**
+GCS 真的比 VM 本機磁碟、MinIO、S3 好嗎？考慮：
+- 既有 `tracked-stocks` ETag + ifMatch race condition 邏輯（commit `4d0879b`）能否在 GCS 原生支援？
+- `valuation/<code>/latest.json` 的 per-stock write pattern 成本（GCS class A op 計價）
+- 多 VM 架構下的 consistency model
+
+**Q3 · 抽象層 storage.js 的風險**
+- 抽象層會不會反而讓 per-backend 特性（GCS conditional write / Vercel Blob cache URL / fs atomic rename）被抹平？
+- 現有 5 個寫 Blob 的 API 的 write semantics（atomic / last-writer-wins / ETag race）如何在抽象層維持？
+
+**Q4 · 漏掉的 Vercel 依賴？**
+我盤點 5 層。還有哪些 Vercel 依賴我沒看到？考慮：
+- `VERCEL_OIDC_TOKEN` 的實際用途（只是 dev 便利還是真有 runtime call）
+- Vercel 的 edge middleware / rewrites / redirects
+- Vercel Analytics / Speed Insights（若有 embed）
+- `@vercel/*` 其他 npm 套件
+- deploy preview URL 的 callback / webhook
+
+**Q5 · Phase 順序與風險**
+- Phase 1 (Blob) 是最大風險，能否拆更小？
+  例如：先搬 1 個 keyspace（如 `last-success`）當 PoC，驗 migration + rollback 流程 · 再全面。
+- Phase 3 (前端搬 VM) 若失敗，production 是否還有退路（Vercel hosting 保留）？
+- 全 phase 跑完的 rollback 單位是什麼？（per-commit / per-phase / 全部 revert）
+
+## 5 · 輸入資料
+
+- 本討論目錄：`.tmp/vercel-full-decoupling/`
+- 交接 doc：`docs/status/2026-04-24-vm-api-rollout-handoff-v2.md`
+- 兩份既有 decision（見 §1）
+- 當前 VM 測試環境：jcv-dev (35.194.207.76)、bigstock production (35.236.155.62)
+
+## 6 · Round 流程
+
+- **Round 1**：Claude 起筆（本段）
+- **Round 2**：Codex append「## Round 2 · Codex · 2026-04-24」— 技術可行性 / code level 風險
+- **Round 2**：Gemini append「## Round 2 · Gemini · 2026-04-24」— 盲點 / 競品 / 用戶角度
+- **Round 3**：Claude synthesize，列 consensus / divergence，必要時回問
+
+不刪別人段落 · 只 append。
+
+---
+
+_待填 · Round 2_
+
+## Round 2 · Codex · 2026-04-24 23:13
+
+### 先講結論
+
+我不同意把這件事簡化成「Blob 改 GCS + 寫 `storage.js` + 4 phase」。
+
+- 方向可行，但 Claude Round 1 明顯低估 scope：repo 內 `@vercel/blob` 實際不是「7+ keyspace / 5 API / 3 worker」，而是至少 29 個 reference：`api` 21、`agent-bridge-standalone` 4、`scripts` 4。除了 `tracked-stocks` / cron，還有 `api/brain.js`、`api/research.js`、`api/telemetry.js`、`api/report.js`、`api/_lib/finmind-snapshot-fallback.js`、restore / migration scripts。
+- `vercel.json` 目前只有 4 個 cron：`compute-valuations`、`collect-daily-events`、`collect-target-prices`、`collect-news`（`vercel.json:6-23`）。沒有 snapshot cron；`morning-note` / `daily-snapshot` 已是 systemd timer，不該算進「待搬 Vercel cron」。
+- `VERCEL_OIDC_TOKEN` repo 內沒有 runtime call site；真正的 runtime coupling 是 `VERCEL_ENV`、`VERCEL_URL`、`vercel.json` headers / CSP / maxDuration，和一些腳本 / 測試的預設 prod URL。
+
+### 對 Claude 建議 A / B / C
+
+#### A · Blob 後端用 GCS
+
+- 結論：部分同意。
+- 同意：若目標是 zero-Vercel dependency，而且 VM 已在 GCP，GCS 是最合理的 production object store；比 S3 少一個 cloud，比 MinIO 少一層維運，比本機磁碟更適合 multi-VM / instance replacement。
+- Claude 沒說清楚 1：`tracked-stocks` 的 CAS 不能「用 GCS ETag 直接 1:1 替換」；要改成 generation precondition。Vercel 現在是 `etag + ifMatch` retry（`api/_lib/tracked-stocks.js:220-289,559-581`, `api/tracked-stocks.js:91-129`），GCS 應該是 `generation + ifGenerationMatch`，create 用 `0`，conflict 看 `412`。
+- Claude 沒說清楚 2：「bucket ACL 對應 private/public」這句太粗。若走 GCS，我會用 separate public/private buckets 或至少明確 IAM + signed URL，不會把 per-object ACL 當主設計。
+- Claude 沒說清楚 3：公開可快取物件在 GCS 仍有 cache staleness 風險；cache policy 要明寫，不是換 backend 就自動等價。
+- 補充：handoff 寫的 `valuation/<code>/latest.json` 與現況不符；實際 code path 是 `valuation/<code>.json`（`api/cron/compute-valuations.js:26-41`, `api/valuation.js:27-31`）。
+
+#### B · 寫 `api/_lib/storage.js` 抽象層
+
+- 結論：反駁「單一平面抽象層」，但同意需要 adapter。
+- 反駁理由 1：現況依賴的不只是 `get/put`，還有 `list(prefix,cursor)`、metadata (`etag`, `uploadedAt`, `url`, `pathname`)、batch `del`、signed/private read、以及 read-modify-write append。
+- 反駁理由 2：`tracked-stocks` 要 compare-and-swap；`snapshot-worker` 要 prefix scan + batch delete（`agent-bridge-standalone/workers/snapshot-worker.mjs:452-501`）；`brain/research/telemetry` 是 local+remote hybrid（`api/brain.js:83-110`, `api/research.js:77-94`, `api/telemetry.js:49-68`）；`daily-snapshot` / `morning-note` log 是 append-like RMW（`api/_lib/daily-snapshot.js:128-148`, `api/_lib/morning-note.js:303-324`）。這些不該被 `putObject/getObject` 抹平。
+- 替代方案：做 capability-based adapter，不做萬用 `storage.js`。至少拆成 `readObject / writeObject`、`getVersionToken / writeIfVersion`、`listPrefix / deleteMany`、`getPublicUrl / signReadUrl`。
+- 替代方案補充：domain module (`tracked-stocks.js`, `daily-snapshot.js`) 保留自己的 write semantics；只把 backend primitive 換掉。
+- 替代方案補充：`versionToken` 要是 opaque，不要硬叫 `etag`，因為 GCS 真正可靠的寫入 precondition 應該吃 generation。
+- 補充：`brain.js` / `research.js` 現在有 delete-then-put pattern（`api/brain.js:83-95`, `api/research.js:77-90`）；若改 GCS 應趁機去掉，不然只是在搬 failure window。
+
+#### C · 分 4 phase 執行
+
+- 結論：反駁目前 phase 順序。
+- 反駁理由 1：最大風險不是「先搬 Blob」本身，而是 runtime/env coupling 還沒清時就搬 data plane，除錯面積會更大。
+- 反駁理由 2：`valuation` 不是「worker 從零寫」；商業邏輯已在 `api/cron/compute-valuations.js:44-87`，缺的是 VM-native timer / service ownership。
+- 替代 phase 0：capability inventory + migration manifest + cutover flag + regression tests。
+- 替代 phase 1：先清 `VERCEL_ENV` / `VERCEL_URL` / `vercel.json` runtime assumptions，補 valuation systemd unit。
+- 替代 phase 2：先做低風險 keyspace PoC，再做 `tracked-stocks` CAS PoC。
+- 替代 phase 3：按 keyspace 分批 cutover。
+- 替代 phase 4：前端 hosting cutover，Vercel 保留 rollback。
+- 替代 phase 5：burn-in 後再刪 `vercel.json` / `@vercel/blob` / scripts/tests。
+
+### Q1 · 推翻既有 decision 合理嗎？
+
+- 條件式同意。
+- 如果使用者的真實目標是「完全不再依賴 Vercel」，那就足以推翻 2026-04-15 / 2026-04-16 的 Blob 例外；因為那兩份 decision 的前提本來就是「允許保留一個 Vercel data plane」。
+- 但如果動機只是「Vercel 常出錯」，那個理由主要打在 build / cron / runtime，不是 Blob 本身。以舊 decision 的準則來看，Knowledge API 留 Blob 仍然是合理的。
+- 新舊 decision 的具體差異應該寫清楚：
+- 舊：最佳化 read-heavy 小 JSON 分發，接受「VM 寫 Blob，Vercel 讀 Blob」的雙平台架構。
+- 新：最佳化 zero-Vercel dependency / single-cloud ops / rollback sovereignty，接受較高 migration 複雜度與更多 storage/hosting 維運責任。
+- 我建議不要把舊 decision 寫成「以前錯了」；應該寫成「決策目標函數改了」。
+
+### Q2 · GCS vs 其他儲存後端
+
+- 我的排序是：GCS > 本機磁碟（僅 dev/recovery cache） > S3（只有 multi-cloud 戰略才有理由） > MinIO（除非你明確要自架 S3 API）。
+- `tracked-stocks` race fix：
+- 現況是 optimistic concurrency：`head` 取 `etag`，`put(..., ifMatch)`，碰 `BlobPreconditionFailedError` / `BlobAlreadyExistsError` 就 retry（`api/_lib/tracked-stocks.js:220-289,559-581`, `api/tracked-stocks.js:91-129`）。
+- GCS 可以保留同等 correctness，但不是用 ETag 1:1 搬；要用 object `generation` 做 precondition。也就是：read current generation，update 用 `ifGenerationMatch=<generation>`，first-create 用 `ifGenerationMatch=0`。語意可替換，欄位名不能照搬。
+- `valuation` per-stock writes：
+- 這條 path 目前是 nightly last-writer-wins singleton write，不需要 CAS。GCS op cost 在目前規模下不是主要 blocker；真正該在意的是 latency、重試策略、以及先把 VM timer 補齊。
+- 多 VM consistency：
+- GCS 對 object read-after-write 和 object listing 是 strong consistency，這點比本機磁碟跨機同步方案乾淨很多。
+- 但 public-cacheable objects 仍可能因 cache header 看起來 stale，所以 public keyspace 要把 Cache-Control 當成 migration contract 的一部分。
+
+### Q3 · 抽象層 `storage.js` 的風險
+
+- 有，而且不小。
+- 現有 write semantics 至少分 5 類：
+- last-writer-wins singleton：`valuation`, `news`, `daily-events`, `target-prices`, `morning-note`, `benchmark`
+- CAS merge：`tracked-stocks`
+- append-like RMW log：`daily-snapshot` log, `morning-note` log
+- prefix scan + metadata sort：`report`, `finmind-snapshot-fallback`, `snapshot-worker`
+- local + remote hybrid：`brain`, `research`, `telemetry`
+- 如果用一個 generic `storage.js` 把這些全收掉，結果通常是兩種：
+- 抽象太薄，call site 還是要知道 backend 細節，抽象形同虛設。
+- 抽象太厚，把 concurrency / metadata / URL semantics 藏起來，真正危險。
+- 我會保留 domain module，僅把 backend primitive adapter 化。特別是：
+- `tracked-stocks` 必須顯式暴露 `versionToken`。
+- `snapshot-worker` 需要 `deleteMany`。
+- `report` / fallback path 需要 `uploadedAt` 類 metadata（`api/_lib/finmind-snapshot-fallback.js:189-220`）。
+- append log 不要偽裝成 atomic append；若未來要改善，應改 local append / Cloud Logging，不是靠抽象名稱自我安慰。
+
+### Q4 · 漏掉的 Vercel 依賴？
+
+- 有，而且比 Round 1 多。
+- `VERCEL_ENV`：
+- 直接影響 auth 寬鬆/嚴格模式（`api/_lib/auth-middleware.js:76-83`）。
+- 也影響 research round count / mode（`api/research.js:475-480`）。
+- `VERCEL_URL`：
+- 被用來組 internal origin / signed URL origin（`api/_lib/signed-url.js:33-40`, `api/cron/collect-target-prices.js:132-136`, `api/cron/snapshot-portfolios.js:23-27` 等）。
+- 若 VM-only，應改成 explicit `APP_ORIGIN` / `INTERNAL_API_ORIGIN`，不是繼續借 `VERCEL_URL`。
+- `vercel.json` 本身：
+- 不只是 cron；還有 CSP / security headers / API cache headers / function maxDuration / ignoreCommand（`vercel.json:24-79`）。
+- `tests/vercel-config.test.js` 直接 assert 這些設定；full decoupling 時測試也要改（`tests/vercel-config.test.js:5-89`）。
+- scripts / QA 預設 prod URL：
+- `scripts/sync-to-vm-root.mjs:22-24`, `scripts/full-smoke.mjs:20-28`, `tests/e2e/support/qaHelpers.mjs:10-13`, `scripts/vercel-ignore.sh:4-10` 都還把 Vercel 當一級公民。
+- nginx/CORS：
+- `deploy/nginx-jcv.conf:6-11` 目前明確 whitelist `https://jiucaivoice-dashboard.vercel.app`；hosting cutover 時要決定雙棲窗口與收口時間。
+- `@vercel/*` 其他套件：
+- 我沒看到 `@vercel/analytics`, `@vercel/speed-insights`, `waitUntil`, `NextRequest`, `NextResponse`, edge middleware runtime 依賴；這塊不是現在的主要問題。
+- `VERCEL_OIDC_TOKEN`：
+- repo grep 沒有 runtime call site，只有 handoff doc 提到。這不是 blocking dependency。
+- 額外一點：
+- `api/_lib/signed-url.js:43-58` 的 signing secret 目前會 fallback 到 blob tokens；如果之後拔掉 blob token，又沒設 `BLOB_SIGNING_SECRET`，signed read 會一起壞。
+
+### Q5 · Phase 順序與風險
+
+- 可以，而且應該拆更小。
+- 我同意先做 PoC，但我會做兩個：
+- PoC 1：generic `last-success-*.json` 這類低風險 singleton marker，驗 list/read/write/ACL/cache/rollback。
+- PoC 2：`tracked-stocks`，專門驗 CAS + retry + concurrent writer。
+- `valuation` 要先補：
+- 不是「商業邏輯還沒寫」，而是 VM-native ownership 還沒寫。最小可行做法是把現有 `collectValuationSnapshots` 包成 systemd worker 或 HTTP-triggered service，先別讓它繼續藏在 Vercel cron 後面。
+- 前端 hosting rollback：
+- 必須讓 Vercel hosting 保留到最後一刻，DNS / public entrypoint 最後切。只要 origin switch 還沒剪掉，Phase 3/4 失敗都有退路。
+- rollback 單位：
+- code/runtime：per-commit rollback。
+- hosting：per-origin / DNS rollback。
+- storage：per-keyspace cutover rollback。
+- 我不接受「Blob 一次搬完，再說 rollback」這種說法。真正可用的 rollback 需要：
+- migration manifest（path, checksum, contentType, visibility, copiedAt）
+- 目標 bucket versioning
+- keyspace-level read-primary flag
+- burn-in 期間保留 reverse shadow-write 或 delta replay 方案
+- 如果沒有最後兩項，所謂 rollback 只是假回滾；因為新寫入資料根本回不去舊 store。
+
+### 我的結論
+
+- 我同意最終目標可以是 GCS + full decouple。
+- 我反駁兩點：`storage.js` 一刀切抽象、以及 `Blob migration` 當 Phase 1 big-bang。
+- 我會先做 runtime decoupling + valuation ownership，再做 storage keyspace-by-keyspace cutover。
+
+## Round 2b · Codex（盲點人格）· 2026-04-24 23:23
+
+### B1 · Real pain 推斷
+從 repo 證據看，使用者的 real pain 比較不像「Blob 被 Vercel 綁住很痛」，而像「Vercel 當開發控制平面時，常用但不穩，會打斷判斷與節奏」。`2026-04-16-vm-maximization-roadmap.md` 列的都是具體事故：ignoreCommand 反覆翻車、env 要手補、news-feed 502、cron 60s 不夠；`docs/research/vercel-cost-investigation.md` 也把 `$43/週` 定位成 build 紀律問題，不是產品成本結構問題；`feedback_vm_url_is_dogfood_surface.md` 更直接說用戶現在日常驗收看的是 VM URL，Vercel 已被降成「少量 build 的輔助面」。所以我推斷「完全脫離 Vercel」更像在追求 operational sovereignty 與心智清爽，而不是單純為了省 Blob 成本。若這個推斷成立，真正該問的不是「怎樣全部搬走」，而是「哪些 Vercel 模式最容易讓我斷線，怎樣把它們降到非關鍵路徑，出錯也不會卡住開發與驗收」。
+
+### B2 · 推翻 decision 的隱性成本
+推翻 `2026-04-15-knowledge-api-blob-not-vm.md` 的成本，真正重的不是 migration code，而是 decision graph 的信用。那份決議是 Claude + Qwen + Codex 兩輪 consensus；`2026-04-16-vm-maximization-roadmap.md` 又把它升級成整體原則的一個例外；`docs/runbooks/restore-drill.md` 甚至已把 private Blob 寫成 shared artifact 的 canonical source。若現在改口，之後每個讀 `docs/decisions/`、git log、handoff 的人都得重新理解「當時為何不搬、現在為何又搬、哪些前提變了」；而 `CLAUDE.md` 本來就是靠「先讀既有 decision，避免重開舊題」來壓低混亂。對單人開發來說，這份 context 稅沒有 infra team 幫你攤，最後就是未來的你在每次新 session 裡反覆補課。換句話說，翻案可以，但必須明寫成「目標函數改了」，不是默默把舊 decision 變成歷史噪音。
+
+### B3 · 產品階段 mismatch
+以 repo 目前證據，我認為時機不對。`2026-04-16-product-stage-stability-first.md` 已把現階段定義成 prototype → internal beta，並把成本優化、換平台類題目明確延後；`feedback_vm_deploy_pitfalls.md` 顯示 VM deploy 還有 SSH key、scp 路徑、pm2 restart 清空 in-memory state 這些不夠 boring 的操作坑；`feedback_auto_mirror_vm_after_commit.md` 更說明到 2026-04-24 還需要「commit 後立即 mirror VM」這種人肉紀律來維持一致；`2026-04-24-vm-api-rollout-handoff-v2.md` 也還在處理 PM2 secrets 靠 shell inherit、rollback 分兩條路、`npm ci --omit=dev` 會踩 transitive dep。這代表 VM 不是不能用，而是還在收斂成可預期平台。此時再把所有剩餘 Vercel 職責一次壓上去，會把「兩邊都有坑」變成「所有坑都集中在 VM」。盲點人格的判斷是：先把 VM deploy / env / rollback 變成 boring，再談全棧遷出，才符合穩定優先。
+
+### B4 · 三個沒看到的盲點
+1. 這不是單純 infra 選型，而是 decision governance 問題。9 天內推翻一個兩輪 consensus 的明文例外，若沒有很乾淨的覆盤與新原則，`docs/decisions/` 會失去「讀了就能信」的作用，bus factor 反而更差。
+2. 目前討論把焦點放在 storage / hosting，卻幾乎沒碰 data governance。`docs/runbooks/restore-drill.md` 已把 portfolio / insider 狀態、restore evidence、private artifact retention 寫進操作契約；若離開 Vercel Blob，真正要重寫的是 backup、保留期、權限邊界、災難復原責任，不只是檔案放哪裡。
+3. 二元 framing 本身可能就是盲點。repo 已經呈現一個可運作的中間態：VM 是 dogfood 與重活主面，Vercel 被限制成低頻 build、靜態入口或 rollback plane。這個 mixed state 不是半吊子，它可能正是 internal beta 最合理的風險對沖，而不必急著追求「100% 純化」。
+
+### B5 · 反方論點
+1. 現在看到的痛，大多是 Vercel 的 build / cron / env 管理方式，不是 Blob 本身；把 heavy jobs 移到 VM、把 Vercel 降成低頻靜態面，已經能處理大部分真痛點，沒必要為了心理上的完整性再付一次全面翻案成本。
+2. 產品階段不支持這麼大的 infra 轉向。`2026-04-16-product-stage-stability-first.md` 很明確：現在最該換來的是穩定與可用體驗，不是平台純度。全脫離會直接吃掉 UX、資料品質與內測節奏的注意力。
+3. 目前 VM 還不是一個 boring platform。deploy pitfall、env 載入、rollback path、in-memory reset 都還在 repo 裡被明文提醒；把 Vercel 這條 rollback / 備援 / 已知運作路徑也砍掉，等於把單人系統的營運風險集中到一個還在磨的面上。
+
+### 我 2a 人格 vs 2b 人格的分歧
+2a 在回答「如果戰略已定，要怎麼技術上搬得動」；2b 在回答「這個戰略目標本身現在是否被證明值得」。所以兩者不矛盾，但權重不同。若今天硬要選一個贏，我會讓 2b 贏：不是因為 full decouple 做不到，而是 repo 證據還不足以證明「現在」做它，比把 VM 先穩定化、更能減少整體風險。
+
+---
+
+## Round 3 · Claude synthesize · 2026-04-24 23:40
+
+### Executive summary
+
+Round 1 的 framing **錯了**。3 個獨立 input（Explore agent 通盤讀 decisions + Codex 2a 技術稽核 + Codex 2b 盲點人格）都獨立收斂到同一結論：**現在不是全棄 Vercel 的正確時機**，而且「完全脫離 Vercel」本來就不是使用者的明文立場。
+
+### Consensus（3 方都同意）
+
+1. **2026-04-16 已定長期目標**：Vercel 純 CDN/SPA + VM 純 backend。**不是「全棄」**，是分家。`docs/decisions/2026-04-16-product-gap-and-arch-direction.md` 明寫 3 個前提（VM 3 個月穩 / 演過 zone 事故 / 接了 Stripe），現在 0/3 達成。
+2. **handoff v2 的 6 API 搬 VM = 既定 split 執行中**，不是 decoupling 本身。
+3. **使用者 real pain 是 Vercel 的 build/cron/env 管理面**（ignoreCommand / 502 / 60s timeout / $43 build burn），不是 Blob 本身。把重活搬 VM + 降 Vercel push 頻率已經處理 80% 痛點。
+4. **產品階段 = internal beta + stability first**（`2026-04-16-product-stage-stability-first.md`）。現在推翻 2 份 consensus decision + 全棧搬遷，會把注意力從 UX 拉走。
+5. **VM 還沒 boring**：SSH key / scp / pm2 in-memory state / transitive dep / mirror discipline 都還在 repo 明文提醒（`feedback_vm_deploy_pitfalls.md` / `feedback_auto_mirror_vm_after_commit.md`）。把 Vercel 這條 rollback/backup plane 也砍掉 = 單人系統風險集中到一個還在磨的面。
+6. **如果堅持要搬 · storage.js 一刀切抽象層會失敗**（Codex 2a 細節）。5 類 write semantics 不能被 `putObject/getObject` 抹平。要 capability-based adapter。
+7. **phase 順序錯**：Blob 先搬不對。應該先清 runtime coupling（VERCEL_ENV / VERCEL_URL / vercel.json headers）+ 補 valuation systemd ownership，再做 keyspace-by-keyspace cutover。
+
+### Divergence（本次沒產生真正分歧）
+
+2a 和 2b 不矛盾：2a 是「若戰略已定，技術上怎麼搬」；2b 是「戰略本身現在值得嗎」。3 方都默認 2b 贏。
+
+### Claude 該告訴用戶的
+
+**錯的問題**：「完全不依賴 Vercel · 我該怎麼做？」
+
+**對的問題**：「怎麼完成 handoff v2 的 6 API VM deploy，並降 Vercel push 頻率到純必要（備援 + CDN + 前端 build）？」
+
+建議路徑（不是 4 phase、不推翻 decision）：
+
+1. **按 handoff v2 §3 的 10 step** 把 6 API 搬到 `bigstock` (production VM)
+2. **補 valuation systemd unit**（handoff §13 點名的 gap）
+3. **今天開的 jcv-dev VM 定位為 staging / dev-only**，不入 production path
+4. **VM 先讓它 boring** 3 個月 + 演過 zone 事故 + 接 Stripe 有付費用戶 → 再回來討論全棄 Vercel
+
+### Blind-spot 盲點人格 B4 提出的真正大題目（值得另開 doc 討論）
+
+**不是** storage 選型 · **是 data governance**：
+- backup / 保留期 / 權限邊界 / 災難復原責任
+- `docs/runbooks/restore-drill.md` 已把 Blob 寫成 canonical source
+- 若未來要搬 Blob · 真正要重寫的是這些契約 · 不是檔案放哪
+
+### 回寫決議
+
+本 discussion 結論建議寫成 `docs/decisions/2026-04-24-vercel-full-decoupling-deferred.md`：
+- 明確「全棄 Vercel」**延後到 3 前提達成**（不是推翻 · 是重申既有 decision 的時機點）
+- 明示 handoff v2 的 6 API 搬 VM 是 既定 split 執行 · 不歸類為 decoupling
+- 盲點人格 B4.2 的 data governance 題目 · 獨立 P2 ticket
+
+---
+
+_End of Round 3. 等使用者決定要不要把結論寫成 decision。_
+
+## Round 4 · Codex Phase 0 deliverable · 2026-04-25 10:31
+
+- Artifact 1: `.tmp/vercel-full-decoupling/phase-0/call-site-inventory.md` · 找到 57 個 call site
+- Artifact 2: `.tmp/vercel-full-decoupling/phase-0/write-semantics-matrix.md` · 分類完成 · 28 個 keyspace
+- Artifact 3: `.tmp/vercel-full-decoupling/phase-0/migration-manifest.json` · 28 條 manifest entry
+- Artifact 4: `.tmp/vercel-full-decoupling/phase-0/cutover-flag-design.md` · cutover flag design
+
+### 我發現 Phase 0 brief 漏掉的：
+- `portfolios/active.json` 有 reader，但 repo 內找不到 writer；不先釐清 source-of-truth，Phase 1 會把 unknown state 一起搬走。
+- `api/cron/snapshot-portfolios.js` 仍讀 `portfolios/{portfolio}/holdings/latest.json`，repo 內同樣找不到 writer；這是 legacy/unknown keyspace，不應默默假設。
+- `api/_lib/signed-url.js` 目前會從 blob tokens 退回簽名 secret；如果 Phase 1 移除 Blob env、卻沒先補明確 `BLOB_SIGNING_SECRET`，private read 會一起壞掉。
+- `snapshot-worker` 不是只有 `put/get`，還需要 `listPrefix + metadata(uploadedAt/size) + deleteMany`；這是 capability boundary，不是後面再補的小細節。
+- coupling surface 不只 Blob API，還包含 `vercel.json` cron ownership、CSP `*.vercel-storage.com`、以及多個 `.vercel.app` hardcoded ops/test target。
+
+### 我建議 Phase 1 第一個動作：
+- 先做「capability contract + unknown writer closure」：定稿 keyspace ID / flag 名稱 / GCS bucket role 與 IAM 契約，補齊 `APP_ORIGIN` 與明確簽名 secret，並先找出 `portfolios/active.json`、`portfolios/{portfolio}/holdings/latest.json` 的 writer；這三件事不做，直接寫 adapter 只會把 unknown 行為包進新抽象。
+
+## Round 5 · Codex Phase 1 prep · 2026-04-25 12:26
+
+- Artifact 1: `.tmp/vercel-full-decoupling/phase-1/unknown-writer-closure.md`
+  - 兩個 unknown writer 都重新 closure 了
+  - repo grep + git history 都找不到 in-repo writer
+  - 結論都不是「暫時沒找到而已」，而是目前 repo 只有 reader、沒有 source-of-truth
+- Artifact 2: `.tmp/vercel-full-decoupling/phase-1/capability-contract.md`
+  - 28 個 keyspace 全部轉成 canonical `<domain>.<purpose>` ID
+  - 每個 keyspace 對應到具名 capability，沒有落回單一 `storage.js`
+  - `cas-write` / `prefix-scan` / `local-mirror` / `append-log` 的 backend boundary 已定稿
+- Artifact 3: `.tmp/vercel-full-decoupling/phase-1/gcs-bucket-iam.md`
+  - 推薦 3 buckets / env：`public`、`private`、`archive`
+  - 不走 28 bucket，也不走一個 all-in-one bucket
+  - versioning / lifecycle / service account / signed URL TTL 都先收斂到 Phase 1 可執行程度
+- Artifact 4: `.tmp/vercel-full-decoupling/phase-1/env-split-design.md`
+  - `BLOB_SIGNING_SECRET`、`APP_ORIGIN`、`INTERNAL_API_ORIGIN` 變成 explicit env
+  - signed-read 不再依賴 blob token fallback
+  - migration order 與 rollback path 已拆成 5 step
+
+### unknown writer 結果
+
+- `portfolios/active.json`
+  - **未找到 writer**
+  - 現況只有 reader：`api/_lib/tracked-stocks.js`、`api/cron/snapshot-portfolios.js`
+  - 兩處 reader 都已有 fallback `[me]`
+  - 判定：**legacy unknown -> retire**
+- `portfolios/{portfolio}/holdings/latest.json`
+  - **未找到 writer**
+  - 現況只有 reader：`api/cron/snapshot-portfolios.js`
+  - 現役 source 已轉成 owner `holdings.json`、browser localStorage、dated snapshots
+  - 判定：**legacy unknown -> retire**
+
+### 我發現 Phase 1 prep brief 還漏一點
+
+- `VERCEL_ENV` 不是單一語意，它同時控制 auth trust、`.env.local` 載入、research round profile；Phase 1 主階段若只做字面 rename，之後還是會留下 hidden coupling。
+- `public-cdn-read` 不只 3 個 user-facing keyspace；`llm-dispatches` 與 `telemetry-events` 也是 public object，只是 cache criticality 比較低。
+- 這 2 個 unknown keyspace 在 tracked git history 也只看得到 reader introduction，看不到被刪掉的 writer；更像「從一開始就沒有 repo-owned writer」，不是「writer 遺失」。
+
+### 建議 Phase 1 主階段（adapter 前）的下一動作
+
+- 先做一個純 config/runtime PR：
+  - 補 `BLOB_SIGNING_SECRET`、`APP_ORIGIN`、`INTERNAL_API_ORIGIN`
+  - code 先改成新 env 優先、舊 Vercel fallback 次之
+  - 不碰 storage adapter
+- 同時把 2 個 legacy unknown keyspace 明確標成:
+  - 不進 GCS migration scope
+  - 不生成 Phase 2 adapter capability
+  - 需要新 source-of-truth 時另開新 keyspace，不 revive 舊 blob path
+- 然後再做第一個真正的 storage PoC：
+  - `ops.last_success_public`
+  - `ops.last_success_private`
+  - 最後才輪到 `portfolio.tracked_stocks`
+
+## Round 6 · Codex Phase 1 step 1 deliverable · 2026-04-25 12:50
+
+- commit SHA
+  - `72b61ffb97d55be6caaed2d4557fe0ec6601a782`
+- 改了哪些檔
+  - `api/_lib/signed-url.js:8-145`
+  - `api/cron/collect-target-prices.js:1-2,133-135`
+  - `api/cron/snapshot-portfolios.js:1-4,23-25`
+  - `.env.example:12-20`
+  - `.env.local.example:36-43`
+  - `tests/api/signed-url.test.js:1-96`
+- 結果
+  - `npm run typecheck` ✅ pass
+  - `npm run lint` ✅ pass
+  - `npm run check:fast-refresh` ✅ pass
+  - `npm run test:run -- --run --reporter=basic 2>&1 | tail -50` ❌ pre-existing tooling failure
+    - 現況 repo 的 `vitest` 會把 `basic` 當 custom reporter 載入，直接在 startup error 結束：`Failed to load custom Reporter from basic`
+    - 這不是這次 env-routing 改動引入；我額外跑了 `npm run test:run -- tests/api/signed-url.test.js tests/api/collect-target-prices.test.js tests/api/portfolio-snapshots.test.js --run`，`3 files / 26 tests` 全部通過
+- brief 漏的或預期外
+  - runtime `VERCEL_URL` 真正還活著的 production code 只有 3 個 resolver 點；其餘 repo 命中是 scripts/docs/tests，不需要在這一步碰
+  - `agent-bridge-standalone/` 這一步不用改：兩個 worker 已經優先讀 `INTERNAL_API_ORIGIN`
+  - 我保留了 `VERCEL_URL` legacy fallback，但把 signed-url secret fallback 收斂成 `BLOB_SIGNING_SECRET -> blob tokens`，不再借 `BRIDGE_*` / `CRON_SECRET`
+  - 依 design / brief 跳過了 script-only `VERCEL_URL` 點：`scripts/backfill-target-prices.mjs`、`scripts/sync-to-vm-root.mjs`
+- 建議下一步
+  - 直接進 Step 2 PoC 可以，但我建議先做一次短 review；這一步已經把 env contract 固定下來，先確認 `BLOB_SIGNING_SECRET` fallback 收斂與 `INTERNAL_API_ORIGIN` 優先順序都符合預期，再開 low-risk keyspace PoC 會比較穩
+
+## Round 8 · Codex B QA · 2026-04-25 13:56
+
+### 找到的 bug（按嚴重度排）
+- 🔴 critical: `readLastSuccess()` 在 shadow-read compare 後會直接 `await appendDivergenceMetric()`；只要 jsonl append / mkdir 失敗，primary read 也會跟著 throw，違反「shadow-read failure 不影響 response」契約。位置：`api/_lib/last-success-store.js:394-408`。我用一次性腳本讓 `appendMetricImpl` 丟 `disk full`，實際結果是整個 read 直接 `THREW disk full`。
+- 🟡 major: shadow-read 不是「return primary result; async/parallel diff」；實作會 `await shadowReadPromise` 後才 return primary。位置：`api/_lib/last-success-store.js:368-382`。我用 250ms 慢 shadow backend 測到整體 `elapsed=255ms`，代表 shadow latency 直接加到 response 上。
+- 🟡 major: env / flag shape 跟 design contract 漂移。runtime 只看 `STORAGE_PRIMARY_OPS_LAST_SUCCESS` + 4 個 compound mode string。位置：`api/_lib/last-success-store.js:38-56`、`.env.example:29-33`、`.env.local.example:51-55`。但 Phase 1 contract 寫的是 `STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC` / `_PRIVATE`，Phase 0/1 env split 還要求 `STORAGE_SHADOW_READ_*` / `STORAGE_SHADOW_WRITE_*`。我直接設 doc 版 env 後呼叫 `getLastSuccessStorageMode()`，實際仍回 `vercel-only`；照 design 設 env 會 silently no-op，也無法 public/private 獨立 cutover。
+- 🟡 major: invalid flag typo 會 silently fallback 到 `vercel-only`，沒有 throw / warn。位置：`api/_lib/last-success-store.js:38-42`。`STORAGE_PRIMARY_OPS_LAST_SUCCESS=vercell-only` 實測結果就是 `vercel-only`。這是 silent compromise，不是 safe failure。
+- 🟡 major: `ops.daily_snapshot_marker` 雖然 A 說暫不切，但 helper 已實作且 routing 錯 bucket。dated marker 固定走 `GCS_BUCKET_PRIVATE`。位置：`api/_lib/last-success-store.js:78-92`。design 把 `ops.daily_snapshot_marker` 放 archive bucket；我實測 `getLastSuccessScopeDescriptor('daily-snapshot', '2026-04-25')` 回的是 `bucketName: "jcv-dev-private"`。
+- 🟡 major: migration script 的 `--resume` 只對單一 runner idempotent；對雙 instance 不安全。state / reverse manifest 固定寫死同一路徑並用 `writeFile()` 每次整檔覆寫，沒有 lock / lease / atomic rename。位置：`scripts/migrate-last-success-to-gcs.mjs:13-14`、`124-155`、`296-334`。兩個 instance 同時跑會互相覆蓋 state，resume 也可能跳過或重跑錯 item。
+- 🟡 major: caller failure contract 不一致。`readLastSuccess()` 對 primary backend failure 會 throw，但 `readLastSuccessMarker()` 把任何錯都吞掉回 `null`。位置：`src/lib/cronLastSuccess.js:58-84`。`api/daily-snapshot-status.js:10-19` 又直接把 `null` 丟進 `computeDailySnapshotHealth()`，而 `computeDailySnapshotHealth()` 會把它當 `badgeStatus: "missing"` 的一般 stale 狀態。位置：`api/_lib/daily-snapshot.js:231-269`。storage outage / misconfig 會被回成 200 + missing，不是 infra failure。
+- 🟡 major: migration script 完全沒有 automated tests；`rg` 只找到 script 本體，找不到 `migrate-last-success-to-gcs` 的 test。Step 2a brief 要求的 idempotent / resume / dry-run 都沒有 coverage。
+- 🟢 minor: payload contract 沒 guard。JSON path 對 `null` 會寫 `"null"`，對 `undefined` 會把 `undefined` 直接傳給底層 writer。位置：`api/_lib/last-success-store.js:244-245`、`280-283`。我在 Attack C 實測 `json-null` -> `4 bytes`、`json-undefined` -> `typeof body === "undefined"`；如果上游 caller 漏 payload，後果取決於底層 SDK，現在沒有明確防線。
+- 🟢 minor: tests 雖然 4 個 mode 各有一個 happy-path case，但沒有覆蓋 invalid flag、shadow log I/O failure、slow shadow latency、migration script、`undefined/null` payload、以及 SDK generation / `ifGenerationMatch` 類真實行為。位置：`tests/api/last-success-store.test.js:24-139`、`tests/api/gcs-storage.test.js:31-150`。
+
+### 通過的部分（A 做對的）
+- `Concurrency / race`: shadow divergence log 用的是 `appendFile()`，不是 truncate。位置：`api/_lib/last-success-store.js:330-349`。同月 JSONL 不會因單次 write 把舊資料覆蓋掉。Attack A 也確認 read 只會看到舊 / 新完整 object，不會看到「部分寫入」內容。
+- `Cutover flag 切換瞬間`: policy 是每次呼叫進 `readLastSuccess()` / `writeLastSuccess()` 時 resolve 一次。位置：`api/_lib/last-success-store.js:360-363`、`419-422`。所以 in-flight request 會沿用舊 policy，新 request 才吃到新 env；沒有額外 cache 導致半途換 backend。
+- `Fallback / failure semantics`: Attack B 實測 `vercel-primary-gcs-shadow` 在 GCS 連續失敗時會 graceful degrade，primary read/write 仍成功；`gcs-only` 則確實 fail-fast throw。shadow-write failure 也沒有把 primary success 回滾。
+- `Auth / secrets leak`: 沒看到 service account key / private key 被 commit；log 也沒有直接打印 token。bucket / key 會進 server log，但沒有直接回給 client。
+- `Spec compare correctness`: A 自己點名的 JSON key order case 是過的；我用 `{meta:{b:2,a:1}}` vs `{meta:{a:1,b:2}}` 實測 hash 相同，result = `match`。
+- `Bucket naming`: runtime bucket 名沒有寫死；真正 runtime 取 `GCS_BUCKET_PUBLIC` / `GCS_BUCKET_PRIVATE` env。`jcv-dev-*` 只出現在 example / test，不是 hardcoded runtime branch。
+- `賤招`: 沒看到 TODO / FIXME / XXX / debugger；script 的 `console.log` 屬於 CLI summary，不是殘留 debug。
+
+### A 自己 flag 「希望被 attack 的部分」結果
+- `compare path`: JSON key order 不同但 payload 等價，這條沒問題；stable sort compare 有做到。
+- `一邊 miss / 一邊 hit`: code 會正確分類成 `primary-miss-shadow-hit` 或 `shadow-miss`，但因為會先 `await shadowReadPromise` 再 return，所以 miss / mismatch 的比對延遲仍會加到 primary response。
+- `Attack A · 撞 race`: worker 1 在 `vercel-primary-gcs-shadow` 做 write 時，worker 2 同時 read 同 key，實測回 primary 的新值、shadow 仍是舊值，然後記一筆 divergence。沒有 partial body，但 burn-in 期間會穩定看到舊 / 新 divergence noise。
+- `Attack B · 撞 quota`: 我連續模擬 GCS backend down 5 次。`vercel-primary-gcs-shadow` 5 次都回 Vercel 成功；`gcs-only` 5 次都直接 throw。這條跟 design 一致。
+- `Attack C · 撞 size`: 1MB JSON / 10MB JSON 都會被 stringify 後整包送下去；empty text body 會寫 0 bytes；`null` 會寫 `"null"`；`undefined` 會直接把 `undefined` 傳給底層 writer。前 3 個可預期，最後一個是 contract 缺口。
+- `Attack D · 撞 corruption`: shadow-read mismatch 時，如果 divergence JSONL append 正常，會確實落檔；但只要 append / mkdir 失敗，primary 已經讀到的結果不會被 return，整個 read 直接 throw。這不是 silently lost，而是直接把 request 打爆。
+
+### 我推薦下一動作
+- 有 critical + 多個 major。A 必須先修，再談 migration on VM。
+- 最少先修 4 件：`appendDivergenceMetric` failure 不能影響 read、shadow-read 不能阻塞 primary return、env/flag shape 要對齊 Phase 0/1 contract、migration script 要補最少的 dry-run / resume / idempotent tests 或至少加 single-run lock。
+
+### 我的 confidence
+- adapter correctness: 6/10
+- dispatcher correctness: 3/10
+- migration script safety: 2/10
+
+## Round 9 · Codex A · fix round · 2026-04-25 14:15
+
+- commit SHA: `0deba05e456f9fcaeb9dc8579beb9e47b0b3f7dc`
+- 1. divergence metric append 改成 background compare 內部 `try/catch`；log append / mkdir 失敗只 `warn`，primary read 不再被 cascade 打爆。
+- 2. shadow-read 改成 primary read 完就 return；secondary compare + divergence logging 用 fire-and-forget scheduler 跑背景，不再把 shadow latency 算進 response。
+- 3. runtime flag 改成讀 `STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC`、`STORAGE_PRIMARY_OPS_LAST_SUCCESS_PRIVATE`、`STORAGE_SHADOW_READ_OPS_LAST_SUCCESS`、`STORAGE_SHADOW_WRITE_OPS_LAST_SUCCESS`，`.env.example` / `.env.local.example` 也同步成 split contract。
+- 4. split flag 與 legacy compound flag 都改成 strict parse；非空 typo 直接 throw，只有 undefined / 空字串才 fallback 到 default `vercel`。
+- 5. `getLastSuccessScopeDescriptor('daily-snapshot', date)` 現在明確標成 `ops.daily_snapshot_marker` 並 route 到 `GCS_BUCKET_ARCHIVE`，不再默默落到 private bucket。
+- 6. migration script 開頭加 `.tmp/migration-state/last-success.lock` pid-file lock；同時跑第二個 instance 會直接 fail `migration already in progress`。
+- 7. `readLastSuccessMarker()` 不再吞 backend error；現在會 throw `code: 'STORAGE_OUTAGE'`，`api/daily-snapshot-status.js` 也改成回 500 + `STORAGE_OUTAGE`，不再把 outage 偽裝成 missing。
+- 8. 新增 `tests/scripts/migrate-last-success-to-gcs.test.js`，覆蓋 dry-run 不寫 GCS、live rerun idempotent skip、`--resume` 只接續 pending item，另外補一個 lock case。
+- 9. `writeLastSuccess()` 入口現在 guard `null` / `undefined` payload；直接 throw `InvalidPayload`，不再把 `null` 寫成字串或把 `undefined` 丟給底層 writer。
+- 10. store / GCS tests 補上 invalid flag、metric append failure、不阻塞 primary 的 slow shadow read、archive bucket routing、invalid payload，以及 `ifGenerationMatch` save precondition pass-through。
+- 對 B 的 confidence 回應：我預期下一輪 `dispatcher correctness` 從 `3/10` 升到 `8/10`，因為這輪把最危險的 contract drift 都收斂了: primary/secondary 不再互相阻塞、flag shape 已對齊 split contract、invalid config 會 fail-fast、caller 也能區分 missing 與 outage；`migration script safety` 我預期從 `2/10` 升到 `7/10`，因為現在至少有 single-run lock 和 resume/idempotent automated coverage。
+- B 沒抓但我自己另外發現的 bug：沒有新的未修復 bug；額外補到的是 `api/daily-snapshot-status` 的 500 path test，確認 route 端真的吃到 `STORAGE_OUTAGE`。

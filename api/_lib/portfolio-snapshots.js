@@ -256,13 +256,11 @@ export async function readPortfolioSnapshots(
       ? { fromDate, toDate }
       : getDefaultDateRange(now, timeZone)
 
-  const rawSnapshots = await readRawPortfolioSnapshots(portfolioId, range, {
+  const rawSnapshots = await loadRawSnapshots(portfolioId, {
     token,
     fetchImpl,
     listImpl,
     origin,
-    now,
-    timeZone,
   })
 
   const bounded = rawSnapshots.filter((snapshot) => snapshot.date <= range.toDate)

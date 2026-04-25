@@ -289,6 +289,56 @@ function classifyShadowRead(primaryResult, shadowResult) {
   }
 }
 
+function resolveListedItemKey(item) {
+  if (!item || typeof item !== 'object') return null
+
+  const candidate =
+    String(item.key || '').trim() ||
+    String(item.pathname || '').trim() ||
+    String(item.url || '').trim()
+
+  return candidate ? extractBlobPathname(candidate) : null
+}
+
+function normalizeListedKeys(items = []) {
+  return Array.from(
+    new Set(
+      (Array.isArray(items) ? items : [])
+        .map((item) => resolveListedItemKey(item))
+        .filter(Boolean)
+    )
+  ).sort((left, right) => left.localeCompare(right))
+}
+
+function classifyShadowList(primaryItems, shadowItems) {
+  const primaryKeys = normalizeListedKeys(primaryItems)
+  const shadowKeys = normalizeListedKeys(shadowItems)
+  const shadowKeySet = new Set(shadowKeys)
+  const primaryKeySet = new Set(primaryKeys)
+  const primaryOnlyKeys = primaryKeys.filter((key) => !shadowKeySet.has(key))
+  const shadowOnlyKeys = shadowKeys.filter((key) => !primaryKeySet.has(key))
+  const matches = primaryOnlyKeys.length === 0 && shadowOnlyKeys.length === 0
+
+  let result = 'match'
+  if (!matches) {
+    result =
+      shadowOnlyKeys.length > 0 && primaryOnlyKeys.length === 0
+        ? 'primary-missing-keys'
+        : primaryOnlyKeys.length > 0 && shadowOnlyKeys.length === 0
+          ? 'shadow-missing-keys'
+          : 'inventory-mismatch'
+  }
+
+  return {
+    matches,
+    result,
+    primaryCount: primaryKeys.length,
+    shadowCount: shadowKeys.length,
+    primaryOnlyKeys,
+    shadowOnlyKeys,
+  }
+}
+
 function normalizeDescriptor(descriptor, keyspaceId) {
   if (!descriptor || typeof descriptor !== 'object' || Array.isArray(descriptor)) {
     throw new Error('[singleton-store] descriptor must be an object')
@@ -720,8 +770,67 @@ export function createSingletonStore({
       }
 
       const policy = getPolicy(descriptor, options)
-      const { primary } = resolvePrimaryAndShadow(policy, 'read')
-      return listStorePrefix(primary, descriptor, options)
+      const { primary, shadow } = resolvePrimaryAndShadow(policy, 'read')
+      const logger = options.logger || console
+      const scheduleBackgroundTask = options.scheduleBackgroundTask || defaultScheduleBackgroundTask
+      const shadowListPromise = shadow
+        ? listStorePrefix(shadow, descriptor, options).catch((error) => ({
+            shadowListError: error,
+          }))
+        : null
+
+      const primaryItems = await listStorePrefix(primary, descriptor, options)
+      if (!shadowListPromise) return primaryItems
+
+      scheduleBackgroundTask(async () => {
+        try {
+          const shadowOutcome = await shadowListPromise
+          if (shadowOutcome?.shadowListError) {
+            logger.warn?.(
+              `[${loggerPrefix}] shadow list failed for ${descriptor.key} (${primary} primary -> ${shadow} shadow):`,
+              shadowOutcome.shadowListError
+            )
+            return
+          }
+
+          const comparison = classifyShadowList(primaryItems, shadowOutcome)
+          if (comparison.matches) return
+
+          try {
+            await appendStorageDivergenceMetric(
+              {
+                type: 'list-divergence',
+                keyspace: descriptor.keyspace,
+                key: descriptor.key,
+                primary,
+                shadow,
+                op: 'list',
+                result: comparison.result,
+                primaryCount: comparison.primaryCount,
+                shadowCount: comparison.shadowCount,
+                primaryOnlyKeys: comparison.primaryOnlyKeys,
+                shadowOnlyKeys: comparison.shadowOnlyKeys,
+                ...(descriptor.scope ? { scope: descriptor.scope } : {}),
+                ...(descriptor.date ? { date: descriptor.date } : {}),
+              },
+              options
+            )
+          } catch (error) {
+            logger.warn?.(
+              `[${loggerPrefix}] failed to append list divergence metric for ${descriptor.key}:`,
+              error
+            )
+          }
+
+          logger.warn?.(
+            `[${loggerPrefix}] shadow list divergence for ${descriptor.key}: ${primary}=${comparison.primaryCount} ${shadow}=${comparison.shadowCount} primaryOnly=${comparison.primaryOnlyKeys.length} shadowOnly=${comparison.shadowOnlyKeys.length}`
+          )
+        } catch (error) {
+          logger.warn?.(`[${loggerPrefix}] shadow list compare failed for ${descriptor.key}:`, error)
+        }
+      })
+
+      return primaryItems
     },
   }
 }

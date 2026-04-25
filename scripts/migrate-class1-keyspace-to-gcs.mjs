@@ -67,6 +67,7 @@ export const CLASS1_KEYSPACES = Object.freeze([
     matcher: /^snapshot\/benchmark\/\d{4}-\d{2}-\d{2}\.json$/,
   }),
 ])
+export const DEFAULT_BATCH_LOCK_PATH = path.resolve('.tmp/migration-state/class1-batch.lock')
 
 const KEYSPACE_ALIAS_MAP = new Map(
   CLASS1_KEYSPACES.flatMap((config) => [
@@ -151,6 +152,36 @@ function resolveRequestedKeyspaces(options, configs = CLASS1_KEYSPACES) {
     )
   }
   return [config]
+}
+
+function resolveBatchLockPath(options = {}) {
+  return options.batchLockPath || DEFAULT_BATCH_LOCK_PATH
+}
+
+async function acquireBatchMigrationLock(rawOptions = {}, deps = {}) {
+  try {
+    return await (deps.acquireMigrationLockImpl || acquireMigrationLock)({
+      lockPath: resolveBatchLockPath(rawOptions),
+      mkdirImpl: deps.mkdirImpl,
+      readFileImpl: deps.readFileImpl,
+      unlinkImpl: deps.unlinkImpl,
+      writeFileImpl: deps.writeFileImpl,
+      consoleImpl: deps.consoleImpl || console,
+      killImpl: deps.killImpl,
+      now: deps.now,
+    })
+  } catch (error) {
+    const message = String(error?.message || '')
+    if (/^migration already in progress(?:\s|$)/.test(message)) {
+      const pidMatch = message.match(/\(pid (\d+)\)$/)
+      throw new Error(
+        pidMatch
+          ? `migration batch already in progress (pid ${pidMatch[1]})`
+          : 'migration batch already in progress'
+      )
+    }
+    throw error
+  }
 }
 
 async function readManifest(
@@ -391,9 +422,14 @@ export async function runMigration(rawOptions = {}, deps = {}) {
   ])
   const keyspaces = resolveRequestedKeyspaces(options)
   const results = []
+  const releaseBatchLock = options.all ? await acquireBatchMigrationLock(rawOptions, deps) : null
 
-  for (const config of keyspaces) {
-    results.push(await runSingleKeyspaceMigration(config, rawOptions, deps))
+  try {
+    for (const config of keyspaces) {
+      results.push(await runSingleKeyspaceMigration(config, rawOptions, deps))
+    }
+  } finally {
+    await releaseBatchLock?.()
   }
 
   if (results.length === 1) return results[0]

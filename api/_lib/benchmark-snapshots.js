@@ -125,41 +125,21 @@ export async function writeBenchmarkSnapshot(
 
 export async function readBenchmarkSnapshots(
   { fromDate, toDate } = {},
-  {
-    token,
-    getImpl,
-    listImpl,
-    gcsReadImpl,
-    gcsListPrefixImpl,
-    storagePolicyOverride,
-    now = new Date(),
-    timeZone = DEFAULT_TIMEZONE,
-  } = {}
+  options = {}
 ) {
+  const { now = new Date(), timeZone = DEFAULT_TIMEZONE } = options
   const range =
     isIsoDate(fromDate) && isIsoDate(toDate)
       ? { fromDate, toDate }
       : getDefaultDateRange(now, timeZone)
 
-  const keys = await listBenchmarkSnapshotKeys({
-    token,
-    listImpl,
-    gcsListPrefixImpl,
-    storagePolicyOverride,
-  })
+  const keys = await listBenchmarkSnapshotKeys(options)
   const dates = keys
     .map((key) => /^snapshot\/benchmark\/(\d{4}-\d{2}-\d{2})\.json$/.exec(String(key))?.[1] || null)
     .filter((date) => date && date >= range.fromDate && date <= range.toDate)
 
   const snapshots = await Promise.all(
-    dates.map((date) =>
-      readBenchmarkSnapshot(date, {
-        token,
-        getImpl,
-        gcsReadImpl,
-        storagePolicyOverride,
-      })
-    )
+    dates.map((date) => readBenchmarkSnapshot(date, options))
   )
 
   return snapshots

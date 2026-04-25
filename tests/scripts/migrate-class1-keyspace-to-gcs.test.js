@@ -33,6 +33,16 @@ function createConsoleSpy() {
   }
 }
 
+function createDeferred() {
+  let resolve
+  let reject
+  const promise = new Promise((nextResolve, nextReject) => {
+    resolve = nextResolve
+    reject = nextReject
+  })
+  return { promise, resolve, reject }
+}
+
 function createDestinationStore(initialEntries = {}) {
   const store = new Map(
     Object.entries(initialEntries).map(([key, value]) => [
@@ -342,5 +352,70 @@ describe('scripts/migrate-class1-keyspace-to-gcs.mjs', () => {
 
     expect(valuationState.items).toHaveLength(1)
     expect(benchmarkState.items).toHaveLength(1)
+  })
+
+  it('rejects a second concurrent --all runner before any keyspace work starts', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'class1-migrate-batch-lock-'))
+    process.chdir(tempDir)
+
+    const runner1Console = createConsoleSpy()
+    const runner2Console = createConsoleSpy()
+    const firstItemStarted = createDeferred()
+    const releaseRunner1 = createDeferred()
+    const runner2LoadKeyInventoryImpl = vi.fn()
+    let holdingFirstItem = true
+
+    const runner1Promise = runMigration(
+      {
+        all: true,
+        dryRun: true,
+      },
+      {
+        consoleImpl: runner1Console,
+        loadKeyInventoryImpl: vi.fn(async (config) => [
+          {
+            key:
+              config.access === 'public'
+                ? `${config.cliKey}/latest.json`
+                : `${config.cliKey}/sample.json`,
+            access: config.access,
+            bucketName: config.access === 'public' ? 'jcv-dev-public' : 'jcv-dev-private',
+          },
+        ]),
+        readSourceImpl: vi.fn(async () => {
+          if (holdingFirstItem) {
+            holdingFirstItem = false
+            firstItemStarted.resolve()
+            await releaseRunner1.promise
+          }
+          return createSourceRecord('{"ok":true}')
+        }),
+        readDestinationImpl: vi.fn(async () => null),
+        gcsWriteImpl: vi.fn(async () => undefined),
+      }
+    )
+
+    await firstItemStarted.promise
+
+    await expect(
+      runMigration(
+        {
+          all: true,
+          dryRun: true,
+        },
+        {
+          consoleImpl: runner2Console,
+          loadKeyInventoryImpl: runner2LoadKeyInventoryImpl,
+          readSourceImpl: vi.fn(async () => createSourceRecord('{"ok":true}')),
+          readDestinationImpl: vi.fn(async () => null),
+          gcsWriteImpl: vi.fn(async () => undefined),
+        }
+      )
+    ).rejects.toThrow(/migration batch already in progress/)
+
+    expect(runner2LoadKeyInventoryImpl).not.toHaveBeenCalled()
+
+    releaseRunner1.resolve()
+    await runner1Promise
   })
 })

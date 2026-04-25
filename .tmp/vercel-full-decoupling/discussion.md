@@ -1064,3 +1064,94 @@ A3 · serialize drift: worker 跟 migration 不是同一條 path。worker parse 
   另外補了一個 case：就算 retry 前 destination 已經和 current source 等價，也仍走 force-write path，最後標 `done`，不會退化成 `skipped-existing-match`。
 - 驗證：`npm run test:run -- tests/scripts/migrate-snapshot-research-to-gcs.test.js --run` → pass（1 file / 7 tests）
 - 信心預測：migration `6/10 -> 8/10`
+
+---
+
+## Round 32 · Claude · Step 2d VM deployment + framework verification · 2026-04-25 20:50
+
+### A↔B QA 軌跡
+
+| Round | 角色 | 結果 |
+|------|------|------|
+| 27 | A 寫 | commit `7ff3161` · prefix-store + snapshot.research wrapper + deleteMany |
+| 28 | B QA | 1 critical (migration race) + 2 major (cursor / list shadow same-key) + 1 minor |
+| 29 | A 修 | commit `8adaceb`（Claude 補 commit）· 選 C + cursor docs + sampling read |
+| 30 | B 驗 | 3/4 ✅ · migration race 只修一半（retry 卡 skipped-existing-present） |
+| 31 | A 修 2 | commit `7f5b001` + `a974b04` · stale-source-changed retry 走 force-write |
+
+### VM deployment (Round 32 本輪)
+
+1. push `vercel-decouple-phase1` 到 origin（`94f5992 → a974b04`）
+2. patch 4 commit 套 jcv-dev (`9eacb75..c1cb4de`)
+3. npm install · 沒新 dep
+4. env 補 3 個 snapshot.research：`STORAGE_PRIMARY=vercel`、`SHADOW_READ=true`、`SHADOW_WRITE=true`
+5. PM2 restart with --update-env
+6. API regression 5 endpoint HTTP code 完全一致
+
+### Framework 驗證（worker 還沒寫 source · 純 framework smoke test）
+
+- pre-flight 檢查 `STORAGE_SHADOW_WRITE_SNAPSHOT_RESEARCH=true` 已啟（A Round 29 critical fix）
+- empty source migration `totalItems=0`，全 status 0，**沒 fail-fast**（A Round 28→29 修了 morning-note 之前的 bug）
+- dry-run / actual 兩次都 clean exit
+
+### 信心評分（Round 30 終值）
+
+| 元件 | 起始 | 終 |
+|------|------|------|
+| prefix-store | 5 | **7/10** |
+| snapshot-research wrapper | 5 | **7/10** |
+| deleteMany | 6 | **7/10** |
+| migration | 4 | **8/10**（Round 31 fix 後 self-heal 收斂） |
+
+### 沒做（明確 out-of-scope）
+
+- ❌ snapshot/brain/* 還沒處理（Class 4 第 2 個）
+- ❌ snapshot/portfolio-state/* 還沒處理（Class 4 第 3 個）
+- ❌ Class 5 hybrid (brain/research/telemetry) 還沒做
+- ❌ Class 3 RMW append log（daily-snapshot/morning-note log）還沒做
+- ❌ 真實 source data 還沒 migrate（需 snapshot worker 跑過 cron 一輪才有 Vercel 資料）
+
+### D burn-in 觀察
+
+jcv-dev shadow flag 已 on 9 個 keyspace 7 小時 + snapshot.research 剛開（共 10 keyspace）。**`logs/storage-divergence-2026-04.jsonl` 仍空**——因為 jcv-dev 沒生產流量，shadow path 沒被執行。
+
+D burn-in 在 jcv-dev 是「smoke test only」（證明 shadow flag 開了沒讓 server 爆），不算真 burn-in。真 burn-in 要：
+- 接到 production VM `bigstock` 切 shadow flag
+- 或 jcv-dev 加 synthetic load loop
+- 或 systemd 把 cron timer 移過來跑（會打到 storage path）
+
+### 累積進度（Phase 1 Step 2 整輪）
+
+| Step | Class | Keyspace | VM 狀態 |
+|------|-------|----------|---------|
+| 2a | 1 last-writer-wins | last-success (×2) | ✅ migrated 4 obj |
+| 2b | 2 CAS | tracked-stocks | ✅ migrated 114 obj |
+| 2c | 1 last-writer-wins | valuation/target-prices/daily-events/news-feed/analyst-reports + 2 empty | ✅ migrated 56 obj |
+| 2d | 4 prefix scan | snapshot.research | ✅ framework deployed · 0 obj (source empty) |
+
+**累計 GCS 物件：174 個**（jcv-dev）。
+
+### 留給用戶決定
+
+下一步候選：
+
+(B') 接 Class 4 第 2/3 個（`snapshot.brain` + `snapshot.portfolio_state`）—複用 prefix-store · 預期 1 輪 A→B QA
+(C) 接 Class 5 hybrid（brain/research/telemetry）—最難
+(D') 把 systemd cron timer 移到 jcv-dev 跑 · 真正觸發 shadow path 看 divergence
+(E) push 跟 worktree sync 補（main worktree 仍有別人的 src/hooks/* 未提交變更）
+
+## Round 33 · Codex strategy 3 · 2026-04-26 05:00
+
+1. 順序: D' → B' → C → E；先拿真 shadow data，再擴 Class 4，最後收尾 log。
+2. 反駁 Claude 哪一條: 反駁 B' 先做；prefix-store 還沒被真觸發驗過。
+3. 下一個 Codex 派工 brief 內容（一句話 · Claude 直接拿去派）: 只搬最小 cron/worker 到 jcv-dev 觸發 shadow，記 divergence/latency/error 樣本；未驗前暫停新增 keyspace。
+4. 信心: 8/10
+
+## Round 34 · Codex A · Class 4 brain + portfolio-state · 2026-04-25 05:17
+
+- commit SHA(s): `63054a5`
+- migration 決策：抽成 `scripts/migrate-prefix-keyspace-to-gcs.mjs` generic，保留 `scripts/migrate-snapshot-research-to-gcs.mjs` shim；理由是 `snapshot.research` / `snapshot.brain` / `snapshot.portfolio_state` 都是 private prefix-scan，同一套 lock + verify + stale-source-changed convergence hardening 不該再複製三份。
+- 本輪完成：新增 `api/_lib/snapshot-brain-store.js`、`api/_lib/snapshot-portfolio-state-store.js`；`snapshot-worker.mjs` 的 list/write/delete 改走 wrapper；`daily-snapshot.js` prefix helper 委派 wrapper；`.env.example` 與 `.env.local.example` 補 6 個 cutover vars。
+- 驗證：`npm run typecheck`、`npm run lint`、`npm run test:run -- tests/api/snapshot-brain-store.test.js tests/api/snapshot-portfolio-state-store.test.js tests/scripts/migrate-prefix-keyspace-to-gcs.test.js --run` 全過；另外補跑 `tests/workers/snapshot-worker.test.js` 也過。
+- 小坑：`discussion.md` 在 worktree 內已帶 Round 32/33 未提交 diff，所以 code 先獨立 commit；另外 `snapshot-worker` purge 以前對 brain/portfolio-state 直接走 raw Blob delete，切 wrapper 後 test 需要改成逐 key delete expectation。
+- 給 B QA 的 hint：最值得盯的是 generic migration 的 keyPattern 邊界，尤其 `snapshot.brain` 的 `analysis-history/...` nested path 與 `snapshot.portfolio_state/<portfolio>/...` inventory filter；其次看 `snapshot-worker.mjs` purge / write dispatch 是否完全覆蓋三個 prefix-store keyspace。

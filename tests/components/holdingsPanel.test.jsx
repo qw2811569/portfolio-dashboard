@@ -99,7 +99,7 @@ describe('components/HoldingsPanel', () => {
     })
 
     render(<HoldingsPanel {...buildProps({ activePortfolioId: 'me' })} />)
-    expect(screen.getByTestId('tracked-stocks-sync-badge')).toHaveTextContent('last-synced')
+    expect(screen.getByTestId('tracked-stocks-sync-badge')).toHaveTextContent('上次同步')
   })
 
   it('renders target-price data error when dossier carries a target fetch failure', () => {

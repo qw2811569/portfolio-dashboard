@@ -132,7 +132,7 @@ describe('components/DailyReportPanel viewMode', () => {
     fireEvent.click(screen.getByTestId('daily-diff-toggle'))
 
     expect(screen.getByTestId('daily-diff-pane')).toHaveTextContent(
-      't0/t1 差異為 aggregate · 不顯示個股細節'
+      't0/t1 只顯示組合層級差異，不展開個股細節'
     )
     expect(screen.queryByText('AI 總結')).not.toBeInTheDocument()
   })

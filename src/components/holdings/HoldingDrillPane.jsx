@@ -150,7 +150,7 @@ function buildTargetSnapshot(dossier) {
   if (thesisTarget != null) {
     return {
       kind: 'thesis',
-      label: '原始 thesis 目標',
+      label: '原始買進目標',
       firm: '自己的交易計畫',
       target: thesisTarget,
       reportsCount: null,
@@ -373,7 +373,7 @@ function ThesisCard({ dossier }) {
         </div>
       ) : statement ? (
         <SoftMessage style={{ marginTop: 8 }}>
-          pillar 追蹤點還沒拆開，先用一句 thesis 扛著看。
+          買進理由還沒拆成追蹤點，先保留一句核心假設。
         </SoftMessage>
       ) : null}
     </div>
@@ -554,7 +554,7 @@ function TargetCard({ holding, dossier }) {
       <div style={panelCard}>
         <div style={eyebrow}>目標與空間</div>
         <SoftMessage>
-          {isEmerging ? '興櫃無券商覆蓋' : '券商目標價還沒收齊，先把 thesis 與估值帶著看。'}
+          {isEmerging ? '興櫃無券商覆蓋' : '券商目標價還沒收齊，先把買進理由與估值一起看。'}
         </SoftMessage>
       </div>
     )
@@ -574,7 +574,7 @@ function TargetCard({ holding, dossier }) {
           : 'warning'
   const sourceLabel =
     target.kind === 'thesis'
-      ? '原始 thesis'
+      ? '原始買進假設'
       : target.firm || resolveTargetSourceLabel(dossier?.targetSource)
 
   return (
@@ -673,7 +673,7 @@ function FreshnessCard({ dossier, holding }) {
           <div style={{ color: C.textMute }}>財報更新 · {fundamentalsUpdatedAt}</div>
         ) : null}
         {thesisUpdatedAt ? (
-          <div style={{ color: C.textMute }}>thesis 更新 · {thesisUpdatedAt}</div>
+          <div style={{ color: C.textMute }}>買進理由更新 · {thesisUpdatedAt}</div>
         ) : null}
         {holdingType ? <div style={{ color: C.textMute }}>部位類型 · {holdingType}</div> : null}
         {staleCopy ? <SoftMessage style={{ marginTop: 4 }}>{staleCopy}</SoftMessage> : null}
@@ -703,12 +703,12 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
 
   return (
     <div style={{ ...panelCard, minHeight: 0 }}>
-      <div style={eyebrow}>持股 aggregate status</div>
+      <div style={eyebrow}>持股整體狀態</div>
       <div style={{ color: C.textSec, fontSize: 12, lineHeight: 1.7, marginBottom: 8 }}>
-        {complianceNote || 'insider-compressed 僅顯示組合層級摘要。'}
+        {complianceNote || '合規壓縮模式下只顯示組合層級摘要。'}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-        {pillars.length > 0 ? <TonePill tone="muted">pillar {pillars.length} 項</TonePill> : null}
+        {pillars.length > 0 ? <TonePill tone="muted">追蹤點 {pillars.length} 項</TonePill> : null}
         {intactCount > 0 ? <TonePill tone="positive">維持 {intactCount}</TonePill> : null}
         {weakenedCount > 0 ? <TonePill tone="warning">轉弱 {weakenedCount}</TonePill> : null}
         {brokenCount > 0 ? <TonePill tone="negative">失真 {brokenCount}</TonePill> : null}
@@ -732,9 +732,7 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
         />
       </div>
       {!pillars.length && !holdingType ? (
-        <SoftMessage style={{ marginTop: 8 }}>
-          這檔目前只保留資料新鮮度與 aggregate 追蹤狀態。
-        </SoftMessage>
+        <SoftMessage style={{ marginTop: 8 }}>這檔目前只保留資料新鮮度與整體追蹤狀態。</SoftMessage>
       ) : null}
     </div>
   )

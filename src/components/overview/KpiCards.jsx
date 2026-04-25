@@ -86,9 +86,9 @@ function buildAnnualizedCard(holdings) {
 function buildMddUnavailableCard() {
   return {
     label: '最大回撤',
-    value: '需要歷史 snapshot',
+    value: '需要歷史快照',
     variant: 'neutral',
-    tooltip: '尚未找到可查詢的投組',
+    tooltip: '目前還沒有可查的歷史快照',
     disabled: true,
   }
 }
@@ -98,20 +98,20 @@ function buildLoadingMddCard() {
     label: '最大回撤',
     value: '載入中…',
     variant: 'neutral',
-    tooltip: '正在讀取歷史 snapshot',
+    tooltip: '正在讀取歷史快照',
     disabled: false,
     loading: true,
   }
 }
 
-function buildErrorMddCard(error, retry) {
+function buildErrorMddCard(_error, retry) {
   return {
     label: '最大回撤',
     value: '無法載入',
     variant: 'neutral',
-    tooltip: error?.message || '讀取歷史 snapshot 失敗',
+    tooltip: '歷史快照暫時取不到，稍後再試。',
     disabled: false,
-    actionLabel: 'Retry',
+    actionLabel: '再試一次',
     onAction: retry,
   }
 }
@@ -121,9 +121,9 @@ function buildInsufficientMddCard(data) {
 
   return {
     label: '最大回撤',
-    value: '需要歷史 snapshot',
+    value: '需要歷史快照',
     variant: 'neutral',
-    tooltip: `已累積 ${snapshotDays}/7 天 snapshot，至少 7 天才顯示最大回撤`,
+    tooltip: `已累積 ${snapshotDays}/7 天快照，至少 7 天才顯示最大回撤`,
     disabled: true,
   }
 }

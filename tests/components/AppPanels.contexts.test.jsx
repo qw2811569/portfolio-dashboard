@@ -1013,8 +1013,8 @@ describe('components/AppPanels context wiring', () => {
     expect(screen.getByText('明日立即執行')).toBeInTheDocument()
     expect(screen.getByText(/2330 站回 5 日線再補回 1\/3/)).toBeInTheDocument()
     expect(screen.getByText('週報匯出內容')).toBeInTheDocument()
-    expect(screen.getByText(/Weekly Narrative/i)).toBeInTheDocument()
-    expect(screen.getByText(/insider compliance notes/i)).toBeInTheDocument()
+    expect(screen.getByText(/本週敘事/)).toBeInTheDocument()
+    expect(screen.getByText(/合規備註/)).toBeInTheDocument()
   })
 
   it('hides the same-day diff card when only one report version exists', () => {

@@ -4,6 +4,7 @@ import { resolveStaleBadgeResourceState } from '../../lib/staleBadge.js'
 
 const BADGE_META = {
   fresh: {
+    label: '最新',
     color: C.textSec,
     background: C.upBg,
     border: alpha(C.up, '24'),
@@ -11,6 +12,7 @@ const BADGE_META = {
     title: '資料狀態良好',
   },
   stale: {
+    label: '偏舊',
     color: C.textSec,
     background: alpha(C.amber, '16'),
     border: alpha(C.amber, '28'),
@@ -18,12 +20,14 @@ const BADGE_META = {
     title: '資料需要更新',
   },
   missing: {
+    label: '待補',
     color: C.textMute,
     background: alpha(C.textMute, '12'),
     border: alpha(C.textMute, '20'),
     title: '資料缺失',
   },
   failed: {
+    label: '失敗',
     color: C.down,
     background: C.downBg,
     border: alpha(C.down, '28'),
@@ -109,7 +113,7 @@ export function StaleBadge({
 
   const meta = BADGE_META[resolvedStatus] || BADGE_META.missing
   const badgeText =
-    label && resolvedText ? `${label} · ${resolvedText}` : label || resolvedText || resolvedStatus
+    label && resolvedText ? `${label} · ${resolvedText}` : label || resolvedText || meta.label
 
   return h(
     'span',
@@ -127,7 +131,7 @@ export function StaleBadge({
         fontSize: 11,
         fontWeight: 600,
         lineHeight: 1.2,
-        textTransform: label || resolvedText ? 'none' : 'lowercase',
+        textTransform: 'none',
         ...style,
       },
       ...restProps,

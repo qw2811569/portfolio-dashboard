@@ -130,8 +130,8 @@ export function resolveTrackedStocksSyncBadge(
     )
     return {
       status: 'failed',
-      label: lastAttemptLabel ? `sync failed ${lastAttemptLabel}` : 'sync failed',
-      title: normalized.lastError || 'Tracked stocks sync failed',
+      label: lastAttemptLabel ? `同步失敗 ${lastAttemptLabel}` : '同步失敗',
+      title: normalized.lastError || '追蹤清單同步失敗',
     }
   }
 
@@ -140,15 +140,15 @@ export function resolveTrackedStocksSyncBadge(
     if (lastAttemptLabel) {
       return {
         status: 'stale',
-        label: `sync pending ${lastAttemptLabel}`,
-        title: 'Tracked stocks sync pending',
+        label: `同步中 ${lastAttemptLabel}`,
+        title: '追蹤清單同步中',
       }
     }
 
     return {
       status: 'missing',
-      label: 'last-synced --',
-      title: 'Tracked stocks has not synced yet',
+      label: '尚未同步',
+      title: '追蹤清單尚未同步',
     }
   }
 
@@ -158,14 +158,14 @@ export function resolveTrackedStocksSyncBadge(
   if (ageMs > staleMs) {
     return {
       status: 'stale',
-      label: `last-synced ${lastSyncedLabel}`,
-      title: 'Tracked stocks sync is stale',
+      label: `上次同步 ${lastSyncedLabel}`,
+      title: '追蹤清單同步已偏舊',
     }
   }
 
   return {
     status: 'fresh',
-    label: `last-synced ${lastSyncedLabel}`,
-    title: 'Tracked stocks synced recently',
+    label: `已同步 ${lastSyncedLabel}`,
+    title: '追蹤清單已完成同步',
   }
 }

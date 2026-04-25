@@ -53,6 +53,6 @@ describe('hooks/useTrackedStocksSyncStatus', () => {
       totalTracked: 1,
     })
     expect(result.current.badge?.status).toBe('fresh')
-    expect(result.current.badge?.label).toContain('last-synced')
+    expect(result.current.badge?.label).toContain('已同步')
   })
 })

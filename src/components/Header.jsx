@@ -846,7 +846,7 @@ export default function Header(props) {
                     h(
                       'span',
                       { style: { fontSize: 11, color: C.textMute, marginLeft: 4 } },
-                      'owner'
+                      '本人'
                     ),
                   portfolio.id === activePortfolioId &&
                     h('span', { style: { fontSize: 11, color: C.lavender, marginLeft: 4 } }, '目前')

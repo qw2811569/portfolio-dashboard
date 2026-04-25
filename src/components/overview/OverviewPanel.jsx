@@ -347,7 +347,7 @@ export function PortfolioSummaryList({ portfolios, activePortfolioId, onSwitch }
                 { style: { fontSize: 12, fontWeight: 600, color: C.text } },
                 displayPortfolioName(portfolio),
                 portfolio.id === 'me' &&
-                  h('span', { style: { fontSize: 11, color: C.textMute, marginLeft: 4 } }, 'owner')
+                  h('span', { style: { fontSize: 11, color: C.textMute, marginLeft: 4 } }, '本人')
               ),
               h(
                 'div',

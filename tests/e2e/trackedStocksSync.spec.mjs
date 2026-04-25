@@ -97,5 +97,5 @@ test('trade route syncs tracked stocks into blob and shows last-synced badge', a
     waitUntil: 'domcontentloaded',
     timeout: 120000,
   })
-  await expect(page.getByTestId('tracked-stocks-sync-badge')).toContainText('last-synced')
+  await expect(page.getByTestId('tracked-stocks-sync-badge')).toContainText('已同步')
 })

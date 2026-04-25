@@ -775,7 +775,7 @@ export function WeeklyExportNarrativeCard({ report }) {
     h(
       'div',
       { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
-      '從 header 複製到 clipboard 的週報素材，現在會附帶 Weekly Narrative；若組合處於 insider 合規模式，也會自動加上 insider compliance notes。'
+      '從上方複製週報素材時，會一併附上「本週敘事」；若組合處於合規壓縮模式，也會自動補上合規備註。'
     )
   )
 }
@@ -936,8 +936,8 @@ export function SameDayDiffCard({ report, analysisHistory = [], viewMode = 'reta
                 },
               },
               diff.changeCount > 0
-                ? 't0/t1 差異為 aggregate · 不顯示個股細節'
-                : '本日 t0 與 t1 無實質差異 · t0/t1 差異為 aggregate · 不顯示個股細節'
+                ? 't0/t1 只顯示組合層級差異，不展開個股細節'
+                : '本日 t0 與 t1 無實質差異，且只保留組合層級說明'
             )
           : diff.changes.length > 0
             ? h(
@@ -1134,7 +1134,7 @@ export function HoldingsChanges({ changes, viewMode = 'retail' }) {
     const summary = summarizeDailyChanges(changes)
     return h(AggregateDailySummary, {
       title: '持倉今日變化',
-      subtitle: 'insider-compressed 僅保留組合層級漲跌摘要。',
+      subtitle: '合規壓縮模式下只保留組合層級漲跌摘要。',
       ...summary,
       totalTodayPnl: summary.totalTodayPnl,
     })
@@ -1870,7 +1870,7 @@ export function MorningNoteSection({ morningNote, viewMode = 'retail' }) {
           : h(AggregateDailySummary, {
               compact: true,
               title: '持倉概況',
-              subtitle: 'insider-compressed 僅保留 aggregate status。',
+              subtitle: '合規壓縮模式下只保留組合層級狀態。',
               ...summarizeHoldingStatus(sections.holdingStatus),
             })
       ),

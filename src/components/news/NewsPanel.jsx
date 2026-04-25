@@ -119,10 +119,10 @@ function buildPreviewNewsItems(holdingCodes = []) {
 function buildTrendSummary(items) {
   const positives = items.filter((item) => inferImpact(item) === 'positive').length
   const negatives = items.filter((item) => inferImpact(item) === 'negative').length
-  if (positives > negatives) return '正向敘事集中在 AI 供應鏈，短線偏向接單與出貨能見度提升。'
+  if (positives > negatives) return '正向訊號集中在 AI 供應鏈，短線偏向接單與出貨能見度提升。'
   if (negatives > positives)
     return '負面訊號來自短期遞延與報價整理，今晚重點是確認是否只是節奏放慢。'
-  return '目前 headline 偏整理盤語氣，多數新聞更適合進 Daily 做脈絡判讀，而不是直接升格成事件。'
+  return '目前多數新聞偏整理盤語氣，更適合進 Daily 做脈絡判讀，而不是直接在這頁升格成事件。'
 }
 
 function buildAggregateNewsClusters(items = []) {
@@ -146,9 +146,9 @@ function buildAggregateNewsClusters(items = []) {
 
   return [
     relatedStockCount > 0 ? `${relatedStockCount} 檔持股訊號已壓縮為組合層級觀察。` : null,
-    impactCounts.positive > 0 ? `利多 headline ${impactCounts.positive} 則` : null,
-    impactCounts.negative > 0 ? `利空 headline ${impactCounts.negative} 則` : null,
-    impactCounts.neutral > 0 ? `中性 headline ${impactCounts.neutral} 則` : null,
+    impactCounts.positive > 0 ? `利多消息 ${impactCounts.positive} 則` : null,
+    impactCounts.negative > 0 ? `利空消息 ${impactCounts.negative} 則` : null,
+    impactCounts.neutral > 0 ? `中性消息 ${impactCounts.neutral} 則` : null,
     leadingSource ? `主來源 ${leadingSource[0]} · ${leadingSource[1]} 則` : null,
   ].filter(Boolean)
 }
@@ -685,10 +685,10 @@ export function NewsFeedSection({
         title: showTickerSideNotes
           ? isMobile
             ? '持股篩選'
-            : '依 ticker'
+            : '依持股'
           : isMobile
             ? '組合摘要'
-            : 'Aggregate clusters',
+            : '組合摘要',
         activeValue: showTickerSideNotes ? tickerFilter : `${aggregateClusters.length} 個群組`,
         isMobile,
       }),
@@ -817,7 +817,7 @@ export function NewsFeedSection({
       'div',
       { 'data-testid': 'news-filter-group-impact' },
       renderFilterSectionHeading({
-        title: isMobile ? '影響篩選' : '依 impact',
+        title: isMobile ? '影響篩選' : '依影響',
         activeValue: impactFilter,
         isMobile,
       }),
@@ -884,7 +884,7 @@ export function NewsFeedSection({
                 marginBottom: isMobile ? 2 : 4,
               },
             },
-            isMobile ? '閱讀狀態' : 'Notice'
+            '閱讀狀態'
           ),
           isMobile &&
             h(
@@ -1004,11 +1004,7 @@ export function NewsFeedSection({
           h(
             'div',
             null,
-            h(
-              'div',
-              { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
-              '新聞聚合 / News preview'
-            ),
+            h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, '新聞脈絡'),
             h(
               'div',
               {
@@ -1035,7 +1031,7 @@ export function NewsFeedSection({
                   fontFamily: TOKENS.fontBody,
                 },
               },
-              'Google News RSS 與 FinMind headline 先進來，先標已看、先聚合重點，再 handoff 給 Daily 判讀影響，不在這頁直接產事件。'
+              'Google News RSS 與 FinMind 新聞會先進來，先標已看、先整理重點，再交給 Daily 判讀，不在這頁直接升格成事件。'
             ),
             h(
               'div',
@@ -1056,13 +1052,13 @@ export function NewsFeedSection({
                       color: TOKENS.ink,
                     }),
               }),
-              renderChip(`Ticker filter: ${holdingCodes.length || 'Auto'}`, {
+              renderChip(`持股範圍：${holdingCodes.length || '自動'} 檔`, {
                 background: alpha(TOKENS.bone, 'f0'),
                 border: `1px solid ${TOKENS.boneDeep}`,
                 color: TOKENS.charcoal,
               }),
               isMobile &&
-                renderChip(`today ${visibleItemCount}`, {
+                renderChip(`今日 ${visibleItemCount} 則`, {
                   background: alpha(TOKENS.charcoal, '06'),
                   border: `1px solid ${TOKENS.boneDeep}`,
                   color: TOKENS.iron,
@@ -1097,7 +1093,7 @@ export function NewsFeedSection({
                     marginBottom: 4,
                   },
                 },
-                'today'
+                '今日'
               ),
               h(
                 'div',
@@ -1121,9 +1117,9 @@ export function NewsFeedSection({
                     fontFamily: TOKENS.fontBody,
                   },
                 },
-                '新增新聞數 N'
+                '目前相關新聞'
               )
-          )
+            )
         )
       ),
       h(
@@ -1200,7 +1196,7 @@ export function NewsFeedSection({
                   h(
                     'div',
                     { style: { ...lbl, color: TOKENS.iron, marginBottom: 0 } },
-                    'Filter / Side notes'
+                    '篩選與側欄'
                   ),
                   h(
                     'div',
@@ -1286,7 +1282,7 @@ export function NewsFeedSection({
                           gap: 6,
                         },
                       },
-                      h('span', null, showFilterBody ? '收起 filter' : '看篩選'),
+                      h('span', null, showFilterBody ? '收起篩選' : '看篩選'),
                       h(
                         'span',
                         { 'aria-hidden': 'true', style: { fontSize: 11, color: TOKENS.iron } },
@@ -1297,11 +1293,7 @@ export function NewsFeedSection({
                 )
               )
             )
-          : h(
-              'div',
-              { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } },
-              'Filter / Side notes'
-            ),
+          : h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, '篩選與側欄'),
         showFilterBody ? sideNotesBody : null
       )
     )
@@ -1356,7 +1348,7 @@ export function NewsAnalysisPanel({
               fontVariantNumeric: 'tabular-nums',
             },
           },
-          '新聞聚合 / News'
+          '新聞脈絡'
         ),
         h(
           'div',
@@ -1383,7 +1375,7 @@ export function NewsAnalysisPanel({
               fontFamily: TOKENS.fontBody,
             },
           },
-          '這頁先聚合 headline，再 handoff 給 Daily 判讀影響。加入持股後，ticker filter、impact tag 與已看機制會一起啟用。'
+          '這頁先整理新聞脈絡，再交給 Daily 判讀影響。加入持股後，依持股篩選、影響標記與已看機制都會一起啟用。'
         ),
         h(
           Button,

@@ -38,7 +38,7 @@ describe('components/overview/KpiCards.jsx', () => {
 
     render(<KpiCards portfolios={buildPortfolios()} />)
 
-    expect(screen.getByText('正在讀取歷史 snapshot')).toBeInTheDocument()
+    expect(screen.getByText('正在讀取歷史快照')).toBeInTheDocument()
     expect(screen.getByLabelText('最大回撤-loading')).toBeInTheDocument()
   })
 
@@ -59,8 +59,8 @@ describe('components/overview/KpiCards.jsx', () => {
 
     render(<KpiCards portfolios={buildPortfolios()} />)
 
-    await screen.findByText('需要歷史 snapshot')
-    expect(screen.getByText('已累積 3/7 天 snapshot，至少 7 天才顯示最大回撤')).toBeInTheDocument()
+    await screen.findByText('需要歷史快照')
+    expect(screen.getByText('已累積 3/7 天快照，至少 7 天才顯示最大回撤')).toBeInTheDocument()
   })
 
   it('renders MDD value and peak/trough hover details when data exists', async () => {
@@ -108,11 +108,11 @@ describe('components/overview/KpiCards.jsx', () => {
     render(<KpiCards portfolios={buildPortfolios()} />)
 
     await screen.findByText('無法載入')
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    fireEvent.click(screen.getByRole('button', { name: '再試一次' }))
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(2)
     })
-    expect(screen.getByText('已累積 4/7 天 snapshot，至少 7 天才顯示最大回撤')).toBeInTheDocument()
+    expect(screen.getByText('已累積 4/7 天快照，至少 7 天才顯示最大回撤')).toBeInTheDocument()
   })
 })

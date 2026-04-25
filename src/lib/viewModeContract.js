@@ -106,7 +106,7 @@ export function isViewModeEnabled(ruleName, viewMode) {
 export function getViewModeComplianceMessage(viewMode, portfolioLabel = '') {
   if (!isViewModeEnabled('showComplianceNote', viewMode)) return ''
   const label = String(portfolioLabel || '').trim()
-  return `${label || '此 insider 組合'} 合規模式 · 僅顯示 aggregate 摘要，不顯示個股細節。`
+  return `${label || '這組'} 目前是合規壓縮檢視 · 只保留組合層級重點，不展開個股細節。`
 }
 
 export { VIEW_MODES }

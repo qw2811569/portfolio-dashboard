@@ -26,12 +26,13 @@ function normalizeComparePortfolio(portfolio) {
   if (portfolio.todayHasPriceData === false) return null
 
   const todayRetPct = toFiniteNumber(portfolio.todayRetPct)
-  if (todayRetPct == null) return null
+  const hasTodayData = todayRetPct != null
 
   return {
     ...portfolio,
     label: displayPortfolioName(portfolio),
-    todayRetPct,
+    todayRetPct: hasTodayData ? todayRetPct : 0,
+    hasTodayData,
     todayTotalPnl: toFiniteNumber(portfolio.todayTotalPnl, 0),
     todayTopContributor:
       portfolio.todayTopContributor && typeof portfolio.todayTopContributor === 'object'
@@ -115,20 +116,36 @@ export function buildDashboardCompareStrip(
   const [primary, secondary] = pickComparePair(portfolios, activePortfolioId)
   if (!primary || !secondary) return null
 
+  const bothLoaded = primary.hasTodayData && secondary.hasTodayData
+  const someLoaded = primary.hasTodayData || secondary.hasTodayData
+  if (!someLoaded) return null
+
   const deltaPp = primary.todayRetPct - secondary.todayRetPct
-  const insight = buildCompareInsight(primary, secondary, deltaPp)
+  const insight = bothLoaded
+    ? buildCompareInsight(primary, secondary, deltaPp)
+    : { tone: 'calm', text: '今日對比資料還在更新 · 補齊後會自動切換口徑' }
+
+  const formatPortfolioPct = (portfolio) =>
+    portfolio.hasTodayData ? formatSignedPercent(portfolio.todayRetPct) : '資料補齊中'
+  const summaryText = bothLoaded
+    ? `${primary.label} ${formatPortfolioPct(primary)} · ${secondary.label} ${formatPortfolioPct(secondary)} · 今日差距 ${formatSignedDeltaPp(deltaPp)}`
+    : `${primary.label} ${formatPortfolioPct(primary)} · ${secondary.label} ${formatPortfolioPct(secondary)}`
 
   return {
     primary,
     secondary,
-    deltaPp,
-    deltaText: formatSignedDeltaPp(deltaPp),
-    summaryText: `${primary.label} ${formatSignedPercent(primary.todayRetPct)} · ${secondary.label} ${formatSignedPercent(secondary.todayRetPct)} · 今日差距 ${formatSignedDeltaPp(deltaPp)}`,
+    deltaPp: bothLoaded ? deltaPp : null,
+    deltaText: bothLoaded ? formatSignedDeltaPp(deltaPp) : '',
+    summaryText,
     insightText: insight.text,
     tone: insight.tone,
     staleStatus: String(staleStatus || '')
       .trim()
       .toLowerCase(),
+    pendingDataPortfolios: [
+      primary.hasTodayData ? null : primary.label,
+      secondary.hasTodayData ? null : secondary.label,
+    ].filter(Boolean),
   }
 }
 

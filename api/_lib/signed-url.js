@@ -5,9 +5,48 @@ export const SIGNED_BLOB_MARKER = 'signed-blob-v1'
 export const SIGNED_BLOB_READ_ROUTE = '/api/blob-read'
 const DEFAULT_LOCAL_ORIGIN = 'http://127.0.0.1:3002'
 
+function readEnv(name) {
+  return String(process.env[name] || '').trim()
+}
+
+function normalizeOptionalOrigin(value) {
+  const text = String(value || '').trim()
+  return text ? text.replace(/\/$/, '') : ''
+}
+
 function normalizeOrigin(value) {
   const text = String(value || '').trim()
   return (text || DEFAULT_LOCAL_ORIGIN).replace(/\/$/, '')
+}
+
+function resolveLegacyVercelOrigin() {
+  const host = readEnv('VERCEL_URL')
+  if (!host) return ''
+  if (/^https?:\/\//i.test(host)) return normalizeOptionalOrigin(host)
+  return normalizeOrigin(`https://${host}`)
+}
+
+function getOriginProtocol(origin) {
+  const normalizedOrigin = normalizeOptionalOrigin(origin)
+  if (!normalizedOrigin) return 'http'
+
+  try {
+    return new URL(normalizedOrigin).protocol.replace(/:$/, '') || 'http'
+  } catch {
+    return /^https:\/\//i.test(normalizedOrigin) ? 'https' : 'http'
+  }
+}
+
+function resolveRequestOrigin(req, fallbackOrigin) {
+  const host = req?.headers?.host || req?.headers?.get?.('host')
+  if (!host) return ''
+
+  const protocol =
+    req?.headers?.['x-forwarded-proto'] ||
+    req?.headers?.get?.('x-forwarded-proto') ||
+    getOriginProtocol(fallbackOrigin)
+
+  return normalizeOrigin(`${protocol}://${host}`)
 }
 
 function normalizeExpiresAt(value) {
@@ -30,22 +69,33 @@ export function extractBlobPathname(value) {
   return text.replace(/^\/+/, '')
 }
 
+export function resolveConfiguredAppOrigin() {
+  return (
+    normalizeOptionalOrigin(readEnv('APP_ORIGIN')) ||
+    resolveLegacyVercelOrigin() ||
+    DEFAULT_LOCAL_ORIGIN
+  )
+}
+
 export function resolveSignedBlobOrigin(req) {
-  const protocol =
-    req?.headers?.['x-forwarded-proto'] ||
-    req?.headers?.get?.('x-forwarded-proto') ||
-    (process.env.VERCEL_URL ? 'https' : 'http')
-  const host =
-    req?.headers?.host || req?.headers?.get?.('host') || process.env.VERCEL_URL || '127.0.0.1:3002'
-  return normalizeOrigin(`${protocol}://${host}`)
+  const fallbackOrigin = resolveConfiguredAppOrigin()
+  return resolveRequestOrigin(req, fallbackOrigin) || fallbackOrigin
+}
+
+export function resolveInternalApiOrigin(req) {
+  const configuredOrigin =
+    normalizeOptionalOrigin(readEnv('INTERNAL_API_ORIGIN')) ||
+    normalizeOptionalOrigin(readEnv('APP_ORIGIN'))
+
+  if (configuredOrigin) return configuredOrigin
+
+  const fallbackOrigin = resolveLegacyVercelOrigin() || DEFAULT_LOCAL_ORIGIN
+  return resolveRequestOrigin(req, fallbackOrigin) || fallbackOrigin
 }
 
 export function getSignedBlobSecret() {
   const candidates = [
     process.env.BLOB_SIGNING_SECRET,
-    process.env.BRIDGE_INTERNAL_TOKEN,
-    process.env.BRIDGE_AUTH_TOKEN,
-    process.env.CRON_SECRET,
     process.env.BLOB_READ_WRITE_TOKEN,
     process.env.PUB_BLOB_TELEMETRY_TOKEN,
     process.env.PUB_BLOB_READ_WRITE_TOKEN,
@@ -89,7 +139,10 @@ export function createSignedBlobReadUrl(
   const resolvedExpiresAt =
     normalizeExpiresAt(expiresAt) ||
     Date.now() + Math.max(1000, Number(ttlMs) || DEFAULT_SIGNED_BLOB_TTL_MS)
-  const url = new URL(SIGNED_BLOB_READ_ROUTE, normalizeOrigin(origin))
+  const url = new URL(
+    SIGNED_BLOB_READ_ROUTE,
+    normalizeOrigin(origin || resolveConfiguredAppOrigin())
+  )
   url.searchParams.set('path', normalizedPath)
   url.searchParams.set('expires', String(resolvedExpiresAt))
   url.searchParams.set(

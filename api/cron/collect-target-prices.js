@@ -1,5 +1,6 @@
 import { list, put } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
+import { resolveInternalApiOrigin } from '../_lib/signed-url.js'
 import {
   dedupeTrackedStocks,
   getBlobToken,
@@ -130,10 +131,7 @@ export function buildTargetPriceSnapshot({ stock, analystPayload, now = new Date
 }
 
 export function resolveRequestOrigin(req) {
-  const protocol =
-    req?.headers?.['x-forwarded-proto'] || (process.env.VERCEL_URL ? 'https' : 'http')
-  const host = req?.headers?.host || process.env.VERCEL_URL || '127.0.0.1:3002'
-  return `${protocol}://${host}`
+  return resolveInternalApiOrigin(req)
 }
 
 async function readJsonSafely(response) {

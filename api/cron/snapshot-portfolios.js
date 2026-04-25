@@ -1,7 +1,7 @@
 import { list } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
 import { getPrivateBlobToken } from '../_lib/blob-tokens.js'
-import { fetchSignedBlobJson } from '../_lib/signed-url.js'
+import { fetchSignedBlobJson, resolveInternalApiOrigin } from '../_lib/signed-url.js'
 
 import { fetchAllStockDailyPrices } from '../_lib/twse-market-data.js'
 import { formatSnapshotDate, writePortfolioSnapshot } from '../_lib/portfolio-snapshots.js'
@@ -21,10 +21,7 @@ function getCronSecret() {
 }
 
 function resolveRequestOrigin(req) {
-  const protocol =
-    req?.headers?.['x-forwarded-proto'] || (process.env.VERCEL_URL ? 'https' : 'http')
-  const host = req?.headers?.host || process.env.VERCEL_URL || '127.0.0.1:3002'
-  return `${protocol}://${host}`
+  return resolveInternalApiOrigin(req)
 }
 
 function dedupePortfolioIds(values = []) {

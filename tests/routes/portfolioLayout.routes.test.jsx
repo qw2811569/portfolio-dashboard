@@ -196,9 +196,7 @@ describe('routes/PortfolioLayout', () => {
         'data-route-shell-limited',
         'true'
       )
-      expect(screen.getByTestId('route-shell-notice')).toHaveTextContent(
-        '這頁還在搬家中，部分操作只會先留在這一頁，不會立刻帶回主畫面。'
-      )
+      expect(screen.queryByTestId('route-shell-notice')).toBeNull()
 
       await waitFor(() => {
         expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('migration-only runtime'))

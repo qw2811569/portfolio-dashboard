@@ -2,11 +2,9 @@ import { createElement as h, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { ConfirmDialog } from '../components/common/Dialogs.jsx'
+import { ErrorBoundary } from '../components/ErrorBoundary.jsx'
 import { useAppConfirmationDialog } from '../hooks/useAppConfirmationDialog.js'
 import { useRoutePortfolioRuntime } from '../hooks/useRoutePortfolioRuntime.js'
-import { C, alpha } from '../theme.js'
-
-const ROUTE_SHELL_NOTICE = '這頁還在搬家中，部分操作只會先留在這一頁，不會立刻帶回主畫面。'
 
 export function PortfolioLayout() {
   const { headerProps, outletContext: baseOutletContext } = useRoutePortfolioRuntime()
@@ -35,23 +33,16 @@ export function PortfolioLayout() {
       'data-route-shell-limited': 'true',
       'data-testid': 'route-shell-root',
     },
+    h(Header, headerProps),
     h(
       'div',
-      {
-        style: {
-          padding: '8px 12px',
-          borderBottom: `1px solid ${alpha(C.amber, '28')}`,
-          background: alpha(C.amber, '14'),
-          color: C.textSec,
-          fontSize: 12,
-          lineHeight: 1.6,
-        },
-        'data-testid': 'route-shell-notice',
-      },
-      ROUTE_SHELL_NOTICE
+      { style: { padding: '8px 12px' } },
+      h(
+        ErrorBoundary,
+        { scope: 'portfolio-route', title: '這個頁面' },
+        h(Outlet, { context: outletContext })
+      )
     ),
-    h(Header, headerProps),
-    h('div', { style: { padding: '8px 12px' } }, h(Outlet, { context: outletContext })),
     h(ConfirmDialog, {
       open: appConfirmDialog.open,
       title: appConfirmDialog.title,

@@ -630,3 +630,123 @@ CAS retry 行為：
   - `npm run lint` ✅（有既存 warning：`src/lib/dashboardHeadline.js:54 no-unused-vars`，非本輪引入）
   - `npm run test:run -- tests/api/tracked-stocks-store.test.js tests/api/gcs-storage.test.js tests/scripts/migrate-tracked-stocks-to-gcs.test.js --run` ✅（`26 passed`）
 - 信心預測：CAS adapter `5/10 -> 7/10`
+
+## Round 18 · Codex B re-verify · 2026-04-25 17:59
+
+### Round 16 stale task race 是否修好
+✅ 已修好。
+
+- 我重跑 repo 內 reproduce case：`npx vitest run tests/api/tracked-stocks-store.test.js -t "does not let an older shadow reconcile overwrite a newer primary payload"` ✅
+- 這條 test 在 `tests/api/tracked-stocks-store.test.js:518-667`，interleaving 就是「舊 task 先拿舊 shadow token、 新 task 先把 primary/shadow 推到 v12、舊 task 恢復後吃 conflict」；最終 assert `shadowState` 仍是 payload v12 / `etag-12`（lines 651-664），沒有退化回 v11。
+- 修點也對得上：`api/_lib/tracked-stocks-store.js:591-595` conflict 後先 `readLatestPrimaryPayload()`，而不是重播 capture 的 stale payload；helper 在 `api/_lib/tracked-stocks-store.js:478-486`。
+
+### single-conflict reconcile regression check
+✅ 通過。
+
+- 我重跑 `npx vitest run tests/api/tracked-stocks-store.test.js -t "reconciles one shadow version conflict so the secondary converges to the latest primary payload"` ✅
+- 這條 test 在 `tests/api/tracked-stocks-store.test.js:377-515`；10→11→12 路徑最終 primary/shadow 都收斂到 v12，且 `gcsBackend.read` 只發生 1 次（lines 511-513），沒有新 warning / divergence metric。
+
+### 新發現的 regression
+沒找到新的 critical regression。
+
+- primary read 失敗：我用 inline mock 重放，background task 只記 warn + divergence metric，沒有 uncaught rejection；觀察到 `readVersionCalls=1`、`shadowWriteCalls=1`、error=`primary network failure`。
+- secondary token re-read 失敗：同樣是 warn + divergence metric，沒有把 background task 打爆；觀察到 `readVersionCalls=2`、`shadowWriteCalls=1`、error=`secondary token reread failed`。
+- primary 在 reconcile 期間又 advance：我額外模擬 v12 reread 後 primary 立刻變 v13；shadow 最終寫入的是 reread 當下 snapshot v12，不會偷跟到 v13。這符合預期，但也代表 shadow 可短暫落後 1 個版本，需靠下一次同步收斂；我不把這視為 regression。
+- 補充：整檔 `npx vitest run tests/api/tracked-stocks-store.test.js` = `9 passed`。
+
+### A 預測 vs 實際
+- CAS adapter 5/10 → 7/10 預測 · 我評：8/10
+- migration: 7/10
+- overall: 7.5/10
+
+### 我推薦下一動作
+- 全 clear → 進 jcv-dev VM migration
+- 理由：Round 16 blocker 已關，這輪沒再挖到新的 critical；下一階段主要價值在真環境 burn-in / divergence 觀察，不是在本地 mock 再加一層 retry。
+
+---
+
+## Round 19 · Claude · Step 2b VM migration executed · 2026-04-25 18:08
+
+### 執行摘要
+
+Phase 1 Step 2b（tracked-stocks CAS）完整實作 + 4 輪 A↔B QA + 真實遷移在 jcv-dev VM 跑通。
+
+### A↔B QA 軌跡（CAS 比 last-success 難很多）
+
+| Round | 角色 | 結果 |
+|------|------|------|
+| 13 | A 寫 | commit `38efec8` 558 行 adapter |
+| 14 | B QA | 1 critical (migration verify race) + 1 major (shadow stale) + 1 minor (helper override) |
+| 15 | A 修 | commit `e54bae1` 三全修，confidence 預測 6→8 / 2→7 |
+| 16 | B 驗 | 三原 bug ✅ · **抓新 race**（舊 task 反蓋新 shadow） |
+| 17 | A 修 2 | commit `0a11bc7` reconcile A：先 re-read primary payload + secondary token |
+| 18 | B 驗 2 | ✅ 全 clear · 沒新 regression · CAS adapter 8/10 |
+
+### VM 執行（Round 19 本輪）
+
+1. patch 套 `38efec8...fd7e055` 5 commit 上 jcv-dev（commit SHA mapped to `e6d502c..1e02ddd` after `git am`）
+2. npm install
+3. env 補 `STORAGE_PRIMARY_PORTFOLIO_TRACKED_STOCKS=vercel` + 2 個 shadow flag（皆 false）
+4. PM2 restart with `--update-env`
+5. API regression check：5 endpoint HTTP code 跟 patch 前一模一樣
+6. Dry-run migration：列 114 portfolio
+7. **Actual migration：114 個全部 done，0 error, 0 race, 0 missing**
+8. Spot-check parity 3 個 portfolio：全 SHA-256 match
+9. GCS bucket count：`gs://jcv-dev-private/tracked-stocks/*/latest.json` 共 114 個
+
+### 信心評分（B Round 18）
+
+| 元件 | Step 2a | Step 2b 起始 | Step 2b 終 |
+|------|--------|------------|----------|
+| Adapter (CAS) | 8/10 | 6/10 | **8/10** |
+| Dispatcher | 8/10 | 7/10 | **8/10** |
+| Migration | 9/10 | 2/10 | **7/10**（verify-throw 邊界硬，operationally 仍 ok） |
+
+### 沒做（明確 out-of-scope）
+
+- ❌ 沒切 cutover flag（仍 `vercel`）· 行為跟 patch 前一致
+- ❌ 沒在 production VM (`bigstock`) 跑
+- ❌ 沒 push（commits 全 local）
+- ❌ 沒 burn-in shadow read/write
+
+### 累積進度
+
+Phase 1 完成 keyspace：
+- ✅ `ops.last_success_*`（2 個 keyspace · 4 + 3=7 keys）
+- ✅ `portfolio.tracked_stocks`（1 個 keyspace · 114 keys）
+
+剩 25 個 keyspace 未搬，含：
+- Class 1 last-writer-wins（7 個 · 簡單複用 2a 模式）
+- Class 4 prefix scan（3 個 · 比 2a 多需 listPrefix + deleteMany）
+- Class 5 hybrid local+remote（4 個 · 最難，brain/research/telemetry）
+- 其他 dated singleton
+
+### 留給用戶決定
+
+下一個 keyspace 候選（按複雜度）：
+
+1. **Class 1 群**：`valuation`、`news-feed`、`daily-events`、`target-prices`、`morning-note-snapshot`、`benchmark` 等。複用 last-success-store 模式 · 預期一輪 A↔B 各搞定
+2. **Class 4**：snapshot prefix scan。要先擴 adapter 加 `listPrefix` + `deleteMany` capability
+3. **Class 5**：brain/research/telemetry hybrid。最危險，sync semantics 要設計
+
+或者：
+
+- **(A) 先 burn-in 已搬的 2 個 keyspace**：jcv-dev 切 `vercel-primary-gcs-shadow` 跑 24-48h 觀察 divergence log，確認 zero divergence 才繼續
+- **(B) 直接接下一個 keyspace 群**：Class 1 七連戰
+- **(C) push 上 GitHub 留紀錄**：8 個 commit local，攢一輪推遠端
+
+## Round 20 · Codex strategy · 2026-04-25 18:10
+
+1. 我站 **C -> B -> A**，但 B 不是「挑 1 個 Class 1 試試」，而是把同屬 last-writer-wins 的那批一次做完。理由：`push` 先解 8 commit 全 local 的單機風險；Class 1 真正在驗的是同一套 dispatcher/shadow contract，分 6 次停下來 burn-in 很浪費；最後再做一次 family-level burn-in，訊號才夠密。
+2. 我反駁 Claude 的第 1、3 條。`shadow` 沒跑過真流量，不等於它必須先當 stop-the-line gate；而 tracked-stocks CAS 已經驗過比 Class 1 更難的 precondition/version path。剩餘風險比較像各 keyspace wiring，而不是 adapter framework 本身。
+3. `push` 不是零風險：可能喚醒 branch webhook/CI/preview，或讓別的 agent 把這支當成可接手分支；但這仍小於「Mac 掛掉 8 commit 全沒」的風險。做法應是隔離 WIP branch / draft PR，不把它當 deploy signal。
+4. 一句話 brief：**先把現有 8 commits 推到隔離 WIP branch，接著整批完成 Class 1 last-writer-wins keyspace，全部進 shadow 後再做一次 24h burn-in。**
+5. 信心：**8/10**
+
+## Round 21 · Codex A · Class 1 batch · 2026-04-25 18:37
+
+- commit SHA(s): `33c7fc7`
+- 實際做了 `7` 個 keyspace（manifest phase 3 的這輪 Class 1 singleton batch）：`valuation`、`target_prices`、`daily_events_latest`、`news_feed_latest`、`analyst_reports`、`morning_note_snapshot`、`benchmark_snapshots`。比預期 `6` 多了 `analyst_reports`。manifest 原始 `semantics_class:1` 還有其他 dated / legacy / phase 4 family，這輪沒有一併擴進來。
+- generic store 抽法總結：新增 `api/_lib/singleton-store.js`，把 env cutover (`primary/shadow-read/shadow-write`)、Vercel/GCS dispatcher、shadow divergence logger、`head`、prefix `list` 都收成同一層；`last-success-store.js` 改成只保留 scope descriptor + legacy/split env policy，7 個新 family 都是薄 wrapper。
+- migration script 一句說明：新增 `scripts/migrate-class1-keyspace-to-gcs.mjs`，用 `--keyspace=<name>` / `--all` 跑每個 family 自己的 lock/state/reverse-manifest，複用 2a 驗過的 verify / resume / idempotent pattern。
+- 我最不確定、希望 B 對抗的部分：Step 2c 的 scope 到底該停在這 `7` 個 phase 3 singleton family，還是要把 manifest 其餘 `semantics_class:1` dated / legacy family 也算進來；其次是 `benchmark` 這種 prefix-list + exact-read hybrid path 在 `gcs` primary 下的 contract 是否還需要更強對抗測試。

@@ -68,6 +68,7 @@ describe('dataAdapters', () => {
   describe('FinMind registry', () => {
     it('exports the authoritative dataset registry keys', () => {
       expect(FINMIND_DATASET_KEYS).toEqual([
+        'price',
         'institutional',
         'margin',
         'valuation',

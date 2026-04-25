@@ -84,13 +84,15 @@ function readSavedFilters(storageKey) {
   }
 }
 
-function readFilterViewState({ storageKeyV2, legacyStorageKey }) {
+function readFilterViewState({ activePortfolioId, storageKeyV2, legacyStorageKey }) {
   const defaultFilterState = createDefaultHoldingsFilterState()
   if (typeof window === 'undefined' || !window.localStorage) {
     return { filterState: defaultFilterState, searchQuery: '' }
   }
 
-  const urlState = readHoldingsFilterStateFromSearch(window.location.search)
+  const urlState = readHoldingsFilterStateFromSearch(window.location.search, {
+    activePortfolioId,
+  })
   if (urlState.hasFilterParams) {
     return {
       filterState: normalizeHoldingsFilterState(urlState.filterState),
@@ -132,8 +134,8 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   const savedFiltersKey = activePortfolioId ? `pf-${activePortfolioId}-saved-filters-v1` : ''
 
   const initialViewState = useMemo(
-    () => readFilterViewState({ storageKeyV2, legacyStorageKey }),
-    [legacyStorageKey, storageKeyV2]
+    () => readFilterViewState({ activePortfolioId, storageKeyV2, legacyStorageKey }),
+    [activePortfolioId, legacyStorageKey, storageKeyV2]
   )
 
   const [filterState, setFilterState] = useState(() => initialViewState.filterState)
@@ -142,16 +144,20 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
     () => initialViewState.searchQuery
   )
+  const [hydratedFilterStorageKey, setHydratedFilterStorageKey] = useState(storageKeyV2)
+  const [hydratedSavedFiltersKey, setHydratedSavedFiltersKey] = useState(savedFiltersKey)
 
   useEffect(() => {
-    const nextViewState = readFilterViewState({ storageKeyV2, legacyStorageKey })
+    const nextViewState = readFilterViewState({ activePortfolioId, storageKeyV2, legacyStorageKey })
     setFilterState(nextViewState.filterState)
     setSearchInput(nextViewState.searchQuery)
     setDebouncedSearchQuery(nextViewState.searchQuery)
-  }, [legacyStorageKey, storageKeyV2])
+    setHydratedFilterStorageKey(storageKeyV2)
+  }, [activePortfolioId, legacyStorageKey, storageKeyV2])
 
   useEffect(() => {
     setSavedFilters(readSavedFilters(savedFiltersKey))
+    setHydratedSavedFiltersKey(savedFiltersKey)
   }, [savedFiltersKey])
 
   useEffect(() => {
@@ -200,6 +206,7 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage || !storageKeyV2) return
+    if (hydratedFilterStorageKey !== storageKeyV2) return
 
     window.localStorage.setItem(storageKeyV2, JSON.stringify(serializeFilterState(safeFilterState)))
     if (legacyStorageKey) {
@@ -208,10 +215,11 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
         JSON.stringify(buildLegacyHoldingsFilterStateMirror(safeFilterState))
       )
     }
-  }, [legacyStorageKey, safeFilterState, storageKeyV2])
+  }, [hydratedFilterStorageKey, legacyStorageKey, safeFilterState, storageKeyV2])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.localStorage || !savedFiltersKey) return
+    if (hydratedSavedFiltersKey !== savedFiltersKey) return
 
     window.localStorage.setItem(
       savedFiltersKey,
@@ -223,7 +231,7 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
         }))
       )
     )
-  }, [savedFilters, savedFiltersKey])
+  }, [hydratedSavedFiltersKey, savedFilters, savedFiltersKey])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -231,7 +239,8 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
     const nextParams = applyHoldingsFilterStateToSearchParams(
       new URLSearchParams(window.location.search),
       safeFilterState,
-      debouncedSearchQuery
+      debouncedSearchQuery,
+      { activePortfolioId }
     )
     const nextSearch = nextParams.toString()
     const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash || ''}`

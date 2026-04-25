@@ -68,6 +68,7 @@ export const HOLDINGS_FILTER_RISK_META = Object.freeze({
 })
 
 export const HOLDINGS_FILTER_URL_PARAM_KEYS = Object.freeze({
+  portfolio: 'holdingsPid',
   intent: 'intent',
   sector: 'sector',
   type: 'type',
@@ -1045,11 +1046,23 @@ export function buildLegacyHoldingsFilterStateMirror(state) {
   })
 }
 
-export function readHoldingsFilterStateFromSearch(search = '') {
+export function readHoldingsFilterStateFromSearch(search = '', { activePortfolioId = '' } = {}) {
   const params = new URLSearchParams(String(search || ''))
   const nextState = buildBaseRetailState()
+  const requestedPortfolioId = String(activePortfolioId || '').trim()
+  const scopedPortfolioId = String(
+    params.get(HOLDINGS_FILTER_URL_PARAM_KEYS.portfolio) || ''
+  ).trim()
   const searchQuery = String(params.get(HOLDINGS_FILTER_URL_PARAM_KEYS.query) || '').trim()
   let hasFilterParams = false
+
+  if (requestedPortfolioId && scopedPortfolioId !== requestedPortfolioId) {
+    return {
+      hasFilterParams: false,
+      filterState: withLegacyMirror(nextState),
+      searchQuery: '',
+    }
+  }
 
   const intentParam = params.get(HOLDINGS_FILTER_URL_PARAM_KEYS.intent)
   if (intentParam) {
@@ -1082,12 +1095,27 @@ export function readHoldingsFilterStateFromSearch(search = '') {
   }
 }
 
-export function applyHoldingsFilterStateToSearchParams(params, state, searchQuery = '') {
+export function applyHoldingsFilterStateToSearchParams(
+  params,
+  state,
+  searchQuery = '',
+  { activePortfolioId = '' } = {}
+) {
   const safeParams = params instanceof URLSearchParams ? params : new URLSearchParams(params)
   const safeState = normalizeHoldingsFilterState(state)
+  const normalizedQuery = String(searchQuery || '').trim()
+  const scopedPortfolioId = String(activePortfolioId || '').trim()
+  const hasScopedState =
+    safeState.intentKey !== 'all' ||
+    Object.values(safeState.filterGroups).some((values) => uniqueStrings(values).length > 0) ||
+    Boolean(normalizedQuery)
 
   for (const key of Object.values(HOLDINGS_FILTER_URL_PARAM_KEYS)) {
     safeParams.delete(key)
+  }
+
+  if (hasScopedState && scopedPortfolioId) {
+    safeParams.set(HOLDINGS_FILTER_URL_PARAM_KEYS.portfolio, scopedPortfolioId)
   }
 
   if (safeState.intentKey !== 'all') {
@@ -1109,7 +1137,6 @@ export function applyHoldingsFilterStateToSearchParams(params, state, searchQuer
     }
   }
 
-  const normalizedQuery = String(searchQuery || '').trim()
   if (normalizedQuery) {
     safeParams.set(HOLDINGS_FILTER_URL_PARAM_KEYS.query, normalizedQuery)
   }

@@ -165,16 +165,34 @@ describe('lib/holdingsFilters', () => {
     const params = applyHoldingsFilterStateToSearchParams(
       new URLSearchParams('stock=2308'),
       state,
-      'AI'
+      'AI',
+      { activePortfolioId: 'me' }
     )
-    const parsed = readHoldingsFilterStateFromSearch(`?${params.toString()}`)
+    const parsed = readHoldingsFilterStateFromSearch(`?${params.toString()}`, {
+      activePortfolioId: 'me',
+    })
 
     expect(params.get('stock')).toBe('2308')
+    expect(params.get('holdingsPid')).toBe('me')
     expect(parsed.filterState.intentKey).toBe('attention')
     expect(parsed.filterState.filterGroups.sector).toEqual(['AI/伺服器'])
     expect(parsed.filterState.filterGroups.type).toEqual(['growth'])
     expect(parsed.filterState.filterGroups.risk).toEqual(['singleOver20'])
     expect(parsed.searchQuery).toBe('AI')
+  })
+
+  it('ignores URL filter state when it belongs to a different portfolio', () => {
+    const params = new URLSearchParams(
+      'holdingsPid=me&intent=attention&sector=AI%2F%E4%BC%BA%E6%9C%8D%E5%99%A8&q=AI'
+    )
+    const parsed = readHoldingsFilterStateFromSearch(`?${params.toString()}`, {
+      activePortfolioId: '7865',
+    })
+
+    expect(parsed.hasFilterParams).toBe(false)
+    expect(parsed.filterState.intentKey).toBe('all')
+    expect(parsed.filterState.filterGroups.sector).toEqual([])
+    expect(parsed.searchQuery).toBe('')
   })
 
   it('defaults to the empty v2 state when given nothing', () => {

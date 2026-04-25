@@ -37,6 +37,9 @@ function createConsoleSpy() {
     log: vi.fn((message) => {
       messages.push(String(message))
     }),
+    warn: vi.fn((message) => {
+      messages.push(String(message))
+    }),
   }
 }
 
@@ -300,7 +303,7 @@ describe('scripts/migrate-last-success-to-gcs.mjs', () => {
     )
   })
 
-  it('refuses to start when another migration instance already holds the lock', async () => {
+  it('clears a stale pid lock and still rejects an active pid lock', async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), 'last-success-migrate-lock-'))
     const paths = await createFixturePaths(
       tempDir,
@@ -308,15 +311,37 @@ describe('scripts/migrate-last-success-to-gcs.mjs', () => {
         public: ['last-success-collect-news.json'],
       })
     )
+    const consoleImpl = createConsoleSpy()
+    const readSourceImpl = vi.fn(async () => createSourceRecord('{"job":"collect-news","ok":true}'))
 
     await mkdir(path.dirname(paths.lockPath), { recursive: true })
-    await writeFile(paths.lockPath, 'busy\n', 'utf8')
+    await writeFile(paths.lockPath, '999999\n', 'utf8')
+
+    const { summary } = await runMigration(
+      {
+        dryRun: true,
+        ...paths,
+      },
+      {
+        consoleImpl,
+        readSourceImpl,
+        readDestinationImpl: vi.fn(async () => null),
+      }
+    )
+
+    expect(summary).toMatchObject({
+      dryRun: true,
+      dryRunCopy: 1,
+    })
+    expect(consoleImpl.warn).toHaveBeenCalledWith('stale lock from pid 999999 cleared')
+
+    await writeFile(paths.lockPath, `${process.pid}\n`, 'utf8')
 
     await expect(
       runMigration({
         dryRun: true,
         ...paths,
       })
-    ).rejects.toThrow(/migration already in progress/)
+    ).rejects.toThrow(new RegExp(`migration already in progress \\(pid ${process.pid}\\)`))
   })
 })

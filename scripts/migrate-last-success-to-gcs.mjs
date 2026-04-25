@@ -1,6 +1,6 @@
 import process from 'node:process'
 import path from 'node:path'
-import { mkdir, open, readFile, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import { get, list } from '@vercel/blob'
@@ -63,41 +63,110 @@ function resolvePaths(options = {}) {
   }
 }
 
+function buildLockPayload(now = new Date()) {
+  return `${JSON.stringify(
+    {
+      pid: process.pid,
+      startedAt: new Date(now).toISOString(),
+    },
+    null,
+    2
+  )}\n`
+}
+
+function parseLockPid(rawLock) {
+  const text = String(rawLock || '').trim()
+  if (!text) return null
+
+  try {
+    const payload = JSON.parse(text)
+    const pid = Number(payload?.pid)
+    if (Number.isInteger(pid) && pid > 0) return pid
+  } catch {}
+
+  const pid = Number.parseInt(text, 10)
+  return Number.isInteger(pid) && pid > 0 ? pid : null
+}
+
+function checkPidLiveness(pid, killImpl = process.kill) {
+  try {
+    killImpl(pid, 0)
+    return true
+  } catch (error) {
+    if (error?.code === 'ESRCH') return false
+    if (error?.code === 'EPERM') return true
+    throw error
+  }
+}
+
+function migrationInProgressError(pid) {
+  return new Error(
+    pid ? `migration already in progress (pid ${pid})` : 'migration already in progress'
+  )
+}
+
 export async function acquireMigrationLock({
   lockPath = DEFAULT_LOCK_PATH,
   mkdirImpl = mkdir,
-  openImpl = open,
+  readFileImpl = readFile,
   unlinkImpl = unlink,
+  writeFileImpl = writeFile,
+  consoleImpl = console,
+  killImpl = process.kill,
   now = new Date(),
 } = {}) {
   await mkdirImpl(path.dirname(lockPath), { recursive: true })
 
-  let handle
-  try {
-    handle = await openImpl(lockPath, 'wx')
-  } catch (error) {
-    if (error?.code === 'EEXIST') {
-      throw new Error('migration already in progress')
-    }
-    throw error
+  const writeLockFile = async () => {
+    await writeFileImpl(lockPath, buildLockPayload(now), {
+      encoding: 'utf8',
+      flag: 'wx',
+    })
   }
+  const warnImpl =
+    typeof consoleImpl?.warn === 'function'
+      ? consoleImpl.warn.bind(consoleImpl)
+      : typeof consoleImpl?.log === 'function'
+        ? consoleImpl.log.bind(consoleImpl)
+        : console.warn
 
   try {
-    await handle.writeFile(
-      `${JSON.stringify(
-        {
-          pid: process.pid,
-          startedAt: new Date(now).toISOString(),
-        },
-        null,
-        2
-      )}\n`,
-      'utf8'
-    )
+    await writeLockFile()
   } catch (error) {
-    await handle.close().catch(() => {})
-    await unlinkImpl(lockPath).catch(() => {})
-    throw error
+    if (error?.code !== 'EEXIST') throw error
+
+    const rawLock = await readFileImpl(lockPath, 'utf8').catch((readError) => {
+      if (readError?.code === 'ENOENT') return null
+      throw readError
+    })
+    const stalePid = parseLockPid(rawLock)
+
+    if (rawLock !== null && !stalePid) {
+      throw migrationInProgressError()
+    }
+
+    if (stalePid && checkPidLiveness(stalePid, killImpl)) {
+      throw migrationInProgressError(stalePid)
+    }
+
+    if (stalePid) {
+      warnImpl(`stale lock from pid ${stalePid} cleared`)
+      await unlinkImpl(lockPath).catch((unlinkError) => {
+        if (unlinkError?.code !== 'ENOENT') throw unlinkError
+      })
+    }
+
+    try {
+      await writeLockFile()
+    } catch (retryError) {
+      if (retryError?.code !== 'EEXIST') throw retryError
+
+      const retryLock = await readFileImpl(lockPath, 'utf8').catch((readError) => {
+        if (readError?.code === 'ENOENT') return null
+        throw readError
+      })
+      throw migrationInProgressError(parseLockPid(retryLock))
+    }
   }
 
   let released = false
@@ -105,7 +174,6 @@ export async function acquireMigrationLock({
     if (released) return
     released = true
 
-    await handle.close().catch(() => {})
     await unlinkImpl(lockPath).catch((error) => {
       if (error?.code !== 'ENOENT') throw error
     })
@@ -395,8 +463,11 @@ export async function runMigration(rawOptions = {}, deps = {}) {
   const releaseLock = await lock({
     lockPath: paths.lockPath,
     mkdirImpl: deps.mkdirImpl,
-    openImpl: deps.openImpl,
+    readFileImpl: deps.readFileImpl,
     unlinkImpl: deps.unlinkImpl,
+    writeFileImpl: deps.writeFileImpl,
+    consoleImpl,
+    killImpl: deps.killImpl,
     now: deps.now,
   })
 

@@ -49,14 +49,20 @@ export default function HoldingSparkline({ history = [], color = 'var(--up)' }) 
         height: 28,
         flex: '0 0 auto',
       },
-      'aria-label': 'holding sparkline',
+      'aria-hidden': 'true',
     },
     h(
       ResponsiveContainer,
       { width: '100%', height: '100%' },
       h(
         LineChart,
-        { data },
+        {
+          data,
+          accessibilityLayer: false,
+          'aria-hidden': 'true',
+          focusable: false,
+          tabIndex: -1,
+        },
         h(Tooltip, {
           formatter: (value) => [value, '收盤'],
           labelFormatter: (label) => label,

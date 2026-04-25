@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url'
 import { get, list } from '@vercel/blob'
 
 import { getPrivateBlobToken } from '../api/_lib/blob-tokens.js'
-import { gcsReadWithVersion, gcsWriteIfGeneration } from '../api/_lib/gcs-storage.js'
+import { gcsReadWithVersion, gcsWrite, gcsWriteIfGeneration } from '../api/_lib/gcs-storage.js'
 import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 import { extractBlobPathname } from '../api/_lib/signed-url.js'
 import {
@@ -176,7 +176,9 @@ export async function readDestination(
 export async function migrateItem(item, options, deps = {}) {
   const readSourceImpl = deps.readSourceImpl || ((entry) => readSource(entry, deps))
   const readDestinationImpl = deps.readDestinationImpl || ((entry) => readDestination(entry, deps))
+  const gcsWriteImpl = deps.gcsWriteImpl || gcsWrite
   const gcsWriteIfGenerationImpl = deps.gcsWriteIfGenerationImpl || gcsWriteIfGeneration
+  const forceOverwrite = options.previousStatus === 'stale-source-changed'
 
   const source = await readSourceImpl(item)
   if (!source) {
@@ -210,7 +212,7 @@ export async function migrateItem(item, options, deps = {}) {
     }
   }
 
-  if (existingDestinationHash === sourceHash) {
+  if (!forceOverwrite && existingDestinationHash === sourceHash) {
     return {
       status: 'skipped-existing-match',
       bytes: source.bytes,
@@ -221,7 +223,7 @@ export async function migrateItem(item, options, deps = {}) {
     }
   }
 
-  if (existingDestinationHash != null) {
+  if (!forceOverwrite && existingDestinationHash != null) {
     return {
       status: 'skipped-existing-present',
       bytes: source.bytes,
@@ -235,14 +237,20 @@ export async function migrateItem(item, options, deps = {}) {
   let writtenGeneration = null
 
   try {
-    const writeResult = await gcsWriteIfGenerationImpl(item.bucketName, item.key, source.buffer, 0, {
-      contentType: source.contentType,
-      cacheControl: 'no-store',
-      public: false,
-    })
+    const writeResult = forceOverwrite
+      ? await gcsWriteImpl(item.bucketName, item.key, source.buffer, {
+          contentType: source.contentType,
+          cacheControl: 'no-store',
+          public: false,
+        })
+      : await gcsWriteIfGenerationImpl(item.bucketName, item.key, source.buffer, 0, {
+          contentType: source.contentType,
+          cacheControl: 'no-store',
+          public: false,
+        })
     writtenGeneration = parseGeneration(writeResult?.generation)
   } catch (error) {
-    if (error?.code !== 'PRECONDITION_FAILED') throw error
+    if (forceOverwrite || error?.code !== 'PRECONDITION_FAILED') throw error
 
     const racedDestination = await readDestinationImpl(item)
     const racedDestinationHash = racedDestination ? sha256(racedDestination.body) : null
@@ -382,6 +390,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
     })
 
     for (const item of state.items) {
+      const previousStatus = String(item.status || '')
       if (
         options.resume &&
         [
@@ -400,7 +409,7 @@ export async function runMigration(rawOptions = {}, deps = {}) {
       item.lastError = null
 
       try {
-        const outcome = await migrateItemImpl(item, options, deps)
+        const outcome = await migrateItemImpl(item, { ...options, previousStatus }, deps)
         Object.assign(item, outcome, {
           updatedAt: new Date(deps.now || new Date()).toISOString(),
         })

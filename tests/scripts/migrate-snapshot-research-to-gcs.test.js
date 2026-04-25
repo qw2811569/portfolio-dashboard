@@ -48,6 +48,19 @@ function createDestinationStore(initialEntries = {}) {
         generation: record.generation,
       }
     },
+    write(bucketName, key, body) {
+      const mapKey = `${bucketName}/${key}`
+      const existing = store.get(mapKey)
+      const nextGeneration = Number(existing?.generation || 0) + 1
+      store.set(mapKey, {
+        body: Buffer.from(body),
+        generation: String(nextGeneration),
+      })
+
+      return {
+        generation: String(nextGeneration),
+      }
+    },
     writeIfGeneration(bucketName, key, body, expectedGeneration) {
       const mapKey = `${bucketName}/${key}`
       const existing = store.get(mapKey)
@@ -297,6 +310,163 @@ describe('scripts/migrate-snapshot-research-to-gcs.mjs', () => {
       }),
     ])
     expect(reverseManifest.items).toEqual([])
+  })
+
+  it('force-overwrites stale-source-changed items on resume until they converge to done', async () => {
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), 'snapshot-research-migrate-stale-converge-')
+    )
+    const paths = buildPaths(tempDir)
+    const destinations = createDestinationStore()
+    const key = 'snapshot/research/2026-04-24/research-index.json'
+    const staleBody = '{"schemaVersion":1,"items":[{"id":"stale"}]}'
+    const freshBody = '{"schemaVersion":1,"items":[{"id":"fresh"}]}'
+    const gcsWriteIfGenerationImpl = vi.fn(async (bucketName, entryKey, body, expectedGeneration) =>
+      destinations.writeIfGeneration(bucketName, entryKey, body, expectedGeneration)
+    )
+    const gcsWriteImpl = vi.fn(async (bucketName, entryKey, body) =>
+      destinations.write(bucketName, entryKey, body)
+    )
+    const readSourceImpl = vi
+      .fn()
+      .mockResolvedValueOnce(createSourceRecord(staleBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+
+    const runtime = {
+      consoleImpl: createConsoleSpy(),
+      loadKeyInventoryImpl: vi.fn(async () => [
+        {
+          key,
+          access: 'private',
+          bucketName: 'jcv-dev-private',
+        },
+      ]),
+      readSourceImpl,
+      readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+      gcsWriteImpl,
+      gcsWriteIfGenerationImpl,
+    }
+
+    const firstRun = await runMigration(paths, runtime)
+    const resumedRun = await runMigration(
+      {
+        ...paths,
+        resume: true,
+      },
+      runtime
+    )
+    const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
+    const reverseManifest = JSON.parse(await readFile(paths.reverseManifestPath, 'utf8'))
+    const finalDestination = destinations.read({
+      bucketName: 'jcv-dev-private',
+      key,
+    })
+
+    expect(firstRun.summary).toMatchObject({
+      totalItems: 1,
+      done: 0,
+      staleSourceChanged: 1,
+    })
+    expect(resumedRun.summary).toMatchObject({
+      resume: true,
+      totalItems: 1,
+      done: 1,
+      staleSourceChanged: 0,
+      skippedExistingMatch: 0,
+      skippedExistingPresent: 0,
+    })
+    expect(gcsWriteIfGenerationImpl).toHaveBeenCalledTimes(1)
+    expect(gcsWriteImpl).toHaveBeenCalledTimes(1)
+    expect(state.items).toEqual([
+      expect.objectContaining({
+        key,
+        status: 'done',
+        attempts: 2,
+      }),
+    ])
+    expect(finalDestination).toMatchObject({
+      generation: '2',
+    })
+    expect(finalDestination?.body.toString()).toBe(freshBody)
+    expect(reverseManifest.items).toEqual([
+      expect.objectContaining({
+        key,
+        bucketName: 'jcv-dev-private',
+        status: 'done',
+      }),
+    ])
+  })
+
+  it('force-overwrites stale-source-changed resume items even when destination already matches', async () => {
+    const tempDir = await mkdtemp(
+      path.join(os.tmpdir(), 'snapshot-research-migrate-stale-force-match-')
+    )
+    const paths = buildPaths(tempDir)
+    const destinations = createDestinationStore()
+    const key = 'snapshot/research/2026-04-24/research-index.json'
+    const staleBody = '{"schemaVersion":1,"items":[{"id":"stale"}]}'
+    const freshBody = '{"schemaVersion":1,"items":[{"id":"fresh"}]}'
+    const gcsWriteIfGenerationImpl = vi.fn(async (bucketName, entryKey, body, expectedGeneration) =>
+      destinations.writeIfGeneration(bucketName, entryKey, body, expectedGeneration)
+    )
+    const gcsWriteImpl = vi.fn(async (bucketName, entryKey, body) =>
+      destinations.write(bucketName, entryKey, body)
+    )
+    const readSourceImpl = vi
+      .fn()
+      .mockResolvedValueOnce(createSourceRecord(staleBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+      .mockResolvedValueOnce(createSourceRecord(freshBody))
+
+    const runtime = {
+      consoleImpl: createConsoleSpy(),
+      loadKeyInventoryImpl: vi.fn(async () => [
+        {
+          key,
+          access: 'private',
+          bucketName: 'jcv-dev-private',
+        },
+      ]),
+      readSourceImpl,
+      readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+      gcsWriteImpl,
+      gcsWriteIfGenerationImpl,
+    }
+
+    const firstRun = await runMigration(paths, runtime)
+    destinations.write('jcv-dev-private', key, Buffer.from(freshBody))
+    const resumedRun = await runMigration(
+      {
+        ...paths,
+        resume: true,
+      },
+      runtime
+    )
+    const state = JSON.parse(await readFile(paths.statePath, 'utf8'))
+
+    expect(firstRun.summary).toMatchObject({
+      totalItems: 1,
+      done: 0,
+      staleSourceChanged: 1,
+    })
+    expect(resumedRun.summary).toMatchObject({
+      resume: true,
+      totalItems: 1,
+      done: 1,
+      skippedExistingMatch: 0,
+    })
+    expect(gcsWriteIfGenerationImpl).toHaveBeenCalledTimes(1)
+    expect(gcsWriteImpl).toHaveBeenCalledTimes(1)
+    expect(state.items).toEqual([
+      expect.objectContaining({
+        key,
+        status: 'done',
+        attempts: 2,
+      }),
+    ])
   })
 
   it('treats an empty source prefix as a successful no-op', async () => {

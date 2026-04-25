@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTrackedStocksSyncStatus } from '../../src/hooks/useTrackedStocksSyncStatus.js'
 
 function writeSyncState(portfolioId, value) {
@@ -10,11 +10,14 @@ function writeSyncState(portfolioId, value) {
 
 describe('hooks/useTrackedStocksSyncStatus', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-24T10:00:00.000+08:00'))
     window.localStorage.clear()
   })
 
   afterEach(() => {
     window.localStorage.clear()
+    vi.useRealTimers()
   })
 
   it('hydrates sync badge updates from storage events across tabs', () => {

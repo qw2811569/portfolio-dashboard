@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { buildAnxietyMetrics } from '../lib/anxietyMetrics.js'
 import { buildDashboardHeadline } from '../lib/dashboardHeadline.js'
 import { buildHoldingDetailDossier } from '../lib/holdingDetailDossier.js'
-import { isSkippedTargetPriceInstrumentType } from '../lib/instrumentTypes.js'
 import {
   buildDashboardCompareStrip,
   buildOverviewDashboardHeadline,

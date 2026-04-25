@@ -129,6 +129,42 @@ describe('api/_lib/gcs-storage.js', () => {
     })
   })
 
+  it('passes generation preconditions through to the SDK save call', async () => {
+    const file = createFileMock({
+      getMetadata: vi.fn().mockResolvedValue([
+        {
+          etag: 'etag-3',
+          generation: '789',
+          contentType: 'application/json',
+        },
+      ]),
+    })
+
+    Storage.mockImplementation(function MockStorage() {
+      return {
+        bucket: vi.fn(() => ({
+          file: vi.fn(() => file),
+        })),
+      }
+    })
+
+    const { gcsWrite } = await import('../../api/_lib/gcs-storage.js')
+    await gcsWrite('jcv-dev-private', 'cas.json', '{"ok":true}', {
+      contentType: 'application/json',
+      ifGenerationMatch: 0,
+    })
+
+    expect(file.save).toHaveBeenCalledWith('{"ok":true}', {
+      resumable: false,
+      metadata: {
+        contentType: 'application/json',
+      },
+      preconditionOpts: {
+        ifGenerationMatch: 0,
+      },
+    })
+  })
+
   it('adds a retry hint for transient backend failures', async () => {
     const transientError = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' })
     const file = createFileMock({

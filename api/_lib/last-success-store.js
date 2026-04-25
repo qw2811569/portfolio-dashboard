@@ -6,13 +6,22 @@ import { get, list, put } from '@vercel/blob'
 import { getPrivateBlobToken } from './blob-tokens.js'
 import { gcsRead, gcsWrite } from './gcs-storage.js'
 
-const DEFAULT_PRIMARY_MODE = 'vercel-only'
-const PRIMARY_MODES = new Set([
-  'vercel-only',
-  'vercel-primary-gcs-shadow',
-  'gcs-primary-vercel-shadow',
-  'gcs-only',
-])
+const DEFAULT_PRIMARY_STORE = 'vercel'
+const PRIMARY_STORES = new Set(['vercel', 'gcs'])
+const LEGACY_PRIMARY_MODES = Object.freeze({
+  'vercel-only': Object.freeze({ primary: 'vercel', shadowRead: false, shadowWrite: false }),
+  'vercel-primary-gcs-shadow': Object.freeze({
+    primary: 'vercel',
+    shadowRead: true,
+    shadowWrite: true,
+  }),
+  'gcs-primary-vercel-shadow': Object.freeze({
+    primary: 'gcs',
+    shadowRead: true,
+    shadowWrite: true,
+  }),
+  'gcs-only': Object.freeze({ primary: 'gcs', shadowRead: false, shadowWrite: false }),
+})
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const DEFAULT_DIVERGENCE_LOG_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -20,6 +29,7 @@ const DEFAULT_DIVERGENCE_LOG_DIR = path.resolve(
   '..',
   'logs'
 )
+const warnedMessages = new Set()
 
 const LAST_SUCCESS_SCOPE_CONFIG = Object.freeze({
   'collect-news': Object.freeze({ access: 'public' }),
@@ -35,24 +45,104 @@ function getPublicBlobToken() {
   return String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
 }
 
-function resolvePrimaryMode(override) {
-  const candidate = String(
-    override || process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS || DEFAULT_PRIMARY_MODE
-  ).trim()
-  return PRIMARY_MODES.has(candidate) ? candidate : DEFAULT_PRIMARY_MODE
+function warnOnce(logger, key, message) {
+  if (warnedMessages.has(key)) return
+  warnedMessages.add(key)
+  logger.warn?.(message)
 }
 
-function resolvePrimaryAndShadow(primaryMode) {
-  switch (primaryMode) {
-    case 'vercel-primary-gcs-shadow':
-      return { primary: 'vercel', shadow: 'gcs' }
-    case 'gcs-primary-vercel-shadow':
-      return { primary: 'gcs', shadow: 'vercel' }
-    case 'gcs-only':
-      return { primary: 'gcs', shadow: null }
-    case 'vercel-only':
+function parsePrimaryStore(value, { envName, fallback = DEFAULT_PRIMARY_STORE } = {}) {
+  const candidate = String(value || '').trim()
+  if (!candidate) return fallback
+  if (PRIMARY_STORES.has(candidate)) return candidate
+  throw new Error(
+    `[last-success-store] ${envName} must be "vercel" or "gcs"; received "${candidate}"`
+  )
+}
+
+function parseShadowToggle(value, { envName, fallback = false } = {}) {
+  const candidate = String(value || '')
+    .trim()
+    .toLowerCase()
+  if (!candidate) return fallback
+  if (candidate === 'true') return true
+  if (candidate === 'false') return false
+  throw new Error(
+    `[last-success-store] ${envName} must be "true" or "false"; received "${String(value)}"`
+  )
+}
+
+function normalizeStoragePolicy(
+  policy,
+  { source = 'storage policy', fallback = DEFAULT_PRIMARY_STORE } = {}
+) {
+  if (!policy || typeof policy !== 'object' || Array.isArray(policy)) {
+    throw new Error(`[last-success-store] ${source} must be an object`)
+  }
+
+  return {
+    primary: parsePrimaryStore(policy.primary, {
+      envName: `${source}.primary`,
+      fallback,
+    }),
+    shadowRead:
+      typeof policy.shadowRead === 'boolean'
+        ? policy.shadowRead
+        : parseShadowToggle(policy.shadowRead, {
+            envName: `${source}.shadowRead`,
+            fallback: false,
+          }),
+    shadowWrite:
+      typeof policy.shadowWrite === 'boolean'
+        ? policy.shadowWrite
+        : parseShadowToggle(policy.shadowWrite, {
+            envName: `${source}.shadowWrite`,
+            fallback: false,
+          }),
+  }
+}
+
+function parseLegacyPrimaryMode(value, { envName, logger, warnDeprecated = false } = {}) {
+  const candidate = String(value || '').trim()
+  if (!candidate) {
+    return {
+      primary: DEFAULT_PRIMARY_STORE,
+      shadowRead: false,
+      shadowWrite: false,
+    }
+  }
+
+  const resolved = LEGACY_PRIMARY_MODES[candidate]
+  if (!resolved) {
+    throw new Error(
+      `[last-success-store] ${envName} must be one of ${Object.keys(LEGACY_PRIMARY_MODES).join(', ')}; received "${candidate}"`
+    )
+  }
+
+  if (warnDeprecated && logger) {
+    warnOnce(
+      logger,
+      'last-success-store-legacy-primary-mode',
+      '[last-success-store] STORAGE_PRIMARY_OPS_LAST_SUCCESS is deprecated; use STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC/_PRIVATE plus STORAGE_SHADOW_READ_OPS_LAST_SUCCESS and STORAGE_SHADOW_WRITE_OPS_LAST_SUCCESS'
+    )
+  }
+
+  return {
+    primary: resolved.primary,
+    shadowRead: resolved.shadowRead,
+    shadowWrite: resolved.shadowWrite,
+  }
+}
+
+function getBucketName(bucketClass) {
+  switch (bucketClass) {
+    case 'public':
+      return String(process.env.GCS_BUCKET_PUBLIC || '').trim()
+    case 'archive':
+      return String(process.env.GCS_BUCKET_ARCHIVE || '').trim()
+    case 'private':
     default:
-      return { primary: 'vercel', shadow: null }
+      return String(process.env.GCS_BUCKET_PRIVATE || '').trim()
   }
 }
 
@@ -76,6 +166,7 @@ function resolveScopeDescriptor(scope, date, accessOverride) {
   }
 
   if (normalizedDate) {
+    const bucketClass = normalizedScope === 'daily-snapshot' ? 'archive' : 'private'
     return {
       scope: normalizedScope,
       date: normalizedDate,
@@ -88,7 +179,8 @@ function resolveScopeDescriptor(scope, date, accessOverride) {
       contentType: 'text/plain; charset=utf-8',
       cacheControl: 'no-store',
       format: 'text',
-      bucketName: String(process.env.GCS_BUCKET_PRIVATE || '').trim(),
+      bucketClass,
+      bucketName: getBucketName(bucketClass),
     }
   }
 
@@ -101,10 +193,8 @@ function resolveScopeDescriptor(scope, date, accessOverride) {
     contentType: 'application/json',
     cacheControl: access === 'public' ? 'public, max-age=0, must-revalidate' : 'no-store',
     format: 'json',
-    bucketName:
-      access === 'public'
-        ? String(process.env.GCS_BUCKET_PUBLIC || '').trim()
-        : String(process.env.GCS_BUCKET_PRIVATE || '').trim(),
+    bucketClass: access,
+    bucketName: getBucketName(access),
   }
 }
 
@@ -259,9 +349,11 @@ const defaultGcsBackend = {
   async read(descriptor, { gcsReadImpl = gcsRead } = {}) {
     if (!descriptor.bucketName) {
       throw new Error(
-        descriptor.access === 'public'
+        descriptor.bucketClass === 'public'
           ? 'GCS_BUCKET_PUBLIC is required for GCS last-success reads'
-          : 'GCS_BUCKET_PRIVATE is required for GCS last-success reads'
+          : descriptor.bucketClass === 'archive'
+            ? 'GCS_BUCKET_ARCHIVE is required for GCS last-success reads'
+            : 'GCS_BUCKET_PRIVATE is required for GCS last-success reads'
       )
     }
 
@@ -271,9 +363,11 @@ const defaultGcsBackend = {
   async write(descriptor, payload, { gcsWriteImpl = gcsWrite } = {}) {
     if (!descriptor.bucketName) {
       throw new Error(
-        descriptor.access === 'public'
+        descriptor.bucketClass === 'public'
           ? 'GCS_BUCKET_PUBLIC is required for GCS last-success writes'
-          : 'GCS_BUCKET_PRIVATE is required for GCS last-success writes'
+          : descriptor.bucketClass === 'archive'
+            ? 'GCS_BUCKET_ARCHIVE is required for GCS last-success writes'
+            : 'GCS_BUCKET_PRIVATE is required for GCS last-success writes'
       )
     }
 
@@ -291,6 +385,111 @@ const defaultGcsBackend = {
 function getBackend(name, overrides = {}) {
   if (name === 'gcs') return overrides.gcsBackend || defaultGcsBackend
   return overrides.vercelBackend || defaultVercelBackend
+}
+
+function resolveShadowBackendName(primary) {
+  return primary === 'gcs' ? 'vercel' : 'gcs'
+}
+
+function resolveStoragePolicy(descriptor, options = {}) {
+  const logger = options.logger || console
+
+  if (options.storagePolicyOverride) {
+    return normalizeStoragePolicy(options.storagePolicyOverride, {
+      source: 'options.storagePolicyOverride',
+    })
+  }
+
+  if (Object.prototype.hasOwnProperty.call(options, 'primaryMode')) {
+    return parseLegacyPrimaryMode(options.primaryMode, {
+      envName: 'options.primaryMode',
+      logger,
+    })
+  }
+
+  const legacyMode = String(process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS || '').trim()
+  const hasSplitConfig = [
+    process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC,
+    process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS_PRIVATE,
+    process.env.STORAGE_SHADOW_READ_OPS_LAST_SUCCESS,
+    process.env.STORAGE_SHADOW_WRITE_OPS_LAST_SUCCESS,
+  ].some((value) => String(value || '').trim().length > 0)
+
+  if (!hasSplitConfig && legacyMode) {
+    return parseLegacyPrimaryMode(legacyMode, {
+      envName: 'STORAGE_PRIMARY_OPS_LAST_SUCCESS',
+      logger,
+      warnDeprecated: true,
+    })
+  }
+
+  if (hasSplitConfig && legacyMode) {
+    warnOnce(
+      logger,
+      'last-success-store-legacy-env-ignored',
+      '[last-success-store] STORAGE_PRIMARY_OPS_LAST_SUCCESS is deprecated and ignored while split ops.last_success env flags are present'
+    )
+  }
+
+  return {
+    primary: parsePrimaryStore(
+      descriptor.access === 'public'
+        ? process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC
+        : process.env.STORAGE_PRIMARY_OPS_LAST_SUCCESS_PRIVATE,
+      {
+        envName:
+          descriptor.access === 'public'
+            ? 'STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC'
+            : 'STORAGE_PRIMARY_OPS_LAST_SUCCESS_PRIVATE',
+        fallback: DEFAULT_PRIMARY_STORE,
+      }
+    ),
+    shadowRead: parseShadowToggle(process.env.STORAGE_SHADOW_READ_OPS_LAST_SUCCESS, {
+      envName: 'STORAGE_SHADOW_READ_OPS_LAST_SUCCESS',
+      fallback: false,
+    }),
+    shadowWrite: parseShadowToggle(process.env.STORAGE_SHADOW_WRITE_OPS_LAST_SUCCESS, {
+      envName: 'STORAGE_SHADOW_WRITE_OPS_LAST_SUCCESS',
+      fallback: false,
+    }),
+  }
+}
+
+function resolvePrimaryAndShadow(policy, operation) {
+  const shadowEnabled = operation === 'read' ? policy.shadowRead : policy.shadowWrite
+  return {
+    primary: policy.primary,
+    shadow: shadowEnabled ? resolveShadowBackendName(policy.primary) : null,
+  }
+}
+
+function createInvalidPayloadError(descriptor) {
+  const error = new Error(`[last-success-store] InvalidPayload for ${descriptor.key}`)
+  error.name = 'InvalidPayload'
+  error.code = 'INVALID_PAYLOAD'
+  return error
+}
+
+function assertValidPayload(payload, descriptor) {
+  if (payload == null) throw createInvalidPayloadError(descriptor)
+}
+
+function defaultScheduleBackgroundTask(task) {
+  const runner = () => {
+    void Promise.resolve().then(task)
+  }
+
+  if (typeof setImmediate === 'function') {
+    setImmediate(runner)
+    return
+  }
+
+  if (typeof queueMicrotask === 'function') {
+    queueMicrotask(runner)
+    return
+  }
+
+  setTimeout(runner, 0)
 }
 
 function classifyShadowRead(primaryResult, shadowResult) {
@@ -350,7 +549,13 @@ async function appendDivergenceMetric(
 }
 
 export function getLastSuccessStorageMode(override) {
-  return resolvePrimaryMode(override)
+  const options =
+    override == null ? {} : typeof override === 'string' ? { primaryMode: override } : override
+
+  return {
+    public: resolveStoragePolicy({ access: 'public' }, options),
+    private: resolveStoragePolicy({ access: 'private' }, options),
+  }
 }
 
 export function getLastSuccessScopeDescriptor(scope, date, accessOverride) {
@@ -359,9 +564,10 @@ export function getLastSuccessScopeDescriptor(scope, date, accessOverride) {
 
 export async function readLastSuccess(scope, date, options = {}) {
   const descriptor = resolveScopeDescriptor(scope, date, options.accessOverride)
-  const primaryMode = resolvePrimaryMode(options.primaryMode)
-  const { primary, shadow } = resolvePrimaryAndShadow(primaryMode)
+  const policy = resolveStoragePolicy(descriptor, options)
+  const { primary, shadow } = resolvePrimaryAndShadow(policy, 'read')
   const logger = options.logger || console
+  const scheduleBackgroundTask = options.scheduleBackgroundTask || defaultScheduleBackgroundTask
 
   const primaryBackend = getBackend(primary, options)
   const shadowBackend = shadow ? getBackend(shadow, options) : null
@@ -379,47 +585,62 @@ export async function readLastSuccess(scope, date, options = {}) {
 
   if (!shadowReadPromise) return primaryResult?.body ?? null
 
-  const shadowOutcome = await shadowReadPromise
-  if (shadowOutcome?.shadowReadError) {
-    logger.warn?.(
-      `[last-success-store] shadow read failed for ${descriptor.key} (${primary} primary -> ${shadow} shadow):`,
-      shadowOutcome.shadowReadError
-    )
-    return primaryResult?.body ?? null
-  }
+  scheduleBackgroundTask(async () => {
+    try {
+      const shadowOutcome = await shadowReadPromise
+      if (shadowOutcome?.shadowReadError) {
+        logger.warn?.(
+          `[last-success-store] shadow read failed for ${descriptor.key} (${primary} primary -> ${shadow} shadow):`,
+          shadowOutcome.shadowReadError
+        )
+        return
+      }
 
-  const shadowResult = normalizeReadResult(shadowOutcome, descriptor)
-  const comparison = classifyShadowRead(primaryResult, shadowResult)
+      const shadowResult = normalizeReadResult(shadowOutcome, descriptor)
+      const comparison = classifyShadowRead(primaryResult, shadowResult)
 
-  await appendDivergenceMetric(
-    {
-      keyspace: descriptor.keyspace,
-      scope: descriptor.scope,
-      date: descriptor.date,
-      key: descriptor.key,
-      primary,
-      shadow,
-      op: 'read',
-      result: comparison.result,
-      primaryHash: comparison.primaryHash,
-      shadowHash: comparison.shadowHash,
-    },
-    options
-  )
+      try {
+        await appendDivergenceMetric(
+          {
+            keyspace: descriptor.keyspace,
+            scope: descriptor.scope,
+            date: descriptor.date,
+            key: descriptor.key,
+            primary,
+            shadow,
+            op: 'read',
+            result: comparison.result,
+            primaryHash: comparison.primaryHash,
+            shadowHash: comparison.shadowHash,
+          },
+          options
+        )
+      } catch (error) {
+        logger.warn?.(
+          `[last-success-store] failed to append divergence metric for ${descriptor.key}:`,
+          error
+        )
+      }
 
-  if (!comparison.matches) {
-    logger.warn?.(
-      `[last-success-store] shadow read divergence for ${descriptor.key}: ${primary}=${comparison.primaryHash || 'miss'} ${shadow}=${comparison.shadowHash || 'miss'}`
-    )
-  }
+      if (!comparison.matches) {
+        logger.warn?.(
+          `[last-success-store] shadow read divergence for ${descriptor.key}: ${primary}=${comparison.primaryHash || 'miss'} ${shadow}=${comparison.shadowHash || 'miss'}`
+        )
+      }
+    } catch (error) {
+      logger.warn?.(`[last-success-store] shadow read compare failed for ${descriptor.key}:`, error)
+    }
+  })
 
   return primaryResult?.body ?? null
 }
 
 export async function writeLastSuccess(scope, date, payload, options = {}) {
   const descriptor = resolveScopeDescriptor(scope, date, options.accessOverride)
-  const primaryMode = resolvePrimaryMode(options.primaryMode)
-  const { primary, shadow } = resolvePrimaryAndShadow(primaryMode)
+  assertValidPayload(payload, descriptor)
+
+  const policy = resolveStoragePolicy(descriptor, options)
+  const { primary, shadow } = resolvePrimaryAndShadow(policy, 'write')
   const logger = options.logger || console
 
   const primaryBackend = getBackend(primary, options)

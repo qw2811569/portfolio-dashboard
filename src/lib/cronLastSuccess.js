@@ -80,7 +80,12 @@ export async function readLastSuccessMarker(
     })
   } catch (error) {
     logger.warn(`[cron-monitor] failed to read ${key}:`, error)
-    return null
+    const outage = new Error(`[cron-monitor] failed to read ${key}: ${error?.message || error}`)
+    outage.code = 'STORAGE_OUTAGE'
+    outage.cause = error
+    outage.job = job
+    outage.key = key
+    throw outage
   }
 }
 

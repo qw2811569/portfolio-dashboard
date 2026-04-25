@@ -90,4 +90,19 @@ describe('api/daily-snapshot-status', () => {
       lastAttemptStatus: 'failed',
     })
   })
+
+  it('returns 500 when the marker backend is unavailable', async () => {
+    get.mockRejectedValue(new Error('blob down'))
+
+    const { default: handler } = await import('../../api/daily-snapshot-status.js')
+    const res = createMockResponse()
+
+    await handler({ method: 'GET', headers: {} }, res)
+
+    expect(res.statusCode).toBe(500)
+    expect(res.payload).toMatchObject({
+      ok: false,
+      code: 'STORAGE_OUTAGE',
+    })
+  })
 })

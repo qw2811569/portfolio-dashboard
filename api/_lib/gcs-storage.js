@@ -93,6 +93,10 @@ export async function gcsWrite(bucketName, key, body, opts = {}) {
   const file = getBucket(bucketName).file(key)
   const contentType = String(opts.contentType || '').trim() || undefined
   const cacheControl = String(opts.cacheControl || '').trim() || undefined
+  const ifGenerationMatch =
+    opts.ifGenerationMatch === 0 || Number.isFinite(Number(opts.ifGenerationMatch))
+      ? Number(opts.ifGenerationMatch)
+      : undefined
 
   try {
     await file.save(body, {
@@ -101,6 +105,13 @@ export async function gcsWrite(bucketName, key, body, opts = {}) {
         ...(contentType ? { contentType } : {}),
         ...(cacheControl ? { cacheControl } : {}),
       },
+      ...(ifGenerationMatch != null
+        ? {
+            preconditionOpts: {
+              ifGenerationMatch,
+            },
+          }
+        : {}),
     })
 
     const [metadata] = await file.getMetadata()

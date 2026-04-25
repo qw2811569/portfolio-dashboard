@@ -247,7 +247,7 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash || ''}`
     if (nextUrl === currentUrl) return
     window.history.replaceState(window.history.state, '', nextUrl)
-  }, [debouncedSearchQuery, safeFilterState])
+  }, [activePortfolioId, debouncedSearchQuery, safeFilterState])
 
   const updateFilterState = (updater) => {
     setFilterState((current) =>

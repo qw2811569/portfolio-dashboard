@@ -202,7 +202,7 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('dashboard-compare-strip')).toBeInTheDocument()
     expect(screen.getByTestId('dashboard-compare-summary')).toHaveTextContent('今日差距 +0.1pp')
-    expect(screen.getByText('stale')).toBeInTheDocument()
+    expect(screen.getByText('偏舊')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('dashboard-compare-summary'))
 
@@ -482,7 +482,7 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('missing')
+    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('待補')
     expect(screen.getByTestId('morning-note-fallback')).toHaveTextContent(
       '今日無 pre-open 更新 · 請等開盤 T1'
     )
@@ -508,7 +508,7 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('failed')
+    expect(screen.getByTitle('morning note freshness')).toHaveTextContent('失敗')
     expect(screen.getByTestId('morning-note-blocked-reason')).toHaveTextContent(
       'AI confidence 0.42 below 0.70'
     )
@@ -530,7 +530,7 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('daily-snapshot-status-card')).toBeInTheDocument()
     expect(screen.getByTestId('daily-snapshot-status-copy')).toHaveTextContent('已超過 36 小時')
-    expect(screen.getByTitle('daily snapshot freshness')).toHaveTextContent('stale')
+    expect(screen.getByTitle('daily snapshot freshness')).toHaveTextContent('偏舊')
   })
 
   it('keeps the daily snapshot reminder hidden when the marker is fresh', () => {

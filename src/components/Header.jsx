@@ -124,14 +124,14 @@ export default function Header(props) {
   const noticeItems = Array.isArray(workflowCue?.items) ? workflowCue.items : []
   const cloudIndicator = h(
     'span',
-    { style: { color: C.textSec, fontSize: 11 } },
+    { style: { color: C.textSec, fontSize: isCompactLandscape ? 10 : 11 } },
     cloudSync ? '☁' : '⚡'
   )
   const titleText = h(
     'span',
     {
       style: {
-        fontSize: isCompactLandscape ? 18 : 20,
+        fontSize: isCompactLandscape ? 17 : 20,
         fontWeight: 700,
         color: C.text,
         fontFamily: 'var(--font-headline)',
@@ -503,8 +503,8 @@ export default function Header(props) {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: isCompactLandscape ? 'center' : 'flex-start',
-        gap: 12,
-        marginBottom: viewMode === OVERVIEW_VIEW_MODE ? 0 : isCompactLandscape ? 2 : 4,
+        gap: isCompactLandscape ? 10 : 12,
+        marginBottom: viewMode === OVERVIEW_VIEW_MODE ? 0 : isCompactLandscape ? 0 : 4,
       },
     },
     h(
@@ -513,8 +513,8 @@ export default function Header(props) {
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: isCompactLandscape ? 6 : 8,
-          rowGap: isCompactLandscape ? 4 : 8,
+          gap: isCompactLandscape ? 5 : 8,
+          rowGap: isCompactLandscape ? 2 : 8,
           flex: 1,
           minWidth: 0,
           flexWrap: isCompactLandscape ? 'nowrap' : 'wrap',
@@ -543,11 +543,12 @@ export default function Header(props) {
           border: `1px solid ${tab === tabItem.k ? alpha(C.lavender, '26') : alpha(C.borderSub, '70')}`,
           boxShadow: tab === tabItem.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
           borderRadius: 999,
-          minHeight: 44,
-          minWidth: compact ? 44 : undefined,
-          padding: compact ? '8px 10px' : '8px 12px',
+          minHeight: compact && isCompactLandscape ? 32 : 44,
+          minWidth: compact ? (isCompactLandscape ? 38 : 44) : undefined,
+          padding: compact ? (isCompactLandscape ? '4px 10px' : '8px 10px') : '8px 12px',
           fontSize: compact ? 10 : 11,
           fontWeight: tab === tabItem.k ? 700 : 500,
+          lineHeight: compact && isCompactLandscape ? 1 : undefined,
           cursor: 'pointer',
           whiteSpace: 'nowrap',
           flex: fill ? '1 1 auto' : '0 0 auto',
@@ -1094,7 +1095,7 @@ export default function Header(props) {
         style: {
           display: 'grid',
           gap: 6,
-          padding: isMobile ? (isCompactLandscape ? '0 0 4px' : '0 0 8px') : '4px 0 4px',
+          padding: isMobile ? (isCompactLandscape ? '0 0 2px' : '0 0 8px') : '4px 0 4px',
           position: 'relative',
         },
       },
@@ -1121,12 +1122,14 @@ export default function Header(props) {
                   onClick: () => setIsMobileTabsOpen((open) => !open),
                   style: {
                     ...ghostBtn,
-                    minHeight: 44,
-                    padding: '8px 10px',
+                    minHeight: isCompactLandscape ? 32 : 44,
+                    minWidth: isCompactLandscape ? 38 : 44,
+                    padding: isCompactLandscape ? '4px 10px' : '8px 10px',
                     background: isMobileTabsOpen ? alpha(C.ink, '10') : C.subtle,
                     color: C.textSec,
                     border: `1px solid ${isMobileTabsOpen ? alpha(C.ink, A.strongLine) : C.border}`,
                     fontSize: 10,
+                    lineHeight: isCompactLandscape ? 1 : undefined,
                   },
                 },
                 isMobileTabsOpen ? '收合' : `更多 ${hiddenMobileTabs.length}`
@@ -1300,7 +1303,12 @@ export default function Header(props) {
           style: {
             ...shellSurface,
             borderBottom: `1px solid ${C.borderSoft}`,
-            padding: viewMode === OVERVIEW_VIEW_MODE ? '8px 12px 8px' : '4px 12px 0',
+            padding:
+              viewMode === OVERVIEW_VIEW_MODE
+                ? '8px 12px 8px'
+                : isCompactLandscape
+                  ? '2px 12px 0'
+                  : '4px 12px 0',
           },
         },
         mobileTitleRow,

@@ -219,6 +219,7 @@ describe('components/Header.jsx', () => {
 
     expect(screen.getByText('持倉看板')).toBeInTheDocument()
     expect(screen.queryByText('+12')).not.toBeInTheDocument()
+    expect(screen.getByTestId('tab-holdings')).toHaveStyle({ minHeight: '32px' })
     expect(screen.getByTestId('header-scroll-zone').style.padding).toBe('78px 12px 0px')
   })
 })

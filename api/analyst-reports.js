@@ -1,6 +1,10 @@
 import { withApiAuth } from './_lib/auth-middleware.js'
 import { createHash } from 'crypto'
 import { list, put } from '@vercel/blob'
+import {
+  readAnalystReportsSnapshot as readAnalystReportsSnapshotStore,
+  writeAnalystReportsSnapshot as writeAnalystReportsSnapshotStore,
+} from './_lib/analyst-reports-store.js'
 import supplyChain from '../src/data/supplyChain.json' with { type: 'json' }
 import {
   callAiRaw,
@@ -19,7 +23,6 @@ import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG } from '../src/seedData.js'
 import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
 
-const ANALYST_REPORTS_BLOB_PREFIX = 'analyst-reports'
 const VM_ANALYST_REPORTS_PATH = '/internal/analyst-reports'
 const VM_POLL_INTERVAL_MS = 1500
 const VM_POLL_TIMEOUT_MS = 45000
@@ -139,43 +142,13 @@ export function resolveStockInput(input = {}) {
 
 export async function readAnalystReportsSnapshot(
   code,
-  { token = getBlobToken(), fetchImpl = fetch } = {}
+  { token = getBlobToken(), fetchImpl = fetch, listImpl = list } = {}
 ) {
-  const normalizedCode = normalizeTicker(code)
-  if (!normalizedCode || !token) return null
-
-  const { blobs } = await list({
-    prefix: `${ANALYST_REPORTS_BLOB_PREFIX}/${normalizedCode}.json`,
-    limit: 1,
-    token,
-  })
-
-  if (!blobs.length) return null
-
-  const response = await fetchImpl(blobs[0].url)
-  if (!response.ok) {
-    throw new Error(`blob read failed (${response.status})`)
-  }
-
-  return response.json()
+  return readAnalystReportsSnapshotStore(code, { token, fetchImpl, listImpl })
 }
 
 export async function writeAnalystReportsSnapshot(code, payload, { token = getBlobToken() } = {}) {
-  const normalizedCode = normalizeTicker(code)
-  if (!normalizedCode) throw new Error('code is required')
-  if (!token) throw new Error('PUB_BLOB_READ_WRITE_TOKEN is required for analyst-reports writes')
-
-  await put(
-    `${ANALYST_REPORTS_BLOB_PREFIX}/${normalizedCode}.json`,
-    JSON.stringify(payload, null, 2),
-    {
-      token,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      access: 'public',
-      contentType: 'application/json',
-    }
-  )
+  return writeAnalystReportsSnapshotStore(code, payload, { token, putImpl: put })
 }
 
 export function isCmoneyNotesEnabled() {

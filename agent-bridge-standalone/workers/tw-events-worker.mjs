@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url'
 import { list, put } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../../api/_lib/auth-middleware.js'
 import { getPrivateBlobToken } from '../../api/_lib/blob-tokens.js'
+import { writeDailyEventsSnapshot } from '../../api/_lib/daily-events-store.js'
 import { loadLocalEnvIfPresent } from '../../api/_lib/local-env.js'
 import { markCronFailure, markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 import { INIT_HOLDINGS } from '../../src/seedData.js'
@@ -10,7 +11,6 @@ import { INIT_HOLDINGS_JINLIANCHENG } from '../../src/seedDataJinliancheng.js'
 
 const DEFAULT_API_ORIGIN = 'http://127.0.0.1:3000'
 const DEFAULT_RANGE_DAYS = 45
-const SNAPSHOT_KEY = 'daily-events/latest.json'
 const JOB_NAME = 'tw-events-worker'
 const PORTFOLIOS = Object.freeze([
   { key: 'me', label: '我', holdings: INIT_HOLDINGS },
@@ -126,12 +126,9 @@ export async function runTwEventsWorker({
     fetchImpl,
   })
 
-  await putImpl(SNAPSHOT_KEY, JSON.stringify(snapshot, null, 2), {
+  await writeDailyEventsSnapshot(snapshot, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'public',
-    contentType: 'application/json',
+    putImpl,
   })
 
   await markCronSuccess(JOB_NAME, {

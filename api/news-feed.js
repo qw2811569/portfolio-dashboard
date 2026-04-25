@@ -1,7 +1,5 @@
 import { withApiAuth } from './_lib/auth-middleware.js'
-import { get, head } from '@vercel/blob'
-
-const NEWS_BLOB_KEY = 'news-feed/latest.json'
+import { headNewsFeed, readNewsFeed } from './_lib/news-feed-store.js'
 
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300')
@@ -13,20 +11,14 @@ async function handler(req, res) {
 
   try {
     if (req.method === 'HEAD') {
-      try {
-        await head(NEWS_BLOB_KEY, { token })
-      } catch (error) {
-        if (error?.name !== 'BlobNotFoundError') throw error
-      }
+      await headNewsFeed({ token })
       return res.status(200).end()
     }
 
-    const blobResult = await get(NEWS_BLOB_KEY, { access: 'public', token })
-    if (!blobResult) {
+    const feed = await readNewsFeed({ token })
+    if (!feed) {
       return res.status(200).json({ items: [], collectedAt: null })
     }
-
-    const feed = await new Response(blobResult.stream).json()
 
     // Optional: filter by stock codes from query param
     const codes = String(req.query?.codes || '')

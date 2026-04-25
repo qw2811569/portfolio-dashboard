@@ -1,8 +1,8 @@
 import { list, put } from '@vercel/blob'
+import { writeNewsFeed } from '../_lib/news-feed-store.js'
 import { INIT_HOLDINGS, INIT_HOLDINGS_JINLIANCHENG, STOCK_META } from '../../src/seedData.js'
 import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
-const NEWS_BLOB_KEY = 'news-feed/latest.json'
 const MAX_ITEMS_PER_STOCK = 5
 const MAX_TOTAL_ITEMS = 100
 const FETCH_TIMEOUT_MS = 8000
@@ -153,12 +153,9 @@ export default async function handler(req, res) {
 
   try {
     const feed = await collectNewsFeed({ logger: console })
-    await put(NEWS_BLOB_KEY, JSON.stringify(feed, null, 2), {
+    await writeNewsFeed(feed, {
       token,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      access: 'public',
-      contentType: 'application/json',
+      putImpl: put,
     })
     await markCronSuccess('collect-news', {
       token,

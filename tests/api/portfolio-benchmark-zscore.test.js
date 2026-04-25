@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { list } = vi.hoisted(() => ({
+const { list, get } = vi.hoisted(() => ({
   list: vi.fn(),
+  get: vi.fn(),
 }))
 
 vi.mock('@vercel/blob', () => ({
   list,
   put: vi.fn(),
-  get: vi.fn(),
+  get,
 }))
 
 function createMockResponse() {
@@ -120,6 +121,7 @@ describe('api/portfolio-benchmark-zscore', () => {
     ]
     const { portfolioSnapshots, benchmarkSnapshots } = buildSnapshots(diffs)
     const blobPayloads = new Map()
+    const benchmarkPayloads = new Map()
 
     list.mockImplementation(async ({ prefix }) => {
       if (prefix === 'portfolios/me/snapshots/') {
@@ -147,7 +149,7 @@ describe('api/portfolio-benchmark-zscore', () => {
       blobPayloads.set(`portfolios/me/snapshots/${snapshot.date}.json`, snapshot)
     })
     benchmarkSnapshots.forEach((snapshot) => {
-      blobPayloads.set(`snapshot/benchmark/${snapshot.date}.json`, snapshot)
+      benchmarkPayloads.set(`snapshot/benchmark/${snapshot.date}.json`, snapshot)
     })
 
     global.fetch.mockImplementation((url) => {
@@ -157,6 +159,13 @@ describe('api/portfolio-benchmark-zscore', () => {
         throw new Error(`unexpected fetch ${pathname}`)
       }
       return Promise.resolve(createJsonResponse(payload))
+    })
+    get.mockImplementation(async (pathname) => {
+      const payload = benchmarkPayloads.get(String(pathname))
+      if (!payload) return null
+      return {
+        stream: new Response(JSON.stringify(payload)).body,
+      }
     })
 
     const { default: handler } = await import('../../api/portfolio-benchmark-zscore.js')
@@ -190,6 +199,7 @@ describe('api/portfolio-benchmark-zscore', () => {
   it('returns a soft unavailable payload when history is too short', async () => {
     const { portfolioSnapshots, benchmarkSnapshots } = buildSnapshots([0.2, -0.1, 0.3])
     const blobPayloads = new Map()
+    const benchmarkPayloads = new Map()
 
     list.mockImplementation(async ({ prefix }) => {
       if (prefix === 'portfolios/me/snapshots/') {
@@ -217,7 +227,7 @@ describe('api/portfolio-benchmark-zscore', () => {
       blobPayloads.set(`portfolios/me/snapshots/${snapshot.date}.json`, snapshot)
     })
     benchmarkSnapshots.forEach((snapshot) => {
-      blobPayloads.set(`snapshot/benchmark/${snapshot.date}.json`, snapshot)
+      benchmarkPayloads.set(`snapshot/benchmark/${snapshot.date}.json`, snapshot)
     })
 
     global.fetch.mockImplementation((url) => {
@@ -227,6 +237,13 @@ describe('api/portfolio-benchmark-zscore', () => {
         throw new Error(`unexpected fetch ${pathname}`)
       }
       return Promise.resolve(createJsonResponse(payload))
+    })
+    get.mockImplementation(async (pathname) => {
+      const payload = benchmarkPayloads.get(String(pathname))
+      if (!payload) return null
+      return {
+        stream: new Response(JSON.stringify(payload)).body,
+      }
     })
 
     const { default: handler } = await import('../../api/portfolio-benchmark-zscore.js')

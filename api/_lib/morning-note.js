@@ -3,6 +3,11 @@ import fsPromises from 'node:fs/promises'
 import path from 'node:path'
 import { get, put } from '@vercel/blob'
 import { getPrivateBlobToken } from './blob-tokens.js'
+import {
+  getMorningNoteSnapshotStoreKey,
+  readMorningNoteSnapshotStore,
+  writeMorningNoteSnapshotStore,
+} from './morning-note-snapshot-store.js'
 import { getTaipeiClock } from '../../src/lib/datetime.js'
 
 export const MORNING_NOTE_SCHEMA_VERSION = 1
@@ -166,9 +171,7 @@ export function formatMorningNoteDisplayDate(value = new Date(), timeZone = MORN
 }
 
 export function getMorningNoteSnapshotKey(date = formatMorningNoteMarketDate()) {
-  const normalized = String(date || '').trim()
-  if (!isIsoDate(normalized)) throw new Error('morning note snapshot date must be YYYY-MM-DD')
-  return `${MORNING_NOTE_SNAPSHOT_PREFIX}/${normalized}.json`
+  return getMorningNoteSnapshotStoreKey(date)
 }
 
 export function getMorningNoteLogKey(value = new Date(), timeZone = MORNING_NOTE_TIMEZONE) {
@@ -265,9 +268,7 @@ export async function readMorningNoteSnapshot(
   date = formatMorningNoteMarketDate(),
   { token = readBlobToken(), getImpl = get } = {}
 ) {
-  const text = await readBlobText(getMorningNoteSnapshotKey(date), { token, getImpl })
-  if (!text) return null
-  return JSON.parse(text)
+  return readMorningNoteSnapshotStore(date, { token, getImpl })
 }
 
 export async function writeMorningNoteSnapshot(
@@ -289,12 +290,9 @@ export async function writeMorningNoteSnapshot(
     ...snapshot,
   }
 
-  await putImpl(getMorningNoteSnapshotKey(marketDate), JSON.stringify(payload, null, 2), {
+  await writeMorningNoteSnapshotStore(marketDate, payload, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/json',
+    putImpl,
   })
 
   return payload

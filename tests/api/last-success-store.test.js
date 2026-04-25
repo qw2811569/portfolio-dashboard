@@ -257,6 +257,7 @@ describe('api/_lib/last-success-store.js', () => {
     })
 
     await flushMicrotasks()
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(settled).toBe(true)
     await expect(resultPromise).resolves.toEqual({ job: 'collect-news', ok: true })

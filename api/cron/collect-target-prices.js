@@ -1,6 +1,7 @@
 import { list, put } from '@vercel/blob'
 import { buildInternalAuthHeaders } from '../_lib/auth-middleware.js'
 import { resolveInternalApiOrigin } from '../_lib/signed-url.js'
+import { writeTargetPriceSnapshot } from '../_lib/target-prices-store.js'
 import {
   dedupeTrackedStocks,
   getBlobToken,
@@ -19,7 +20,6 @@ export {
   getFallbackTrackedStocks,
 } from '../_lib/tracked-stocks.js'
 
-const TARGET_PRICE_PREFIX = 'target-prices'
 const PROCESSING_PAUSE_MS = 250
 
 function getCronSecret() {
@@ -165,16 +165,9 @@ async function fetchAnalystReports(stock, { origin, fetchImpl = fetch } = {}) {
 }
 
 export async function putTargetPriceSnapshot(code, snapshot, { token = getBlobToken() } = {}) {
-  if (!token) {
-    throw new Error('BLOB_READ_WRITE_TOKEN is required for target-price writes')
-  }
-
-  await put(`${TARGET_PRICE_PREFIX}/${code}.json`, JSON.stringify(snapshot, null, 2), {
+  return writeTargetPriceSnapshot(code, snapshot, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/json',
+    putImpl: put,
   })
 }
 

@@ -1,8 +1,5 @@
 import { withApiAuth } from './_lib/auth-middleware.js'
-import { get } from '@vercel/blob'
-import { getPrivateBlobToken } from './_lib/blob-tokens.js'
-
-const TARGET_PRICE_PREFIX = 'target-prices'
+import { readTargetPriceSnapshot } from './_lib/target-prices-store.js'
 
 function normalizeTargetSource(value) {
   const normalized = String(value || '')
@@ -20,21 +17,12 @@ async function handler(req, res) {
   const code = String(req.query?.code || '').trim()
   if (!code) return res.status(400).json({ error: 'code query param is required' })
 
-  const token = getPrivateBlobToken()
-  if (!token) return res.status(500).json({ error: 'blob token not configured' })
-
   try {
-    const blobResult = await get(`${TARGET_PRICE_PREFIX}/${code}.json`, {
-      access: 'private',
-      token,
-      useCache: false,
-    })
-
-    if (!blobResult) {
+    const snapshot = await readTargetPriceSnapshot(code)
+    if (!snapshot) {
       return res.status(404).json({ error: `no target-price snapshot for ${code}` })
     }
 
-    const snapshot = await new Response(blobResult.stream).json()
     const reportCount = Array.isArray(snapshot?.targets?.reports)
       ? snapshot.targets.reports.length
       : 0

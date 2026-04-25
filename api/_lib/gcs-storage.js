@@ -209,3 +209,31 @@ export async function gcsHead(bucketName, key) {
     throw normalized
   }
 }
+
+export async function gcsListPrefix(bucketName, prefix, { cursor, limit = 1000 } = {}) {
+  try {
+    const [files, , apiResponse] = await getBucket(bucketName).getFiles({
+      prefix: String(prefix || '').trim(),
+      pageToken: cursor || undefined,
+      maxResults: limit,
+      autoPaginate: false,
+    })
+
+    return {
+      items: (Array.isArray(files) ? files : []).map((file) => ({
+        key: file.name,
+        pathname: file.name,
+      })),
+      cursor: apiResponse?.nextPageToken || null,
+    }
+  } catch (error) {
+    const normalized = normalizeGcsError(error, bucketName, prefix)
+    if (normalized === null) {
+      return {
+        items: [],
+        cursor: null,
+      }
+    }
+    throw normalized
+  }
+}

@@ -1,9 +1,10 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { get } from '@vercel/blob'
 
 import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
+import { readTargetPriceSnapshot } from '../api/_lib/target-prices-store.js'
+import { readValuationSnapshot } from '../api/_lib/valuation-store.js'
 import { isSkippedInstrumentType, loadTrackedStocks } from '../api/cron/collect-target-prices.js'
 import { isCronTargetUsable } from '../src/lib/dataAdapters/cronTargetsAdapter.js'
 
@@ -11,8 +12,6 @@ const TARGET_PRICE_THRESHOLD = 0.8
 const FALLBACK_TARGET_PRICE_THRESHOLD = 0.75
 const VALUATION_THRESHOLD = 0.95
 const TRACKED_STOCKS_LIVE_SYNC_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-const TARGET_PRICE_PREFIX = 'target-prices/'
-const VALUATION_PREFIX = 'valuation/'
 const STATUS_DIR = path.resolve('docs/status')
 const ALERTS_PATH = path.resolve('coordination/llm-bus/alerts.jsonl')
 const FALLBACK_TRACKED_SOURCES = new Set([
@@ -204,25 +203,15 @@ function evaluateTargetGate({
   }
 }
 
-async function readSnapshotMap(trackedStocks, token, prefix) {
+async function readSnapshotMap(trackedStocks, readSnapshot, token) {
   const snapshotMap = new Map()
 
   for (const stock of trackedStocks) {
     const code = String(stock?.code || '').trim()
     if (!code) continue
 
-    const blobResult = await get(`${prefix}${code}.json`, {
-      access: 'private',
-      token,
-      useCache: false,
-    })
-    if (!blobResult) {
-      snapshotMap.set(code, null)
-      continue
-    }
-
     try {
-      snapshotMap.set(code, await new Response(blobResult.stream).json())
+      snapshotMap.set(code, await readSnapshot(code, { token }))
     } catch {
       snapshotMap.set(code, null)
     }
@@ -326,8 +315,8 @@ export async function auditDataCoverage({
   })
   const eligibleStocks = trackedStocks.filter((stock) => !isSkippedInstrumentType(stock.type))
   const [targetSnapshotMap, valuationSnapshotMap] = await Promise.all([
-    readSnapshotMap(eligibleStocks, token, TARGET_PRICE_PREFIX),
-    readSnapshotMap(eligibleStocks, token, VALUATION_PREFIX),
+    readSnapshotMap(eligibleStocks, readTargetPriceSnapshot, token),
+    readSnapshotMap(eligibleStocks, readValuationSnapshot, token),
   ])
 
   const rows = eligibleStocks

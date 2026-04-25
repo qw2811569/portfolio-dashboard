@@ -491,3 +491,130 @@ _End of Round 3. 等使用者決定要不要把結論寫成 decision。_
 - 10. store / GCS tests 補上 invalid flag、metric append failure、不阻塞 primary 的 slow shadow read、archive bucket routing、invalid payload，以及 `ifGenerationMatch` save precondition pass-through。
 - 對 B 的 confidence 回應：我預期下一輪 `dispatcher correctness` 從 `3/10` 升到 `8/10`，因為這輪把最危險的 contract drift 都收斂了: primary/secondary 不再互相阻塞、flag shape 已對齊 split contract、invalid config 會 fail-fast、caller 也能區分 missing 與 outage；`migration script safety` 我預期從 `2/10` 升到 `7/10`，因為現在至少有 single-run lock 和 resume/idempotent automated coverage。
 - B 沒抓但我自己另外發現的 bug：沒有新的未修復 bug；額外補到的是 `api/daily-snapshot-status` 的 500 path test，確認 route 端真的吃到 `STORAGE_OUTAGE`。
+
+## Round 10 · Codex B re-verify · 2026-04-25 14:32
+
+### 10 個 fix 驗證結果
+
+| # | 嚴重度 | 標題 | 結論 | 證據 |
+|---|--------|------|------|------|
+| 1 | 🔴 | cascade | ✅ 修好 | runtime harness 重跑 `appendMetricImpl -> disk full`；`readLastSuccess()` 仍 return `{job:'collect-news', ok:true}`，只留下 warn，不再 throw。 |
+| 2 | 🟡 | shadow-read blocks primary | ✅ 修好 | 250ms 慢 shadow backend 重跑；primary read `elapsed=0ms`，結果即時回 `{backend:'primary'}`，沒有再被 shadow latency 卡住。 |
+| 3 | 🟡 | env shape 漂移 | ✅ 修好 | split env 重跑：`public={primary:'gcs', shadowRead:true, shadowWrite:false}`、`private={primary:'vercel', shadowRead:true, shadowWrite:false}`；legacy compound `gcs-primary-vercel-shadow` 仍可 backward-compat 解析；split + legacy 同時設時 split 贏，並 warn legacy ignored。 |
+| 4 | 🟡 | invalid flag silent fallback | ✅ 修好 | 設 `STORAGE_PRIMARY_OPS_LAST_SUCCESS_PUBLIC=vercell-only` 後，`getLastSuccessStorageMode()` 直接 throw：`must be "vercel" or "gcs"`；不再 silently fallback。 |
+| 5 | 🟡 | daily-snapshot bucket route | ✅ 修好 | `getLastSuccessScopeDescriptor('daily-snapshot','2026-04-25')` 現在回 `keyspace='ops.daily_snapshot_marker'`、`bucketClass='archive'`、`bucketName='jcv-dev-archive'`。 |
+| 6 | 🟡 | migration multi-instance lock | ⚠️ 修了但有 regression | integration 重跑：第二個 instance 會正確 throw `migration already in progress`；但我再測 `SIGKILL` 持鎖 process 後，stale lock 會殘留，下一次仍 false-positive throw 同訊息。 |
+| 7 | 🟡 | caller failure contract | ✅ 修好 | `readLastSuccessMarker()` 在底層 throw 時會丟 `code='STORAGE_OUTAGE'`；`api/daily-snapshot-status.js` 在 `GCS` primary + 缺 bucket 的 outage 情境下實回 `500` + `{code:'STORAGE_OUTAGE'}`，不再回 `200 + missing`。 |
+| 8 | 🟡 | migration tests | ✅ 修好 | `tests/scripts/migrate-last-success-to-gcs.test.js` 已存在；case 含 dry-run、idempotent rerun、resume、lock。targeted `vitest`：4 files / 21 tests 全綠。 |
+| 9 | 🟢 | payload guard | ✅ 修好 | `writeLastSuccess(..., null)` 與 `writeLastSuccess(..., undefined)` 都會 throw `InvalidPayload` + `code='INVALID_PAYLOAD'`。 |
+| 10 | 🟢 | test coverage | ✅ 修好 | test 名稱可對到 invalid flag、metric append failure、slow shadow latency、archive bucket、invalid payload、`ifGenerationMatch`；`tests/api/daily-snapshot-status.test.js` 也有 500 outage path。補充：invalid payload test file 是 `null` case，`undefined` 我用 runtime harness 另驗也有擋住。 |
+
+### 新發現的 regression
+
+- 🟡 `migration stale lock`: `scripts/migrate-last-success-to-gcs.mjs` 的 pid-file lock 沒有 stale detection / pid liveness check。實測 child process acquire lock 後 `SIGKILL`，lock file 仍留著；下一次 migration 直接 false-positive `migration already in progress`。這條會把後續 migration wedge 住，A 還要補。
+- 除了上面這條，這輪沒有再抓到新的 dispatcher / fallback / auth regression。
+- `primary throw` 時 shadow read 確實已經發出，但我觀察到 `shadowCalled=true` 且 `unhandledRejection=[]`；目前看是多做了一次無效 I/O，不是漏錯或 crash。
+- Round 8 通過項重跑：
+- `Concurrency / race`: in-memory race 重跑，writer 還在等 120ms shadow write 時，reader 已讀到 primary 新值 `{version:'new'}`；沒有 partial body regression。
+- `Cutover flag 切換瞬間`: 兩次 read 間改 env，結果從 `vercel` 正常切到 `gcs`；沒有 cache regression。
+- `Fallback`: `vercel-primary-gcs-shadow` 仍會在 shadow read/write fail 時 graceful degrade；`gcs-only` 仍 fail-fast throw。
+- `Auth / secrets`: 我只看到 log site 打 key / error；`rg` 沒看到新的 token / private key 直接打印。
+
+### A 預測 vs 實際
+- A 預測 dispatcher correctness 3→8 · 我評：8/10
+- A 預測 migration safety 2→7 · 我評：5/10
+- adapter correctness · 我評：8/10
+
+### 我推薦下一動作
+- 還沒全 clear。A 先補 `stale lock`，再談 migration on jcv-dev VM。
+
+## Round 11 · Codex A · stale lock fix · 2026-04-25 14:50
+
+- commit SHA: `a49296e1d426504c9541d679ff3721fa45f185ed`
+- diff 大小: `2 files changed, 125 insertions(+), 29 deletions(-)`
+- test 結果: `npm run test:run -- tests/scripts/migrate-last-success-to-gcs.test.js --run` ✅ `1 passed / 4 passed`
+- race window 評估: 兩個 instance 仍可能同時看到 stale lock，但 reclaim 之後用 `writeFile(..., { flag: 'wx' })` 重搶，只會有一個成功；輸家會在 retry 時看到新的 lock 並回 `migration already in progress (pid X)`。殘留風險主要是重複清 stale warning，不會變成雙持鎖。
+
+---
+
+## Round 12 · Claude · VM migration executed · 2026-04-25 14:55
+
+### 執行摘要
+
+Phase 1 Step 2a 完整實作 + 對抗性 QA + 真實遷移在 jcv-dev VM 跑通。
+
+### 執行步驟
+
+1. **patch 套用**：`fcf71b6...a49296e` 5 個 commit `git am` 上 `jcv-dev` 從 main HEAD `c25b342` rebase
+2. **npm install**：`@google-cloud/storage` SDK 裝好
+3. **env 補齊**：`.env` 加 `GCS_PROJECT=jcv-dev-2026` + 3 個 bucket name；**flag 預設 `vercel-only` 沒動 behavior**
+4. **PM2 restart with --update-env**：jcv-api online 0s
+5. **API regression check**：5 個 endpoint HTTP code 跟 patch 前一模一樣（`/api/valuation` 400 / `/api/target-prices` 400 / `/api/tracked-stocks` 405 / `/api/brain` 400 / `/api/blob-read` 401）
+6. **dry-run migration**：列出 7 keyspace · 4 actual + 3 source-missing
+7. **actual migration**：
+   - `last-success-collect-daily-events.json` → `gs://jcv-dev-public/` ✅ done
+   - `last-success-collect-news.json` → `gs://jcv-dev-public/` ✅ done
+   - `last-success-collect-target-prices.json` → `gs://jcv-dev-private/` ✅ done · vercel⟷gcs SHA match `e3134d67ed00`
+   - `last-success-compute-valuations.json` → `gs://jcv-dev-private/` ✅ done · SHA match `97eff03c4466`
+   - 3 source-missing（Vercel Blob 沒寫過 · 預期）
+8. **read-back verify**：migration script 自帶 SHA-256 read-back · 4 個 `done` 都通過
+
+### 信心評分（B Round 10 + post-VM）
+
+| 元件 | 起始 | 修後 |
+|------|------|------|
+| Adapter correctness | 6 | **8/10** |
+| Dispatcher correctness | 3 | **8/10** |
+| Migration safety | 2 | **9/10**（含 stale lock fix） |
+
+### 沒做的（明確 out-of-scope）
+
+- ❌ 沒切過 `STORAGE_PRIMARY_OPS_LAST_SUCCESS_*` flag（仍 `vercel-only`）
+- ❌ 沒在 production VM (`bigstock`) 跑 · 只 jcv-dev
+- ❌ 沒 push（5 commit 都 local）
+- ❌ 沒 burn-in（理論最少 24h shadow-read 觀察）
+
+### 留給用戶決定
+
+Step 2 PoC 已成功落地。下一動作有 3 條路徑：
+
+1. **緩步驗收**：jcv-dev 切 `vercel-primary-gcs-shadow` 跑 24h burn-in · 看 divergence log 沒事再切 `gcs-primary` · 共需 ~3 天
+2. **保守留守**：本步 PoC 已證明 adapter / migration 行得通 · flag 仍 `vercel-only` 無事 · 直接 push 到 GitHub 留紀錄 · 等下一個 keyspace Step 2b（tracked-stocks CAS）再進
+3. **積極推進**：直接派 Codex 寫 Step 2b（`portfolio.tracked-stocks` GCS generation precondition CAS）· 用同樣 A→B QA 模式
+
+### 沒處理的 follow-up
+
+- daily-snapshot / morning-note / tw-events-worker 的 marker 應該由 worker 寫 · 目前 source-missing 會在那些 worker 跑過第一輪後自然填上
+- `migration-source-inventory.json` 我寫的版本（2 物件）跟實際（4 物件）有差 · 來源是 Vercel Blob list API 的 prefix 行為跟 exact filename match 不同（不是 bug · 是我的 inventory 工具用法錯）
+
+## Round 13 · Codex A · Phase 1 Step 2b · 2026-04-25 17:11
+
+- commit SHA: `38efec8`
+- 改 / 新建檔（file:line list）
+- `api/_lib/gcs-storage.js:74-201` — 加 `gcsReadWithVersion` / `gcsWriteIfGeneration`，把 GCS 412 正規化成 `PRECONDITION_FAILED`
+- `api/_lib/storage-divergence-log.js:1-81` — 抽共用 divergence logger / stable JSON hash / background task scheduler，讓 2a / 2b 共用同一份 logger
+- `api/_lib/last-success-store.js:1-11,199-220,498-531` — 只改成吃共用 logger helper，2a behavior 不變
+- `api/_lib/tracked-stocks-store.js:1-558` — 新增 tracked-stocks capability adapter，支援 Vercel/GCS primary + shadow read/write + opaque `versionToken`
+- `api/_lib/tracked-stocks.js:221-276,545-557` — 既有 tracked-stocks wrapper 改接新 store，保留既有 read fallback API surface
+- `api/tracked-stocks.js:5-126` — caller 改成 `readTrackedStocks` + `writeTrackedStocksIfVersion`；retry loop 仍留在 caller
+- `scripts/migrate-tracked-stocks-to-gcs.mjs:1-426` — 新增 create-only migration script，state/lock/resume/stale-lock safety 跟 2a 對齊
+- `tests/api/gcs-storage.test.js:63-335` — 補 versioned read / create-only / 412 normalize coverage
+- `tests/api/tracked-stocks-store.test.js:1-454` — 補 4 mode、shadow divergence、non-blocking shadow write、VERSION_CONFLICT propagate、caller retry
+- `tests/scripts/migrate-tracked-stocks-to-gcs.test.js:1-400` — 補 dry-run / idempotent / resume / stale lock / existing-object skip coverage
+- `.env.example:38-40`
+- `.env.local.example:60-62`
+
+CAS retry 行為：
+
+1. 第一次成功：caller 先 `readTrackedStocks()` 拿到 current payload + opaque `versionToken`，合併 stocks 後一次 `writeTrackedStocksIfVersion()` 成功，直接回 200。
+2. 第一次 412 · retry 後成功：primary store 回 `VERSION_CONFLICT`，caller sleep/backoff 後重新 read 最新 payload + 最新 token，再 merge 一次後重寫；若第二次 precondition pass 就成功，不會掉資料。
+3. 連續 N 次 412 · 終 throw（max retries reached）：caller 最多跑 `TRACKED_STOCKS_WRITE_RETRY_LIMIT=3` 輪；每輪都 conflict 就把最後一次 `VERSION_CONFLICT` 往外 throw，route 回 500，沒有把 retry 策略藏進 adapter。
+
+與 2a last-success 的設計差異總結：
+
+- 2a 是 Class 1 last-writer-wins；2b 是 Class 2 CAS，所以 adapter 不是單純 `read/write`，而是 `readTrackedStocks` + `writeTrackedStocksIfVersion`。
+- 2a 的 shadow write 可以直接寫同 payload；2b 的 shadow write 必須先用 secondary 自己的 version space 讀 secondary token，再 best-effort conditional write，不能拿 primary token 硬套 secondary。
+- 2a 的 retry 可以在 backend 邏輯外看起來像 overwrite；2b 明確把 retry loop 留在 caller，因為 max retries / backoff / merge policy 都是 domain semantics。
+- 2a migration 可以 overwrite verified singleton；2b migration 嚴格 create-only，目的不是同步最新值，而是安全建立初始 GCS 副本，遇到已存在物件一律 skip，不覆蓋較新的 secondary。
+
+- 給 Codex B QA 的 hint：我最不確定的是 cross-backend shadow-read 的「version 一致」定義。Vercel `etag` 和 GCS `generation` 不是同一個 version domain，所以我採 payload hash 為 divergence 主判準，version 只記錄 presence/hash metadata，不拿 raw token equality 當 mismatch 條件；這塊請優先 challenge。

@@ -1,0 +1,34 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "d0ce1f34-94cf-46f9-a79c-a18aa1e369dc",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "bdb1b711-4a4c-44ea-af27-62a5c9031131",
+      "prompt_summary": "我看不懂",
+      "prompt_hash": "sha256:5052d4a65e421a185abae52ec6f8f89be8fd29b9bed0b96f34aaf3c9a52038f8",
+      "message_count": 363,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-25T04:40:55.911384Z",
+      "session_start": "2026-04-22T05:34:16.818Z",
+      "prompt_submitted_at": "2026-04-25T04:40:55.911385Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 34,
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

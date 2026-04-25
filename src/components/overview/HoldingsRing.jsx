@@ -86,7 +86,7 @@ export default function HoldingsRing({ holdings = [], totalVal = 0 }) {
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart accessibilityLayer={false} aria-hidden="true" focusable={false} tabIndex={-1}>
             <Pie
               data={chartData}
               dataKey="value"

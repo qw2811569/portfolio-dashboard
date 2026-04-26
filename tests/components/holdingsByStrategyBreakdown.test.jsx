@@ -52,6 +52,37 @@ describe('components/HoldingsByStrategyBreakdown', () => {
     expect(strategyFill(rows[1])).toHaveStyle({ background: C.cta })
   })
 
+  it('highlights only the rows tied for max value when others are below', () => {
+    render(
+      <HoldingsByStrategyBreakdown
+        holdings={[
+          { code: '2330', name: '台積電', value: 500000 },
+          { code: '0050', name: '元大台灣50', value: 500000 },
+          { code: '2454', name: '聯發科', value: 300000 },
+          { code: '3037', name: '欣興', value: 200000 },
+          { code: '權證A', name: '權證A', value: 100000, type: '權證' },
+        ]}
+        stockMeta={{
+          2330: { strategy: '成長股' },
+          '0050': { strategy: 'ETF/指數' },
+          2454: { strategy: '事件驅動' },
+          3037: { strategy: '事件驅動' },
+        }}
+      />
+    )
+
+    const rows = screen.getAllByTestId('holdings-strategy-row')
+    expect(rows).toHaveLength(4)
+    expect(screen.getByText('成長股')).toBeInTheDocument()
+    expect(screen.getByText('事件驅動')).toBeInTheDocument()
+    expect(screen.getByText('ETF / 防守')).toBeInTheDocument()
+    expect(screen.getByText('權證')).toBeInTheDocument()
+    expect(strategyFill(rows[0])).toHaveStyle({ background: C.cta })
+    expect(strategyFill(rows[1])).toHaveStyle({ background: C.cta })
+    expect(strategyFill(rows[2])).toHaveStyle({ background: C.cta })
+    expect(strategyFill(rows[3])).toHaveStyle({ background: C.charcoal })
+  })
+
   it('does not render any cta bar when all rows have zero value', () => {
     render(
       <HoldingsByStrategyBreakdown

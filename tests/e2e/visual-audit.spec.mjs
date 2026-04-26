@@ -1,7 +1,7 @@
 import { test } from '@playwright/test'
 
 const BASE = process.env.AUDIT_BASE_URL || 'http://104.199.144.170/'
-const OUT = '.tmp/r156-full-execute/round4/screenshots'
+const OUT = process.env.AUDIT_OUT_DIR || '.tmp/r156-full-execute/round12/screenshots'
 
 const routes = [
   { name: '01-overview-desktop', path: '/portfolio/me/overview', viewport: { width: 1440, height: 900 }, full: true },

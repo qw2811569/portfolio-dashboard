@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
 import path from 'node:path'
 import { get, put } from '@vercel/blob'
+import { appendLogLine } from './append-log-store.js'
 import { getPrivateBlobToken } from './blob-tokens.js'
 import {
   getMorningNoteSnapshotStoreKey,
@@ -300,7 +301,7 @@ export async function writeMorningNoteSnapshot(
 
 export async function appendMorningNoteLog(
   entry,
-  { token = readBlobToken(), getImpl = get, putImpl = put } = {}
+  { token = readBlobToken(), getImpl = get, putImpl = put, ...options } = {}
 ) {
   if (!token) {
     throw new Error('BLOB_READ_WRITE_TOKEN is required for morning note log writes')
@@ -308,17 +309,12 @@ export async function appendMorningNoteLog(
 
   const now = entry?.ts ? new Date(entry.ts) : new Date()
   const logKey = getMorningNoteLogKey(now)
-  const existing = (await readBlobText(logKey, { token, getImpl })) || ''
   const line = JSON.stringify(entry)
-  const nextText =
-    existing.trim().length > 0 ? `${existing.replace(/\s*$/, '\n')}${line}\n` : `${line}\n`
-
-  await putImpl(logKey, nextText, {
+  await appendLogLine('morning_note_log', logKey, line, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/x-ndjson',
+    getImpl,
+    putImpl,
+    ...options,
   })
 
   return {

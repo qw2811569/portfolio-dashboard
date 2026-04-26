@@ -6,6 +6,11 @@ import {
   buildWeeklyReportFilename,
   buildWeeklyReportHtmlDocument,
 } from '../lib/weeklyReportExport.js'
+import {
+  buildWeeklyPdfData,
+  buildWeeklyPdfDefinition,
+  downloadWeeklyPdf,
+} from '../lib/weeklyPdfBuilder.js'
 
 function downloadTextFile(filename, content, mimeType) {
   const blob = new Blob([String(content ?? '')], { type: mimeType })
@@ -142,10 +147,45 @@ export function useWeeklyReportClipboard({
     return html
   }, [flashSaved, generateWeeklyReport, now])
 
+  const downloadWeeklyReportPdf = useCallback(async () => {
+    const data = buildWeeklyPdfData({
+      portfolioName: activePortfolioName,
+      holdings,
+      newsEvents,
+      totalVal,
+      totalPnl,
+      retPct,
+      isClosedEvent,
+      now: now(),
+    })
+    const definition = buildWeeklyPdfDefinition(data)
+
+    try {
+      await downloadWeeklyPdf(buildWeeklyReportFilename('pdf', now()), definition)
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloaded('pdf'))
+    } catch (error) {
+      console.error('downloadWeeklyReportPdf failed:', error)
+      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloadFailed('pdf'))
+    }
+
+    return definition
+  }, [
+    activePortfolioName,
+    flashSaved,
+    holdings,
+    isClosedEvent,
+    newsEvents,
+    now,
+    retPct,
+    totalPnl,
+    totalVal,
+  ])
+
   return {
     generateWeeklyReport,
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
     downloadWeeklyReportHtml,
+    downloadWeeklyReportPdf,
   }
 }

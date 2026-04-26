@@ -331,26 +331,30 @@ export function useAppRuntimeWorkflows({
     toSlashDate,
   })
 
-  const { copyWeeklyReport, downloadWeeklyReportMarkdown, downloadWeeklyReportHtml } =
-    useAppWeeklyReportRuntime({
-      activePortfolioId,
-      portfolios,
-      holdings: H,
-      watchlist: W,
-      analysisHistory,
-      newsEvents: resolvedNewsEvents,
-      strategyBrain,
-      totalCost,
-      totalVal,
-      totalPnl,
-      retPct,
-      isClosedEvent,
-      resolveHoldingPrice,
-      getHoldingUnrealizedPnl,
-      getHoldingReturnPct,
-      brainRuleSummary,
-      flashSaved,
-    })
+  const {
+    copyWeeklyReport,
+    downloadWeeklyReportMarkdown,
+    downloadWeeklyReportHtml,
+    downloadWeeklyReportPdf,
+  } = useAppWeeklyReportRuntime({
+    activePortfolioId,
+    portfolios,
+    holdings: H,
+    watchlist: W,
+    analysisHistory,
+    newsEvents: resolvedNewsEvents,
+    strategyBrain,
+    totalCost,
+    totalVal,
+    totalPnl,
+    retPct,
+    isClosedEvent,
+    resolveHoldingPrice,
+    getHoldingUnrealizedPnl,
+    getHoldingReturnPct,
+    brainRuleSummary,
+    flashSaved,
+  })
 
   const tradeCapture = useAppTradeRuntime({
     workflowArgs: {
@@ -547,6 +551,7 @@ export function useAppRuntimeWorkflows({
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
     downloadWeeklyReportHtml,
+    downloadWeeklyReportPdf,
     backupFileInputRef,
     exportLocalBackup,
     importLocalBackup,

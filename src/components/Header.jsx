@@ -15,8 +15,10 @@ export default function Header(props) {
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
     downloadWeeklyReportHtml,
+    downloadWeeklyReportPdf,
     exportLocalBackup,
     importLocalBackup,
+    onOpenOnboarding,
     priceSyncStatusTone,
     priceSyncStatusLabel,
     activePriceSyncAt,
@@ -140,6 +142,32 @@ export default function Header(props) {
     },
     '持倉看板'
   )
+  // R156 #7 · insider portfolio (例 7865 金聯成) · header 加 persistent
+  // 「👑 公司代表」badge · 跨 tab contract · 不只 Daily 才看到合規模式
+  const isInsiderView = viewMode === 'insider-compressed'
+  const insiderBadge =
+    isInsiderView &&
+    h(
+      'span',
+      {
+        'data-testid': 'header-insider-badge',
+        title: 'Insider 公司代表合規模式 · 不出 AI 買賣建議 · 只列風險 / 狀態 / 合規邊界',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          fontSize: 11,
+          fontWeight: 600,
+          color: C.text,
+          padding: '3px 8px',
+          borderRadius: 999,
+          background: alpha(C.ink, '10'),
+          border: `1px solid ${alpha(C.ink, '24')}`,
+          whiteSpace: 'nowrap',
+        },
+      },
+      '👑 公司代表'
+    )
   const savedLabel =
     saved && h('span', { style: { color: C.textSec, fontSize: 11, fontWeight: 500 } }, saved)
   const refreshPricesButton = h(
@@ -220,8 +248,45 @@ export default function Header(props) {
           },
           '📥 .html'
         )
+      : null,
+    typeof downloadWeeklyReportPdf === 'function'
+      ? h(
+          'button',
+          {
+            type: 'button',
+            className: 'ui-btn',
+            'data-testid': 'weekly-export-pdf',
+            onClick: downloadWeeklyReportPdf,
+            style: {
+              background: alpha(C.fillTeal, '10'),
+              border: `1px solid ${alpha(C.fillTeal, A.strongLine)}`,
+              ...weeklyReportButtonStyle,
+            },
+          },
+          '📥 .pdf'
+        )
       : null
   )
+  const onboardingHelpButton =
+    typeof onOpenOnboarding === 'function'
+      ? h(
+          'button',
+          {
+            type: 'button',
+            className: 'ui-btn',
+            'data-testid': 'onboarding-help',
+            onClick: onOpenOnboarding,
+            style: {
+              background: alpha(C.ink, '08'),
+              color: C.textSec,
+              border: `1px solid ${alpha(C.ink, A.strongLine)}`,
+              ...ghostBtn,
+            },
+            'aria-label': '重看導覽',
+          },
+          '?'
+        )
+      : null
   const exportBackupButton = h(
     'button',
     {
@@ -522,6 +587,7 @@ export default function Header(props) {
       },
       cloudIndicator,
       titleText,
+      insiderBadge || null,
       isCompactLandscape ? null : savedLabel
     ),
     isCompactLandscape ? null : pnlSummary
@@ -645,6 +711,7 @@ export default function Header(props) {
             },
           },
           weeklyReportControls,
+          onboardingHelpButton,
           exportBackupButton,
           importBackupLabel
         ),
@@ -1220,9 +1287,11 @@ export default function Header(props) {
           },
           cloudIndicator,
           titleText,
+          insiderBadge || null,
           savedLabel,
           refreshPricesButton,
           weeklyReportControls,
+          onboardingHelpButton,
           exportBackupButton,
           importBackupLabel,
           backupImportInput,

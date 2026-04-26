@@ -34,6 +34,7 @@ function buildProps(overrides = {}) {
     copyWeeklyReport: vi.fn(),
     downloadWeeklyReportMarkdown: vi.fn(),
     downloadWeeklyReportHtml: vi.fn(),
+    downloadWeeklyReportPdf: vi.fn(),
     exportLocalBackup: vi.fn(),
     backupFileInputRef: { current: null },
     importLocalBackup: vi.fn(),
@@ -137,6 +138,19 @@ describe('components/Header.jsx', () => {
     render(<Header {...buildProps()} />)
 
     expect(screen.queryByTestId('header-notice-toggle')).not.toBeInTheDocument()
+  })
+
+  it('exposes weekly PDF export and manual onboarding replay', () => {
+    const downloadWeeklyReportPdf = vi.fn()
+    const onOpenOnboarding = vi.fn()
+
+    render(<Header {...buildProps({ downloadWeeklyReportPdf, onOpenOnboarding })} />)
+
+    fireEvent.click(screen.getByTestId('weekly-export-pdf'))
+    fireEvent.click(screen.getByTestId('onboarding-help'))
+
+    expect(downloadWeeklyReportPdf).toHaveBeenCalled()
+    expect(onOpenOnboarding).toHaveBeenCalled()
   })
 
   it('renders weekly export controls and wires each action button', () => {

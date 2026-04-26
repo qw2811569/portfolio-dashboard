@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { C } from '../theme.js'
 import AppPanels from './AppPanels.jsx'
 import { ConfirmDialog } from './common/index.js'
@@ -8,6 +8,7 @@ import Header from './Header.jsx'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
 import { PortfolioPanelsProvider } from '../contexts/PortfolioPanelsContext.jsx'
 import { useCmdK } from '../hooks/useCmdK.js'
+import OnboardingTour from './onboarding/OnboardingTour.jsx'
 
 export default function AppShellFrame({
   ready,
@@ -21,6 +22,7 @@ export default function AppShellFrame({
   confirmDialogProps,
 }) {
   const panelRootRef = useRef(null)
+  const [onboardingReplayToken, setOnboardingReplayToken] = useState(0)
   const visuallyHiddenStyle = {
     position: 'absolute',
     width: 1,
@@ -192,7 +194,10 @@ export default function AppShellFrame({
         title={headerBoundaryCopy.title}
         description={headerBoundaryCopy.description}
       >
-        <Header {...headerProps} />
+        <Header
+          {...headerProps}
+          onOpenOnboarding={() => setOnboardingReplayToken((current) => current + 1)}
+        />
       </ErrorBoundary>
 
       <main className="app-shell" style={{ padding: '8px 12px' }} aria-label="持倉工作台主內容">
@@ -216,6 +221,11 @@ export default function AppShellFrame({
         onClose={cmdK.closePalette}
       />
       <ConfirmDialog {...confirmDialogProps} />
+      <OnboardingTour
+        key={onboardingReplayToken}
+        replayToken={onboardingReplayToken}
+        onNavigate={headerProps?.setTab}
+      />
     </div>
   )
 }

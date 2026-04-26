@@ -1,0 +1,33 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "3be30534-470a-47f4-845f-2afd78c26731",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "<task-notification>\n<task-id>bidfebsz3</task-id>\n<tool-use-id>toolu_019DUxW2tWGvYZoGwGxu5Mz9</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Codex investigate root cause read-only\" completed (exit code 0)</summary>\n</task-notification>",
+      "prompt_hash": "sha256:8c60900dc4772f735c7276b75b6fa3dabd09e1c3b5f3ac7acbc2580285b6b8e5",
+      "message_count": 12019,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-26T16:14:35.748979Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "prompt_submitted_at": "2026-04-26T16:14:35.748980Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 902,
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

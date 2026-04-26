@@ -479,6 +479,7 @@ export function HoldingRow({
   holding,
   dossier = null,
   expanded = false,
+  rowTone = 'paper',
   detailOpen = false,
   onToggle = () => {},
   onOpenDetail = () => {},
@@ -498,6 +499,7 @@ export function HoldingRow({
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
   const value = getHoldingMarketValue(holding)
+  const rowBackground = rowTone === 'alt' ? alpha(C.paper, '8c') : alpha(C.paper, 'd4')
   const deviationBadge = buildPriceDeviationBadgeMeta(holding)
   const badgeTone = badgeToneStyles[deviationBadge?.tone || 'muted']
   const sparklineHistory = Array.isArray(holding.priceHistory)
@@ -521,7 +523,7 @@ export function HoldingRow({
           gap: 8,
           alignItems: 'center',
           padding: '12px',
-          background: expanded ? C.subtleElev : C.card,
+          background: expanded ? C.surfaceMuted : rowBackground,
           border: `1px solid ${C.border}`,
           borderRadius: C.radii.md,
           marginBottom: expanded ? 0 : 4,
@@ -781,6 +783,7 @@ function HoldingMobileCard({
   holding,
   dossier = null,
   expanded = false,
+  rowTone = 'paper',
   detailOpen = false,
   onToggle = () => {},
   onOpenDetail = () => {},
@@ -800,6 +803,7 @@ function HoldingMobileCard({
   const pnl = getHoldingUnrealizedPnl(holding)
   const pct = getHoldingReturnPct(holding)
   const value = getHoldingMarketValue(holding)
+  const rowBackground = rowTone === 'alt' ? alpha(C.paper, '8c') : alpha(C.paper, 'd4')
   const deviationBadge = buildPriceDeviationBadgeMeta(holding)
   const badgeTone = badgeToneStyles[deviationBadge?.tone || 'muted']
   const sparklineHistory = Array.isArray(holding.priceHistory)
@@ -819,7 +823,7 @@ function HoldingMobileCard({
           display: 'grid',
           gap: 12,
           padding: '14px 14px 12px',
-          background: expanded ? C.subtleElev : C.card,
+          background: expanded ? C.surfaceMuted : rowBackground,
           border: `1px solid ${C.border}`,
           borderRadius: expanded ? '16px 16px 0 0' : 16,
           marginBottom: expanded ? 0 : 8,
@@ -1371,10 +1375,11 @@ export function HoldingsTable({
               gap: 8,
             },
           },
-          sorted.map((holding) =>
+          sorted.map((holding, index) =>
             h(HoldingMobileCard, {
               key: holding.code,
               holding,
+              rowTone: index % 2 === 0 ? 'paper' : 'alt',
               dossier: dossierByCode.get(holding.code) || null,
               expanded: expandedStock === holding.code,
               detailOpen: detailStockCode === holding.code,
@@ -1465,10 +1470,11 @@ export function HoldingsTable({
       h(
         'div',
         null,
-        sorted.map((holding) =>
+        sorted.map((holding, index) =>
           h(HoldingRow, {
             key: holding.code,
             holding,
+            rowTone: index % 2 === 0 ? 'paper' : 'alt',
             dossier: dossierByCode.get(holding.code) || null,
             expanded: expandedStock === holding.code,
             detailOpen: detailStockCode === holding.code,

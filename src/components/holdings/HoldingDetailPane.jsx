@@ -109,7 +109,7 @@ function SectionCard({ title, eyebrow = '', children }) {
       style={{
         borderRadius: 18,
         border: `1px solid ${alpha(C.text, '10')}`,
-        background: alpha(C.card, 'fc'),
+        background: alpha(C.raised, 'fc'),
         padding: '14px 14px',
         boxShadow: `${C.insetLine}, ${C.shadow}`,
       }}
@@ -149,7 +149,7 @@ function MetricGrid({ rows = [] }) {
           style={{
             borderRadius: C.radii.md,
             border: `1px solid ${alpha(C.text, '10')}`,
-            background: alpha(C.card, 'f2'),
+            background: alpha(C.surface, 'f2'),
             padding: '10px 12px',
           }}
         >
@@ -299,7 +299,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
           maxHeight: isMobile ? '90vh' : 'calc(100vh - 24px)',
           borderRadius: isMobile ? `${C.radii.lg} ${C.radii.lg} 0 0` : C.radii.lg,
           border: `1px solid ${alpha(C.text, '12')}`,
-          background: alpha(C.card, 'fd'),
+          background: alpha(C.raised, 'fd'),
           boxShadow: `0 28px 80px ${alpha(C.text, '24')}`,
           display: 'grid',
           gridTemplateRows: 'auto 1fr auto',
@@ -312,7 +312,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
           style={{
             padding: isMobile ? '10px 14px 12px' : '16px 18px 14px',
             borderBottom: `1px solid ${alpha(C.text, '10')}`,
-            background: alpha(C.card, 'ff'),
+            background: alpha(C.raised, 'ff'),
           }}
         >
           {isMobile ? (
@@ -792,7 +792,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               ? '12px 14px calc(env(safe-area-inset-bottom) + 14px)'
               : '12px 18px 16px',
             borderTop: `1px solid ${alpha(C.text, '10')}`,
-            background: alpha(C.card, 'fe'),
+            background: alpha(C.raised, 'fe'),
           }}
         >
           <button
@@ -804,7 +804,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               minHeight: 46,
               borderRadius: 8,
               border: `1px solid ${alpha(C.text, '14')}`,
-              background: alpha(C.card, 'f4'),
+              background: alpha(C.surface, 'f4'),
               color: C.textSec,
               cursor: 'pointer',
               fontSize: 13,

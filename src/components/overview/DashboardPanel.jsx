@@ -605,7 +605,7 @@ function TodayPnlHero({
                       gap: 8,
                     },
                   },
-                  h('span', { 'aria-hidden': 'true', style: { fontSize: 11 } }, '🔔'),
+                  h('span', { style: { fontSize: 11, fontWeight: 700 } }, '提醒'),
                   h(
                     'span',
                     {

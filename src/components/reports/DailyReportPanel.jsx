@@ -333,7 +333,7 @@ export function DailyAnalysisEmpty({
             opacity: stressTesting ? 0.5 : 1,
           },
         },
-        stressTesting ? '測試中...' : '⚠️ 風險壓力測試'
+        stressTesting ? '測試中...' : '風險壓力測試'
       )
     )
   )
@@ -523,7 +523,7 @@ export function StressResult({ result, onClose }) {
       h(
         'div',
         { style: { fontSize: 13, fontWeight: 600, color: C.down } },
-        `⚠️ 風險壓力測試 · ${result.date}`
+        `風險壓力測試 · ${result.date}`
       ),
       h('span', { style: { fontSize: 11, color: C.textMute } }, '點擊關閉')
     ),

@@ -444,7 +444,7 @@ function HoldingsFilterChipBar({ filterBar }) {
           whiteSpace: 'nowrap',
         },
       },
-      '📌 存 filter'
+      '存 filter'
     )
   )
 
@@ -837,7 +837,7 @@ export function PortfolioHealthCheck({ holdings }) {
             lineHeight: 1.6,
           },
         },
-        '⚠ 產業集中：',
+        '產業集中：',
         warnings
           .map(([ind]) => {
             const count = holdings.filter((h) => STOCK_META[h.code]?.industry === ind).length

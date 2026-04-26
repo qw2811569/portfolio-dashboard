@@ -126,7 +126,7 @@ export default function Header(props) {
   const cloudIndicator = h(
     'span',
     { style: { color: C.textSec, fontSize: isCompactLandscape ? 10 : 11 } },
-    cloudSync ? '☁' : '⚡'
+    cloudSync ? '雲端' : '本機'
   )
   const titleText = h(
     'span',
@@ -212,7 +212,7 @@ export default function Header(props) {
           ...weeklyReportButtonStyle,
         },
       },
-      '📋 複製'
+      '複製'
     ),
     typeof downloadWeeklyReportMarkdown === 'function'
       ? h(
@@ -228,7 +228,7 @@ export default function Header(props) {
               ...weeklyReportButtonStyle,
             },
           },
-          '📥 .md'
+          '下載 .md'
         )
       : null,
     typeof downloadWeeklyReportHtml === 'function'
@@ -245,7 +245,7 @@ export default function Header(props) {
               ...weeklyReportButtonStyle,
             },
           },
-          '📥 .html'
+          '下載 .html'
         )
       : null,
     typeof downloadWeeklyReportPdf === 'function'
@@ -262,7 +262,7 @@ export default function Header(props) {
               ...weeklyReportButtonStyle,
             },
           },
-          '📥 .pdf'
+          '下載 .pdf'
         )
       : null
   )
@@ -365,7 +365,7 @@ export default function Header(props) {
           },
           title: workflowCue.reason || workflowCue.label || '',
         },
-        h('span', { 'aria-hidden': 'true', style: { fontSize: 12 } }, '🔔'),
+        h('span', { style: { fontSize: 12, fontWeight: 700 } }, '提醒'),
         h(
           'span',
           {

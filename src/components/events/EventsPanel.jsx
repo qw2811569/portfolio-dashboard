@@ -707,7 +707,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                   fontWeight: 600,
                 },
               },
-              '📋 待復盤'
+              '待復盤'
             ),
           h(
             'span',

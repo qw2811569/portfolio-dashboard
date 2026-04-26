@@ -269,7 +269,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
                   color: C.textSec,
                 },
               },
-              `⚠ ${warning}`
+              `注意：${warning}`
             )
           )
         )

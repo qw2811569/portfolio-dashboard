@@ -81,7 +81,7 @@ export function ToastContainer({ toasts, remove }) {
       case 'error':
         return '✕'
       case 'warning':
-        return '⚠'
+        return '!'
       default:
         return 'ℹ'
     }

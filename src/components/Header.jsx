@@ -62,6 +62,7 @@ export default function Header(props) {
   const [isNoticeOpen, setIsNoticeOpen] = useState(false)
   const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false)
   const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false)
+  const [hoveredTab, setHoveredTab] = useState('')
   const isMobile = useIsMobile()
   const isCompactLandscape = useIsMobile(COMPACT_LANDSCAPE_MEDIA_QUERY)
   const activePortfolioSummary =
@@ -599,12 +600,17 @@ export default function Header(props) {
         key: tabItem.k,
         'data-testid': `tab-${tabItem.k}`,
         onClick: () => handleTabSelect(tabItem.k),
+        onMouseEnter: () => setHoveredTab(tabItem.k),
+        onMouseLeave: () => setHoveredTab((current) => (current === tabItem.k ? '' : current)),
+        onFocus: () => setHoveredTab(tabItem.k),
+        onBlur: () => setHoveredTab((current) => (current === tabItem.k ? '' : current)),
         style: {
-          background: tab === tabItem.k ? alpha(C.ink, '10') : 'transparent',
-          color: tab === tabItem.k ? C.text : C.textMute,
-          border: `1px solid ${tab === tabItem.k ? alpha(C.ink, '26') : alpha(C.borderSub, '70')}`,
-          boxShadow: tab === tabItem.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
-          borderRadius: 999,
+          background:
+            hoveredTab === tabItem.k && tab !== tabItem.k ? alpha(C.charcoal, '06') : 'transparent',
+          color: tab === tabItem.k ? C.text : C.iron,
+          border: 'none',
+          borderBottom: tab === tabItem.k ? `2px solid ${C.cta}` : '2px solid transparent',
+          boxShadow: 'none',
           minHeight: compact && isCompactLandscape ? 32 : 44,
           minWidth: compact ? (isCompactLandscape ? 38 : 44) : undefined,
           padding: compact ? (isCompactLandscape ? '4px 10px' : '8px 10px') : '8px 12px',
@@ -615,6 +621,7 @@ export default function Header(props) {
           whiteSpace: 'nowrap',
           flex: fill ? '1 1 auto' : '0 0 auto',
           justifyContent: 'center',
+          transition: 'background-color 200ms ease, color 200ms ease, border-color 200ms ease',
         },
       },
       tabItem.label

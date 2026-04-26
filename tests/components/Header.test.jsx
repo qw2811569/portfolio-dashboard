@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Header, { COMPACT_LANDSCAPE_MEDIA_QUERY } from '../../src/components/Header.jsx'
+import { C } from '../../src/theme.js'
 
 const originalMatchMedia = window.matchMedia
 
@@ -138,6 +139,20 @@ describe('components/Header.jsx', () => {
     render(<Header {...buildProps()} />)
 
     expect(screen.queryByTestId('header-notice-toggle')).not.toBeInTheDocument()
+  })
+
+  it('renders active navigation as an underline tab instead of a pill', () => {
+    render(<Header {...buildProps()} />)
+
+    const activeTab = screen.getByTestId('tab-holdings')
+    const inactiveTab = screen.getByTestId('tab-research')
+
+    expect(activeTab).toHaveStyle({ borderBottom: `2px solid ${C.cta}` })
+    expect(activeTab.style.borderRadius).not.toBe('999px')
+    expect(activeTab.style.background).toBe('transparent')
+    expect(inactiveTab.style.borderBottom).toBe('2px solid transparent')
+    expect(inactiveTab.style.borderRadius).not.toBe('999px')
+    expect(inactiveTab.style.fontWeight).toBe('500')
   })
 
   it('exposes weekly PDF export and manual onboarding replay', () => {

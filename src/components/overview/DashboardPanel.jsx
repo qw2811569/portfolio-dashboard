@@ -811,32 +811,36 @@ function TodayPnlHero({
               onDismiss: () => setDismissedGateKey(headlineGateKey),
             })
           : h(
+              // R156 #6 + #9 hero · poster style · headline 用 bold sans 不再霸王 serif
+              // Mobile clamp 24-32 / desktop 32-40 · 不再 56px 撐爆 fold 1
               'div',
               {
                 'data-testid': 'dashboard-headline',
                 style: {
-                  fontSize: 'clamp(36px, 4.8vw, 56px)',
+                  fontSize: 'clamp(24px, 3.2vw, 36px)',
                   fontWeight: 700,
                   color: headlineColor,
-                  fontFamily: 'var(--font-headline)',
-                  lineHeight: 1.12,
-                  letterSpacing: '-0.02em',
-                  maxWidth: '14ch',
+                  fontFamily: 'var(--font-body)',
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.01em',
+                  maxWidth: '20ch',
                 },
               },
               safeHeadlineText
             ),
         h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
         h(
+          // R156 #9 hero number · 數字當主角 · bold sans 不 serif · Strava 風
+          // 黑灰大色塊撐重量 · darkPanel inset border 增加 weight
           'div',
           {
             className: 'tn',
             style: {
-              fontSize: 'clamp(56px, 8vw, 76px)',
-              fontWeight: 700,
+              fontSize: 'clamp(48px, 7vw, 72px)',
+              fontWeight: 800,
               color: C.text,
-              fontFamily: 'var(--font-num)',
-              letterSpacing: '-0.02em',
+              fontFamily: 'var(--font-body)',
+              letterSpacing: '-0.03em',
               lineHeight: 0.96,
               fontVariantNumeric: 'tabular-nums',
             },

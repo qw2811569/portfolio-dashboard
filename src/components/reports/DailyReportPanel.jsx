@@ -2182,19 +2182,57 @@ export function DailyReportPanel({
       !isDailyWaiting &&
         viewMode !== 'insider-compressed' &&
         h(DailyHoldingActions, { actions: dailyRitual.holdingActions }),
-      h(DailyArchiveTimeline, {
-        items: dailyRitual.archive,
-        selectedDate: selectedRitualDate,
-        onSelect: setSelectedArchiveDate,
-      }),
       isDailyWaiting
-        ? h(DailyWaitingCta, {
-            hasPendingReview,
-            onNavigateReview: navigateToNeedsReview,
-            onAnalyze: runDailyAnalysis,
-            analyzing,
-          })
-        : h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+        ? [
+            h(DailyArchiveTimeline, {
+              key: 'archive',
+              items: dailyRitual.archive,
+              selectedDate: selectedRitualDate,
+              onSelect: setSelectedArchiveDate,
+            }),
+            h(DailyWaitingCta, {
+              key: 'waiting-cta',
+              hasPendingReview,
+              onNavigateReview: navigateToNeedsReview,
+              onAnalyze: runDailyAnalysis,
+              analyzing,
+            }),
+          ]
+        : h(
+            Card,
+            {
+              style: {
+                borderRadius: 8,
+                padding: '10px 12px',
+              },
+            },
+            h(
+              'details',
+              null,
+              h(
+                'summary',
+                {
+                  style: {
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    color: C.textSec,
+                    fontWeight: 800,
+                  },
+                },
+                '歷史紀錄與命中率'
+              ),
+              h(
+                'div',
+                { style: { marginTop: 10 } },
+                h(DailyArchiveTimeline, {
+                  items: dailyRitual.archive,
+                  selectedDate: selectedRitualDate,
+                  onSelect: setSelectedArchiveDate,
+                }),
+                h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+              )
+            )
+          )
     ),
 
     // Empty state

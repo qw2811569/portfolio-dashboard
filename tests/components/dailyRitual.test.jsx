@@ -126,4 +126,30 @@ describe('components/Daily ritual', () => {
 
     expect(screen.getAllByText('第 8 天歷史摘要').length).toBeGreaterThan(0)
   })
+
+  it('hides per-holding actions and stale advice while waiting for tomorrow data', () => {
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        dailyReport={{
+          id: 'daily-waiting',
+          date: '2026/04/26',
+          time: '18:40',
+          totalTodayPnl: 100,
+          changes: [{ code: '2330', name: '台積電', changePct: 9.1, todayPnl: 100 }],
+          anomalies: [],
+          eventCorrelations: [],
+          eventAssessments: [],
+          needsReview: [],
+          analysisStage: 't0-preliminary',
+        }}
+      />
+    )
+
+    expect(screen.getByTestId('daily-ritual-hero')).toHaveTextContent('等明早')
+    expect(screen.queryByTestId('daily-holding-actions')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('daily-hit-rate-chart')).not.toBeInTheDocument()
+    expect(screen.getByTestId('daily-waiting-review-cta')).toHaveTextContent('先補復盤')
+    expect(screen.queryByText('減碼分批')).not.toBeInTheDocument()
+  })
 })

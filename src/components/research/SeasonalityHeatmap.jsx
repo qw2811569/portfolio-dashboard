@@ -140,7 +140,7 @@ function EmptySeasonalityCard({ name, code, updatedAt = null }) {
     {
       style: {
         border: '1px dashed var(--positive-soft)',
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.cardBlue, 'c8')})`,
+        background: alpha(C.card, 'f2'),
       },
     },
     h(SeasonalityCardHeader, { name, code, updatedAt }),
@@ -162,7 +162,7 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
       color: C.textSec,
       style: {
         border: '1px solid var(--positive-soft)',
-        background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd4')})`,
+        background: alpha(C.card, 'fa'),
       },
     },
     h(

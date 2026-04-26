@@ -195,7 +195,7 @@ export function EmptyState({ resource = 'holdings', onAction }) {
         padding: '28px 20px',
         borderStyle: 'solid',
         borderColor: alpha(C.border, 'd8'),
-        background: `radial-gradient(circle at 50% 0%, ${alpha(C.border, '56')}, transparent 46%), linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+        background: alpha(C.card, 'f6'),
       },
     },
     h(

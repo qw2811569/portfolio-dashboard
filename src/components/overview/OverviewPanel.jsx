@@ -120,7 +120,7 @@ export function OverviewHeader({
         style: {
           marginBottom: 8,
           padding: '24px 24px',
-          background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+          background: alpha(C.card, 'f6'),
         },
       },
       h(

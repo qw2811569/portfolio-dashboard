@@ -136,7 +136,7 @@ export function TradeDisclaimerModal({
           width: 'min(560px, 100%)',
           maxHeight: 'min(92vh, 720px)',
           overflowY: 'auto',
-          background: `linear-gradient(180deg, ${alpha(C.card, 'fc')}, ${alpha(C.subtle, 'ff')})`,
+          background: alpha(C.card, 'fc'),
           border: `1px solid ${alpha(C.amber, '32')}`,
           borderRadius: 24,
           boxShadow: `${C.insetLine}, ${C.shadow}, 0 24px 64px ${alpha(C.text, '1f')}`,

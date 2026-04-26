@@ -91,7 +91,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
       {
         style: {
           marginBottom: 8,
-          background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
+          background: alpha(C.card, 'f4'),
           border: `1px solid ${C.border}`,
         },
       },

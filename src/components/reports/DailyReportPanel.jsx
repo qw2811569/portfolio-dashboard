@@ -305,7 +305,7 @@ export function DailyAnalysisEmpty({
             padding: '8px 24px',
             borderRadius: 8,
             border: 'none',
-            background: `linear-gradient(135deg,${alpha(C.cta, '20')},${alpha(C.positive, '20')})`,
+            background: C.cta,
             color: C.onFill,
             fontSize: 12,
             fontWeight: 600,
@@ -416,7 +416,7 @@ export function AnalyzingState({ step }) {
       style: {
         textAlign: 'center',
         padding: '48px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.ink, '08')}, ${alpha(C.lavender, '08')})`,
+        background: alpha(C.ink, '08'),
       },
     },
     // Spinning loader
@@ -474,7 +474,7 @@ export function AnalyzingState({ step }) {
         style: {
           height: '100%',
           width: '60%',
-          background: `linear-gradient(90deg, ${C.ink}, ${C.lavender})`,
+          background: C.ink,
           borderRadius: 2,
           animation: 'indeterminate 1.8s ease-in-out infinite',
         },

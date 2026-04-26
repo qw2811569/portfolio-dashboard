@@ -48,9 +48,7 @@ function WeightBar({ label, value, tone = C.ink, solid = false }) {
           height: 10,
           borderRadius: 999,
           overflow: 'hidden',
-          background: solid
-            ? alpha(tone, '18')
-            : `linear-gradient(90deg, ${alpha(C.ink, '14')}, ${alpha(C.iron, '10')})`,
+          background: solid ? alpha(tone, '18') : alpha(C.ink, '14'),
           border: `1px solid ${alpha(tone, '24')}`,
           position: 'relative',
         },
@@ -59,9 +57,7 @@ function WeightBar({ label, value, tone = C.ink, solid = false }) {
         style: {
           width: `${percent}%`,
           height: '100%',
-          background: solid
-            ? `linear-gradient(90deg, ${alpha(tone, '78')}, ${alpha(tone, 'b8')})`
-            : `linear-gradient(90deg, ${alpha(C.ink, '70')}, ${alpha(C.iron, 'b8')})`,
+          background: solid ? alpha(tone, 'b8') : alpha(C.ink, '70'),
           borderRadius: 999,
         },
       })
@@ -92,7 +88,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
       'data-testid': 'concentration-dashboard',
       style: {
         marginBottom: 8,
-        background: `linear-gradient(180deg, ${alpha(C.cardBlue, 'd6')}, ${alpha(C.card, 'fb')})`,
+        background: alpha(C.card, 'fb'),
         border: `1px solid ${alpha(riskMeta.accent, '28')}`,
       },
     },

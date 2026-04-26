@@ -320,7 +320,7 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
         textAlign: 'center',
         padding: '32px 16px',
         color: C.textMute,
-        background: `linear-gradient(180deg, ${alpha(C.subtle, 'fc')}, ${alpha(C.card, 'f2')})`,
+        background: alpha(C.subtle, 'fc'),
         border: `1px dashed ${C.border}`,
         borderRadius: 22,
         ...style,

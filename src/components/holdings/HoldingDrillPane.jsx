@@ -8,7 +8,7 @@ import { normalizeDataError } from '../../lib/dataError.js'
 const valuationCache = new Map()
 
 const panelCard = {
-  background: `linear-gradient(180deg, ${C.card}, ${alpha(C.subtle, 'f6')})`,
+  background: C.card,
   border: `1px solid ${C.border}`,
   borderRadius: 12,
   padding: '12px 12px 8px',
@@ -472,7 +472,7 @@ function ValuationCard({ holding, dossier }) {
           height: 8,
           marginTop: 12,
           borderRadius: 999,
-          background: `linear-gradient(90deg, ${alpha(C.up, '24')}, ${alpha(C.amber, '16')})`,
+          background: alpha(C.up, '24'),
           overflow: 'hidden',
         }}
       >

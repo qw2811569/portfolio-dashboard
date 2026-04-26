@@ -194,7 +194,7 @@ function EmptyTimelineState() {
       style: {
         marginBottom: 8,
         padding: '16px 16px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.textMute, '06')} 0%, ${alpha(C.iron, '08')} 100%)`,
+        background: alpha(C.iron, '08'),
         border: `1px solid ${C.borderSub}`,
       },
     },
@@ -237,7 +237,7 @@ export function EventsTimeline({ events = [] }) {
       style: {
         marginBottom: 8,
         padding: '16px 16px 12px',
-        background: `linear-gradient(180deg, ${alpha(C.cardBlue, '82')} 0%, ${alpha(C.bg, '96')} 100%)`,
+        background: alpha(C.cardBlue, '82'),
         overflow: 'hidden',
       },
     },
@@ -253,7 +253,7 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__legend-item{display:inline-flex;align-items:center;gap:4px}
 .events-timeline__legend-dot{width:8px;height:8px;border-radius:999px;display:inline-block}
 .events-timeline__desktop{position:relative;height:180px;margin-top:14px}
-.events-timeline__axis{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:linear-gradient(90deg,var(--muted, ${C.textMute}) 0%,var(--muted, ${C.textMute}) 49.2%,var(--up, ${C.up}) 49.2%,var(--up, ${C.up}) 50.8%,var(--positive, ${C.up}) 50.8%,var(--positive, ${C.up}) 100%);border-radius:999px;box-shadow:inset 0 0 0 1px ${alpha(C.borderStrong, '25')}}
+.events-timeline__axis{position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);background:${alpha(C.iron, '40')};border-radius:999px;box-shadow:inset 0 0 0 1px ${alpha(C.borderStrong, '25')}}
 .events-timeline__tick{position:absolute;top:50%;width:1px;height:18px;transform:translate(-50%,-50%);background:${alpha(C.borderStrong, '60')}}
 .events-timeline__tick--today{width:4px;height:34px;background:var(--up, ${C.up});border-radius:999px}
 .events-timeline__tick-label{position:absolute;top:calc(50% + 18px);transform:translateX(-50%);font-size:11px;color:${C.textMute};white-space:nowrap}

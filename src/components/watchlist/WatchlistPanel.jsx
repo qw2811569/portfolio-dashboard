@@ -429,7 +429,7 @@ export function WatchlistRow({
             style: {
               width: `${prog}%`,
               height: '100%',
-              background: `linear-gradient(90deg,${alpha(sc, '40')},${alpha(C.iron, '40')})`,
+              background: alpha(sc, '60'),
               borderRadius: 3,
             },
           })

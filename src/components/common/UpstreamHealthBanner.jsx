@@ -20,12 +20,12 @@ export function UpstreamHealthBanner({
     banner.kind === 'auth'
       ? {
           border: alpha(C.amber, '38'),
-          background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.amber, '10')})`,
+          background: alpha(C.card, 'f6'),
           accent: C.amber,
         }
       : {
           border: alpha(C.down, '24'),
-          background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.down, '08')})`,
+          background: alpha(C.card, 'f6'),
           accent: C.textSec,
         }
 

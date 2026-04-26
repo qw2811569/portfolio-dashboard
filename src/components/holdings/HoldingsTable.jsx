@@ -72,7 +72,7 @@ function HoldingsFilteredEmptyState({ hasActiveFilters = false, onClearFilters =
         padding: '28px 20px',
         borderStyle: 'solid',
         borderColor: alpha(C.border, 'd8'),
-        background: `radial-gradient(circle at 50% 0%, ${alpha(C.amber, '10')}, transparent 46%), linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+        background: alpha(C.card, 'f6'),
       },
     },
     h(
@@ -192,7 +192,7 @@ function ThesisQuickFormCard({
         padding: '12px 12px',
         borderRadius: 12,
         border: `1px solid ${alpha(C.fillTeal, '28')}`,
-        background: `linear-gradient(180deg, ${alpha(C.fillTeal, '08')}, ${C.card})`,
+        background: C.card,
       },
     },
     h(
@@ -521,9 +521,7 @@ export function HoldingRow({
           gap: 8,
           alignItems: 'center',
           padding: '12px',
-          background: expanded
-            ? `linear-gradient(90deg, ${C.subtleElev}, ${C.card})`
-            : `linear-gradient(90deg, ${C.card}, ${alpha(C.subtle, 'f4')})`,
+          background: expanded ? C.subtleElev : C.card,
           border: `1px solid ${C.border}`,
           borderRadius: 10,
           marginBottom: expanded ? 0 : 4,
@@ -671,7 +669,7 @@ export function HoldingRow({
             fontWeight: 600,
             color: pc(pnl),
             fontFamily: 'var(--font-num)',
-            background: `linear-gradient(90deg, ${pcBg(pnl)}, transparent)`,
+            background: pcBg(pnl),
             borderRadius: 999,
             padding: '4px 8px',
             textAlign: 'center',
@@ -821,9 +819,7 @@ function HoldingMobileCard({
           display: 'grid',
           gap: 12,
           padding: '14px 14px 12px',
-          background: expanded
-            ? `linear-gradient(180deg, ${C.subtleElev}, ${C.card})`
-            : `linear-gradient(180deg, ${C.card}, ${alpha(C.subtle, 'f5')})`,
+          background: expanded ? C.subtleElev : C.card,
           border: `1px solid ${C.border}`,
           borderRadius: expanded ? '16px 16px 0 0' : 16,
           marginBottom: expanded ? 0 : 8,
@@ -1058,7 +1054,7 @@ function HoldingMobileCard({
             style: {
               borderRadius: 12,
               border: `1px solid ${pnl == null ? C.borderSub : alpha(pc(pnl), '24')}`,
-              background: `linear-gradient(180deg, ${pcBg(pnl)}, transparent)`,
+              background: pcBg(pnl),
               padding: '10px 10px',
             },
           },

@@ -392,10 +392,7 @@ export function buildWeeklyReportHtmlDocument(markdown = '') {
         margin: 0;
         font-family: "Source Han Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
         color: var(--ink);
-        background:
-          radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 34%),
-          radial-gradient(circle at top right, rgba(194, 107, 45, 0.10), transparent 28%),
-          linear-gradient(180deg, #faf5ed 0%, var(--bg) 100%);
+        background: var(--bg);
       }
       main {
         max-width: 1100px;
@@ -405,7 +402,7 @@ export function buildWeeklyReportHtmlDocument(markdown = '') {
       .hero {
         padding: 32px;
         border-radius: 28px;
-        background: linear-gradient(135deg, var(--surface-strong), rgba(255, 246, 231, 0.92));
+        background: var(--surface-strong);
         border: 1px solid var(--line);
         box-shadow: var(--shadow);
         margin-bottom: 24px;
@@ -446,7 +443,7 @@ export function buildWeeklyReportHtmlDocument(markdown = '') {
         box-shadow: var(--shadow);
       }
       .card-soft {
-        background: linear-gradient(180deg, rgba(255, 253, 247, 0.95), rgba(251, 244, 233, 0.92));
+        background: rgba(255, 253, 247, 0.95);
         box-shadow: none;
       }
       h2 {
@@ -507,7 +504,7 @@ export function buildWeeklyReportHtmlDocument(markdown = '') {
       .analysis-card {
         padding: 18px;
         border-radius: 18px;
-        background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(247, 239, 227, 0.92));
+        background: rgba(255, 252, 246, 0.98);
         border: 1px solid var(--line);
       }
       blockquote {

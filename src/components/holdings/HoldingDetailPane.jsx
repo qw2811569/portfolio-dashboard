@@ -109,7 +109,7 @@ function SectionCard({ title, eyebrow = '', children }) {
       style={{
         borderRadius: 18,
         border: `1px solid ${alpha(C.text, '10')}`,
-        background: `linear-gradient(180deg, ${alpha(C.card, 'fc')}, ${alpha(C.subtle, 'f8')})`,
+        background: alpha(C.card, 'fc'),
         padding: '14px 14px',
         boxShadow: `${C.insetLine}, ${C.shadow}`,
       }}
@@ -299,7 +299,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
           maxHeight: isMobile ? '90vh' : 'calc(100vh - 24px)',
           borderRadius: isMobile ? '22px 22px 0 0' : 22,
           border: `1px solid ${alpha(C.text, '12')}`,
-          background: `linear-gradient(180deg, ${alpha(C.card, 'fd')}, ${alpha(C.subtleElev || C.subtle, 'f7')})`,
+          background: alpha(C.card, 'fd'),
           boxShadow: `0 28px 80px ${alpha(C.text, '24')}`,
           display: 'grid',
           gridTemplateRows: 'auto 1fr auto',
@@ -312,7 +312,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
           style={{
             padding: isMobile ? '10px 14px 12px' : '16px 18px 14px',
             borderBottom: `1px solid ${alpha(C.text, '10')}`,
-            background: `linear-gradient(180deg, ${alpha(C.card, 'ff')}, ${alpha(C.card, 'f1')})`,
+            background: alpha(C.card, 'ff'),
           }}
         >
           {isMobile ? (
@@ -792,7 +792,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               ? '12px 14px calc(env(safe-area-inset-bottom) + 14px)'
               : '12px 18px 16px',
             borderTop: `1px solid ${alpha(C.text, '10')}`,
-            background: `linear-gradient(180deg, ${alpha(C.card, '00')}, ${alpha(C.card, 'fe')} 24%)`,
+            background: alpha(C.card, 'fe'),
           }}
         >
           <button

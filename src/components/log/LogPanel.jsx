@@ -411,7 +411,7 @@ function EmptyLogState() {
       style={{
         textAlign: 'center',
         padding: '28px 20px',
-        background: `radial-gradient(circle at 50% 0%, ${alpha(C.border, '56')}, transparent 44%), linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+        background: alpha(C.card, 'f6'),
       }}
     >
       <div
@@ -455,9 +455,7 @@ function JournalListItem({ item, isActive, isMobile, onSelect }) {
         cursor: 'pointer',
         borderRadius: 18,
         border: `1px solid ${isActive ? alpha(C.positive, '40') : alpha(C.borderStrong, 'b8')}`,
-        background: isActive
-          ? `linear-gradient(180deg, ${alpha(C.positive, '12')}, ${alpha(C.subtle, 'f8')})`
-          : `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
+        background: isActive ? alpha(C.positive, '12') : alpha(C.card, 'f4'),
         boxShadow: isActive
           ? `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(C.positive, '14')}`
           : `${C.insetLine}, ${C.shadow}`,
@@ -775,7 +773,7 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
         style={{
           marginBottom: 12,
           padding: isMobile ? '18px 16px' : '22px 20px',
-          background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.subtle, 'fc')})`,
+          background: alpha(C.card, 'f6'),
         }}
       >
         <div style={{ display: 'grid', gap: 14 }}>

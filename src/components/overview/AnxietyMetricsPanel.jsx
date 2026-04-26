@@ -16,25 +16,25 @@ const toneMeta = {
   ok: {
     badge: 'positive',
     border: alpha(C.positive, '26'),
-    background: `linear-gradient(180deg, ${alpha(C.positive, '12')}, ${alpha(C.card, 'f8')})`,
+    background: alpha(C.card, 'f8'),
     accent: C.positive,
   },
   warn: {
     badge: 'warning',
     border: alpha(C.warning, '30'),
-    background: `linear-gradient(180deg, ${alpha(C.warning, '12')}, ${alpha(C.card, 'f8')})`,
+    background: alpha(C.card, 'f8'),
     accent: C.warning,
   },
   alert: {
     badge: 'alert',
     border: alpha(C.cta, '28'),
-    background: `linear-gradient(180deg, ${alpha(C.cta, '12')}, ${alpha(C.card, 'f8')})`,
+    background: alpha(C.card, 'f8'),
     accent: C.cta,
   },
   muted: {
     badge: 'mute',
     border: alpha(C.iron, '26'),
-    background: `linear-gradient(180deg, ${alpha(C.iron, '12')}, ${alpha(C.card, 'f8')})`,
+    background: alpha(C.card, 'f8'),
     accent: C.iron,
   },
 }
@@ -578,7 +578,7 @@ export function AnxietyMetricsPanel({
       'data-testid': 'anxiety-metrics-panel',
       style: {
         marginBottom: 16,
-        background: `linear-gradient(180deg, ${alpha(C.bone, 'f8')}, ${alpha(C.boneDeep, 'b2')})`,
+        background: alpha(C.bone, 'f8'),
       },
     },
     h(

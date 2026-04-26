@@ -44,7 +44,7 @@ export function AccuracyGateBlock({
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.amber, '60')}`,
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.amber, '0c')})`,
+        background: alpha(C.card, 'f6'),
       },
     },
     h(

@@ -20,6 +20,7 @@ Branch: main
 - `cda690f` fix(R12 A6): show watchlist target distance
 - `aa5c137` fix(R12): preserve report controls outside waiting state
 - `363065f` fix(R12): keep waiting state compatible with existing flows
+- `44d59fa` docs(R12): add codex execution report
 
 Note: while this task was running, Claude pushed shared commit `21e6450`, which includes A1/A2/A4 implementation files (`DashboardPanel`, `HoldingsPanel`, `HoldingsPanelChunk`, `ResearchPanel`, `Header`, `Dialogs`, etc.). I did not rewrite that history.
 
@@ -30,6 +31,12 @@ Note: while this task was running, Claude pushed shared commit `21e6450`, which 
 - `npm run test:run -- tests/components/dailyRitual.test.jsx` passed.
 - `npm run test:run -- tests/components/AppPanels.contexts.test.jsx tests/components/holdingsPanel.test.jsx tests/components/holdingsPanelChunk.test.jsx tests/components/dailyRitual.test.jsx` passed.
 - `PORTFOLIO_BASE_URL=http://127.0.0.1:3002/ npx playwright test tests/e2e/mobileFoldOne.spec.mjs --project=chromium` passed.
+- Initial post-push curl to `http://104.199.144.170/` returned 200 but still served the old asset hash, so I ran the repo VM sync helper against `jcv-dev`:
+  `VM_HOST=jcv-dev VM_APP_DIR=/home/chenkuichen/app VM_ROOT_DIR=/home/chenkuichen/app/portfolio-dashboard/dist VM_ROOT_URL=http://104.199.144.170/ node scripts/sync-to-vm-root.mjs`.
+- VM sync verified commit `44d59fa`, root asset `/assets/index-Iv-WlJf1.js`, and `Last-Modified: Sun, 26 Apr 2026 16:13:07 GMT`.
+- `PORTFOLIO_BASE_URL=http://104.199.144.170/ npx playwright test tests/e2e/mobileFoldOne.spec.mjs --project=chromium` passed.
+- `PORTFOLIO_BASE_URL=http://104.199.144.170/ npx playwright test --grep "holdings mobile P&L"` passed.
+- `PORTFOLIO_BASE_URL=http://104.199.144.170/ npx playwright test --grep "research thesis status"` passed.
 
 ## Constraints
 

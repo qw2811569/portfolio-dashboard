@@ -258,6 +258,22 @@ export function WatchlistRow({
 }) {
   const w = item
   const upsideText = upside != null ? `${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%` : '—'
+  const targetDistancePct =
+    w.target > 0 && w.price > 0
+      ? ((Number(w.price) - Number(w.target)) / Number(w.target)) * 100
+      : null
+  const targetDistanceText =
+    targetDistancePct == null
+      ? '—'
+      : `${targetDistancePct >= 0 ? '+' : ''}${targetDistancePct.toFixed(1)}%`
+  const targetStatus =
+    targetDistancePct == null
+      ? '觀察中'
+      : targetDistancePct >= 0
+        ? '過頭'
+        : Math.abs(targetDistancePct) <= 5
+          ? '接近'
+          : '觀察中'
   const prog = w.target > 0 && w.price > 0 ? Math.min((w.price / w.target) * 100, 100) : 0
   const sc = resolveTone(w.scKey, 'info')
   const isWExp = expanded
@@ -415,8 +431,32 @@ export function WatchlistRow({
         h(
           'div',
           null,
-          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '潛在漲幅'),
-          h('div', { style: { fontSize: 17, fontWeight: 600, color: C.text } }, upsideText)
+          h('div', { style: { fontSize: 11, color: C.textMute, marginBottom: 4 } }, '距目標價'),
+          h(
+            'div',
+            {
+              'data-testid': `watchlist-target-distance-${w.code}`,
+              style: { fontSize: 28, lineHeight: 1, fontWeight: 800, color: C.text },
+            },
+            targetDistanceText
+          ),
+          h(
+            'span',
+            {
+              style: {
+                display: 'inline-flex',
+                marginTop: 6,
+                borderRadius: 8,
+                padding: '4px 8px',
+                border: `1px solid ${C.border}`,
+                background: alpha(C.charcoal, '08'),
+                color: C.textSec,
+                fontSize: 11,
+                fontWeight: 800,
+              },
+            },
+            targetStatus
+          )
         )
       ),
       h(
@@ -424,15 +464,20 @@ export function WatchlistRow({
         { style: { marginTop: 12 } },
         h(
           'div',
-          { style: { background: C.subtle, borderRadius: 3, height: 3 } },
+          { style: { background: C.subtle, borderRadius: 2, height: 1 } },
           h('div', {
             style: {
               width: `${prog}%`,
               height: '100%',
               background: alpha(sc, '60'),
-              borderRadius: 3,
+              borderRadius: 2,
             },
           })
+        ),
+        h(
+          'div',
+          { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
+          `潛在空間 ${upsideText}`
         )
       ),
       h(

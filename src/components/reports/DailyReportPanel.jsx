@@ -2127,7 +2127,11 @@ export function DailyReportPanel({
           marginBottom: 8,
         },
       },
-      h(DailyHero, { hero: dailyRitual.hero, copyText: dailyRitual.copyText }),
+      h(DailyHero, {
+        hero: dailyRitual.hero,
+        copyText: dailyRitual.copyText,
+        streaming: analyzing && Boolean(dailyReport?.aiInsight || dailyReport?.insight),
+      }),
       h(DailyPillars, { pillars: dailyRitual.pillars }),
       viewMode !== 'insider-compressed' &&
         h(DailyHoldingActions, { actions: dailyRitual.holdingActions }),

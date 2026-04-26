@@ -8,6 +8,7 @@ import {
   DataSourceBadge,
   MarkdownText,
   OperatingContextCard,
+  StreamingText,
 } from '../common'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Skeleton } from '../common/Skeleton.jsx'
@@ -1187,6 +1188,7 @@ export function KnowledgeProposalCard({ results }) {
  */
 export function ResearchResults({
   results,
+  streaming = false,
   onEnrich,
   enriching,
   onApplyProposal,
@@ -1288,7 +1290,13 @@ export function ResearchResults({
           },
           `Round ${i + 1}：${round.title}`
         ),
-        h(MarkdownText, { text: round.content, color: C.textSec })
+        streaming
+          ? h(StreamingText, {
+              text: round.content,
+              streaming: true,
+              style: { color: C.textSec, fontSize: 12, lineHeight: 1.8, whiteSpace: 'pre-wrap' },
+            })
+          : h(MarkdownText, { text: round.content, color: C.textSec })
       )
     )
   )
@@ -1543,6 +1551,7 @@ export function ResearchPanel({
           proposalActionId,
           proposalActionType,
           viewMode,
+          streaming: researching,
         }),
     showResearchEmpty &&
       h(EmptyState, {

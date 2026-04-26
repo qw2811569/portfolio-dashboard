@@ -1,7 +1,8 @@
 import { C, alpha } from '../../theme.js'
 import { Button, Card } from '../common'
+import StreamingText from '../common/StreamingText.jsx'
 
-export default function DailyHero({ hero, copyText }) {
+export default function DailyHero({ hero, copyText, streaming = false }) {
   const handleCopy = async () => {
     try {
       await navigator.clipboard?.writeText(copyText || hero?.text || '')
@@ -38,7 +39,7 @@ export default function DailyHero({ hero, copyText }) {
           whiteSpace: 'pre-wrap',
         }}
       >
-        {hero?.text}
+        <StreamingText text={hero?.text} streaming={streaming} />
       </div>
     </Card>
   )

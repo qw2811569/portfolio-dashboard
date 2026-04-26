@@ -322,7 +322,7 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
         color: C.textMute,
         background: alpha(C.subtle, 'fc'),
         border: `1px dashed ${C.border}`,
-        borderRadius: 22,
+        borderRadius: C.radii.lg,
         ...style,
       },
     },

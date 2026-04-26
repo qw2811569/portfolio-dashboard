@@ -17,7 +17,7 @@ const lbl = {
 }
 
 const ghostBtn = {
-  borderRadius: 20,
+  borderRadius: C.radii.lg,
   padding: '4px 8px',
   fontSize: 11,
   fontWeight: 500,

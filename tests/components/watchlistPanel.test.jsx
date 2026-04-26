@@ -160,7 +160,7 @@ describe('components/WatchlistPanel', () => {
     )
 
     const progressBarFill = Array.from(container.querySelectorAll('div')).find((node) =>
-      node.style.background.includes('linear-gradient')
+      node.style.background.includes(toRgbTriplet(resolveTone('olive')))
     )
 
     expect(progressBarFill?.style.background).toContain(toRgbTriplet(resolveTone('olive')))

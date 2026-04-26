@@ -407,7 +407,7 @@ function HoldingsFilterChipBar({ filterBar }) {
             onChange: (event) => safeFilterBar.onApplySavedFilter?.(event.target.value),
             style: {
               minHeight: 44,
-              borderRadius: 10,
+              borderRadius: C.radii.md,
               border: `1px solid ${C.border}`,
               background: C.card,
               color: C.text,
@@ -479,7 +479,7 @@ function HoldingsFilterChipBar({ filterBar }) {
       style: {
         minHeight: 44,
         width: '100%',
-        borderRadius: 10,
+        borderRadius: C.radii.md,
         border: `1px solid ${C.border}`,
         background: C.card,
         color: C.text,
@@ -934,7 +934,7 @@ export function Top5Holdings({ holdings, totalVal }) {
               gap: 4,
               background: C.subtle,
               border: `1px solid ${C.border}`,
-              borderRadius: 20,
+              borderRadius: C.radii.lg,
               padding: '4px 8px',
             },
           },

@@ -81,7 +81,7 @@ export function DataError({
         display: 'grid',
         gap: 8,
         padding: '8px 12px',
-        borderRadius: 14,
+        borderRadius: C.radii.md,
         border: `1px solid ${tone.border}`,
         background: tone.background,
         boxShadow: `inset 0 1px 0 ${alpha('#ffffff', '8a')}`,

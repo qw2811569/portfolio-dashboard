@@ -217,7 +217,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             {
               style: {
                 padding: '8px 12px',
-                borderRadius: 10,
+                borderRadius: C.radii.md,
                 background: C.subtle,
                 border: `1px solid ${C.borderSub}`,
               },

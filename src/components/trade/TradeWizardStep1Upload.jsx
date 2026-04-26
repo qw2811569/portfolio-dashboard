@@ -46,7 +46,7 @@ export default function TradeWizardStep1Upload({
             placeItems: 'center',
             minHeight: 132,
             border: `1px dashed ${C.borderStrong}`,
-            borderRadius: 10,
+            borderRadius: C.radii.md,
             background: alpha(C.fillTeal, '08'),
             cursor: 'pointer',
             color: C.textSec,

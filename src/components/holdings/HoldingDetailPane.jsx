@@ -93,7 +93,7 @@ function SoftEmpty({ children }) {
         color: C.textMute,
         lineHeight: 1.8,
         padding: '12px 14px',
-        borderRadius: 14,
+        borderRadius: C.radii.md,
         background: alpha(C.textMute, '08'),
         border: `1px dashed ${alpha(C.textMute, '22')}`,
       }}
@@ -147,7 +147,7 @@ function MetricGrid({ rows = [] }) {
         <div
           key={row.label}
           style={{
-            borderRadius: 14,
+            borderRadius: C.radii.md,
             border: `1px solid ${alpha(C.text, '10')}`,
             background: alpha(C.card, 'f2'),
             padding: '10px 12px',
@@ -297,7 +297,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
           width: isMobile ? '100%' : 'min(468px, calc(100vw - 24px))',
           height: isMobile ? '90vh' : 'calc(100vh - 24px)',
           maxHeight: isMobile ? '90vh' : 'calc(100vh - 24px)',
-          borderRadius: isMobile ? '22px 22px 0 0' : 22,
+          borderRadius: isMobile ? `${C.radii.lg} ${C.radii.lg} 0 0` : C.radii.lg,
           border: `1px solid ${alpha(C.text, '12')}`,
           background: alpha(C.card, 'fd'),
           boxShadow: `0 28px 80px ${alpha(C.text, '24')}`,
@@ -498,7 +498,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                         <div
                           key={pillar.id}
                           style={{
-                            borderRadius: 14,
+                            borderRadius: C.radii.md,
                             border: `1px solid ${tone.border}`,
                             background: alpha(C.card, 'f3'),
                             padding: '10px 12px',
@@ -637,7 +637,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                   <div
                     key={`${item.date}-${item.reportStage}`}
                     style={{
-                      borderRadius: 14,
+                      borderRadius: C.radii.md,
                       border: `1px solid ${alpha(C.text, '10')}`,
                       background: alpha(C.card, 'f3'),
                       padding: '10px 12px',
@@ -672,7 +672,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             {detail.latestResearchSlice ? (
               <div
                 style={{
-                  borderRadius: 14,
+                  borderRadius: C.radii.md,
                   border: `1px solid ${alpha(C.text, '10')}`,
                   background: alpha(C.card, 'f3'),
                   padding: '12px 12px',
@@ -702,7 +702,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                   <div
                     key={`${event.type}-${event.date}-${event.label}`}
                     style={{
-                      borderRadius: 14,
+                      borderRadius: C.radii.md,
                       border: `1px solid ${alpha(C.text, '10')}`,
                       background: alpha(C.card, 'f3'),
                       padding: '10px 12px',
@@ -747,7 +747,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                     gridTemplateColumns: '1fr auto',
                     gap: 12,
                     alignItems: 'center',
-                    borderRadius: 14,
+                    borderRadius: C.radii.md,
                     border: `1px solid ${alpha(C.text, '10')}`,
                     background: alpha(C.card, 'f3'),
                     padding: '12px 12px',

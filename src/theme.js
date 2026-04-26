@@ -186,6 +186,7 @@ export const C = Object.freeze({
   shadow: TOKENS.shadow,
   insetLine: TOKENS.insetLine,
   shellShadow: TOKENS.shellShadow,
+  radii: TOKENS.radii,
 
   cardBg: TOKENS.boneSoft,
   // R156 #1 Orange lock down · cardBlue/cardOlive/cardRose/cardAmber 不再各自染色

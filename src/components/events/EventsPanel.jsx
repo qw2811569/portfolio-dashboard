@@ -267,7 +267,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
         {
           onClick: onToggle,
           style: {
-            borderRadius: 20,
+            borderRadius: C.radii.lg,
             padding: '4px 8px',
             fontSize: 11,
             fontWeight: 500,
@@ -295,7 +295,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
             style: {
               fontSize: 11,
               padding: '4px 8px',
-              borderRadius: 20,
+              borderRadius: C.radii.lg,
               background: alpha(resolveTone(item.tone), '15'),
               color: C.textSec,
               border: `1px solid ${alpha(resolveTone(item.tone), '20')}`,
@@ -365,7 +365,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
                 style: {
                   fontSize: 11,
                   padding: '4px 8px',
-                  borderRadius: 20,
+                  borderRadius: C.radii.lg,
                   background: alpha(resolveTone(leg.tone), '15'),
                   color: C.textSec,
                 },
@@ -822,7 +822,7 @@ export function EventsFilter({ filterType, setFilterType }) {
             background: filterType === t ? C.subtleElev : 'transparent',
             color: filterType === t ? C.text : C.textMute,
             border: `1px solid ${filterType === t ? C.borderStrong : C.border}`,
-            borderRadius: 20,
+            borderRadius: C.radii.lg,
             padding: '4px 8px',
             fontSize: 12,
             fontWeight: 500,
@@ -852,7 +852,7 @@ export function CatalystFilter({ catalystFilter, setCatalystFilter }) {
             background: catalystFilter === t ? C.subtleElev : 'transparent',
             color: catalystFilter === t ? C.text : C.textSec,
             border: `1px solid ${catalystFilter === t ? C.borderStrong : C.border}`,
-            borderRadius: 20,
+            borderRadius: C.radii.lg,
             padding: '4px 8px',
             fontSize: 12,
             fontWeight: 500,
@@ -964,7 +964,7 @@ export function EventsPanel({
             {
               onClick: () => setShowInformational((value) => !value),
               style: {
-                borderRadius: 20,
+                borderRadius: C.radii.lg,
                 padding: '4px 10px',
                 fontSize: 12,
                 fontWeight: 600,

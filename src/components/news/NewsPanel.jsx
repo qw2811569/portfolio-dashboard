@@ -265,7 +265,7 @@ function ViewModeNotice({ note }) {
       style: {
         marginBottom: 12,
         padding: isMobile ? '12px 14px' : '16px 16px',
-        borderRadius: isMobile ? 22 : 28,
+        borderRadius: isMobile ? TOKENS.radii.lg : 28,
         borderLeft: `3px solid ${alpha(TOKENS.cta, '40')}`,
       },
     },
@@ -969,7 +969,7 @@ export function NewsFeedSection({
       {
         style: {
           padding: isMobile ? '10px 12px' : '12px 12px',
-          borderRadius: isMobile ? 18 : 22,
+          borderRadius: isMobile ? 18 : TOKENS.radii.lg,
           background: alpha(TOKENS.warning, '12'),
           border: `1px solid ${alpha(TOKENS.warning, '20')}`,
           color: TOKENS.ink,
@@ -1025,7 +1025,7 @@ export function NewsFeedSection({
       {
         style: {
           padding: isMobile ? '10px 12px' : '12px',
-          borderRadius: isMobile ? 18 : 22,
+          borderRadius: isMobile ? 18 : TOKENS.radii.lg,
           background: alpha(TOKENS.positive, '10'),
           border: `1px solid ${alpha(TOKENS.positive, '22')}`,
         },

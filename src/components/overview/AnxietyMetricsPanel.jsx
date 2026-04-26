@@ -218,7 +218,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
         display: 'grid',
         gap: 12,
         padding: '14px 14px 12px',
-        borderRadius: 20,
+        borderRadius: C.radii.lg,
         border: `1px solid ${meta.border}`,
         background: meta.background,
         boxShadow: `${C.insetLine}, ${C.shadow}`,

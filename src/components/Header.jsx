@@ -454,7 +454,7 @@ export default function Header(props) {
                   {
                     key: `${item.code}-${item.name}`,
                     style: {
-                      borderRadius: 10,
+                      borderRadius: C.radii.md,
                       border: `1px solid ${C.borderSub}`,
                       background: C.subtle,
                       padding: '8px 8px',
@@ -761,7 +761,7 @@ export default function Header(props) {
           background: C.subtle,
           color: C.text,
           border: `1px solid ${C.border}`,
-          borderRadius: 10,
+          borderRadius: C.radii.md,
           minHeight: 44,
           padding: '8px 12px',
           fontSize: 11,
@@ -1120,7 +1120,7 @@ export default function Header(props) {
         style: {
           background: C.subtle,
           border: `1px solid ${C.border}`,
-          borderRadius: 10,
+          borderRadius: C.radii.md,
           padding: '8px 8px',
           marginBottom: 4,
           display: 'flex',

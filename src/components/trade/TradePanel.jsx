@@ -236,7 +236,7 @@ export function UploadDropzone({
           style: {
             width: '100%',
             padding: '12px',
-            borderRadius: 10,
+            borderRadius: C.radii.md,
             background: parsing ? C.subtle : C.cardHover,
             color: parsing ? C.textMute : C.text,
             border: `1px solid ${parsing ? C.border : alpha(C.amber, '40')}`,
@@ -258,7 +258,7 @@ export function UploadDropzone({
             marginTop: 8,
             background: C.upBg,
             border: `1px solid ${alpha(C.up, '20')}`,
-            borderRadius: 10,
+            borderRadius: C.radii.md,
             padding: 12,
             fontSize: 12,
             color: C.text,
@@ -794,7 +794,7 @@ export function ParseResults({
                     {
                       key: entry.id,
                       style: {
-                        borderRadius: 10,
+                        borderRadius: C.radii.md,
                         border: `1px solid ${C.border}`,
                         background: C.card,
                         padding: '10px 10px',

@@ -51,6 +51,9 @@ export function composeDailyReportRitual({
     null
   const insight = normalizeText(selectedReport?.aiInsight || selectedReport?.insight)
   const hasInsight = Boolean(insight)
+  const waitingForFreshData = Boolean(
+    !selectedReport || selectedReport?.waiting === true || selectedReport?.hero?.waiting === true
+  )
   const changes = Array.isArray(selectedReport?.changes) ? selectedReport.changes : []
   const eventText = firstSentence(
     selectedReport?.eventSummary ||
@@ -113,8 +116,11 @@ export function composeDailyReportRitual({
     hero: {
       date: normalizeReportDate(selectedReport),
       time: normalizeText(selectedReport?.time),
-      text: hasInsight ? insight : '等明早 08:30（台北時間）資料補齊後再產生收盤摘要。',
-      waiting: !hasInsight,
+      text:
+        hasInsight && !waitingForFreshData
+          ? insight
+          : '等明早 08:30（台北時間）資料補齊後再產生收盤摘要。',
+      waiting: waitingForFreshData,
     },
     pillars: [
       { key: 'fundamental', title: '基本面', body: fundamentalText },

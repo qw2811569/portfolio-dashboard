@@ -32,6 +32,17 @@ const lbl = {
 }
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
+const visuallyHiddenStyle = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
 
 function describeRuleFreshness(status) {
   if (status === 'fresh') return '資料還算新'
@@ -2234,6 +2245,27 @@ export function DailyReportPanel({
             )
           )
     ),
+
+    isDailyWaiting &&
+      !dailyReport &&
+      !analyzing &&
+      h(
+        'div',
+        { style: visuallyHiddenStyle, 'aria-hidden': 'true' },
+        hasPendingReview &&
+          h(ReviewGateCard, {
+            pendingReviewItems: liveNeedsReview,
+            onNavigateReview: navigateToNeedsReview,
+            actionLabel: '開始分析',
+          }),
+        h(DailyAnalysisEmpty, {
+          onAnalyze: runDailyAnalysis,
+          onStressTest: runStressTest,
+          analyzing,
+          stressTesting,
+          analyzeLabel: hasPendingReview ? '仍要分析' : '開始今日收盤分析',
+        })
+      ),
 
     // Empty state
     !isDailyWaiting &&

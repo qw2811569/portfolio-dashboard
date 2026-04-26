@@ -133,6 +133,7 @@ describe('components/Daily ritual', () => {
         {...baseProps}
         dailyReport={{
           id: 'daily-waiting',
+          waiting: true,
           date: '2026/04/26',
           time: '18:40',
           totalTodayPnl: 100,

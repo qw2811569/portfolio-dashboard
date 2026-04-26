@@ -1,7 +1,7 @@
 import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { CANONICAL_TONE_KEYS, normalizeToneKey, resolveTone } from '../../lib/toneResolver.js'
-import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
+import { Card, Button, ConfirmDialog, OperatingContextCard, OverlayPortal } from '../common'
 
 const bgTints = [C.raised, C.surface, C.raised]
 const WATCHLIST_TONE_OPTIONS = Object.freeze(CANONICAL_TONE_KEYS)
@@ -718,7 +718,7 @@ export function WatchlistRow({
   )
 }
 
-function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }) {
+function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit, onDelete }) {
   if (!open) return null
 
   const updateField = (key) => (event) => {
@@ -727,17 +727,18 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
   }
 
   return h(
-    'div',
+    OverlayPortal,
     {
+      id: 'watchlist-editor',
+      kind: 'blocking',
+      'data-testid': 'watchlist-editor-overlay',
       style: {
-        position: 'fixed',
-        inset: 0,
         background: 'rgba(0, 0, 0, 0.3)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        zIndex: 130,
+        zIndex: 1200,
       },
       onClick: (event) => {
         if (event.target === event.currentTarget) onClose()
@@ -919,6 +920,20 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
           },
           '取消'
         ),
+        editingItem &&
+          h(
+            Button,
+            {
+              onClick: onDelete,
+              style: {
+                padding: '4px 12px',
+                borderColor: C.up,
+                color: C.textSec,
+                background: 'transparent',
+              },
+            },
+            '刪除'
+          ),
         h(
           Button,
           {
@@ -1009,6 +1024,7 @@ export function WatchlistPanel({
       setForm,
       onClose: closeEditor,
       onSubmit: submitEditor,
+      onDelete: () => setPendingDeleteItem(editingItem),
     }),
 
     // Focus card

@@ -1,5 +1,6 @@
 import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
+import { OverlayPortal } from './AppOverlay.jsx'
 import { Button } from './Base.jsx'
 
 function DialogShell({
@@ -15,17 +16,16 @@ function DialogShell({
   if (!open) return null
 
   return h(
-    'div',
+    OverlayPortal,
     {
+      kind: 'blocking',
       style: {
-        position: 'fixed',
-        inset: 0,
         background: alpha(C.text, '5c'),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        zIndex: 130,
+        zIndex: 1300,
       },
       onClick: (event) => {
         if (event.target === event.currentTarget) onClose?.()

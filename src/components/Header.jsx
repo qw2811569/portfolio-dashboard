@@ -3,6 +3,7 @@ import { useIsMobile } from '../hooks/useIsMobile.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { C, A, alpha } from '../theme.js'
 import { ConfirmDialog, TextFieldDialog } from './common/index.js'
+import { useOverlay, useOverlayBlockingStyle } from './common/AppOverlay.jsx'
 
 export const COMPACT_LANDSCAPE_MEDIA_QUERY = '(max-height: 500px) and (orientation: landscape)'
 
@@ -64,6 +65,8 @@ export default function Header(props) {
   const [hoveredTab, setHoveredTab] = useState('')
   const isMobile = useIsMobile()
   const isCompactLandscape = useIsMobile(COMPACT_LANDSCAPE_MEDIA_QUERY)
+  const { isBlocking: isOverlayBlocking } = useOverlay()
+  const overlayBlockingStyle = useOverlayBlockingStyle()
   const activePortfolioSummary =
     safePortfolioSummaries.find((portfolio) => portfolio.id === activePortfolioId) || null
   const activePortfolioLabel = displayPortfolioName(
@@ -640,6 +643,7 @@ export default function Header(props) {
         className: 'ui-btn',
         key: tabItem.k,
         'data-testid': `tab-${tabItem.k}`,
+        tabIndex: mobileBottom && isOverlayBlocking ? -1 : undefined,
         onClick: () => handleTabSelect(tabItem.k),
         onMouseEnter: () => setHoveredTab(tabItem.k),
         onMouseLeave: () => setHoveredTab((current) => (current === tabItem.k ? '' : current)),
@@ -704,103 +708,6 @@ export default function Header(props) {
   const hiddenMobileTabs = isMobile
     ? mobileOverflowTabKeys.map((key) => tabs.find((item) => item.k === key)).filter(Boolean)
     : []
-  const mobileActionsRow = h(
-    'div',
-    {
-      style: {
-        display: 'grid',
-        gap: 8,
-        marginBottom: 8,
-      },
-    },
-    h(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 8,
-        },
-      },
-      h(
-        'div',
-        {
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            flexWrap: 'wrap',
-            flex: 1,
-            minWidth: 0,
-          },
-        },
-        refreshPricesButton,
-        headerNoticeControl
-      ),
-      h(
-        'button',
-        {
-          type: 'button',
-          className: 'ui-btn',
-          'data-testid': 'header-mobile-overflow-toggle',
-          'aria-expanded': isMobileActionsOpen,
-          'aria-controls': 'header-mobile-actions-drawer',
-          onClick: () => setIsMobileActionsOpen((open) => !open),
-          style: {
-            ...ghostBtn,
-            padding: '8px 12px',
-            background: isMobileActionsOpen ? alpha(C.ink, '10') : C.subtle,
-            color: C.textSec,
-            border: `1px solid ${isMobileActionsOpen ? alpha(C.ink, A.strongLine) : C.border}`,
-          },
-        },
-        isMobileActionsOpen ? '收合' : '⋯'
-      )
-    ),
-    isMobileActionsOpen &&
-      h(
-        'div',
-        {
-          id: 'header-mobile-actions-drawer',
-          'data-testid': 'header-mobile-actions-drawer',
-          style: {
-            ...card,
-            padding: '12px',
-            display: 'grid',
-            gap: 10,
-          },
-        },
-        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '更多操作'),
-        h(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-            },
-          },
-          weeklyReportControls,
-          onboardingHelpButton,
-          exportBackupButton,
-          importBackupLabel
-        ),
-        h(
-          'div',
-          {
-            style: {
-              display: 'grid',
-              gap: 4,
-            },
-          },
-          h('div', { style: { fontSize: 11, color: C.textSec, fontWeight: 600 } }, '同步狀態'),
-          priceSyncMeta,
-          lastUpdateMeta
-        )
-      ),
-    backupImportInput
-  )
   const portfolioSelectorBlock = h(
     'div',
     {
@@ -1378,6 +1285,7 @@ export default function Header(props) {
       {
         'data-testid': 'mobile-bottom-tab-bar',
         'aria-label': '主要分頁',
+        'aria-hidden': isOverlayBlocking ? 'true' : undefined,
         style: {
           position: 'fixed',
           left: 0,
@@ -1388,6 +1296,7 @@ export default function Header(props) {
           borderTop: `1px solid ${C.borderSoft}`,
           boxShadow: '0 -10px 24px rgba(11,18,14,0.08)',
           padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',
+          ...overlayBlockingStyle,
         },
       },
       h(
@@ -1412,6 +1321,7 @@ export default function Header(props) {
               'data-testid': 'mobile-tabs-more-toggle',
               'aria-expanded': isMobileTabsOpen,
               'aria-controls': 'mobile-tabs-drawer',
+              tabIndex: isOverlayBlocking ? -1 : undefined,
               onClick: () => setIsMobileTabsOpen((open) => !open),
               style: {
                 ...ghostBtn,

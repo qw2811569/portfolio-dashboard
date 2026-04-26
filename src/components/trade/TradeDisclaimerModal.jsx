@@ -1,5 +1,6 @@
 import { createElement as h, useEffect } from 'react'
 import { Button } from '../common/Base.jsx'
+import { OverlayPortal } from '../common/AppOverlay.jsx'
 import { C, alpha } from '../../theme.js'
 import {
   TRADE_DISCLAIMER_DOC_HREF,
@@ -110,13 +111,13 @@ export function TradeDisclaimerModal({
   if (!open) return null
 
   return h(
-    'div',
+    OverlayPortal,
     {
+      id: 'trade-disclaimer',
+      kind: 'blocking',
       'data-testid': 'trade-disclaimer-modal',
       style: {
-        position: 'fixed',
-        inset: 0,
-        zIndex: 120,
+        zIndex: 1200,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

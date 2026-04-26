@@ -55,9 +55,9 @@ export default class AnimatedNumber extends ReactComponent {
       className = '',
       style = {},
       duration = 280,
-      value: _value,
       ...props
     } = this.props
+    delete props.value
     const isRolling = this.state.previous !== undefined
 
     return (

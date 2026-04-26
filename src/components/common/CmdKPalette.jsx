@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { OverlayPortal, useOverlayBlockingStyle } from './AppOverlay.jsx'
 
 const MOBILE_MEDIA_QUERY = '(max-width: 768px)'
 
@@ -35,6 +36,7 @@ export default function CmdKPalette({
   const inputRef = useRef(null)
   const [isMobile, setIsMobile] = useState(() => getIsMobileViewport())
   const [viewportHeight, setViewportHeight] = useState(null)
+  const overlayBlockingStyle = useOverlayBlockingStyle()
 
   useEffect(() => {
     if (!open) return
@@ -114,6 +116,7 @@ export default function CmdKPalette({
             boxShadow: `0 18px 40px ${alpha(C.ink, '18')}`,
             fontSize: 24,
             cursor: 'pointer',
+            ...overlayBlockingStyle,
           }}
         >
           🔍
@@ -121,11 +124,11 @@ export default function CmdKPalette({
       ) : null}
 
       {open ? (
-        <div
+        <OverlayPortal
+          id="cmd-k-palette"
+          kind="blocking"
           aria-hidden="false"
           style={{
-            position: 'fixed',
-            inset: 0,
             zIndex: 1200,
             background: alpha(C.appBg, 'ee'),
             display: 'flex',
@@ -305,7 +308,7 @@ export default function CmdKPalette({
               )}
             </div>
           </div>
-        </div>
+        </OverlayPortal>
       ) : null}
     </>
   )

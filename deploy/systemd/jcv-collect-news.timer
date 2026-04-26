@@ -1,0 +1,10 @@
+[Unit]
+Description=JCV cron timer · collect-news
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 10:00:00
+Persistent=true
+Unit=jcv-collect-news.service
+
+[Install]
+WantedBy=timers.target

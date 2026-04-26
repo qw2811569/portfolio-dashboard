@@ -39,7 +39,7 @@ function DialogShell({
         'aria-label': ariaLabel || title,
         style: {
           width,
-          background: C.card,
+          background: C.raised,
           border: `1px solid ${C.border}`,
           borderRadius: 16,
           boxShadow: `${C.insetLine}, ${C.shadow}`,
@@ -215,7 +215,7 @@ export function TextFieldDialog({
         type,
         style: {
           width: '100%',
-          background: C.subtle,
+          background: C.surface,
           border: `1px solid ${error ? alpha(C.up, '40') : C.border}`,
           borderRadius: 8,
           padding: '8px 12px',

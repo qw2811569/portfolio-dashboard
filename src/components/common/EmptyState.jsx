@@ -195,7 +195,7 @@ export function EmptyState({ resource = 'holdings', onAction }) {
         padding: '28px 20px',
         borderStyle: 'solid',
         borderColor: alpha(C.border, 'd8'),
-        background: alpha(C.card, 'f6'),
+        background: alpha(C.raised, 'f6'),
       },
     },
     h(
@@ -217,7 +217,7 @@ export function EmptyState({ resource = 'holdings', onAction }) {
             placeItems: 'center',
             borderRadius: '50%',
             border: `1px solid ${alpha(C.border, 'd6')}`,
-            background: alpha(C.subtle, 'f0'),
+            background: alpha(C.surface, 'f0'),
             boxShadow: `${C.insetLine}, ${C.shadow}`,
           },
         },

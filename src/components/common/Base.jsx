@@ -25,7 +25,7 @@ function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = 
 export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
   const accent = color || C.ink
   const baseStyle = {
-    background: alpha(C.card, 'f4'),
+    background: alpha(C.raised, 'f8'),
     border: `1px solid ${C.border}`,
     borderRadius: 16,
     padding: '16px 16px',
@@ -64,7 +64,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
     'div',
     {
       style: {
-        background: C.shell,
+        background: C.raised,
         border: `1px solid ${C.border}`,
         borderRadius: 16,
         padding: '8px 12px',
@@ -320,7 +320,7 @@ export function EmptyState({ icon = '∅', title, description, action, style = {
         textAlign: 'center',
         padding: '32px 16px',
         color: C.textMute,
-        background: alpha(C.subtle, 'fc'),
+        background: alpha(C.surface, 'fc'),
         border: `1px dashed ${C.border}`,
         borderRadius: C.radii.lg,
         ...style,

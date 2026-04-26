@@ -109,9 +109,9 @@ export default function CmdKPalette({
             height: 56,
             borderRadius: '50%',
             border: `1px solid ${alpha(C.positive, '40')}`,
-            background: alpha(C.shell, 'f8'),
+            background: alpha(C.raised, 'f8'),
             color: C.text,
-            boxShadow: `0 18px 40px ${alpha(C.bg, '72')}`,
+            boxShadow: `0 18px 40px ${alpha(C.ink, '18')}`,
             fontSize: 24,
             cursor: 'pointer',
           }}
@@ -127,7 +127,7 @@ export default function CmdKPalette({
             position: 'fixed',
             inset: 0,
             zIndex: 1200,
-            background: alpha(C.shell, 'ee'),
+            background: alpha(C.appBg, 'ee'),
             display: 'flex',
             alignItems: isMobile ? 'stretch' : 'flex-start',
             justifyContent: 'center',
@@ -147,9 +147,9 @@ export default function CmdKPalette({
               display: 'flex',
               flexDirection: 'column',
               borderRadius: isMobile ? 0 : 16,
-              background: alpha(C.shell, 'fb'),
+              background: alpha(C.raised, 'fb'),
               border: isMobile ? 'none' : `1px solid ${C.borderStrong}`,
-              boxShadow: isMobile ? 'none' : `0 36px 90px ${alpha(C.bg, '90')}, ${C.shellShadow}`,
+              boxShadow: isMobile ? 'none' : `0 36px 90px ${alpha(C.ink, '18')}, ${C.shellShadow}`,
               overflow: 'hidden',
             }}
             onClick={(event) => event.stopPropagation()}
@@ -158,7 +158,7 @@ export default function CmdKPalette({
               style={{
                 padding: isMobile ? '16px 16px 12px' : '16px 16px 12px',
                 borderBottom: `1px solid ${C.borderSub}`,
-                background: alpha(C.card, '10'),
+                background: alpha(C.surface, '70'),
               }}
             >
               <div
@@ -168,7 +168,7 @@ export default function CmdKPalette({
                   gap: 8,
                   borderRadius: 16,
                   border: `1px solid ${C.borderStrong}`,
-                  background: alpha(C.bg, '30'),
+                  background: alpha(C.raised, 'f0'),
                   padding: '12px 16px',
                 }}
               >

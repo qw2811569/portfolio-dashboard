@@ -1565,3 +1565,39 @@ GCS 累計 **174 物件**。
 - Timezone：Vercel cron schedule 是 UTC 語意；本輪依 Round 46 指示做字面翻譯，`OnCalendar` 沒加 timezone。若 VM local timezone 是 Asia/Taipei，實際觸發時刻會跟 Vercel UTC 不同，Claude 在 jcv-dev enable 前要決定是否加 `UTC`。
 - `vercel.json` 註解：JSON 不支援 comment，本輪用 top-level `cronsRetirementNote` 保留「will be retired Phase 5」。若 Vercel config schema 不接受未知欄位，下一輪應移到 docs / discussion，不要破壞 rollback deploy。
 - `.env.local` as `EnvironmentFile`：systemd env file syntax 大致相容 dotenv，但若現場 `.env.local` 有 shell-incompatible quoting/export pattern，service 會 fail，需要 Claude 在 jcv-dev 跑 `systemctl status` 確認。
+
+## Round 48 · Codex B QA · 2026-04-26 13:31
+
+### 找到的 bug
+- 🔴 `deploy/systemd/jcv-*.timer:5`：4 個 Round 46 timer 的 `OnCalendar` 都沒有 explicit timezone。Vercel Cron 文件明確是 UTC；systemd 沒寫 timezone 時吃 manager/host local timezone。若 jcv-dev 是 UTC，字面時間才等價；若是 Asia/Taipei，實際會差 8 小時：`22:00` 會變 14:00 UTC，不是 Vercel 的 22:00 UTC。現有 repo 內 `jcv-morning-note.timer` / `jcv-daily-snapshot.timer` 都寫 `Asia/Taipei`，代表這個 repo 已經知道 systemd timer 需要 explicit TZ。
+- 🟡 `deploy/install-cron-systemd.sh:9,12`：installer 用 `deploy/systemd/jcv-*` glob，不只安裝/enable Round 46 的 4 組 Vercel cron，也會一起處理既有 `jcv-daily-snapshot.{service,timer}` 和 `jcv-morning-note.{service,timer}`。我用 Python glob 實掃是 6 services / 6 timers。若 Phase 2 只要切 Vercel cron，這是 scope overmatch。
+- 🟡 `deploy/install-cron-systemd.sh:21-23`：`set -e` 會讓 `enable --now` 失敗時 abort，這點 OK；但沒有 rollback/disable 已成功 enable 的前幾個 timer，也沒有 `unmask` 或 masked unit 檢查。失敗後可能留下 partial state，需要手動清。
+- 🟡 schedule 行為不是完全等價：`Persistent=true` 會在 VM downtime 後補跑 missed timer；Vercel cron 不保證這種 backfill。這可能是 VM cron 想要的特性，但不是 Vercel 行為等價。
+- 🟢 service content 大致 OK：`Type=oneshot` 正確；`curl -fsSL --max-time 300` 會讓 non-2xx / network failure 變 service failure；Authorization header 使用 `${CRON_SECRET}`；4 個 endpoint path 都對到 `vercel.json`。`EnvironmentFile=/home/chenkuichen/app/portfolio-dashboard/.env.local` 本機不存在，無法驗 jcv-dev 實檔；`.env.local.example` 是 comment + `KEY=value` 形態，格式方向相容，但現場 `.env.local` 若有 `export KEY=` 或奇怪 quoting 仍要 VM 上驗。
+
+### 6 類別
+1. schedule 翻譯: fail until TZ fixed。Cron field 對應本身正確：`0 22 * * *` -> `*-*-* 22:00:00`、weekday 3 條 -> `Mon..Fri *-*-* HH:MM:00` 都對；但 Vercel 是 UTC，systemd 目前依 host TZ，所以等價性取決於 jcv-dev `timedatectl`。要等價應加 explicit `UTC`，或改成 Asia/Taipei 對應時間並明確承認不是 Vercel UTC 語意。`AccuracySec` 未設，systemd default 通常是 1min；既有 timers 明確設 `AccuracySec=1m`。
+2. service unit: mostly pass。4 個 service 都有 `[Unit]` / `[Service]`、`Type=oneshot`、`User=chenkuichen`、`WorkingDirectory=/home/chenkuichen/app/portfolio-dashboard`、`EnvironmentFile`、`ExecStart`。`curl -fsSL` + `--max-time 300` 能 fail fast 到 systemd 狀態；但 max-time 對 60 秒函式偏鬆，且 service 只 curl localhost，不負責確保 API process 已經起來。
+3. install script: partial fail。mode `0644` 對 `.service` / `.timer` OK；順序 `install -> daemon-reload -> enable --now -> list-timers` OK；`enable --now` 失敗會 abort。缺點是 glob overmatch、無 rollback、無 masked unit 處理，且 `list-timers 'jcv-*'` 會列出所有 jcv timers，不只本輪 4 個。
+4. tests: partial pass。`tests/deploy/cron-systemd-syntax.test.js` 4 tests 覆蓋 4 cron manifest、service/timer 存在、section/key=value、`Type` / `EnvironmentFile` / `ExecStart` path、`Persistent=true`、`WantedBy=timers.target`、OnCalendar 對表。缺口：沒有 assert explicit timezone、沒有 assert `AccuracySec`、沒有 assert installer 只 enable intended 4 timers、沒有 assert `ExecStart` 含 CRON_SECRET header / `--max-time` / `-f`。
+5. coexistence with Vercel cron: acceptable only during rollback window。`vercel.json` 未刪 cron，Phase 2 雙跑符合 rollback 策略；但如果 host UTC，Vercel + VM 會在同一分鐘打同一 handler，會增加 collect-target-prices / FinMind quota 浪費。compute-valuations last-writer-wins 可接受。暫時不建議加「if Vercel just ran then skip」這種複雜 condition，Phase 5 刪 Vercel cron 比較乾淨。
+6. validation 替代: pass with caveat。local 沒 `systemd-analyze`。我跑了 Python parser：4 個 target timer 都有 `[Unit]` / `[Timer]` / `[Install]`，OnCalendar regex match，`Persistent=true`，`WantedBy=timers.target`；4 個 service 都有 `[Unit]` / `[Service]`，`ExecStart` 含 CRON_SECRET header / `--max-time 300` / endpoint path。也跑 `npm run test:run -- tests/deploy/cron-systemd-syntax.test.js`，4/4 pass。第一個 `npm test ... --runInBand` 失敗只是 Vitest 不支援 Jest flag，已用正確指令重跑。
+
+### confidence
+- systemd unit syntax: 8/10
+- schedule 等價: 4/10
+- install script: 6/10
+
+### 推薦下一動作
+還有 issue → A 修。不要 K。最小修正是：4 個 Round 46 timer 加 explicit `UTC`（或明確改成 Asia/Taipei 對應時間並更新表）、installer 改成只安裝/enable 這 4 個 Vercel cron timers 或加入 allowlist、測試補 explicit TZ / CRON_SECRET header / `--max-time` / installer allowlist。
+
+## Round 49 · Codex A · Phase 2 fix · 2026-04-26 13:36
+
+- commit SHA: `5acaf77eca223bba1e3954b0c1ff3af058a99718`
+- fix 1: 4 個 Phase 2 timer 都改成 explicit `UTC`，並補 `AccuracySec=1m`。
+- fix 2: `deploy/install-cron-systemd.sh` 改用 4 個 Vercel cron 的 explicit allowlist，不再用 `deploy/systemd/jcv-*` glob 安裝或 enable。
+- fix 3: installer 在 install 前 capture 既有 active `jcv-*` timers；`trap ERR` 失敗時只 disable 本輪已嘗試 enable、且原本不 active 的 timer。
+- fix 4: 4 個 timer 改成 `Persistent=false`，避免 VM downtime 後補跑 missed runs，對齊 Vercel cron 不 backfill 的行為。
+- timezone 決定: 維持 Vercel cron 的 UTC 語意，使用 `OnCalendar=... UTC`，不轉成 Asia/Taipei wall-clock；這樣 rollback 雙跑期間與 Vercel schedule 最等價，也不依賴 jcv-dev host timezone。
+- tests: 補 explicit `UTC`、`AccuracySec=1m`、`Persistent=false`、`Authorization: Bearer ${CRON_SECRET}`、installer allowlist/rollback assertion；`npm run test:run -- tests/deploy/cron-systemd-syntax.test.js --run` pass。
+- 信心預測: schedule `4→9`；install `6→8`。

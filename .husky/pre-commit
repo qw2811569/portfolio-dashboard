@@ -12,6 +12,8 @@ npm run theme:check || {
   exit 1
 }
 
+npm run check:locale
+
 npx lint-staged
 
 npm run theme:check || {

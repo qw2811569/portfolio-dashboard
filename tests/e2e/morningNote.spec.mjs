@@ -162,7 +162,7 @@ test('dashboard shows fallback copy instead of blank when today has no pre-open 
           portfolioId: 'me',
           date: '2026/04/26',
           staleStatus: 'missing',
-          fallbackMessage: '今日無 pre-open 更新 · 請等開盤 T1',
+          fallbackMessage: '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要',
           sections: {
             todayEvents: [],
             holdingStatus: [],
@@ -179,7 +179,7 @@ test('dashboard shows fallback copy instead of blank when today has no pre-open 
 
   await expectMorningNoteVisible(page)
   await expect(page.getByTestId('morning-note-fallback')).toContainText(
-    '今日無 pre-open 更新 · 請等開盤 T1'
+    '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要'
   )
   await expect(page.getByTitle('morning note freshness')).toContainText('missing')
 })

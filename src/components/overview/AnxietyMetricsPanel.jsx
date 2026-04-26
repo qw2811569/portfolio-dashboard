@@ -161,6 +161,52 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
   const meta = toneMeta[metric?.tone] || toneMeta.muted
   const detailId = `anxiety-metric-detail-${metric.id}`
   const isMetricLoading = metric?.availability === 'loading'
+  const isPlaceholder = metric?.availability === 'placeholder'
+
+  // R156 #3: collapse placeholder/loading cards to a 1-row chip so the dashboard
+  // first fold isn't dominated by 3 of 5 cards永遠寫「待補 上線時才有」(R152 #2).
+  if (isPlaceholder || isMetricLoading) {
+    return h(
+      'article',
+      {
+        'data-testid': `anxiety-metric-card-${metric.id}`,
+        'data-availability': metric?.availability,
+        style: {
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '8px 12px',
+          borderRadius: 12,
+          border: `1px solid ${meta.border}`,
+          background: alpha(meta.background, 'a8'),
+          gridColumn: spanFullWidth ? '1 / -1' : undefined,
+        },
+      },
+      h(
+        'span',
+        {
+          style: {
+            fontSize: 11,
+            color: C.textMute,
+            letterSpacing: '0.1em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+          },
+        },
+        metric.id.toUpperCase()
+      ),
+      h(
+        'span',
+        {
+          'data-testid': `anxiety-metric-question-${metric.id}`,
+          style: { fontSize: 12, color: C.textSec, lineHeight: 1.4, flex: 1, minWidth: 0 },
+        },
+        metric.question
+      ),
+      h(Badge, { color: meta.badge, size: 'sm' }, isMetricLoading ? '整理中' : '稍後再上')
+    )
+  }
 
   return h(
     'article',

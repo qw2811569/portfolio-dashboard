@@ -9,7 +9,7 @@ export const MORNING_NOTE_SCHEMA_VERSION = 1
 export const MORNING_NOTE_TIMEZONE = 'Asia/Taipei'
 export const MORNING_NOTE_SNAPSHOT_PREFIX = 'snapshot/morning-note'
 export const MORNING_NOTE_LOG_PREFIX = 'logs/morning-note'
-export const MORNING_NOTE_FALLBACK_COPY = '今日無 pre-open 更新 · 請等開盤 T1'
+export const MORNING_NOTE_FALLBACK_COPY = '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要'
 
 export const MORNING_NOTE_PORTFOLIOS = Object.freeze({
   me: Object.freeze({

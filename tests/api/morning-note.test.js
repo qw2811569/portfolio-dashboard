@@ -128,7 +128,7 @@ describe('api/morning-note', () => {
       note: {
         portfolioId: 'me',
         staleStatus: 'missing',
-        fallbackMessage: '今日無 pre-open 更新 · 請等開盤 T1',
+        fallbackMessage: '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要',
       },
     })
   })

@@ -11,7 +11,8 @@
 1. `agent-bridge-standalone/project-status.json` — 9 個 tab、已完成清單、roadmap、分工 load
 2. `coordination/llm-bus/agent-bridge-tasks.json` — 當前 task 佇列
 3. **`docs/decisions/index.md` — 已決議事項索引（開新討論前必讀，防止重開舊題）**
-4. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
+4. **`docs/audits/INDEX.md` — PM / UX / Designer / QA / Perf audit 統一入口**
+5. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
 
 ## ⚠️ 寫 SA/SD / scope spec 前必做（2026-04-17 新紀律）
 

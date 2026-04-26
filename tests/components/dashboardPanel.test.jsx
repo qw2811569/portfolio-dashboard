@@ -470,7 +470,7 @@ describe('components/DashboardPanel', () => {
           morningNote: {
             date: '2026/04/20',
             staleStatus: 'missing',
-            fallbackMessage: '今日無 pre-open 更新 · 請等開盤 T1',
+            fallbackMessage: '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要',
             sections: {
               todayEvents: [],
               holdingStatus: [],
@@ -484,7 +484,7 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTitle('morning note freshness')).toHaveTextContent('待補')
     expect(screen.getByTestId('morning-note-fallback')).toHaveTextContent(
-      '今日無 pre-open 更新 · 請等開盤 T1'
+      '今天還沒到開盤時間 · 09:00 開盤後會有早盤摘要'
     )
   })
 

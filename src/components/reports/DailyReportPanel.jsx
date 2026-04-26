@@ -16,6 +16,12 @@ import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
 import { pfKey, readStorageValue } from '../../lib/portfolioUtils.js'
 import { normalizeAnalysisHistoryEntries } from '../../lib/reportUtils.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
+import { composeDailyReportRitual } from '../../lib/dailyReportComposer.js'
+import DailyHero from './DailyHero.jsx'
+import DailyPillars from './DailyPillars.jsx'
+import DailyHoldingActions from './DailyHoldingActions.jsx'
+import DailyArchiveTimeline from './DailyArchiveTimeline.jsx'
+import DailyHitRateChart from './DailyHitRateChart.jsx'
 
 const lbl = {
   fontSize: 12,
@@ -1951,6 +1957,7 @@ export function DailyReportPanel({
   viewMode = 'retail',
 }) {
   const [autoConfirmState, setAutoConfirmState] = useState(null)
+  const [selectedArchiveDate, setSelectedArchiveDate] = useState('')
   const isInsiderCompressed = viewMode === 'insider-compressed'
   const complianceNote = isInsiderCompressed
     ? '這是合規壓縮版 · 僅保留組合層級觀察 · 不顯示個股細節'
@@ -1999,6 +2006,16 @@ export function DailyReportPanel({
     if (!dailyReport) return normalized
     return resolvePersistedAnalysisHistory(operatingContext?.portfolio?.id)
   }, [analysisHistory, dailyReport, operatingContext?.portfolio?.id])
+  const dailyRitual = useMemo(
+    () =>
+      composeDailyReportRitual({
+        dailyReport,
+        analysisHistory: resolvedAnalysisHistory,
+        selectedDate: selectedArchiveDate,
+      }),
+    [dailyReport, resolvedAnalysisHistory, selectedArchiveDate]
+  )
+  const selectedRitualDate = selectedArchiveDate || dailyRitual.hero.date
   const dailyAccuracyGateKey = dailyAccuracyGate
     ? [
         dailyAccuracyGate.resource,
@@ -2100,6 +2117,27 @@ export function DailyReportPanel({
     ),
     // Morning note (always shown when available)
     h(MorningNoteSection, { morningNote, viewMode }),
+
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gap: 8,
+          marginBottom: 8,
+        },
+      },
+      h(DailyHero, { hero: dailyRitual.hero, copyText: dailyRitual.copyText }),
+      h(DailyPillars, { pillars: dailyRitual.pillars }),
+      viewMode !== 'insider-compressed' &&
+        h(DailyHoldingActions, { actions: dailyRitual.holdingActions }),
+      h(DailyArchiveTimeline, {
+        items: dailyRitual.archive,
+        selectedDate: selectedRitualDate,
+        onSelect: setSelectedArchiveDate,
+      }),
+      h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+    ),
 
     // Empty state
     !dailyReport &&

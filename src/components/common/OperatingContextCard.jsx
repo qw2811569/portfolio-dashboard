@@ -40,6 +40,42 @@ function formatAttentionBadgeLabel(attentionCount = 0, attentionSummary = '') {
   return summary ? `需注意 ${count} 檔 · ${summary}` : `需注意 ${count} 檔`
 }
 
+function ContextChip({ children, active = false }) {
+  return h(
+    'span',
+    {
+      'data-testid': active ? 'operating-context-active-chip' : 'operating-context-chip',
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 8px',
+        borderRadius: 999,
+        background: alpha(C.charcoal, '08'),
+        border: `1px solid ${alpha(C.charcoal, '16')}`,
+        color: C.iron,
+        fontSize: 12,
+        fontWeight: 500,
+        lineHeight: 1.4,
+      },
+    },
+    active &&
+      h(
+        'span',
+        {
+          'aria-hidden': 'true',
+          style: {
+            color: C.cta,
+            fontSize: 8,
+            lineHeight: 1,
+          },
+        },
+        '●'
+      ),
+    children
+  )
+}
+
 export function OperatingContextCard({ context, variant = 'default' }) {
   if (!context) return null
 
@@ -157,8 +193,8 @@ export function OperatingContextCard({ context, variant = 'default' }) {
                 justifyContent: 'flex-end',
               },
             },
-            resolvedPortfolioLabel && h(Badge, { color: 'positive' }, resolvedPortfolioLabel),
-            holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
+            resolvedPortfolioLabel && h(ContextChip, { active: true }, resolvedPortfolioLabel),
+            holdingsCount > 0 && h(ContextChip, null, `持股 ${holdingsCount} 檔`),
             activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
             pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
             attentionCount > 0 &&
@@ -302,8 +338,8 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             justifyContent: 'flex-end',
           },
         },
-        resolvedPortfolioLabel && h(Badge, { color: 'positive' }, resolvedPortfolioLabel),
-        holdingsCount > 0 && h(Badge, { color: 'default' }, `持股 ${holdingsCount} 檔`),
+        resolvedPortfolioLabel && h(ContextChip, { active: true }, resolvedPortfolioLabel),
+        holdingsCount > 0 && h(ContextChip, null, `持股 ${holdingsCount} 檔`),
         activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
         pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
         attentionCount > 0 &&

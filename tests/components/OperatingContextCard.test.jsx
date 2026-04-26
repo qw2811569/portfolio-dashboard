@@ -43,4 +43,17 @@ describe('components/OperatingContextCard', () => {
 
     expect(screen.getByText('需注意 3 檔 · 走勢轉弱 3 檔')).toBeInTheDocument()
   })
+
+  it('renders portfolio and holdings chips with neutral surfaces plus one active dot', () => {
+    render(<OperatingContextCard context={buildContext({ portfolioLabel: '小奎主要投資' })} />)
+
+    const activeChip = screen.getByTestId('operating-context-active-chip')
+    const holdingChip = screen.getByText('持股 5 檔')
+
+    expect(activeChip).toHaveTextContent('●小奎主要投資')
+    expect(activeChip.style.background).toBe('rgba(47, 50, 50, 0.03)')
+    expect(activeChip.style.color).toBe('rgb(131, 133, 133)')
+    expect(holdingChip.style.background).toBe('rgba(47, 50, 50, 0.03)')
+    expect(holdingChip.style.color).toBe('rgb(131, 133, 133)')
+  })
 })

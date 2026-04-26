@@ -735,9 +735,9 @@ function TodayPnlHero({
                             style: {
                               padding: '8px 12px',
                               borderRadius: 999,
-                              border: `1px solid ${alpha(C.cta, '32')}`,
-                              background: alpha(C.cta, '10'),
-                              color: C.textSec,
+                              border: `1px solid ${C.cta}`,
+                              background: C.cta,
+                              color: C.onFill,
                               fontSize: 12,
                               fontWeight: 600,
                             },
@@ -1886,7 +1886,7 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
           {
             style: {
               borderRadius: 999,
-              border: `1px solid ${alpha(C.cta, '80')}`,
+              border: `1px solid ${C.cta}`,
               color: C.cta,
               padding: '5px 11px',
               fontSize: 12,

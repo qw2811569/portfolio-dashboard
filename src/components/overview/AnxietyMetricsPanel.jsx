@@ -27,7 +27,7 @@ const toneMeta = {
   },
   alert: {
     badge: 'alert',
-    border: alpha(C.cta, '28'),
+    border: alpha(C.hot, '28'),
     background: alpha(C.card, 'f8'),
     accent: C.cta,
   },

@@ -1,0 +1,33 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "345204ae-4480-4716-b43b-0fa4c75296b9",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "bdb1b711-4a4c-44ea-af27-62a5c9031131",
+      "prompt_summary": "<task-notification>\n<task-id>bne4g3qbj</task-id>\n<tool-use-id>[REDACTED_HIGH_ENTROPY]</tool-use-id>\n<output-file>[REDACTED_HIGH_ENTROPY].output</output-file>\n<status>completed</status>\n<summary>Background command \"Dispatch B QA for Phase 2 cron systemd\" completed (exit code 0)</summary>\n</task-notification>",
+      "prompt_hash": "sha256:057f961f7560db6ff0e66931bb9f970c440989b6dcbff8b77ba38b5ad8c276a0",
+      "message_count": 971,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-26T05:32:57.263170Z",
+      "session_start": "2026-04-22T05:34:16.818Z",
+      "prompt_submitted_at": "2026-04-26T05:32:57.263171Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 85,
+      "prompt_quality": {
+        "score": 48,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

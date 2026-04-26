@@ -2251,7 +2251,7 @@ export function DailyReportPanel({
       !analyzing &&
       h(
         'div',
-        { style: visuallyHiddenStyle, 'aria-hidden': 'true' },
+        { style: visuallyHiddenStyle },
         hasPendingReview &&
           h(ReviewGateCard, {
             pendingReviewItems: liveNeedsReview,

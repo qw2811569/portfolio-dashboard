@@ -659,6 +659,21 @@ export function NewsEventCard({
                 },
                 '重看投資理由'
               ),
+            !event?.needsThesisReview &&
+              h(
+                'span',
+                {
+                  style: {
+                    fontSize: 11,
+                    padding: '4px 8px',
+                    borderRadius: 8,
+                    background: alpha(C.charcoal, '08'),
+                    color: C.textSec,
+                    fontWeight: 700,
+                  },
+                },
+                '資訊備查'
+              ),
             h(EventCountdownBadge, { event })
           )
         ),

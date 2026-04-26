@@ -92,7 +92,7 @@ function resolveEventTone(daysFromToday) {
   }
 }
 
-function buildTimelineEvents(events, holdingCodes) {
+export function buildTimelineEvents(events, holdingCodes) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -140,13 +140,52 @@ function buildTimelineEvents(events, holdingCodes) {
     }))
 }
 
-function TimelineMarker({ event, onHover, onLeave }) {
+export function buildTimelineGroups(timelineEvents) {
+  const buckets = new Map()
+
+  for (const event of Array.isArray(timelineEvents) ? timelineEvents : []) {
+    const key = `${event.position.toFixed(2)}:${event.dateLabel}`
+    const current = buckets.get(key) || []
+    current.push(event)
+    buckets.set(key, current)
+  }
+
+  return Array.from(buckets.values())
+    .map((eventsAtPosition) => {
+      const primary = eventsAtPosition[0]
+      if (eventsAtPosition.length === 1) return primary
+
+      const isImportant = eventsAtPosition.some((event) => event.isImportant)
+      const matchesHolding = eventsAtPosition.some((event) => event.matchesHolding)
+      const fullLabel = `${eventsAtPosition.length} events · ${primary.dateLabel}`
+
+      return {
+        ...primary,
+        key: `group-${primary.position.toFixed(2)}-${primary.dateLabel}`,
+        isGroup: true,
+        groupedEvents: eventsAtPosition,
+        formattedLabel: `${eventsAtPosition.length} events`,
+        fullLabel,
+        isImportant,
+        matchesHolding,
+        tooltip: eventsAtPosition
+          .map((event) => `${event.fullLabel} · ${event.formattedLabel}`)
+          .join('\n'),
+      }
+    })
+    .map((event, index) => ({
+      ...event,
+      lane: index % 2 === 0 ? 'top' : 'bottom',
+    }))
+}
+
+function TimelineMarker({ event, onHover, onLeave, onClick }) {
   const markerSize = event.isImportant ? 18 : 12
 
   return h(
     'button',
     {
-      key: `${event.date}-${event.fullLabel}`,
+      key: event.key || `${event.date}-${event.fullLabel}`,
       type: 'button',
       className: `events-timeline__marker events-timeline__marker--${event.lane}`,
       title: event.tooltip,
@@ -155,6 +194,7 @@ function TimelineMarker({ event, onHover, onLeave }) {
       onMouseLeave: onLeave,
       onFocus: () => onHover(event),
       onBlur: onLeave,
+      onClick: () => onClick(event),
       style: {
         left: `${event.position}%`,
         '--marker-size': `${markerSize}px`,
@@ -172,7 +212,7 @@ function TimelineMarker({ event, onHover, onLeave }) {
     h(
       'span',
       {
-        className: 'events-timeline__label',
+        className: 'events-timeline__label events-timeline__label--truncate',
         style: {
           fontWeight: event.isImportant ? 700 : 500,
         },
@@ -214,6 +254,7 @@ function EmptyTimelineState() {
 export function EventsTimeline({ events = [] }) {
   const { holdings = [] } = usePortfolioRouteContext()
   const [hoveredEvent, setHoveredEvent] = useState(null)
+  const [expandedGroupKey, setExpandedGroupKey] = useState('')
   const holdingCodes = useMemo(
     () =>
       new Set(
@@ -226,8 +267,25 @@ export function EventsTimeline({ events = [] }) {
     () => buildTimelineEvents(events, holdingCodes),
     [events, holdingCodes]
   )
+  const timelineGroups = useMemo(() => buildTimelineGroups(timelineEvents), [timelineEvents])
+  const expandedGroup = timelineGroups.find(
+    (event) =>
+      event.isGroup && (event.key || `${event.date}-${event.fullLabel}`) === expandedGroupKey
+  )
 
-  if (timelineEvents.length === 0) {
+  const handleMarkerClick = (event) => {
+    if (!event?.isGroup) {
+      setHoveredEvent(event)
+      setExpandedGroupKey('')
+      return
+    }
+
+    const key = event.key || `${event.date}-${event.fullLabel}`
+    setExpandedGroupKey((current) => (current === key ? '' : key))
+    setHoveredEvent(event)
+  }
+
+  if (timelineGroups.length === 0) {
     return h(EmptyTimelineState)
   }
 
@@ -267,11 +325,16 @@ export function EventsTimeline({ events = [] }) {
 .events-timeline__marker:focus-visible .events-timeline__dot,.events-timeline__marker:hover .events-timeline__dot{transform:scale(1.08);box-shadow:0 0 0 5px ${alpha(C.ink, '10')}}
 .events-timeline__dot{display:block;width:var(--marker-size);height:var(--marker-size);border-radius:999px;background:${C.bg};border-style:solid;border-color:var(--marker-color);margin:0 auto;box-shadow:0 8px 18px var(--marker-rail);transition:transform .15s ease, box-shadow .15s ease}
 .events-timeline__label{display:block;font-size:12px;line-height:1.45;color:var(--marker-text)}
-.events-timeline__label-type{color:${C.text}}
-.events-timeline__label-date{color:${C.textMute};font-weight:500}
+.events-timeline__label--truncate{max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.events-timeline__label-type{display:block;color:${C.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.events-timeline__label-date{display:block;color:${C.textMute};font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .events-timeline__tooltip{margin-top:12px;padding:8px 12px;border-radius:10px;background:${alpha(C.bg, '96')};border:1px solid ${C.borderSub};font-size:12px;color:${C.textSec};line-height:1.7}
 .events-timeline__tooltip-title{font-size:11px;font-weight:700;color:${C.text}}
 .events-timeline__tooltip-meta{color:${C.textMute};margin-top:2px}
+.events-timeline__expanded-list{margin-top:12px;display:grid;gap:6px;padding:10px 12px;border-radius:12px;border:1px solid ${C.borderSub};background:${alpha(C.bg, '92')}}
+.events-timeline__expanded-title{font-size:11px;font-weight:700;color:${C.text};letter-spacing:.04em}
+.events-timeline__expanded-item{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:${C.textSec};line-height:1.5}
+.events-timeline__expanded-meta{color:${C.textMute};white-space:nowrap}
 .events-timeline__mobile{display:none;margin-top:12px}
 .events-timeline__mobile-list{display:grid;gap:8px}
 .events-timeline__mobile-item{display:grid;grid-template-columns:18px 1fr;gap:12px;align-items:start;width:100%;min-height:44px;padding:12px 0;border:none;background:transparent;text-align:left;cursor:pointer}
@@ -359,31 +422,52 @@ export function EventsTimeline({ events = [] }) {
             )
           )
         ),
-        timelineEvents.map((event) =>
+        timelineGroups.map((event) =>
           h(TimelineMarker, {
-            key: `${event.date}-${event.fullLabel}-${event.position}`,
+            key: event.key || `${event.date}-${event.fullLabel}-${event.position}`,
             event,
             onHover: setHoveredEvent,
             onLeave: () => setHoveredEvent(null),
+            onClick: handleMarkerClick,
           })
         )
       ),
+      expandedGroup &&
+        h(
+          'div',
+          {
+            className: 'events-timeline__expanded-list',
+            'data-testid': 'events-timeline-expanded-list',
+          },
+          h('div', { className: 'events-timeline__expanded-title' }, expandedGroup.fullLabel),
+          expandedGroup.groupedEvents.map((event) =>
+            h(
+              'div',
+              {
+                key: `${event.date}-${event.fullLabel}-expanded`,
+                className: 'events-timeline__expanded-item',
+              },
+              h('span', null, event.fullLabel),
+              h('span', { className: 'events-timeline__expanded-meta' }, event.formattedLabel)
+            )
+          )
+        ),
       h(
         'div',
         { className: 'events-timeline__mobile' },
         h(
           'div',
           { className: 'events-timeline__mobile-list' },
-          timelineEvents.map((event) =>
+          timelineGroups.map((event) =>
             h(
               'button',
               {
-                key: `${event.date}-${event.fullLabel}-mobile`,
+                key: `${event.key || `${event.date}-${event.fullLabel}`}-mobile`,
                 type: 'button',
                 className: 'events-timeline__mobile-item',
                 title: event.tooltip,
                 'aria-label': event.fullLabel,
-                onClick: () => setHoveredEvent(event),
+                onClick: () => handleMarkerClick(event),
                 onFocus: () => setHoveredEvent(event),
                 onBlur: () => setHoveredEvent(null),
               },

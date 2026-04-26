@@ -113,7 +113,7 @@ describe('components/EventsPanel', () => {
     )
 
     expect(screen.getByText('已過 6 天 · 待復盤')).toBeInTheDocument()
-    expect(screen.getByText('📋 待復盤')).toBeInTheDocument()
+    expect(screen.getByText('待復盤')).toBeInTheDocument()
   })
 
   it('renders TW-specific filter chips', () => {

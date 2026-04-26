@@ -109,6 +109,7 @@ export function useRouteHoldingsPage() {
         holdings,
         holdingDossiers,
         newsEvents,
+        dailyReport,
         totalVal,
         totalCost,
         todayTotalPnl,

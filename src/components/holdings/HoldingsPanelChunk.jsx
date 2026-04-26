@@ -9,7 +9,9 @@ import {
   normalizeHoldingsFilterState,
   readHoldingsFilterStateFromSearch,
 } from '../../lib/holdingsFilters.js'
+import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { HoldingsPanel, HoldingsTable } from './index.js'
+import HoldingsRightRail from './HoldingsRightRail.jsx'
 
 const EMPTY_LIST = []
 const EMPTY_SAVED_FILTERS = []
@@ -124,6 +126,7 @@ function readFilterViewState({ activePortfolioId, storageKeyV2, legacyStorageKey
 }
 
 export default function HoldingsPanelChunk({ panelProps, tableProps }) {
+  const isMobile = useIsMobile()
   const activePortfolioId = String(panelProps?.activePortfolioId || '').trim()
   const tableHoldings = tableProps?.holdings
   const panelHoldings = panelProps?.holdings
@@ -351,14 +354,32 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   }
 
   return (
-    <HoldingsPanel {...panelProps} holdingsFilterBar={holdingsFilterBar}>
-      <HoldingsTable
-        {...tableProps}
-        holdings={visibleHoldings}
-        totalHoldingsCount={filterModel.rows.length}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={handleClearAll}
+    <div
+      data-testid="holdings-panel-with-rail"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 320px',
+        gap: isMobile ? 12 : 16,
+        alignItems: 'start',
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <HoldingsPanel {...panelProps} holdingsFilterBar={holdingsFilterBar}>
+          <HoldingsTable
+            {...tableProps}
+            holdings={visibleHoldings}
+            totalHoldingsCount={filterModel.rows.length}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={handleClearAll}
+          />
+        </HoldingsPanel>
+      </div>
+      <HoldingsRightRail
+        holdings={panelProps?.holdings}
+        holdingDossiers={panelProps?.holdingDossiers}
+        dailyReport={panelProps?.dailyReport}
+        alerts={panelProps?.newsEvents}
       />
-    </HoldingsPanel>
+    </div>
   )
 }

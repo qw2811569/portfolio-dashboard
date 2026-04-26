@@ -565,12 +565,18 @@ export function RelayPlanCard({ expanded, onToggle }) {
   )
 }
 
-export function NewsEventCard({ event, onReview, onToggle }) {
+export function NewsEventCard({
+  event,
+  onReview,
+  onToggle,
+  insiderViewMode = false,
+  isInsiderSelfStock = false,
+}) {
   const eventType = inferEventType(event)
   const eventMeta = EVENT_TYPE_META[eventType] || EVENT_TYPE_META.other
   const typeStyle = getEventStyle(event)
   const impactMeta = IMPACT_META[event.impact] || IMPACT_META.neutral
-  const predictionMeta = getPredictionMeta(event)
+  const predictionMeta = getPredictionMeta(event, { insiderViewMode, isInsiderSelfStock })
   const reviewMeta = getReviewMeta(event)
   const countdown = calculateEventCountdown(event)
   const title = event.label || event.title || '未命名事件'
@@ -881,7 +887,23 @@ export function EventsPanel({
   setCatalystFilter,
   staleStatus = 'fresh',
   operatingContext = null,
+  viewMode = 'retail',
+  insiderStockCodes = [],
 }) {
+  const insiderViewMode = viewMode === 'insider-compressed' || viewMode === 'insider'
+  const normalizedInsiderCodes = (Array.isArray(insiderStockCodes) ? insiderStockCodes : [])
+    .map((code) => String(code || '').trim())
+    .filter(Boolean)
+  function isInsiderSelfStock(event) {
+    if (!insiderViewMode || !normalizedInsiderCodes.length) return false
+    const stocks = Array.isArray(event?.stocks) ? event.stocks : []
+    return stocks.some((stock) => {
+      const stockCode = String(stock || '')
+        .replace(/[^A-Z0-9]/gi, '')
+        .toUpperCase()
+      return normalizedInsiderCodes.some((code) => stockCode.includes(code.toUpperCase()))
+    })
+  }
   const [showInformational, setShowInformational] = useState(false)
   const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
     (event) => event?.recordType !== 'news'
@@ -986,6 +1008,8 @@ export function EventsPanel({
       h(EventCard, {
         key: buildEventKey(event, index),
         event,
+        insiderViewMode,
+        isInsiderSelfStock: isInsiderSelfStock(event),
       })
     ),
 

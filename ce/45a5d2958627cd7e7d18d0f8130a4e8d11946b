@@ -1,0 +1,227 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "84acd069-53ad-42ff-8701-d167ae046f2e",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "CLAUDE.md Rule 0「Claude 不碰實作」 這個改掉，你們討論，不要什麼都問我，我都找到問題了，你怎麼誕生更多問題給我。明明你們討論這個文件給的這麼詳細，為何你們老是出錯",
+      "prompt_hash": "sha256:99a880f20137860eb7721563bf8d30c95ab7b181d16e5ddabf36bbd908a811cf",
+      "message_count": 11390,
+      "cost_usd": 0.4413280500000001,
+      "input_tokens": 2,
+      "output_tokens": 1631,
+      "cache_read_tokens": 1364961,
+      "cache_creation_tokens": 1965,
+      "timestamp": "2026-04-26T11:53:37.019486Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-26T11:53:29.583Z",
+      "session_duration_secs": 975731,
+      "ai_response_time_secs": 10.88531689717377,
+      "accepted_lines": 1350,
+      "overridden_lines": 1,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "src/hooks/useWeeklyReportClipboard.js",
+      "line_range": [
+        5,
+        173
+      ],
+      "files_changed": [
+        {
+          "path": "src/hooks/useWeeklyReportClipboard.js",
+          "line_range": [
+            5,
+            173
+          ],
+          "blob_hash": "cc706dc053ca900042e7d6e4f770c07dfa862d31",
+          "additions": 1,
+          "deletions": 20
+        },
+        {
+          "path": "src/hooks/useAppRuntime.js",
+          "line_range": [
+            511,
+            543
+          ],
+          "blob_hash": "ecd1caaf3b9ee4f3358946ce3230a244f7d50835",
+          "deletions": 2
+        },
+        {
+          "path": "src/hooks/useAppRuntimeWorkflows.js",
+          "line_range": [
+            336,
+            336
+          ],
+          "blob_hash": "e1b1b56858242afa899a723a6ec7ec1a15c76ac4",
+          "deletions": 1
+        }
+      ],
+      "prompt_number": 869,
+      "total_additions": 1,
+      "total_deletions": 23,
+      "tools_used": [
+        "Bash",
+        "Edit",
+        "Read"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "CLAUDE.md Rule 0「Claude 不碰實作」 這個改掉，你們討論，不要什麼都問我，我都找到問題了，你怎麼誕生更多問題給我。明明你們討論這個文件給的這麼詳細，為何你們老是出錯"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"grep -n \"RULE 0\\|Rule 0\\|不碰實作\\|不自己寫\" CLAUDE.md 2>&1 | head\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Read(file: \"CLAUDE.md\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "CLAUDE.md"
+          ]
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Edit(file: \"CLAUDE.md\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "CLAUDE.md"
+          ]
+        },
+        {
+          "turn": 4,
+          "role": "assistant",
+          "content": "CLAUDE.md Rule 0 改了。現在我下海自己做 R7.5 的 .html removal + ? rename + Header pill。\n\n先確認 Codex R7 v2 沒在改 Header.jsx 避免 conflict。"
+        },
+        {
+          "turn": 5,
+          "role": "tool",
+          "content": "Bash(command: \"git status -s; echo '---'; git log --oneline origin/main -3\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 6,
+          "role": "assistant",
+          "content": "開始下海做。Header.jsx 等 Codex R7 v2 push 後做（避免 conflict），先做不衝突的：useWeeklyReportClipboard hook 拿掉 .html。"
+        },
+        {
+          "turn": 7,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 8,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 9,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 10,
+          "role": "tool",
+          "content": "Edit(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 11,
+          "role": "tool",
+          "content": "Edit(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 12,
+          "role": "tool",
+          "content": "Edit(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 13,
+          "role": "tool",
+          "content": "Bash(command: \"grep -rn \"downloadWeeklyReportHtml\" src/ tests/ 2>&1 | head\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 14,
+          "role": "tool",
+          "content": "Read(file: \"useAppRuntime.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useAppRuntime.js"
+          ]
+        },
+        {
+          "turn": 15,
+          "role": "tool",
+          "content": "Edit(file: \"useAppRuntime.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useAppRuntime.js"
+          ]
+        },
+        {
+          "turn": 16,
+          "role": "tool",
+          "content": "Edit(file: \"useAppRuntime.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useAppRuntime.js"
+          ]
+        },
+        {
+          "turn": 17,
+          "role": "tool",
+          "content": "Read(file: \"useAppRuntimeWorkflows.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useAppRuntimeWorkflows.js"
+          ]
+        },
+        {
+          "turn": 18,
+          "role": "tool",
+          "content": "Read(file: \"useAppRuntimeWorkflows.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useAppRuntimeWorkflows.js"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 50,
+        "rating": "Fair",
+        "category": "other"
+      }
+    }
+  ]
+}

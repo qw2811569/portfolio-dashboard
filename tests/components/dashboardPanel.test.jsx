@@ -471,6 +471,36 @@ describe('components/DashboardPanel', () => {
     expect(onNavigate.mock.calls).toEqual([['events'], ['holdings'], ['daily']])
   })
 
+  it('hands Morning Note holding clicks to setTab plus detail stock context', () => {
+    const onMorningNoteHandoff = vi.fn()
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          onMorningNoteHandoff,
+          morningNote: {
+            date: '2026/04/18',
+            sections: {
+              todayEvents: [],
+              holdingStatus: [{ code: '2330', name: '台積電', pillarSummary: '2/3 on_track' }],
+              watchlistAlerts: [],
+              announcements: [],
+            },
+          },
+        })}
+      />
+    )
+
+    fireEvent.click(screen.getByText('台積電 2330'))
+
+    expect(onMorningNoteHandoff).toHaveBeenCalledWith({
+      target: 'holdings',
+      code: '2330',
+      handoffSource: 'morning-note',
+    })
+  })
+
   it('renders markdown morning note copy as semantic elements instead of raw tokens', () => {
     render(
       <DashboardPanel

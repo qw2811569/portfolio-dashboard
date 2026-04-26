@@ -25,9 +25,9 @@ function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = 
 export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
   const accent = color || C.ink
   const baseStyle = {
-    background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
+    background: alpha(C.card, 'f4'),
     border: `1px solid ${C.border}`,
-    borderRadius: 22,
+    borderRadius: 16,
     padding: '16px 16px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
     ...(highlighted
@@ -154,6 +154,8 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
   const selectedColor = colors[color] || colors[resolvedColor] || colors.default
   const selectedSize = sizes[size] || sizes.sm
   const localizedStyle = getLocalizedMetaStyle(children, { uppercase: true })
+  const textContent = extractTextContent(children)
+  const isLowConfidence = /低信心|low confidence|confidence\s*0\.[0-6]/i.test(textContent)
 
   return h(
     'span',
@@ -175,6 +177,7 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
     selectedColor.dot &&
       h('span', {
         'aria-hidden': 'true',
+        className: isLowConfidence ? 'low-confidence-dot' : undefined,
         style: {
           width: 8,
           height: 8,

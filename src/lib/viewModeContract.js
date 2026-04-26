@@ -1,3 +1,5 @@
+import { INSIDER_COMPLIANCE_COPY } from './insiderCopy.js'
+
 const VIEW_MODES = {
   OWNER: 'owner',
   RETAIL: 'retail',
@@ -106,7 +108,7 @@ export function isViewModeEnabled(ruleName, viewMode) {
 export function getViewModeComplianceMessage(viewMode, portfolioLabel = '') {
   if (!isViewModeEnabled('showComplianceNote', viewMode)) return ''
   const label = String(portfolioLabel || '').trim()
-  return `${label || '這組'} 目前是合規壓縮檢視 · 只保留組合層級重點，不展開個股細節。`
+  return `${label || '這組'} 目前是合規壓縮檢視 · ${INSIDER_COMPLIANCE_COPY.B}`
 }
 
 export { VIEW_MODES }

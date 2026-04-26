@@ -97,12 +97,34 @@ function normalizeSourceLabel(source = '') {
 }
 
 function inferImpact(item) {
+  if (item?.suppressImpactJudgment) return 'neutral'
   const text = `${item.title || ''} ${item.description || ''}`.toLowerCase()
   const positiveWords = ['成長', '上修', '擴', '回溫', '升溫', '樂觀', '接單', '受惠', '創高']
   const negativeWords = ['下修', '衰退', '震盪', '保守', '遞延', '壓力', '疲弱', '下滑', '調降']
   if (negativeWords.some((word) => text.includes(word.toLowerCase()))) return 'negative'
   if (positiveWords.some((word) => text.includes(word.toLowerCase()))) return 'positive'
   return 'neutral'
+}
+
+function getRelatedStockCodes(item = {}) {
+  return (Array.isArray(item.relatedStocks) ? item.relatedStocks : [])
+    .map((stock) => String(stock?.code || stock || '').trim())
+    .filter(Boolean)
+}
+
+function normalizeInsiderNewsItem(item = {}, insiderCodes = []) {
+  const relatedCodes = getRelatedStockCodes(item)
+  const isRelatedSelfStock = relatedCodes.some((code) => insiderCodes.includes(code))
+  if (!isRelatedSelfStock) return item
+
+  return {
+    ...item,
+    impactJudgment: null,
+    actionCta: null,
+    aiImpactPromptInput: null,
+    suppressImpactJudgment: true,
+    isRelatedSelfStock: true,
+  }
 }
 
 function summarizeItem(item) {
@@ -375,6 +397,7 @@ function NewsFeedCard({
   onToggleRead = () => {},
   onNavigateDaily = () => {},
 }) {
+  const suppressImpact = Boolean(item?.suppressImpactJudgment || item?.isRelatedSelfStock)
   const impact = inferImpact(item)
   const impactTone =
     impact === 'positive'
@@ -442,11 +465,12 @@ function NewsFeedCard({
             border: `1px solid ${alpha(TOKENS.warning, '24')}`,
             color: TOKENS.ink,
           }),
-          renderChip(impactTone.label, {
-            background: impactTone.bg,
-            color: impactTone.color,
-            border: `1px solid ${impactTone.border}`,
-          })
+          !suppressImpact &&
+            renderChip(impactTone.label, {
+              background: impactTone.bg,
+              color: impactTone.color,
+              border: `1px solid ${impactTone.border}`,
+            })
         ),
         h(
           'a',
@@ -561,23 +585,24 @@ function NewsFeedCard({
           },
           isRead ? '已看' : '標記已看'
         ),
-        h(
-          Button,
-          {
-            onClick: () => onNavigateDaily(item),
-            style: {
-              background: TOKENS.cta,
-              border: `1px solid ${alpha(TOKENS.cta, '40')}`,
-              color: TOKENS.ink,
-              textTransform: 'none',
-              letterSpacing: '0.02em',
-              padding: '8px 12px',
-              width: isMobile ? 'auto' : '100%',
-              justifyContent: 'center',
+        !suppressImpact &&
+          h(
+            Button,
+            {
+              onClick: () => onNavigateDaily(item),
+              style: {
+                background: TOKENS.cta,
+                border: `1px solid ${alpha(TOKENS.cta, '40')}`,
+                color: TOKENS.ink,
+                textTransform: 'none',
+                letterSpacing: '0.02em',
+                padding: '8px 12px',
+                width: isMobile ? 'auto' : '100%',
+                justifyContent: 'center',
+              },
             },
-          },
-          '→ 判讀影響'
-        )
+            '→ 判讀影響'
+          )
       )
     )
   )
@@ -594,6 +619,10 @@ export function NewsFeedSection({
   const isMobile = useIsMobile()
   const codesKey = useMemo(() => [...holdingCodes].sort().join(','), [holdingCodes])
   const requestHoldingCodes = useMemo(() => buildHoldingCodesFromKey(codesKey), [codesKey])
+  const insiderCodes = useMemo(
+    () => (viewMode === 'insider-compressed' ? requestHoldingCodes : []),
+    [requestHoldingCodes, viewMode]
+  )
 
   const [items, setItems] = useState([])
   const [error, setError] = useState(null)
@@ -619,7 +648,11 @@ export function NewsFeedSection({
     const applyPayload = (payload) => {
       if (!active || !payload) return
       setError(payload.error || null)
-      setItems(payload.items || [])
+      const nextItems =
+        viewMode === 'insider-compressed'
+          ? (payload.items || []).map((item) => normalizeInsiderNewsItem(item, insiderCodes))
+          : payload.items || []
+      setItems(nextItems)
       setSettledRequestKey(requestKey)
     }
 
@@ -637,7 +670,7 @@ export function NewsFeedSection({
     return () => {
       active = false
     }
-  }, [codesKey, requestHoldingCodes, requestKey])
+  }, [codesKey, insiderCodes, requestHoldingCodes, requestKey, viewMode])
 
   const sources = useMemo(
     () => ['全部來源', ...new Set(items.map((item) => normalizeSourceLabel(item.source)))],
@@ -1052,9 +1085,9 @@ export function NewsFeedSection({
           style: {
             marginBottom: 16,
             padding: isMobile ? '20px 18px' : '24px 24px',
-            borderRadius: 30,
+            borderRadius: 16,
             border: `1px solid ${TOKENS.boneDeep}`,
-            background: `radial-gradient(circle at 16% 18%, ${alpha(TOKENS.warning, '18')}, transparent 28%), linear-gradient(180deg, ${alpha(TOKENS.bone, 'fa')}, ${alpha(TOKENS.bone, 'ec')})`,
+            background: alpha(TOKENS.bone, 'fa'),
             position: 'relative',
             overflow: 'hidden',
           },
@@ -1063,9 +1096,7 @@ export function NewsFeedSection({
           style: {
             position: 'absolute',
             inset: 0,
-            backgroundImage: `radial-gradient(${alpha(TOKENS.charcoal, '09')} 0.7px, transparent 0.7px), radial-gradient(${alpha(TOKENS.charcoal, '06')} 0.7px, transparent 0.7px)`,
-            backgroundPosition: '0 0, 12px 12px',
-            backgroundSize: '24px 24px',
+            background: alpha(TOKENS.charcoal, '04'),
             opacity: 0.38,
             pointerEvents: 'none',
           },
@@ -1207,10 +1238,10 @@ export function NewsFeedSection({
         Card,
         {
           style: {
-            borderRadius: 30,
+            borderRadius: 16,
             padding: '0 24px',
             border: `1px solid ${TOKENS.boneDeep}`,
-            background: `linear-gradient(180deg, ${alpha(TOKENS.bone, 'f7')}, ${alpha(TOKENS.bone, 'ee')})`,
+            background: alpha(TOKENS.bone, 'f7'),
             overflow: 'hidden',
           },
         },
@@ -1235,10 +1266,10 @@ export function NewsFeedSection({
         {
           'data-testid': 'news-side-notes',
           style: {
-            borderRadius: 28,
+            borderRadius: 16,
             padding: '16px 16px 16px',
             border: `1px solid ${TOKENS.boneDeep}`,
-            background: `linear-gradient(180deg, ${alpha(TOKENS.bone, 'f5')}, ${alpha(TOKENS.bone, 'ec')})`,
+            background: alpha(TOKENS.bone, 'f5'),
             position: isMobile ? 'static' : 'sticky',
             top: isMobile ? 'auto' : 16,
           },
@@ -1411,9 +1442,9 @@ export function NewsAnalysisPanel({
           style: {
             textAlign: 'left',
             padding: '24px 24px',
-            borderRadius: 30,
+            borderRadius: 16,
             border: `1px solid ${TOKENS.boneDeep}`,
-            background: `radial-gradient(circle at 16% 18%, ${alpha(TOKENS.warning, '16')}, transparent 28%), linear-gradient(180deg, ${alpha(TOKENS.bone, 'fa')}, ${alpha(TOKENS.bone, 'ee')})`,
+            background: alpha(TOKENS.bone, 'fa'),
           },
         },
         h(

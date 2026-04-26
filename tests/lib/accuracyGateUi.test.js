@@ -4,8 +4,11 @@ import {
   containsInsiderActionCue,
   resolveDashboardAccuracyGate,
   resolveDailyAccuracyGate,
+  resolveDetailSummaryAccuracyGate,
   resolveHoldingsAccuracyGate,
   resolveResearchAccuracyGate,
+  resolveTomorrowActionsAccuracyGate,
+  resolveWeeklyPdfNarrativeAccuracyGate,
 } from '../../src/lib/accuracyGateUi.js'
 
 describe('lib/accuracyGateUi', () => {
@@ -257,6 +260,43 @@ describe('lib/accuracyGateUi', () => {
     expect(gate).toMatchObject({
       reason: 'auth-required',
       resource: 'thesis',
+    })
+  })
+
+  it('resolves detail pane AI summary gates for insider action leakage', () => {
+    const gate = resolveDetailSummaryAccuracyGate({
+      summary: '建議先減碼，等拉回再買進',
+      viewMode: 'insider-compressed',
+      context: { portfolioLabel: '金聯成' },
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'insider-compliance',
+      resource: 'detail',
+    })
+  })
+
+  it('resolves tomorrow action gates for missing generated content with errors', () => {
+    const gate = resolveTomorrowActionsAccuracyGate({
+      actions: [],
+      error: 'timeout',
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'api-timeout',
+      resource: 'tomorrow',
+    })
+  })
+
+  it('resolves weekly PDF narrative gates for insider action leakage', () => {
+    const gate = resolveWeeklyPdfNarrativeAccuracyGate({
+      narrative: '本週可考慮加碼並設定停損',
+      viewMode: 'insider-compressed',
+    })
+
+    expect(gate).toMatchObject({
+      reason: 'insider-compliance',
+      resource: 'weekly',
     })
   })
 })

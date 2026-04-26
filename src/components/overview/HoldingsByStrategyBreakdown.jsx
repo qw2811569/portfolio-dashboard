@@ -73,6 +73,7 @@ export default function HoldingsByStrategyBreakdown({
         ) : (
           rows.map((row) => {
             const pct = total > 0 ? (row.value / total) * 100 : row.weight * 100
+            const safePct = Math.max(2, Math.min(100, pct))
             const color =
               maxValue > 0 && Number(row.value) === maxValue
                 ? DOMINANT_STRATEGY_BAR_COLOR
@@ -131,11 +132,16 @@ export default function HoldingsByStrategyBreakdown({
                   }}
                 >
                   <div
+                    data-testid="strategy-bar-fill"
                     style={{
-                      width: `${Math.max(2, Math.min(100, pct))}%`,
+                      width: '100%',
                       height: '100%',
                       borderRadius: 999,
                       background: color,
+                      transform: `scaleX(${safePct / 100})`,
+                      transformOrigin: 'left center',
+                      '--bar-pct': `scaleX(${safePct / 100})`,
+                      animation: 'strategy-bar-grow 300ms ease-out 1',
                     }}
                   />
                 </div>

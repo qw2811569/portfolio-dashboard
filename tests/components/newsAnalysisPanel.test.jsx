@@ -163,6 +163,38 @@ describe('components/NewsFeedSection', () => {
     expect(screen.getByText(/2 則相關新聞/)).toBeInTheDocument()
   })
 
+  it('strips impact judgment for insider self-news', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            title: '金聯成公告新產能進度',
+            description: '市場解讀偏正向。',
+            link: 'https://example.com/news/7865',
+            pubDate: '2026-04-12T10:30:00Z',
+            source: '經濟日報',
+            relatedStocks: [{ code: '7865', name: '金聯成' }],
+            impactJudgment: '利多',
+            actionCta: '判讀影響',
+            aiImpactPromptInput: '請判斷利多',
+          },
+        ],
+      }),
+    })
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['7865']} viewMode="insider-compressed" />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('金聯成公告新產能進度')).toBeInTheDocument()
+    })
+
+    expect(screen.getAllByText('利多')).toHaveLength(1)
+    expect(screen.queryByText('→ 判讀影響')).not.toBeInTheDocument()
+  })
+
   it('calls /api/news-feed with codes and days=3', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,

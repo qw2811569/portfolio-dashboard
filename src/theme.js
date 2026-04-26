@@ -124,8 +124,23 @@ function buildRuntimeTokens() {
     fontHead: GENERATED_TOKENS.fontTitle,
     fontNum: GENERATED_TOKENS.fontDisplay,
     fontMono: GENERATED_TOKENS.fontCaption,
+    fontSizes: Object.freeze({
+      display: 'clamp(36px, 4vw, 56px)',
+      title: 'clamp(24px, 2.4vw, 32px)',
+      section: '20px',
+      body: '14px',
+      caption: '11px',
+    }),
     radius: '24px',
     radiusSm: '16px',
+    radii: Object.freeze({
+      sm: '8px',
+      md: '12px',
+      lg: '16px',
+      pill: '999px',
+      circle: '50%',
+      dataMark: '4px',
+    }),
     ease: '240ms ease',
     max: '1240px',
   })

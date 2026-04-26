@@ -265,6 +265,7 @@ export function WatchlistRow({
   return h(
     Card,
     {
+      className: 'card-hover-lift',
       style: {
         background: bgTints[index % 3],
         marginBottom: 8,
@@ -306,8 +307,8 @@ export function WatchlistRow({
                     padding: '4px 8px',
                     borderRadius: 3,
                     marginLeft: 4,
-                    background: C.lavBg,
-                    color: C.lavender,
+                    background: alpha(C.iron, '12'),
+                    color: C.iron,
                     fontWeight: 500,
                   },
                 },

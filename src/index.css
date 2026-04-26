@@ -147,6 +147,104 @@ textarea {
   animation: skeleton-shimmer 2.4s ease-in-out infinite;
 }
 
+.card-hover-lift {
+  transition:
+    transform 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.panel-mount {
+  animation: panel-mount-fade 200ms ease-out both;
+}
+
+.drawer-slide {
+  animation: drawer-slide-in 240ms ease-out both;
+  will-change: transform, opacity;
+}
+
+.low-confidence-dot {
+  animation: low-confidence-dot-pop 100ms ease-out both;
+}
+
+@keyframes panel-mount-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawer-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes low-confidence-dot-pop {
+  from {
+    transform: scale(0);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes strategy-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: var(--bar-pct, scaleX(0));
+  }
+}
+
+@keyframes metric-settle {
+  from {
+    opacity: 0.78;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .card-hover-lift:hover,
+  .panel-mount,
+  .drawer-slide,
+  .low-confidence-dot {
+    transform: none !important;
+  }
+}
+
 .skeleton-circle {
   border-radius: 999px;
 }
@@ -199,9 +297,9 @@ textarea {
   display: grid;
   gap: 12px;
   padding: 18px 18px;
-  border-radius: 22px;
+  border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--iron) 12%, var(--bone));
-  background: linear-gradient(180deg, var(--bone-soft, #ece3d6), var(--bone, #f3eadf));
+  background: var(--bone-soft, #ece3d6);
 }
 
 .skeleton-card-head,
@@ -245,7 +343,7 @@ textarea {
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--iron) 10%, var(--bone));
-  background: linear-gradient(90deg, var(--bone-soft, #ece3d6), var(--bone, #f3eadf));
+  background: var(--bone-soft, #ece3d6);
 }
 
 .skeleton-row-copy {

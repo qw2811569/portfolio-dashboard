@@ -109,7 +109,7 @@ export default function CmdKPalette({
             height: 56,
             borderRadius: '50%',
             border: `1px solid ${alpha(C.positive, '40')}`,
-            background: `linear-gradient(180deg, ${alpha(C.cardBlue, 'f0')} 0%, ${alpha(C.shell, 'f8')} 100%)`,
+            background: alpha(C.shell, 'f8'),
             color: C.text,
             boxShadow: `0 18px 40px ${alpha(C.bg, '72')}`,
             fontSize: 24,
@@ -127,8 +127,7 @@ export default function CmdKPalette({
             position: 'fixed',
             inset: 0,
             zIndex: 1200,
-            background: alpha(C.bg, 'd8'),
-            backdropFilter: 'blur(12px)',
+            background: alpha(C.shell, 'ee'),
             display: 'flex',
             alignItems: isMobile ? 'stretch' : 'flex-start',
             justifyContent: 'center',
@@ -147,8 +146,8 @@ export default function CmdKPalette({
               maxHeight: viewportHeight ? `${viewportHeight}px` : undefined,
               display: 'flex',
               flexDirection: 'column',
-              borderRadius: isMobile ? 0 : 24,
-              background: `linear-gradient(180deg, ${alpha(C.shell, 'fb')} 0%, ${alpha(C.card, 'f6')} 100%)`,
+              borderRadius: isMobile ? 0 : 16,
+              background: alpha(C.shell, 'fb'),
               border: isMobile ? 'none' : `1px solid ${C.borderStrong}`,
               boxShadow: isMobile ? 'none' : `0 36px 90px ${alpha(C.bg, '90')}, ${C.shellShadow}`,
               overflow: 'hidden',
@@ -159,7 +158,7 @@ export default function CmdKPalette({
               style={{
                 padding: isMobile ? '16px 16px 12px' : '16px 16px 12px',
                 borderBottom: `1px solid ${C.borderSub}`,
-                background: `linear-gradient(180deg, ${alpha(C.cardBlue, '8c')} 0%, ${alpha(C.card, '10')} 100%)`,
+                background: alpha(C.card, '10'),
               }}
             >
               <div
@@ -252,9 +251,7 @@ export default function CmdKPalette({
                             width: '100%',
                             textAlign: 'left',
                             border: `1px solid ${selected ? alpha(C.positive, '44') : 'transparent'}`,
-                            background: selected
-                              ? `linear-gradient(90deg, ${alpha(C.positive, '12')} 0%, ${alpha(C.cardBlue, '28')} 100%)`
-                              : 'transparent',
+                            background: selected ? alpha(C.positive, '12') : 'transparent',
                             color: C.text,
                             borderRadius: 16,
                             padding: isMobile ? '16px 16px' : '12px 12px',

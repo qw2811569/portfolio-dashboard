@@ -100,12 +100,13 @@ export default function Header(props) {
     boxSizing: 'border-box',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    transition: 'all 0.18s ease',
+    transition:
+      'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease',
   }
   const card = {
-    background: `linear-gradient(180deg, ${alpha(C.card, 'f2')}, ${alpha(C.subtle, 'f4')})`,
+    background: alpha(C.card, 'f4'),
     border: `1px solid ${C.border}`,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: '12px 12px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
   }
@@ -117,10 +118,8 @@ export default function Header(props) {
     marginBottom: 4,
   }
   const shellSurface = {
-    background: `linear-gradient(180deg, ${alpha(C.shell, 'f4')} 0%, ${alpha(C.subtleElev, 'ea')} 100%)`,
+    background: alpha(C.shell, 'f4'),
     boxShadow: C.shellShadow,
-    backdropFilter: 'blur(16px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(160%)',
   }
   const hasHeaderNotice = viewMode !== OVERVIEW_VIEW_MODE && workflowCue?.kind === 'data-refresh'
   const noticeItems = Array.isArray(workflowCue?.items) ? workflowCue.items : []
@@ -208,8 +207,8 @@ export default function Header(props) {
         'data-testid': 'weekly-export-copy',
         onClick: copyWeeklyReport,
         style: {
-          background: `linear-gradient(90deg, ${C.lavBg}, ${alpha(C.ink, '08')})`,
-          border: `1px solid ${alpha(C.lavender, A.strongLine)}`,
+          background: alpha(C.ink, '08'),
+          border: `1px solid ${alpha(C.ink, A.strongLine)}`,
           ...weeklyReportButtonStyle,
         },
       },
@@ -601,12 +600,9 @@ export default function Header(props) {
         'data-testid': `tab-${tabItem.k}`,
         onClick: () => handleTabSelect(tabItem.k),
         style: {
-          background:
-            tab === tabItem.k
-              ? `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.ink, '10')})`
-              : 'transparent',
+          background: tab === tabItem.k ? alpha(C.ink, '10') : 'transparent',
           color: tab === tabItem.k ? C.text : C.textMute,
-          border: `1px solid ${tab === tabItem.k ? alpha(C.lavender, '26') : alpha(C.borderSub, '70')}`,
+          border: `1px solid ${tab === tabItem.k ? alpha(C.ink, '26') : alpha(C.borderSub, '70')}`,
           boxShadow: tab === tabItem.k ? `0 0 0 1px ${alpha(C.ink, '10')}` : 'none',
           borderRadius: 999,
           minHeight: compact && isCompactLandscape ? 32 : 44,
@@ -783,7 +779,7 @@ export default function Header(props) {
         onClick: editor?.openCreate || createPortfolio,
         disabled: !ready || portfolioSwitching,
         style: {
-          background: `linear-gradient(90deg, ${alpha(C.cta, '12')}, ${alpha(C.positive, '08')})`,
+          background: alpha(C.cta, '12'),
           color: C.textSec,
           border: `1px solid ${alpha(C.cta, A.strongLine)}`,
           ...ghostBtn,
@@ -799,12 +795,9 @@ export default function Header(props) {
         onClick: viewMode === OVERVIEW_VIEW_MODE ? exitOverview : openOverview,
         disabled: !ready || portfolioSwitching,
         style: {
-          background:
-            viewMode === OVERVIEW_VIEW_MODE
-              ? `linear-gradient(90deg, ${alpha(C.amber, '12')}, ${alpha(C.choco, '10')})`
-              : `linear-gradient(90deg, ${alpha(C.lavender, '10')}, ${alpha(C.rose, '10')})`,
+          background: viewMode === OVERVIEW_VIEW_MODE ? alpha(C.ink, '10') : alpha(C.ink, '08'),
           color: C.textSec,
-          border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.amber, A.strongLine) : alpha(C.lavender, '20')}`,
+          border: `1px solid ${viewMode === OVERVIEW_VIEW_MODE ? alpha(C.ink, A.strongLine) : alpha(C.ink, '20')}`,
           ...ghostBtn,
           cursor: !ready || portfolioSwitching ? 'not-allowed' : 'pointer',
         },
@@ -845,8 +838,8 @@ export default function Header(props) {
         style: {
           ...card,
           marginBottom: 8,
-          borderLeft: `3px solid ${C.lavender}`,
-          boxShadow: `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(C.lavender, '10')}`,
+          borderLeft: `3px solid ${C.iron}`,
+          boxShadow: `${C.insetLine}, ${C.shadow}, 0 0 0 1px ${alpha(C.iron, '10')}`,
         },
       },
       h(
@@ -864,7 +857,7 @@ export default function Header(props) {
         h(
           'div',
           null,
-          h('div', { style: { ...lbl, color: C.lavender, marginBottom: 4 } }, '組合管理'),
+          h('div', { style: { ...lbl, color: C.iron, marginBottom: 4 } }, '組合管理'),
           h(
             'div',
             { style: { fontSize: 11, color: C.textSec } },
@@ -886,10 +879,7 @@ export default function Header(props) {
             {
               key: portfolio.id,
               style: {
-                background:
-                  portfolio.id === activePortfolioId
-                    ? `linear-gradient(90deg, ${alpha(C.lavender, '08')}, ${alpha(C.ink, '08')})`
-                    : C.subtle,
+                background: portfolio.id === activePortfolioId ? alpha(C.ink, '08') : C.subtle,
                 border: `1px solid ${portfolio.id === activePortfolioId ? C.borderStrong : C.border}`,
                 borderRadius: 8,
                 padding: '8px 12px',
@@ -920,7 +910,7 @@ export default function Header(props) {
                       '本人'
                     ),
                   portfolio.id === activePortfolioId &&
-                    h('span', { style: { fontSize: 11, color: C.lavender, marginLeft: 4 } }, '目前')
+                    h('span', { style: { fontSize: 11, color: C.iron, marginLeft: 4 } }, '目前')
                 ),
                 h(
                   'div',
@@ -1101,7 +1091,7 @@ export default function Header(props) {
       'div',
       {
         style: {
-          background: `linear-gradient(90deg, ${C.upBg}, ${alpha(C.amber, '12')})`,
+          background: alpha(C.up, '12'),
           border: `1px solid ${alpha(C.up, A.line)}`,
           borderLeft: `3px solid ${C.up}`,
           borderRadius: 6,

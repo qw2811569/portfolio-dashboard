@@ -245,9 +245,7 @@ export function ResearchHeader({
             fontSize: 13,
             fontWeight: 600,
             cursor: researching ? 'not-allowed' : 'pointer',
-            background: researching
-              ? C.subtle
-              : `linear-gradient(135deg,${C.fillTomato},${C.fillChoco})`,
+            background: researching ? C.subtle : C.fillTomato,
             color: researching ? C.textMute : C.onFill,
           },
         },
@@ -532,7 +530,7 @@ export function ResearchProgress({ researching, researchTarget, holdings }) {
       style: {
         marginBottom: 8,
         padding: '24px 16px',
-        background: `linear-gradient(135deg, ${alpha(C.positive, '08')}, ${alpha(C.iron, '08')})`,
+        background: alpha(C.iron, '08'),
       },
     },
     h(
@@ -692,7 +690,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
           position: 'relative',
           height: 14,
           borderRadius: 999,
-          background: `linear-gradient(90deg, ${alpha(C.up, '18')}, ${alpha(C.up, '52')})`,
+          background: alpha(C.up, '52'),
           border: '1px solid var(--positive-soft)',
           overflow: 'hidden',
         },
@@ -752,7 +750,7 @@ function ConsensusHighlightCard({ item }) {
       color: C.textSec,
       style: {
         border: '1px solid var(--positive-soft)',
-        background: `linear-gradient(180deg, ${alpha(C.card, 'fa')}, ${alpha(C.cardBlue, 'd8')})`,
+        background: alpha(C.card, 'fa'),
       },
     },
     h(

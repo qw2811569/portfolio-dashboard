@@ -9,6 +9,7 @@ import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { useUpstreamHealth } from '../../hooks/useUpstreamHealth.js'
 import {
   AccuracyGateBlock,
+  AnimatedNumber,
   Button,
   Card,
   MarkdownText,
@@ -29,7 +30,7 @@ const lbl = {
 }
 
 const metricCard = {
-  background: `linear-gradient(180deg, ${alpha(C.card, 'f0')}, ${alpha(C.subtle, 'f6')})`,
+  background: alpha(C.card, 'f6'),
   border: `1px solid ${C.border}`,
   borderRadius: 12,
   padding: '12px 14px',
@@ -365,7 +366,7 @@ function DashboardCompareStrip({ compareStrip = null, onNavigate = null }) {
         marginBottom: 8,
         padding: '12px 14px',
         border: `1px solid ${alpha(accentColor, compareStrip.tone === 'watch' ? '22' : '18')}`,
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(accentColor, '08')})`,
+        background: compareStrip.tone === 'watch' ? alpha(C.amber, '08') : alpha(C.up, '08'),
       },
     },
     h(
@@ -535,7 +536,7 @@ function TodayPnlHero({
       style: {
         marginBottom: 8,
         padding: isMobileFold ? '18px 14px' : '40px 28px',
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
+        background: alpha(C.card, 'f4'),
       },
     },
     h(
@@ -813,6 +814,7 @@ function TodayPnlHero({
               'div',
               {
                 key: metric.label,
+                className: 'card-hover-lift',
                 style: {
                   ...metricCard,
                   display: 'grid',
@@ -820,7 +822,7 @@ function TodayPnlHero({
                   minHeight: isMobileFold ? 104 : 164,
                   padding: isMobileFold ? '12px 10px' : '22px 24px',
                   borderRadius: 8,
-                  background: `linear-gradient(180deg, ${alpha(C.card, 'f8')}, ${alpha(C.subtle, 'fc')})`,
+                  background: alpha(C.card, 'f8'),
                 },
               },
               h(
@@ -835,25 +837,23 @@ function TodayPnlHero({
                 },
                 metric.label
               ),
-              h(
-                'div',
-                {
-                  'data-testid': metric.testId,
-                  className: 'tn',
-                  style: {
-                    fontSize: isMobileFold ? 26 : 'clamp(42px, 4.8vw, 58px)',
-                    fontWeight: 800,
-                    color: metric.color,
-                    marginTop: isMobileFold ? 12 : 18,
-                    fontFamily: 'Inter, system-ui, var(--font-body)',
-                    lineHeight: 0.98,
-                    fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: 0,
-                    whiteSpace: 'nowrap',
-                  },
+              h(AnimatedNumber, {
+                'data-testid': metric.testId,
+                value: metric.value,
+                as: 'div',
+                className: 'tn',
+                style: {
+                  fontSize: isMobileFold ? 26 : 'clamp(42px, 4.8vw, 58px)',
+                  fontWeight: 800,
+                  color: metric.color,
+                  marginTop: isMobileFold ? 12 : 18,
+                  fontFamily: 'Inter, system-ui, var(--font-body)',
+                  lineHeight: 0.98,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: 0,
+                  whiteSpace: 'nowrap',
                 },
-                metric.value
-              ),
+              }),
               !isMobileFold &&
                 h(
                   'div',
@@ -986,7 +986,7 @@ function buildTodayInMarketsItems(newsEvents = []) {
   return selectTodayInMarketsItems(items, TODAY_IN_MARKETS_MAX_ITEMS)
 }
 
-function MorningNoteCard({ morningNote = null, onNavigate = null }) {
+function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteHandoff = null }) {
   if (!morningNote) return null
 
   const sections = morningNote.sections || {}
@@ -1015,6 +1015,13 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
   const staleStatus = ['stale', 'missing', 'failed'].includes(morningNote.staleStatus)
     ? morningNote.staleStatus
     : ''
+  const handleMorningNoteHandoff = ({ target = 'daily', code = '' } = {}) => {
+    if (typeof onMorningNoteHandoff === 'function') {
+      onMorningNoteHandoff({ target, code, handoffSource: 'morning-note' })
+      return
+    }
+    if (typeof onNavigate === 'function') onNavigate(target)
+  }
 
   return h(
     Card,
@@ -1139,16 +1146,23 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             'div',
             {
               key: item.id || item.title,
+              role: 'button',
+              tabIndex: 0,
+              onClick: () => handleMorningNoteHandoff({ target: 'daily' }),
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  handleMorningNoteHandoff({ target: 'daily' })
+                }
+              },
               style: {
                 borderRadius: 12,
                 border: `1px solid ${
                   item.tone === 'watch' ? alpha(C.amber, '32') : alpha(C.fillTeal, '24')
                 }`,
-                background:
-                  item.tone === 'watch'
-                    ? `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.amber, '08')})`
-                    : `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.fillTeal, '08')})`,
+                background: item.tone === 'watch' ? alpha(C.amber, '08') : alpha(C.fillTeal, '08'),
                 padding: '10px 12px',
+                cursor: 'pointer',
               },
             },
             h(
@@ -1187,10 +1201,27 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             'div',
             {
               key: `${event.date}-${event.title}`,
+              role: 'button',
+              tabIndex: 0,
+              onClick: () =>
+                handleMorningNoteHandoff({
+                  target: 'events',
+                  code: event.stocks?.[0] || event.stockCode || '',
+                }),
+              onKeyDown: (keyboardEvent) => {
+                if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                  keyboardEvent.preventDefault()
+                  handleMorningNoteHandoff({
+                    target: 'events',
+                    code: event.stocks?.[0] || event.stockCode || '',
+                  })
+                }
+              },
               style: {
                 display: 'flex',
                 gap: 8,
                 alignItems: 'flex-start',
+                cursor: 'pointer',
               },
             },
             h(
@@ -1224,6 +1255,15 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             'div',
             {
               key: holding.code,
+              role: 'button',
+              tabIndex: 0,
+              onClick: () => handleMorningNoteHandoff({ target: 'holdings', code: holding.code }),
+              onKeyDown: (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  handleMorningNoteHandoff({ target: 'holdings', code: holding.code })
+                }
+              },
               style: {
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -1232,6 +1272,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                 fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.7,
+                cursor: 'pointer',
               },
             },
             h('span', null, `${holding.name} ${holding.code}`),
@@ -1298,7 +1339,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
             Button,
             {
               key: item.key,
-              onClick: () => typeof onNavigate === 'function' && onNavigate(item.target),
+              onClick: () => handleMorningNoteHandoff({ target: item.target }),
               style: {
                 padding: '8px 12px',
                 borderRadius: 999,
@@ -1307,7 +1348,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null }) {
                 color: C.textSec,
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: typeof onNavigate === 'function' ? 'pointer' : 'default',
+                cursor: 'pointer',
               },
               title: item.summary,
             },
@@ -1371,10 +1412,10 @@ function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {
         )}`,
         background:
           badgeStatus === 'failed'
-            ? `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.down, '08')})`
+            ? alpha(C.down, '08')
             : badgeStatus === 'missing'
-              ? `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.subtle, 'f2')})`
-              : `linear-gradient(180deg, ${alpha(C.card, 'f5')}, ${alpha(C.amber, '0a')})`,
+              ? alpha(C.card, 'f5')
+              : alpha(C.amber, '0a'),
       },
     },
     h(
@@ -1435,7 +1476,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.fillTeal, '42')}`,
-        background: `linear-gradient(180deg, ${alpha(C.card, 'f6')}, ${alpha(C.fillTeal, '06')})`,
+        background: alpha(C.card, 'f6'),
       },
     },
     h(
@@ -1540,7 +1581,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
                   padding: '12px 14px',
                   borderRadius: 14,
                   border: `1px solid ${item.categoryMeta.border}`,
-                  background: `linear-gradient(180deg, ${alpha(C.card, 'fc')}, ${item.categoryMeta.background})`,
+                  background: item.categoryMeta.background,
                 },
               },
               h(
@@ -1802,7 +1843,7 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
         padding: isMobile ? '28px 22px' : '34px 30px',
         borderRadius: 8,
         border: `1px solid ${alpha(C.bone, '24')}`,
-        background: `linear-gradient(180deg, ${C.darkPanel}, ${C.darkPanelSoft})`,
+        background: C.darkPanel,
         boxShadow: `${C.insetLine}, 0 24px 60px ${alpha(C.ink, '24')}`,
         color: C.bone,
       },
@@ -2272,6 +2313,7 @@ export function DashboardPanel({
   marketPriceSync = null,
   onRefreshReminder = null,
   onNavigate = null,
+  onMorningNoteHandoff = null,
 }) {
   const dashboardHeadline = useMemo(
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
@@ -2377,7 +2419,7 @@ export function DashboardPanel({
     }),
     h(PrincipleCards),
     h(DailySnapshotStatusCard, { dailySnapshotStatus }),
-    h(MorningNoteCard, { morningNote, onNavigate }),
+    h(MorningNoteCard, { morningNote, onNavigate, onMorningNoteHandoff }),
     h(TodayInMarketsCard, { newsEvents }),
     h(AiQuickSummary, { latestInsight }),
     h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
+import PanelMount from './common/PanelMount.jsx'
 import {
   usePortfolioPanelsActions,
   usePortfolioPanelsData,
@@ -33,9 +34,9 @@ function PanelSuspenseFallback({ title }) {
     <section
       aria-label={`${title} loading`}
       style={{
-        borderRadius: 28,
+        borderRadius: 16,
         border: '1px solid rgba(217, 211, 209, 0.9)',
-        background: 'linear-gradient(180deg, rgba(231, 224, 214, 0.95), rgba(231, 224, 214, 0.86))',
+        background: 'rgba(231, 224, 214, 0.95)',
         padding: '20px 18px',
         display: 'grid',
         gap: 12,
@@ -64,7 +65,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: '100%',
             height: 72,
-            borderRadius: 20,
+            borderRadius: 16,
             background: 'rgba(47, 50, 50, 0.06)',
           }}
         />
@@ -72,7 +73,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: '100%',
             height: 72,
-            borderRadius: 20,
+            borderRadius: 16,
             background: 'rgba(47, 50, 50, 0.05)',
           }}
         />
@@ -238,7 +239,9 @@ export default function AppPanels({ viewMode, overviewViewMode, tab, errorBounda
   return (
     <ErrorBoundary scope={activePanel.scope} title={activePanel.title}>
       <Suspense fallback={<PanelSuspenseFallback title={activePanel.title} />}>
-        <Component {...props} />
+        <PanelMount key={activePanelKey} data-testid="panel-mount">
+          <Component {...props} />
+        </PanelMount>
       </Suspense>
     </ErrorBoundary>
   )

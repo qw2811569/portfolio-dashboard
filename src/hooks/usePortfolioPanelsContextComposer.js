@@ -606,6 +606,10 @@ export function usePortfolioPanelsContextComposer({
       },
       dashboard: {
         onNavigate: setTab,
+        onMorningNoteHandoff: ({ target = 'daily', code = '' } = {}) => {
+          if (code && typeof setDetailStockCode === 'function') setDetailStockCode(code)
+          if (target && typeof setTab === 'function') setTab(target)
+        },
         onRefreshReminder: () => refreshAnalystReports({ force: true }),
       },
       holdings: {

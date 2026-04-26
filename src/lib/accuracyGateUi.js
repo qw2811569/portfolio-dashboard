@@ -21,6 +21,9 @@ const RESOURCE_LABELS = {
   research: '深度研究',
   thesis: '投資 thesis',
   dashboard: '首頁 headline',
+  detail: '個股摘要',
+  tomorrow: '明日行動',
+  weekly: '週報敘事',
 }
 
 function toText(value) {
@@ -399,4 +402,84 @@ export function resolveDashboardAccuracyGate({ holdingDossiers = [], dataRefresh
       pendingCount: Array.isArray(dataRefreshRows) ? dataRefreshRows.length : 0,
     },
   }
+}
+
+function resolveTextEntryAccuracyGate({
+  text = '',
+  error = '',
+  resource = 'thesis',
+  viewMode = 'retail',
+  context = {},
+} = {}) {
+  const normalizedText = toText(text)
+  const normalizedError = toText(error)
+
+  if (viewMode === 'insider-compressed' && containsInsiderActionCue(normalizedText)) {
+    return {
+      reason: 'insider-compliance',
+      resource,
+      context,
+    }
+  }
+
+  if (!normalizedText && normalizedError) {
+    return {
+      reason: classifyAccuracyGateReasonFromError(normalizedError),
+      resource,
+      context,
+    }
+  }
+
+  return null
+}
+
+export function resolveDetailSummaryAccuracyGate({
+  summary = '',
+  error = '',
+  viewMode = 'retail',
+  context = {},
+} = {}) {
+  return resolveTextEntryAccuracyGate({
+    text: summary,
+    error,
+    resource: 'detail',
+    viewMode,
+    context,
+  })
+}
+
+export function resolveTomorrowActionsAccuracyGate({
+  actions = [],
+  error = '',
+  viewMode = 'retail',
+  context = {},
+} = {}) {
+  const text = Array.isArray(actions)
+    ? actions
+        .map((item) => [item?.title, item?.label, item?.body, item?.reason, item?.action].join(' '))
+        .join('\n')
+    : toText(actions)
+
+  return resolveTextEntryAccuracyGate({
+    text,
+    error,
+    resource: 'tomorrow',
+    viewMode,
+    context,
+  })
+}
+
+export function resolveWeeklyPdfNarrativeAccuracyGate({
+  narrative = '',
+  error = '',
+  viewMode = 'retail',
+  context = {},
+} = {}) {
+  return resolveTextEntryAccuracyGate({
+    text: narrative,
+    error,
+    resource: 'weekly',
+    viewMode,
+    context,
+  })
 }

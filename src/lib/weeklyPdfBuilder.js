@@ -1,4 +1,9 @@
 import { getDailyPrinciple } from './dailyPrinciples.js'
+import { resolveWeeklyPdfNarrativeAccuracyGate } from './accuracyGateUi.js'
+import { INSIDER_COMPLIANCE_COPY } from './insiderCopy.js'
+
+const WEEKLY_INSIDER_COPY =
+  '本區僅列風險、狀態與公開資訊整理；不輸出 AI 買賣建議，不提供加碼、減碼或出場指令。'
 
 export const PDF_CJK_FONT_FAMILY = 'SourceHanSansTC'
 export const PDF_CJK_FONT_FILES = Object.freeze({
@@ -114,6 +119,21 @@ export function buildWeeklyPdfData({
 } = {}) {
   const principle = getDailyPrinciple(now)
   const hasInsiderSection = shouldUseInsiderSection({ complianceMode, portfolio })
+  const viewMode = hasInsiderSection ? 'insider-compressed' : 'retail'
+  const weeklyNarrative = [
+    `本週市值 ${money(totalVal)}，損益 ${money(totalPnl)}，報酬 ${pct(retPct)}。`,
+    eventRows(newsEvents, false, isClosedEvent)
+      .map((event) => event.title)
+      .filter(Boolean)
+      .join('；'),
+  ]
+    .filter(Boolean)
+    .join('\n')
+  const narrativeAccuracyGate = resolveWeeklyPdfNarrativeAccuracyGate({
+    narrative: weeklyNarrative,
+    viewMode,
+    context: { portfolioLabel: portfolioName },
+  })
 
   return {
     title: `${portfolioName} Weekly`,
@@ -131,10 +151,13 @@ export function buildWeeklyPdfData({
       quote: principle.quote,
       author: principle.author,
     },
+    narrative: narrativeAccuracyGate ? '' : weeklyNarrative,
+    narrativeAccuracyGate,
     insiderSection: hasInsiderSection
       ? {
           title: `Insider section · ${portfolioName}`,
-          copy: '本區僅列風險、狀態與公開資訊整理；不輸出 AI 買賣建議，不提供加碼、減碼或出場指令。',
+          complianceCopy: INSIDER_COMPLIANCE_COPY.C,
+          copy: WEEKLY_INSIDER_COPY,
           rows: [
             '狀態：列入本週追蹤清單。',
             '風險：留意流動性、資訊揭露時點與單一事件依賴。',
@@ -179,11 +202,16 @@ export function buildWeeklyPdfDefinition(data) {
       ...table('Top drags', data.topDrags),
       ...table('已驗證事件', data.verifiedEvents),
       ...table('待處理事件', data.pendingEvents),
+      { text: 'Weekly narrative', style: 'section' },
+      data.narrativeAccuracyGate
+        ? { text: '合規邊界：本段敘事已略過，避免輸出操作方向。', style: 'muted' }
+        : { text: data.narrative || '無', style: 'muted' },
       { text: '心法週語錄', style: 'section' },
       { text: `${data.principle.quote} — ${data.principle.author}` },
       ...(data.insiderSection
         ? [
             { text: data.insiderSection.title, style: 'section' },
+            { text: data.insiderSection.complianceCopy, style: 'muted' },
             { text: data.insiderSection.copy, style: 'muted' },
             { ul: data.insiderSection.rows },
           ]

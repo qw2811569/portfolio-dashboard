@@ -136,13 +136,53 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getByTestId('dashboard-headline')).toHaveTextContent('接近估值上緣')
+    expect(screen.getByTestId('dashboard-headline')).toHaveTextContent(
+      '把市場的雜訊 · 壓回能判斷的節奏。'
+    )
     expect(screen.getByTestId('dashboard-reminder-toggle')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('dashboard-reminder-toggle'))
 
     expect(screen.getByTestId('dashboard-reminder-drawer')).toBeInTheDocument()
     expect(screen.getByText('聯發科 (2454)')).toBeInTheDocument()
+  })
+
+  it('keeps the first-fold sidecar as a dark today focus card', () => {
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 10, cost: 900, price: 950, value: 9500 }],
+          totalVal: 9500,
+          morningNote: {
+            headline: '今天先看法說',
+            focusPoints: [
+              {
+                id: 'event-1',
+                tone: 'watch',
+                title: '台積電法說直接牽動 2330',
+                body: '先確認 AI 需求跟毛利率是否仍在主線內。',
+              },
+            ],
+          },
+          newsEvents: [
+            {
+              id: 'evt-1',
+              title: '台積電法說',
+              status: 'pending',
+              eventDate: '2026-04-25',
+              stocks: ['台積電 2330'],
+            },
+          ],
+        })}
+      />
+    )
+
+    const focusCard = screen.getByTestId('dashboard-focus-card')
+
+    expect(focusCard).toHaveTextContent('今日焦點')
+    expect(focusCard).toHaveTextContent('台積電法說直接牽動 2330')
+    expect(focusCard).toHaveAttribute('data-variant', 'dark-panel')
+    expect(screen.getAllByTestId('dashboard-focus-item')).toHaveLength(3)
   })
 
   it('collapses multi-source auth failures into one global banner on dashboard', () => {
@@ -418,7 +458,7 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getByText('Morning Note')).toBeInTheDocument()
+    expect(screen.getAllByText('Morning Note').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('morning-note-headline')).toHaveTextContent('今天先把節奏排好')
     expect(screen.getByTestId('morning-note-lead')).toHaveTextContent('先看法說，再看主部位。')
     expect(screen.getByText('HIGH')).toBeInTheDocument()

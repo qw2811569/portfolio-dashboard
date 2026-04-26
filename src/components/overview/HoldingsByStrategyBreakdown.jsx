@@ -25,6 +25,7 @@ export default function HoldingsByStrategyBreakdown({
   totalVal = 0,
   stockMeta = null,
   holdingDossiers = [],
+  compact = false,
 }) {
   const mergedMeta = buildStockMetaWithDossiers(stockMeta, holdingDossiers)
   const rows = groupHoldingsByStrategy(holdings, mergedMeta)
@@ -33,29 +34,31 @@ export default function HoldingsByStrategyBreakdown({
   const maxValue = Math.max(0, ...rows.map((row) => Number(row.value) || 0))
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ display: 'grid', gap: 4 }}>
+    <div style={{ display: 'grid', gap: compact ? 10 : 16 }}>
+      <div style={{ display: 'grid', gap: compact ? 2 : 4 }}>
         <div
           style={{
-            fontSize: 14,
+            fontSize: compact ? 12 : 14,
             color: C.textMute,
             fontFamily: 'var(--font-body)',
           }}
         >
           持倉結構
         </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: C.textMute,
-            lineHeight: 1.6,
-          }}
-        >
-          依策略分類看資金配置，先確認組合是不是符合原本打法。
-        </div>
+        {!compact && (
+          <div
+            style={{
+              fontSize: 12,
+              color: C.textMute,
+              lineHeight: 1.6,
+            }}
+          >
+            依策略分類看資金配置，先確認組合是不是符合原本打法。
+          </div>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gap: 10 }}>
+      <div style={{ display: 'grid', gap: compact ? 8 : 10 }}>
         {rows.length === 0 ? (
           <div
             style={{
@@ -81,7 +84,7 @@ export default function HoldingsByStrategyBreakdown({
                 data-testid="holdings-strategy-row"
                 style={{
                   display: 'grid',
-                  gap: 6,
+                  gap: compact ? 4 : 6,
                 }}
               >
                 <div
@@ -96,7 +99,7 @@ export default function HoldingsByStrategyBreakdown({
                     <div
                       style={{
                         color: C.text,
-                        fontSize: 13,
+                        fontSize: compact ? 12 : 13,
                         fontWeight: 700,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -105,18 +108,23 @@ export default function HoldingsByStrategyBreakdown({
                     >
                       {row.label}
                     </div>
-                    <div style={{ color: C.textMute, fontSize: 11, marginTop: 2 }}>
-                      {row.count} 檔 · {Math.round(row.value).toLocaleString()}
-                    </div>
+                    {!compact && (
+                      <div style={{ color: C.textMute, fontSize: 11, marginTop: 2 }}>
+                        {row.count} 檔 · {Math.round(row.value).toLocaleString()}
+                      </div>
+                    )}
                   </div>
-                  <div className="tn" style={{ color: C.textSec, fontWeight: 700, fontSize: 13 }}>
+                  <div
+                    className="tn"
+                    style={{ color: C.textSec, fontWeight: 700, fontSize: compact ? 12 : 13 }}
+                  >
                     {pct.toFixed(1)}%
                   </div>
                 </div>
                 <div
                   aria-hidden="true"
                   style={{
-                    height: 8,
+                    height: compact ? 6 : 8,
                     borderRadius: 999,
                     overflow: 'hidden',
                     background: alpha(C.text, '10'),

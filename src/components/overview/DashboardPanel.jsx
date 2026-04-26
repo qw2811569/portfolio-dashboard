@@ -1,7 +1,7 @@
 import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { buildAnxietyMetrics } from '../../lib/anxietyMetrics.js'
 import { buildDashboardHeadline } from '../../lib/dashboardHeadline.js'
-import { isSkippedTargetPriceInstrumentType } from '../../lib/instrumentTypes.js'
 import { buildMorningNoteDeepLinks } from '../../lib/morningNoteBuilder.js'
 import { normalizeEventType } from '../../lib/eventTypeMeta.js'
 import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
@@ -101,14 +101,6 @@ function formatTaipeiDate() {
     day: 'numeric',
     weekday: 'short',
   }).format(new Date())
-}
-
-function formatMetricValue(value, { signed = false, suffix = '' } = {}) {
-  if (value == null) return '-'
-  if (typeof value === 'string') return value
-  if (!Number.isFinite(value)) return '-'
-  const sign = signed && value > 0 ? '+' : ''
-  return `${sign}${Math.round(value).toLocaleString()}${suffix}`
 }
 
 function isSafeExternalUrl(value) {
@@ -354,52 +346,6 @@ function resolveTodayInMarketsFreshness(items = []) {
   }
 }
 
-function readMetricValue(item, keys) {
-  for (const key of keys) {
-    const value = Number(item?.[key])
-    if (Number.isFinite(value)) return value
-  }
-  return null
-}
-
-function buildSubmetrics({ holdings = [], watchlist = [], dataRefreshRows = [] }) {
-  const safeHoldings = Array.isArray(holdings) ? holdings : []
-  const safeWatchlist = Array.isArray(watchlist) ? watchlist : []
-  const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
-
-  const hasWeekPnl = safeHoldings.some(
-    (holding) => readMetricValue(holding, ['week_pnl', 'weekPnl', 'weeklyPnl']) != null
-  )
-  const hasMonthPnl = safeHoldings.some(
-    (holding) => readMetricValue(holding, ['month_pnl', 'monthPnl', 'monthlyPnl']) != null
-  )
-  const weekPnl = hasWeekPnl
-    ? safeHoldings.reduce(
-        (sum, holding) =>
-          sum + (readMetricValue(holding, ['week_pnl', 'weekPnl', 'weeklyPnl']) || 0),
-        0
-      )
-    : null
-  const monthPnl = hasMonthPnl
-    ? safeHoldings.reduce(
-        (sum, holding) =>
-          sum + (readMetricValue(holding, ['month_pnl', 'monthPnl', 'monthlyPnl']) || 0),
-        0
-      )
-    : null
-  const missingTargetCount = safeRefreshRows.filter((row) => {
-    const status = String(row?.targetStatus || '').toLowerCase()
-    return status === 'missing' || status === 'failed'
-  }).length
-
-  return [
-    { label: '本週損益', value: formatMetricValue(weekPnl, { signed: true }) },
-    { label: '本月損益', value: formatMetricValue(monthPnl, { signed: true }) },
-    { label: '追蹤中', value: `${safeWatchlist.length}` },
-    { label: '需要補充', value: `${missingTargetCount}` },
-  ]
-}
-
 function DashboardCompareStrip({ compareStrip = null, onNavigate = null }) {
   if (!compareStrip) return null
 
@@ -515,13 +461,14 @@ function TodayPnlHero({
   todayPnlIsStale = false,
   marketPriceSync = null,
   holdings = [],
-  watchlist = [],
   portfolioName = '',
   headline = '',
   headlineTone = 'calm',
   headlineGate = null,
   collapseUpstreamBanners = false,
   dataRefreshRows = [],
+  stockMeta = null,
+  holdingDossiers = [],
   onRefreshReminder = null,
   onNavigate = null,
 }) {
@@ -545,7 +492,6 @@ function TodayPnlHero({
   const sign = showStalePnl ? '' : todayTotalPnl > 0 ? '+' : ''
   const totalText = Math.round(totalVal).toLocaleString()
   const pnlText = showStalePnl ? '—' : `${sign}${Math.round(todayTotalPnl).toLocaleString()}`
-  const submetrics = buildSubmetrics({ holdings, watchlist, dataRefreshRows })
   const portfolioLabel = displayPortfolioName({ displayName: portfolioName }) || '目前組合'
   const safeRefreshRows = Array.isArray(dataRefreshRows) ? dataRefreshRows : []
   const headlineText = String(headline || '').trim() || '今日持倉 overview'
@@ -558,6 +504,29 @@ function TodayPnlHero({
   const safeHeadlineText = headlineGate ? '首頁 headline 稍後再補' : headlineText
   const headlineColor =
     headlineTone === 'alert' ? C.text : headlineTone === 'watch' ? C.textSec : C.text
+  const heroMetrics = [
+    {
+      label: '總資產',
+      value: totalText,
+      helper: '把市值先放大，其他訊號都只是判斷順序。',
+      testId: 'dashboard-total-assets-value',
+      color: C.text,
+    },
+    {
+      label: '今日損益',
+      value: pnlText,
+      helper: showStalePnl ? '資料補齊中' : '看方向，也看它有沒有改變 thesis。',
+      testId: 'dashboard-today-pnl-value',
+      color,
+    },
+    {
+      label: '持倉檔數',
+      value: `${holdings.length} 檔`,
+      helper: '檔數是節奏指標，不是越多越好。',
+      testId: 'dashboard-holdings-count-value',
+      color: C.text,
+    },
+  ]
 
   return h(
     Card,
@@ -565,7 +534,7 @@ function TodayPnlHero({
       'data-testid': 'dashboard-poster-hero',
       style: {
         marginBottom: 8,
-        padding: isMobileFold ? '24px 16px' : '56px 28px',
+        padding: isMobileFold ? '18px 14px' : '40px 28px',
         background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
       },
     },
@@ -574,7 +543,7 @@ function TodayPnlHero({
       {
         style: {
           display: 'grid',
-          gap: isMobileFold ? 20 : 32,
+          gap: isMobileFold ? 16 : 24,
         },
       },
       h(
@@ -582,7 +551,7 @@ function TodayPnlHero({
         {
           style: {
             display: 'grid',
-            gap: 20,
+            gap: isMobileFold ? 14 : 18,
           },
         },
         h(
@@ -819,7 +788,7 @@ function TodayPnlHero({
               {
                 'data-testid': 'dashboard-headline',
                 style: {
-                  fontSize: 'clamp(24px, 3.2vw, 36px)',
+                  fontSize: isMobileFold ? 24 : 'clamp(28px, 3.2vw, 36px)',
                   fontWeight: 700,
                   color: headlineColor,
                   fontFamily: 'Inter, system-ui, var(--font-body)',
@@ -830,44 +799,35 @@ function TodayPnlHero({
               },
               safeHeadlineText
             ),
-        h('div', { style: { ...lbl, fontSize: 14, marginBottom: 0 } }, '總資產'),
-        h(
-          // R156 #9 hero number · 數字當主角 · bold sans 不 serif · Strava 風
-          // 黑灰大色塊撐重量 · darkPanel inset border 增加 weight
-          'div',
-          {
-            'data-testid': 'dashboard-total-assets-value',
-            className: 'tn',
-            style: {
-              fontSize: 'clamp(48px, 7vw, 72px)',
-              fontWeight: 800,
-              color: C.text,
-              fontFamily: 'Inter, system-ui, var(--font-body)',
-              letterSpacing: 0,
-              lineHeight: 0.96,
-              fontVariantNumeric: 'tabular-nums',
-            },
-          },
-          totalText
-        ),
         h(
           'div',
           {
             style: {
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: 'clamp(16px, 2vw, 24px)',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: isMobileFold ? 8 : 12,
             },
           },
-          submetrics.map((metric) =>
+          heroMetrics.map((metric) =>
             h(
               'div',
-              { key: metric.label, style: metricCard },
+              {
+                key: metric.label,
+                style: {
+                  ...metricCard,
+                  display: 'grid',
+                  alignContent: 'space-between',
+                  minHeight: isMobileFold ? 104 : 164,
+                  padding: isMobileFold ? '12px 10px' : '22px 24px',
+                  borderRadius: 8,
+                  background: `linear-gradient(180deg, ${alpha(C.card, 'f8')}, ${alpha(C.subtle, 'fc')})`,
+                },
+              },
               h(
                 'div',
                 {
                   style: {
-                    fontSize: 11,
+                    fontSize: 12,
                     color: C.textMute,
                     letterSpacing: '0.08em',
                     lineHeight: 1.4,
@@ -878,108 +838,60 @@ function TodayPnlHero({
               h(
                 'div',
                 {
+                  'data-testid': metric.testId,
                   className: 'tn',
                   style: {
-                    fontSize: 22,
-                    fontWeight: 600,
-                    color: C.text,
-                    marginTop: 6,
-                    fontFamily: 'var(--font-num)',
-                    lineHeight: 1.05,
+                    fontSize: isMobileFold ? 26 : 'clamp(42px, 4.8vw, 58px)',
+                    fontWeight: 800,
+                    color: metric.color,
+                    marginTop: isMobileFold ? 12 : 18,
+                    fontFamily: 'Inter, system-ui, var(--font-body)',
+                    lineHeight: 0.98,
                     fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: 0,
+                    whiteSpace: 'nowrap',
                   },
                 },
                 metric.value
-              )
+              ),
+              !isMobileFold &&
+                h(
+                  'div',
+                  {
+                    style: {
+                      fontSize: 12,
+                      color: C.textSec,
+                      lineHeight: 1.65,
+                      marginTop: 14,
+                    },
+                  },
+                  metric.helper
+                )
             )
           )
-        )
-      ),
-      h(
-        'div',
-        {
-          style: {
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 24,
-            alignItems: 'center',
-          },
-        },
-        h(
-          'div',
-          { style: { display: 'grid', gap: 4 } },
-          h(
-            'div',
-            {
-              style: {
-                fontSize: 12,
-                color: C.textMute,
-                fontFamily: 'var(--font-body)',
-                letterSpacing: '0.08em',
-              },
-            },
-            '今日損益'
-          ),
-          h(
-            'div',
-            {
-              'data-testid': 'dashboard-today-pnl-value',
-              className: 'tn',
-              style: {
-                fontSize: 22,
-                fontWeight: 600,
-                color,
-                fontFamily: 'var(--font-num)',
-                letterSpacing: 0,
-                lineHeight: 1.1,
-              },
-            },
-            pnlText
-          ),
-          showStalePnl &&
-            h(
-              'div',
-              {
-                'data-testid': 'dashboard-today-pnl-stale-copy',
-                style: {
-                  fontSize: 11,
-                  color: C.textMute,
-                  lineHeight: 1.6,
-                },
-              },
-              '資料補齊中'
-            )
         ),
+        showStalePnl &&
+          h(
+            'div',
+            {
+              'data-testid': 'dashboard-today-pnl-stale-copy',
+              style: {
+                fontSize: 11,
+                color: C.textMute,
+                lineHeight: 1.6,
+              },
+            },
+            '資料補齊中'
+          ),
         h(
           'div',
-          { style: { display: 'grid', gap: 4 } },
-          h(
-            'div',
-            {
-              style: {
-                fontSize: 12,
-                color: C.textMute,
-                fontFamily: 'var(--font-body)',
-                letterSpacing: '0.08em',
-              },
+          {
+            style: {
+              borderTop: `1px solid ${C.border}`,
+              paddingTop: isMobileFold ? 12 : 18,
             },
-            '總持倉'
-          ),
-          h(
-            'div',
-            {
-              className: 'tn',
-              style: {
-                fontSize: 22,
-                fontWeight: 600,
-                color: C.textSec,
-                fontFamily: 'var(--font-num)',
-                letterSpacing: 0,
-                lineHeight: 1.1,
-              },
-            },
-            `${holdings.length} 檔`
-          )
+          },
+          h(HoldingsRing, { holdings, totalVal, stockMeta, holdingDossiers, compact: true })
         )
       )
     )
@@ -1755,6 +1667,291 @@ function TodayInMarketsCard({ newsEvents = [] }) {
   )
 }
 
+const FOCUS_TONE_ORDER = {
+  alert: 0,
+  warn: 1,
+  warning: 1,
+  ok: 2,
+  calm: 2,
+  muted: 3,
+}
+
+const FOCUS_METRIC_ORDER = {
+  x5: 0,
+  x2: 1,
+  x4: 2,
+  x1: 3,
+  x3: 4,
+}
+
+function cleanFocusCopy(value = '') {
+  return String(value || '')
+    .replace(/[#*_`>|-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildMorningFocusItem(morningNote = null) {
+  if (!morningNote) return null
+  const focusPoints = Array.isArray(morningNote.focusPoints) ? morningNote.focusPoints : []
+  const firstFocus = focusPoints.find((item) => item?.title || item?.body)
+  if (firstFocus) {
+    return {
+      id: `morning-${firstFocus.id || firstFocus.title || 'focus'}`,
+      eyebrow: 'Morning Note',
+      title: cleanFocusCopy(firstFocus.title) || '盤前重點先放到前面',
+      body: cleanFocusCopy(firstFocus.body) || '今天先看這件事有沒有改變持倉節奏。',
+      tone: firstFocus.tone === 'watch' ? 'warn' : 'ok',
+      routeTab: 'daily',
+      routeLabel: '盤後接續',
+    }
+  }
+
+  const title = cleanFocusCopy(morningNote.headline || morningNote.summary || morningNote.lead)
+  if (!title) return null
+  return {
+    id: 'morning-note',
+    eyebrow: 'Morning Note',
+    title,
+    body:
+      cleanFocusCopy(morningNote.lead || morningNote.summary) ||
+      '先把今天最容易影響情緒的事放在前面。',
+    tone: morningNote.staleStatus === 'failed' ? 'alert' : 'ok',
+    routeTab: 'daily',
+    routeLabel: '盤後接續',
+  }
+}
+
+function buildDashboardFocusItems({
+  anxietyMetrics = null,
+  holdings = [],
+  holdingDossiers = [],
+  newsEvents = [],
+  dailyReport = null,
+  morningNote = null,
+  stockMeta = null,
+}) {
+  const panelState =
+    anxietyMetrics ||
+    buildAnxietyMetrics({
+      holdings,
+      holdingDossiers,
+      newsEvents,
+      dailyReport,
+      stockMeta,
+    })
+  const metrics = Array.isArray(panelState?.metrics) ? panelState.metrics : []
+  const metricItems = metrics
+    .filter((metric) => metric?.availability === 'ready')
+    .map((metric) => ({
+      id: metric.id,
+      eyebrow: metric.question,
+      title: cleanFocusCopy(metric.currentValue) || metric.question,
+      body: cleanFocusCopy(metric.supportingValue || metric.detail) || '今天先把這題放進檢查順序。',
+      tone: metric.tone,
+      routeTab: metric.routeTab,
+      routeLabel: metric.routeLabel,
+    }))
+    .sort((left, right) => {
+      const toneDelta = (FOCUS_TONE_ORDER[left.tone] ?? 4) - (FOCUS_TONE_ORDER[right.tone] ?? 4)
+      if (toneDelta !== 0) return toneDelta
+      return (FOCUS_METRIC_ORDER[left.id] ?? 10) - (FOCUS_METRIC_ORDER[right.id] ?? 10)
+    })
+
+  const morningItem = buildMorningFocusItem(morningNote)
+  const items = morningItem ? [morningItem, ...metricItems] : metricItems
+  const selected = []
+  const seenIds = new Set()
+
+  for (const item of items) {
+    const key = item.id || item.title
+    if (seenIds.has(key)) continue
+    selected.push(item)
+    seenIds.add(key)
+    if (selected.length >= 3) break
+  }
+
+  if (selected.length > 0) return selected
+
+  return [
+    {
+      id: 'quiet-day',
+      eyebrow: '今日焦點',
+      title: '今天先把節奏放慢',
+      body: '五個焦慮題沒有出現明確警訊，先照 thesis 和部位結構走。',
+      tone: 'ok',
+      routeTab: 'holdings',
+      routeLabel: '查看持倉',
+    },
+  ]
+}
+
+function DashboardFocusCard({ items = [], onNavigate = null }) {
+  const isMobile = useIsMobile('(max-width: 600px)')
+  const safeItems = Array.isArray(items) ? items.slice(0, 3) : []
+
+  return h(
+    Card,
+    {
+      'data-testid': 'dashboard-focus-card',
+      'data-variant': 'dark-panel',
+      className: 'dashboard-focus-card',
+      style: {
+        marginTop: 8,
+        marginBottom: 8,
+        padding: isMobile ? '28px 22px' : '34px 30px',
+        borderRadius: 8,
+        border: `1px solid ${alpha(C.bone, '24')}`,
+        background: `linear-gradient(180deg, ${C.darkPanel}, ${C.darkPanelSoft})`,
+        boxShadow: `${C.insetLine}, 0 24px 60px ${alpha(C.ink, '24')}`,
+        color: C.bone,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gap: 24,
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: isMobile ? 'grid' : 'flex',
+            alignItems: isMobile ? 'start' : 'baseline',
+            justifyContent: isMobile ? 'start' : 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          {
+            style: {
+              color: C.bone,
+              fontSize: 'clamp(30px, 4vw, 48px)',
+              fontWeight: 800,
+              lineHeight: 1.04,
+              letterSpacing: 0,
+              fontFamily: 'Inter, system-ui, var(--font-body)',
+            },
+          },
+          '今日焦點'
+        ),
+        h(
+          'span',
+          {
+            style: {
+              borderRadius: 999,
+              border: `1px solid ${alpha(C.cta, '80')}`,
+              color: C.cta,
+              padding: '5px 11px',
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              fontVariantNumeric: 'tabular-nums',
+            },
+          },
+          `${safeItems.length} Items`
+        )
+      ),
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 0,
+          },
+        },
+        safeItems.map((item, index) =>
+          h(
+            'div',
+            {
+              key: item.id || item.title,
+              'data-testid': 'dashboard-focus-item',
+              style: {
+                display: 'grid',
+                gap: 8,
+                padding: index === 0 ? '0 0 20px' : '20px 0',
+                borderTop: index === 0 ? 'none' : `1px solid ${alpha(C.bone, '22')}`,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                },
+              },
+              h(
+                'div',
+                {
+                  style: {
+                    color: alpha(C.bone, 'c8'),
+                    fontSize: 11,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1.4,
+                  },
+                },
+                item.eyebrow
+              ),
+              item.routeTab &&
+                typeof onNavigate === 'function' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    'aria-label': item.routeLabel || '查看',
+                    title: item.routeLabel || '查看',
+                    onClick: () => onNavigate(item.routeTab),
+                    style: {
+                      border: 'none',
+                      background: 'transparent',
+                      color: alpha(C.bone, 'd8'),
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: 0,
+                      cursor: 'pointer',
+                    },
+                  },
+                  '>'
+                )
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  color: C.bone,
+                  fontSize: 22,
+                  lineHeight: 1.25,
+                  fontWeight: 800,
+                },
+              },
+              item.title
+            ),
+            h(
+              'div',
+              {
+                style: {
+                  color: alpha(C.bone, 'c8'),
+                  fontSize: 13,
+                  lineHeight: 1.75,
+                },
+              },
+              item.body
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
 /**
  * Pending Events — stocks with events today/tomorrow
  */
@@ -2049,7 +2246,6 @@ function PortfolioHealthCard({
  */
 export function DashboardPanel({
   holdings = [],
-  watchlist = [],
   holdingDossiers = [],
   dataRefreshRows = [],
   morningNote = null,
@@ -2080,6 +2276,19 @@ export function DashboardPanel({
   const dashboardHeadline = useMemo(
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
     [holdingDossiers, viewMode]
+  )
+  const dashboardFocusItems = useMemo(
+    () =>
+      buildDashboardFocusItems({
+        anxietyMetrics,
+        holdings,
+        holdingDossiers,
+        newsEvents,
+        dailyReport,
+        morningNote,
+        stockMeta,
+      }),
+    [anxietyMetrics, dailyReport, holdingDossiers, holdings, morningNote, newsEvents, stockMeta]
   )
   const upstreamHealth = useUpstreamHealth({
     panel: 'dashboard',
@@ -2133,12 +2342,13 @@ export function DashboardPanel({
         { className: 'dashboard-hero-main' },
         h(TodayPnlHero, {
           holdings,
-          watchlist,
           headline: dashboardHeadline.headline,
           headlineTone: dashboardHeadline.tone,
           headlineGate: dashboardHeadlineGate,
           collapseUpstreamBanners: upstreamHealth.shouldCollapseBanners,
           dataRefreshRows,
+          stockMeta,
+          holdingDossiers,
           onRefreshReminder,
           onNavigate,
           totalVal,
@@ -2147,22 +2357,15 @@ export function DashboardPanel({
           todayPnlIsStale,
           marketPriceSync,
           portfolioName: displayPortfolioName({ displayName: portfolioName, id: portfolioId }),
-        }),
-        h(DashboardCompareStrip, { compareStrip, onNavigate })
+        })
       ),
       h(
-        Card,
-        {
-          className: 'dashboard-hero-ring',
-          style: {
-            marginTop: 8,
-            marginBottom: 8,
-            padding: '28px 24px',
-          },
-        },
-        h(HoldingsRing, { holdings, totalVal, stockMeta, holdingDossiers })
+        'div',
+        { className: 'dashboard-hero-side' },
+        h(DashboardFocusCard, { items: dashboardFocusItems, onNavigate })
       )
     ),
+    h(DashboardCompareStrip, { compareStrip, onNavigate }),
     h(AnxietyMetricsPanel, {
       anxietyMetrics,
       holdings,

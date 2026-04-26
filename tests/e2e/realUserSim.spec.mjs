@@ -951,7 +951,7 @@ test('real user simulation covers golden path, clipboard/download correctness, b
       const headline = page.getByTestId('dashboard-headline')
       await expect(headline).toBeVisible()
       await expect(headline).toContainText(
-        /論述仍穩|接近估值|主力剛進|資料補齊中|首頁結論|整體資料大致到位|整體論述仍穩/
+        /把市場的雜訊 · 壓回能判斷的節奏。|論述仍穩|接近估值|主力剛進|資料補齊中|首頁結論|整體資料大致到位|整體論述仍穩/
       )
 
       const valueMeta = await measureDashboardValue(page)

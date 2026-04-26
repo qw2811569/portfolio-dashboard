@@ -274,19 +274,28 @@ textarea {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 420px);
   gap: clamp(24px, 3vw, 36px);
-  align-items: stretch;
-  padding-bottom: 48px;
+  align-items: start;
+  padding-bottom: 120px;
 }
 
 .dashboard-hero-main,
-.dashboard-hero-ring {
+.dashboard-hero-side {
   min-width: 0;
+}
+
+.dashboard-focus-card {
+  position: sticky;
+  top: 16px;
 }
 
 @media (max-width: 1080px) {
   .dashboard-hero {
     grid-template-columns: minmax(0, 1fr);
     padding-bottom: 40px;
+  }
+
+  .dashboard-focus-card {
+    position: static;
   }
 }
 

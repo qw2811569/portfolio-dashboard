@@ -4,6 +4,7 @@ const BROKEN_PILLAR_STATUSES = new Set(['broken', 'invalidated'])
 const WEAKENED_PILLAR_STATUSES = new Set(['watch', 'behind', 'weakened'])
 const MISSING_DATA_STATUSES = new Set(['missing', 'failed'])
 const STALE_DATA_STATUSES = new Set(['stale', 'aging'])
+export const DASHBOARD_POSTER_HEADLINE = '把市場的雜訊 · 壓回能判斷的節奏。'
 
 function toFiniteNumber(value) {
   if (value == null) return null
@@ -49,18 +50,6 @@ function resolveThesisState(dossier) {
     return 'weakened'
   }
   return 'stable'
-}
-
-function resolveFreshnessStatuses(dossier) {
-  const freshness = dossier?.freshness
-  if (!freshness || typeof freshness !== 'object') return []
-  return Object.values(freshness)
-    .map((value) =>
-      String(value || '')
-        .trim()
-        .toLowerCase()
-    )
-    .filter(Boolean)
 }
 
 function resolveTargetFreshnessStatus(dossier) {
@@ -121,52 +110,8 @@ function resolveValuationState(dossier) {
   return 'below'
 }
 
-function buildRetailHeadline(summary) {
-  const {
-    holdingsCount,
-    stableCount,
-    weakenedCount,
-    brokenCount,
-    nearUpperCount,
-    aboveUpperCount,
-    missingDataCount,
-    staleDataCount,
-  } = summary
-
-  if (brokenCount > 0 && stableCount > 0) {
-    return `${pluralizeHoldings(stableCount)}論述仍穩 · ${pluralizeHoldings(brokenCount)}需要重看`
-  }
-  if (brokenCount > 0) {
-    return `${pluralizeHoldings(brokenCount)}論述需要重看 · 今天多留意 thesis 變化`
-  }
-  if (aboveUpperCount > 0 && stableCount > 0) {
-    return `${pluralizeHoldings(stableCount)}論述仍穩 · ${pluralizeHoldings(aboveUpperCount)}已到估值上緣`
-  }
-  if (aboveUpperCount > 0) {
-    return `有 ${pluralizeHoldings(aboveUpperCount)}已到估值上緣 · 可以回來看一下空間`
-  }
-  if (nearUpperCount > 0 && stableCount > 0) {
-    return `${pluralizeHoldings(stableCount)}論述仍穩 · ${pluralizeHoldings(nearUpperCount)}接近估值上緣`
-  }
-  if (weakenedCount > 0 && stableCount > 0) {
-    return `${pluralizeHoldings(stableCount)}論述仍穩 · ${pluralizeHoldings(weakenedCount)}需要多看一眼`
-  }
-  if (weakenedCount > 0) {
-    return `${pluralizeHoldings(weakenedCount)}論述有些鬆動 · 可以進來看看`
-  }
-  if (missingDataCount > 0) {
-    return `${pluralizeHoldings(missingDataCount)}資料補齊中 · 首頁結論會跟著更新`
-  }
-  if (staleDataCount > 0) {
-    return `${pluralizeHoldings(staleDataCount)}資料有點久了 · 其餘持倉仍在追蹤區間`
-  }
-  if (stableCount > 0) {
-    return `今日論述大致穩定 · ${pluralizeHoldings(Math.max(stableCount, holdingsCount))}持倉持續追蹤中`
-  }
-  if (holdingsCount > 0) {
-    return `今日持倉 overview · ${pluralizeHoldings(holdingsCount)}持倉持續追蹤中`
-  }
-  return '今日持倉 overview'
+function buildRetailHeadline() {
+  return DASHBOARD_POSTER_HEADLINE
 }
 
 function buildCompressedHeadline(summary) {

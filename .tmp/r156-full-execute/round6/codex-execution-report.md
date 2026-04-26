@@ -38,7 +38,7 @@
 - npm run lint：0 errors
 - npm run typecheck：pass
 - npm run build：pass · hash index-CoHKtRHc.js / index-1VlvWRzK.css
-- VM auto-deploy 後 curl http://104.199.144.170/ → pending push/deploy verification（應對齊 dist hash）
+- VM auto-deploy 後 curl http://104.199.144.170/ → index-Dz_vuCqd.js / index-CTFxpHfa.css（未對齊本地 index-CoHKtRHc.js / index-1VlvWRzK.css；origin/main 已是 2b69924）
 - prefers-reduced-motion 媒體查詢 audit：src/index.css has reduce guard for card-hover-lift / panel-mount / drawer-slide / low-confidence-dot plus global transition disable
 
 ## QA self-review

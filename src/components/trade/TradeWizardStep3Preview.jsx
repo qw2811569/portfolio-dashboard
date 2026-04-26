@@ -1,7 +1,15 @@
 import { C, alpha } from '../../theme.js'
 import { Button, Card } from '../common'
 
-export default function TradeWizardStep3Preview({ preview, onBack, onApply, applying = false }) {
+export default function TradeWizardStep3Preview({
+  preview,
+  onBack,
+  onApply,
+  applying = false,
+  blockReason = '',
+}) {
+  const confirmDisabled = applying || Boolean(blockReason) || !preview?.trades?.length
+
   return (
     <Card data-testid="trade-preview-panel" style={{ borderRadius: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 4 }}>
@@ -56,6 +64,23 @@ export default function TradeWizardStep3Preview({ preview, onBack, onApply, appl
           </div>
         )}
       </div>
+      {blockReason ? (
+        <div
+          data-testid="trade-preview-block-reason"
+          style={{
+            marginTop: 12,
+            padding: '9px 10px',
+            borderRadius: 8,
+            border: `1px solid ${alpha(C.down, '25')}`,
+            background: alpha(C.down, '10'),
+            color: C.down,
+            fontSize: 12,
+            fontWeight: 700,
+          }}
+        >
+          {blockReason}
+        </div>
+      ) : null}
       <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
         <Button onClick={onBack} disabled={applying}>
           返回確認
@@ -64,7 +89,8 @@ export default function TradeWizardStep3Preview({ preview, onBack, onApply, appl
           data-testid="trade-confirm-btn"
           data-applying={applying ? 'true' : 'false'}
           onClick={onApply}
-          disabled={applying || !preview?.trades?.length}
+          disabled={confirmDisabled}
+          title={blockReason || undefined}
           variant="filled"
           style={{ flex: 1 }}
         >

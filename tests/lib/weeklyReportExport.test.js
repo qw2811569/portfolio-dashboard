@@ -68,6 +68,11 @@ describe('lib/weeklyReportExport', () => {
     expect(html).toContain('金聯成(7865)')
     expect(html).toContain('事件預測紀錄')
     expect(html).toContain('近 7 日收盤分析')
+    expect(html).toContain('@font-face')
+    expect(html).toContain('SourceHanSansTC-Regular.woff2')
+    expect(html).toContain(
+      'font-family: "Source Han Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;'
+    )
   })
 
   it('formats filenames with ISO week numbering', () => {

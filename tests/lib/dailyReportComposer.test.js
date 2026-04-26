@@ -60,5 +60,10 @@ describe('lib/dailyReportComposer', () => {
     expect(ritual.copyText).toContain('每檔今日該做')
     expect(ritual.copyText).toContain('台積電 2330')
     expect(ritual.copyText).toContain('命中率')
+    expect(ritual.copyText).toContain('每檔今日該做：\n台積電 2330')
+    expect(ritual.copyText).toContain('\n聯發科 2454')
+    expect(ritual.copyText).not.toContain(
+      '台積電 2330：續抱：今日漲跌 7.0%，先照原計畫檢查。；聯發科'
+    )
   })
 })

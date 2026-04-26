@@ -11,6 +11,11 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/results.json' }],
   ],
   outputDir: '.playwright-artifacts',
+  expect: {
+    toHaveScreenshot: {
+      pathTemplate: '{testDir}/snapshots/{projectName}/{arg}{ext}',
+    },
+  },
   use: {
     actionTimeout: 20000,
     navigationTimeout: 60000,

@@ -12,7 +12,15 @@ const inputStyle = {
   fontFamily: 'inherit',
 }
 
-export default function TradeWizardStep2Parse({ trades = [], onChangeTrade, onNext, onBack }) {
+export default function TradeWizardStep2Parse({
+  trades = [],
+  onChangeTrade,
+  onNext,
+  onBack,
+  hasUnconfirmedActions = false,
+}) {
+  const nextBlockReason = hasUnconfirmedActions ? '請先確認所有未指定動作的交易' : ''
+
   return (
     <Card data-testid="trade-parse-results" style={{ borderRadius: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 4 }}>
@@ -38,6 +46,7 @@ export default function TradeWizardStep2Parse({ trades = [], onChangeTrade, onNe
               style={inputStyle}
               value={trade.action}
               onChange={(event) =>
+                // Only an explicit direction change clears this warning; qty/price edits keep it visible.
                 onChangeTrade(index, {
                   action: event.target.value,
                   confidence: 'medium',
@@ -96,7 +105,8 @@ export default function TradeWizardStep2Parse({ trades = [], onChangeTrade, onNe
         <Button
           data-testid="trade-wizard-to-preview"
           onClick={onNext}
-          disabled={!trades.length}
+          disabled={!trades.length || hasUnconfirmedActions}
+          title={nextBlockReason}
           variant="filled"
           style={{ flex: 1 }}
         >

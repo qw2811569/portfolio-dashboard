@@ -3,6 +3,7 @@ import {
   PORTFOLIO_BASE_URL,
   expectNoBlockingQaErrors,
   installQaMonitor,
+  mergeQaEvidence,
   saveLocatorScreenshot,
   stubOwnerCloudBootstrap,
 } from './support/qaHelpers.mjs'
@@ -84,6 +85,12 @@ async function expectPosterHero(page, testInfo, { fileName, maxHeight }) {
   expect(totalStyle.fontFamily).toMatch(/Inter|system-ui/i)
   expect(totalStyle.fontFamily).not.toMatch(/Source Serif|Noto Serif/i)
   expect(Number(totalStyle.fontWeight)).toBeGreaterThanOrEqual(800)
+
+  if (testInfo.project.name === 'chromium') {
+    await expect(hero).toHaveScreenshot(fileName, { maxDiffPixelRatio: 0.02 })
+    mergeQaEvidence(testInfo, { screenshots: [`tests/e2e/snapshots/chromium/${fileName}`] })
+    return
+  }
 
   await saveLocatorScreenshot(hero, testInfo, fileName)
 }

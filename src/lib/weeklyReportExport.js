@@ -375,10 +375,22 @@ export function buildWeeklyReportHtmlDocument(markdown = '') {
         --warm-soft: rgba(194, 107, 45, 0.12);
         --shadow: 0 18px 48px rgba(49, 35, 24, 0.12);
       }
+      @font-face {
+        font-family: 'Source Han Sans TC';
+        src: url('/fonts/SourceHanSansTC-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Source Han Sans TC';
+        src: url('/fonts/SourceHanSansTC-Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-display: swap;
+      }
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: "Avenir Next", "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;
+        font-family: "Source Han Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
         color: var(--ink);
         background:
           radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 34%),

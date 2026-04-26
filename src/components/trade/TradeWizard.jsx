@@ -37,6 +37,11 @@ export default function TradeWizard({
     () => previewTradeApply({ holdings, trades, marketQuotes }),
     [holdings, marketQuotes, trades]
   )
+  const hasUnconfirmedActions = useMemo(
+    () => trades.some((trade) => trade?.needsActionConfirmation),
+    [trades]
+  )
+  const actionBlockReason = hasUnconfirmedActions ? '有未確認動作' : ''
 
   const acceptParsed = (parsed) => {
     const nextTrades = Array.isArray(parsed?.trades) ? parsed.trades : []
@@ -77,8 +82,21 @@ export default function TradeWizard({
     )
   }
 
+  const goToPreview = () => {
+    if (hasUnconfirmedActions) {
+      setError('請先確認所有未指定動作的交易。')
+      return
+    }
+    setError('')
+    setStep(3)
+  }
+
   const applyTrades = async () => {
     if (applying) return
+    if (hasUnconfirmedActions) {
+      setError('請先確認所有未指定動作的交易。')
+      return
+    }
     setApplying(true)
     setError('')
     try {
@@ -173,7 +191,8 @@ export default function TradeWizard({
           trades={trades}
           onChangeTrade={updateTrade}
           onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
+          onNext={goToPreview}
+          hasUnconfirmedActions={hasUnconfirmedActions}
         />
       ) : null}
       {step === 3 ? (
@@ -182,6 +201,7 @@ export default function TradeWizard({
           onBack={() => setStep(2)}
           onApply={applyTrades}
           applying={applying}
+          blockReason={actionBlockReason}
         />
       ) : null}
       {step === 4 ? <TradeWizardStep4Apply result={applyResult} onReset={reset} /> : null}

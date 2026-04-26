@@ -81,7 +81,7 @@ export function PrincipleSummary() {
   const principle = getDailyPrinciple(new Date())
 
   return (
-    <RailCard eyebrow="MINDSET" title="心法卡摘要" color={C.cta}>
+    <RailCard eyebrow="MINDSET" title="心法卡摘要" color={C.charcoal}>
       <div
         style={{
           color: C.text,

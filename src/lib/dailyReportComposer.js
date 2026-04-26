@@ -130,7 +130,7 @@ export function composeDailyReportRitual({
       `基本面：${fundamentalText}`,
       `事件：${eventText}`,
       `風險：${riskText}`,
-      holdingActionLines.length ? `每檔今日該做：${holdingActionLines.join('；')}` : '',
+      holdingActionLines.length ? `每檔今日該做：\n${holdingActionLines.join('\n')}` : '',
       hitRowsLine,
     ]
       .filter(Boolean)

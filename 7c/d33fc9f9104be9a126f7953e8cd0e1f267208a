@@ -1,0 +1,74 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "657c240b-654f-4d1b-be17-c7280202150c",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "你讓gemini去看我們inspiration，去對照我們的網站，讓他提出優化項目，然後顯示給我看",
+      "prompt_hash": "sha256:4b67e2ff4a35799b6fdb538fd75e7bffa2675274fbf1ed4925017b880197b988",
+      "message_count": 11695,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-26T13:26:35.164555Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-26T13:26:34.671Z",
+      "session_duration_secs": 981316,
+      "ai_response_time_secs": 10.859351667641883,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/r156-full-execute/round8/gemini-blind-spot-brief.md",
+      "line_range": [
+        1,
+        102
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/r156-full-execute/round8/gemini-blind-spot-brief.md",
+          "line_range": [
+            1,
+            102
+          ],
+          "blob_hash": "f274344ec2212d2b1919b68c91b6ffad61a1e5b0",
+          "additions": 102
+        }
+      ],
+      "prompt_number": 881,
+      "total_additions": 102,
+      "tools_used": [
+        "Bash",
+        "Write"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "你讓gemini去看我們inspiration，去對照我們的網站，讓他提出優化項目，然後顯示給我看"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"cat scripts/launch-gemini.sh 2>&1 | head -50\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Write(file: \"gemini-blind-spot-brief.md\")",
+          "tool_name": "Write",
+          "files_touched": [
+            "gemini-blind-spot-brief.md"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

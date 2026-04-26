@@ -2,6 +2,7 @@
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { inflateSync } from 'node:zlib'
 import { describe, expect, it, vi } from 'vitest'
 import pdfMakeModule from 'pdfmake/build/pdfmake.js'
 import vfsModule from 'pdfmake/build/vfs_fonts.js'
@@ -32,6 +33,34 @@ function getPdfBuffer(pdfDocument) {
       reject(error)
     }
   })
+}
+
+function decodePdfStreams(buffer) {
+  const text = buffer.toString('latin1')
+  const streams = []
+  let cursor = 0
+
+  while ((cursor = text.indexOf('stream', cursor)) !== -1) {
+    let start = cursor + 'stream'.length
+    if (buffer[start] === 0x0d && buffer[start + 1] === 0x0a) start += 2
+    else if (buffer[start] === 0x0a) start += 1
+
+    const end = text.indexOf('endstream', start)
+    if (end === -1) break
+
+    let stream = buffer.subarray(start, end)
+    if (stream.at(-1) === 0x0a) stream = stream.subarray(0, -1)
+    if (stream.at(-1) === 0x0d) stream = stream.subarray(0, -1)
+
+    try {
+      streams.push(inflateSync(stream))
+    } catch {
+      streams.push(stream)
+    }
+    cursor = end + 'endstream'.length
+  }
+
+  return streams
 }
 
 describe('lib/weeklyPdfBuilder runtime', () => {
@@ -72,5 +101,13 @@ describe('lib/weeklyPdfBuilder runtime', () => {
     expect(buffer.length).toBeGreaterThan(5000)
     expect(pdfText).toContain('SourceHanSansTC')
     expect(pdfText).toContain('/CIDSystemInfo')
+    const taijidianBytes = Buffer.from([0x53, 0xf0, 0x7a, 0x4d, 0x96, 0xfb])
+    const decodedStreamText = Buffer.concat(decodePdfStreams(buffer)).toString('latin1')
+    const taijidianCMapMatch = decodedStreamText.match(/<53f0>\s+<7a4d>\s+<96fb>/i)
+    const embeddedTaijidianBytes = Buffer.from(
+      taijidianCMapMatch?.[0].match(/[0-9a-f]{4}/gi).join('') || '',
+      'hex'
+    )
+    expect(embeddedTaijidianBytes.equals(taijidianBytes)).toBe(true)
   })
 })

@@ -95,11 +95,20 @@
 | drawer / modal / section transition | 240-300ms |
 | easing                              | ease-out  |
 
-### 1.10 Motion 原則
+### 1.10 Motion 原則（2026-04-26 修訂）
 
-- 有感但不炫技
-- 不做大面積彈跳
-- 僅用於狀態確認、層級切換、抽屜開合
+- 動畫應有助於**易讀性**與**觀賞性** — 把使用者眼睛帶到該看的地方，把長停留的畫面變得不沉悶不呆板
+- 例：價格異動 row 的 pulse / 數字翻轉 / streaming 文字逐字出 / chart bar grow-in / drawer slide / metric card hover lift / 任何能「示意 something happened」或「讓資料感覺活的」motion，都允許
+- 仍要避免：突兀大面積彈跳、會引發暈眩、跟內容無關的純炫耀
+- Performance budget：60fps，prefers-reduced-motion 必尊重（per §7.4）
+
+**舊原則（2026-04-18 原版，已 supersede）**：
+
+- ~~有感但不炫技~~
+- ~~不做大面積彈跳~~
+- ~~僅用於狀態確認、層級切換、抽屜開合~~
+
+理由：實作後發現「不炫技」太嚴，把該帶眼睛的 cue 也擋掉（例如 holdings price deviation pulse 是真正幫 user 注意異動）。改為「易讀性 + 觀賞性 + 不沉悶」優先，由 designer / reviewer 個案判斷。決議文件 `docs/decisions/2026-04-26-motion-relax.md`。
 
 ---
 

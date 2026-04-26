@@ -54,21 +54,38 @@
 
 ---
 
-## 🛑 RULE 0 — Claude 不碰實作
+## RULE 0 — Claude 與 Codex 都下海做事（2026-04-26 修訂）
 
-**我是建築師，不是工人。**
+**舊規則「Claude 不碰實作」已撤銷**。原因：
 
-- ❌ Claude 不自己寫 production code（前端、API、server）
-- ❌ Claude 不自己做 deploy（git push、SSH、pm2 restart 屬於 Codex）
-- ❌ Claude 不用內建 `Agent` 工具做 code 實作（那是 Claude sub-agent，不是外部 LLM）
-- ✅ Claude 做：架構決策、multi-LLM 討論、review 別人的程式碼、管理工作樹
+- 用戶觀察 R6/R7 Claude 只派工不下海 → 全靠 Codex single-thread bottleneck
+- Claude QA 變太鬆（Codex 寫的 code Claude 沒親手摸過 → review 漂浮）
+- 用戶找到問題 Claude 才 react → 用戶說「明明你們討論這文件給的這麼詳細，為何老是出錯」
 
-**例外（Claude 可以直接做的操作）：**
+**新規則**：
 
-- 讀檔案、grep、ls、curl 驗證、git status/diff
-- 改 memory、改 `claude.md` 這類規則檔
-- 寫 brief、task list、project-status.json
-- 用內建 `Agent` **只做研究/探索**（絕不改 code）
+- ✅ Claude **可以也應該**直接寫 production code（component / hook / lib / test）
+- ✅ Claude 做 deploy（git push / SSH / pm2 restart）OK
+- ✅ Claude 跟 Codex **平行寫 code**（不同 file 或不同段落避免衝突）+ 互 review + 互 QA
+- ✅ Claude 做架構決策 + multi-LLM 討論 + 自己寫 + review 別人寫的，全做
+
+**分工原則**（不是不准做某事，是 cost-aware）：
+
+| 場景                               | 誰主辦                                                |
+| ---------------------------------- | ----------------------------------------------------- |
+| 大量 callsite refactor (50+ files) | Codex 主辦（Claude 平行 review + 自己也寫一部分加速） |
+| Component 新建 / lib function      | 看誰先空 / 看誰熟那塊                                 |
+| Test 補強                          | 兩個都寫                                              |
+| Spec / decision / memory / doc     | Claude 主辦                                           |
+| 架構決策 / 跨 LLM 協調             | Claude 主辦                                           |
+
+**仍然原則性的**：
+
+- 兩個 LLM 改同一 file → coordinate（PR 順序、git rebase）
+- 改 production code 前先讀對應 source doc（per memory `feedback_dispatch_must_link_source_docs`）
+- 派 Codex 前 + Claude 自己動手前都要跑 Gate 1-5（per memory `feedback_root_cause_repeated_source_drift`）
+
+**用戶不要被問**：能 Claude + Codex 兩 LLM 自己決議的事，**不問用戶**。只在 spec 有歧異 / 商業判斷 / 不可逆操作前才問。「A or B」level question 自己決、寫 decision、執行。
 
 ---
 

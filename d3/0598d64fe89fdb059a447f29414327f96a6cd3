@@ -1,0 +1,149 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "accb5f7c-e1d1-42b4-9e51-bd0e454cba71",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "CLAUDE.md Rule 0「Claude 不碰實作」 這個改掉，你們討論，不要什麼都問我，我都找到問題了，你怎麼誕生更多問題給我。明明你們討論這個文件給的這麼詳細，為何你們老是出錯",
+      "prompt_hash": "sha256:5db6413e247e74746489c69ca7aae151f55aebea4ddf3b3dc140b3052ed5dac2",
+      "message_count": 11373,
+      "cost_usd": 0.4413280500000001,
+      "input_tokens": 2,
+      "output_tokens": 1631,
+      "cache_read_tokens": 1364961,
+      "cache_creation_tokens": 1965,
+      "timestamp": "2026-04-26T11:52:18.734228Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-26T11:52:18.383Z",
+      "session_duration_secs": 975660,
+      "ai_response_time_secs": 10.88871551897208,
+      "accepted_lines": 191,
+      "overridden_lines": 1,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "CLAUDE.md",
+      "line_range": [
+        1,
+        315
+      ],
+      "files_changed": [
+        {
+          "path": "CLAUDE.md",
+          "line_range": [
+            1,
+            315
+          ],
+          "blob_hash": "592f4d78641ded168356f55f4f89f9f5462a9c14",
+          "additions": 315
+        },
+        {
+          "path": "src/hooks/useWeeklyReportClipboard.js",
+          "line_range": [
+            5,
+            5
+          ],
+          "blob_hash": "a9df0e470d10662103a3084fbcd5439153d0b694",
+          "additions": 1,
+          "deletions": 4
+        }
+      ],
+      "prompt_number": 869,
+      "total_additions": 316,
+      "total_deletions": 4,
+      "tools_used": [
+        "Bash",
+        "Edit",
+        "Read"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "CLAUDE.md Rule 0「Claude 不碰實作」 這個改掉，你們討論，不要什麼都問我，我都找到問題了，你怎麼誕生更多問題給我。明明你們討論這個文件給的這麼詳細，為何你們老是出錯"
+        },
+        {
+          "turn": 1,
+          "role": "tool",
+          "content": "Bash(command: \"grep -n \"RULE 0\\|Rule 0\\|不碰實作\\|不自己寫\" CLAUDE.md 2>&1 | head\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Read(file: \"CLAUDE.md\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "CLAUDE.md"
+          ]
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Edit(file: \"CLAUDE.md\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "CLAUDE.md"
+          ]
+        },
+        {
+          "turn": 4,
+          "role": "assistant",
+          "content": "CLAUDE.md Rule 0 改了。現在我下海自己做 R7.5 的 .html removal + ? rename + Header pill。\n\n先確認 Codex R7 v2 沒在改 Header.jsx 避免 conflict。"
+        },
+        {
+          "turn": 5,
+          "role": "tool",
+          "content": "Bash(command: \"git status -s; echo '---'; git log --oneline origin/main -3\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 6,
+          "role": "assistant",
+          "content": "開始下海做。Header.jsx 等 Codex R7 v2 push 後做（避免 conflict），先做不衝突的：useWeeklyReportClipboard hook 拿掉 .html。"
+        },
+        {
+          "turn": 7,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 8,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 9,
+          "role": "tool",
+          "content": "Read(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Read",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        },
+        {
+          "turn": 10,
+          "role": "tool",
+          "content": "Edit(file: \"useWeeklyReportClipboard.js\")",
+          "tool_name": "Edit",
+          "files_touched": [
+            "useWeeklyReportClipboard.js"
+          ]
+        }
+      ],
+      "prompt_quality": {
+        "score": 50,
+        "rating": "Fair",
+        "category": "other"
+      }
+    }
+  ]
+}

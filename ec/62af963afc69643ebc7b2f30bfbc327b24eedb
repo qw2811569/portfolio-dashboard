@@ -1,0 +1,34 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "c746e535-4cee-46c0-a824-b0616420aaa1",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "圓角有處理吧",
+      "prompt_hash": "sha256:48e76cea0dbe2ca4af38a07790de3dca48c895e6917e04213868c82526b4de57",
+      "message_count": 11329,
+      "cost_usd": 0.0,
+      "timestamp": "2026-04-26T11:40:39.778590Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "prompt_submitted_at": "2026-04-26T11:40:39.778590Z",
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": "",
+      "line_range": [
+        0,
+        0
+      ],
+      "prompt_number": 864,
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

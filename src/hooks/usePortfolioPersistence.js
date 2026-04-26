@@ -11,6 +11,11 @@ import { createDataError, normalizeDataError } from '../lib/dataError.js'
 import { STOCK_META } from '../seedData.js'
 import { normalizeWatchlist } from '../lib/watchlistUtils.js'
 import { readStoredWatchlist } from '../lib/watchlistSync.js'
+import {
+  getPortfolioFieldStorageKey,
+  parseRealtimeStorageValue,
+  subscribePortfolioRealtimeSync,
+} from '../lib/portfolioRealtimeSync.js'
 import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 
 function mergeResearchHistory(existingReports, incomingReports) {
@@ -29,6 +34,10 @@ function ensureArray(value) {
 
 function buildHistorySyncStatus(status = 'idle', message = '') {
   return { status, message }
+}
+
+function identityDailyReportEntry(value) {
+  return value
 }
 
 async function fetchJsonOrThrow(url, options = {}, failureMessage = 'cloud sync failed') {
@@ -74,6 +83,7 @@ export function usePortfolioPersistence({
   setHoldingDossiers,
   setAnalysisHistory,
   setAnalysisHistoryStatus,
+  setDailyReport,
   setResearchHistory,
   setResearchHistoryStatus,
   setSaved,
@@ -86,6 +96,7 @@ export function usePortfolioPersistence({
   applyMarketQuotesToHoldings,
   normalizeHoldingDossiers,
   normalizeAnalysisHistoryEntries,
+  normalizeDailyReportEntry = identityDailyReportEntry,
   readSyncAt,
   writeSyncAt,
 }) {
@@ -249,6 +260,57 @@ export function usePortfolioPersistence({
     if (canPersistPortfolioData && dailyReport)
       savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport, dailyReport)
   }, [activePortfolioId, canPersistPortfolioData, dailyReport, savePortfolioData])
+
+  useEffect(() => {
+    if (!activePortfolioId || typeof window === 'undefined') return undefined
+
+    const historySuffix = PORTFOLIO_ALIAS_TO_SUFFIX.analysisHistory
+    const dailySuffix = PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport
+    const historyKey = getPortfolioFieldStorageKey(activePortfolioId, historySuffix)
+    const dailyKey = getPortfolioFieldStorageKey(activePortfolioId, dailySuffix)
+
+    const applyPortfolioField = (suffix, value) => {
+      if (suffix === historySuffix) {
+        setAnalysisHistory(normalizeAnalysisHistoryEntries(value))
+        setAnalysisHistoryStatus(buildHistorySyncStatus('success'))
+        return
+      }
+
+      if (suffix === dailySuffix && typeof setDailyReport === 'function') {
+        setDailyReport(normalizeDailyReportEntry(value) || null)
+      }
+    }
+
+    const unsubscribeBroadcast = subscribePortfolioRealtimeSync((payload) => {
+      if (payload?.type !== 'portfolio-field') return
+      if (String(payload.portfolioId || '').trim() !== String(activePortfolioId || '').trim())
+        return
+      applyPortfolioField(payload.suffix, payload.value)
+    })
+
+    const handleStorageEvent = (event) => {
+      if (event?.key === historyKey) {
+        applyPortfolioField(historySuffix, parseRealtimeStorageValue(event.newValue))
+        return
+      }
+      if (event?.key === dailyKey) {
+        applyPortfolioField(dailySuffix, parseRealtimeStorageValue(event.newValue))
+      }
+    }
+
+    window.addEventListener('storage', handleStorageEvent)
+    return () => {
+      unsubscribeBroadcast()
+      window.removeEventListener('storage', handleStorageEvent)
+    }
+  }, [
+    activePortfolioId,
+    normalizeAnalysisHistoryEntries,
+    normalizeDailyReportEntry,
+    setAnalysisHistory,
+    setAnalysisHistoryStatus,
+    setDailyReport,
+  ])
 
   useEffect(() => {
     if (canPersistPortfolioData && reversalConditions) {

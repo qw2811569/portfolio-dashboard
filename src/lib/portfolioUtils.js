@@ -28,6 +28,7 @@ import { getPersistedMarketQuotes } from './market.js'
 import { todayStorageDate } from './datetime.js'
 import { normalizeWatchlist } from './watchlistUtils.js'
 import { broadcastWatchlistSync } from './watchlistSync.js'
+import { broadcastPortfolioFieldSync } from './portfolioRealtimeSync.js'
 
 export function createDefaultPortfolios() {
   return [{ id: OWNER_PORTFOLIO_ID, name: '我', isOwner: true, createdAt: todayStorageDate() }]
@@ -201,6 +202,7 @@ export async function savePortfolioData(pid, suffix, data) {
   if (suffix === PORTFOLIO_ALIAS_TO_SUFFIX.watchlist) {
     broadcastWatchlistSync({ portfolioId: pid, watchlist: sanitized })
   }
+  broadcastPortfolioFieldSync({ portfolioId: pid, suffix, value: sanitized })
 
   return sanitized
 }

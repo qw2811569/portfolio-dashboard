@@ -22,6 +22,11 @@ import {
 } from '../utils.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { removePersistedTabForPortfolio } from '../lib/tabPersistence.js'
+import {
+  broadcastActivePortfolioSync,
+  parseRealtimeStorageValue,
+  subscribePortfolioRealtimeSync,
+} from '../lib/portfolioRealtimeSync.js'
 
 /**
  * Read a value from localStorage
@@ -224,6 +229,7 @@ export const usePortfolioManagement = ({
         resetTransientUiState({ resetTab: pid !== activePortfolioId })
         await save(VIEW_MODE_KEY, PORTFOLIO_VIEW_MODE)
         await save(ACTIVE_PORTFOLIO_KEY, pid)
+        broadcastActivePortfolioSync({ activePortfolioId: pid, viewMode: PORTFOLIO_VIEW_MODE })
         await loadPortfolio(pid, PORTFOLIO_VIEW_MODE)
         restoreTabForPortfolio(pid)
       } catch (err) {
@@ -262,6 +268,39 @@ export const usePortfolioManagement = ({
     pendingPortfolioIdRef.current = ''
     void switchPortfolio(queuedPid)
   }, [activePortfolioId, portfolioSwitching, switchPortfolio, viewMode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const applyActivePortfolio = (nextPortfolioId, nextViewMode = PORTFOLIO_VIEW_MODE) => {
+      const normalizedPortfolioId = String(nextPortfolioId || '').trim()
+      if (!normalizedPortfolioId) return
+
+      if (nextViewMode === OVERVIEW_VIEW_MODE) {
+        setViewMode(OVERVIEW_VIEW_MODE)
+        return
+      }
+
+      if (normalizedPortfolioId === activePortfolioId && viewMode === PORTFOLIO_VIEW_MODE) return
+      void switchPortfolio(normalizedPortfolioId)
+    }
+
+    const unsubscribeBroadcast = subscribePortfolioRealtimeSync((payload) => {
+      if (payload?.type !== 'active-portfolio') return
+      applyActivePortfolio(payload.activePortfolioId, payload.viewMode)
+    })
+
+    const handleStorageEvent = (event) => {
+      if (event?.key !== ACTIVE_PORTFOLIO_KEY) return
+      applyActivePortfolio(parseRealtimeStorageValue(event.newValue), PORTFOLIO_VIEW_MODE)
+    }
+
+    window.addEventListener('storage', handleStorageEvent)
+    return () => {
+      unsubscribeBroadcast()
+      window.removeEventListener('storage', handleStorageEvent)
+    }
+  }, [activePortfolioId, switchPortfolio, viewMode])
 
   /**
    * Create a new portfolio
@@ -470,6 +509,10 @@ export const usePortfolioManagement = ({
       resetTransientUiState()
       setViewMode(OVERVIEW_VIEW_MODE)
       await save(VIEW_MODE_KEY, OVERVIEW_VIEW_MODE)
+      broadcastActivePortfolioSync({
+        activePortfolioId,
+        viewMode: OVERVIEW_VIEW_MODE,
+      })
     } finally {
       portfolioTransitionRef.current = {
         isHydrating: false,

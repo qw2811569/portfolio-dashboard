@@ -2,6 +2,35 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLocalBackupWorkflow } from '../../src/hooks/useLocalBackupWorkflow.js'
 import { usePortfolioPersistence } from '../../src/hooks/usePortfolioPersistence.js'
+import { __resetPortfolioRealtimeSyncForTests } from '../../src/lib/portfolioRealtimeSync.js'
+
+class FakeBroadcastChannel {
+  static instances = []
+
+  constructor(name) {
+    this.name = name
+    this.listeners = new Set()
+    FakeBroadcastChannel.instances.push(this)
+  }
+
+  addEventListener(_type, listener) {
+    this.listeners.add(listener)
+  }
+
+  removeEventListener(_type, listener) {
+    this.listeners.delete(listener)
+  }
+
+  postMessage(payload) {
+    for (const listener of this.listeners) {
+      listener({ data: payload })
+    }
+  }
+
+  close() {
+    this.listeners.clear()
+  }
+}
 
 const expectAbortableFetch = (url) => {
   expect(global.fetch).toHaveBeenCalledWith(
@@ -39,6 +68,7 @@ function createPersistenceProps(overrides = {}) {
     setHoldingDossiers: vi.fn(),
     setAnalysisHistory: vi.fn(),
     setAnalysisHistoryStatus: vi.fn(),
+    setDailyReport: vi.fn(),
     setResearchHistory: vi.fn(),
     setResearchHistoryStatus: vi.fn(),
     setSaved: vi.fn(),
@@ -50,6 +80,7 @@ function createPersistenceProps(overrides = {}) {
     applyMarketQuotesToHoldings: vi.fn((rows) => rows),
     normalizeHoldingDossiers: vi.fn((rows) => rows || []),
     normalizeAnalysisHistoryEntries: vi.fn((rows) => rows),
+    normalizeDailyReportEntry: vi.fn((row) => row),
     readSyncAt: vi.fn().mockReturnValue(0),
     writeSyncAt: vi.fn(),
     ...overrides,
@@ -58,11 +89,24 @@ function createPersistenceProps(overrides = {}) {
 
 describe('hooks/usePortfolioPersistence.js', () => {
   beforeEach(() => {
+    FakeBroadcastChannel.instances = []
+    __resetPortfolioRealtimeSyncForTests()
+    Object.defineProperty(window, 'BroadcastChannel', {
+      value: FakeBroadcastChannel,
+      configurable: true,
+      writable: true,
+    })
+    Object.defineProperty(globalThis, 'BroadcastChannel', {
+      value: FakeBroadcastChannel,
+      configurable: true,
+      writable: true,
+    })
     global.fetch = vi.fn()
     localStorage.clear()
   })
 
   afterEach(() => {
+    __resetPortfolioRealtimeSyncForTests()
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
@@ -345,6 +389,46 @@ describe('hooks/usePortfolioPersistence.js', () => {
       { timestamp: 1, title: 'existing' },
     ])
     expect(props.writeSyncAt).toHaveBeenCalledWith('pf-research-cloud-sync-at', expect.any(Number))
+  })
+
+  it('applies realtime daily report and analysis history updates for the active portfolio', async () => {
+    const props = createPersistenceProps({
+      activePortfolioId: 'me',
+      normalizeAnalysisHistoryEntries: vi.fn((rows) =>
+        Array.isArray(rows) ? rows.map((row) => ({ ...row, normalized: true })) : []
+      ),
+      normalizeDailyReportEntry: vi.fn((row) => ({ ...row, normalizedDaily: true })),
+    })
+
+    renderHook(() => usePortfolioPersistence(props))
+
+    await waitFor(() => {
+      expect(FakeBroadcastChannel.instances).toHaveLength(1)
+    })
+
+    FakeBroadcastChannel.instances[0].postMessage({
+      type: 'portfolio-field',
+      portfolioId: 'me',
+      suffix: 'daily-report-v1',
+      value: { id: 'daily-1', date: '2026/04/26' },
+    })
+    FakeBroadcastChannel.instances[0].postMessage({
+      type: 'portfolio-field',
+      portfolioId: 'me',
+      suffix: 'analysis-history-v1',
+      value: [{ id: 'h-1', date: '2026/04/25' }],
+    })
+
+    await waitFor(() => {
+      expect(props.setDailyReport).toHaveBeenCalledWith({
+        id: 'daily-1',
+        date: '2026/04/26',
+        normalizedDaily: true,
+      })
+      expect(props.setAnalysisHistory).toHaveBeenCalledWith([
+        { id: 'h-1', date: '2026/04/25', normalized: true },
+      ])
+    })
   })
 
   it('rejects backup imports that do not carry schemaVersion', async () => {

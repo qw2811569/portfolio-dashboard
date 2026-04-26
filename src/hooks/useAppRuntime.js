@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { C } from '../theme.js'
 import { IND_COLOR, STOCK_META } from '../seedData.js'
 import { NEWS_EVENTS, RELAY_PLAN_CODES } from '../seedDataEvents.js'
@@ -55,6 +55,10 @@ import {
   readStorageValue,
 } from '../lib/portfolioUtils.js'
 import { APP_ERROR_BOUNDARY_COPY, APP_LOADING_MESSAGE } from '../lib/appMessages.js'
+import {
+  broadcastAnalysisStatusSync,
+  subscribePortfolioRealtimeSync,
+} from '../lib/portfolioRealtimeSync.js'
 
 const PORTFOLIO_DERIVED_HELPERS = {
   normalizeHoldingDossiers,
@@ -239,6 +243,28 @@ export function useAppRuntime() {
 
   const activePortfolioName =
     portfolios.find((portfolio) => portfolio?.id === activePortfolioId)?.name || ''
+
+  useEffect(() => {
+    if (!ready || !activePortfolioId) return
+    broadcastAnalysisStatusSync({
+      portfolioId: activePortfolioId,
+      analyzing,
+      analyzeStep,
+    })
+  }, [activePortfolioId, analyzeStep, analyzing, ready])
+
+  useEffect(() => {
+    if (!activePortfolioId) return undefined
+
+    return subscribePortfolioRealtimeSync((payload) => {
+      if (payload?.type !== 'analysis-status') return
+      if (String(payload.portfolioId || '').trim() !== String(activePortfolioId || '').trim())
+        return
+      setAnalyzing(Boolean(payload.analyzing))
+      setAnalyzeStep(String(payload.analyzeStep || ''))
+    })
+  }, [activePortfolioId, setAnalyzeStep, setAnalyzing])
+
   const { theses, addThesis, updateThesis, getThesisByStock } = useThesisTracking(activePortfolioId)
   const morningNote = useMorningNoteRuntime({
     portfolioId: activePortfolioId,

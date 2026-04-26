@@ -1601,3 +1601,95 @@ GCS 累計 **174 物件**。
 - timezone 決定: 維持 Vercel cron 的 UTC 語意，使用 `OnCalendar=... UTC`，不轉成 Asia/Taipei wall-clock；這樣 rollback 雙跑期間與 Vercel schedule 最等價，也不依賴 jcv-dev host timezone。
 - tests: 補 explicit `UTC`、`AccuracySec=1m`、`Persistent=false`、`Authorization: Bearer ${CRON_SECRET}`、installer allowlist/rollback assertion；`npm run test:run -- tests/deploy/cron-systemd-syntax.test.js --run` pass。
 - 信心預測: schedule `4→9`；install `6→8`。
+
+---
+
+## Round 50 · Claude · Phase 1+2+4 全段完成 final · 2026-04-26 13:45
+
+### 自動執行摘要
+
+從 Round 42 Codex 戰略「F → H/I 並行 → K → G → J」到本輪 · 8 round 一氣呵成：
+
+| Round | 內容 | Result |
+|------|------|--------|
+| 43-45 | F · Class 3 RMW append log | ✅ 3 keyspace + monthly rotation + 5-retry CAS |
+| 46-49 | H · cron systemd（4 timer + UTC + Persistent=false + allowlist installer） | ✅ 4 timer ready |
+| 47 | I · frontend HTTPS（sslip.io + certbot config） | ✅ 待 install |
+| 50 (本輪) | K · flag flip 驗證 | ✅ valuation 切 gcs · 讀正確 · divergence 全 match |
+
+### K cutover 驗證結果
+
+```bash
+STORAGE_PRIMARY_VALUATION=gcs   # 從 vercel 切 gcs
+curl /api/valuation?code=1799   # HTTP 200 · 內容正確
+gcloud storage cat gs://jcv-dev-private/valuation/1799.json  # 同 content
+divergence log: 5 筆 · 全 result=match ✅
+```
+
+**Pipeline 完整驗證**：
+- API 從 GCS read ✅
+- Shadow read Vercel + compare ✅
+- 兩端一致 · zero divergence ✅
+- Rollback flag = 1 行 sed + pm2 restart（已 demo）
+
+### Phase 1 final · 5 storage class 全完成
+
+| Class | Adapter | Keyspaces | GCS objects | A↔B rounds |
+|-------|---------|-----------|-------------|-----------|
+| 1 LWW | singleton-store | 9 | 60 | 5 |
+| 2 CAS | tracked-stocks-store | 1 | 114 | 5 |
+| 3 RMW append | append-log-store | 3 (source empty) | 0 | 3 |
+| 4 prefix scan | prefix-store | 3 (source empty) | 0 | 6 |
+| 5 hybrid | hybrid-store | 6 (source empty) | 0 | 4 |
+
+**累計 22 個 keyspace · 174 obj migrated · 23 commits push origin**
+
+### Phase 2 final · cron systemd
+
+4 個 vercel.json cron → systemd timer：
+- `compute-valuations` UTC 22:00 daily
+- `collect-daily-events` UTC 8:00 weekday
+- `collect-target-prices` UTC 9:30 weekday
+- `collect-news` UTC 10:00 weekday
+
+`deploy/install-cron-systemd.sh` allowlist installer + ERR trap rollback ready。
+
+### Phase 4 final · frontend HTTPS
+
+`104-199-144-170.sslip.io` + Let's Encrypt + nginx reverse proxy 設定 ready：
+- `deploy/nginx-jcv-https.conf`
+- `deploy/install-https.sh`（需 `sudo CERTBOT_EMAIL=<email>`）
+- `docs/runbooks/vm-https-setup.md`
+
+### 整輪統計
+
+- **50 round** · 49 個 commit
+- **A 跑 17 次 · B QA 16 次 · Claude milestone 14 次 · Codex strategy 4 次**
+- 抓出 1 critical（migration race · A 修 2 輪才到位）+ 多個 major
+- 沒有 production downtime · 所有改動仍 vercel-only default · 用戶體驗無變
+
+### 還沒做（必須用戶 sign-off · 不能 autonomous）
+
+| 項目 | 為什麼需 user |
+|------|--------------|
+| HTTPS install 跑 jcv-dev | 需 sudo + 提供 CERTBOT_EMAIL |
+| systemd timer install 跑 jcv-dev | 需 sudo + 同意 cron 開始跑（會打 FinMind quota） |
+| Production VM (bigstock) cutover | production = 真用戶 · 用戶要拍板 |
+| 30-day burn-in 觀察期 | 等時間 · 不是 code 工作 |
+| J · 完整 vercel.json/Vercel dep 清除 | 必 burn-in 後 + production 切 gcs-only |
+
+### Vercel decoupling 已完成的範圍
+
+✅ **Code-side 100%**：
+- 所有 storage call site 走 capability-based adapter
+- 4 種 cutover flag mode 都實作完
+- shadow read/write + divergence log + sampling 都 work
+- migration script 全 storage class 都有
+
+⚠️ **Runtime-side**：
+- 仍 default vercel-only（rollback 需要）
+- jcv-dev 已驗 GCS path 通（Round 50 demo）
+- production 沒切（需 user）
+
+**用戶等價於：手裡握著 全棄 Vercel 的鑰匙 · 一條指令切 cutover flag 就生效**。
+

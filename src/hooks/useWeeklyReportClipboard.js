@@ -2,10 +2,7 @@ import { useCallback } from 'react'
 import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { buildWeeklyReportTemplate } from '../lib/promptTemplateCatalog.js'
-import {
-  buildWeeklyReportFilename,
-  buildWeeklyReportHtmlDocument,
-} from '../lib/weeklyReportExport.js'
+import { buildWeeklyReportFilename } from '../lib/weeklyReportExport.js'
 import {
   buildWeeklyPdfData,
   buildWeeklyPdfDefinition,
@@ -132,21 +129,6 @@ export function useWeeklyReportClipboard({
     return report
   }, [flashSaved, generateWeeklyReport, now])
 
-  const downloadWeeklyReportHtml = useCallback(() => {
-    const report = generateWeeklyReport()
-    const html = buildWeeklyReportHtmlDocument(report)
-
-    try {
-      downloadTextFile(buildWeeklyReportFilename('html', now()), html, 'text/html;charset=utf-8')
-      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloaded('html'))
-    } catch (error) {
-      console.error('downloadWeeklyReportHtml failed:', error)
-      flashSaved(APP_TOAST_MESSAGES.weeklyReportDownloadFailed('html'))
-    }
-
-    return html
-  }, [flashSaved, generateWeeklyReport, now])
-
   const downloadWeeklyReportPdf = useCallback(async () => {
     const data = buildWeeklyPdfData({
       portfolioName: activePortfolioName,
@@ -189,7 +171,6 @@ export function useWeeklyReportClipboard({
     generateWeeklyReport,
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
-    downloadWeeklyReportHtml,
     downloadWeeklyReportPdf,
   }
 }

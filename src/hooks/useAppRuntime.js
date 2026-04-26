@@ -509,7 +509,6 @@ export function useAppRuntime() {
   const {
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
-    downloadWeeklyReportHtml,
     downloadWeeklyReportPdf,
     exportLocalBackup,
     importLocalBackup,
@@ -542,7 +541,6 @@ export function useAppRuntime() {
       refreshing,
       copyWeeklyReport,
       downloadWeeklyReportMarkdown,
-      downloadWeeklyReportHtml,
       downloadWeeklyReportPdf,
       exportLocalBackup,
       importLocalBackup,

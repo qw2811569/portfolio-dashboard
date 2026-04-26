@@ -34,7 +34,6 @@ function buildProps(overrides = {}) {
     refreshing: false,
     copyWeeklyReport: vi.fn(),
     downloadWeeklyReportMarkdown: vi.fn(),
-    downloadWeeklyReportHtml: vi.fn(),
     downloadWeeklyReportPdf: vi.fn(),
     exportLocalBackup: vi.fn(),
     backupFileInputRef: { current: null },
@@ -171,25 +170,23 @@ describe('components/Header.jsx', () => {
   it('renders weekly export controls and wires each action button', () => {
     const copyWeeklyReport = vi.fn()
     const downloadWeeklyReportMarkdown = vi.fn()
-    const downloadWeeklyReportHtml = vi.fn()
 
     render(
       <Header
         {...buildProps({
           copyWeeklyReport,
           downloadWeeklyReportMarkdown,
-          downloadWeeklyReportHtml,
         })}
       />
     )
 
     fireEvent.click(screen.getByTestId('weekly-export-copy'))
     fireEvent.click(screen.getByTestId('weekly-export-md'))
-    fireEvent.click(screen.getByTestId('weekly-export-html'))
 
     expect(copyWeeklyReport).toHaveBeenCalledTimes(1)
     expect(downloadWeeklyReportMarkdown).toHaveBeenCalledTimes(1)
-    expect(downloadWeeklyReportHtml).toHaveBeenCalledTimes(1)
+
+    expect(screen.queryByTestId('weekly-export-html')).not.toBeInTheDocument()
   })
 
   it('folds secondary mobile header actions into an overflow drawer', () => {
@@ -204,7 +201,7 @@ describe('components/Header.jsx', () => {
     expect(screen.getByTestId('header-mobile-actions-drawer')).toBeInTheDocument()
     expect(screen.getByTestId('weekly-export-copy')).toBeInTheDocument()
     expect(screen.getByTestId('weekly-export-md')).toBeInTheDocument()
-    expect(screen.getByTestId('weekly-export-html')).toBeInTheDocument()
+    expect(screen.queryByTestId('weekly-export-html')).not.toBeInTheDocument()
   })
 
   it('compresses mobile tabs and reveals hidden ones from the more drawer', () => {

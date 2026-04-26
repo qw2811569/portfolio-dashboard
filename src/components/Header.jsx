@@ -14,7 +14,6 @@ export default function Header(props) {
     refreshing,
     copyWeeklyReport,
     downloadWeeklyReportMarkdown,
-    downloadWeeklyReportHtml,
     downloadWeeklyReportPdf,
     exportLocalBackup,
     importLocalBackup,
@@ -89,7 +88,7 @@ export default function Header(props) {
   }
 
   const ghostBtn = {
-    borderRadius: 999,
+    borderRadius: 8,
     padding: '8px 12px',
     fontSize: 12,
     fontWeight: 500,
@@ -160,7 +159,7 @@ export default function Header(props) {
           fontWeight: 600,
           color: C.text,
           padding: '3px 8px',
-          borderRadius: 999,
+          borderRadius: 8,
           background: alpha(C.ink, '10'),
           border: `1px solid ${alpha(C.ink, '24')}`,
           whiteSpace: 'nowrap',
@@ -232,23 +231,6 @@ export default function Header(props) {
           '下載 .md'
         )
       : null,
-    typeof downloadWeeklyReportHtml === 'function'
-      ? h(
-          'button',
-          {
-            type: 'button',
-            className: 'ui-btn',
-            'data-testid': 'weekly-export-html',
-            onClick: downloadWeeklyReportHtml,
-            style: {
-              background: alpha(C.orange, '10'),
-              border: `1px solid ${alpha(C.orange, A.strongLine)}`,
-              ...weeklyReportButtonStyle,
-            },
-          },
-          '下載 .html'
-        )
-      : null,
     typeof downloadWeeklyReportPdf === 'function'
       ? h(
           'button',
@@ -284,7 +266,7 @@ export default function Header(props) {
             },
             'aria-label': '重看導覽',
           },
-          '?'
+          '重看導覽'
         )
       : null
   const exportBackupButton = h(
@@ -375,7 +357,7 @@ export default function Header(props) {
               fontWeight: 700,
               minWidth: 18,
               textAlign: 'center',
-              borderRadius: 999,
+              borderRadius: 8,
               padding: '4px 8px',
               background: alpha(C.amber, '18'),
               border: `1px solid ${alpha(C.amber, '24')}`,
@@ -422,7 +404,7 @@ export default function Header(props) {
                 style: {
                   fontSize: 11,
                   color: C.textMute,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   padding: '4px 8px',
                   background: C.subtle,
                   border: `1px solid ${C.border}`,

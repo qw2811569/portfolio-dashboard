@@ -2,8 +2,9 @@
 Description=JCV cron timer · compute-valuations
 
 [Timer]
-OnCalendar=*-*-* 22:00:00
-Persistent=true
+OnCalendar=*-*-* 22:00:00 UTC
+Persistent=false
+AccuracySec=1m
 Unit=jcv-compute-valuations.service
 
 [Install]

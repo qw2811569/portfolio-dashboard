@@ -5,13 +5,14 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const systemdDir = path.join(repoRoot, 'deploy/systemd')
+const installScript = fs.readFileSync(path.join(repoRoot, 'deploy/install-cron-systemd.sh'), 'utf8')
 const vercelConfig = JSON.parse(fs.readFileSync(path.join(repoRoot, 'vercel.json'), 'utf8'))
 
 const cronScheduleToOnCalendar = {
-  '0 22 * * *': '*-*-* 22:00:00',
-  '0 8 * * 1-5': 'Mon..Fri *-*-* 08:00:00',
-  '30 9 * * 1-5': 'Mon..Fri *-*-* 09:30:00',
-  '0 10 * * 1-5': 'Mon..Fri *-*-* 10:00:00',
+  '0 22 * * *': '*-*-* 22:00:00 UTC',
+  '0 8 * * 1-5': 'Mon..Fri *-*-* 08:00:00 UTC',
+  '30 9 * * 1-5': 'Mon..Fri *-*-* 09:30:00 UTC',
+  '0 10 * * 1-5': 'Mon..Fri *-*-* 10:00:00 UTC',
 }
 
 function parseSystemdUnit(source) {
@@ -96,8 +97,10 @@ describe('cron systemd units', () => {
         '/home/chenkuichen/app/portfolio-dashboard/.env.local'
       )
       expect(service.Service.ExecStart).toContain(`http://127.0.0.1:3000${cron.path}`)
+      expect(service.Service.ExecStart).toContain('Authorization: Bearer ${CRON_SECRET}')
       expect(timer.Timer.Unit).toBe(`jcv-${cronName}.service`)
-      expect(timer.Timer.Persistent).toBe('true')
+      expect(timer.Timer.Persistent).toBe('false')
+      expect(timer.Timer.AccuracySec).toBe('1m')
       expect(timer.Install.WantedBy).toBe('timers.target')
     }
   })
@@ -110,6 +113,30 @@ describe('cron systemd units', () => {
       )
 
       expect(timer.Timer.OnCalendar).toBe(cronScheduleToOnCalendar[cron.schedule])
+      expect(timer.Timer.OnCalendar).toMatch(/ UTC$/)
+    }
+  })
+
+  it('installs only the Vercel cron systemd allowlist', () => {
+    const expectedTimers = [
+      'jcv-compute-valuations',
+      'jcv-collect-daily-events',
+      'jcv-collect-target-prices',
+      'jcv-collect-news',
+    ]
+
+    const timersBlock = installScript.match(/TIMERS=\(\n(?<body>[\s\S]*?)\n\)/)?.groups?.body
+    expect(timersBlock).toBeTruthy()
+    expect(timersBlock.trim().split(/\s+/)).toEqual(expectedTimers)
+    expect(installScript).toContain('rollback_enabled_timers')
+    expect(installScript).toContain('ROLLBACK_TIMER_UNITS+=("${timer_unit}")')
+    expect(installScript).toContain('sudo systemctl disable --now "${timer_unit}"')
+    expect(installScript).toContain("systemctl list-timers --no-legend --plain 'jcv-*'")
+    expect(installScript).not.toMatch(/install[^\n]*\$\{SYSTEMD_DIR\}\/jcv-\*/)
+
+    for (const timer of expectedTimers) {
+      expect(installScript).toContain('"${SYSTEMD_DIR}/${timer}.service"')
+      expect(installScript).toContain('"${SYSTEMD_DIR}/${timer}.timer"')
     }
   })
 })

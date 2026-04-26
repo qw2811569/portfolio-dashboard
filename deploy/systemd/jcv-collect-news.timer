@@ -2,8 +2,9 @@
 Description=JCV cron timer · collect-news
 
 [Timer]
-OnCalendar=Mon..Fri *-*-* 10:00:00
-Persistent=true
+OnCalendar=Mon..Fri *-*-* 10:00:00 UTC
+Persistent=false
+AccuracySec=1m
 Unit=jcv-collect-news.service
 
 [Install]

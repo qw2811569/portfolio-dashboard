@@ -346,3 +346,137 @@ Watchlist / events / news / daily / research 共用「現在先看這裡」 · D
 **🌊 = 12h** · ~1.5 工作天 · 競品 baseline
 
 合計 ~91h · 約 11 個工作天 全做完 · 跟 ship 友 / beta launch 對齊。
+
+---
+
+## §4 Spec / Mockup Drift（Codex PM 人格 Round 6 · 2026-04-26）
+
+R152 / R153 audit 都只看 live · 漏 SA + SD + 16 張 mockup。Codex 用 PM 人格補做 Round 6 · 對照 SA (558行) + SD (754行) + 16 張 mockup PNG · 找出 implementation drift。
+
+### Top 5 Spec Drift（PM impact 排序）
+
+1. **Trade 沒 wizard** — SA §5.9 + SD §4.7 + `mockup-trade-preview.png` 都寫 `upload → parse → preview → apply`。Live 是合規提醒 + 4 組手動表單（成交 / 目標價 / 財報 / 營收混在一起）。**用戶不敢把成交套進系統**。
+2. **Holdings 沒右側 pane 4 卡** — `mockup-holdings-preview.png` 明畫右欄固定 4 卡：心法卡摘要 / 今天先做 / 今天不做 / 風險提醒。Live 完全沒這 4 卡 · 用戶要自己從 20 檔表格推出今天行動邊界。
+3. **Daily 沒交付收盤 ritual 成品** — SA §6.3 + `mockup-daily-preview.png` 要 streaming + 3 pillar + per holding 5 actions + 7 天 archive + hit-rate chart。Live 卡在「資料確認 / 待復盤 / 重新分析」入口層。
+4. **Dashboard 持倉結構偏離 PM intent** — `mockup-dashboard-preview.png` 寫**策略分類**（成長股 56% / 事件驅動 18% / ETF 14% / 權證 12%）· 這是讓用戶理解自己曝險。Live 改成 ticker market cap top-5 圓餅 · 注意力帶回價格不是策略。
+5. **Insider 不是 per-portfolio trust contract** — SA §4.2 + §6.10 + SD §9 全寫 7865 是商業核心。Live 金聯成 Dashboard 沒 `👑 公司代表` badge · Events 仍預測/利多語氣 · Weekly PDF insider section 沒做。
+
+### 重新定位 R152 PM 10 痛點（多數其實 spec 寫了沒做）
+
+| 痛點 #                        | 性質                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| #1 第一次打開像闖進別人工作台 | **部分新發現**（SA 沒明寫 onboarding tour）+ SD §11.1 要 empty states 寫了沒做 |
+| #2 5 焦慮卡 3 張待補          | **spec 寫了沒做** SA §6.8 + SD §11.1 #6                                        |
+| #3 失敗 copy 太 dev           | **spec 寫了沒做** SA §7.4 + SD §8.2 禁工程黑話                                 |
+| #4 Mobile fold 1 看不到       | **mockup + SD 寫了沒做** SD §3.10.2 + §7.1                                     |
+| #5 沒一句話講清楚 app         | **新發現** · spec 沒明寫 onboarding tagline                                    |
+| #6 7865 insider 邊界          | **spec 寫了沒做完整** SA §4.2 + §6.10 + SD §9                                  |
+| #7 60+ 筆 record 管不了       | **mockup 寫了** filter/export/reflection · live dogfood scale 是新發現         |
+| #8 多 tab 像平行宇宙          | **spec 有 shared-state 原則** · BroadcastChannel 是新發現                      |
+| #9 第一螢幕爭舞台             | **mockup 寫只 2-3 卡 live 變 7+**                                              |
+| #10 競品 baseline 缺          | **大多新發現** dark mode SA §2.4 明說非 Phase 1 必要                           |
+
+### Scope Creep（live 多做 spec 沒寫）
+
+- **`觀察股` tab** — SA §5.1 明寫 Watchlist 不列正式 route
+- **`全組合` tab** — 應 view mode 不該並列 nav
+- **全域 .md / .html / 備份 / 匯入 toolbar** — 搶 ritual product 入口層
+- **Events「三檔接力投資計畫」** — 帶分批出場/加碼/停損語言 · 偏 strategy 不是 catalyst validation
+- **Trade 混入目標價 + 財報維護** — 違反 SA §5.9 trade job 純粹性
+- **Log 的 `trade audit` 技術稽核語言** — 違反 SD §8.2
+
+### 完全沒做的 spec 必要功能
+
+| Feature                                                   | Spec §   | 狀態                        |
+| --------------------------------------------------------- | -------- | --------------------------- |
+| Morning Note handoff to other pages                       | SA §6.1  | ❌ live 只 fallback「待補」 |
+| Close Analysis streaming + 3 pillar + per holding actions | SA §6.3  | ❌ 卡 standby               |
+| Weekly PDF + insider section                              | SA §6.4  | ❌ 只有 .md/.html           |
+| Holdings detail right pane                                | SA §6.7  | ❌ dossier 跑列表下方       |
+| Accuracy Gate 5/5 explicit display                        | SA §6.9  | ⚠️ 部分                     |
+| `👑 公司代表` insider badge                               | SA §6.10 | ❌                          |
+
+---
+
+## §5 Design Style Consensus · 用戶喜歡的設計風格（R155 · Claude + Codex 看 inspiration 兩資料夾）
+
+13 張 inspiration 雙 LLM 共識。
+
+### 一句話：「**像高級雜誌的封面 + 投資電報的冷靜 + 一抹很敢的橘**」
+
+不是溫柔筆記 · 是有重量的投資海報。
+
+### 5 個強訊號（雙 LLM 同意）
+
+**1. 顏色 — Tangerine Alloy palette（用戶存了 3 次 · 強訊號）**
+
+- 近黑 `#0B120E` + 深灰 `#2F3232` + 中灰 `#838585` + 米色 `#D9D3D1` + **橘 `#EC662D`**
+- 04-18 又存更熱版本 `#E74504 #FC6A0A #F5ECE4 #292929 #585757`
+- → 米當底 · 黑灰當骨架 · 一抹橘當印章 · **沒有第二個彩色**
+
+**2. 橘色要果斷不能稀釋**
+
+- Inspiration 橘是大圓 / 大色塊 / 主 CTA / 圖表節點 — 像印章重擊
+- Live 橘弄成淡 wash / gradient / 漸層卡底色 → 記憶點消失
+- → 橘只給「最重要的那個位置」其他都不准用
+
+**3. 黑灰要撐骨架（不能只米色）**
+
+- Inspiration 反覆出現大面積黑 / 煤灰深色區塊 — 撐重量
+- Live 幾乎全米色 + 淺橘 wash · 缺重量 · 看起來軟
+- → 加大塊 `#0B120E` / `#2F3232` / `#292929` panel · 才有「電報感」
+
+**4. 巨大數字 / 標題當主角**
+
+- 每張參考都有「一眼看到的主角」：Strava `67` / 天氣 `37°` / 睡眠 `8 12` / 海報 `MONDAY`
+- Live hero 是 serif 軟句子「16 檔資料有點久了」· 不夠 punch
+- → Hero 換 bold sans 大數字 · serif 退到次標
+
+**5. 第一螢幕只一個主角 · 不是 8-9 卡爭舞台**
+
+- Inspiration 海報式一屏一主視覺
+- Live 第一螢幕同時 hero + KPI + ring + 5 焦慮 + Today + Buffett quote → 重心散 7 處
+- → 第一螢幕收剩 1 主視覺 + 1 副視覺 · 其餘下沉
+
+### 兩個 R153 Designer Round 5 我做反了（Codex 抓到）
+
+- ❌ 我說「全用 serif 是對的」· 其實 inspiration 大量用**粗 sans**（Strava / 天氣 / Monday）· serif 只在 03 styleguide 出現一次當小調味
+- ❌ 我說「米色暖系」是核心 · 其實**黑灰重量同樣核心** · 沒黑就沒骨架
+
+### 不要做（inspiration 沒出現）
+
+- 紫 / 藍 / 綠 amber 多色
+- 漸層卡（gradient card）
+- 玻璃擬態 / 光澤效果
+- 圓潤可愛圓角
+- 動畫炫技
+
+### Top-3 立即動工 visual 對齊（雙 LLM 共識）
+
+1. **第一螢幕改海報式 · 1 主視覺 + 1 副視覺**（現在 8-9 卡爭舞台）
+2. **加黑灰大色塊撐重量**（現在全米軟 · 缺骨架）
+3. **橘色變少變準** · 只給 CTA / 主數據 / 重要缺口（現在橘灑得到處）
+
+---
+
+## §6 整合動工順序 v2（合 §1 PM + §2 Designer + §4 Spec drift + §5 Design style）
+
+依「修了用戶感受立即跳級」優先：
+
+| 優先  | 批次                                                          | 工時 | 為什麼先做                                |
+| ----- | ------------------------------------------------------------- | ---- | ----------------------------------------- |
+| 🔥 1  | **§5 #3 橘色 lock down · 米色 + 黑灰 + 1 橘**                 | 4-6h | 視覺感最快變強 · token 改 1 處全 app 受益 |
+| 🔥 2  | **§4 #4 Dashboard 持倉結構回到策略分類**                      | 3h   | mockup intent · 用戶看曝險不看 ticker     |
+| 🔥 3  | **§1 A 速成 copy 拆彈 + §1 #2 焦慮卡 collapse**               | 5h   | dev 口氣修 + 焦慮卡待補 collapse          |
+| 🟡 4  | **§4 #2 Holdings 右側 pane 4 卡（心法/今天先做/不做/風險）**  | 8h   | mockup 明畫但完全沒做 · 大幅補 spec drift |
+| 🟡 5  | **§4 #1 Trade wizard upload→parse→preview→apply**             | 10h  | 用戶不敢用核心功能 · 商業 risk            |
+| 🟡 6  | **§5 #5 第一螢幕收剩 1 主 1 副 · §1 #4 mobile fold**          | 8h   | 海報式對齊 inspiration · mobile 同時改    |
+| 🟡 7  | **§4 #5 7865 `👑 公司代表` badge + 跨 tab insider contract**  | 6h   | 合規必修 · 法律 risk                      |
+| 🟢 8  | **§4 #3 Daily 補 streaming + 3 pillar + per holding actions** | 12h  | 收盤 ritual 完成品 · 大工                 |
+| 🟢 9  | **§5 #4 Hero bold sans 大數字 · 換字體 + 黑灰大色塊**         | 6h   | 視覺骨架重塑                              |
+| 🟢 10 | **§1 E 重度用戶 search/filter · §1 F multi-tab sync**         | 11h  | 留存層                                    |
+| 🌊 11 | **§1 G 競品 baseline · Weekly PDF · onboarding tour**         | 18h  | 完整度層                                  |
+
+**🔥 = 12-15h ~2 工作天 · 第一個用戶感受跳級**
+**🟡 = 32h ~4 工作天 · 完成後對齊 spec/mockup PM intent**
+**🟢 + 🌊 = 47h ~6 工作天 · 完整度**

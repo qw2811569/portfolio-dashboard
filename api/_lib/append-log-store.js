@@ -351,14 +351,15 @@ function getBackend(name, options = {}) {
 
 async function appendLineViaBackend(backend, descriptor, line, options = {}) {
   const maxRetries = Number.isFinite(Number(options.maxRetries))
-    ? Math.max(1, Number(options.maxRetries))
+    ? Math.max(0, Number(options.maxRetries))
     : DEFAULT_MAX_RETRIES
+  const maxAttempts = maxRetries + 1
   const retryDelayMs = Number.isFinite(Number(options.retryDelayMs))
     ? Math.max(0, Number(options.retryDelayMs))
     : DEFAULT_RETRY_DELAY_MS
 
   let lastConflict = null
-  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const current = await backend.readWithVersion(descriptor, options)
     const body = appendLineToBody(current?.body || '', line)
 
@@ -377,8 +378,10 @@ async function appendLineViaBackend(backend, descriptor, line, options = {}) {
     } catch (error) {
       if (error?.code !== 'VERSION_CONFLICT') throw error
       lastConflict = error
-      if (attempt < maxRetries && retryDelayMs > 0) {
-        await sleep(retryDelayMs * attempt)
+      if (attempt <= maxRetries && retryDelayMs > 0) {
+        const baseDelay = retryDelayMs * attempt
+        const jitter = Math.random() * baseDelay
+        await sleep(baseDelay + jitter)
       }
     }
   }

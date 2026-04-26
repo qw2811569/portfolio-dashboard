@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url'
 import { get, list } from '@vercel/blob'
 
 import { getPrivateBlobToken } from '../api/_lib/blob-tokens.js'
-import { gcsReadWithVersion, gcsWrite, gcsWriteIfGeneration } from '../api/_lib/gcs-storage.js'
+import { gcsReadWithVersion, gcsWriteIfGeneration } from '../api/_lib/gcs-storage.js'
 import { loadLocalEnvIfPresent } from '../api/_lib/local-env.js'
 import { extractBlobPathname } from '../api/_lib/signed-url.js'
 import {
@@ -74,6 +74,10 @@ function formatCurrentMonth(now = new Date(), timeZone = 'Asia/Taipei') {
 
 function extractMonthFromKey(key) {
   return String(key || '').match(/-(\d{4}-\d{2})\.jsonl$/)?.[1] || null
+}
+
+function isCurrentMonthKey(key, now = new Date()) {
+  return extractMonthFromKey(key) === formatCurrentMonth(now)
 }
 
 function isShadowWriteEnabled(envPrefix) {
@@ -255,9 +259,32 @@ export async function readDestination(
 export async function migrateItem(item, options, deps = {}) {
   const readSourceImpl = deps.readSourceImpl || ((entry) => readSource(entry, deps))
   const readDestinationImpl = deps.readDestinationImpl || ((entry) => readDestination(entry, deps))
-  const gcsWriteImpl = deps.gcsWriteImpl || gcsWrite
   const gcsWriteIfGenerationImpl = deps.gcsWriteIfGenerationImpl || gcsWriteIfGeneration
   const forceOverwrite = options.previousStatus === 'stale-source-changed'
+  const keyspaceConfig = getAppendLogMigrationConfig(options.keyspace)
+  const now = deps.now || new Date()
+  const isCurrentMonth = isCurrentMonthKey(item.key, now)
+
+  if (forceOverwrite && !isCurrentMonth) {
+    const logger = deps.consoleImpl || console
+    logger.warn?.(
+      `[stale-source-changed-skip] ${item.key} is historical/immutable; marking done without overwriting GCS`
+    )
+    return {
+      status: 'done',
+      bytes: item.bytes ?? 0,
+      sourceHash: item.sourceHash ?? null,
+      destinationHash: item.destinationHash ?? null,
+      generation: item.generation ?? null,
+      contentType: item.contentType ?? null,
+    }
+  }
+
+  if (forceOverwrite && !isShadowWriteEnabled(keyspaceConfig.envPrefix)) {
+    throw new Error(
+      `STORAGE_SHADOW_WRITE_${keyspaceConfig.envPrefix}=true is required before overwriting current-month ${keyspaceConfig.keyspace} stale-source-changed items`
+    )
+  }
 
   const source = await readSourceImpl(item)
   if (!source) {
@@ -315,12 +342,21 @@ export async function migrateItem(item, options, deps = {}) {
 
   let writtenGeneration = null
   try {
+    const expectedGeneration = forceOverwrite
+      ? parseGeneration(existingDestination?.generation) ?? 0
+      : 0
     const writeResult = forceOverwrite
-      ? await gcsWriteImpl(item.bucketName, item.key, source.buffer, {
-          contentType: source.contentType,
-          cacheControl: 'no-store',
-          public: false,
-        })
+      ? await gcsWriteIfGenerationImpl(
+          item.bucketName,
+          item.key,
+          source.buffer,
+          expectedGeneration,
+          {
+            contentType: source.contentType,
+            cacheControl: 'no-store',
+            public: false,
+          }
+        )
       : await gcsWriteIfGenerationImpl(item.bucketName, item.key, source.buffer, 0, {
           contentType: source.contentType,
           cacheControl: 'no-store',

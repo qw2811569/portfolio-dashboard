@@ -85,7 +85,7 @@ describe('api/_lib/append-log-store.js', () => {
     expect(state.writeCount).toBe(2)
   })
 
-  it('fails fast after max retries on repeated CAS conflicts', async () => {
+  it('fails fast after configured retries on repeated CAS conflicts', async () => {
     const store = createAppendLogStore('daily_snapshot_log')
     const backend = {
       readWithVersion: vi.fn().mockResolvedValue({ body: '', versionToken: 'v1' }),
@@ -101,8 +101,52 @@ describe('api/_lib/append-log-store.js', () => {
       })
     ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' })
 
-    expect(backend.readWithVersion).toHaveBeenCalledTimes(3)
-    expect(backend.writeIfVersion).toHaveBeenCalledTimes(3)
+    expect(backend.readWithVersion).toHaveBeenCalledTimes(4)
+    expect(backend.writeIfVersion).toHaveBeenCalledTimes(4)
+  })
+
+  it('uses default maxRetries as five retries after the initial attempt', async () => {
+    const store = createAppendLogStore('daily_snapshot_log')
+    const backend = {
+      readWithVersion: vi.fn().mockResolvedValue({ body: '', versionToken: 'v1' }),
+      writeIfVersion: vi.fn().mockRejectedValue(createConflictError()),
+    }
+
+    await expect(
+      store.appendLine('logs/daily-snapshot-2026-04.jsonl', '{"line":"x"}', {
+        storagePolicyOverride: { primary: 'gcs', shadowRead: false, shadowWrite: false },
+        gcsBackend: backend,
+        retryDelayMs: 0,
+      })
+    ).rejects.toMatchObject({ code: 'VERSION_CONFLICT' })
+
+    expect(backend.readWithVersion).toHaveBeenCalledTimes(6)
+    expect(backend.writeIfVersion).toHaveBeenCalledTimes(6)
+  })
+
+  it('succeeds when the fifth retry resolves the CAS conflict', async () => {
+    const store = createAppendLogStore('daily_snapshot_log')
+    const backend = {
+      readWithVersion: vi.fn().mockResolvedValue({ body: '', versionToken: 'v1' }),
+      writeIfVersion: vi
+        .fn()
+        .mockRejectedValueOnce(createConflictError())
+        .mockRejectedValueOnce(createConflictError())
+        .mockRejectedValueOnce(createConflictError())
+        .mockRejectedValueOnce(createConflictError())
+        .mockRejectedValueOnce(createConflictError())
+        .mockResolvedValueOnce({ body: '{"line":"x"}\n', versionToken: 'v2' }),
+    }
+
+    const result = await store.appendLine('logs/daily-snapshot-2026-04.jsonl', '{"line":"x"}', {
+      storagePolicyOverride: { primary: 'gcs', shadowRead: false, shadowWrite: false },
+      gcsBackend: backend,
+      retryDelayMs: 0,
+    })
+
+    expect(result.attempts).toBe(6)
+    expect(backend.readWithVersion).toHaveBeenCalledTimes(6)
+    expect(backend.writeIfVersion).toHaveBeenCalledTimes(6)
   })
 
   it('uses monthly rotation keys for Class 3 wrappers', () => {

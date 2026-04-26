@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   loadKeyInventory,
+  migrateItem,
   runMigration,
 } from '../../scripts/migrate-append-log-to-gcs.mjs'
 
@@ -51,6 +52,14 @@ function createDestinationStore(initialEntries = {}) {
       const mapKey = `${bucketName}/${key}`
       const existing = store.get(mapKey)
       if (expectedGeneration === 0 && existing) {
+        const error = new Error('precondition failed')
+        error.code = 'PRECONDITION_FAILED'
+        throw error
+      }
+      if (
+        expectedGeneration !== 0 &&
+        String(existing?.generation || '') !== String(expectedGeneration)
+      ) {
         const error = new Error('precondition failed')
         error.code = 'PRECONDITION_FAILED'
         throw error
@@ -237,5 +246,140 @@ describe('scripts/migrate-append-log-to-gcs.mjs', () => {
     )
 
     expect(state.items[0].status).toBe('stale-source-changed')
+  })
+
+  it('marks historical stale-source-changed resumes done without overwriting GCS', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'append-log-migrate-'))
+    const paths = buildPaths(tempDir)
+    const destinations = createDestinationStore()
+    const readSourceImpl = vi
+      .fn()
+      .mockResolvedValueOnce(createSourceRecord('{"status":"first"}\n'))
+      .mockResolvedValueOnce(createSourceRecord('{"status":"first"}\n{"status":"second"}\n'))
+    const writeIfGenerationImpl = vi.fn(async (...args) => destinations.writeIfGeneration(...args))
+
+    const firstState = await runMigration(
+      {
+        keyspace: 'daily_snapshot_log',
+        ...paths,
+      },
+      {
+        now: new Date('2026-04-26T03:00:00.000Z'),
+        acquireMigrationLockImpl: vi.fn(async () => async () => {}),
+        loadKeyInventoryImpl: vi.fn(async () => [
+          {
+            key: 'logs/daily-snapshot-2026-03.jsonl',
+            access: 'private',
+            bucketName: 'jcv-dev-private',
+          },
+        ]),
+        readSourceImpl,
+        readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+        gcsWriteIfGenerationImpl: writeIfGenerationImpl,
+      }
+    )
+
+    expect(firstState.items[0].status).toBe('stale-source-changed')
+    expect(
+      destinations.read({
+        bucketName: 'jcv-dev-private',
+        key: 'logs/daily-snapshot-2026-03.jsonl',
+      })?.body.toString('utf8')
+    ).toBe('{"status":"first"}\n')
+
+    const resumeReadSourceImpl = vi.fn(async () =>
+      createSourceRecord('{"status":"first"}\n{"status":"second"}\n')
+    )
+    const resumeWriteIfGenerationImpl = vi.fn(async (...args) =>
+      destinations.writeIfGeneration(...args)
+    )
+    const consoleImpl = {
+      log: vi.fn(),
+      warn: vi.fn(),
+    }
+
+    const resumedState = await runMigration(
+      {
+        keyspace: 'daily_snapshot_log',
+        resume: true,
+        ...paths,
+      },
+      {
+        now: new Date('2026-04-26T03:00:00.000Z'),
+        consoleImpl,
+        acquireMigrationLockImpl: vi.fn(async () => async () => {}),
+        loadKeyInventoryImpl: vi.fn(async () => [
+          {
+            key: 'logs/daily-snapshot-2026-03.jsonl',
+            access: 'private',
+            bucketName: 'jcv-dev-private',
+          },
+        ]),
+        readSourceImpl: resumeReadSourceImpl,
+        readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+        gcsWriteIfGenerationImpl: resumeWriteIfGenerationImpl,
+      }
+    )
+
+    expect(resumedState.items[0].status).toBe('done')
+    expect(resumeReadSourceImpl).not.toHaveBeenCalled()
+    expect(resumeWriteIfGenerationImpl).not.toHaveBeenCalled()
+    expect(consoleImpl.warn).toHaveBeenCalledWith(
+      '[stale-source-changed-skip] logs/daily-snapshot-2026-03.jsonl is historical/immutable; marking done without overwriting GCS'
+    )
+    expect(
+      destinations.read({
+        bucketName: 'jcv-dev-private',
+        key: 'logs/daily-snapshot-2026-03.jsonl',
+      })?.body.toString('utf8')
+    ).toBe('{"status":"first"}\n')
+  })
+
+  it('uses CAS generation overwrite for current-month stale-source-changed resumes', async () => {
+    const destinations = createDestinationStore({
+      'jcv-dev-private/logs/daily-snapshot-2026-04.jsonl': {
+        body: '{"status":"first"}\n',
+        generation: '7',
+      },
+    })
+    const source = createSourceRecord('{"status":"first"}\n{"status":"second"}\n')
+    const writeIfGenerationImpl = vi.fn(async (...args) => destinations.writeIfGeneration(...args))
+
+    const outcome = await migrateItem(
+      {
+        key: 'logs/daily-snapshot-2026-04.jsonl',
+        access: 'private',
+        bucketName: 'jcv-dev-private',
+      },
+      {
+        keyspace: 'daily_snapshot_log',
+        previousStatus: 'stale-source-changed',
+      },
+      {
+        now: new Date('2026-04-26T03:00:00.000Z'),
+        readSourceImpl: vi.fn(async () => source),
+        readDestinationImpl: vi.fn(async (item) => destinations.read(item)),
+        gcsWriteIfGenerationImpl: writeIfGenerationImpl,
+      }
+    )
+
+    expect(outcome.status).toBe('done')
+    expect(writeIfGenerationImpl).toHaveBeenCalledWith(
+      'jcv-dev-private',
+      'logs/daily-snapshot-2026-04.jsonl',
+      source.buffer,
+      7,
+      {
+        contentType: 'application/x-ndjson',
+        cacheControl: 'no-store',
+        public: false,
+      }
+    )
+    expect(
+      destinations.read({
+        bucketName: 'jcv-dev-private',
+        key: 'logs/daily-snapshot-2026-04.jsonl',
+      })?.body.toString('utf8')
+    ).toBe('{"status":"first"}\n{"status":"second"}\n')
   })
 })

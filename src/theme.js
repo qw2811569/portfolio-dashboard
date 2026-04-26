@@ -178,12 +178,12 @@ export const C = Object.freeze({
   hot: TOKENS.hot,
   negative: TOKENS.negative,
 
-  bg: TOKENS.boneSoft,
-  shell: TOKENS.bone,
-  card: TOKENS.boneSoft,
-  cardHover: TOKENS.paper,
-  subtle: TOKENS.bone,
-  subtleElev: TOKENS.boneDeep,
+  bg: TOKENS.appBg,
+  shell: TOKENS.appBg,
+  card: TOKENS.surface,
+  cardHover: TOKENS.surfaceMuted,
+  subtle: TOKENS.surface,
+  subtleElev: TOKENS.surfaceMuted,
   border: TOKENS.line,
   borderSub: alpha(TOKENS.charcoal, '14'),
   borderStrong: alpha(TOKENS.charcoal, '29'),
@@ -193,13 +193,13 @@ export const C = Object.freeze({
   shellShadow: TOKENS.shellShadow,
   radii: TOKENS.radii,
 
-  cardBg: TOKENS.boneSoft,
+  cardBg: TOKENS.surface,
   // R156 #1 Orange lock down · cardBlue/cardOlive/cardRose/cardAmber 不再各自染色
-  // 全部 alias 到 boneSoft + 微 charcoal 邊 · 視覺只剩 米 + 黑灰 + 1 橘（從 C.cta 直接取）
-  cardBlue: TOKENS.boneSoft,
-  cardAmber: TOKENS.boneSoft,
-  cardOlive: TOKENS.boneSoft,
-  cardRose: TOKENS.boneSoft,
+  // 全部 alias 到 surface + 微 charcoal 邊 · 視覺只剩 白灰 + 黑灰 + 1 橘（從 C.cta 直接取）
+  cardBlue: TOKENS.surface,
+  cardAmber: TOKENS.surface,
+  cardOlive: TOKENS.surface,
+  cardRose: TOKENS.surface,
 
   text: TOKENS.ink,
   textSec: TOKENS.charcoal,

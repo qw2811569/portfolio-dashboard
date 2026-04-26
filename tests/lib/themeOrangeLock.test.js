@@ -3,10 +3,10 @@ import { C, TOKENS, alpha } from '../../src/theme.js'
 
 describe('lib/theme orange lock', () => {
   it('keeps former card color aliases on the same neutral surface', () => {
-    expect(C.cardBlue).toBe(TOKENS.boneSoft)
-    expect(C.cardAmber).toBe(TOKENS.boneSoft)
-    expect(C.cardOlive).toBe(TOKENS.boneSoft)
-    expect(C.cardRose).toBe(TOKENS.boneSoft)
+    expect(C.cardBlue).toBe(TOKENS.surface)
+    expect(C.cardAmber).toBe(TOKENS.surface)
+    expect(C.cardOlive).toBe(TOKENS.surface)
+    expect(C.cardRose).toBe(TOKENS.surface)
   })
 
   it('maps former cool and warm washes to charcoal or iron alpha', () => {

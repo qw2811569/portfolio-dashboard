@@ -51,6 +51,8 @@ describe('components/HoldingsRightRail', () => {
 
     expect(principleCard).toHaveStyle({ borderLeft: `3px solid ${C.charcoal}` })
     expect(doCard).toHaveStyle({ borderLeft: `3px solid ${C.cta}` })
+    expect(dontCard).toHaveStyle({ borderLeft: `3px solid ${C.textMute}` })
+    expect(riskCard).toHaveStyle({ borderLeft: `3px solid ${C.down}` })
     expect(principleCard.style.borderLeft).not.toBe(doCard.style.borderLeft)
     expect(
       [principleCard, doCard, dontCard, riskCard].filter(

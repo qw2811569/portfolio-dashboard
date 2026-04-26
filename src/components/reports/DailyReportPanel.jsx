@@ -151,7 +151,7 @@ function AggregateDailySummary({
     ? {
         padding: '8px 8px',
         borderRadius: 8,
-        background: C.subtle,
+        background: C.surface,
         border: `1px solid ${C.borderSub}`,
       }
     : {
@@ -1299,7 +1299,7 @@ export function EventCorrelations({ correlations, viewMode = 'retail' }) {
         'div',
         {
           key: ec.id,
-          style: { marginBottom: 8, background: C.subtle, borderRadius: 7, padding: '8px 8px' },
+          style: { marginBottom: 8, background: C.surface, borderRadius: 7, padding: '8px 8px' },
         },
         h(
           'div',
@@ -1362,7 +1362,7 @@ export function EventAssessments({
         'div',
         {
           key: ea.eventId || i,
-          style: { marginBottom: 8, background: C.subtle, borderRadius: 7, padding: '8px 8px' },
+          style: { marginBottom: 8, background: C.surface, borderRadius: 7, padding: '8px 8px' },
         },
         h(
           'div',
@@ -1722,7 +1722,7 @@ export function AIInsightSection({
   return h(
     Card,
     {
-      style: { marginBottom: 8, background: C.subtle },
+      style: { marginBottom: 8, background: C.surface },
     },
     h(
       'div',

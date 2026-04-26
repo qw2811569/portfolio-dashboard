@@ -14,7 +14,7 @@ export default function DailyHero({ hero, copyText, streaming = false }) {
   return (
     <Card
       data-testid="daily-ritual-hero"
-      style={{ borderRadius: 8, borderLeft: `3px solid ${C.cta}` }}
+      style={{ borderRadius: 8, borderLeft: `3px solid ${C.cta}`, background: C.raised }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
@@ -32,7 +32,7 @@ export default function DailyHero({ hero, copyText, streaming = false }) {
           marginTop: 12,
           padding: '12px 12px',
           borderRadius: 8,
-          background: alpha(C.charcoal, '08'),
+          background: alpha(C.surface, 'f6'),
           color: C.textSec,
           fontSize: 14,
           lineHeight: 1.8,

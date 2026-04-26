@@ -1486,3 +1486,37 @@ GCS 累計 **174 物件**。
 - historical immutable 邊界判定：從 append log key suffix 解析 `YYYY-MM`（例如 `logs/daily-snapshot-2026-03.jsonl` → `2026-03`），再跟 `formatCurrentMonth(now, 'Asia/Taipei')` 比對；相等是 current month，不相等就是 historical/immutable。測試固定 `now = 2026-04-26T03:00:00.000Z`，所以 `2026-03` historical、`2026-04` current。
 - tests: ✅ `npm run test:run -- tests/api/append-log-store.test.js tests/scripts/migrate-append-log-to-gcs.test.js --run`（2 files / 13 tests）
 - 信心預測：migration `7→8`；append-log-store `8→9`
+
+## Round 47 · Codex A · Phase 4 frontend HTTPS · 2026-04-26 13:24
+
+- commit SHA: `00bbb534a15303171e56c736502f4014fddbfb5c`
+- chosen domain: `104-199-144-170.sslip.io`
+- files:
+  - `deploy/nginx-jcv-https.conf`
+  - `deploy/install-https.sh`
+  - `docs/runbooks/vm-https-setup.md`
+
+### HTTPS 切換 step-by-step
+
+1. 確認 jcv-dev `dist/` 已在 `/var/www/app/current/dist`，API process 已聽 `127.0.0.1:3000`。
+2. 若 GCP 還沒有 rule，建立 `allow-https`：`gcloud compute firewall-rules create allow-https --project jcv-dev-2026 --network default --allow tcp:443 --source-ranges 0.0.0.0/0`。
+3. 在 jcv-dev repo 上跑：`sudo CERTBOT_EMAIL=<email> deploy/install-https.sh`。
+4. script 會先裝 `nginx` / `certbot` / `python3-certbot-nginx`，載入 temporary HTTP site，跑 `certbot certonly --nginx -d 104-199-144-170.sslip.io`。
+5. cert 成功後，script 會把 `deploy/nginx-jcv-https.conf` 安裝到 `/etc/nginx/sites-available/jcv-dev-https.conf`，跑 `nginx -t`，reload nginx。
+6. 驗證：
+   - `curl -I http://104-199-144-170.sslip.io/` 應 301 到 HTTPS。
+   - `curl -I https://104-199-144-170.sslip.io/` 應回 Let's Encrypt cert 下的 HTTPS response。
+   - `curl -sS https://104-199-144-170.sslip.io/ | head` 應看到 VM `dist/` HTML。
+   - `curl -sS -o /dev/null -w "%{http_code}\n" https://104-199-144-170.sslip.io/api/` 應命中 local API，而不是 static fallback。
+
+### 本輪驗證
+
+- `bash -n deploy/install-https.sh` pass。
+- 本機沒有 `nginx` binary，因此沒有跑 `nginx -t -c deploy/nginx-jcv-https.conf`；腳本在 VM 上會對 temporary HTTP site 與 final HTTPS site 各跑一次 `nginx -t`。
+- 沒有在 jcv-dev 執行 install script，符合「Claude 之後手動」限制。
+
+### 最不確定的部分
+
+- jcv-dev 實際 nginx package layout 若不是 Debian/Ubuntu 的 `sites-available` / `sites-enabled`，script 需要用 `NGINX_SITE_AVAILABLE` / `NGINX_SITE_ENABLED` override。
+- `certbot certonly --nginx` 會依 VM 上已啟用的 nginx config 解析 server_name；若現場有舊 default site 搶 `80`，script 已移除 `/etc/nginx/sites-enabled/default`，但仍需 Claude 手動確認沒有其他 enabled site 搶同一 domain。
+- `/api/` 驗證的 HTTP code 可能是 app-specific 404/401；關鍵是確認它來自 `127.0.0.1:3000` API process，不是 nginx SPA fallback。

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HoldingsPanel } from '../../src/components/holdings/HoldingsPanel.jsx'
 
@@ -224,7 +224,7 @@ describe('components/HoldingsPanel', () => {
     expect(screen.getByTestId('holdings-summary-today-pnl')).toHaveTextContent('—')
   })
 
-  it('renders the retail-intent filter bar with search and saved controls', () => {
+  it('renders the retail-intent filter bar with search and saved controls', async () => {
     render(
       <HoldingsPanel
         {...buildProps({
@@ -259,7 +259,9 @@ describe('components/HoldingsPanel', () => {
       />
     )
 
-    expect(screen.getByTestId('holdings-filter-chip-bar')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('holdings-filter-expand'))
+
+    await waitFor(() => expect(screen.getByTestId('holdings-filter-chip-bar')).toBeInTheDocument())
     expect(screen.getByTestId('holdings-filter-search')).toHaveValue('AI')
     expect(screen.getByTestId('holdings-filter-saved-select')).toBeInTheDocument()
     expect(screen.getByTestId('holdings-filter-save')).toBeInTheDocument()

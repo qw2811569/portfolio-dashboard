@@ -32,17 +32,6 @@ const lbl = {
 }
 
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.up : C.down)
-const visuallyHiddenStyle = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-}
 
 function describeRuleFreshness(status) {
   if (status === 'fresh') return '資料還算新'
@@ -2068,8 +2057,9 @@ export function DailyReportPanel({
         dailyReport,
         analysisHistory: resolvedAnalysisHistory,
         selectedDate: selectedArchiveDate,
+        isStreaming: analyzing,
       }),
-    [dailyReport, resolvedAnalysisHistory, selectedArchiveDate]
+    [analyzing, dailyReport, resolvedAnalysisHistory, selectedArchiveDate]
   )
   const selectedRitualDate = selectedArchiveDate || dailyRitual.hero.date
   const dailyAccuracyGateKey = dailyAccuracyGate
@@ -2085,7 +2075,7 @@ export function DailyReportPanel({
   const showDailyAccuracyGate = Boolean(
     dailyAccuracyGate && dismissedAccuracyGateKey !== dailyAccuracyGateKey
   )
-  const isDailyWaiting = !dailyReport || dailyRitual.hero.waiting === true
+  const isDailyWaiting = dailyRitual.state === 'waiting'
 
   useEffect(() => {
     let active = true
@@ -2150,7 +2140,7 @@ export function DailyReportPanel({
 
   return h(
     'div',
-    { 'data-testid': 'daily-panel' },
+    { 'data-testid': 'daily-panel', 'data-daily-state': dailyRitual.state },
     isInsiderCompressed &&
       h(ComplianceNoteCard, {
         note: complianceNote,
@@ -2187,88 +2177,60 @@ export function DailyReportPanel({
       h(DailyHero, {
         hero: dailyRitual.hero,
         copyText: dailyRitual.copyText,
-        streaming: analyzing && Boolean(dailyReport?.aiInsight || dailyReport?.insight),
+        streaming: dailyRitual.isStreaming && dailyRitual.state === 'ready',
       }),
-      !isDailyWaiting && h(DailyPillars, { pillars: dailyRitual.pillars }),
-      !isDailyWaiting &&
+      dailyRitual.canShowActions && h(DailyPillars, { pillars: dailyRitual.pillars }),
+      dailyRitual.canShowActions &&
         viewMode !== 'insider-compressed' &&
         h(DailyHoldingActions, { actions: dailyRitual.holdingActions }),
       isDailyWaiting
-        ? [
-            h(DailyArchiveTimeline, {
-              key: 'archive',
-              items: dailyRitual.archive,
-              selectedDate: selectedRitualDate,
-              onSelect: setSelectedArchiveDate,
-            }),
-            h(DailyWaitingCta, {
-              key: 'waiting-cta',
-              hasPendingReview,
-              onNavigateReview: navigateToNeedsReview,
-              onAnalyze: runDailyAnalysis,
-              analyzing,
-            }),
-          ]
-        : h(
-            Card,
-            {
-              style: {
-                borderRadius: 8,
-                padding: '10px 12px',
-              },
-            },
+        ? h(DailyWaitingCta, {
+            key: 'waiting-cta',
+            hasPendingReview,
+            onNavigateReview: navigateToNeedsReview,
+            onAnalyze: runDailyAnalysis,
+            analyzing,
+          })
+        : dailyRitual.canShowArchive &&
             h(
-              'details',
-              null,
-              h(
-                'summary',
-                {
-                  style: {
-                    cursor: 'pointer',
-                    fontSize: 12,
-                    color: C.textSec,
-                    fontWeight: 800,
-                  },
+              Card,
+              {
+                style: {
+                  borderRadius: 8,
+                  padding: '10px 12px',
                 },
-                '歷史紀錄與命中率'
-              ),
+              },
               h(
-                'div',
-                { style: { marginTop: 10 } },
-                h(DailyArchiveTimeline, {
-                  items: dailyRitual.archive,
-                  selectedDate: selectedRitualDate,
-                  onSelect: setSelectedArchiveDate,
-                }),
-                h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+                'details',
+                null,
+                h(
+                  'summary',
+                  {
+                    style: {
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      color: C.textSec,
+                      fontWeight: 800,
+                    },
+                  },
+                  dailyRitual.canShowHitRate ? '歷史紀錄與命中率' : '歷史紀錄'
+                ),
+                h(
+                  'div',
+                  { style: { marginTop: 10 } },
+                  h(DailyArchiveTimeline, {
+                    items: dailyRitual.archive,
+                    selectedDate: selectedRitualDate,
+                    onSelect: setSelectedArchiveDate,
+                  }),
+                  dailyRitual.canShowHitRate && h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+                )
               )
             )
-          )
     ),
 
-    isDailyWaiting &&
-      !dailyReport &&
-      !analyzing &&
-      h(
-        'div',
-        { style: visuallyHiddenStyle },
-        hasPendingReview &&
-          h(ReviewGateCard, {
-            pendingReviewItems: liveNeedsReview,
-            onNavigateReview: navigateToNeedsReview,
-            actionLabel: '開始分析',
-          }),
-        h(DailyAnalysisEmpty, {
-          onAnalyze: runDailyAnalysis,
-          onStressTest: runStressTest,
-          analyzing,
-          stressTesting,
-          analyzeLabel: hasPendingReview ? '仍要分析' : '開始今日收盤分析',
-        })
-      ),
-
     // Empty state
-    !isDailyWaiting &&
+    isDailyWaiting &&
       !dailyReport &&
       !analyzing &&
       hasPendingReview &&
@@ -2278,7 +2240,7 @@ export function DailyReportPanel({
         actionLabel: '開始分析',
       }),
 
-    !isDailyWaiting &&
+    isDailyWaiting &&
       !dailyReport &&
       !analyzing &&
       h(DailyAnalysisEmpty, {
@@ -2297,7 +2259,7 @@ export function DailyReportPanel({
 
     // Daily report
     dailyReport &&
-      !isDailyWaiting &&
+      dailyRitual.canShowArchive &&
       h(
         'div',
         null,
@@ -2316,98 +2278,103 @@ export function DailyReportPanel({
           analysisHistory: resolvedAnalysisHistory,
           viewMode,
         }),
-        h(WeeklyExportNarrativeCard, { report: dailyReport }),
+        dailyRitual.canShowActions && [
+          h(WeeklyExportNarrativeCard, { key: 'weekly-export', report: dailyReport }),
 
-        h(DailyReportSummary, {
-          report: dailyReport,
-          expanded: dailyExpanded,
-          onToggle: () => setDailyExpanded((p) => !p),
-        }),
+          h(DailyReportSummary, {
+            key: 'daily-summary',
+            report: dailyReport,
+            expanded: dailyExpanded,
+            onToggle: () => setDailyExpanded((p) => !p),
+          }),
 
-        h(
-          Button,
-          {
-            'data-testid': 'run-daily-analysis-btn',
-            onClick: (ev) => {
-              ev.stopPropagation()
-              runDailyAnalysis()
-            },
-            disabled: analyzing,
-            style: {
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: `1px solid ${analyzing ? C.border : alpha(C.cta, '2a')}`,
-              background: analyzing ? C.subtle : alpha(C.cta, '12'),
-              color: analyzing ? C.textMute : C.textSec,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: analyzing ? 'not-allowed' : 'pointer',
-              marginBottom: 8,
-            },
-          },
-          analyzing
-            ? analyzeStep || '分析中...'
-            : hasPendingReview
-              ? '仍要重新分析'
-              : isPreliminaryReport
-                ? '跑資料確認版'
-                : '重新分析今日收盤'
-        ),
-        h(
-          Button,
-          {
-            'data-testid': 'go-research-btn',
-            onClick: (ev) => {
-              ev.stopPropagation()
-              setTab('research')
-            },
-            style: {
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: `1px solid ${alpha(C.positive, '2a')}`,
-              background: alpha(C.positive, '12'),
-              color: C.textSec,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: 8,
-            },
-          },
-          '前往深度研究'
-        ),
-
-        dailyExpanded &&
           h(
-            'div',
-            null,
-            h(HoldingsChanges, { changes: dailyReport.changes, viewMode }),
-            h(AnomaliesSection, { anomalies: dailyReport.anomalies, viewMode }),
-            h(EventCorrelations, { correlations: dailyReport.eventCorrelations, viewMode }),
-            h(EventAssessments, {
-              assessments: dailyReport.eventAssessments,
-              newsEvents,
-              onNavigate: setTab,
-              onNavigateExpand: (id) => setExpandedNews(new Set([id])),
-            }),
-            h(BrainAuditSection, { brainAudit: dailyReport.brainAudit }),
-            h(NeedsReviewSection, {
-              needsReview: dailyReport.needsReview,
-              onNavigate: setTab,
-              onExpand: (id) => setExpandedNews(new Set([id])),
-            }),
-            h(AIInsightSection, {
-              insight: dailyReport.aiInsight,
-              error: dailyReport.aiError,
-              date: dailyReport.date,
-              time: dailyReport.time,
-              onFeedback: handleFeedback,
-              accuracyGate: showDailyAccuracyGate ? dailyAccuracyGate : null,
-              onRetry: retryDailyAccuracyGate,
-              onDismiss: () => setDismissedAccuracyGateKey(dailyAccuracyGateKey),
-            })
-          )
+            Button,
+            {
+              key: 'rerun',
+              'data-testid': 'run-daily-analysis-btn',
+              onClick: (ev) => {
+                ev.stopPropagation()
+                runDailyAnalysis()
+              },
+              disabled: analyzing,
+              style: {
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: `1px solid ${analyzing ? C.border : alpha(C.cta, '2a')}`,
+                background: analyzing ? C.subtle : alpha(C.cta, '12'),
+                color: analyzing ? C.textMute : C.textSec,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: analyzing ? 'not-allowed' : 'pointer',
+                marginBottom: 8,
+              },
+            },
+            analyzing
+              ? analyzeStep || '分析中...'
+              : hasPendingReview
+                ? '仍要重新分析'
+                : isPreliminaryReport
+                  ? '跑資料確認版'
+                  : '重新分析今日收盤'
+          ),
+          h(
+            Button,
+            {
+              key: 'research',
+              'data-testid': 'go-research-btn',
+              onClick: (ev) => {
+                ev.stopPropagation()
+                setTab('research')
+              },
+              style: {
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: `1px solid ${alpha(C.positive, '2a')}`,
+                background: alpha(C.positive, '12'),
+                color: C.textSec,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginBottom: 8,
+              },
+            },
+            '前往深度研究'
+          ),
+
+          dailyExpanded &&
+            h(
+              'div',
+              { key: 'expanded' },
+              h(HoldingsChanges, { changes: dailyReport.changes, viewMode }),
+              h(AnomaliesSection, { anomalies: dailyReport.anomalies, viewMode }),
+              h(EventCorrelations, { correlations: dailyReport.eventCorrelations, viewMode }),
+              h(EventAssessments, {
+                assessments: dailyReport.eventAssessments,
+                newsEvents,
+                onNavigate: setTab,
+                onNavigateExpand: (id) => setExpandedNews(new Set([id])),
+              }),
+              h(BrainAuditSection, { brainAudit: dailyReport.brainAudit }),
+              h(NeedsReviewSection, {
+                needsReview: dailyReport.needsReview,
+                onNavigate: setTab,
+                onExpand: (id) => setExpandedNews(new Set([id])),
+              }),
+              h(AIInsightSection, {
+                insight: dailyReport.aiInsight,
+                error: dailyReport.aiError,
+                date: dailyReport.date,
+                time: dailyReport.time,
+                onFeedback: handleFeedback,
+                accuracyGate: showDailyAccuracyGate ? dailyAccuracyGate : null,
+                onRetry: retryDailyAccuracyGate,
+                onDismiss: () => setDismissedAccuracyGateKey(dailyAccuracyGateKey),
+              })
+            ),
+        ]
       )
   )
 }

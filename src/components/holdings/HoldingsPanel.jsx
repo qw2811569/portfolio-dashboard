@@ -361,12 +361,9 @@ function HoldingsFilterChipBar({ filterBar }) {
   const filterGroups = Array.isArray(safeFilterBar.filterGroups) ? safeFilterBar.filterGroups : []
   const savedFilters = Array.isArray(safeFilterBar.savedFilters) ? safeFilterBar.savedFilters : []
   const activeFilterCount = Number(safeFilterBar.activeFilterCount) || 0
-  const isJsdom =
-    typeof navigator !== 'undefined' && /jsdom/i.test(String(navigator.userAgent || ''))
-  const showAdvancedBody =
-    (!isMobile && (desktopExpanded || isJsdom)) || (isMobile && mobileAdvancedOpen)
+  const showAdvancedBody = (!isMobile && desktopExpanded) || (isMobile && mobileAdvancedOpen)
 
-  if (!isMobile && !desktopExpanded && !isJsdom) {
+  if (!isMobile && !desktopExpanded) {
     return h(
       Card,
       {

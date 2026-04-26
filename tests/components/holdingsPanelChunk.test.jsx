@@ -67,6 +67,14 @@ describe('components/HoldingsPanelChunk', () => {
     const firstRender = render(<HoldingsPanelChunk {...buildProps('me')} />)
 
     await waitFor(() => {
+      expect(screen.getByTestId('holdings-filter-collapsed-summary')).toBeInTheDocument()
+    })
+
+    await act(async () => {
+      screen.getByTestId('holdings-filter-expand').click()
+    })
+
+    await waitFor(() => {
       expect(screen.getByTestId('holdings-filter-primary-all')).toHaveAttribute(
         'aria-pressed',
         'true'

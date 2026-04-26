@@ -32,7 +32,7 @@ describe('lib/dailyReportComposer', () => {
     const ritual = composeDailyReportRitual({ dailyReport: null })
 
     expect(ritual.hero.waiting).toBe(true)
-    expect(ritual.hero.text).toContain('08:30（台北時間）')
+    expect(ritual.hero.text).toContain('等明早 08:30')
   })
 
   it('derives less trigger-happy holding actions and includes actions plus hit rows in copy', () => {

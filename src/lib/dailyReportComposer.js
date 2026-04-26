@@ -27,6 +27,7 @@ export function composeDailyReportRitual({
   dailyReport = null,
   analysisHistory = [],
   selectedDate = '',
+  isStreaming = false,
 } = {}) {
   const history = Array.isArray(analysisHistory) ? analysisHistory : []
   const archive = [dailyReport, ...history]
@@ -55,6 +56,22 @@ export function composeDailyReportRitual({
     !selectedReport || selectedReport?.waiting === true || selectedReport?.hero?.waiting === true
   )
   const changes = Array.isArray(selectedReport?.changes) ? selectedReport.changes : []
+  const hasChanges = changes.length > 0
+  const state =
+    waitingForFreshData || (!hasInsight && !hasChanges)
+      ? 'waiting'
+      : hasInsight
+        ? 'ready'
+        : 'partial'
+  const analysisStage = normalizeText(selectedReport?.analysisStage)
+  const stageKind = analysisStage.startsWith('t0')
+    ? 'preliminary'
+    : analysisStage.startsWith('t1')
+      ? 'confirmed'
+      : ''
+  const canShowActions = state === 'ready'
+  const canShowHitRate = state === 'ready'
+  const canShowArchive = state !== 'waiting'
   const eventText = firstSentence(
     selectedReport?.eventSummary ||
       selectedReport?.eventInsight ||
@@ -113,14 +130,23 @@ export function composeDailyReportRitual({
 
   return {
     report: selectedReport,
+    state,
+    isStreaming: Boolean(isStreaming || selectedReport?.isStreaming || selectedReport?.streaming),
+    analysisStage,
+    stageKind,
+    canShowActions,
+    canShowHitRate,
+    canShowArchive,
     hero: {
       date: normalizeReportDate(selectedReport),
       time: normalizeText(selectedReport?.time),
       text:
-        hasInsight && !waitingForFreshData
+        state === 'ready'
           ? insight
-          : '等明早 08:30（台北時間）資料補齊後再產生收盤摘要。',
-      waiting: waitingForFreshData,
+          : state === 'partial'
+            ? '資料已收齊，AI 正在分析'
+            : '等明早 08:30 收盤後再開',
+      waiting: state === 'waiting',
     },
     pillars: [
       { key: 'fundamental', title: '基本面', body: fundamentalText },

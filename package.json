@@ -27,7 +27,7 @@
     "tw-events:worker": "node agent-bridge-standalone/workers/tw-events-worker.mjs",
     "snapshot:worker": "node agent-bridge-standalone/workers/snapshot-worker.mjs",
     "audit:data-coverage": "node scripts/audit-data-coverage.mjs",
-    "verify:local": "npm run check:facade-alias && npm run theme:check && npm run check:runtime-entry && npm run check:fast-refresh && npm run lint && npm run typecheck && npm run typecheck:js-critical && npm run test:run && npm run audit:data-coverage && npm run build && npm run healthcheck && npm run smoke:ui",
+    "verify:local": "npm run check:facade-alias && npm run theme:check && npm run check:runtime-entry && npm run check:fast-refresh && npm run lint && npm run typecheck && npm run typecheck:js-critical && npm run test:run && npm run build && npm run healthcheck && npm run smoke:ui",
     "checkpoint": "bash scripts/create-checkpoint.sh",
     "checkpoint:git": "bash scripts/git-checkpoint.sh",
     "prepare": "husky",

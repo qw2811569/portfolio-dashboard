@@ -126,6 +126,75 @@ describe('components/LogPanel', () => {
     expect(within(detail).getByText('免責聲明確認')).toBeInTheDocument()
   })
 
+  it('filters trade log entries by search text, action, month, and stock', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        entries: [],
+        summary: { portfolioId: 'me', count: 0, lastUpdatedAt: '' },
+      }),
+    })
+
+    render(
+      <LogPanel
+        tradeLog={[
+          buildTradeLogEntry({
+            id: 1,
+            action: '買進',
+            code: '2330',
+            name: '台積電',
+            date: '2026/04/24',
+            qa: [{ q: '理由', a: '先進封裝擴產' }],
+          }),
+          buildTradeLogEntry({
+            id: 2,
+            action: '賣出',
+            code: '2454',
+            name: '聯發科',
+            date: '2026/03/18',
+            qa: [{ q: '理由', a: '停利調節' }],
+          }),
+          buildTradeLogEntry({
+            id: 3,
+            action: '買進',
+            code: '2303',
+            name: '聯電',
+            date: '2026/04/19',
+            qa: [{ q: '理由', a: '成熟製程轉強' }],
+          }),
+        ]}
+        portfolioId="me"
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('trade-log-filters')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByTestId('trade-log-search'), { target: { value: '封裝' } })
+    let list = screen.getByTestId('trade-log-list')
+    expect(within(list).getByText('台積電')).toBeInTheDocument()
+    expect(within(list).queryByText('聯發科')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('trade-log-search'), { target: { value: '' } })
+    fireEvent.change(screen.getByTestId('trade-log-action-filter'), { target: { value: '賣出' } })
+    list = screen.getByTestId('trade-log-list')
+    expect(within(list).getByText('聯發科')).toBeInTheDocument()
+    expect(within(list).queryByText('台積電')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('trade-log-action-filter'), { target: { value: '全部' } })
+    fireEvent.change(screen.getByTestId('trade-log-month-filter'), { target: { value: '2026/04' } })
+    list = screen.getByTestId('trade-log-list')
+    expect(within(list).getByText('台積電')).toBeInTheDocument()
+    expect(within(list).getByText('聯電')).toBeInTheDocument()
+    expect(within(list).queryByText('聯發科')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('trade-log-stock-filter'), { target: { value: '2303' } })
+    list = screen.getByTestId('trade-log-list')
+    expect(within(list).getByText('聯電')).toBeInTheDocument()
+    expect(within(list).queryByText('台積電')).not.toBeInTheDocument()
+  })
+
   it('uses the mobile single-column branch on <=768px', async () => {
     mockMatchMedia(true)
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({

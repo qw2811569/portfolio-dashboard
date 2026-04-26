@@ -24,6 +24,18 @@ const EYE_BROW_STYLE = {
   fontWeight: 600,
 }
 
+const FILTER_INPUT_STYLE = {
+  width: '100%',
+  minHeight: 36,
+  borderRadius: 8,
+  border: `1px solid ${C.border}`,
+  background: C.bg,
+  color: C.text,
+  fontSize: 12,
+  padding: '8px 10px',
+  boxSizing: 'border-box',
+}
+
 function buildTradeAuditUrl(portfolioId = '', limit = LOG_AUDIT_LIMIT) {
   if (typeof window === 'undefined') return ''
   const url = new URL('/api/trade-audit', window.location.origin)
@@ -128,6 +140,77 @@ function formatReasonPreview(item) {
   if (answered) return String(answered.a).trim()
   if (qa[0]?.q) return `${qa[0].q}（未填）`
   return '這筆尚未補 memo，先保留成交脈絡與 audit 線索。'
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+}
+
+function getTradeMonth(item = {}) {
+  const timestamp = item?.timestamp instanceof Date ? item.timestamp : parseFlexibleDate(item?.date)
+  if (timestamp instanceof Date && !Number.isNaN(timestamp.getTime())) {
+    const year = timestamp.getFullYear()
+    const month = String(timestamp.getMonth() + 1).padStart(2, '0')
+    return `${year}/${month}`
+  }
+
+  const rawDate = String(item?.date || '').replace(/-/g, '/')
+  const match = rawDate.match(/^(\d{4})\/(\d{1,2})/)
+  return match ? `${match[1]}/${String(match[2]).padStart(2, '0')}` : ''
+}
+
+function getTradeSearchText(item = {}) {
+  const memoText = normalizeTradeQuestionList(item.qa)
+    .flatMap((qa) => [qa?.q, qa?.a])
+    .filter(Boolean)
+    .join(' ')
+
+  return normalizeSearchText(
+    [
+      item.code,
+      item.name,
+      item.reasonPreview,
+      memoText,
+      item.tradeLine,
+      item.sourceLabel,
+      item.timestampLabel,
+    ].join(' ')
+  )
+}
+
+function buildTradeFilterOptions(items = []) {
+  const months = new Set()
+  const stocks = new Map()
+
+  items.forEach((item) => {
+    const month = getTradeMonth(item)
+    if (month) months.add(month)
+
+    const code = String(item?.code || '').trim()
+    if (code && !stocks.has(code)) {
+      stocks.set(code, `${code} ${item?.name || ''}`.trim())
+    }
+  })
+
+  return {
+    months: Array.from(months).sort((a, b) => b.localeCompare(a)),
+    stocks: Array.from(stocks.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.value.localeCompare(b.value)),
+  }
+}
+
+function filterJournalItems(items = [], filters = {}) {
+  const query = normalizeSearchText(filters.query)
+  return (Array.isArray(items) ? items : []).filter((item) => {
+    if (filters.action !== '全部' && item.action !== filters.action) return false
+    if (filters.month !== '全部' && getTradeMonth(item) !== filters.month) return false
+    if (filters.stock !== '全部' && item.code !== filters.stock) return false
+    if (query && !getTradeSearchText(item).includes(query)) return false
+    return true
+  })
 }
 
 function getHoldingsCountDelta(auditEntry = null) {
@@ -565,6 +648,10 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
     loadedKey: '',
   })
   const [selectedItemId, setSelectedItemId] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [actionFilter, setActionFilter] = useState('全部')
+  const [monthFilter, setMonthFilter] = useState('全部')
+  const [stockFilter, setStockFilter] = useState('全部')
   const [refreshNonce, setRefreshNonce] = useState(0)
   const normalizedPortfolioId = String(portfolioId || '').trim()
   const auditRequestKey = normalizedPortfolioId ? `${normalizedPortfolioId}:${refreshNonce}` : ''
@@ -650,10 +737,24 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
       }),
     [tradeLog, resolvedAuditEntries]
   )
+  const filterOptions = useMemo(() => buildTradeFilterOptions(journalItems), [journalItems])
+  const filteredJournalItems = useMemo(
+    () =>
+      filterJournalItems(journalItems, {
+        query: searchQuery,
+        action: actionFilter,
+        month: monthFilter,
+        stock: stockFilter,
+      }),
+    [actionFilter, journalItems, monthFilter, searchQuery, stockFilter]
+  )
   const freshness = useMemo(() => resolveFreshnessState(journalItems), [journalItems])
   const selectedItem = useMemo(
-    () => journalItems.find((item) => item.id === selectedItemId) || journalItems[0] || null,
-    [journalItems, selectedItemId]
+    () =>
+      filteredJournalItems.find((item) => item.id === selectedItemId) ||
+      filteredJournalItems[0] ||
+      null,
+    [filteredJournalItems, selectedItemId]
   )
 
   const auditCount = resolvedAuditEntries.length
@@ -722,7 +823,9 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
                 title="trade log freshness"
               />
               <Badge color="iron" size="xs">
-                {journalItems.length} 筆紀錄
+                {filteredJournalItems.length === journalItems.length
+                  ? `${journalItems.length} 筆紀錄`
+                  : `${filteredJournalItems.length}/${journalItems.length} 筆`}
               </Badge>
               {auditCount > 0 && (
                 <Badge color="positive" size="xs">
@@ -748,6 +851,72 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
               label="本機 fallback"
               value={localOnlyCount > 0 ? `${localOnlyCount} 筆` : '無'}
             />
+          </div>
+
+          <div
+            data-testid="trade-log-filters"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'minmax(220px, 1.3fr) repeat(3, 1fr)',
+              gap: 8,
+              alignItems: 'end',
+            }}
+          >
+            <label style={{ display: 'grid', gap: 4, fontSize: 12, color: C.textMute }}>
+              搜尋
+              <input
+                data-testid="trade-log-search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="代碼、名稱或 memo"
+                style={FILTER_INPUT_STYLE}
+              />
+            </label>
+            <label style={{ display: 'grid', gap: 4, fontSize: 12, color: C.textMute }}>
+              動作
+              <select
+                data-testid="trade-log-action-filter"
+                value={actionFilter}
+                onChange={(event) => setActionFilter(event.target.value)}
+                style={FILTER_INPUT_STYLE}
+              >
+                <option value="全部">全部</option>
+                <option value="買進">買進</option>
+                <option value="賣出">賣出</option>
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: 4, fontSize: 12, color: C.textMute }}>
+              月份
+              <select
+                data-testid="trade-log-month-filter"
+                value={monthFilter}
+                onChange={(event) => setMonthFilter(event.target.value)}
+                style={FILTER_INPUT_STYLE}
+              >
+                <option value="全部">全部</option>
+                {filterOptions.months.map((month) => (
+                  <option key={month} value={month}>
+                    {month}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: 4, fontSize: 12, color: C.textMute }}>
+              標的
+              <select
+                data-testid="trade-log-stock-filter"
+                value={stockFilter}
+                onChange={(event) => setStockFilter(event.target.value)}
+                style={FILTER_INPUT_STYLE}
+              >
+                <option value="全部">全部</option>
+                {filterOptions.stocks.map((stock) => (
+                  <option key={stock.value} value={stock.value}>
+                    {stock.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </div>
       </Card>
@@ -813,7 +982,9 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
               <div>
                 <div style={{ ...EYE_BROW_STYLE, marginBottom: 6 }}>Journal list</div>
                 <div style={{ fontSize: 14, color: C.textSec, lineHeight: 1.6 }}>
-                  先挑一筆，再到右側 detail 看 memo 與 audit 細節。
+                  {filteredJournalItems.length === journalItems.length
+                    ? '先挑一筆，再到右側 detail 看 memo 與 audit 細節。'
+                    : `目前符合條件 ${filteredJournalItems.length} 筆。`}
                 </div>
               </div>
               <Badge color={isMobile ? 'warning' : 'iron'} size="xs">
@@ -821,17 +992,23 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
               </Badge>
             </div>
 
-            <div data-testid="trade-log-list" style={{ display: 'grid', gap: 10 }}>
-              {journalItems.map((item) => (
-                <JournalListItem
-                  key={item.id}
-                  item={item}
-                  isActive={selectedItem?.id === item.id}
-                  isMobile={isMobile}
-                  onSelect={setSelectedItemId}
-                />
-              ))}
-            </div>
+            {filteredJournalItems.length === 0 ? (
+              <SoftMessage data-testid="trade-log-filter-empty">
+                沒有符合條件的交易紀錄。
+              </SoftMessage>
+            ) : (
+              <div data-testid="trade-log-list" style={{ display: 'grid', gap: 10 }}>
+                {filteredJournalItems.map((item) => (
+                  <JournalListItem
+                    key={item.id}
+                    item={item}
+                    isActive={selectedItem?.id === item.id}
+                    isMobile={isMobile}
+                    onSelect={setSelectedItemId}
+                  />
+                ))}
+              </div>
+            )}
           </Card>
 
           {selectedItem && <JournalDetail item={selectedItem} isMobile={isMobile} />}

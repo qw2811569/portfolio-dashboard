@@ -78,11 +78,13 @@ function buildEventKey(event, index) {
   return `${base}::${titleSuffix}::${index}`
 }
 
-function getPredictionMeta(event) {
-  if (event?.pred === 'up') return { label: '預測看漲', color: C.textSec, bg: C.upBg }
-  if (event?.pred === 'down') return { label: '預測看跌', color: C.down, bg: C.downBg }
+function getPredictionMeta(event, { insiderViewMode = false, isInsiderSelfStock = false } = {}) {
+  if (insiderViewMode && isInsiderSelfStock) return null
+
+  if (event?.pred === 'up') return { label: '正向催化', color: C.textSec, bg: C.upBg }
+  if (event?.pred === 'down') return { label: '負向風險', color: C.down, bg: C.downBg }
   if (event?.pred === 'neutral')
-    return { label: '預測中性', color: C.textSec, bg: alpha(C.ink, '10') }
+    return { label: '中性記錄', color: C.textSec, bg: alpha(C.ink, '10') }
   return null
 }
 

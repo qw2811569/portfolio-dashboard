@@ -86,6 +86,21 @@ export default function Header(props) {
     navigateToTab(nextTab)
     setIsMobileTabsOpen(false)
   }
+  const mobilePrimaryTabKeys = ['dashboard', 'holdings', 'events', 'daily', 'research']
+  const mobileOverflowTabKeys = ['news', 'trade', 'log']
+  const normalizeMobileLabel = (tabItem) => {
+    const labels = {
+      dashboard: '看板',
+      holdings: '持倉',
+      events: '事件',
+      daily: '收盤',
+      research: '深度',
+      news: 'News',
+      trade: 'Trade',
+      log: 'Log',
+    }
+    return labels[tabItem?.k] || tabItem?.label || ''
+  }
 
   const ghostBtn = {
     borderRadius: 8,
@@ -183,7 +198,7 @@ export default function Header(props) {
         cursor: refreshing ? 'not-allowed' : 'pointer',
       },
     },
-    refreshing ? '股價更新中...' : '⟳ 收盤價'
+    refreshing ? '股價更新中...' : '更新收盤價'
   )
   const weeklyReportButtonStyle = {
     color: C.textSec,
@@ -546,12 +561,14 @@ export default function Header(props) {
   const mobileTitleRow = h(
     'div',
     {
+      'data-testid': 'header-mobile-title-row',
       style: {
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: isCompactLandscape ? 'center' : 'flex-start',
-        gap: isCompactLandscape ? 10 : 12,
-        marginBottom: viewMode === OVERVIEW_VIEW_MODE ? 0 : isCompactLandscape ? 0 : 4,
+        alignItems: 'center',
+        gap: 10,
+        height: isCompactLandscape ? 48 : 56,
+        minHeight: isCompactLandscape ? 48 : 56,
       },
     },
     h(
@@ -560,21 +577,63 @@ export default function Header(props) {
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: isCompactLandscape ? 5 : 8,
-          rowGap: isCompactLandscape ? 2 : 8,
+          gap: 8,
           flex: 1,
           minWidth: 0,
-          flexWrap: isCompactLandscape ? 'nowrap' : 'wrap',
+          flexWrap: 'nowrap',
         },
       },
-      cloudIndicator,
       titleText,
       insiderBadge || null,
-      isCompactLandscape ? null : savedLabel
+      h(
+        'span',
+        {
+          'data-testid': 'header-mobile-active-portfolio',
+          title: activePortfolioLabel,
+          style: {
+            minWidth: 0,
+            maxWidth: '42vw',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            borderRadius: 8,
+            border: `1px solid ${C.border}`,
+            background: C.subtle,
+            padding: '5px 8px',
+            fontSize: 11,
+            fontWeight: 600,
+            color: C.textSec,
+          },
+        },
+        viewMode === OVERVIEW_VIEW_MODE ? '全部總覽' : activePortfolioLabel
+      )
     ),
-    isCompactLandscape ? null : pnlSummary
+    h(
+      'button',
+      {
+        type: 'button',
+        className: 'ui-btn',
+        'data-testid': 'header-mobile-overflow-toggle',
+        'aria-label': '開啟更多操作',
+        'aria-expanded': isMobileActionsOpen,
+        'aria-controls': 'header-mobile-actions-drawer',
+        onClick: () => setIsMobileActionsOpen((open) => !open),
+        style: {
+          ...ghostBtn,
+          minWidth: 44,
+          minHeight: 44,
+          padding: '8px 10px',
+          background: isMobileActionsOpen ? alpha(C.ink, '10') : C.subtle,
+          color: C.textSec,
+          border: `1px solid ${isMobileActionsOpen ? alpha(C.ink, A.strongLine) : C.border}`,
+          fontSize: 18,
+          lineHeight: 1,
+        },
+      },
+      '⋯'
+    )
   )
-  const renderTabButton = (tabItem, { compact = false, fill = false } = {}) =>
+  const renderTabButton = (tabItem, { compact = false, fill = false, mobileBottom = false } = {}) =>
     h(
       'button',
       {
@@ -593,9 +652,15 @@ export default function Header(props) {
           border: 'none',
           borderBottom: tab === tabItem.k ? `2px solid ${C.cta}` : '2px solid transparent',
           boxShadow: 'none',
-          minHeight: compact && isCompactLandscape ? 32 : 44,
-          minWidth: compact ? (isCompactLandscape ? 38 : 44) : undefined,
-          padding: compact ? (isCompactLandscape ? '4px 10px' : '8px 10px') : '8px 12px',
+          minHeight: mobileBottom ? 50 : compact && isCompactLandscape ? 32 : 44,
+          minWidth: mobileBottom ? 0 : compact ? (isCompactLandscape ? 38 : 44) : undefined,
+          padding: mobileBottom
+            ? '6px 4px'
+            : compact
+              ? isCompactLandscape
+                ? '4px 10px'
+                : '8px 10px'
+              : '8px 12px',
           fontSize: compact ? 10 : 11,
           fontWeight: tab === tabItem.k ? 700 : 500,
           lineHeight: compact && isCompactLandscape ? 1 : undefined,
@@ -606,17 +671,38 @@ export default function Header(props) {
           transition: 'background-color 200ms ease, color 200ms ease, border-color 200ms ease',
         },
       },
-      tabItem.label
+      mobileBottom
+        ? h(
+            'span',
+            {
+              style: {
+                display: 'grid',
+                gap: 2,
+                justifyItems: 'center',
+                alignItems: 'center',
+              },
+            },
+            h('span', {
+              'aria-hidden': 'true',
+              style: {
+                width: 15,
+                height: 15,
+                borderRadius: 4,
+                boxSizing: 'border-box',
+                background: tab === tabItem.k ? C.cta : 'transparent',
+                border: `1.5px solid ${tab === tabItem.k ? C.cta : C.iron}`,
+                boxShadow: tab === tabItem.k ? `inset 0 0 0 3px ${alpha(C.shell, 'd8')}` : 'none',
+              },
+            }),
+            h('span', null, normalizeMobileLabel(tabItem))
+          )
+        : tabItem.label
     )
-  const visibleMobileTabs = (() => {
-    if (!isMobile) return tabs
-    const primaryTabs = tabs.slice(0, 5)
-    const activeTab = tabs.find((item) => item.k === tab)
-    if (!activeTab || primaryTabs.some((item) => item.k === activeTab.k)) return primaryTabs
-    return [...primaryTabs, activeTab]
-  })()
+  const visibleMobileTabs = isMobile
+    ? mobilePrimaryTabKeys.map((key) => tabs.find((item) => item.k === key)).filter(Boolean)
+    : tabs
   const hiddenMobileTabs = isMobile
-    ? tabs.filter((item) => !visibleMobileTabs.some((visibleItem) => visibleItem.k === item.k))
+    ? mobileOverflowTabKeys.map((key) => tabs.find((item) => item.k === key)).filter(Boolean)
     : []
   const mobileActionsRow = h(
     'div',

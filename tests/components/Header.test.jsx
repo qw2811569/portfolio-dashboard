@@ -236,7 +236,7 @@ describe('components/Header.jsx', () => {
     expect(setTab).toHaveBeenCalledWith('research')
   })
 
-  it('collapses the landscape mobile header down to title and tabs only', () => {
+  it('collapses the landscape mobile header down to a single row plus bottom tabs', () => {
     mockMatchMediaResolver(
       (query) => query === COMPACT_LANDSCAPE_MEDIA_QUERY || query.includes('max-width: 768px')
     )
@@ -245,7 +245,9 @@ describe('components/Header.jsx', () => {
 
     expect(screen.getByText('持倉看板')).toBeInTheDocument()
     expect(screen.queryByText('+12')).not.toBeInTheDocument()
-    expect(screen.getByTestId('tab-holdings')).toHaveStyle({ minHeight: '32px' })
-    expect(screen.getByTestId('header-scroll-zone').style.padding).toBe('78px 12px 0px')
+    expect(screen.getByTestId('header-mobile-active-portfolio')).toBeInTheDocument()
+    expect(screen.getByTestId('mobile-bottom-tab-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('tab-holdings')).toHaveStyle({ minHeight: '50px' })
+    expect(screen.getByTestId('header-scroll-zone').style.padding).toBe('58px 12px 0px')
   })
 })

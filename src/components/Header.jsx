@@ -567,8 +567,8 @@ export default function Header(props) {
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: 10,
-        height: isCompactLandscape ? 48 : 56,
-        minHeight: isCompactLandscape ? 48 : 56,
+        height: isCompactLandscape ? 48 : 55,
+        minHeight: isCompactLandscape ? 48 : 55,
       },
     },
     h(
@@ -1309,6 +1309,160 @@ export default function Header(props) {
           )
         )
     )
+  const mobileActionsSheet =
+    isMobileActionsOpen &&
+    h(
+      'div',
+      {
+        id: 'header-mobile-actions-drawer',
+        'data-testid': 'header-mobile-actions-drawer',
+        style: {
+          position: 'fixed',
+          top: isCompactLandscape ? 54 : 64,
+          left: 12,
+          right: 12,
+          zIndex: 30,
+          maxHeight: 'calc(100vh - 148px)',
+          overflowY: 'auto',
+          ...card,
+          padding: '12px',
+          display: 'grid',
+          gap: 12,
+        },
+      },
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '更多操作'),
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+        refreshPricesButton,
+        headerNoticeControl,
+        weeklyReportControls,
+        onboardingHelpButton,
+        exportBackupButton,
+        importBackupLabel
+      ),
+      portfolioSelectorBlock,
+      portfolioManagerBlock,
+      urgentAlertBlock,
+      overviewNoticeBlock,
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gap: 4,
+          },
+        },
+        h('div', { style: { fontSize: 11, color: C.textSec, fontWeight: 600 } }, '同步狀態'),
+        h(
+          'div',
+          { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+          cloudIndicator,
+          savedLabel
+        ),
+        priceSyncMeta,
+        lastUpdateMeta
+      ),
+      backupImportInput
+    )
+  const mobileBottomTabsBlock =
+    viewMode !== OVERVIEW_VIEW_MODE &&
+    h(
+      'nav',
+      {
+        'data-testid': 'mobile-bottom-tab-bar',
+        'aria-label': '主要分頁',
+        style: {
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 20,
+          background: alpha(C.shell, 'fb'),
+          borderTop: `1px solid ${C.borderSoft}`,
+          boxShadow: '0 -10px 24px rgba(11,18,14,0.08)',
+          padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+            gap: 2,
+            alignItems: 'stretch',
+          },
+        },
+        visibleMobileTabs.map((tabItem) =>
+          renderTabButton(tabItem, { compact: true, fill: true, mobileBottom: true })
+        ),
+        hiddenMobileTabs.length > 0 &&
+          h(
+            'button',
+            {
+              type: 'button',
+              className: 'ui-btn',
+              'data-testid': 'mobile-tabs-more-toggle',
+              'aria-expanded': isMobileTabsOpen,
+              'aria-controls': 'mobile-tabs-drawer',
+              onClick: () => setIsMobileTabsOpen((open) => !open),
+              style: {
+                ...ghostBtn,
+                minHeight: 50,
+                minWidth: 0,
+                padding: '6px 4px',
+                background: isMobileTabsOpen ? alpha(C.ink, '10') : 'transparent',
+                color: C.textSec,
+                border: 'none',
+                borderBottom: isMobileTabsOpen ? `2px solid ${C.cta}` : '2px solid transparent',
+                fontSize: 10,
+                lineHeight: 1.15,
+              },
+            },
+            h(
+              'span',
+              {
+                style: {
+                  display: 'grid',
+                  gap: 2,
+                  justifyItems: 'center',
+                },
+              },
+              h('span', { style: { fontSize: 18, lineHeight: '15px' } }, '⋯'),
+              h('span', null, '更多')
+            )
+          )
+      ),
+      isMobileTabsOpen &&
+        hiddenMobileTabs.length > 0 &&
+        h(
+          'div',
+          {
+            id: 'mobile-tabs-drawer',
+            'data-testid': 'mobile-tabs-drawer',
+            style: {
+              position: 'absolute',
+              right: 8,
+              bottom: 'calc(100% + 8px)',
+              width: 176,
+              ...card,
+              padding: '8px',
+              display: 'grid',
+              gap: 6,
+            },
+          },
+          hiddenMobileTabs.map((tabItem) =>
+            renderTabButton(tabItem, { compact: true, fill: true, mobileBottom: true })
+          )
+        )
+    )
 
   if (!isMobile)
     return h(
@@ -1437,32 +1591,20 @@ export default function Header(props) {
           style: {
             ...shellSurface,
             borderBottom: `1px solid ${C.borderSoft}`,
-            padding:
-              viewMode === OVERVIEW_VIEW_MODE
-                ? '8px 12px 8px'
-                : isCompactLandscape
-                  ? '2px 12px 0'
-                  : '4px 12px 0',
+            padding: isCompactLandscape ? '2px 12px' : '4px 12px',
           },
         },
-        mobileTitleRow,
-        tabsBlock
+        mobileTitleRow
       )
     ),
-    h(
-      'div',
-      {
-        'data-testid': 'header-scroll-zone',
-        style: {
-          padding: `${viewMode === OVERVIEW_VIEW_MODE ? 84 : isCompactLandscape ? 78 : 108}px 12px 0`,
-        },
+    mobileActionsSheet,
+    h('div', {
+      'data-testid': 'header-scroll-zone',
+      style: {
+        padding: `${isCompactLandscape ? 58 : 68}px 12px 0`,
       },
-      mobileActionsRow,
-      portfolioSelectorBlock,
-      portfolioManagerBlock,
-      urgentAlertBlock,
-      overviewNoticeBlock
-    ),
+    }),
+    mobileBottomTabsBlock,
     h(TextFieldDialog, {
       open: Boolean(editor?.isOpen),
       title: editor?.mode === 'rename' ? '重新命名組合' : '建立新組合',

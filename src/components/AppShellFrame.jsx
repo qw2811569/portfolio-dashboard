@@ -172,6 +172,7 @@ export default function AppShellFrame({
 
   return (
     <div
+      className="portfolio-app-root"
       style={{
         background: C.bg,
         minHeight: '100vh',
@@ -186,6 +187,11 @@ export default function AppShellFrame({
           --font-body: 'Source Sans 3','Noto Sans TC',sans-serif;
           --font-num: 'Source Serif 4','IBM Plex Mono',serif;
           --font-mono: 'IBM Plex Mono','SFMono-Regular',ui-monospace,monospace;
+        }
+        @media (max-width: 768px) {
+          .portfolio-app-root {
+            padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+          }
         }
       `}</style>
 

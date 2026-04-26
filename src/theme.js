@@ -173,10 +173,12 @@ export const C = Object.freeze({
   shellShadow: TOKENS.shellShadow,
 
   cardBg: TOKENS.boneSoft,
-  cardBlue: alpha(TOKENS.positive, '18'),
-  cardAmber: alpha(TOKENS.warning, '18'),
-  cardOlive: alpha(TOKENS.positive, '14'),
-  cardRose: alpha(TOKENS.cta, '14'),
+  // R156 #1 Orange lock down · cardBlue/cardOlive/cardRose/cardAmber 不再各自染色
+  // 全部 alias 到 boneSoft + 微 charcoal 邊 · 視覺只剩 米 + 黑灰 + 1 橘（從 C.cta 直接取）
+  cardBlue: TOKENS.boneSoft,
+  cardAmber: TOKENS.boneSoft,
+  cardOlive: TOKENS.boneSoft,
+  cardRose: TOKENS.boneSoft,
 
   text: TOKENS.ink,
   textSec: TOKENS.charcoal,
@@ -188,32 +190,40 @@ export const C = Object.freeze({
   down: TOKENS.negative,
   downBg: alpha(TOKENS.negative, '12'),
 
-  cyanBg: alpha(TOKENS.warning, '16'),
+  // R156 #1 Orange lock down · 米 + 黑灰 + 1 橘 三軸
+  // 所有「彩色 chip / fill / glow」alias 都收回中性（charcoal / iron / boneSoft）
+  // 唯一可亮的是 cta 主橘 · 不准被多色稀釋
+  cyanBg: alpha(TOKENS.charcoal, '0c'),
   amber: TOKENS.warning,
-  amberBg: TOKENS.warningSoft,
+  amberBg: alpha(TOKENS.charcoal, '0c'),
   orange: TOKENS.cta,
   orangeBg: alpha(TOKENS.cta, '12'),
-  mint: TOKENS.warning,
-  mintBg: alpha(TOKENS.warning, '12'),
+  mint: TOKENS.charcoal,
+  mintBg: alpha(TOKENS.charcoal, '0c'),
   lavender: TOKENS.iron,
-  lavBg: alpha(TOKENS.iron, '12'),
+  lavBg: alpha(TOKENS.iron, '0c'),
   rose: TOKENS.cta,
-  roseBg: alpha(TOKENS.cta, '12'),
+  roseBg: alpha(TOKENS.cta, '0c'),
   choco: TOKENS.charcoal,
-  chocoBg: alpha(TOKENS.charcoal, '12'),
+  chocoBg: alpha(TOKENS.charcoal, '0c'),
   stone: TOKENS.mutedSoft,
-  urgent: TOKENS.warning,
+  urgent: TOKENS.cta,
   onFill: TOKENS.ink,
   focusRing: TOKENS.focusRing,
 
-  fillTeal: TOKENS.hot,
-  fillAmber: TOKENS.warning,
+  // 黑灰大色塊 token（R156 §5 #2 撐骨架用）
+  darkPanel: TOKENS.ink,
+  darkPanelSoft: alpha(TOKENS.ink, 'eb'),
+  charcoalPanel: TOKENS.charcoal,
+
+  fillTeal: TOKENS.charcoal,
+  fillAmber: TOKENS.charcoal,
   fillTomato: TOKENS.cta,
   fillChoco: TOKENS.charcoal,
 
   glowPink: alpha(TOKENS.cta, '14'),
-  glowBlue: alpha(TOKENS.positive, '18'),
-  glowWarm: alpha(TOKENS.warning, '14'),
+  glowBlue: alpha(TOKENS.charcoal, '0c'),
+  glowWarm: alpha(TOKENS.charcoal, '0c'),
 })
 
 export function applyThemeVars(target = DEFAULT_TARGET) {

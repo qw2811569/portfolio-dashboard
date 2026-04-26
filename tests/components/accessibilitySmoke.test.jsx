@@ -32,7 +32,7 @@ describe('accessibility smoke pack', () => {
     render(<DailyReportPanel {...baseProps} dailyReport={null} />)
 
     expect(screen.getByRole('button', { name: '開始今日收盤分析' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '⚠️ 風險壓力測試' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '風險壓力測試' })).toBeInTheDocument()
     expect(screen.getByText('資料狀態')).toBeInTheDocument()
   })
 

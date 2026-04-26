@@ -1,5 +1,6 @@
 import { C } from '../../theme.js'
 import { Button, Card } from '../common'
+import { TRADE_BLOCK_REASON_HUMAN } from './tradeMessages.js'
 
 const inputStyle = {
   width: '100%',
@@ -19,7 +20,7 @@ export default function TradeWizardStep2Parse({
   onBack,
   hasUnconfirmedActions = false,
 }) {
-  const nextBlockReason = hasUnconfirmedActions ? '請先確認所有未指定動作的交易' : ''
+  const nextBlockReason = hasUnconfirmedActions ? TRADE_BLOCK_REASON_HUMAN : ''
 
   return (
     <Card data-testid="trade-parse-results" style={{ borderRadius: 8 }}>

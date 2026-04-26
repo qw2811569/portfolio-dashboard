@@ -11,6 +11,7 @@ import TradeWizardStep1Upload from './TradeWizardStep1Upload.jsx'
 import TradeWizardStep2Parse from './TradeWizardStep2Parse.jsx'
 import TradeWizardStep3Preview from './TradeWizardStep3Preview.jsx'
 import TradeWizardStep4Apply from './TradeWizardStep4Apply.jsx'
+import { TRADE_BLOCK_REASON_HUMAN, TRADE_BLOCK_REASON_UNCONFIRMED } from './tradeMessages.js'
 
 const steps = ['上傳', '解析', '預覽', '套用']
 
@@ -41,7 +42,7 @@ export default function TradeWizard({
     () => trades.some((trade) => trade?.needsActionConfirmation),
     [trades]
   )
-  const actionBlockReason = hasUnconfirmedActions ? '有未確認動作' : ''
+  const actionBlockReason = hasUnconfirmedActions ? TRADE_BLOCK_REASON_UNCONFIRMED : ''
 
   const acceptParsed = (parsed) => {
     const nextTrades = Array.isArray(parsed?.trades) ? parsed.trades : []
@@ -84,7 +85,7 @@ export default function TradeWizard({
 
   const goToPreview = () => {
     if (hasUnconfirmedActions) {
-      setError('請先確認所有未指定動作的交易。')
+      setError(`${TRADE_BLOCK_REASON_HUMAN}。`)
       return
     }
     setError('')
@@ -94,7 +95,7 @@ export default function TradeWizard({
   const applyTrades = async () => {
     if (applying) return
     if (hasUnconfirmedActions) {
-      setError('請先確認所有未指定動作的交易。')
+      setError(`${TRADE_BLOCK_REASON_HUMAN}。`)
       return
     }
     setApplying(true)

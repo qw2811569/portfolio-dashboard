@@ -4,6 +4,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TradeWizard from '../../src/components/trade/TradeWizard.jsx'
 import TradeWizardStep3Preview from '../../src/components/trade/TradeWizardStep3Preview.jsx'
+import {
+  TRADE_BLOCK_REASON_HUMAN,
+  TRADE_BLOCK_REASON_UNCONFIRMED,
+} from '../../src/components/trade/tradeMessages.js'
 
 describe('components/TradeWizard', () => {
   beforeEach(() => {
@@ -50,7 +54,7 @@ describe('components/TradeWizard', () => {
     )
   })
 
-  it('blocks Step 2 advance until every unspecified trade action is explicitly confirmed', () => {
+  it('blocks Step 2 advance until every unspecified trade action is explicitly confirmed', async () => {
     render(
       <TradeWizard
         portfolioId="me"
@@ -70,12 +74,24 @@ describe('components/TradeWizard', () => {
     const nextButton = screen.getByTestId('trade-wizard-to-preview')
     expect(screen.getByTestId('trade-action-warning')).toHaveTextContent('未指定動作')
     expect(nextButton).toBeDisabled()
-    expect(nextButton).toHaveAttribute('title', '請先確認所有未指定動作的交易')
+    expect(nextButton).toHaveAttribute('title', TRADE_BLOCK_REASON_HUMAN)
 
     fireEvent.change(screen.getByLabelText('第 1 筆方向'), { target: { value: '買進' } })
 
     expect(screen.queryByTestId('trade-action-warning')).not.toBeInTheDocument()
-    expect(nextButton).toBeEnabled()
+    const confirmedNextButton = screen.getByTestId('trade-wizard-to-preview')
+    expect(confirmedNextButton).toBeEnabled()
+
+    fireEvent.click(confirmedNextButton)
+
+    expect(screen.getByTestId('trade-preview-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('trade-confirm-btn')).toBeEnabled()
+
+    fireEvent.click(screen.getByTestId('trade-confirm-btn'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('trade-wizard-applied')).toBeInTheDocument()
+    })
   })
 
   it('disables Step 3 confirm when a defensive block reason is present', () => {
@@ -98,11 +114,13 @@ describe('components/TradeWizard', () => {
         }}
         onBack={vi.fn()}
         onApply={onApply}
-        blockReason="有未確認動作"
+        blockReason={TRADE_BLOCK_REASON_UNCONFIRMED}
       />
     )
 
-    expect(screen.getByTestId('trade-preview-block-reason')).toHaveTextContent('有未確認動作')
+    expect(screen.getByTestId('trade-preview-block-reason')).toHaveTextContent(
+      TRADE_BLOCK_REASON_UNCONFIRMED
+    )
     expect(screen.getByTestId('trade-confirm-btn')).toBeDisabled()
 
     fireEvent.click(screen.getByTestId('trade-confirm-btn'))

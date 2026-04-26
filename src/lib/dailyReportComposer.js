@@ -12,14 +12,15 @@ function normalizeReportDate(report) {
   return normalizeText(report?.date || report?.marketDate || report?.createdAt).replace(/-/g, '/')
 }
 
+function normalizeDateKey(value) {
+  return normalizeText(value).replace(/-/g, '/')
+}
+
 function deriveHoldingAction(change = {}) {
   const pct = Number(change?.changePct)
-  const pnl = Number(change?.todayPnl)
-  if (Number.isFinite(pct) && pct <= -4) return '減碼'
-  if (Number.isFinite(pct) && pct >= 5) return '觀察'
-  if (Number.isFinite(pnl) && pnl < 0) return '續抱'
-  if (Number.isFinite(pct) && pct > 0) return '續抱'
-  return '觀察'
+  if (Number.isFinite(pct) && pct >= 8) return '減碼分批'
+  if (Number.isFinite(pct) && pct <= -8) return '減碼或停損'
+  return '續抱'
 }
 
 export function composeDailyReportRitual({
@@ -42,8 +43,9 @@ export function composeDailyReportRitual({
     )
     .slice(0, 90)
 
+  const selectedDateKey = normalizeDateKey(selectedDate)
   const selectedReport =
-    archive.find((item) => item.date === selectedDate)?.report ||
+    archive.find((item) => item.date === selectedDateKey)?.report ||
     dailyReport ||
     archive[0]?.report ||
     null
@@ -83,6 +85,29 @@ export function composeDailyReportRitual({
     }
   })
 
+  const holdingActions = changes.map((change) => ({
+    code: normalizeText(change.code),
+    name: normalizeText(change.name || change.code),
+    action: normalizeText(change.action) || deriveHoldingAction(change),
+    reason: firstSentence(
+      change.reason || change.summary || change.note,
+      Number.isFinite(Number(change.changePct))
+        ? `今日漲跌 ${Number(change.changePct).toFixed(1)}%，先照原計畫檢查。`
+        : '今天先照原計畫檢查。'
+    ),
+  }))
+  const holdingActionLines = holdingActions
+    .slice(0, 5)
+    .map((item) =>
+      [`${item.name} ${item.code}`.trim(), item.action, item.reason].filter(Boolean).join('：')
+    )
+  const hitRowsLine = hitRows.length
+    ? `命中率：${hitRows
+        .slice(0, 5)
+        .map((row) => `${row.label} ${row.rate}%`)
+        .join(' / ')}`
+    : ''
+
   return {
     report: selectedReport,
     hero: {
@@ -96,17 +121,7 @@ export function composeDailyReportRitual({
       { key: 'event', title: '事件', body: eventText },
       { key: 'risk', title: '風險', body: riskText },
     ],
-    holdingActions: changes.map((change) => ({
-      code: normalizeText(change.code),
-      name: normalizeText(change.name || change.code),
-      action: normalizeText(change.action) || deriveHoldingAction(change),
-      reason: firstSentence(
-        change.reason || change.summary || change.note,
-        Number.isFinite(Number(change.changePct))
-          ? `今日漲跌 ${Number(change.changePct).toFixed(1)}%，先照原計畫檢查。`
-          : '今天先照原計畫檢查。'
-      ),
-    })),
+    holdingActions,
     archive,
     hitRows,
     copyText: [
@@ -115,6 +130,10 @@ export function composeDailyReportRitual({
       `基本面：${fundamentalText}`,
       `事件：${eventText}`,
       `風險：${riskText}`,
-    ].join('\n'),
+      holdingActionLines.length ? `每檔今日該做：${holdingActionLines.join('；')}` : '',
+      hitRowsLine,
+    ]
+      .filter(Boolean)
+      .join('\n'),
   }
 }

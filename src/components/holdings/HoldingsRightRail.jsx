@@ -20,8 +20,8 @@ const railEyebrow = {
 
 const toneMeta = {
   alert: { color: C.down, bg: alpha(C.down, '12'), border: alpha(C.down, '28') },
-  warning: { color: C.text, bg: alpha(C.amber, '14'), border: alpha(C.amber, '30') },
-  watch: { color: C.text, bg: alpha(C.fillTeal, '12'), border: alpha(C.fillTeal, '30') },
+  warning: { color: C.text, bg: alpha(C.charcoal, '10'), border: alpha(C.charcoal, '24') },
+  watch: { color: C.text, bg: alpha(C.iron, '10'), border: alpha(C.iron, '26') },
   mute: { color: C.textSec, bg: alpha(C.textMute, '10'), border: alpha(C.textMute, '18') },
 }
 
@@ -81,7 +81,7 @@ export function PrincipleSummary() {
   const principle = getDailyPrinciple(new Date())
 
   return (
-    <RailCard eyebrow="MINDSET" title="心法卡摘要" color={C.accent}>
+    <RailCard eyebrow="MINDSET" title="心法卡摘要" color={C.cta}>
       <div
         style={{
           color: C.text,
@@ -111,7 +111,7 @@ export function PrincipleSummary() {
 
 export function TodayDoCard({ items = [] }) {
   return (
-    <RailCard eyebrow="DO" title="今天先做" color={C.up}>
+    <RailCard eyebrow="DO" title="今天先做" color={C.cta}>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         {items.map((item, index) => (
           <ActionItem key={`${item.code || item.title}-${index}`} item={item} />

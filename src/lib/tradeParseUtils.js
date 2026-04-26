@@ -53,6 +53,8 @@ function normalizeTradeRow(row, fallbackDate) {
     date: normalizeTradeDate(row.date || row.tradeDate || row.time, fallbackDate),
     time: String(row.time || '').trim(),
     cost: row.cost != null ? normalizeTradeNumeric(row.cost || row.avgCost) : null,
+    confidence: String(row.confidence || '').trim() || undefined,
+    needsActionConfirmation: Boolean(row.needsActionConfirmation),
   }
 }
 
@@ -190,6 +192,7 @@ export function assessTradeParseQuality(parsed) {
       if (!String(trade.name || '').trim()) issues.push('名稱缺失')
       if ((Number(trade.qty) || 0) <= 0) issues.push('股數異常')
       if ((Number(trade.price) || 0) <= 0) issues.push('成交價異常')
+      if (trade.needsActionConfirmation) issues.push('未指定動作')
       return issues.length > 0
         ? {
             index,

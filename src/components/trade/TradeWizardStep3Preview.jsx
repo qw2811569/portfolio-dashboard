@@ -1,7 +1,7 @@
 import { C, alpha } from '../../theme.js'
 import { Button, Card } from '../common'
 
-export default function TradeWizardStep3Preview({ preview, onBack, onApply }) {
+export default function TradeWizardStep3Preview({ preview, onBack, onApply, applying = false }) {
   return (
     <Card data-testid="trade-preview-panel" style={{ borderRadius: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 4 }}>
@@ -57,15 +57,18 @@ export default function TradeWizardStep3Preview({ preview, onBack, onApply }) {
         )}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-        <Button onClick={onBack}>返回確認</Button>
+        <Button onClick={onBack} disabled={applying}>
+          返回確認
+        </Button>
         <Button
           data-testid="trade-confirm-btn"
+          data-applying={applying ? 'true' : 'false'}
           onClick={onApply}
-          disabled={!preview?.trades?.length}
+          disabled={applying || !preview?.trades?.length}
           variant="filled"
           style={{ flex: 1 }}
         >
-          確認套用
+          {applying ? '套用中...' : '確認套用'}
         </Button>
       </div>
     </Card>

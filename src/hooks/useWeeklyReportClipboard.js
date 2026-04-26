@@ -150,6 +150,8 @@ export function useWeeklyReportClipboard({
   const downloadWeeklyReportPdf = useCallback(async () => {
     const data = buildWeeklyPdfData({
       portfolioName: activePortfolioName,
+      portfolio: activePortfolio,
+      complianceMode,
       holdings,
       newsEvents,
       totalVal,
@@ -171,6 +173,8 @@ export function useWeeklyReportClipboard({
     return definition
   }, [
     activePortfolioName,
+    activePortfolio,
+    complianceMode,
     flashSaved,
     holdings,
     isClosedEvent,

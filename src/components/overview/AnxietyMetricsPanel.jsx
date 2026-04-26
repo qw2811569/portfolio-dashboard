@@ -171,6 +171,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
       {
         'data-testid': `anxiety-metric-card-${metric.id}`,
         'data-availability': metric?.availability,
+        'data-compact': 'true',
         style: {
           minWidth: 0,
           display: 'flex',

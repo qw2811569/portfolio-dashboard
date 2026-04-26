@@ -116,4 +116,27 @@ describe('components/AnxietyMetricsPanel', () => {
       gridColumn: '1 / -1',
     })
   })
+
+  it.each(['placeholder', 'loading'])(
+    'renders %s availability as a compact chip instead of a large card',
+    (availability) => {
+      mockMatchMedia(false)
+      const baseState = buildPanelState()
+      const state = {
+        ...baseState,
+        metrics: baseState.metrics.map((metric, index) =>
+          index === 0 ? { ...metric, availability } : metric
+        ),
+      }
+
+      render(<AnxietyMetricsPanel anxietyMetrics={state} />)
+
+      const card = screen.getByTestId('anxiety-metric-card-x1')
+      expect(card).toHaveAttribute('data-compact', 'true')
+      expect(card).toHaveAttribute('data-availability', availability)
+      expect(card.style.display).toBe('flex')
+      expect(card.style.padding).toBe('8px 12px')
+      expect(screen.queryByTestId('anxiety-metric-toggle-x1')).not.toBeInTheDocument()
+    }
+  )
 })

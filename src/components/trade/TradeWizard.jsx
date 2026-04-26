@@ -29,6 +29,7 @@ export default function TradeWizard({
   const [trades, setTrades] = useState([])
   const [tradeDate, setTradeDate] = useState(() => toSlashDate())
   const [parsing, setParsing] = useState(false)
+  const [applying, setApplying] = useState(false)
   const [error, setError] = useState('')
   const [applyResult, setApplyResult] = useState(null)
 
@@ -77,20 +78,29 @@ export default function TradeWizard({
   }
 
   const applyTrades = async () => {
-    const result = await persistTradeApply({
-      portfolioId,
-      holdings,
-      tradeLog,
-      setHoldings,
-      setTradeLog,
-      trades,
-      tradeDate,
-      marketQuotes,
-      disclaimerAckedAt,
-    })
-    setApplyResult(result)
-    setStep(4)
-    flashSaved?.(`✅ 已寫入 ${result.entries.length} 筆成交`, 3000)
+    if (applying) return
+    setApplying(true)
+    setError('')
+    try {
+      const result = await persistTradeApply({
+        portfolioId,
+        holdings,
+        tradeLog,
+        setHoldings,
+        setTradeLog,
+        trades,
+        tradeDate,
+        marketQuotes,
+        disclaimerAckedAt,
+      })
+      setApplyResult(result)
+      setStep(4)
+      flashSaved?.(`已寫入 ${result.entries.length} 筆成交`, 3000)
+    } catch (err) {
+      setError(err?.message || '交易寫入失敗，請稍後再試。')
+    } finally {
+      setApplying(false)
+    }
   }
 
   const reset = () => {
@@ -171,6 +181,7 @@ export default function TradeWizard({
           preview={preview}
           onBack={() => setStep(2)}
           onApply={applyTrades}
+          applying={applying}
         />
       ) : null}
       {step === 4 ? <TradeWizardStep4Apply result={applyResult} onReset={reset} /> : null}

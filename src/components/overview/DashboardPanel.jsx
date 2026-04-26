@@ -525,6 +525,7 @@ function TodayPnlHero({
   onRefreshReminder = null,
   onNavigate = null,
 }) {
+  const isMobileFold = useIsMobile('(max-width: 600px)')
   const [isReminderOpen, setIsReminderOpen] = useState(false)
   const [dismissedGateKey, setDismissedGateKey] = useState('')
   const showStalePnl = Boolean(
@@ -561,9 +562,10 @@ function TodayPnlHero({
   return h(
     Card,
     {
+      'data-testid': 'dashboard-poster-hero',
       style: {
         marginBottom: 8,
-        padding: '56px 28px',
+        padding: isMobileFold ? '24px 16px' : '56px 28px',
         background: `linear-gradient(180deg, ${alpha(C.card, 'f4')}, ${alpha(C.subtle, 'fc')})`,
       },
     },
@@ -572,7 +574,7 @@ function TodayPnlHero({
       {
         style: {
           display: 'grid',
-          gap: 32,
+          gap: isMobileFold ? 20 : 32,
         },
       },
       h(
@@ -781,7 +783,7 @@ function TodayPnlHero({
                 style: {
                   fontSize: 11,
                   color: C.textMute,
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: 'Inter, system-ui, var(--font-body)',
                 },
               },
               formatTaipeiDate()
@@ -820,9 +822,9 @@ function TodayPnlHero({
                   fontSize: 'clamp(24px, 3.2vw, 36px)',
                   fontWeight: 700,
                   color: headlineColor,
-                  fontFamily: 'var(--font-body)',
+                  fontFamily: 'Inter, system-ui, var(--font-body)',
                   lineHeight: 1.2,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: 0,
                   maxWidth: '20ch',
                 },
               },
@@ -834,13 +836,14 @@ function TodayPnlHero({
           // 黑灰大色塊撐重量 · darkPanel inset border 增加 weight
           'div',
           {
+            'data-testid': 'dashboard-total-assets-value',
             className: 'tn',
             style: {
               fontSize: 'clamp(48px, 7vw, 72px)',
               fontWeight: 800,
               color: C.text,
-              fontFamily: 'var(--font-body)',
-              letterSpacing: '-0.03em',
+              fontFamily: 'Inter, system-ui, var(--font-body)',
+              letterSpacing: 0,
               lineHeight: 0.96,
               fontVariantNumeric: 'tabular-nums',
             },
@@ -927,7 +930,7 @@ function TodayPnlHero({
                 fontWeight: 600,
                 color,
                 fontFamily: 'var(--font-num)',
-                letterSpacing: '-0.02em',
+                letterSpacing: 0,
                 lineHeight: 1.1,
               },
             },
@@ -971,7 +974,7 @@ function TodayPnlHero({
                 fontWeight: 600,
                 color: C.textSec,
                 fontFamily: 'var(--font-num)',
-                letterSpacing: '-0.02em',
+                letterSpacing: 0,
                 lineHeight: 1.1,
               },
             },

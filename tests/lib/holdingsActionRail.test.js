@@ -52,4 +52,23 @@ describe('lib/holdingsActionRail', () => {
     expect(actions.dontItems.length).toBeGreaterThanOrEqual(1)
     expect(actions.riskItems).toHaveLength(1)
   })
+
+  it('does not leak yesterday events into upcoming risk items', () => {
+    const actions = buildTodayActions({
+      now: new Date('2026-04-26T12:00:00+08:00'),
+      holdings: [{ code: '2330', name: '台積電', price: 950, value: 100000, pct: 0 }],
+      dossiers: [
+        {
+          code: '2330',
+          events: [
+            { date: '2026-04-25', title: '昨天公告', stocks: ['2330'] },
+            { date: '2026-04-26', title: '今天法說', stocks: ['2330'] },
+          ],
+        },
+      ],
+    })
+
+    expect(actions.riskItems.some((item) => item.body.includes('昨天公告'))).toBe(false)
+    expect(actions.riskItems.some((item) => item.body.includes('今天法說'))).toBe(true)
+  })
 })

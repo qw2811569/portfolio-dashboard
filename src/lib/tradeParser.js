@@ -15,7 +15,7 @@ function normalizeNumber(value) {
 
 function normalizeAction(value) {
   const raw = normalizeText(value)
-  if (/賣|sell|sold|s/i.test(raw)) return '賣出'
+  if (/^(賣出|賣|sell|sold)$/i.test(raw)) return '賣出'
   return '買進'
 }
 
@@ -24,12 +24,13 @@ function parseTradeLine(line, fallbackDate) {
   if (!text) return null
 
   const match = text.match(
-    /(買進|賣出|買|賣|buy|sell)?\s*([A-Za-z0-9]{4,6})\s*([\u3400-\u9fffA-Za-z0-9._-]+)?\s*(?:股數|qty|quantity|x)?\s*([0-9,]+)\s*(?:股|shares?)?\s*(?:@|＠|成交價|price|元)?\s*([0-9,.]+)/i
+    /^(?:(買進|賣出|買|賣|buy|sell|sold)\s*)?([A-Za-z0-9]{4,6})(?:\s+([\u3400-\u9fffA-Za-z._-][\u3400-\u9fffA-Za-z0-9._-]*))?\s*(?:股數|qty|quantity|x)?\s*([0-9,]+)\s*(?:股|shares?)?\s*(?:@|＠|成交價|price|元)?\s*([0-9,.]+)/i
   )
   if (!match) return null
 
   const [, action, code, name, qty, price] = match
   const normalizedCode = normalizeText(code).toUpperCase()
+  const needsActionConfirmation = !normalizeText(action)
   return {
     action: normalizeAction(action),
     code: normalizedCode,
@@ -37,6 +38,8 @@ function parseTradeLine(line, fallbackDate) {
     qty: normalizeNumber(qty),
     price: normalizeNumber(price),
     date: fallbackDate,
+    confidence: needsActionConfirmation ? 'low' : 'medium',
+    needsActionConfirmation,
   }
 }
 
@@ -49,13 +52,18 @@ export function parseTradesFromText(
     .map((line) => line.trim())
     .filter(Boolean)
   const trades = lines.map((line) => parseTradeLine(line, fallbackDate)).filter(Boolean)
+  const hasUnspecifiedAction = trades.some((trade) => trade.needsActionConfirmation)
 
   return normalizeTradeParseResult(
     {
       tradeDate: fallbackDate,
       trades,
-      note: trades.length ? '文字解析' : '未偵測到交易',
-      confidence: trades.length ? 'medium' : 'low',
+      note: hasUnspecifiedAction
+        ? '文字解析：部分交易未指定買進或賣出'
+        : trades.length
+          ? '文字解析'
+          : '未偵測到交易',
+      confidence: trades.length && !hasUnspecifiedAction ? 'medium' : 'low',
     },
     fallbackDate
   )

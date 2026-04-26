@@ -18,6 +18,21 @@ describe('lib/tradeParser', () => {
     ])
   })
 
+  it('does not treat stock symbols containing s as sell orders', () => {
+    const parsed = parseTradesFromText('TSMC 100 @ 950', {
+      fallbackDate: '2026-04-26',
+    })
+
+    expect(parsed.confidence).toBe('low')
+    expect(parsed.trades[0]).toMatchObject({
+      action: '買進',
+      code: 'TSMC',
+      qty: 100,
+      price: 950,
+      needsActionConfirmation: true,
+    })
+  })
+
   it('builds a manual trade parse result', () => {
     const parsed = buildManualTrade({
       code: '2454',

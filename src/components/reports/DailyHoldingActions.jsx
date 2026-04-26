@@ -2,10 +2,12 @@ import { C, alpha } from '../../theme.js'
 import { Card } from '../common'
 
 const actionTone = {
-  加碼: C.up,
+  加碼: C.textSec,
   續抱: C.textSec,
-  觀察: C.amber,
-  減碼: C.down,
+  觀察: C.iron,
+  減碼: C.textSec,
+  減碼分批: C.textSec,
+  減碼或停損: C.down,
   出場: C.down,
 }
 

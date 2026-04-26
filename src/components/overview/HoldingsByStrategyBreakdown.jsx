@@ -1,13 +1,8 @@
 import { C, alpha } from '../../theme.js'
 import { groupHoldingsByStrategy } from '../../lib/holdings.js'
 
-const STRATEGY_COLORS = {
-  成長股: 'var(--positive)',
-  事件驅動: 'var(--up)',
-  'ETF / 防守': 'var(--warning)',
-  權證: C.choco,
-  其他: 'var(--muted)',
-}
+const STRATEGY_BAR_COLOR = C.charcoal
+const DOMINANT_STRATEGY_BAR_COLOR = C.cta
 
 function buildStockMetaWithDossiers(stockMeta, holdingDossiers) {
   const merged = { ...(stockMeta && typeof stockMeta === 'object' ? stockMeta : {}) }
@@ -35,6 +30,7 @@ export default function HoldingsByStrategyBreakdown({
   const rows = groupHoldingsByStrategy(holdings, mergedMeta)
   const total =
     totalVal > 0 ? totalVal : rows.reduce((sum, row) => sum + (Number(row.value) || 0), 0)
+  const maxValue = Math.max(0, ...rows.map((row) => Number(row.value) || 0))
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -74,7 +70,10 @@ export default function HoldingsByStrategyBreakdown({
         ) : (
           rows.map((row) => {
             const pct = total > 0 ? (row.value / total) * 100 : row.weight * 100
-            const color = STRATEGY_COLORS[row.label] || STRATEGY_COLORS.其他
+            const color =
+              maxValue > 0 && Number(row.value) === maxValue
+                ? DOMINANT_STRATEGY_BAR_COLOR
+                : STRATEGY_BAR_COLOR
 
             return (
               <div

@@ -77,8 +77,10 @@ function collectUpcomingEvents(holding, dossier = null, alerts = [], now = new D
       if (!event.date) return true
       const parsed = new Date(`${event.date.slice(0, 10)}T00:00:00+08:00`)
       if (Number.isNaN(parsed.getTime())) return true
-      const diffDays = (parsed.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
-      return diffDays >= -1 && diffDays <= 14
+      const today = new Date(now)
+      today.setHours(0, 0, 0, 0)
+      const diffDays = (parsed.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
+      return diffDays >= 0 && diffDays <= 14
     })
 }
 

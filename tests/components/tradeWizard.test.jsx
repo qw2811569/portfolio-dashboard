@@ -48,4 +48,43 @@ describe('components/TradeWizard', () => {
       expect.stringContaining('2454')
     )
   })
+
+  it('warns on unspecified trade actions and disables confirm while applying', async () => {
+    let resolveAudit
+    global.fetch = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveAudit = () => resolve({ ok: true, json: () => Promise.resolve({}) })
+        })
+    )
+
+    render(
+      <TradeWizard
+        portfolioId="me"
+        holdings={[{ code: 'TSMC', name: 'TSMC', qty: 10, cost: 900, price: 950, value: 9500 }]}
+        tradeLog={[]}
+        setHoldings={vi.fn()}
+        setTradeLog={vi.fn()}
+        toSlashDate={() => '2026-04-26'}
+      />
+    )
+
+    fireEvent.change(screen.getByTestId('trade-wizard-text-input'), {
+      target: { value: 'TSMC 100 @ 950' },
+    })
+    fireEvent.click(screen.getByTestId('trade-wizard-parse-text-btn'))
+
+    expect(screen.getByTestId('trade-action-warning')).toHaveTextContent('未指定動作')
+
+    fireEvent.click(screen.getByTestId('trade-wizard-to-preview'))
+    fireEvent.click(screen.getByTestId('trade-confirm-btn'))
+
+    expect(screen.getByTestId('trade-confirm-btn')).toBeDisabled()
+    expect(screen.getByTestId('trade-confirm-btn')).toHaveAttribute('data-applying', 'true')
+
+    resolveAudit()
+    await waitFor(() => {
+      expect(screen.getByTestId('trade-wizard-applied')).toBeInTheDocument()
+    })
+  })
 })

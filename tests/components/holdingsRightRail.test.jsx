@@ -3,6 +3,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import HoldingsRightRail from '../../src/components/holdings/HoldingsRightRail.jsx'
+import { C } from '../../src/theme.js'
 
 describe('components/HoldingsRightRail', () => {
   it('renders the four fixed right-rail cards for desktop holdings work', () => {
@@ -29,5 +30,14 @@ describe('components/HoldingsRightRail', () => {
     expect(screen.getByText('今天不做')).toBeInTheDocument()
     expect(screen.getByText('風險提醒')).toBeInTheDocument()
     expect(screen.getByText('法說會後確認毛利率')).toBeInTheDocument()
+    expect(screen.getByText('心法卡摘要').closest('div[style]')).toBeTruthy()
+  })
+
+  it('renders a real accent border color instead of an undefined token', () => {
+    render(<HoldingsRightRail holdings={[]} holdingDossiers={[]} />)
+    const card = screen.getByText('心法卡摘要').parentElement
+
+    expect(card).toHaveStyle({ borderLeft: `3px solid ${C.cta}` })
+    expect(card.getAttribute('style')).not.toContain('undefined')
   })
 })

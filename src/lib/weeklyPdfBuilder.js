@@ -1,5 +1,19 @@
 import { getDailyPrinciple } from './dailyPrinciples.js'
 
+export const PDF_CJK_FONT_FAMILY = 'SourceHanSansTC'
+export const PDF_CJK_FONT_FILES = Object.freeze({
+  normal: 'SourceHanSansTC-Regular.woff2',
+  bold: 'SourceHanSansTC-Bold.woff2',
+})
+export const PDF_CJK_FONT_REGISTRY = Object.freeze({
+  [PDF_CJK_FONT_FAMILY]: {
+    normal: PDF_CJK_FONT_FILES.normal,
+    bold: PDF_CJK_FONT_FILES.bold,
+    italics: PDF_CJK_FONT_FILES.normal,
+    bolditalics: PDF_CJK_FONT_FILES.bold,
+  },
+})
+
 function money(value) {
   const number = Number(value) || 0
   return number.toLocaleString('zh-TW')
@@ -37,8 +51,59 @@ function eventRows(events = [], closed = false, isClosedEvent = () => false) {
     }))
 }
 
+function normalizeComplianceMode(...values) {
+  return values
+    .map((value) =>
+      String(value || '')
+        .trim()
+        .toLowerCase()
+    )
+    .find(Boolean)
+}
+
+function shouldUseInsiderSection({ complianceMode, portfolio } = {}) {
+  const mode = normalizeComplianceMode(
+    complianceMode,
+    portfolio?.compliance_mode,
+    portfolio?.complianceMode,
+    portfolio?.viewMode
+  )
+  return mode === 'insider-compressed' || mode === 'insider'
+}
+
+async function fetchFontAsBase64(path, fetchImpl = fetch) {
+  const response = await fetchImpl(`/fonts/${path}`)
+  if (!response.ok) throw new Error(`PDF font load failed: ${path}`)
+  const buffer = await response.arrayBuffer()
+  let binary = ''
+  for (const byte of new Uint8Array(buffer)) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
+}
+
+export async function registerPdfMakeCjkFonts(pdfMake, { fetchImpl = fetch } = {}) {
+  if (!pdfMake) return
+
+  const fontEntries = await Promise.all(
+    Object.values(PDF_CJK_FONT_FILES).map(async (file) => [
+      file,
+      await fetchFontAsBase64(file, fetchImpl),
+    ])
+  )
+  const fontVfs = Object.fromEntries(fontEntries)
+
+  if (typeof pdfMake.addVirtualFileSystem === 'function') {
+    pdfMake.addVirtualFileSystem(fontVfs)
+  }
+  pdfMake.vfs = { ...(pdfMake.vfs || {}), ...fontVfs }
+  pdfMake.fonts = { ...(pdfMake.fonts || {}), ...PDF_CJK_FONT_REGISTRY }
+}
+
 export function buildWeeklyPdfData({
   portfolioName = '持倉看板',
+  portfolio = null,
+  complianceMode = 'retail',
   holdings = [],
   newsEvents = [],
   totalVal = 0,
@@ -48,9 +113,7 @@ export function buildWeeklyPdfData({
   now = new Date(),
 } = {}) {
   const principle = getDailyPrinciple(now)
-  const hasInsider7865 = (Array.isArray(holdings) ? holdings : []).some(
-    (holding) => String(holding?.code || '') === '7865'
-  )
+  const hasInsiderSection = shouldUseInsiderSection({ complianceMode, portfolio })
 
   return {
     title: `${portfolioName} Weekly`,
@@ -68,9 +131,9 @@ export function buildWeeklyPdfData({
       quote: principle.quote,
       author: principle.author,
     },
-    insiderSection: hasInsider7865
+    insiderSection: hasInsiderSection
       ? {
-          title: 'Insider section · 金聯成 7865',
+          title: `Insider section · ${portfolioName}`,
           copy: '本區僅列風險、狀態與公開資訊整理；不輸出 AI 買賣建議，不提供加碼、減碼或出場指令。',
           rows: [
             '狀態：列入本週追蹤清單。',
@@ -127,7 +190,7 @@ export function buildWeeklyPdfDefinition(data) {
         : []),
     ],
     defaultStyle: {
-      font: 'Roboto',
+      font: PDF_CJK_FONT_FAMILY,
       fontSize: 10,
     },
     styles: {
@@ -139,9 +202,14 @@ export function buildWeeklyPdfDefinition(data) {
 }
 
 export async function downloadWeeklyPdf(filename, definition) {
-  const pdfMakeModule = await import('pdfmake/build/pdfmake')
-  const vfsModule = await import('pdfmake/build/vfs_fonts')
+  const pdfMakeModule = await import('pdfmake/build/pdfmake.js')
+  const vfsModule = await import('pdfmake/build/vfs_fonts.js')
   const pdfMake = pdfMakeModule.default || pdfMakeModule
-  pdfMake.vfs = (vfsModule.default || vfsModule).vfs
+  const builtInVfs = (vfsModule.default || vfsModule).vfs || vfsModule.default || vfsModule
+  if (typeof pdfMake.addVirtualFileSystem === 'function') {
+    pdfMake.addVirtualFileSystem(builtInVfs)
+  }
+  pdfMake.vfs = { ...(pdfMake.vfs || {}), ...builtInVfs }
+  await registerPdfMakeCjkFonts(pdfMake)
   pdfMake.createPdf(definition).download(filename)
 }

@@ -37,7 +37,13 @@ export default function TradeWizardStep2Parse({ trades = [], onChangeTrade, onNe
               aria-label={`第 ${index + 1} 筆方向`}
               style={inputStyle}
               value={trade.action}
-              onChange={(event) => onChangeTrade(index, { action: event.target.value })}
+              onChange={(event) =>
+                onChangeTrade(index, {
+                  action: event.target.value,
+                  confidence: 'medium',
+                  needsActionConfirmation: false,
+                })
+              }
             >
               <option value="買進">買進</option>
               <option value="賣出">賣出</option>
@@ -68,6 +74,20 @@ export default function TradeWizardStep2Parse({ trades = [], onChangeTrade, onNe
               value={trade.price}
               onChange={(event) => onChangeTrade(index, { price: Number(event.target.value) })}
             />
+            {trade.needsActionConfirmation ? (
+              <div
+                data-testid="trade-action-warning"
+                style={{
+                  gridColumn: '1 / -1',
+                  color: C.down,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  lineHeight: 1.5,
+                }}
+              >
+                未指定動作，請確認這筆是買進或賣出。
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

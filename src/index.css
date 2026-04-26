@@ -289,3 +289,10 @@ textarea {
     padding-bottom: 40px;
   }
 }
+
+@media (max-width: 600px) {
+  .dashboard-hero {
+    gap: 16px;
+    padding-bottom: 24px;
+  }
+}

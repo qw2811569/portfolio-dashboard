@@ -24,6 +24,43 @@ describe('lib/dailyPrinciples', () => {
     expect(Array.isArray(entry.tags)).toBe(true)
   })
 
+  it('keeps the expanded Western-only quote schema complete without Chinese-name leaks', () => {
+    const forbiddenNames = [
+      '段永平',
+      '李嘉誠',
+      '孫子',
+      '老子',
+      '論語',
+      '王陽明',
+      '孔子',
+      '巴菲特',
+      '查理蒙格',
+    ]
+
+    expect(DAILY_PRINCIPLES.length).toBeGreaterThanOrEqual(350)
+
+    for (const entry of DAILY_PRINCIPLES) {
+      expect(entry.quote).toBeTruthy()
+      expect(entry.quoteEn).toBeTruthy()
+      expect(entry.author).toBeTruthy()
+      expect(entry.year).toBeTruthy()
+      expect(entry.authorBrief).toBeTruthy()
+      expect(Array.isArray(entry.tags)).toBe(true)
+      expect(entry.tags.length).toBeGreaterThan(0)
+
+      const serialized = [
+        entry.quote,
+        entry.quoteEn,
+        entry.author,
+        entry.authorBrief,
+        ...(Array.isArray(entry.tags) ? entry.tags : []),
+      ].join(' ')
+      for (const name of forbiddenNames) {
+        expect(serialized).not.toContain(name)
+      }
+    }
+  })
+
   it('narrows the pool when portfolio context implies caution', () => {
     const calmEntry = getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'), null)
     const cautionEntry = getDailyPrinciple(new Date('2026-04-24T00:00:00.000Z'), {

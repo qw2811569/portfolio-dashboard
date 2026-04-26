@@ -40,7 +40,7 @@ export function composeDailyReportRitual({
     .filter(
       (item, index, rows) => item.date && rows.findIndex((row) => row.date === item.date) === index
     )
-    .slice(0, 7)
+    .slice(0, 90)
 
   const selectedReport =
     archive.find((item) => item.date === selectedDate)?.report ||

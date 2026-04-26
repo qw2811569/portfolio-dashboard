@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DailyReportPanel } from '../../src/components/reports/DailyReportPanel.jsx'
 
@@ -81,5 +81,49 @@ describe('components/Daily ritual', () => {
     expect(screen.getByTestId('daily-ritual-hero')).toBeInTheDocument()
     expect(screen.queryByTestId('daily-holding-actions')).not.toBeInTheDocument()
     expect(screen.queryByText('台積電')).not.toBeInTheDocument()
+  })
+
+  it('indexes older daily history and switches to a specific date from the calendar input', () => {
+    const history = Array.from({ length: 10 }, (_, index) => {
+      const day = String(25 - index).padStart(2, '0')
+      return {
+        id: `h-${index}`,
+        date: `2026/04/${day}`,
+        aiInsight: `第 ${index + 1} 天歷史摘要`,
+        hitRate: 80 - index,
+        eventAssessments: [],
+      }
+    })
+
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        analysisHistory={history}
+        dailyReport={{
+          id: 'daily-current',
+          date: '2026/04/26',
+          aiInsight: '今日摘要',
+          totalTodayPnl: 0,
+          changes: [],
+          anomalies: [],
+          eventCorrelations: [],
+          eventAssessments: [],
+          needsReview: [],
+          analysisStage: 't1-confirmed',
+        }}
+      />
+    )
+
+    const archive = screen.getByTestId('daily-archive-timeline')
+    expect(
+      within(archive).getByText('已建立 11 天索引，較早日期可用日曆切換。')
+    ).toBeInTheDocument()
+    expect(within(archive).queryByText('04/18')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('daily-archive-date-input'), {
+      target: { value: '2026-04-18' },
+    })
+
+    expect(screen.getAllByText('第 8 天歷史摘要').length).toBeGreaterThan(0)
   })
 })

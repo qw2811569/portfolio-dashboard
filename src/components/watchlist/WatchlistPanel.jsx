@@ -692,7 +692,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit }
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        zIndex: 40,
+        zIndex: 130,
       },
       onClick: (event) => {
         if (event.target === event.currentTarget) onClose()

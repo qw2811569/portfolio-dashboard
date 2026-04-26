@@ -350,6 +350,7 @@ function renderFilterGroupRow(group) {
 function HoldingsFilterChipBar({ filterBar }) {
   const isMobile = useIsMobile()
   const [mobileAdvancedOpen, setMobileAdvancedOpen] = useState(false)
+  const [desktopExpanded, setDesktopExpanded] = useState(false)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saveError, setSaveError] = useState('')
@@ -360,7 +361,76 @@ function HoldingsFilterChipBar({ filterBar }) {
   const filterGroups = Array.isArray(safeFilterBar.filterGroups) ? safeFilterBar.filterGroups : []
   const savedFilters = Array.isArray(safeFilterBar.savedFilters) ? safeFilterBar.savedFilters : []
   const activeFilterCount = Number(safeFilterBar.activeFilterCount) || 0
-  const showAdvancedBody = !isMobile || mobileAdvancedOpen
+  const showAdvancedBody = (!isMobile && desktopExpanded) || (isMobile && mobileAdvancedOpen)
+
+  if (!isMobile && !desktopExpanded) {
+    return h(
+      Card,
+      {
+        'data-testid': 'holdings-filter-collapsed-summary',
+        style: {
+          marginBottom: 8,
+          padding: '10px 12px',
+        },
+      },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          },
+        },
+        h(
+          'div',
+          { style: { display: 'grid', gap: 2 } },
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 12,
+                color: C.text,
+                fontWeight: 800,
+              },
+            },
+            activeFilterCount > 0
+              ? `篩 ${activeFilterCount} 條件 · ${safeFilterBar.filteredCount} / ${safeFilterBar.totalCount} 檔`
+              : `篩 0 條件 · 全部 ${safeFilterBar.totalCount} 檔`
+          ),
+          h(
+            'div',
+            { style: { fontSize: 11, color: C.textMute, lineHeight: 1.5 } },
+            safeFilterBar.debouncedSearchQuery
+              ? `搜尋：${safeFilterBar.debouncedSearchQuery}`
+              : '表格先露出，需要時再展開搜尋與條件。'
+          )
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            'data-testid': 'holdings-filter-expand',
+            onClick: () => setDesktopExpanded(true),
+            style: {
+              minHeight: 40,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.raised,
+              color: C.textSec,
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+            },
+          },
+          '展開'
+        )
+      )
+    )
+  }
 
   const handleSaveSubmit = () => {
     const result = safeFilterBar.onSaveCurrentFilter?.(saveName)
@@ -674,6 +744,28 @@ function HoldingsFilterChipBar({ filterBar }) {
               },
             },
             showAdvancedBody ? '收起進階篩選' : '展開進階篩選'
+          ),
+        !isMobile &&
+          h(
+            'button',
+            {
+              type: 'button',
+              'data-testid': 'holdings-filter-desktop-collapse',
+              onClick: () => setDesktopExpanded(false),
+              style: {
+                minHeight: 40,
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.surface,
+                color: C.textSec,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                justifySelf: 'start',
+              },
+            },
+            '收合篩選'
           ),
         showAdvancedBody &&
           h(
@@ -1014,6 +1106,79 @@ export function WinLossSummary({ winners, losers }) {
   )
 }
 
+function MobilePnlQuickEntries({ winners = [], losers = [], onSortByPnl = null }) {
+  const isMobile = useIsMobile()
+  if (!isMobile) return null
+
+  const topWinner = Array.isArray(winners) ? winners[0] : null
+  const topLoser = Array.isArray(losers) ? losers[0] : null
+  const rows = [
+    topWinner
+      ? {
+          key: 'winner',
+          label: `賺最多 · ${topWinner.name} +${getHoldingReturnPct(topWinner).toFixed(1)}%`,
+          direction: 'desc',
+          tone: C.text,
+        }
+      : null,
+    topLoser
+      ? {
+          key: 'loser',
+          label: `賠最多 · ${topLoser.name} ${getHoldingReturnPct(topLoser).toFixed(1)}%`,
+          direction: 'asc',
+          tone: C.down,
+        }
+      : null,
+  ].filter(Boolean)
+
+  if (rows.length === 0) return null
+
+  return h(
+    Card,
+    {
+      'data-testid': 'holdings-mobile-pnl-quick-entries',
+      style: {
+        marginBottom: 8,
+        padding: '10px 10px',
+      },
+    },
+    h(
+      'div',
+      { style: { display: 'grid', gap: 8 } },
+      rows.map((row) =>
+        h(
+          'button',
+          {
+            key: row.key,
+            type: 'button',
+            'data-testid': `holdings-mobile-pnl-${row.key}`,
+            onClick: () => onSortByPnl?.(row.direction),
+            style: {
+              width: '100%',
+              minHeight: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: `1px solid ${C.border}`,
+              background: C.raised,
+              color: row.tone,
+              fontSize: 14,
+              fontWeight: 800,
+              textAlign: 'left',
+              cursor: 'pointer',
+            },
+          },
+          h('span', null, row.label),
+          h('span', { style: { fontSize: 16, color: C.textMute } }, '↓')
+        )
+      )
+    )
+  )
+}
+
 /**
  * Daily Insight Card — 今日收盤快評摘要
  */
@@ -1155,6 +1320,12 @@ export function HoldingsPanel({
         h(HoldingsRing, { holdings, totalVal, stockMeta: STOCK_META, holdingDossiers })
       )
     ),
+
+    h(MobilePnlQuickEntries, {
+      winners,
+      losers,
+      onSortByPnl: holdingsFilterBar?.onSortByPnl,
+    }),
 
     // Filter chip bar
     h(HoldingsFilterChipBar, { filterBar: holdingsFilterBar }),

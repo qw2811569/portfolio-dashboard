@@ -124,6 +124,129 @@ function ResearchHistoryErrorState({ message = '', onRetry = null }) {
   )
 }
 
+export function calculateThesisStatus(holdings = [], holdingDossiers = []) {
+  const dossierByCode = new Map(
+    (Array.isArray(holdingDossiers) ? holdingDossiers : [])
+      .filter(Boolean)
+      .map((dossier) => [String(dossier.code || dossier.stockCode || '').trim(), dossier])
+  )
+
+  return (Array.isArray(holdings) ? holdings : []).reduce(
+    (summary, holding) => {
+      const code = String(holding?.code || '').trim()
+      const dossier = dossierByCode.get(code) || {}
+      const pillars = Array.isArray(dossier?.thesis?.pillars) ? dossier.thesis.pillars : []
+      const statuses = pillars.map((pillar) =>
+        String(pillar?.status || '')
+          .trim()
+          .toLowerCase()
+      )
+      const hasThesis =
+        Boolean(
+          String(
+            dossier?.thesis?.statement || dossier?.thesis?.reason || dossier?.thesis?.text || ''
+          ).trim()
+        ) || pillars.length > 0
+
+      if (!hasThesis) {
+        summary.missing += 1
+      } else if (statuses.some((status) => ['broken', 'invalidated'].includes(status))) {
+        summary.broken += 1
+      } else if (
+        statuses.some((status) => ['watch', 'behind', 'weakened', 'wobbly'].includes(status))
+      ) {
+        summary.wobbly += 1
+      } else {
+        summary.ok += 1
+      }
+      summary.total += 1
+      return summary
+    },
+    { total: 0, ok: 0, wobbly: 0, broken: 0, missing: 0 }
+  )
+}
+
+function ThesisStatusSummary({ holdings = [], holdingDossiers = [] }) {
+  const summary = calculateThesisStatus(holdings, holdingDossiers)
+  const riskCount = summary.wobbly + summary.broken
+  const statusCopy =
+    summary.total > 0
+      ? `${summary.total} 個持倉投資理由中 ${summary.ok} 個仍 OK / ${riskCount} 個鬆動`
+      : '還沒有持倉投資理由'
+
+  return h(
+    Card,
+    {
+      'data-testid': 'research-thesis-status',
+      style: {
+        marginBottom: 8,
+        padding: '14px 14px',
+        borderRadius: 8,
+        borderLeft: `3px solid ${riskCount > 0 ? alpha(C.amber, '50') : alpha(C.positive, '45')}`,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        },
+      },
+      h(
+        'div',
+        { style: { display: 'grid', gap: 4, minWidth: 0 } },
+        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '投資理由狀態'),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 18,
+              lineHeight: 1.35,
+              color: C.text,
+              fontWeight: 800,
+            },
+          },
+          statusCopy
+        )
+      ),
+      h(
+        'div',
+        { style: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
+        [
+          ['仍 OK', summary.ok, C.positive],
+          ['鬆動', summary.wobbly, C.amber],
+          ['失真', summary.broken, C.down],
+          ['未補', summary.missing, C.textMute],
+        ].map(([label, count, color]) =>
+          h(
+            'span',
+            {
+              key: label,
+              style: {
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 28,
+                borderRadius: 8,
+                padding: '4px 8px',
+                border: `1px solid ${alpha(color, '24')}`,
+                background: alpha(color, '10'),
+                color: label === '失真' ? C.down : C.textSec,
+                fontSize: 12,
+                fontWeight: 800,
+              },
+            },
+            `${label} ${count}`
+          )
+        )
+      )
+    )
+  )
+}
+
 function buildCompressedResearchNarrative(results) {
   const summary = String(results?.summary || '').trim()
   if (summary) return summary
@@ -1459,6 +1582,7 @@ export function ResearchPanel({
     h(OperatingContextCard, { context: operatingContext }),
     isViewModeEnabled('showComplianceNote', viewMode) &&
       h(ViewModeNotice, { note: complianceNote }),
+    h(ThesisStatusSummary, { holdings, holdingDossiers }),
     h(ResearchHeader, {
       onEvolve,
       onRefresh,
@@ -1466,35 +1590,65 @@ export function ResearchPanel({
       reportRefreshing,
       reportRefreshStatus,
     }),
-    reportRefreshError &&
-      h(
-        Card,
-        {
-          style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
+    h(
+      Card,
+      {
+        style: {
+          marginBottom: 8,
+          padding: '10px 12px',
+          borderRadius: 8,
         },
-        h(DataError, {
-          status: reportRefreshError.status,
-          resource: 'analyst-reports',
-          retryBehavior: 'manual',
-          onRetry: onRefresh,
-        }),
+      },
+      h(
+        'details',
+        null,
+        h(
+          'summary',
+          {
+            style: {
+              cursor: 'pointer',
+              fontSize: 12,
+              color: C.textSec,
+              fontWeight: 800,
+            },
+          },
+          '登入、補資料與個股入口'
+        ),
         h(
           'div',
-          { style: { fontSize: 11, color: C.textMute, marginTop: 8, lineHeight: 1.6 } },
-          `這輪卡在 ${reportRefreshError.name} (${reportRefreshError.code})`
+          { style: { marginTop: 10 } },
+          reportRefreshError &&
+            h(
+              Card,
+              {
+                style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.amber, '40')}` },
+              },
+              h(DataError, {
+                status: reportRefreshError.status,
+                resource: 'analyst-reports',
+                retryBehavior: 'manual',
+                onRetry: onRefresh,
+              }),
+              h(
+                'div',
+                { style: { fontSize: 11, color: C.textMute, marginTop: 8, lineHeight: 1.6 } },
+                `這輪卡在 ${reportRefreshError.name} (${reportRefreshError.code})`
+              )
+            ),
+          h(StockResearchButtons, {
+            holdings,
+            onResearch,
+            researching,
+            researchTarget,
+            STOCK_META,
+            IND_COLOR,
+          }),
+          h(DataRefreshCenter, {
+            dataRefreshRows,
+          })
         )
-      ),
-    h(StockResearchButtons, {
-      holdings,
-      onResearch,
-      researching,
-      researchTarget,
-      STOCK_META,
-      IND_COLOR,
-    }),
-    h(DataRefreshCenter, {
-      dataRefreshRows,
-    }),
+      )
+    ),
     h(ResearchProgress, {
       researching,
       researchTarget,

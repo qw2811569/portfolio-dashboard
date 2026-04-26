@@ -25,7 +25,7 @@ function DialogShell({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        zIndex: 90,
+        zIndex: 130,
       },
       onClick: (event) => {
         if (event.target === event.currentTarget) onClose?.()

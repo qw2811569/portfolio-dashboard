@@ -144,6 +144,10 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
   const [filterState, setFilterState] = useState(() => initialViewState.filterState)
   const [searchInput, setSearchInput] = useState(() => initialViewState.searchQuery)
   const [savedFilters, setSavedFilters] = useState(() => readSavedFilters(savedFiltersKey))
+  const [sortState, setSortState] = useState({
+    sortBy: tableProps?.sortBy || 'code',
+    sortDir: tableProps?.sortDir || 'asc',
+  })
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
     () => initialViewState.searchQuery
   )
@@ -351,6 +355,11 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
     onSaveCurrentFilter: handleSaveCurrentFilter,
     onApplySavedFilter: handleApplySavedFilter,
     onClearAll: handleClearAll,
+    onSortByPnl: (direction) =>
+      setSortState({
+        sortBy: 'pct',
+        sortDir: direction === 'asc' ? 'asc' : 'desc',
+      }),
   }
 
   return (
@@ -368,6 +377,8 @@ export default function HoldingsPanelChunk({ panelProps, tableProps }) {
           <HoldingsTable
             {...tableProps}
             holdings={visibleHoldings}
+            sortBy={sortState.sortBy}
+            sortDir={sortState.sortDir}
             totalHoldingsCount={filterModel.rows.length}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={handleClearAll}

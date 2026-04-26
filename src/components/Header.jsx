@@ -1383,7 +1383,7 @@ export default function Header(props) {
           left: 0,
           right: 0,
           bottom: 0,
-          zIndex: 20,
+          zIndex: 50,
           background: alpha(C.raised, 'fb'),
           borderTop: `1px solid ${C.borderSoft}`,
           boxShadow: '0 -10px 24px rgba(11,18,14,0.08)',

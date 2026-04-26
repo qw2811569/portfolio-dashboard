@@ -103,7 +103,7 @@ export function PrincipleSummary() {
           lineHeight: 1.5,
         }}
       >
-        今天先看這個：先照提醒與 thesis 檢查，不因盤中情緒改變原本策略。
+        今天先看這個：先照提醒與投資論述檢查，不因盤中情緒改變原本策略。
       </div>
     </RailCard>
   )

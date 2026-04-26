@@ -54,7 +54,7 @@ function PrincipleCard({ label, entry }) {
             whiteSpace: 'nowrap',
           },
         },
-        'daily principle'
+        '心法'
       )
     ),
     h(

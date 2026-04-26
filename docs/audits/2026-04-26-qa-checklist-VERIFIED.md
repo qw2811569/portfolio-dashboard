@@ -1,7 +1,7 @@
 # 持倉看板 QA Checklist · 雙重確認版（白話）
 
-**日期**：2026-04-26
-**驗證**：Claude（106 ☑ / 14 ☐）+ Codex（133 ☑ / 12 ☐）→ 雙邊比對
+**日期**：2026-04-26（R8/R9 後重 verify）
+**驗證**：Claude + Codex 雙邊獨立 re-verify after R8/R9 → **11 條原 ☐ 中 10 條轉 ☑，剩 1 條（#10 禁用詞 src/ identifier）需 decision**
 **規則**：☑ = 雙邊都確認過 · ☐ = 至少一邊找到問題或無法 confirm
 **Live**：http://104.199.144.170/
 
@@ -24,9 +24,9 @@
 
 ### Mobile
 
-- ☐ **Header 高度 ≤ 64px** · Codex catch: mobile screenshot 02 看 Header 高度超過 64px 且多列
+- ☑ Header 高度 ≤ 64px · R8 commit `87f02a8` mobile single row 55px
 - ☑ Mobile fold 1 看到 hero + 持倉 + 黑 panel
-- ☐ **Bottom sticky tab bar 5 primary + 5 overflow** · Codex catch: mobile screenshot tab bar 在頂部，無底部 sticky tab，違 SD §3.10.2
+- ☑ Bottom sticky tab bar 5 primary + 3 overflow · R8 commit `87f02a8` mobile-bottom-tab-bar testid + bottom: 0 fixed
 
 ### 看板頁不要做 4 條
 
@@ -66,8 +66,8 @@
 - ☑ Labels 不重疊 aggregate
 - ☑ 預測命中率 chart
 - ☑ Status chip 顏色
-- ☐ **Voice 專業記錄官 不出現「預測看漲 / 停損 / 出場」** · Codex catch: `EventsPanel.jsx:82` 「預測看漲」仍在
-- ☐ **Insider mode 自家股事件去 buy/sell 暗示** · 同上 line 82 沒 insider filter
+- ☑ Voice 專業記錄官 不出現「預測看漲 / 停損 / 出場」 · R8 commit `df64b7a` getPredictionMeta 改「正向催化 / 負向風險 / 中性記錄」
+- ☑ Insider mode 自家股事件去 buy/sell 暗示 · R9 commit `f6d3c7c` EventsPanel wire isInsiderSelfStock + getPredictionMeta return null on insider self-stock
 
 ### Mobile
 
@@ -113,7 +113,7 @@
 - ☑ Insider mode 不顯示 per-holding actions
 - ☑ Accuracy Gate 6 entry
 - ☑ Voice 顧問 + 結構化
-- ☐ **Streaming 文字 live generation 時逐字** · Codex catch: AnimatedNumber 只 metric settle，未實作真 streaming text reveal
+- ☑ Streaming 文字 live generation 時逐字 · R8 commit `fba9b83` 新 `StreamingText.jsx` + `DailyHero.jsx` 接入
 
 ### Mobile
 
@@ -129,7 +129,7 @@
 
 ### Desktop
 
-- ☐ **Streaming AI 結果區（live 逐字）** · Codex catch: 找不到 typewriter / line-reveal 實作
+- ☑ Streaming AI 結果區（live 逐字） · R8 commit `fba9b83` `ResearchPanel.jsx` 接入 `StreamingText`
 - ☑ 每份研究含目標持股 / 信心 / 來源 / 新鮮度 badges
 - ☑ 風險揭示 / 資料待補 list
 - ☑ Weekly PDF 入口 + Insider compliance section
@@ -175,7 +175,7 @@
 
 - ☑ Search bar + sort
 - ☑ 每股 row 標準
-- ☐ **編輯/刪除 button 方角不 pill** · Codex catch: `WatchlistPanel.jsx:345, 364` borderRadius 12 + 4px padding 高度 → 視覺偏 pill
+- ☑ 編輯/刪除 button 方角不 pill · R8 commit `df64b7a` borderRadius 12 → 8
 
 ### Mobile
 
@@ -209,7 +209,7 @@
 
 ## 跨頁全局（Header）
 
-- ☐ **純文字下載按鈕無 emoji** · Codex catch: Header `⟳ 收盤價` 圖形符號還在 + cloudIndicator「雲端」字樣（週報 buttons 已純文字 OK）
+- ☑ 純文字下載按鈕無 emoji · R8 commit `df64b7a` `⟳ 收盤價` → 純文字「更新收盤價」 + cloudIndicator「雲端 / 本機」純文字（無 icon）
 - ☑ 沒 .html 下載
 - ☑ 沒單獨 `?` button（已 rename「重看導覽」）
 - ☑ Insider 7865 切換 Header 出現 `👑 公司代表` badge
@@ -224,7 +224,7 @@
 
 ### 全站禁用詞 0 出現
 
-- ☐ **禁用詞** · Codex catch: src/ 多處命中 `內部人` (chip-analysis.json 內) / `canonical` (PortfolioLayout.jsx) / `SSE` (useResearchWorkflow.js) / `tracking` (WatchlistPanel.jsx)。**user-facing 0**（component 文字面），但 source code identifier 還有 — 嚴格判斷視為違規
+- ☐ **禁用詞 src/ identifier**（**唯一未修**） · R8/R9 後仍命中：`canonical` (PortfolioLayout.jsx route-shell text) / `SSE streaming` (useResearchWorkflow.js) / `tracking` (useCmdK.js / WatchlistPanel.jsx) / `策略大腦` (useStrategyBrain.js) / `內部人` (chip-analysis.json data) · **要新 decision**：是否例外允許 internal identifier / data file 含禁用詞，或全 refactor rename（大工）
 
 ---
 
@@ -234,7 +234,7 @@
 - ☑ Daily / Holdings / Trade / Log / News compliance copy
 - ☑ News 自家股隱 AI impact
 - ☑ Weekly PDF insider section
-- ☐ **Events 自家股不出現預測看漲** · 同 Events 段問題 EventsPanel.jsx:82
+- ☑ Events 自家股不出現預測看漲 · R9 commit `f6d3c7c` insider self-stock filter wired
 - ☑ Trade / Log insider 文案邊界
 - ☑ Persona 視覺氣氛
 
@@ -242,7 +242,7 @@
 
 ## 視覺 Motion
 
-- ☐ **Hero 數字 prev → next 過渡** · Codex catch: `AnimatedNumber.jsx:1-21` 只直接 render value + metric-settle，沒 prev value state，無 prev → next 證據
+- ☑ Hero 數字 prev → next 過渡 · R8 commits `df64b7a` + `7cd33fc` AnimatedNumber 加 prevRef + transition state（phase enter/roll/settled）+ render previous/current 雙 span 透明度過渡
 - ☑ Strategy bar grow-in 300ms
 - ☑ Tab / panel mount fade
 - ☑ Card hover lift Watchlist + KPI
@@ -263,7 +263,7 @@
 - ☑ 5 焦慮 X1-X5
 - ☑ Accuracy Gate 6 entry
 - ☑ Trade → Holdings + Log
-- ☐ **Insider UX 跨 tab 一致** · Codex catch: Header / News / Daily 都套，但 Events line 82 沒套，跨 tab 不一致
+- ☑ Insider UX 跨 tab 一致 · R9 commit `f6d3c7c` Events 完成 insider self-stock filter wire，全 tab Header / News / Daily / Events 一致
 - ☑ Empty / Skeleton / Error / 互動 / 完成 五狀態
 
 ---

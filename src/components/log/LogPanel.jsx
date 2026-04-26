@@ -435,7 +435,7 @@ function EmptyLogState() {
         還沒有交易紀錄
       </div>
       <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.7 }}>
-        上傳成交後，這裡會保留每筆 memo、trade audit 與時間線，方便回頭復盤。
+        上傳成交後，這裡會保留每筆備忘、稽核紀錄與時間線，方便回頭復盤。
       </div>
     </Card>
   )
@@ -798,11 +798,10 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
                   marginBottom: 8,
                 }}
               >
-                歷史成交、memo 與 trade audit 在這裡對上線。
+                歷史成交、備忘與稽核紀錄在這裡對上線。
               </div>
               <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.7 }}>
-                先看 list，點進去再核對 memo、tradeLog
-                計數與免責聲明確認時間，回頭查帳不必翻多個頁面。
+                先看清單，點進去再核對備忘、成交筆數與免責聲明確認時間，回頭查帳不必翻多個頁面。
               </div>
             </div>
 
@@ -842,11 +841,11 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
           >
             <SummaryStat label="最後寫入" value={freshness.exactLabel} />
             <SummaryStat
-              label="trade audit"
+              label="稽核紀錄"
               value={auditCount > 0 ? `${auditCount} 筆已接入` : '尚未抓到'}
             />
             <SummaryStat
-              label="本機 fallback"
+              label="本機備援"
               value={localOnlyCount > 0 ? `${localOnlyCount} 筆` : '無'}
             />
           </div>

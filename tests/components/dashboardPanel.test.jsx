@@ -600,7 +600,7 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('daily-snapshot-status-card')).toBeInTheDocument()
     expect(screen.getByTestId('daily-snapshot-status-copy')).toHaveTextContent('已超過 36 小時')
-    expect(screen.getByTitle('daily snapshot freshness')).toHaveTextContent('偏舊')
+    expect(screen.getByTitle('當日資料新鮮度')).toHaveTextContent('偏舊')
   })
 
   it('keeps the daily snapshot reminder hidden when the marker is fresh', () => {

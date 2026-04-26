@@ -1131,6 +1131,51 @@ function AutoConfirmCard({ state = null }) {
   )
 }
 
+function DailyWaitingCta({ hasPendingReview = false, onNavigateReview, onAnalyze, analyzing }) {
+  return h(
+    Card,
+    {
+      'data-testid': 'daily-waiting-cta',
+      style: {
+        marginBottom: 8,
+        padding: '12px 12px',
+        borderRadius: 8,
+        border: `1px solid ${alpha(C.cta, '24')}`,
+        background: C.raised,
+      },
+    },
+    h(
+      'div',
+      { style: { display: 'grid', gap: 8 } },
+      h(
+        'div',
+        { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
+        '今天資料還沒齊，先不要看逐檔動作。可以先把已到期事件補完復盤，明早資料齊了再產生今日建議。'
+      ),
+      h(
+        Button,
+        {
+          'data-testid': 'daily-waiting-review-cta',
+          onClick: hasPendingReview ? onNavigateReview : onAnalyze,
+          disabled: analyzing,
+          style: {
+            width: '100%',
+            minHeight: 44,
+            borderRadius: 8,
+            border: 'none',
+            background: analyzing ? C.subtle : C.cta,
+            color: analyzing ? C.textMute : C.onFill,
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: analyzing ? 'not-allowed' : 'pointer',
+          },
+        },
+        analyzing ? '處理中...' : '先補復盤'
+      )
+    )
+  )
+}
+
 /**
  * Holdings Changes Table
  */
@@ -2029,6 +2074,7 @@ export function DailyReportPanel({
   const showDailyAccuracyGate = Boolean(
     dailyAccuracyGate && dismissedAccuracyGateKey !== dailyAccuracyGateKey
   )
+  const isDailyWaiting = !dailyReport || dailyRitual.hero.waiting === true
 
   useEffect(() => {
     let active = true
@@ -2132,19 +2178,28 @@ export function DailyReportPanel({
         copyText: dailyRitual.copyText,
         streaming: analyzing && Boolean(dailyReport?.aiInsight || dailyReport?.insight),
       }),
-      h(DailyPillars, { pillars: dailyRitual.pillars }),
-      viewMode !== 'insider-compressed' &&
+      !isDailyWaiting && h(DailyPillars, { pillars: dailyRitual.pillars }),
+      !isDailyWaiting &&
+        viewMode !== 'insider-compressed' &&
         h(DailyHoldingActions, { actions: dailyRitual.holdingActions }),
       h(DailyArchiveTimeline, {
         items: dailyRitual.archive,
         selectedDate: selectedRitualDate,
         onSelect: setSelectedArchiveDate,
       }),
-      h(DailyHitRateChart, { rows: dailyRitual.hitRows })
+      isDailyWaiting
+        ? h(DailyWaitingCta, {
+            hasPendingReview,
+            onNavigateReview: navigateToNeedsReview,
+            onAnalyze: runDailyAnalysis,
+            analyzing,
+          })
+        : h(DailyHitRateChart, { rows: dailyRitual.hitRows })
     ),
 
     // Empty state
-    !dailyReport &&
+    !isDailyWaiting &&
+      !dailyReport &&
       !analyzing &&
       hasPendingReview &&
       h(ReviewGateCard, {
@@ -2153,7 +2208,8 @@ export function DailyReportPanel({
         actionLabel: '開始分析',
       }),
 
-    !dailyReport &&
+    !isDailyWaiting &&
+      !dailyReport &&
       !analyzing &&
       h(DailyAnalysisEmpty, {
         onAnalyze: runDailyAnalysis,
@@ -2171,6 +2227,7 @@ export function DailyReportPanel({
 
     // Daily report
     dailyReport &&
+      !isDailyWaiting &&
       h(
         'div',
         null,

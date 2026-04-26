@@ -34,11 +34,16 @@ body {
   color: var(--ink, #202823);
   font-family: var(--font-body, 'Source Han Sans TC', 'Noto Sans TC', 'Source Sans 3', sans-serif);
   background: var(--app-bg, #f4efe6);
+  padding-bottom: env(safe-area-inset-bottom, 80px);
   letter-spacing: 0.01em;
   line-height: 1.7;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.mobile-page {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 
 h1,
@@ -423,6 +428,6 @@ textarea {
 @media (max-width: 600px) {
   .dashboard-hero {
     gap: 16px;
-    padding-bottom: 24px;
+    padding-bottom: 88px;
   }
 }

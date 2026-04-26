@@ -37,6 +37,6 @@ describe('OverviewPanel concentration dashboard', () => {
     expect(screen.getByTestId('overview-kpi-cards')).toBeInTheDocument()
     expect(screen.getByTestId('concentration-dashboard')).toBeInTheDocument()
     expect(screen.getByText('組合集中度')).toBeInTheDocument()
-    expect(screen.getByText('心法')).toBeInTheDocument()
+    expect(screen.getAllByText('心法').length).toBeGreaterThan(0)
   })
 })

@@ -1430,10 +1430,10 @@ function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {
           marginBottom: 8,
         },
       },
-      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Restore Snapshot'),
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '還原快照'),
       h(StaleBadge, {
         status: badgeStatus,
-        title: 'daily snapshot freshness',
+        title: '當日資料新鮮度',
       })
     ),
     h(
@@ -1458,7 +1458,7 @@ function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {
             color: C.textMute,
           },
         },
-        `last success · ${lastLabel}`
+        `最近一次成功 · ${lastLabel}`
       )
   )
 }
@@ -1993,6 +1993,96 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
   )
 }
 
+function MobileTodayActionCard({ items = [], onNavigate = null }) {
+  const primaryItem = Array.isArray(items) && items.length > 0 ? items[0] : null
+  if (!primaryItem) return null
+
+  const handlePrimaryAction = () => {
+    if (primaryItem.routeTab && typeof onNavigate === 'function') onNavigate(primaryItem.routeTab)
+  }
+
+  return h(
+    Card,
+    {
+      'data-testid': 'dashboard-mobile-today-action',
+      style: {
+        marginBottom: 8,
+        padding: '16px 14px',
+        borderRadius: 8,
+        border: `1px solid ${alpha(C.cta, '28')}`,
+        background: C.raised,
+        boxShadow: `${C.insetLine}, 0 12px 28px ${alpha(C.ink, '08')}`,
+      },
+    },
+    h(
+      'div',
+      { style: { display: 'grid', gap: 12 } },
+      h(
+        'div',
+        {
+          style: {
+            fontSize: 12,
+            color: C.textSec,
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+          },
+        },
+        '今天先做 1 件事'
+      ),
+      h(
+        'div',
+        { style: { display: 'grid', gap: 6 } },
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 20,
+              lineHeight: 1.25,
+              fontWeight: 800,
+              color: C.text,
+              letterSpacing: 0,
+            },
+          },
+          primaryItem.title
+        ),
+        h(
+          'div',
+          {
+            style: {
+              fontSize: 13,
+              lineHeight: 1.65,
+              color: C.textSec,
+            },
+          },
+          primaryItem.body
+        )
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          'data-testid': 'dashboard-mobile-primary-cta',
+          onClick: handlePrimaryAction,
+          style: {
+            width: '100%',
+            minHeight: 48,
+            border: 'none',
+            borderRadius: 8,
+            background: C.cta,
+            color: C.onFill,
+            fontSize: 14,
+            fontWeight: 800,
+            cursor:
+              primaryItem.routeTab && typeof onNavigate === 'function' ? 'pointer' : 'default',
+            boxShadow: `0 10px 18px ${alpha(C.cta, '22')}`,
+          },
+        },
+        primaryItem.routeLabel || '查看這件事'
+      )
+    )
+  )
+}
+
 /**
  * Pending Events — stocks with events today/tomorrow
  */
@@ -2315,6 +2405,7 @@ export function DashboardPanel({
   onNavigate = null,
   onMorningNoteHandoff = null,
 }) {
+  const isMobile = useIsMobile('(max-width: 600px)')
   const dashboardHeadline = useMemo(
     () => buildDashboardHeadline(holdingDossiers, { viewMode }),
     [holdingDossiers, viewMode]
@@ -2371,11 +2462,12 @@ export function DashboardPanel({
 
   return h(
     'div',
-    null,
+    { className: isMobile ? 'mobile-page' : undefined },
     h(UpstreamHealthBanner, {
       banner: upstreamHealth.banner,
       onRetryAll: handleRetryAll,
     }),
+    isMobile && h(MobileTodayActionCard, { items: dashboardFocusItems, onNavigate }),
     h(
       'div',
       { className: 'dashboard-hero' },
@@ -2401,11 +2493,12 @@ export function DashboardPanel({
           portfolioName: displayPortfolioName({ displayName: portfolioName, id: portfolioId }),
         })
       ),
-      h(
-        'div',
-        { className: 'dashboard-hero-side' },
-        h(DashboardFocusCard, { items: dashboardFocusItems, onNavigate })
-      )
+      !isMobile &&
+        h(
+          'div',
+          { className: 'dashboard-hero-side' },
+          h(DashboardFocusCard, { items: dashboardFocusItems, onNavigate })
+        )
     ),
     h(DashboardCompareStrip, { compareStrip, onNavigate }),
     h(AnxietyMetricsPanel, {

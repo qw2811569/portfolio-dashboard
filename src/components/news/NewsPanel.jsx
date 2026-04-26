@@ -1,6 +1,6 @@
 import { createElement as h, useEffect, useMemo, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
-import { TOKENS, alpha } from '../../theme.js'
+import { C, TOKENS, alpha } from '../../theme.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { Card, Button, DataError, OperatingContextCard } from '../common'
 import { Skeleton } from '../common/Skeleton.jsx'
@@ -375,9 +375,9 @@ function renderChip(text, style = {}, key = text) {
         gap: 4,
         padding: '4px 8px',
         borderRadius: 8,
-        border: `1px solid ${TOKENS.boneDeep}`,
-        background: alpha(TOKENS.bone, 'eb'),
-        color: TOKENS.charcoal,
+        border: `1px solid ${C.border}`,
+        background: alpha(C.surface, 'f4'),
+        color: C.textSec,
         fontSize: 11,
         letterSpacing: '0.04em',
         fontFamily: TOKENS.fontBody,
@@ -526,9 +526,9 @@ function NewsFeedCard({
             renderChip(
               `${stock.code} ${stock.name}`,
               {
-                background: alpha(TOKENS.bone, 'f2'),
-                color: TOKENS.charcoal,
-                border: `1px solid ${TOKENS.boneDeep}`,
+                background: alpha(C.surface, 'f2'),
+                color: C.textSec,
+                border: `1px solid ${C.border}`,
               },
               stock.code
             )
@@ -572,9 +572,9 @@ function NewsFeedCard({
             className: 'ui-btn',
             onClick: () => onToggleRead(item),
             style: {
-              border: `1px solid ${TOKENS.boneDeep}`,
-              background: isRead ? alpha(TOKENS.boneDeep, 'b8') : alpha(TOKENS.bone, 'ed'),
-              color: isRead ? TOKENS.charcoal : TOKENS.iron,
+              border: `1px solid ${C.border}`,
+              background: isRead ? C.surfaceMuted : alpha(C.surface, 'ed'),
+              color: isRead ? C.textSec : C.textSec,
               borderRadius: 8,
               padding: '8px 12px',
               fontSize: 11,
@@ -1086,8 +1086,8 @@ export function NewsFeedSection({
             marginBottom: 16,
             padding: isMobile ? '20px 18px' : '24px 24px',
             borderRadius: 16,
-            border: `1px solid ${TOKENS.boneDeep}`,
-            background: alpha(TOKENS.bone, 'fa'),
+            border: `1px solid ${C.border}`,
+            background: alpha(C.raised, 'fa'),
             position: 'relative',
             overflow: 'hidden',
           },
@@ -1165,9 +1165,9 @@ export function NewsFeedSection({
                     }),
               }),
               renderChip(`持股範圍：${holdingCodes.length || '自動'} 檔`, {
-                background: alpha(TOKENS.bone, 'f0'),
-                border: `1px solid ${TOKENS.boneDeep}`,
-                color: TOKENS.charcoal,
+                background: alpha(C.surface, 'f0'),
+                border: `1px solid ${C.border}`,
+                color: C.textSec,
               }),
               isMobile &&
                 renderChip(`今日 ${visibleItemCount} 則`, {

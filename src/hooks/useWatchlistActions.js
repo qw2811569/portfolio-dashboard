@@ -11,6 +11,7 @@ export function useWatchlistActions({ setWatchlist = () => {} }) {
 
       const price = parseFloat(draft?.price) || 0
       const target = parseFloat(draft?.target) || 0
+      const now = new Date().toISOString()
       const nextItem = {
         code,
         name,
@@ -20,12 +21,21 @@ export function useWatchlistActions({ setWatchlist = () => {} }) {
         catalyst: String(draft?.catalyst || '').trim(),
         scKey: normalizeToneKey(draft?.scKey, 'info'),
         note: String(draft?.note || '').trim(),
+        createdAt: String(draft?.createdAt || '').trim() || now,
+        updatedAt: now,
       }
 
       setWatchlist((prev) => {
         const current = Array.isArray(prev) ? [...prev] : []
         const nextRows = editingCode
-          ? current.map((item) => (item.code === editingCode ? nextItem : item))
+          ? current.map((item) =>
+              item.code === editingCode
+                ? {
+                    ...nextItem,
+                    createdAt: String(item?.createdAt || nextItem.createdAt).trim(),
+                  }
+                : item
+            )
           : [...current.filter((item) => item.code !== nextItem.code), nextItem]
         return normalizeWatchlist(nextRows)
       })

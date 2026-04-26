@@ -1,4 +1,4 @@
-import { createElement as h, useState } from 'react'
+import { createElement as h, useMemo, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import { CANONICAL_TONE_KEYS, normalizeToneKey, resolveTone } from '../../lib/toneResolver.js'
 import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
@@ -16,6 +16,12 @@ const inputStyle = {
   boxSizing: 'border-box',
 }
 
+const WATCHLIST_SORT_OPTIONS = [
+  { value: 'target-distance', label: '距目標價' },
+  { value: 'added-time', label: '加入時間' },
+  { value: 'catalyst', label: '催化劑' },
+]
+
 function createWatchlistForm(item = null) {
   return {
     code: item?.code || '',
@@ -27,6 +33,74 @@ function createWatchlistForm(item = null) {
     scKey: normalizeToneKey(item?.scKey, 'info'),
     note: item?.note || '',
   }
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+}
+
+function parseDateMs(value) {
+  const date = new Date(value)
+  const time = date.getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+function getTargetDistance(row = {}) {
+  const item = row?.item || {}
+  const price = Number(item.price) || 0
+  const target = Number(item.target) || 0
+  if (price <= 0 || target <= 0) return Number.POSITIVE_INFINITY
+  return Math.abs(target - price) / price
+}
+
+function getWatchlistSearchText(row = {}) {
+  const item = row?.item || {}
+  return normalizeSearchText(
+    [
+      item.code,
+      item.name,
+      item.status,
+      item.catalyst,
+      item.note,
+      row.summary,
+      row.action,
+      row.primaryEvent?.title,
+    ].join(' ')
+  )
+}
+
+function filterWatchlistRows(rows = [], query = '') {
+  const needle = normalizeSearchText(query)
+  if (!needle) return Array.isArray(rows) ? rows : []
+  return (Array.isArray(rows) ? rows : []).filter((row) =>
+    getWatchlistSearchText(row).includes(needle)
+  )
+}
+
+function sortWatchlistRows(rows = [], sortBy = 'target-distance') {
+  return [...(Array.isArray(rows) ? rows : [])].sort((left, right) => {
+    if (sortBy === 'added-time') {
+      const rightTime = parseDateMs(right?.item?.createdAt || right?.item?.updatedAt)
+      const leftTime = parseDateMs(left?.item?.createdAt || left?.item?.updatedAt)
+      return rightTime - leftTime || (right.index ?? 0) - (left.index ?? 0)
+    }
+
+    if (sortBy === 'catalyst') {
+      const leftCatalyst = normalizeSearchText(left?.item?.catalyst)
+      const rightCatalyst = normalizeSearchText(right?.item?.catalyst)
+      if (leftCatalyst && !rightCatalyst) return -1
+      if (!leftCatalyst && rightCatalyst) return 1
+      return leftCatalyst.localeCompare(rightCatalyst) || (left.index ?? 0) - (right.index ?? 0)
+    }
+
+    return (
+      getTargetDistance(left) - getTargetDistance(right) ||
+      (right.upside ?? -999) - (left.upside ?? -999) ||
+      (left.index ?? 0) - (right.index ?? 0)
+    )
+  })
 }
 
 /**
@@ -180,6 +254,7 @@ export function WatchlistRow({
   onToggle,
   onEdit,
   onDelete,
+  compactActions = false,
 }) {
   const w = item
   const upsideText = upside != null ? `${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%` : '—'
@@ -251,48 +326,49 @@ export function WatchlistRow({
             h('span', { style: { fontSize: 11 } }, isWExp ? '▲' : '▼')
           )
         ),
-        h(
-          'div',
-          { style: { display: 'flex', gap: 4, alignItems: 'center' } },
+        (!compactActions || isWExp) &&
           h(
-            Button,
-            {
-              onClick: (e) => {
-                e.stopPropagation()
-                onEdit()
+            'div',
+            { style: { display: 'flex', gap: 4, alignItems: 'center' } },
+            h(
+              Button,
+              {
+                onClick: (e) => {
+                  e.stopPropagation()
+                  onEdit()
+                },
+                style: {
+                  padding: '4px 8px',
+                  background: 'transparent',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  fontSize: 11,
+                  color: C.textMute,
+                  cursor: 'pointer',
+                },
               },
-              style: {
-                padding: '4px 8px',
-                background: 'transparent',
-                border: `1px solid ${C.border}`,
-                borderRadius: 12,
-                fontSize: 11,
-                color: C.textMute,
-                cursor: 'pointer',
+              '編輯'
+            ),
+            h(
+              Button,
+              {
+                onClick: (e) => {
+                  e.stopPropagation()
+                  onDelete()
+                },
+                style: {
+                  padding: '4px 8px',
+                  background: 'transparent',
+                  border: `1px solid ${C.up}`,
+                  borderRadius: 12,
+                  fontSize: 11,
+                  color: C.textSec,
+                  cursor: 'pointer',
+                },
               },
-            },
-            '編輯'
+              '刪除'
+            )
           ),
-          h(
-            Button,
-            {
-              onClick: (e) => {
-                e.stopPropagation()
-                onDelete()
-              },
-              style: {
-                padding: '4px 8px',
-                background: 'transparent',
-                border: `1px solid ${C.up}`,
-                borderRadius: 12,
-                fontSize: 11,
-                color: C.textSec,
-                cursor: 'pointer',
-              },
-            },
-            '刪除'
-          )
-        ),
         h(
           'span',
           {
@@ -829,6 +905,13 @@ export function WatchlistPanel({
   const [editingItem, setEditingItem] = useState(null)
   const [pendingDeleteItem, setPendingDeleteItem] = useState(null)
   const [form, setForm] = useState(() => createWatchlistForm())
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('target-distance')
+  const visibleRows = useMemo(
+    () => sortWatchlistRows(filterWatchlistRows(watchlistRows, searchQuery), sortBy),
+    [searchQuery, sortBy, watchlistRows]
+  )
+  const compactActions = visibleRows.length > 12
 
   const openAddModal = () => {
     setEditingItem(null)
@@ -924,7 +1007,44 @@ export function WatchlistPanel({
         )
       : h(
           'div',
-          { style: { display: 'flex', justifyContent: 'flex-end', marginBottom: 8 } },
+          {
+            style: {
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: 8,
+              alignItems: 'end',
+              marginBottom: 8,
+            },
+          },
+          h(
+            'label',
+            { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
+            '搜尋',
+            h('input', {
+              'data-testid': 'watchlist-search',
+              value: searchQuery,
+              onChange: (event) => setSearchQuery(event.target.value),
+              placeholder: '代碼、名稱或催化劑',
+              style: inputStyle,
+            })
+          ),
+          h(
+            'label',
+            { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
+            '排序',
+            h(
+              'select',
+              {
+                'data-testid': 'watchlist-sort',
+                value: sortBy,
+                onChange: (event) => setSortBy(event.target.value),
+                style: inputStyle,
+              },
+              WATCHLIST_SORT_OPTIONS.map((option) =>
+                h('option', { key: option.value, value: option.value }, option.label)
+              )
+            )
+          ),
           h(
             Button,
             {
@@ -945,7 +1065,17 @@ export function WatchlistPanel({
         ),
 
     // Watchlist rows
-    watchlistRows.map(
+    watchlistRows.length > 0 &&
+      visibleRows.length === 0 &&
+      h(
+        Card,
+        {
+          'data-testid': 'watchlist-filter-empty',
+          style: { textAlign: 'center', padding: '18px 12px', marginBottom: 8 },
+        },
+        h('div', { style: { fontSize: 12, color: C.textMute } }, '沒有符合條件的觀察股')
+      ),
+    visibleRows.map(
       ({
         item: w,
         index: wi,
@@ -970,6 +1100,7 @@ export function WatchlistPanel({
           onToggle: () => setExpandedStock(expandedStock === `w-${w.code}` ? null : `w-${w.code}`),
           onEdit: () => openEditModal(w),
           onDelete: () => setPendingDeleteItem(w),
+          compactActions,
         })
     )
   )

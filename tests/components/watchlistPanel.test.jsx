@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { WatchlistPanel, WatchlistRow } from '../../src/components/watchlist/WatchlistPanel.jsx'
 import { resolveTone } from '../../src/lib/toneResolver.js'
@@ -59,6 +59,62 @@ describe('components/WatchlistPanel', () => {
     render(<WatchlistPanel {...buildProps({ watchlistRows: rows })} />)
 
     expect(screen.queryByText('這個組合目前沒有觀察股')).not.toBeInTheDocument()
+  })
+
+  it('searches and sorts watchlist rows without changing the row envelope', () => {
+    const rows = [
+      {
+        item: {
+          code: '2330',
+          name: '台積電',
+          price: 900,
+          target: 990,
+          catalyst: 'CoWoS 擴產',
+          createdAt: '2026-04-20T00:00:00.000Z',
+        },
+        index: 0,
+        relatedEvents: [],
+        hits: 0,
+        misses: 0,
+        pendingCount: 0,
+        trackingCount: 0,
+        upside: 10,
+      },
+      {
+        item: {
+          code: '2454',
+          name: '聯發科',
+          price: 1000,
+          target: 1400,
+          catalyst: '手機復甦',
+          createdAt: '2026-04-23T00:00:00.000Z',
+        },
+        index: 1,
+        relatedEvents: [],
+        hits: 0,
+        misses: 0,
+        pendingCount: 0,
+        trackingCount: 0,
+        upside: 40,
+      },
+    ]
+
+    render(<WatchlistPanel {...buildProps({ watchlistRows: rows })} />)
+
+    const panel = screen.getByTestId('watchlist-panel')
+    expect(within(panel).getByText('台積電')).toBeInTheDocument()
+    expect(within(panel).getByText('聯發科')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('watchlist-search'), { target: { value: 'CoWoS' } })
+    expect(within(panel).getByText('台積電')).toBeInTheDocument()
+    expect(within(panel).queryByText('聯發科')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByTestId('watchlist-search'), { target: { value: '' } })
+    fireEvent.change(screen.getByTestId('watchlist-sort'), { target: { value: 'added-time' } })
+    const rowTitles = within(panel)
+      .getAllByText(/台積電|聯發科/u)
+      .map((node) => node.textContent)
+    expect(rowTitles[0]).toContain('聯發科')
   })
 
   it('renders the watchlist focus card when watchlistFocus is provided', () => {

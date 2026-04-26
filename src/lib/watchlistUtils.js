@@ -19,6 +19,8 @@ export function normalizeWatchlist(value) {
         catalyst: typeof item.catalyst === 'string' ? item.catalyst.trim() : '',
         scKey: normalizeToneKey(item.scKey, 'info'),
         note: typeof item.note === 'string' ? item.note.trim() : '',
+        ...(item.createdAt ? { createdAt: String(item.createdAt).trim() } : {}),
+        ...(item.updatedAt ? { updatedAt: String(item.updatedAt).trim() } : {}),
       }
     })
     .filter(Boolean)

@@ -81,10 +81,12 @@ function buildEventKey(event, index) {
 function getPredictionMeta(event, { insiderViewMode = false, isInsiderSelfStock = false } = {}) {
   if (insiderViewMode && isInsiderSelfStock) return null
 
-  if (event?.pred === 'up') return { label: '正向催化', color: C.textSec, bg: C.upBg }
-  if (event?.pred === 'down') return { label: '負向風險', color: C.down, bg: C.downBg }
+  if (event?.pred === 'up')
+    return { label: '正向催化', color: C.textSec, bg: alpha(C.charcoal, '08') }
+  if (event?.pred === 'down')
+    return { label: '負向風險', color: C.textSec, bg: alpha(C.charcoal, '08') }
   if (event?.pred === 'neutral')
-    return { label: '中性記錄', color: C.textSec, bg: alpha(C.ink, '10') }
+    return { label: '中性記錄', color: C.textSec, bg: alpha(C.charcoal, '08') }
   return null
 }
 
@@ -588,7 +590,8 @@ export function NewsEventCard({
     {
       style: {
         marginBottom: 8,
-        borderLeft: `2px solid ${event.urgent ? C.up : alpha(impactMeta.color || typeStyle.color, '40')}`,
+        border: `1px solid ${C.border}`,
+        borderLeft: `2px solid ${event.urgent ? C.textSec : alpha(C.charcoal, '32')}`,
         cursor: onToggle ? 'pointer' : 'default',
       },
       onClick: onToggle,
@@ -638,7 +641,26 @@ export function NewsEventCard({
             },
           },
           h('div', { style: { fontSize: 12, fontWeight: 500, color: C.text } }, title),
-          h(EventCountdownBadge, { event })
+          h(
+            'div',
+            { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
+            event?.needsThesisReview &&
+              h(
+                'span',
+                {
+                  style: {
+                    fontSize: 11,
+                    padding: '4px 8px',
+                    borderRadius: 8,
+                    background: alpha(C.charcoal, '08'),
+                    color: C.textSec,
+                    fontWeight: 700,
+                  },
+                },
+                '重看投資理由'
+              ),
+            h(EventCountdownBadge, { event })
+          )
         ),
         subtitle
           ? h(
@@ -724,20 +746,6 @@ export function NewsEventCard({
                 fontSize: 11,
                 padding: '4px 8px',
                 borderRadius: 8,
-                background: event?.needsThesisReview ? alpha(C.hot, '12') : alpha(C.textMute, '12'),
-                color: event?.needsThesisReview ? C.hot : C.textMute,
-                fontWeight: 600,
-              },
-            },
-            event?.needsThesisReview ? '需要重看 thesis' : '資訊備查'
-          ),
-          h(
-            'span',
-            {
-              style: {
-                fontSize: 11,
-                padding: '4px 8px',
-                borderRadius: 8,
                 background: alpha(C.textMute, '12'),
                 color: C.textMute,
                 fontWeight: 600,
@@ -752,10 +760,8 @@ export function NewsEventCard({
             {
               style: {
                 marginTop: 8,
-                padding: '8px 8px',
-                borderRadius: 8,
-                background: alpha(predictionMeta.color, '08'),
-                border: `1px solid ${alpha(predictionMeta.color, '18')}`,
+                padding: '8px 0 0',
+                borderTop: `1px solid ${C.borderSub}`,
                 fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.6,
@@ -770,10 +776,8 @@ export function NewsEventCard({
             {
               style: {
                 marginTop: 8,
-                padding: '8px 8px',
-                borderRadius: 8,
-                background: C.subtle,
-                border: `1px solid ${C.borderSub}`,
+                padding: '8px 0 0',
+                borderTop: `1px solid ${C.borderSub}`,
                 fontSize: 12,
                 color: C.textSec,
                 lineHeight: 1.6,

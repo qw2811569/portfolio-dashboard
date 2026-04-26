@@ -60,7 +60,7 @@ export default function AppShellFrame({
     return (
       <div
         style={{
-          background: 'var(--app-bg, #FAFAFA)',
+          background: `var(--app-bg, ${C.appBg})`,
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
@@ -174,7 +174,7 @@ export default function AppShellFrame({
     <div
       className="portfolio-app-root"
       style={{
-        background: 'var(--app-bg, #FAFAFA)',
+        background: `var(--app-bg, ${C.appBg})`,
         minHeight: '100vh',
         color: C.text,
         fontFamily: 'var(--font-body)',

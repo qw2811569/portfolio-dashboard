@@ -308,7 +308,7 @@ export function WatchlistRow({
                     borderRadius: 3,
                     marginLeft: 4,
                     background: alpha(C.iron, '12'),
-                    color: C.iron,
+                    color: C.textSec,
                     fontWeight: 500,
                   },
                 },

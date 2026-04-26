@@ -53,7 +53,7 @@ function ContextChip({ children, active = false }) {
         borderRadius: 8,
         background: alpha(C.charcoal, '08'),
         border: `1px solid ${alpha(C.charcoal, '16')}`,
-        color: C.iron,
+        color: C.textSec,
         fontSize: 12,
         fontWeight: 500,
         lineHeight: 1.4,

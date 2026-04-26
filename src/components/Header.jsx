@@ -932,7 +932,7 @@ export default function Header(props) {
         h(
           'div',
           null,
-          h('div', { style: { ...lbl, color: C.iron, marginBottom: 4 } }, '組合管理'),
+          h('div', { style: { ...lbl, color: C.textSec, marginBottom: 4 } }, '組合管理'),
           h(
             'div',
             { style: { fontSize: 11, color: C.textSec } },
@@ -985,7 +985,7 @@ export default function Header(props) {
                       '本人'
                     ),
                   portfolio.id === activePortfolioId &&
-                    h('span', { style: { fontSize: 11, color: C.iron, marginLeft: 4 } }, '目前')
+                    h('span', { style: { fontSize: 11, color: C.textSec, marginLeft: 4 } }, '目前')
                 ),
                 h(
                   'div',

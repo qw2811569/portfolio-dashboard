@@ -52,8 +52,8 @@ describe('components/OperatingContextCard', () => {
 
     expect(activeChip).toHaveTextContent('●小奎主要投資')
     expect(activeChip.style.background).toBe('rgba(47, 50, 50, 0.03)')
-    expect(activeChip.style.color).toBe('rgb(131, 133, 133)')
+    expect(activeChip.style.color).toBe('rgb(47, 50, 50)')
     expect(holdingChip.style.background).toBe('rgba(47, 50, 50, 0.03)')
-    expect(holdingChip.style.color).toBe('rgb(131, 133, 133)')
+    expect(holdingChip.style.color).toBe('rgb(47, 50, 50)')
   })
 })

@@ -9,7 +9,7 @@ import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewM
 
 const lbl = {
   fontSize: 12,
-  color: TOKENS.iron,
+  color: C.textSec,
   letterSpacing: '0.06em',
   fontWeight: 600,
   marginBottom: 4,
@@ -271,7 +271,7 @@ function ViewModeNotice({ note }) {
     },
     h(
       'div',
-      { style: { ...lbl, color: TOKENS.iron, fontSize: isMobile ? 11 : lbl.fontSize } },
+      { style: { ...lbl, color: C.textSec, fontSize: isMobile ? 11 : lbl.fontSize } },
       '合規顯示模式'
     ),
     h('div', { style: { fontSize: isMobile ? 11 : 12, color: TOKENS.ink, lineHeight: 1.7 } }, note)
@@ -417,7 +417,7 @@ function NewsFeedCard({
         : {
             label: IMPACT_COPY.neutral,
             bg: alpha(TOKENS.boneDeep, 'd6'),
-            color: TOKENS.iron,
+            color: C.textSec,
             border: alpha(TOKENS.charcoal, '16'),
           }
 
@@ -558,7 +558,7 @@ function NewsFeedCard({
               fontSize: 11,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: TOKENS.iron,
+              color: C.textSec,
               fontFamily: TOKENS.fontCaption,
               fontVariantNumeric: 'tabular-nums',
             },
@@ -720,7 +720,7 @@ export function NewsFeedSection({
     return h(
       Card,
       { style: { padding: '24px 16px' } },
-      h('div', { style: { fontSize: 11, color: TOKENS.iron, marginBottom: 12 } }, '新聞脈絡整理中'),
+      h('div', { style: { fontSize: 11, color: C.textSec, marginBottom: 12 } }, '新聞脈絡整理中'),
       h(Skeleton, { variant: 'card', count: 2 })
     )
   }
@@ -848,7 +848,7 @@ export function NewsFeedSection({
                     top: '50%',
                     right: 14,
                     transform: 'translateY(-50%)',
-                    color: TOKENS.iron,
+                    color: C.textSec,
                     fontSize: 11,
                     pointerEvents: 'none',
                   },
@@ -994,7 +994,7 @@ export function NewsFeedSection({
             {
               style: {
                 fontSize: isMobile ? 10 : 11,
-                color: TOKENS.iron,
+                color: C.textSec,
                 marginBottom: isMobile ? 2 : 4,
               },
             },
@@ -1116,7 +1116,7 @@ export function NewsFeedSection({
           h(
             'div',
             null,
-            h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, '新聞脈絡'),
+            h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '新聞脈絡'),
             h(
               'div',
               {
@@ -1173,7 +1173,7 @@ export function NewsFeedSection({
                 renderChip(`今日 ${visibleItemCount} 則`, {
                   background: alpha(TOKENS.charcoal, '06'),
                   border: `1px solid ${TOKENS.boneDeep}`,
-                  color: TOKENS.iron,
+                  color: C.textSec,
                 }),
               isMobile &&
                 renderChip(`未讀 ${unreadCount} 則`, {
@@ -1199,7 +1199,7 @@ export function NewsFeedSection({
                     fontSize: 14,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: TOKENS.iron,
+                    color: C.textSec,
                     fontFamily: TOKENS.fontCaption,
                     fontVariantNumeric: 'tabular-nums',
                     marginBottom: 4,
@@ -1305,11 +1305,7 @@ export function NewsFeedSection({
                       minWidth: 0,
                     },
                   },
-                  h(
-                    'div',
-                    { style: { ...lbl, color: TOKENS.iron, marginBottom: 0 } },
-                    '篩選與側欄'
-                  ),
+                  h('div', { style: { ...lbl, color: C.textSec, marginBottom: 0 } }, '篩選與側欄'),
                   h(
                     'div',
                     {
@@ -1397,7 +1393,7 @@ export function NewsFeedSection({
                       h('span', null, showFilterBody ? '收起篩選' : '看篩選'),
                       h(
                         'span',
-                        { 'aria-hidden': 'true', style: { fontSize: 11, color: TOKENS.iron } },
+                        { 'aria-hidden': 'true', style: { fontSize: 11, color: C.textSec } },
                         showFilterBody ? '^' : 'v'
                       )
                     )
@@ -1405,7 +1401,7 @@ export function NewsFeedSection({
                 )
               )
             )
-          : h('div', { style: { ...lbl, color: TOKENS.iron, marginBottom: 8 } }, '篩選與側欄'),
+          : h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '篩選與側欄'),
         showFilterBody ? sideNotesBody : null
       )
     )
@@ -1454,7 +1450,7 @@ export function NewsAnalysisPanel({
               fontSize: 11,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: TOKENS.iron,
+              color: C.textSec,
               marginBottom: 8,
               fontFamily: TOKENS.fontCaption,
               fontVariantNumeric: 'tabular-nums',

@@ -25,7 +25,7 @@ const EVENT_TYPE_STYLE = Object.freeze({
   macro: { color: C.lavender, background: alpha(C.lavender, '18') },
   market: { color: C.choco, background: alpha(C.choco, '18') },
   technical: { color: C.text, background: alpha(C.text, '08') },
-  other: { color: C.iron, background: alpha(C.iron, '18') },
+  other: { color: C.textSec, background: alpha(C.iron, '18') },
 })
 
 const CATALYST_LABELS = {

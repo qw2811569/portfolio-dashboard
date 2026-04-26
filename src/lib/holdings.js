@@ -330,6 +330,91 @@ export function groupHoldingsByType(holdings) {
   }, {})
 }
 
+const STRATEGY_BUCKET_ORDER = ['成長股', '事件驅動', 'ETF / 防守', '權證', '其他']
+
+function readStrategyValue(strategy) {
+  if (strategy && typeof strategy === 'object') return String(strategy.value || '').trim()
+  return String(strategy || '').trim()
+}
+
+function normalizeStrategyBucket(strategy, holding = {}) {
+  const raw = readStrategyValue(strategy)
+  const type = String(holding?.type || '').trim()
+  const name = String(holding?.name || '').trim()
+
+  if (raw === '成長股') return '成長股'
+  if (raw === '事件驅動') return '事件驅動'
+  if (raw === '權證' || type.includes('權證') || /權證/.test(name)) return '權證'
+  if (
+    raw === 'ETF/指數' ||
+    raw === 'ETF' ||
+    raw === '指數' ||
+    raw === '防守' ||
+    raw === '價值股' ||
+    type.toUpperCase().includes('ETF') ||
+    /ETF|指數|高股息/.test(name)
+  ) {
+    return 'ETF / 防守'
+  }
+
+  return '其他'
+}
+
+function resolveHoldingStrategy(holding, stockMeta = {}) {
+  const code = String(holding?.code || '').trim()
+  const meta = code ? stockMeta?.[code] || stockMeta?.[Number(code)] : null
+
+  return (
+    readStrategyValue(holding?.dossier?.classification?.strategy) ||
+    readStrategyValue(holding?.classification?.strategy) ||
+    readStrategyValue(meta?.classification?.strategy) ||
+    readStrategyValue(holding?.stockMeta?.strategy) ||
+    readStrategyValue(meta?.strategy) ||
+    ''
+  )
+}
+
+/**
+ * Group holdings into first-fold strategy buckets.
+ */
+export function groupHoldingsByStrategy(holdings, stockMeta = {}) {
+  const rows = new Map(
+    STRATEGY_BUCKET_ORDER.map((label, index) => [
+      label,
+      {
+        key: label,
+        label,
+        value: 0,
+        weight: 0,
+        count: 0,
+        holdings: [],
+        order: index,
+      },
+    ])
+  )
+
+  for (const holding of Array.isArray(holdings) ? holdings : []) {
+    const value = Number(holding?.value) || getHoldingMarketValue(holding)
+    if (!Number.isFinite(value) || value <= 0) continue
+
+    const bucket = normalizeStrategyBucket(resolveHoldingStrategy(holding, stockMeta), holding)
+    const current = rows.get(bucket) || rows.get('其他')
+    current.value += value
+    current.count += 1
+    current.holdings.push(holding)
+  }
+
+  const total = Array.from(rows.values()).reduce((sum, row) => sum + row.value, 0)
+
+  return Array.from(rows.values())
+    .filter((row) => row.value > 0)
+    .map((row) => ({
+      ...row,
+      weight: total > 0 ? row.value / total : 0,
+    }))
+    .sort((a, b) => a.order - b.order)
+}
+
 /**
  * Sort holdings by P&L
  */

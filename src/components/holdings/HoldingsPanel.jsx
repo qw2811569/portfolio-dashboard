@@ -1152,7 +1152,7 @@ export function HoldingsPanel({
             padding: '16px 16px 12px',
           },
         },
-        h(HoldingsRing, { holdings, totalVal })
+        h(HoldingsRing, { holdings, totalVal, stockMeta: STOCK_META, holdingDossiers })
       )
     ),
 

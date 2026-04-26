@@ -5,6 +5,7 @@ import {
   getHoldingUnrealizedPnl,
   getHoldingReturnPct,
   normalizeHoldingMetrics,
+  groupHoldingsByStrategy,
 } from '../../src/lib/holdings.js'
 import { calculateTotalMarketValue } from '../../src/lib/holdingMath.ts'
 
@@ -91,6 +92,31 @@ describe('lib/holdings.js', () => {
       ]
 
       expect(calculateTotalMarketValue(holdings, { 2330: 600 })).toBe(800000)
+    })
+  })
+
+  describe('groupHoldingsByStrategy', () => {
+    it('依 dossier classification 與 stockMeta 彙總策略分類市值', () => {
+      const rows = groupHoldingsByStrategy(
+        [
+          {
+            code: '2330',
+            name: '台積電',
+            value: 600000,
+            classification: { strategy: { value: '成長股' } },
+          },
+          { code: '0050', name: '元大台灣50', value: 200000 },
+          { code: '053848', name: '亞翔權證', value: 100000, type: '權證' },
+          { code: '9999', name: '未知', value: 100000 },
+        ],
+        {
+          '0050': { strategy: 'ETF/指數' },
+        }
+      )
+
+      expect(rows.map((row) => row.label)).toEqual(['成長股', 'ETF / 防守', '權證', '其他'])
+      expect(rows.find((row) => row.label === '成長股')?.weight).toBeCloseTo(0.6)
+      expect(rows.find((row) => row.label === 'ETF / 防守')?.value).toBe(200000)
     })
   })
 })

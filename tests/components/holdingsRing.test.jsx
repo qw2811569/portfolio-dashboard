@@ -1,72 +1,48 @@
 // @vitest-environment jsdom
 
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import HoldingsRing from '../../src/components/overview/HoldingsRing.jsx'
 
-vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children, initialDimension }) => (
-    <div
-      data-testid="holdings-ring-container"
-      data-initial-width={String(initialDimension?.width)}
-      data-initial-height={String(initialDimension?.height)}
-    >
-      {children}
-    </div>
-  ),
-  PieChart: (props) => (
-    <div
-      data-testid="holdings-ring-pie-chart"
-      data-accessibility-layer={String(props.accessibilityLayer)}
-      data-aria-hidden={String(props['aria-hidden'])}
-      data-tab-index={String(props.tabIndex)}
-    >
-      {props.children}
-    </div>
-  ),
-  Pie: ({ children }) => <div data-testid="holdings-ring-pie">{children}</div>,
-  Cell: () => <div data-testid="holdings-ring-cell" />,
-}))
-
 describe('components/HoldingsRing.jsx', () => {
-  it('marks the recharts pie chart as decorative so it stays out of keyboard focus order', () => {
+  it('renders first-fold holdings as strategy bars instead of ticker pie slices', () => {
     render(
       <HoldingsRing
         holdings={[
-          { code: '2330', name: '台積電', value: 9500 },
-          { code: '2454', name: '聯發科', value: 6100 },
+          {
+            code: '2330',
+            name: '台積電',
+            value: 600000,
+            classification: { strategy: { value: '成長股' } },
+          },
+          { code: '2454', name: '聯發科', value: 300000 },
+          { code: '0050', name: '元大台灣50', value: 100000 },
         ]}
-        totalVal={15600}
+        stockMeta={{
+          2454: { strategy: '事件驅動' },
+          '0050': { strategy: 'ETF/指數' },
+        }}
+        totalVal={1000000}
       />
     )
 
-    const chart = screen.getByTestId('holdings-ring-pie-chart')
-    expect(screen.getByTestId('holdings-ring-container')).toHaveAttribute(
-      'data-initial-width',
-      '320'
-    )
-    expect(screen.getByTestId('holdings-ring-container')).toHaveAttribute(
-      'data-initial-height',
-      '260'
-    )
-    expect(chart.dataset.accessibilityLayer).toBe('false')
-    expect(chart.dataset.ariaHidden).toBe('true')
-    expect(chart.dataset.tabIndex).toBe('-1')
+    expect(screen.getByText('持倉結構')).toBeInTheDocument()
+    expect(screen.getByText('成長股')).toBeInTheDocument()
+    expect(screen.getByText('事件驅動')).toBeInTheDocument()
+    expect(screen.getByText('ETF / 防守')).toBeInTheDocument()
+    expect(screen.getByText('60.0%')).toBeInTheDocument()
+    expect(screen.queryByText('台積電')).not.toBeInTheDocument()
   })
 
-  it('aggregates duplicate stock codes before rendering the legend', () => {
+  it('can read strategy classification from holding dossiers', () => {
     render(
       <HoldingsRing
-        holdings={[
-          { code: '2330', name: '台積電', value: 100000 },
-          { code: '2330', name: '台積電', value: 50000 },
-          { code: '2454', name: '聯發科', value: 200000 },
-        ]}
-        totalVal={350000}
+        holdings={[{ code: '3037', name: '欣興', value: 100000 }]}
+        holdingDossiers={[{ code: '3037', classification: { strategy: { value: '事件驅動' } } }]}
       />
     )
 
-    expect(screen.getAllByText('2330')).toHaveLength(1)
-    expect(screen.getByText('42.9%')).toBeInTheDocument()
+    expect(screen.getByText('事件驅動')).toBeInTheDocument()
+    expect(screen.getByText('100.0%')).toBeInTheDocument()
   })
 })

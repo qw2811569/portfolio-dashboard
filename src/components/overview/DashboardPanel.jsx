@@ -2153,7 +2153,7 @@ export function DashboardPanel({
             padding: '28px 24px',
           },
         },
-        h(HoldingsRing, { holdings, totalVal })
+        h(HoldingsRing, { holdings, totalVal, stockMeta, holdingDossiers })
       )
     ),
     h(AnxietyMetricsPanel, {

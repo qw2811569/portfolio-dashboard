@@ -119,7 +119,7 @@ export default function Header(props) {
       'background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease',
   }
   const card = {
-    background: alpha(C.card, 'f4'),
+    background: alpha(C.raised, 'f8'),
     border: `1px solid ${C.border}`,
     borderRadius: 12,
     padding: '12px 12px',
@@ -133,7 +133,7 @@ export default function Header(props) {
     marginBottom: 4,
   }
   const shellSurface = {
-    background: alpha(C.shell, 'f4'),
+    background: alpha(C.raised, 'f4'),
     boxShadow: C.shellShadow,
   }
   const hasHeaderNotice = viewMode !== OVERVIEW_VIEW_MODE && workflowCue?.kind === 'data-refresh'
@@ -1384,7 +1384,7 @@ export default function Header(props) {
           right: 0,
           bottom: 0,
           zIndex: 20,
-          background: alpha(C.shell, 'fb'),
+          background: alpha(C.raised, 'fb'),
           borderTop: `1px solid ${C.borderSoft}`,
           boxShadow: '0 -10px 24px rgba(11,18,14,0.08)',
           padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',

@@ -30,7 +30,7 @@ const lbl = {
 }
 
 const metricCard = {
-  background: alpha(C.card, 'f6'),
+  background: alpha(C.surface, 'f8'),
   border: `1px solid ${C.border}`,
   borderRadius: 12,
   padding: '12px 14px',
@@ -536,7 +536,7 @@ function TodayPnlHero({
       style: {
         marginBottom: 8,
         padding: isMobileFold ? '18px 14px' : '40px 28px',
-        background: alpha(C.card, 'f4'),
+        background: alpha(C.surface, 'f4'),
       },
     },
     h(
@@ -634,7 +634,7 @@ function TodayPnlHero({
                         width: 'min(320px, calc(100vw - 48px))',
                         borderRadius: C.radii.md,
                         border: `1px solid ${C.border}`,
-                        background: C.card,
+                        background: C.raised,
                         boxShadow: `${C.insetLine}, ${C.shadow}`,
                         padding: '12px',
                         zIndex: 2,
@@ -822,7 +822,7 @@ function TodayPnlHero({
                   minHeight: isMobileFold ? 104 : 164,
                   padding: isMobileFold ? '12px 10px' : '22px 24px',
                   borderRadius: 8,
-                  background: alpha(C.card, 'f8'),
+                  background: alpha(C.surface, 'f8'),
                 },
               },
               h(
@@ -1476,7 +1476,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.fillTeal, '42')}`,
-        background: alpha(C.card, 'f6'),
+        background: alpha(C.surface, 'f6'),
       },
     },
     h(

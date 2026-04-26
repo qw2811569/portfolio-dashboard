@@ -60,7 +60,7 @@ export default function AppShellFrame({
     return (
       <div
         style={{
-          background: C.bg,
+          background: 'var(--app-bg, #FAFAFA)',
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
@@ -75,7 +75,7 @@ export default function AppShellFrame({
             width: 'min(520px, 100%)',
             border: `1px solid ${C.border}`,
             borderRadius: 24,
-            background: C.shell,
+            background: C.raised,
             boxShadow: C.shellShadow,
             overflow: 'hidden',
           }}
@@ -132,7 +132,7 @@ export default function AppShellFrame({
                     fontSize: 12,
                     fontWeight: 500,
                     color: C.textMute,
-                    background: C.card,
+                    background: C.surface,
                     border: `1px solid ${C.border}`,
                   }}
                 >
@@ -174,7 +174,7 @@ export default function AppShellFrame({
     <div
       className="portfolio-app-root"
       style={{
-        background: C.bg,
+        background: 'var(--app-bg, #FAFAFA)',
         minHeight: '100vh',
         color: C.text,
         fontFamily: 'var(--font-body)',

@@ -177,6 +177,11 @@ export const C = Object.freeze({
   cta: TOKENS.cta,
   hot: TOKENS.hot,
   negative: TOKENS.negative,
+  appBg: TOKENS.appBg,
+  surface: TOKENS.surface,
+  surfaceMuted: TOKENS.surfaceMuted,
+  paper: TOKENS.paper,
+  raised: TOKENS.raised,
 
   bg: TOKENS.appBg,
   shell: TOKENS.appBg,

@@ -176,7 +176,7 @@ function KpiCard({
       'aria-disabled': disabled,
       'data-kpi-label': label,
       style: {
-        background: alpha(C.cardBlue, 'c8'),
+        background: alpha(C.raised, 'f8'),
         border: `1px solid ${alpha(C.ink, disabled ? '24' : '40')}`,
         padding: '16px 16px',
         minHeight: 126,

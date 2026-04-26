@@ -1,0 +1,115 @@
+{
+  "blameprompt_version": "1.0.1",
+  "receipts": [
+    {
+      "id": "07674863-f64f-401d-bed8-892b7367ce22",
+      "provider": "claude",
+      "model": "claude-opus-4-7",
+      "session_id": "003ecf6f-87de-4442-9a85-68eab9ac750b",
+      "prompt_summary": "怎麼會發生這種事 讓codex去查原因",
+      "response_summary": "平行 2 個 Codex 跑：\n- **task `be2k2peh3`** R12 主 6 layout refactor\n- **task `bidfebsz3`** 7 測試失敗根因 read-only investigate（含「為何 mutual QA 沒抓」結構問題）\n\nInvestigate brief 點關鍵問題：\n1. 哪個 commit 開始壞 / 哪個改了文案\n2. 業務 decision 廢除 vs 文案漂移\n3. 為什麼之前 mutual QA / Gate 3 沒抓到（流程結構問題 — 是不是只看 pass count 不看 fail？）\n4. 不修，只查 + 寫修法建議\n\n兩 task 都完事我整合修法。",
+      "prompt_hash": "sha256:71d5d265a5348ed518716c31d4940f51dc53a277150803c8d5e7adfed2d6a5ed",
+      "message_count": 12018,
+      "cost_usd": 0.31899120000000003,
+      "input_tokens": 6,
+      "output_tokens": 2030,
+      "cache_read_tokens": 957094,
+      "cache_creation_tokens": 372,
+      "timestamp": "2026-04-26T16:05:15.846Z",
+      "session_start": "2026-04-15T04:51:17.989Z",
+      "session_end": "2026-04-26T16:06:24.283Z",
+      "session_duration_secs": 990906,
+      "ai_response_time_secs": 10.894400113830375,
+      "prompt_submitted_at": "2026-04-26T16:05:16.350631Z",
+      "prompt_duration_secs": 79,
+      "accepted_lines": 32,
+      "overridden_lines": 0,
+      "user": "qw2811569 <qw2811569@gmail.com>",
+      "file_path": ".tmp/r156-full-execute/round12/codex-investigate-test-failures.md",
+      "line_range": [
+        1,
+        101
+      ],
+      "files_changed": [
+        {
+          "path": ".tmp/r156-full-execute/round12/codex-investigate-test-failures.md",
+          "line_range": [
+            1,
+            101
+          ],
+          "blob_hash": "69df4f0d261a4256dcac3ddcad3a92b3a9d5e349",
+          "additions": 101
+        },
+        {
+          "path": "src/components/holdings/HoldingsPanel.jsx",
+          "line_range": [
+            365,
+            368
+          ],
+          "blob_hash": "b7b56406e93fee5df191ce8311b752f7e076f79e",
+          "additions": 3,
+          "deletions": 1
+        },
+        {
+          "path": "src/components/reports/DailyReportPanel.jsx",
+          "line_range": [
+            35,
+            2269
+          ],
+          "blob_hash": "100aa3a338b31942f3f201133deeb5d97ec778cf",
+          "additions": 32
+        }
+      ],
+      "prompt_number": 901,
+      "total_additions": 136,
+      "total_deletions": 1,
+      "tools_used": [
+        "Bash",
+        "TodoWrite",
+        "Write"
+      ],
+      "conversation": [
+        {
+          "turn": 0,
+          "role": "user",
+          "content": "怎麼會發生這種事 讓codex去查原因"
+        },
+        {
+          "turn": 1,
+          "role": "assistant",
+          "content": "派 Codex 平行查根因（read-only investigation，不會跟 R12 衝）："
+        },
+        {
+          "turn": 2,
+          "role": "tool",
+          "content": "Write(file: \"codex-investigate-test-failures.md\")",
+          "tool_name": "Write",
+          "files_touched": [
+            "codex-investigate-test-failures.md"
+          ]
+        },
+        {
+          "turn": 3,
+          "role": "tool",
+          "content": "Bash(command: \"bash scripts/launch-codex.sh \"$(cat .tmp/r156-full-execute/round12/codex-investi...\")",
+          "tool_name": "Bash"
+        },
+        {
+          "turn": 4,
+          "role": "tool",
+          "content": "TodoWrite()",
+          "tool_name": "TodoWrite"
+        }
+      ],
+      "prompt_quality": {
+        "score": 38,
+        "rating": "Poor",
+        "issues": [
+          "no_file_reference",
+          "too_short"
+        ],
+        "category": "other"
+      }
+    }
+  ]
+}

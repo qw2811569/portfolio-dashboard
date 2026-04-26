@@ -1451,3 +1451,38 @@ GCS 累計 **174 物件**。
   - ✅ `npm run test:run -- tests/api/append-log-store.test.js tests/scripts/migrate-append-log-to-gcs.test.js --run`
   - ✅ 補跑 `tests/api/morning-note.test.js tests/api/daily-snapshot-status.test.js --run`
 - 我最不確定的部分：Vercel Blob 的 `head` etag + `get(useCache:false)` 不是單一原子 read；若 head/get 間被更新，會造成一次 false conflict 並 retry，但不應造成 lost append。另一個不確定是 active current-month migration 若 source 在 initial copy 後變動，現在會標 `stale-source-changed`，resume 走 prefix-store 同款 overwrite convergence；這比純 create-only 更能收斂，但仍需 shadow-write burn-in 驗真流量。
+
+## Round 44 · Codex B QA · 2026-04-26 13:12
+
+### 找到的 bug
+- 🔴 `scripts/migrate-append-log-to-gcs.mjs:260` + `:318-323`：`previousStatus === 'stale-source-changed'` 會切到 `gcsWrite()` 無條件 overwrite。這違反 append log migration 的 historical month create-only / immutable 要求，也可能在 current-month shadow-write burn-in 時把 GCS 已收到的更新覆蓋回較舊 source snapshot。in-memory probe 證實 existing destination generation 7 會被覆蓋成 generation 8。
+- 🟡 `api/_lib/append-log-store.js:352-386`：`DEFAULT_MAX_RETRIES = 5` 現在是「總嘗試 5 次」，不是「initial + 5 retries」。我用 default options 模擬連續 conflict，實際第 5 次 write 就 throw `VERSION_CONFLICT`；若第 6 次才會成功，目前仍會失敗。這不符合本輪要求的「連續 6 次 412，第 6 次 throw」語意。
+- 🟡 `api/_lib/append-log-store.js:380-381`：backoff 是固定線性 `25ms * attempt`，沒有 jitter。多 writer 同時 conflict 時會同步睡醒再撞同一個 lifecycle，會增加上面 retry budget 被耗盡的機率。
+
+### 6 類別 explicit
+1. CAS retry: fail。失敗會 throw `code: 'VERSION_CONFLICT'` 沒錯；5 次內若成功會不 throw；但 default 只有 5 total attempts，不是 5 retries。現有 test 用 `maxRetries: 3` 鎖住了「max attempts」語意，沒有覆蓋 Round 44 指定的 6 次 412 case。
+2. atomic append: pass with caveat。真 race `worker1 read v1 + worker2 read v1 + worker1 write v2 + worker2 ifMatch v1` 會 412，retry 後 re-read v2 再 append，沒有 lost append。Vercel SDK `@vercel/blob@2.3.1` 本地 type/runtime 都有 `ifMatch`，會送 `x-if-match`。`head` 後 source 改變再 `get(useCache:false)` 會造成 false conflict + retry，不會直接 lost append。
+3. monthly rotation: mostly pass。三端 key naming 都是 `{prefix}-{YYYY-MM}.jsonl`，daily snapshot worker 用 `getDailySnapshotLogKey(now)`，morning note 用 `entry.ts`，restore rehearsal 用指定 month 的 `getRestoreRehearsalLogKey()`，跨月會落不同 key。問題在 migration resume 的 stale overwrite，破壞歷史月份 immutable/create-only。
+4. caller refactor: pass。`daily-snapshot.js` 的 `appendBlobJsonLine()` 和 `morning-note.js` 的 `appendMorningNoteLog()` 都改走 `appendLogLine()`；restore rehearsal 仍透過 `appendBlobJsonLine()`，因此也進 append-log store。`rg` 沒看到這三個 log keyspace 還有 raw blob `get` + `put` append path。NDJSON line 仍是 `JSON.stringify(entry)` + newline。
+5. migration: fail。inventory pagination 有覆蓋；current-month shadow-write gate 有覆蓋；empty inventory 不會因 current-month gate fail-fast。create-only 初次寫入用 generation=0 OK，但 `stale-source-changed` resume 會無條件 overwrite，和 append log migration 要求衝突。現有 tests 只測 stale status，沒測 resume 後不可覆蓋。
+6. regression: partial pass。`npm run test:run -- tests/api/append-log-store.test.js tests/scripts/migrate-append-log-to-gcs.test.js tests/api/daily-snapshot-status.test.js tests/api/morning-note.test.js tests/api/morning-note-snapshot-store.test.js tests/workers/morning-note-worker.test.js tests/hooks/useDailySnapshotStatus.test.jsx tests/hooks/useMorningNoteRuntime.test.jsx tests/lib/morningNoteBuilder.test.js` 通過，9 files / 32 tests。額外跑 `npx playwright test tests/e2e/morningNote.spec.mjs --project=chromium`，2 passed / 1 failed：fallback case 期待 freshness text `missing`，實際 UI 顯示 `待補`。這看起來是既有 copy/localization expectation，不是 append-log refactor 直接造成，但 morning-note e2e suite 目前不是綠的。
+
+### confidence
+- append-log-store: 8/10
+- 3 wrappers: 8/10
+- migration: 7/10
+- caller refactor: 8/10
+- Class 1-5 regression: 6/10
+
+### 推薦下一動作
+還有 issue → A 再修。先改 `maxRetries` 語意為 5 retries / 6 total attempts，加 jitter；migration 拿掉 append log 的 stale-source overwrite，或至少限定 current-month 且用 CAS/generation guard，不能讓 historical month 被覆蓋。修完再補三個 tests：default 6x conflict throw、5 conflicts then 6th success、stale-source-changed resume 不 overwrite existing historical destination。
+
+## Round 45 · Codex A · Class 3 fix · 2026-04-26 13:18
+
+- commit SHA: `e6598805da69015929d2e0de46d32b14ca30dc77`
+- fix 1: append-log migration 的 `stale-source-changed` resume 不再走無條件 `gcsWrite()`。historical 月份直接 warning + 標 `done`，不 read source、不 overwrite GCS；current 月份要求 shadow-write enabled，並用 `gcsWriteIfGeneration()` 對既有 destination generation 做 CAS overwrite。
+- fix 2: `DEFAULT_MAX_RETRIES = 5` 現在是 retries 語意；append 會跑 initial attempt + 5 retries = 6 total attempts。`maxRetries: 3` 則是 4 total attempts。
+- fix 3: conflict backoff 改成 base delay + jitter：`retryDelayMs * attempt + Math.random() * (retryDelayMs * attempt)`，避免多 writer 固定節奏一起 retry。
+- historical immutable 邊界判定：從 append log key suffix 解析 `YYYY-MM`（例如 `logs/daily-snapshot-2026-03.jsonl` → `2026-03`），再跟 `formatCurrentMonth(now, 'Asia/Taipei')` 比對；相等是 current month，不相等就是 historical/immutable。測試固定 `now = 2026-04-26T03:00:00.000Z`，所以 `2026-03` historical、`2026-04` current。
+- tests: ✅ `npm run test:run -- tests/api/append-log-store.test.js tests/scripts/migrate-append-log-to-gcs.test.js --run`（2 files / 13 tests）
+- 信心預測：migration `7→8`；append-log-store `8→9`

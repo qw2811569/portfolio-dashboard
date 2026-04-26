@@ -326,7 +326,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               style={{
                 width: 64,
                 height: 6,
-                borderRadius: 999,
+                borderRadius: 8,
                 background: alpha(C.textMute, '32'),
                 margin: '0 auto 12px',
                 touchAction: 'none',
@@ -388,7 +388,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                     display: 'inline-flex',
                     alignItems: 'center',
                     padding: '4px 10px',
-                    borderRadius: 999,
+                    borderRadius: 8,
                     fontSize: 11,
                     fontWeight: 700,
                     color: pillarTone.color,
@@ -409,7 +409,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               style={{
                 minWidth: 44,
                 minHeight: 44,
-                borderRadius: 999,
+                borderRadius: 8,
                 border: `1px solid ${alpha(C.text, '12')}`,
                 background: alpha(C.card, 'f2'),
                 color: C.textSec,
@@ -521,7 +521,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                                 fontWeight: 700,
                                 color: tone.color,
                                 background: tone.background,
-                                borderRadius: 999,
+                                borderRadius: 8,
                                 padding: '3px 8px',
                               }}
                             >
@@ -617,7 +617,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                           fontWeight: 700,
                           color: tone.color,
                           background: tone.background,
-                          borderRadius: 999,
+                          borderRadius: 8,
                           padding: '4px 8px',
                         }}
                       >
@@ -802,7 +802,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             style={{
               width: '100%',
               minHeight: 46,
-              borderRadius: 999,
+              borderRadius: 8,
               border: `1px solid ${alpha(C.text, '14')}`,
               background: alpha(C.card, 'f4'),
               color: C.textSec,

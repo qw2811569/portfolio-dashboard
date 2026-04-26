@@ -256,7 +256,7 @@ function TonePill({ tone = 'muted', children }) {
         alignItems: 'center',
         gap: 4,
         padding: '4px 8px',
-        borderRadius: 999,
+        borderRadius: 8,
         border: `1px solid ${meta.border}`,
         background: meta.background,
         color: C.text,
@@ -290,7 +290,7 @@ function ValuationSkeleton() {
             style={{
               width: `${width}%`,
               height: 10,
-              borderRadius: 999,
+              borderRadius: 8,
               background: alpha(C.textMute, '14'),
             }}
           />
@@ -471,7 +471,7 @@ function ValuationCard({ holding, dossier }) {
           position: 'relative',
           height: 8,
           marginTop: 12,
-          borderRadius: 999,
+          borderRadius: 999, // pill 999 keep: linear price-range track needs rounded caps
           background: alpha(C.up, '24'),
           overflow: 'hidden',
         }}
@@ -484,7 +484,7 @@ function ValuationCard({ holding, dossier }) {
             left: `calc(${markerRatio * 100}% - 5px)`,
             width: 10,
             height: 14,
-            borderRadius: 999,
+            borderRadius: 8,
             background: C.text,
             boxShadow: `0 0 0 2px ${C.card}`,
           }}

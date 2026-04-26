@@ -225,7 +225,7 @@ function KpiCard({
                 style: {
                   width: '72%',
                   height: 18,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: alpha(C.ink, '18'),
                   backgroundSize: '200% 100%',
                   animation: 'overview-kpi-skeleton 1.4s ease-in-out infinite',
@@ -235,7 +235,7 @@ function KpiCard({
                 style: {
                   width: '44%',
                   height: 12,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: alpha(C.ink, '12'),
                   backgroundSize: '200% 100%',
                   animation: 'overview-kpi-skeleton 1.4s ease-in-out infinite',

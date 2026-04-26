@@ -47,7 +47,7 @@ export default function DailyHoldingActions({ actions = [] }) {
                   color,
                   background: alpha(color, '12'),
                   border: `1px solid ${alpha(color, '25')}`,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   padding: '5px 9px',
                   fontSize: 12,
                   fontWeight: 800,

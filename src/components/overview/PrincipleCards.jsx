@@ -48,7 +48,7 @@ function PrincipleCard({ label, entry }) {
             fontSize: 11,
             color: C.text,
             padding: '4px 8px',
-            borderRadius: 999,
+            borderRadius: 8,
             background: alpha(C.ink, '08'),
             border: `1px solid ${alpha(C.ink, '16')}`,
             whiteSpace: 'nowrap',

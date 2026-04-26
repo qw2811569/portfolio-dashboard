@@ -182,7 +182,7 @@ export function UploadDropzone({
                   gap: 4,
                   background: isActive ? C.subtleElev : C.subtle,
                   border: `1px solid ${isActive ? C.borderStrong : C.border}`,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   padding: '4px 8px',
                 },
               },
@@ -828,7 +828,7 @@ export function ParseResults({
                             style: {
                               minHeight: 28,
                               padding: '4px 8px',
-                              borderRadius: 999,
+                              borderRadius: 8,
                               background: entry.action === '買進' ? C.upBg : C.downBg,
                               color: entry.action === '買進' ? C.textSec : C.down,
                               fontSize: 11,

@@ -51,7 +51,7 @@ export function EventCountdownBadge({ event, now }) {
         alignItems: 'center',
         gap: 4,
         padding: '4px 8px',
-        borderRadius: 999,
+        borderRadius: 8,
         fontSize: 11,
         lineHeight: 1.2,
         color: tone.color,

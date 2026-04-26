@@ -207,7 +207,7 @@ function AggregateDailySummary({
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: alpha(C.amber, '12'),
                 border: `1px solid ${alpha(C.amber, '20')}`,
                 color: C.textSec,

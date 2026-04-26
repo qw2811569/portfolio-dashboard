@@ -184,7 +184,7 @@ export function OverviewHeader({
                   fontSize: 11,
                   color: C.textSec,
                   padding: '4px 8px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: alpha(C.ink, '10'),
                   border: `1px solid ${C.borderStrong}`,
                 },
@@ -458,7 +458,7 @@ export function DuplicateHoldings({ holdings }) {
                   style: {
                     fontSize: 11,
                     padding: '4px 8px',
-                    borderRadius: 999,
+                    borderRadius: 8,
                     background: C.subtle,
                     border: `1px solid ${C.border}`,
                     color: C.textSec,

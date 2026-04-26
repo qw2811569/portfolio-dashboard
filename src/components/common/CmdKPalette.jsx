@@ -289,7 +289,7 @@ export default function CmdKPalette({
                             style={{
                               fontSize: 12,
                               color: selected ? C.text : C.textMute,
-                              borderRadius: 999,
+                              borderRadius: 8,
                               border: `1px solid ${selected ? alpha(C.positive, '30') : C.borderSub}`,
                               padding: isMobile ? '4px 8px' : '4px 8px',
                               flexShrink: 0,

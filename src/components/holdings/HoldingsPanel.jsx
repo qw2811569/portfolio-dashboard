@@ -188,7 +188,7 @@ function TrackedStocksSyncBadge({ badge = null, syncState = null, suppressErrorB
           style: {
             display: 'inline-flex',
             alignItems: 'center',
-            borderRadius: 999,
+            borderRadius: 8,
             padding: '4px 8px',
             fontSize: 12,
             lineHeight: 1.2,
@@ -259,7 +259,7 @@ function renderChipButton({
         gap: 8,
         minHeight: 44,
         padding: '10px 14px',
-        borderRadius: 999,
+        borderRadius: 8,
         border: `1px solid ${active ? toneMeta.activeBorder : toneMeta.idleBorder}`,
         background: active ? toneMeta.activeBackground : toneMeta.idleBackground,
         color: active ? toneMeta.activeColor : toneMeta.idleColor,
@@ -284,7 +284,7 @@ function renderChipButton({
             minWidth: 22,
             height: 22,
             padding: '0 6px',
-            borderRadius: 999,
+            borderRadius: 8,
             background: active ? alpha(C.ink, '10') : alpha(C.charcoal, '10'),
             color: active ? C.ink : C.textSec,
             fontSize: 11,
@@ -434,7 +434,7 @@ function HoldingsFilterChipBar({ filterBar }) {
         style: {
           minHeight: 44,
           padding: '10px 14px',
-          borderRadius: 999,
+          borderRadius: 8,
           border: `1px solid ${alpha(C.cta, '32')}`,
           background: safeFilterBar.canSaveCurrentFilter ? alpha(C.cta, '14') : alpha(C.iron, '10'),
           color: safeFilterBar.canSaveCurrentFilter ? C.text : C.textMute,
@@ -576,7 +576,7 @@ function HoldingsFilterChipBar({ filterBar }) {
                     style: {
                       display: 'inline-flex',
                       alignItems: 'center',
-                      borderRadius: 999,
+                      borderRadius: 8,
                       minHeight: 24,
                       padding: '0 8px',
                       background: alpha(C.cta, '16'),
@@ -593,7 +593,7 @@ function HoldingsFilterChipBar({ filterBar }) {
                     style: {
                       display: 'inline-flex',
                       alignItems: 'center',
-                      borderRadius: 999,
+                      borderRadius: 8,
                       minHeight: 24,
                       padding: '0 8px',
                       background: alpha(C.iron, '10'),
@@ -613,7 +613,7 @@ function HoldingsFilterChipBar({ filterBar }) {
                 style: {
                   minHeight: 44,
                   padding: '10px 14px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   border: `1px solid ${alpha(C.cta, A.strongLine)}`,
                   background: C.bone,
                   color: C.text,
@@ -663,7 +663,7 @@ function HoldingsFilterChipBar({ filterBar }) {
               style: {
                 minHeight: 44,
                 padding: '10px 14px',
-                borderRadius: 999,
+                borderRadius: 8,
                 border: `1px solid ${alpha(C.amber, '32')}`,
                 background: alpha(C.amber, '10'),
                 color: C.text,

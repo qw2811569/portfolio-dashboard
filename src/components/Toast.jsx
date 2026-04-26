@@ -141,7 +141,7 @@ export function ToastContainer({ toasts, remove }) {
               color: C.textMute,
               cursor: 'pointer',
               fontSize: 16,
-              borderRadius: 999,
+              borderRadius: 8,
               flexShrink: 0,
             },
           },

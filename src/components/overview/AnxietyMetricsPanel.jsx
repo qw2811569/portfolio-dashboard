@@ -251,7 +251,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
             style: {
               width: 34,
               height: 34,
-              borderRadius: 999,
+              borderRadius: '50%',
               border: `1px solid ${meta.border}`,
               background: alpha(meta.accent, '12'),
               display: 'inline-flex',

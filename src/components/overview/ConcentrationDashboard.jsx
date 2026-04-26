@@ -46,7 +46,7 @@ function WeightBar({ label, value, tone = C.ink, solid = false }) {
         'aria-hidden': true,
         style: {
           height: 10,
-          borderRadius: 999,
+          borderRadius: 999, // pill 999 keep: linear concentration track needs rounded caps
           overflow: 'hidden',
           background: solid ? alpha(tone, '18') : alpha(C.ink, '14'),
           border: `1px solid ${alpha(tone, '24')}`,
@@ -58,7 +58,7 @@ function WeightBar({ label, value, tone = C.ink, solid = false }) {
           width: `${percent}%`,
           height: '100%',
           background: solid ? alpha(tone, 'b8') : alpha(C.ink, '70'),
-          borderRadius: 999,
+          borderRadius: 999, // pill 999 keep: linear concentration fill needs rounded caps
         },
       })
     ),

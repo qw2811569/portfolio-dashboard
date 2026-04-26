@@ -50,7 +50,7 @@ function ContextChip({ children, active = false }) {
         alignItems: 'center',
         gap: 4,
         padding: '4px 8px',
-        borderRadius: 999,
+        borderRadius: 8,
         background: alpha(C.charcoal, '08'),
         border: `1px solid ${alpha(C.charcoal, '16')}`,
         color: C.iron,

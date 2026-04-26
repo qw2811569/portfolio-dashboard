@@ -59,7 +59,7 @@ export function UpstreamHealthBanner({
                 minHeight: 44,
                 width: 'fit-content',
                 padding: '10px 14px',
-                borderRadius: 999,
+                borderRadius: 8,
                 border: `1px solid ${alpha(C.amber, '2a')}`,
                 background: alpha(C.amber, '12'),
                 color: C.textSec,

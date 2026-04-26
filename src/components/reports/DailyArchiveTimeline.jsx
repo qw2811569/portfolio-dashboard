@@ -68,7 +68,7 @@ export default function DailyArchiveTimeline({ items = [], selectedDate = '', on
               key={item.id}
               onClick={() => onSelect?.(item.date)}
               style={{
-                borderRadius: 999,
+                borderRadius: 8,
                 background: active ? alpha(C.fillTeal, '24') : C.subtle,
                 border: `1px solid ${active ? alpha(C.fillTeal, '45') : C.border}`,
                 color: active ? C.text : C.textSec,

@@ -126,7 +126,7 @@ export function DataError({
                   minWidth: 44,
                   minHeight: 44,
                   padding: '8px 12px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   border: `1px solid ${alpha(C.amber, '2a')}`,
                   background: alpha(C.amber, '12'),
                   color: C.textSec,

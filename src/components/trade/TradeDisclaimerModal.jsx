@@ -152,7 +152,7 @@ export function TradeDisclaimerModal({
             gap: 8,
             minHeight: 44,
             padding: '0 12px',
-            borderRadius: 999,
+            borderRadius: 8,
             background: C.amberBg,
             border: `1px solid ${alpha(C.amber, '28')}`,
             color: C.textSec,

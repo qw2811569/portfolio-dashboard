@@ -47,7 +47,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: 96,
             height: 10,
-            borderRadius: 999,
+            borderRadius: 8,
             background: 'rgba(131, 133, 133, 0.18)',
           }}
         />

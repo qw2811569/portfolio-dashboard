@@ -195,7 +195,7 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
               color: C.textSec,
               border: '1px solid var(--positive-soft)',
               background: alpha(C.iron, '16'),
-              borderRadius: 999,
+              borderRadius: 8,
               padding: '4px 8px',
               letterSpacing: '0.04em',
               whiteSpace: 'nowrap',

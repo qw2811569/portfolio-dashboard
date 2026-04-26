@@ -131,7 +131,7 @@ export function AccuracyGateBlock({
                   minWidth: 44,
                   minHeight: 44,
                   padding: '10px 14px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   border: `1px solid ${alpha(C.amber, '2a')}`,
                   background: alpha(C.amber, '12'),
                   color: C.textSec,

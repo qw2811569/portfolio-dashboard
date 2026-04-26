@@ -657,7 +657,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: impactMeta.bg,
                 color: impactMeta.color,
                 fontWeight: 600,
@@ -672,7 +672,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 style: {
                   fontSize: 11,
                   padding: '4px 8px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: predictionMeta.bg,
                   color: predictionMeta.color,
                   fontWeight: 600,
@@ -686,7 +686,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: reviewMeta.bg,
                 color: reviewMeta.color,
                 fontWeight: 600,
@@ -701,7 +701,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
                 style: {
                   fontSize: 11,
                   padding: '4px 8px',
-                  borderRadius: 999,
+                  borderRadius: 8,
                   background: alpha(C.choco, '12'),
                   color: C.choco,
                   fontWeight: 600,
@@ -715,7 +715,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: event?.needsThesisReview ? alpha(C.hot, '12') : alpha(C.textMute, '12'),
                 color: event?.needsThesisReview ? C.hot : C.textMute,
                 fontWeight: 600,
@@ -729,7 +729,7 @@ export function NewsEventCard({ event, onReview, onToggle }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: alpha(C.textMute, '12'),
                 color: C.textMute,
                 fontWeight: 600,

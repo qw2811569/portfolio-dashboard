@@ -152,7 +152,7 @@ export default function TradeWizard({
                 <div
                   style={{
                     height: 5,
-                    borderRadius: 999,
+                    borderRadius: 999, // pill 999 keep: linear step progress bar needs rounded caps
                     background: active || done ? C.up : alpha(C.textMute, '18'),
                   }}
                 />

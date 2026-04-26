@@ -127,7 +127,7 @@ export default function AppShellFrame({
                 <span
                   key={item}
                   style={{
-                    borderRadius: 999,
+                    borderRadius: 8,
                     padding: '4px 8px',
                     fontSize: 12,
                     fontWeight: 500,

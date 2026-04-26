@@ -86,7 +86,7 @@ export class ErrorBoundary extends Component {
             background: C.cta,
             color: C.onFill,
             border: 'none',
-            borderRadius: 999,
+            borderRadius: 8,
             cursor: 'pointer',
             fontSize: 12,
             fontWeight: 600,

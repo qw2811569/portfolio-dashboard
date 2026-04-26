@@ -159,7 +159,7 @@ export function ConfirmDialog({
             color: busy ? C.textMute : C.onFill,
             cursor: busy ? 'not-allowed' : 'pointer',
             fontWeight: 600,
-            borderRadius: 999,
+            borderRadius: 8,
             boxShadow: `inset 0 0 0 1px ${alpha(accent, '25')}`,
           },
         },
@@ -268,7 +268,7 @@ export function TextFieldDialog({
             color: busy || submitDisabled ? C.textMute : C.onFill,
             cursor: busy || submitDisabled ? 'not-allowed' : 'pointer',
             fontWeight: 600,
-            borderRadius: 999,
+            borderRadius: 8,
           },
         },
         busy ? '處理中...' : submitLabel

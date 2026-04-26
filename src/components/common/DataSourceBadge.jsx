@@ -50,7 +50,7 @@ export function DataSourceBadge({ source, style = {} }) {
       style: {
         display: 'inline-flex',
         alignItems: 'center',
-        borderRadius: 999,
+        borderRadius: 8,
         padding: '4px 8px',
         fontSize: 12,
         lineHeight: 1.2,

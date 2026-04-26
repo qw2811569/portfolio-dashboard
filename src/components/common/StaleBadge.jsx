@@ -124,7 +124,7 @@ export function StaleBadge({
         alignItems: 'center',
         gap: 4,
         padding: '4px 8px',
-        borderRadius: 999,
+        borderRadius: 8,
         border: `1px solid ${meta.border}`,
         background: meta.background,
         color: meta.color,

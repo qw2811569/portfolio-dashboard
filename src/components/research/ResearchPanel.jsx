@@ -180,7 +180,7 @@ function CompressedResearchResults({ results }) {
           style: {
             fontSize: 11,
             padding: '4px 8px',
-            borderRadius: 999,
+            borderRadius: 8,
             background: alpha(C.amber, '14'),
             border: `1px solid ${alpha(C.amber, '22')}`,
             color: C.textSec,
@@ -195,7 +195,7 @@ function CompressedResearchResults({ results }) {
             style: {
               fontSize: 11,
               padding: '4px 8px',
-              borderRadius: 999,
+              borderRadius: 8,
               background: alpha(C.positive, '12'),
               border: `1px solid ${alpha(C.positive, '22')}`,
               color: C.textSec,
@@ -366,7 +366,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
               style: {
                 fontSize: 11,
                 padding: '4px 8px',
-                borderRadius: 999,
+                borderRadius: 8,
                 background: C.subtle,
                 border: `1px solid ${C.border}`,
                 color: C.textSec,
@@ -474,7 +474,7 @@ export function DataRefreshCenter({ dataRefreshRows }) {
                   {
                     style: {
                       padding: '4px 8px',
-                      borderRadius: 999,
+                      borderRadius: 8,
                       background: alpha(C.amber, '14'),
                       border: `1px solid ${alpha(C.amber, '28')}`,
                     },
@@ -689,7 +689,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
         style: {
           position: 'relative',
           height: 14,
-          borderRadius: 999,
+          borderRadius: 999, // pill 999 keep: linear score track needs rounded caps
           background: alpha(C.up, '52'),
           border: '1px solid var(--positive-soft)',
           overflow: 'hidden',
@@ -778,7 +778,7 @@ function ConsensusHighlightCard({ item }) {
             color: C.textSec,
             border: '1px solid var(--positive-soft)',
             background: alpha(C.positive, '18'),
-            borderRadius: 999,
+            borderRadius: 8,
             padding: '4px 8px',
             letterSpacing: '0.06em',
           },

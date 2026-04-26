@@ -65,7 +65,7 @@ export function PeerRankingBadge({ holding }) {
             lineHeight: 1.2,
             fontWeight: 600,
             padding: '4px 8px',
-            borderRadius: 999,
+            borderRadius: 8,
             border: `1px solid ${tone.borderColor}`,
             background: tone.background,
             color: tone.color,

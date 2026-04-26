@@ -126,7 +126,7 @@ export default function HoldingsByStrategyBreakdown({
                   aria-hidden="true"
                   style={{
                     height: compact ? 6 : 8,
-                    borderRadius: 999,
+                    borderRadius: 999, // pill 999 keep: linear strategy track needs rounded caps
                     overflow: 'hidden',
                     background: alpha(C.text, '10'),
                   }}
@@ -136,7 +136,7 @@ export default function HoldingsByStrategyBreakdown({
                     style={{
                       width: '100%',
                       height: '100%',
-                      borderRadius: 999,
+                      borderRadius: 999, // pill 999 keep: linear strategy fill needs rounded caps
                       background: color,
                       transform: `scaleX(${safePct / 100})`,
                       transformOrigin: 'left center',

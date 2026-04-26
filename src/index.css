@@ -1,3 +1,31 @@
+:root {
+  --app-bg: #FAFAFA;
+  --surface: #EFEEEC;
+  --surface-muted: #E5E2DD;
+  --paper: #D9D3D1;
+  --raised: #FFFFFF;
+  --dark-panel: #0B120E;
+  --text: #0B120E;
+  --text-secondary: #2F3232;
+  --text-muted: #838585;
+  --border: rgba(11, 18, 14, 0.14);
+  --border-soft: rgba(11, 18, 14, 0.08);
+}
+
+[data-theme='light'] {
+  --app-bg: #FAFAFA;
+  --surface: #EFEEEC;
+  --surface-muted: #E5E2DD;
+  --paper: #D9D3D1;
+  --raised: #FFFFFF;
+  --dark-panel: #0B120E;
+  --text: #0B120E;
+  --text-secondary: #2F3232;
+  --text-muted: #838585;
+  --border: rgba(11, 18, 14, 0.14);
+  --border-soft: rgba(11, 18, 14, 0.08);
+}
+
 html {
   background: var(--app-bg, #f4efe6);
 }

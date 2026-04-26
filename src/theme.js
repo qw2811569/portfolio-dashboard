@@ -104,8 +104,13 @@ export function alpha(color, opacity) {
 function buildRuntimeTokens() {
   return Object.freeze({
     ...GENERATED_TOKENS,
+    appBg: '#FAFAFA',
+    surface: '#EFEEEC',
+    surfaceMuted: '#E5E2DD',
+    raised: '#FFFFFF',
+    darkPanel: '#0B120E',
     boneSoft: alpha(GENERATED_TOKENS.bone, 'f2'),
-    paper: alpha(GENERATED_TOKENS.bone, 'db'),
+    paper: GENERATED_TOKENS.boneDeep,
     sand: alpha(GENERATED_TOKENS.warning, '18'),
     line: GENERATED_TOKENS.boneDeep,
     lineSoft: alpha(GENERATED_TOKENS.charcoal, '14'),
@@ -250,9 +255,19 @@ export function applyThemeVars(target = DEFAULT_TARGET) {
   }
 
   target.style.setProperty('--app-bg', C.bg)
+  target.style.setProperty('--surface', TOKENS.surface)
+  target.style.setProperty('--surface-muted', TOKENS.surfaceMuted)
+  target.style.setProperty('--paper', TOKENS.paper)
+  target.style.setProperty('--raised', TOKENS.raised)
+  target.style.setProperty('--dark-panel', TOKENS.darkPanel)
   target.style.setProperty('--ink', C.text)
+  target.style.setProperty('--text', C.text)
+  target.style.setProperty('--text-secondary', C.textSec)
+  target.style.setProperty('--text-muted', C.textMute)
   target.style.setProperty('--bone', TOKENS.bone)
   target.style.setProperty('--bone-soft', TOKENS.boneSoft)
+  target.style.setProperty('--border', C.borderSub)
+  target.style.setProperty('--border-soft', C.borderSoft)
   target.style.setProperty('--line', TOKENS.line)
   target.style.setProperty('--muted', C.textMute)
   target.style.setProperty('--muted-fallback', C.textMuteFallback)

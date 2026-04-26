@@ -3,6 +3,7 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "ignoreCommand": "bash scripts/vercel-ignore.sh",
+  "cronsRetirementNote": "will be retired Phase 5; retained during Phase 2 systemd rollback window",
   "crons": [
     {
       "path": "/api/cron/compute-valuations",

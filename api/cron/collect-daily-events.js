@@ -1,11 +1,11 @@
 import { list, put } from '@vercel/blob'
 import { loadGeminiCalendarEvents, dedupeCalendarEvents } from '../event-calendar.js'
 import { queryFinMindDataset } from '../_lib/finmind-governor.js'
+import { writeDailyEventsSnapshot } from '../_lib/daily-events-store.js'
 import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 
 const CRON_TOKEN = process.env.CRON_SECRET
 const BLOB_TOKEN = process.env.PUB_BLOB_READ_WRITE_TOKEN
-const SNAPSHOT_KEY = 'daily-events/latest.json'
 const LOOKAHEAD_DAYS = 30
 
 function parseStockCodes() {
@@ -160,12 +160,9 @@ export default async function handler(req, res) {
 
     if (!BLOB_TOKEN) return res.status(500).json({ error: 'blob token not configured' })
 
-    await put(SNAPSHOT_KEY, JSON.stringify(snapshot, null, 2), {
+    await writeDailyEventsSnapshot(snapshot, {
       token: BLOB_TOKEN,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      access: 'public',
-      contentType: 'application/json',
+      putImpl: put,
     })
     await markCronSuccess('collect-daily-events', {
       token: BLOB_TOKEN,

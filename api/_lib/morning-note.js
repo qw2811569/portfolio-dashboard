@@ -2,7 +2,13 @@ import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
 import path from 'node:path'
 import { get, put } from '@vercel/blob'
+import { appendLogLine } from './append-log-store.js'
 import { getPrivateBlobToken } from './blob-tokens.js'
+import {
+  getMorningNoteSnapshotStoreKey,
+  readMorningNoteSnapshotStore,
+  writeMorningNoteSnapshotStore,
+} from './morning-note-snapshot-store.js'
 import { getTaipeiClock } from '../../src/lib/datetime.js'
 
 export const MORNING_NOTE_SCHEMA_VERSION = 1
@@ -166,9 +172,7 @@ export function formatMorningNoteDisplayDate(value = new Date(), timeZone = MORN
 }
 
 export function getMorningNoteSnapshotKey(date = formatMorningNoteMarketDate()) {
-  const normalized = String(date || '').trim()
-  if (!isIsoDate(normalized)) throw new Error('morning note snapshot date must be YYYY-MM-DD')
-  return `${MORNING_NOTE_SNAPSHOT_PREFIX}/${normalized}.json`
+  return getMorningNoteSnapshotStoreKey(date)
 }
 
 export function getMorningNoteLogKey(value = new Date(), timeZone = MORNING_NOTE_TIMEZONE) {
@@ -265,9 +269,7 @@ export async function readMorningNoteSnapshot(
   date = formatMorningNoteMarketDate(),
   { token = readBlobToken(), getImpl = get } = {}
 ) {
-  const text = await readBlobText(getMorningNoteSnapshotKey(date), { token, getImpl })
-  if (!text) return null
-  return JSON.parse(text)
+  return readMorningNoteSnapshotStore(date, { token, getImpl })
 }
 
 export async function writeMorningNoteSnapshot(
@@ -289,12 +291,9 @@ export async function writeMorningNoteSnapshot(
     ...snapshot,
   }
 
-  await putImpl(getMorningNoteSnapshotKey(marketDate), JSON.stringify(payload, null, 2), {
+  await writeMorningNoteSnapshotStore(marketDate, payload, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/json',
+    putImpl,
   })
 
   return payload
@@ -302,7 +301,7 @@ export async function writeMorningNoteSnapshot(
 
 export async function appendMorningNoteLog(
   entry,
-  { token = readBlobToken(), getImpl = get, putImpl = put } = {}
+  { token = readBlobToken(), getImpl = get, putImpl = put, ...options } = {}
 ) {
   if (!token) {
     throw new Error('BLOB_READ_WRITE_TOKEN is required for morning note log writes')
@@ -310,17 +309,12 @@ export async function appendMorningNoteLog(
 
   const now = entry?.ts ? new Date(entry.ts) : new Date()
   const logKey = getMorningNoteLogKey(now)
-  const existing = (await readBlobText(logKey, { token, getImpl })) || ''
   const line = JSON.stringify(entry)
-  const nextText =
-    existing.trim().length > 0 ? `${existing.replace(/\s*$/, '\n')}${line}\n` : `${line}\n`
-
-  await putImpl(logKey, nextText, {
+  await appendLogLine('morning_note_log', logKey, line, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/x-ndjson',
+    getImpl,
+    putImpl,
+    ...options,
   })
 
   return {

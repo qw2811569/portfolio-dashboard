@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const get = vi.fn()
+const { readTargetPriceSnapshot } = vi.hoisted(() => ({
+  readTargetPriceSnapshot: vi.fn(),
+}))
 
-vi.mock('@vercel/blob', () => ({
-  get,
+vi.mock('../../api/_lib/target-prices-store.js', () => ({
+  readTargetPriceSnapshot,
 }))
 
 function createMockResponse() {
@@ -37,27 +39,16 @@ describe('api/target-prices', () => {
   })
 
   it('surfaces source and count headers from the stored snapshot', async () => {
-    get.mockResolvedValue({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue(
-            new TextEncoder().encode(
-              JSON.stringify({
-                code: '3491',
-                name: '昇達科',
-                targets: {
-                  source: 'gemini',
-                  reports: [
-                    { firm: '凱基投顧', target: 1680, date: '2026-04-15' },
-                    { firm: '元大投顧', target: 1650, date: '2026-04-12' },
-                  ],
-                },
-              })
-            )
-          )
-          controller.close()
-        },
-      }),
+    readTargetPriceSnapshot.mockResolvedValue({
+      code: '3491',
+      name: '昇達科',
+      targets: {
+        source: 'gemini',
+        reports: [
+          { firm: '凱基投顧', target: 1680, date: '2026-04-15' },
+          { firm: '元大投顧', target: 1650, date: '2026-04-12' },
+        ],
+      },
     })
 
     const { default: handler } = await import('../../api/target-prices.js')
@@ -66,6 +57,7 @@ describe('api/target-prices', () => {
 
     await handler(req, res)
 
+    expect(readTargetPriceSnapshot).toHaveBeenCalledWith('3491')
     expect(res.statusCode).toBe(200)
     expect(res.headers['x-target-price-source']).toBe('gemini')
     expect(res.headers['x-target-price-count']).toBe('2')
@@ -79,29 +71,18 @@ describe('api/target-prices', () => {
   })
 
   it('preserves cnyes source for aggregate-only snapshots', async () => {
-    get.mockResolvedValue({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue(
-            new TextEncoder().encode(
-              JSON.stringify({
-                code: '2330',
-                name: '台積電',
-                targets: {
-                  source: 'cnyes',
-                  coverageState: 'aggregate-only',
-                  reports: [],
-                  aggregate: {
-                    medianTarget: 2352.5,
-                    firmsCount: 36,
-                  },
-                },
-              })
-            )
-          )
-          controller.close()
+    readTargetPriceSnapshot.mockResolvedValue({
+      code: '2330',
+      name: '台積電',
+      targets: {
+        source: 'cnyes',
+        coverageState: 'aggregate-only',
+        reports: [],
+        aggregate: {
+          medianTarget: 2352.5,
+          firmsCount: 36,
         },
-      }),
+      },
     })
 
     const { default: handler } = await import('../../api/target-prices.js')
@@ -110,6 +91,7 @@ describe('api/target-prices', () => {
 
     await handler(req, res)
 
+    expect(readTargetPriceSnapshot).toHaveBeenCalledWith('2330')
     expect(res.statusCode).toBe(200)
     expect(res.headers['x-target-price-source']).toBe('cnyes')
     expect(res.headers['x-target-price-count']).toBe('0')

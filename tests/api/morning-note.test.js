@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const get = vi.fn()
+const { get, head, list, put } = vi.hoisted(() => ({
+  get: vi.fn(),
+  head: vi.fn(),
+  list: vi.fn(),
+  put: vi.fn(),
+}))
 
 vi.mock('@vercel/blob', () => ({
   get,
-  put: vi.fn(),
+  head,
+  list,
+  put,
 }))
 
 function createMockResponse() {

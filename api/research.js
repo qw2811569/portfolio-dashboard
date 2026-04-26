@@ -2,12 +2,19 @@ import { withApiAuth } from './_lib/auth-middleware.js'
 // Vercel Serverless Function — AutoResearch 自主進化系統
 // 借鑒 karpathy/autoresearch：AI 自主多輪迭代，累積進化
 // 不只研究股票，而是審視整個投資系統並自我改善
-import { put, list, del } from '@vercel/blob'
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
-import { join } from 'path'
 import { callAiText, ensureAiConfigured } from './_lib/ai-provider.js'
-import { getPrivateBlobToken } from './_lib/blob-tokens.js'
 import { PortfolioAccessError, requirePortfolio } from './_lib/require-portfolio.js'
+import {
+  getResearchArtifactKey,
+  getResearchPrefix,
+  listResearchObjects,
+  readResearchIndex,
+  readResearchObject,
+  upsertResearchIndexReport,
+  writeBrainProposal,
+  writeResearchIndex,
+  writeResearchObject,
+} from './_lib/research-store.js'
 import { normalizeStrategyBrain } from '../src/lib/brainRuntime.js'
 import { buildKnowledgeEvolutionProposal } from '../src/lib/knowledgeEvolutionRuntime.js'
 import { buildCompactKnowledgeContext, buildKnowledgeContext } from '../src/lib/knowledgeBase.js'
@@ -26,72 +33,6 @@ import {
 } from '../src/lib/researchRequestRuntime.js'
 import { applyAccuracyGatePrompt } from '../src/lib/accuracyGate.js'
 import { stripBuySellForInsider } from '../src/lib/tradeAiResponse.js'
-import { fetchSignedBlobJson, resolveSignedBlobOrigin } from './_lib/signed-url.js'
-
-const TOKEN = getPrivateBlobToken()
-const RESEARCH_INDEX_KEY = 'research-index.json'
-const BRAIN_PROPOSAL_PREFIX = 'brain-proposals'
-const DATA_DIR = join(process.cwd(), 'data')
-
-// ── 本地檔案讀寫 ──
-function localPath(key) {
-  return join(DATA_DIR, key.replace(/\//g, '__'))
-}
-
-function readLocal(key) {
-  try {
-    const p = localPath(key)
-    if (!existsSync(p)) return null
-    return JSON.parse(readFileSync(p, 'utf-8'))
-  } catch {
-    return null
-  }
-}
-
-function writeLocal(key, data) {
-  try {
-    if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true })
-    writeFileSync(localPath(key), JSON.stringify(data, null, 2))
-  } catch (err) {
-    console.warn('[api/research] writeLocal failed:', err.message || err)
-  }
-}
-
-async function read(key, opts = {}) {
-  const local = readLocal(key)
-  if (local) return local
-  try {
-    const { blobs } = await list({ prefix: key, limit: 1, token: TOKEN })
-    if (!blobs.length) return null
-    const data = await fetchSignedBlobJson(blobs[0]?.pathname || blobs[0]?.url, {
-      origin: opts.origin,
-      fetchImpl: opts.fetchImpl,
-    })
-    writeLocal(key, data)
-    return data
-  } catch {
-    return null
-  }
-}
-
-async function write(key, data) {
-  writeLocal(key, data)
-  try {
-    try {
-      await del(key, { token: TOKEN })
-    } catch {
-      /* best-effort cleanup before re-write — old blob may not exist */
-    }
-    await put(key, JSON.stringify(data), {
-      access: 'private',
-      token: TOKEN,
-      contentType: 'application/json',
-      addRandomSuffix: false,
-    })
-  } catch (err) {
-    console.warn('[api/research] blob write failed:', err.message || err)
-  }
-}
 
 async function callClaude(system, user, maxTokens = 4000, portfolio = null) {
   return callAiText({
@@ -146,11 +87,7 @@ dossier 第一行「持倉：<type> | ...」已標示型別，請依型別切換
 - PEG、營收月增、法人連續買超、目標價 freshness 等皆適用`
 
 async function updateResearchIndex(report) {
-  const current = readLocal(RESEARCH_INDEX_KEY) || []
-  const next = [report, ...current.filter((item) => item.timestamp !== report.timestamp)]
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 30)
-  await write(RESEARCH_INDEX_KEY, next)
+  await upsertResearchIndexReport(report)
 }
 
 function buildBrainProposal({
@@ -571,25 +508,27 @@ async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const { code } = req.query
-      const origin = resolveSignedBlobOrigin(req)
-      const cached = (await read(RESEARCH_INDEX_KEY, { origin })) || []
+      const cached = (await readResearchIndex()) || []
       if (cached.length > 0) {
         const reports = code
           ? cached.filter((r) => r.code === code).slice(0, 10)
           : cached.slice(0, 10)
         return res.status(200).json({ reports })
       }
-      const prefix = code ? `research/${code}/` : 'research/'
-      const blobs = await list({ prefix, token: TOKEN })
+      const prefix = code ? getResearchPrefix(code) : getResearchPrefix()
+      const items = await listResearchObjects(prefix)
       const reports = []
-      for (const blob of blobs.blobs.sort((a, b) => b.uploadedAt - a.uploadedAt).slice(0, 10)) {
-        reports.push(
-          await fetchSignedBlobJson(blob?.pathname || blob?.url, {
-            origin,
-          })
+      for (const item of items
+        .slice()
+        .sort(
+          (left, right) =>
+            new Date(right?.uploadedAt || 0).getTime() - new Date(left?.uploadedAt || 0).getTime()
         )
+        .slice(0, 10)) {
+        const report = await readResearchObject(item.key)
+        if (report) reports.push(report)
       }
-      if (reports.length > 0) writeLocal(RESEARCH_INDEX_KEY, reports)
+      if (reports.length > 0) await writeResearchIndex(reports)
       return res.status(200).json({ reports })
     } catch {
       return res.status(200).json({ reports: [] })
@@ -692,6 +631,7 @@ async function handler(req, res) {
       })
 
       if (researchRoundCount === 1) {
+        const reportTimestamp = Date.now()
         const brainCtx = brain ? buildResearchBrainContext(brain) : ''
         const singlePass = await callPortfolioClaude(
           `你是專業的台股研究分析師兼持倉策略顧問。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做一輪完整深度研究。
@@ -721,7 +661,7 @@ ${brainCtx}
           code: s.code,
           name: s.name,
           date: today,
-          timestamp: Date.now(),
+          timestamp: reportTimestamp,
           mode: 'single',
           roundMode: 'local-fast',
           rounds: [{ title: '深度研究（本地快速版）', content: singlePass }],
@@ -729,22 +669,12 @@ ${brainCtx}
           priceAtResearch: s.price,
         }
         if (persist) {
-          writeLocal(`research/${s.code}/${Date.now()}.json`, report)
+          await writeResearchObject(getResearchArtifactKey(s.code, report.timestamp), report)
           await updateResearchIndex(report)
-        }
-        if (persist && TOKEN) {
-          try {
-            await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
-              access: 'private',
-              token: TOKEN,
-              contentType: 'application/json',
-            })
-          } catch (err) {
-            console.warn('[api/research] blob persist (single-fast) failed:', err.message || err)
-          }
         }
         results.push(report)
       } else {
+        const reportTimestamp = Date.now()
         const round1 = await callPortfolioClaude(
           `你是專業的台股研究分析師。你必須先讀完整的持股 dossier，再對「${s.name}(${s.code})」做研究。
 如果 dossier 標示某些欄位是 stale 或 missing，要直接說出不確定性，不要虛構最新財報或投顧數字。
@@ -807,7 +737,7 @@ ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           code: s.code,
           name: s.name,
           date: today,
-          timestamp: Date.now(),
+          timestamp: reportTimestamp,
           mode: 'single',
           roundMode: 'full',
           rounds: [
@@ -819,19 +749,8 @@ ${TYPE_AWARE_FRAMEWORK_GUIDE}`,
           priceAtResearch: s.price,
         }
         if (persist) {
-          writeLocal(`research/${s.code}/${Date.now()}.json`, report)
+          await writeResearchObject(getResearchArtifactKey(s.code, report.timestamp), report)
           await updateResearchIndex(report)
-        }
-        if (persist && TOKEN) {
-          try {
-            await put(`research/${s.code}/${Date.now()}.json`, JSON.stringify(report), {
-              access: 'private',
-              token: TOKEN,
-              contentType: 'application/json',
-            })
-          } catch (err) {
-            console.warn('[api/research] blob persist (single-full) failed:', err.message || err)
-          }
         }
         results.push(report)
       }
@@ -1090,18 +1009,19 @@ JSON 結構：
       })
 
       if (persist && brainProposal) {
-        await write(`${BRAIN_PROPOSAL_PREFIX}/${proposalId}.json`, brainProposal)
+        await writeBrainProposal(proposalId, brainProposal)
       }
 
       const reportCode = mode === 'portfolio' ? 'PORTFOLIO' : 'EVOLVE'
       const reportName = mode === 'portfolio' ? '全組合研究' : '全組合研究 + 系統進化'
-      const reportKey = `research/${reportCode}/${Date.now()}.json`
+      const reportTimestamp = Date.now()
+      const reportKey = `research/${reportCode}/${reportTimestamp}.json`
 
       const report = {
         code: reportCode,
         name: reportName,
         date: today,
-        timestamp: Date.now(),
+        timestamp: reportTimestamp,
         mode,
         roundMode: portfolioRoundMode,
         rounds: [
@@ -1135,19 +1055,8 @@ JSON 結構：
         proposalStatus: brainProposal?.status || 'failed',
       }
       if (persist) {
-        writeLocal(reportKey, report)
+        await writeResearchObject(reportKey, report)
         await updateResearchIndex(report)
-      }
-      if (persist && TOKEN) {
-        try {
-          await put(reportKey, JSON.stringify(report), {
-            access: 'private',
-            token: TOKEN,
-            contentType: 'application/json',
-          })
-        } catch (err) {
-          console.warn('[api/research] blob persist (portfolio) failed:', err.message || err)
-        }
       }
       results.push(report)
     }

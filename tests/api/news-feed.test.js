@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const get = vi.fn()
-const head = vi.fn()
+const { readNewsFeed, headNewsFeed } = vi.hoisted(() => ({
+  readNewsFeed: vi.fn(),
+  headNewsFeed: vi.fn(),
+}))
 
-vi.mock('@vercel/blob', () => ({
-  get,
-  head,
+vi.mock('../../api/_lib/news-feed-store.js', () => ({
+  readNewsFeed,
+  headNewsFeed,
 }))
 
 function createMockResponse() {
@@ -31,15 +33,6 @@ function createMockResponse() {
   }
 }
 
-function createJsonStream(value) {
-  return new ReadableStream({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(JSON.stringify(value)))
-      controller.close()
-    },
-  })
-}
-
 describe('api/news-feed', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -55,23 +48,20 @@ describe('api/news-feed', () => {
   })
 
   it('reads the latest feed directly from blob storage', async () => {
-    get.mockResolvedValue({
-      statusCode: 200,
-      stream: createJsonStream({
-        items: [
-          {
-            title: '台積電法說會前市場觀望',
-            pubDate: '2026-04-15T08:00:00.000Z',
-            relatedStocks: [{ code: '2330', name: '台積電' }],
-          },
-          {
-            title: '聯發科 5G 晶片出貨增溫',
-            pubDate: '2026-04-14T08:00:00.000Z',
-            relatedStocks: [{ code: '2454', name: '聯發科' }],
-          },
-        ],
-        collectedAt: '2026-04-15T10:00:45.215Z',
-      }),
+    readNewsFeed.mockResolvedValue({
+      items: [
+        {
+          title: '台積電法說會前市場觀望',
+          pubDate: '2026-04-15T08:00:00.000Z',
+          relatedStocks: [{ code: '2330', name: '台積電' }],
+        },
+        {
+          title: '聯發科 5G 晶片出貨增溫',
+          pubDate: '2026-04-14T08:00:00.000Z',
+          relatedStocks: [{ code: '2454', name: '聯發科' }],
+        },
+      ],
+      collectedAt: '2026-04-15T10:00:45.215Z',
     })
 
     const { default: handler } = await import('../../api/news-feed.js')
@@ -80,10 +70,7 @@ describe('api/news-feed', () => {
 
     await handler(req, res)
 
-    expect(get).toHaveBeenCalledWith('news-feed/latest.json', {
-      access: 'public',
-      token: 'blob-token',
-    })
+    expect(readNewsFeed).toHaveBeenCalledWith({ token: 'blob-token' })
     expect(res.statusCode).toBe(200)
     expect(res.payload).toMatchObject({
       collectedAt: '2026-04-15T10:00:45.215Z',
@@ -93,7 +80,7 @@ describe('api/news-feed', () => {
   })
 
   it('returns an empty feed when the blob does not exist', async () => {
-    get.mockResolvedValue(null)
+    readNewsFeed.mockResolvedValue(null)
 
     const { default: handler } = await import('../../api/news-feed.js')
     const req = { method: 'GET', query: {} }
@@ -106,7 +93,7 @@ describe('api/news-feed', () => {
   })
 
   it('responds to HEAD for health checks', async () => {
-    head.mockResolvedValue({
+    headNewsFeed.mockResolvedValue({
       pathname: 'news-feed/latest.json',
       url: 'https://blob.example/news-feed/latest.json',
     })
@@ -117,7 +104,7 @@ describe('api/news-feed', () => {
 
     await handler(req, res)
 
-    expect(head).toHaveBeenCalledWith('news-feed/latest.json', { token: 'blob-token' })
+    expect(headNewsFeed).toHaveBeenCalledWith({ token: 'blob-token' })
     expect(res.statusCode).toBe(200)
     expect(res.ended).toBe(true)
   })

@@ -1,8 +1,5 @@
-import { get } from '@vercel/blob'
 import { withApiAuth } from './_lib/auth-middleware.js'
-import { getPrivateBlobToken } from './_lib/blob-tokens.js'
-
-const VALUATION_PREFIX = 'valuation'
+import { readValuationSnapshot } from './_lib/valuation-store.js'
 
 function normalizeMethod(value) {
   const method = String(value || '').trim()
@@ -20,24 +17,15 @@ async function handler(req, res) {
   const code = String(req.query?.code || '').trim()
   if (!code) return res.status(400).json({ error: 'code query param is required' })
 
-  const token = getPrivateBlobToken()
-  if (!token) return res.status(500).json({ error: 'blob token not configured' })
-
   try {
-    const blobResult = await get(`${VALUATION_PREFIX}/${code}.json`, {
-      access: 'private',
-      token,
-      useCache: false,
-    })
-
-    if (!blobResult) {
+    const snapshot = await readValuationSnapshot(code)
+    if (!snapshot) {
       return res.status(304).json({
         code,
         hint: 'compute required',
       })
     }
 
-    const snapshot = await new Response(blobResult.stream).json()
     res.setHeader('x-valuation-method', normalizeMethod(snapshot?.method))
     res.setHeader('x-valuation-confidence', String(snapshot?.confidence || 'low'))
     res.setHeader('x-valuation-position', String(snapshot?.positionInBand || 'unknown'))

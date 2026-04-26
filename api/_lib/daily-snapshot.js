@@ -1,7 +1,11 @@
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { get, put } from '@vercel/blob'
+import { appendLogLine, inferAppendLogKeyspaceId } from './append-log-store.js'
 import { getPrivateBlobToken } from './blob-tokens.js'
+import { getSnapshotBrainPrefix } from './snapshot-brain-store.js'
+import { getSnapshotPortfolioStatePrefix } from './snapshot-portfolio-state-store.js'
+import { getSnapshotResearchPrefix } from './snapshot-research-store.js'
 
 export const DAILY_SNAPSHOT_SCHEMA_VERSION = 1
 export const DAILY_SNAPSHOT_TIMEZONE = 'Asia/Taipei'
@@ -19,6 +23,10 @@ export const PORTFOLIO_STATE_FIELD_SPECS = Object.freeze([
   Object.freeze({ suffix: 'fundamentals-v1', fileName: 'fundamentals.json', emptyValue: {} }),
   Object.freeze({ suffix: 'news-events-v1', fileName: 'newsEvents.json', emptyValue: [] }),
 ])
+
+function trimTrailingSlash(value) {
+  return String(value || '').replace(/\/+$/, '')
+}
 
 function formatDateParts(value = new Date(), timeZone = DAILY_SNAPSHOT_TIMEZONE) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -57,21 +65,15 @@ export function getDailySnapshotManifestKey(date) {
 }
 
 export function getDailySnapshotResearchPrefix(date) {
-  const normalized = String(date || '').trim()
-  if (!isIsoDate(normalized)) throw new Error('daily snapshot date must be YYYY-MM-DD')
-  return `snapshot/research/${normalized}`
+  return trimTrailingSlash(getSnapshotResearchPrefix(date))
 }
 
 export function getDailySnapshotBrainPrefix(date) {
-  const normalized = String(date || '').trim()
-  if (!isIsoDate(normalized)) throw new Error('daily snapshot date must be YYYY-MM-DD')
-  return `snapshot/brain/${normalized}`
+  return trimTrailingSlash(getSnapshotBrainPrefix(date))
 }
 
 export function getDailySnapshotPortfolioStatePrefix(date) {
-  const normalized = String(date || '').trim()
-  if (!isIsoDate(normalized)) throw new Error('daily snapshot date must be YYYY-MM-DD')
-  return `snapshot/portfolio-state/${normalized}`
+  return trimTrailingSlash(getSnapshotPortfolioStatePrefix(date))
 }
 
 export function getDailySnapshotLocalStorageKey(date) {
@@ -128,28 +130,23 @@ export async function readBlobText(
 export async function appendBlobJsonLine(
   key,
   entry,
-  { token = getPrivateBlobToken(), getImpl = get, putImpl = put } = {}
+  { token = getPrivateBlobToken(), getImpl = get, putImpl = put, ...options } = {}
 ) {
   if (!token) {
     throw new Error('BLOB_READ_WRITE_TOKEN is required for blob log writes')
   }
 
-  const existing = (await readBlobText(key, { token, getImpl })) || ''
-  const nextLine = `${JSON.stringify(entry)}\n`
-  const nextText =
-    existing.trim().length > 0 ? `${existing.replace(/\s*$/, '\n')}${nextLine}` : nextLine
-
-  await putImpl(key, nextText, {
+  const line = JSON.stringify(entry)
+  await appendLogLine(inferAppendLogKeyspaceId(key), key, line, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/x-ndjson',
+    getImpl,
+    putImpl,
+    ...options,
   })
 
   return {
     key,
-    line: nextLine.trimEnd(),
+    line,
   }
 }
 

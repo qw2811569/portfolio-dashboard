@@ -1,13 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { get, list } = vi.hoisted(() => ({
+const { get, head, list, put } = vi.hoisted(() => ({
   get: vi.fn(),
+  head: vi.fn(),
   list: vi.fn(),
+  put: vi.fn(),
 }))
 
 vi.mock('@vercel/blob', () => ({
   get,
+  head,
   list,
+  put,
 }))
 
 function createMockResponse() {
@@ -88,6 +92,21 @@ describe('api/daily-snapshot-status', () => {
       stale: true,
       badgeStatus: 'failed',
       lastAttemptStatus: 'failed',
+    })
+  })
+
+  it('returns 500 when the marker backend is unavailable', async () => {
+    get.mockRejectedValue(new Error('blob down'))
+
+    const { default: handler } = await import('../../api/daily-snapshot-status.js')
+    const res = createMockResponse()
+
+    await handler({ method: 'GET', headers: {} }, res)
+
+    expect(res.statusCode).toBe(500)
+    expect(res.payload).toMatchObject({
+      ok: false,
+      code: 'STORAGE_OUTAGE',
     })
   })
 })

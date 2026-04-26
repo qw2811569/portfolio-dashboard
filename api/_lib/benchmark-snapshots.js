@@ -1,6 +1,10 @@
-import { list, put } from '@vercel/blob'
-import { getPrivateBlobToken } from './blob-tokens.js'
-import { fetchSignedBlobJson } from './signed-url.js'
+import { put } from '@vercel/blob'
+import {
+  getBenchmarkSnapshotStoreKey,
+  listBenchmarkSnapshotKeys,
+  readBenchmarkSnapshot,
+  writeBenchmarkSnapshotStore,
+} from './benchmark-snapshot-store.js'
 
 const DEFAULT_TIMEZONE = 'Asia/Taipei'
 const DEFAULT_HISTORY_DAYS = 90
@@ -11,10 +15,6 @@ export const DEFAULT_BENCHMARK_CODE = '0050'
 export const DEFAULT_BENCHMARK_LABEL = '元大台灣50'
 export const DEFAULT_BENCHMARK_PROXY_FOR = '^TWII'
 export const DEFAULT_BENCHMARK_SOURCE = 'finmind:TaiwanStockPrice'
-
-function getBlobToken() {
-  return getPrivateBlobToken()
-}
 
 function formatDateParts(value, timeZone = DEFAULT_TIMEZONE) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -63,27 +63,6 @@ function normalizeText(value, fallback = null) {
   return text || fallback
 }
 
-async function listAllBlobs(prefix, { token = getBlobToken(), listImpl = list } = {}) {
-  if (!token) throw new Error('BLOB_READ_WRITE_TOKEN is required for benchmark snapshot reads')
-
-  const blobs = []
-  let cursor
-
-  do {
-    const page = await listImpl({
-      prefix,
-      token,
-      cursor,
-      limit: 1000,
-    })
-
-    blobs.push(...(Array.isArray(page?.blobs) ? page.blobs : []))
-    cursor = page?.cursor || null
-  } while (cursor)
-
-  return blobs
-}
-
 function getDefaultDateRange(now = new Date(), timeZone = DEFAULT_TIMEZONE) {
   const toDate = formatBenchmarkSnapshotDate(now, timeZone)
   const fromDate = shiftDate(toDate, -(DEFAULT_HISTORY_DAYS - 1))
@@ -91,7 +70,7 @@ function getDefaultDateRange(now = new Date(), timeZone = DEFAULT_TIMEZONE) {
 }
 
 export function getBenchmarkSnapshotKey(date) {
-  return `${BENCHMARK_SNAPSHOT_PREFIX}/${assertSnapshotDate(date)}.json`
+  return getBenchmarkSnapshotStoreKey(assertSnapshotDate(date))
 }
 
 export function normalizeBenchmarkSnapshot(snapshot = {}) {
@@ -129,58 +108,34 @@ export function normalizeBenchmarkSnapshot(snapshot = {}) {
   }
 }
 
-export async function writeBenchmarkSnapshot(
-  snapshot,
-  { token = getBlobToken(), putImpl = put } = {}
-) {
-  if (!token) {
-    throw new Error('BLOB_READ_WRITE_TOKEN is required for benchmark snapshot writes')
-  }
-
+export async function writeBenchmarkSnapshot(snapshot, { token, putImpl = put } = {}) {
   const normalized = normalizeBenchmarkSnapshot(snapshot)
   if (!normalized) throw new Error('benchmark snapshot payload is required')
 
-  await putImpl(getBenchmarkSnapshotKey(normalized.date), JSON.stringify(normalized, null, 2), {
+  await writeBenchmarkSnapshotStore(normalized.date, normalized, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/json',
+    putImpl,
   })
 
   return normalized
 }
 
-export async function readBenchmarkSnapshots(
-  { fromDate, toDate } = {},
-  {
-    token = getBlobToken(),
-    fetchImpl = fetch,
-    listImpl = list,
-    origin,
-    now = new Date(),
-    timeZone = DEFAULT_TIMEZONE,
-  } = {}
-) {
+export async function readBenchmarkSnapshots({ fromDate, toDate } = {}, options = {}) {
+  const { now = new Date(), timeZone = DEFAULT_TIMEZONE } = options
   const range =
     isIsoDate(fromDate) && isIsoDate(toDate)
       ? { fromDate, toDate }
       : getDefaultDateRange(now, timeZone)
 
-  const blobs = await listAllBlobs(BENCHMARK_SNAPSHOT_PREFIX, { token, listImpl })
-  const snapshots = []
+  const keys = await listBenchmarkSnapshotKeys(options)
+  const dates = keys
+    .map((key) => /^snapshot\/benchmark\/(\d{4}-\d{2}-\d{2})\.json$/.exec(String(key))?.[1] || null)
+    .filter((date) => date && date >= range.fromDate && date <= range.toDate)
 
-  for (const blob of blobs) {
-    const payload = normalizeBenchmarkSnapshot(
-      await fetchSignedBlobJson(blob?.pathname || blob?.url, {
-        origin,
-        fetchImpl,
-      })
-    )
-    if (!payload) continue
-    if (payload.date < range.fromDate || payload.date > range.toDate) continue
-    snapshots.push(payload)
-  }
+  const snapshots = await Promise.all(dates.map((date) => readBenchmarkSnapshot(date, options)))
 
-  return snapshots.sort((left, right) => left.date.localeCompare(right.date))
+  return snapshots
+    .map((snapshot) => normalizeBenchmarkSnapshot(snapshot))
+    .filter(Boolean)
+    .sort((left, right) => left.date.localeCompare(right.date))
 }

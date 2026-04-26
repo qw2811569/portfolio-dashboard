@@ -1,0 +1,11 @@
+[Unit]
+Description=JCV cron timer · collect-target-prices
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 09:30:00 UTC
+Persistent=false
+AccuracySec=1m
+Unit=jcv-collect-target-prices.service
+
+[Install]
+WantedBy=timers.target

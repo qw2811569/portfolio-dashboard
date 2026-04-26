@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const get = vi.fn()
+const { readValuationSnapshot } = vi.hoisted(() => ({
+  readValuationSnapshot: vi.fn(),
+}))
 
-vi.mock('@vercel/blob', () => ({
-  get,
+vi.mock('../../api/_lib/valuation-store.js', () => ({
+  readValuationSnapshot,
 }))
 
 function createMockResponse() {
@@ -37,25 +39,14 @@ describe('api/valuation', () => {
   })
 
   it('returns the stored valuation snapshot when blob exists', async () => {
-    get.mockResolvedValue({
-      stream: new ReadableStream({
-        start(controller) {
-          controller.enqueue(
-            new TextEncoder().encode(
-              JSON.stringify({
-                code: '7865',
-                method: 'historical-per-band',
-                confidence: 'high',
-                positionInBand: 'within',
-                lowerBound: 30.2,
-                midPoint: 37.5,
-                upperBound: 44.8,
-              })
-            )
-          )
-          controller.close()
-        },
-      }),
+    readValuationSnapshot.mockResolvedValue({
+      code: '7865',
+      method: 'historical-per-band',
+      confidence: 'high',
+      positionInBand: 'within',
+      lowerBound: 30.2,
+      midPoint: 37.5,
+      upperBound: 44.8,
     })
 
     const { default: handler } = await import('../../api/valuation.js')
@@ -64,6 +55,7 @@ describe('api/valuation', () => {
 
     await handler(req, res)
 
+    expect(readValuationSnapshot).toHaveBeenCalledWith('7865')
     expect(res.statusCode).toBe(200)
     expect(res.headers['x-valuation-method']).toBe('historical-per-band')
     expect(res.headers['x-valuation-confidence']).toBe('high')
@@ -75,7 +67,7 @@ describe('api/valuation', () => {
   })
 
   it('returns 304 with compute hint when no valuation blob exists', async () => {
-    get.mockResolvedValue(null)
+    readValuationSnapshot.mockResolvedValue(null)
 
     const { default: handler } = await import('../../api/valuation.js')
     const req = { method: 'GET', query: { code: '2489' } }
@@ -83,6 +75,7 @@ describe('api/valuation', () => {
 
     await handler(req, res)
 
+    expect(readValuationSnapshot).toHaveBeenCalledWith('2489')
     expect(res.statusCode).toBe(304)
     expect(res.payload).toEqual({
       code: '2489',

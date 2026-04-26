@@ -1,6 +1,7 @@
 import { list, put } from '@vercel/blob'
 import { getPrivateBlobToken } from '../_lib/blob-tokens.js'
 import { loadLocalEnvIfPresent } from '../_lib/local-env.js'
+import { writeValuationSnapshot } from '../_lib/valuation-store.js'
 import { markCronSuccess } from '../../src/lib/cronLastSuccess.js'
 import { fetchHistoricalPerBandValuation } from '../../src/lib/dataAdapters/finmindValuationAdapter.js'
 import {
@@ -10,7 +11,6 @@ import {
   resolveRequestOrigin,
 } from './collect-target-prices.js'
 
-const VALUATION_PREFIX = 'valuation'
 const PROCESSING_PAUSE_MS = 150
 
 function getBlobToken() {
@@ -28,16 +28,9 @@ export async function putValuationSnapshot(
   snapshot,
   { token = getBlobToken(), putImpl = put } = {}
 ) {
-  if (!token) {
-    throw new Error('BLOB_READ_WRITE_TOKEN is required for valuation writes')
-  }
-
-  await putImpl(`${VALUATION_PREFIX}/${code}.json`, JSON.stringify(snapshot, null, 2), {
+  return writeValuationSnapshot(code, snapshot, {
     token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    access: 'private',
-    contentType: 'application/json',
+    putImpl,
   })
 }
 

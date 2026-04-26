@@ -1291,3 +1291,163 @@ GCS 累計 **174 物件**。
 - **Class 5 hybrid**（brain.js / research.js / telemetry.js · 最難）
 
 Codex Round 33 strategy: D' → B' → **C** → E。D'+B' 都過 · 進 C。
+
+## Round 39 · Codex B QA · 2026-04-25 15:05
+
+### 找到的 bug
+- 🔴 critical: 未發現必須立刻 rollback 的 correctness regression；`hybrid-store` 主要 read/write 路徑與 4 wrapper 基本可運作，相關 test 實跑全過。
+- 🟡 major: telemetry migration public source read 不吃 `PUB_BLOB_TELEMETRY_TOKEN`。`telemetry-store` wrapper 正確走 `getTelemetryBlobToken()`，但 `scripts/migrate-hybrid-keyspace-to-gcs.mjs:245-250` 的 public `readSource()` 只看 `PUB_BLOB_READ_WRITE_TOKEN`。我用 probe 設 `PUB_BLOB_TELEMETRY_TOKEN=telemetry-token`、不設 `PUB_BLOB_READ_WRITE_TOKEN`，結果直接噴 `PUB_BLOB_READ_WRITE_TOKEN is required for public hybrid migration reads`。這會讓 telemetry keyspace 在「token contract 正確」的環境仍無法 migrate。
+- 🟡 major: delete propagation 仍會 stale shadow resurrect。`hybridStore.delete()` 先刪 local，再 best-effort 刪 primary + shadow，remote delete failure 只 log 不 throw（`api/_lib/hybrid-store.js:647-681`）。我做 probe：local delete 成功、primary miss、shadow delete fail、下一次 read shadow hit，結果 stale payload 被 promote 回 local。這違反「local delete 後第二次 read 不會被 stale shadow 寫回 local」。
+- 🟡 major: local replace 不是 atomic。remote write 已改 `put(... allowOverwrite: true)`，沒有 delete-then-put；但 local truth 寫入仍是直接 `writeFile(target)`（`api/_lib/hybrid-store.js:61-76`），read 端 JSON parse fail 會吞掉並當 local miss（`50-58`），接著 fallback remote（`548-563`）。若 reader 卡在 local file truncate / partial write 中間，可能讀到 null、拿 stale remote 回填，這是 local-first hybrid 特有的資料倒退風險。
+- 🟡 major: `research-index.json` / `analysis-history-index.json` 還是 read-modify-write last writer wins，沒有 versionToken/CAS。`api/research.js:88-94`、`api/_lib/analysis-history.js:71-75` 都會在 concurrent save 時 drop 另一個 writer 的 index entry；tracked-stocks 已有 versionToken retry pattern，這兩個 index 還沒有。
+- 🟢 minor: `events.json` / `holdings.json` 納入 brain wrapper 功能上沒破，但 keyspace ownership 命名偏糊。現有 callsite 是 `api/brain.js:76-91` 的 `save-events` / `save-holdings`，之前就是 brain API raw Blob lane；現在改走 `STORAGE_*_BRAIN` flag，會讓 portfolio state 跟 strategy brain 共用同一套 cutover flag。
+- 🟢 minor: 現有 tests 沒 cover 幾個本輪指定 hard case：all-miss read、public migration token fallback、delete resurrection、promote race byte equality、local partial write atomicity、index concurrent write lost update。
+
+### 7 類別 explicit 答
+1. local-first read：✅ 主邏輯符合 local → primary → shadow → null。既有 test cover local hit 不打 remote、primary hit promote、shadow hit promote；我另用 probe 驗全 miss 回 `null` 不 throw。缺口是 local partial/corrupt JSON 被當 miss，會 fallback remote。
+2. write semantics：✅ local mandatory、primary/shadow best-effort 成立；4 cutover mode tests pass。我另用 probe 驗 primary + shadow remote fail 不 throw、local payload 已寫入。local write fail 會 throw。
+3. atomic replace：🟡 remote replace 修掉 delete-then-put，test 也確認 write path 不呼叫 `delImpl`，`put` 帶 `allowOverwrite: true`。但 local file replace 仍非 atomic，concurrent local read 可能看到 partial/empty。
+4. promote race：🟢 兩個 local miss caller 會各自打 remote、各自 promote；如果兩次 remote payload byte-equal，最後 local byte-equal。若 primary/shadow 在兩次 fetch 間不同，最後 local 是最後完成 promote 的 payload；目前沒有 per-key lock 或 generation guard，也沒有 divergence record。
+5. delete propagation：🟡 wrapper delete 會嘗試清 local + 兩個 remote mirror；analysis-history 有 caller 接上。brain/research wrapper 也有 delete API，但主要 caller 沒 expose delete lane。只要任一 remote delete fail，後續 shadowRead 仍可把 stale object promote 回 local，缺 tombstone/failed-delete hard fail。
+6. telemetry public：🟡 runtime wrapper OK：write Vercel `access:'public'`，GCS `public:true`，token 走 `PUB_BLOB_TELEMETRY_TOKEN` fallback `PUB_BLOB_READ_WRITE_TOKEN`。migration write 也設 `public:true`。但 migration public source read token 錯，只吃 `PUB_BLOB_READ_WRITE_TOKEN`，跟 wrapper contract 不一致。
+7. A flag 兩點：A1：`events.json` / `holdings.json` 之前由 `api/brain.js` 的 save/load actions raw Blob write，納入 brain wrapper 不破現有 caller，但會污染 `BRAIN` envPrefix；長期建議拆成 `portfolio_events_store` / `portfolio_holdings_store` 或至少獨立 envPrefix。`brain-proposals/*` 實際 writer 是 `api/research.js:1014-1016`，放 research wrapper 比放 brain wrapper合理。A2：兩個 index 的 multi-writer 機率不是 0；research endpoint 可多請求並行，analysis save/delete 也可能並行。建議補 tracked-stocks 同級 CAS/versionToken retry，至少 index 檔要做。
+
+### confidence
+- hybrid-store: 7/10
+- 4 wrappers: 7/10
+- migration: 6/10
+- caller refactor (4 callers): 7/10
+- Class 1-4 regression: 8/10
+
+### 我推薦下一動作
+- 先修 telemetry migration public `readSource()`，讓它用 keyspace tokenResolver / `getTelemetryBlobToken()`，並補 regression：只設 `PUB_BLOB_TELEMETRY_TOKEN` 時 dry-run 能讀 source。
+- 對 delete 加 tombstone 或讓 remote mirror delete failure 對 local-authority keyspace 變 hard failure；否則 shadowRead 會復活已刪資料。
+- 把 local write 改 temp-file + atomic rename，read parse failure 不應無條件 fallback remote promote。
+- 給 `research-index.json` / `analysis-history-index.json` 補 CAS/versionToken retry，或先用 singleflight/mutex 把同 process lost update 擋住。
+- 重新跑 4 keyspace dry-run；本輪我只跑了 mock/unit 與 local probe，沒有真環境 token/bucket dry-run。
+
+## Round 40 · Codex A · Class 5 hybrid fix · 2026-04-25 06:14
+
+- commit SHA: `8753af7`
+- telemetry migration: public `readSource()` 改走 `getTelemetryBlobToken()` fallback chain，`PUB_BLOB_TELEMETRY_TOKEN` only regression 已補。
+- delete propagation: 選 A tombstone；local delete 後寫 `<localPath>.tombstone`，read 見 tombstone 直接 `null`，remote mirrors 都 confirmed deleted/missing 才清 tombstone。
+- local replace: local JSON write 改 temp-file + POSIX atomic `rename()`；local JSON parse fail 改丟 `LOCAL_CORRUPT`，不再 fallback remote。
+- index CAS: `hybrid-store` 新增 `readWithVersion()` / `writeIfVersion()`；`research-index.json`、`analysis-history-index.json` 改 CAS retry，concurrent 兩 writer 最終保留兩筆。
+- minor wrapper: `events.json` / `holdings.json` 從 brain envPrefix 拆到 `PORTFOLIO_EVENTS` / `PORTFOLIO_HOLDINGS` wrapper；`brain-proposals/*` 維持 research wrapper。
+- CAS 與 local-first 結合: local file 也有 `versionToken`，用 authoritative JSON bytes 的 `local:<sha256>`；`writeIfVersion()` 在 per-file local CAS queue 裡重讀 token，比對成功才 atomic rename，remote dual-write 仍維持 best-effort。
+- confidence: hybrid-store `7/10 -> 8/10`；migration `6/10 -> 8/10`。
+
+---
+
+## Round 41 · Claude · Step 2f VM deploy + Phase 1 milestone · 2026-04-25 22:05
+
+### A↔B QA 軌跡（Class 5 hybrid · 最難一步）
+
+| Round | 角色 | 結果 |
+|------|------|------|
+| 38 | A 寫 | commit `8753af7` · hybrid-store + 4 wrapper + caller refactor + delete-then-put → atomic |
+| 39 | B QA | 0 critical · 4 major + 2 minor（telemetry token / delete propagation / atomic / index CAS / wrapper split） |
+| 40 | A 修 | commit `cf766a5` · 5 fix · tombstone + temp+rename + CAS + token chain + portfolio split |
+
+### VM deploy
+
+- 2 commit 套上 jcv-dev (`c13949a..45ff46f`)
+- 18 個新 env vars 寫進 `.env.local`（含 portfolio_events / portfolio_holdings 拆分）
+- API regression check：`/api/research` 500 是「未設定 AI_API_KEY」runtime check · 不是 Class 5 storage bug · 其他 endpoint 全綠
+
+### confidence（B Round 39 終值）
+
+| 元件 | 起始 → A 修後 |
+|------|---|
+| hybrid-store | 7→8/10 |
+| 4 wrappers | 7/10 |
+| migration | 6→8/10 |
+| caller refactor | 7/10 |
+| Class 1-4 regression | 8/10（仍 clean） |
+
+### Phase 1 整體完成度
+
+| Step | Class | Keyspaces | GCS objects |
+|------|-------|-----------|-------------|
+| 2a | 1 LWW | last_success ×2 | 4 |
+| 2b | 2 CAS | tracked_stocks | 114 |
+| 2c | 1 LWW batch | 7 個 | 56 |
+| 2d | 4 prefix | snapshot.research | 0 (empty) |
+| 2e | 4 prefix | snapshot.brain + portfolio_state | 0 (empty) |
+| **2f** | **5 hybrid** | **brain + research + telemetry + analysis_history + portfolio_events + portfolio_holdings** | **0 (empty · framework deployed)** |
+
+GCS 累計 **174 物件**。
+
+### Phase 1 Step 2 已涵蓋 Class
+
+- ✅ Class 1 (LWW singleton)
+- ✅ Class 2 (CAS)
+- ✅ Class 4 (prefix scan + listPrefix + deleteMany)
+- ✅ Class 5 (hybrid local+remote)
+- ⏳ Class 3 (RMW append log) — 還沒做
+
+### 還沒做（Phase 1 Step 2 剩餘）
+
+- **Class 3 RMW append log**（`logs/trade-audit-{YYYY-MM}.jsonl`、`logs/storage-divergence-{YYYY-MM}.jsonl` 自己 · `daily-snapshot` log · `morning-note` log）
+- 真實 burn-in（jcv-dev 沒生產流量 · 需移 cron 過去或用 synthetic load）
+- production VM (`bigstock`) 切 cutover flag 跑真流量
+- Phase 2-5（cron systemd / 前端 hosting / 清 vercel.json）
+
+### A 自己 noted unresolved
+
+- `events.json` / `holdings.json` 已從 brain envPrefix 拆出 · 但 caller 是 `api/brain.js` 的 save-events / save-holdings actions（API 表面仍叫 brain）· 命名與 envPrefix 已分離 · 行為一致
+- 未來若 portfolio events/holdings 多寫者 · 需補 versionToken/CAS（目前只有 index files 加了 CAS）
+
+### 累積 commits
+
+10 個 phase-1 commits 在 `vercel-decouple-phase1` 分支 · 全 push origin。
+- `72b61ff` env split
+- `fcf71b6` last-success adapter
+- `0deba05` last-success failover hardening
+- `a49296e` stale lock fix
+- `38efec8` tracked-stocks CAS
+- `e54bae1` tracked-stocks hardening
+- `0a11bc7` tracked-stocks shadow reconcile
+- `33c7fc7` Class 1 batch
+- `94f5992` Class 1 batch fixes
+- `7ff3161` snapshot.research prefix-store
+- `8adaceb` prefix-store sampling + race fix
+- `7f5b001` stale convergence
+- `63054a5` snapshot.brain + portfolio-state
+- `06a06b5` research shim hardening
+- `8753af7` Class 5 hybrid stores
+- `cf766a5` Class 5 tombstone + atomic + CAS
+
+### 累積 round
+
+41 round（A 跑 13 次 · B QA 13 次 · Claude review 1 次 · Codex 戰略 review 3 次 · Claude milestone summary 11 次）
+
+
+## Round 42 · Codex final strategy · 2026-04-26 12:53
+1. 完整順序: F → H/I並行 → K → G → J。
+2. 每段預期 round 數:
+   F = 1 輪 / H = 1 輪 / G = 2 輪 / I = 1 輪 / K = 1 輪 / J = 1 輪
+3. 哪段需要最多 A↔B QA: G
+4. 哪段可以 A 一次到位 skip B: I、J
+5. 信心 8/10
+
+## Round 43 · Codex A · Class 3 RMW append log · 2026-04-26 13:03
+
+- commit SHA(s): `7e9352b`（Class 3 append-log store / wrappers / migration / tests）。本 discussion 追加會再單獨 commit。
+- manifest 真實 Class 3 list（從 `/Users/chenkuichen/app/test/.tmp/vercel-full-decoupling/phase-0/migration-manifest.json`；此 worktree 內沒有 `phase-0/migration-manifest.json`）：
+  - `morning_note_log` → `logs/morning-note-{YYYY-MM}.jsonl`：需 migrate；Vercel Blob RMW append。
+  - `daily_snapshot_log` → `logs/daily-snapshot-{YYYY-MM}.jsonl`：需 migrate；Vercel Blob RMW append。
+  - `restore_rehearsal_log` → `logs/restore-rehearsal-{YYYY-MM}.jsonl`：需 migrate；Vercel Blob RMW append。
+  - `trade-audit` 不在 manifest Class 3；repo 內是 VM local `logs/trade-audit-{YYYY-MM}.jsonl`，不遷移。
+  - `storage-divergence` 不在 manifest Class 3；repo 內是 generated VM local `logs/storage-divergence-{YYYY-MM}.jsonl`，不遷移。
+- 選的 RMW 設計：A + monthly rotation。新增 `api/_lib/append-log-store.js`，每次 append 都是 `readWithVersion()` → client-side append one NDJSON line → `writeIfVersion()`，version conflict 最多 retry 5 次 with backoff，最後仍 conflict 就 throw 給 caller。Vercel primary 用 etag `ifMatch`；GCS primary 用 generation `ifGenerationMatch`。
+- monthly rotation 細節：key 維持既有 `{prefix}-{YYYY-MM}.jsonl`。只有當月檔案持續 RMW；歷史月份視為 immutable migration unit。migration script `scripts/migrate-append-log-to-gcs.mjs --keyspace=<id>` list Vercel monthly objects、GCS create-only generation=0、read-back hash verify；如果 inventory 含當月檔，preflight 要求 `STORAGE_SHADOW_WRITE_<KEYSPACE>=true`。
+- cutover flags 已補到 `.env.example` / `.env.local.example`，defaults 不變：`STORAGE_PRIMARY_MORNING_NOTE_LOG=vercel`、`STORAGE_PRIMARY_DAILY_SNAPSHOT_LOG=vercel`、`STORAGE_PRIMARY_RESTORE_REHEARSAL_LOG=vercel`，各自 shadow read/write false。
+- caller refactor：`appendBlobJsonLine()`（daily snapshot + restore rehearsal）和 `appendMorningNoteLog()` 都改走 `appendLogLine()`；不再在 caller 內 full-file `get` + `put`。
+- tests：`tests/api/append-log-store.test.js` 覆蓋 CAS retry、max retries、monthly key naming、daily/morning wrapper；`tests/scripts/migrate-append-log-to-gcs.test.js` 覆蓋 inventory pagination、current-month shadow-write gate、create-only write + hash verify、source-race stale detection。
+- 驗證：
+  - ✅ `npm run typecheck`
+  - ✅ `npm run lint`（仍有既有 warning：`src/lib/dashboardHeadline.js:54 resolveFreshnessStatuses` unused）
+  - ✅ `npm run test:run -- tests/api/append-log-store.test.js tests/scripts/migrate-append-log-to-gcs.test.js --run`
+  - ✅ 補跑 `tests/api/morning-note.test.js tests/api/daily-snapshot-status.test.js --run`
+- 我最不確定的部分：Vercel Blob 的 `head` etag + `get(useCache:false)` 不是單一原子 read；若 head/get 間被更新，會造成一次 false conflict 並 retry，但不應造成 lost append。另一個不確定是 active current-month migration 若 source 在 initial copy 後變動，現在會標 `stale-source-changed`，resume 走 prefix-store 同款 overwrite convergence；這比純 create-only 更能收斂，但仍需 shadow-write burn-in 驗真流量。

@@ -1,26 +1,26 @@
 :root {
-  --app-bg: #FAFAFA;
-  --surface: #EFEEEC;
-  --surface-muted: #E5E2DD;
-  --paper: #D9D3D1;
-  --raised: #FFFFFF;
-  --dark-panel: #0B120E;
-  --text: #0B120E;
-  --text-secondary: #2F3232;
+  --app-bg: #fafafa;
+  --surface: #efeeec;
+  --surface-muted: #e5e2dd;
+  --paper: #d9d3d1;
+  --raised: #ffffff;
+  --dark-panel: #0b120e;
+  --text: #0b120e;
+  --text-secondary: #2f3232;
   --text-muted: #838585;
   --border: rgba(11, 18, 14, 0.14);
   --border-soft: rgba(11, 18, 14, 0.08);
 }
 
 [data-theme='light'] {
-  --app-bg: #FAFAFA;
-  --surface: #EFEEEC;
-  --surface-muted: #E5E2DD;
-  --paper: #D9D3D1;
-  --raised: #FFFFFF;
-  --dark-panel: #0B120E;
-  --text: #0B120E;
-  --text-secondary: #2F3232;
+  --app-bg: #fafafa;
+  --surface: #efeeec;
+  --surface-muted: #e5e2dd;
+  --paper: #d9d3d1;
+  --raised: #ffffff;
+  --dark-panel: #0b120e;
+  --text: #0b120e;
+  --text-secondary: #2f3232;
   --text-muted: #838585;
   --border: rgba(11, 18, 14, 0.14);
   --border-soft: rgba(11, 18, 14, 0.08);
@@ -79,15 +79,15 @@ textarea {
 }
 
 :where(
-    a[href],
-    button,
-    input:not([type='hidden']),
-    select,
-    textarea,
-    summary,
-    [role='button'],
-    [tabindex]:not([tabindex='-1'])
-  ):focus-visible {
+  a[href],
+  button,
+  input:not([type='hidden']),
+  select,
+  textarea,
+  summary,
+  [role='button'],
+  [tabindex]:not([tabindex='-1'])
+):focus-visible {
   outline: 2px solid var(--ink, #0b120e) !important;
   outline-offset: 2px;
   box-shadow: var(--focus-ring, 0 0 0 3px rgba(239, 125, 47, 0.22)) !important;
@@ -428,6 +428,6 @@ textarea {
 @media (max-width: 600px) {
   .dashboard-hero {
     gap: 16px;
-    padding-bottom: 88px;
+    padding-bottom: 160px;
   }
 }

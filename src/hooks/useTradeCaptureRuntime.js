@@ -593,6 +593,12 @@ export function useTradeCaptureRuntime({
   return useMemo(
     () => ({
       img: activeUpload?.img || null,
+      portfolioId,
+      holdings,
+      tradeLog,
+      marketQuotes,
+      setHoldings,
+      setTradeLog,
       uploads: tradeEditorState.uploads,
       activeUploadId: tradeEditorState.activeUploadId,
       activeUploadIndex: tradeEditorState.uploads.findIndex(
@@ -652,6 +658,7 @@ export function useTradeCaptureRuntime({
       upsertFundamentalsEntry,
       createDefaultFundamentalDraft,
       toSlashDate,
+      flashSaved,
       resetActiveUploadMemo,
     }),
     [
@@ -684,6 +691,13 @@ export function useTradeCaptureRuntime({
       setTradeDisclaimerChecked,
       acknowledgeTradeDisclaimer,
       openTradeDisclaimer,
+      portfolioId,
+      holdings,
+      tradeLog,
+      marketQuotes,
+      setHoldings,
+      setTradeLog,
+      flashSaved,
       toSlashDate,
       tradeEditorState,
       upsertFundamentalsEntry,

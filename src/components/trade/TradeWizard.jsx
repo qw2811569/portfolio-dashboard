@@ -132,7 +132,7 @@ export default function TradeWizard({
 
   return (
     <div data-testid="trade-wizard" style={{ display: 'grid', gap: 14 }}>
-      <Card style={{ borderRadius: 8, padding: '12px 14px' }}>
+      <Card style={{ borderRadius: 8, padding: '12px 14px', background: C.raised }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
           {steps.map((label, index) => {
             const active = step === index + 1

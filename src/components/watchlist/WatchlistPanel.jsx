@@ -3,14 +3,14 @@ import { C, alpha } from '../../theme.js'
 import { CANONICAL_TONE_KEYS, normalizeToneKey, resolveTone } from '../../lib/toneResolver.js'
 import { Card, Button, ConfirmDialog, OperatingContextCard } from '../common'
 
-const bgTints = [C.card, C.cardBlue, C.cardAmber]
+const bgTints = [C.raised, C.surface, C.raised]
 const WATCHLIST_TONE_OPTIONS = Object.freeze(CANONICAL_TONE_KEYS)
 const inputStyle = {
   width: '100%',
   padding: '8px 8px',
   borderRadius: 8,
   border: `1px solid ${C.border}`,
-  background: C.bg,
+  background: C.raised,
   color: C.text,
   fontSize: 12,
   boxSizing: 'border-box',
@@ -452,7 +452,7 @@ export function WatchlistRow({
           style: {
             marginTop: 8,
             padding: '8px 12px',
-            background: C.bg,
+            background: C.surface,
             borderRadius: C.radii.md,
           },
         },

@@ -1520,3 +1520,48 @@ GCS 累計 **174 物件**。
 - jcv-dev 實際 nginx package layout 若不是 Debian/Ubuntu 的 `sites-available` / `sites-enabled`，script 需要用 `NGINX_SITE_AVAILABLE` / `NGINX_SITE_ENABLED` override。
 - `certbot certonly --nginx` 會依 VM 上已啟用的 nginx config 解析 server_name；若現場有舊 default site 搶 `80`，script 已移除 `/etc/nginx/sites-enabled/default`，但仍需 Claude 手動確認沒有其他 enabled site 搶同一 domain。
 - `/api/` 驗證的 HTTP code 可能是 app-specific 404/401；關鍵是確認它來自 `127.0.0.1:3000` API process，不是 nginx SPA fallback。
+
+## Round 46 · Codex A · Phase 2 cron systemd · 2026-04-26 13:25
+
+- commit SHA: `80e5ddc6e57675c911efa3bac538198e467522ce`
+- scope: `vercel.json` 4 個 cron 全部補 systemd service + timer；Vercel cron 保留 rollback，`vercel.json` 加 `cronsRetirementNote` 標 Phase 5 退役。
+
+### vercel.json cron list
+
+| path | schedule | function |
+|---|---:|---|
+| `/api/cron/compute-valuations` | `0 22 * * *` | `api/cron/compute-valuations.js` |
+| `/api/cron/collect-daily-events` | `0 8 * * 1-5` | `api/cron/collect-daily-events.js` |
+| `/api/cron/collect-target-prices` | `30 9 * * 1-5` | `api/cron/collect-target-prices.js` |
+| `/api/cron/collect-news` | `0 10 * * 1-5` | `api/cron/collect-news.js` |
+
+### systemd 翻譯對照表
+
+| cron name | Vercel schedule | systemd OnCalendar | files |
+|---|---:|---|---|
+| `compute-valuations` | `0 22 * * *` | `*-*-* 22:00:00` | `deploy/systemd/jcv-compute-valuations.{service,timer}` |
+| `collect-daily-events` | `0 8 * * 1-5` | `Mon..Fri *-*-* 08:00:00` | `deploy/systemd/jcv-collect-daily-events.{service,timer}` |
+| `collect-target-prices` | `30 9 * * 1-5` | `Mon..Fri *-*-* 09:30:00` | `deploy/systemd/jcv-collect-target-prices.{service,timer}` |
+| `collect-news` | `0 10 * * 1-5` | `Mon..Fri *-*-* 10:00:00` | `deploy/systemd/jcv-collect-news.{service,timer}` |
+
+### install script 設計
+
+- `deploy/install-cron-systemd.sh` 只安裝 repo 內 `deploy/systemd/jcv-*.service` / `jcv-*.timer` 到 `/etc/systemd/system/`，mode `0644`。
+- 安裝後跑 `systemctl daemon-reload`，再 `systemctl enable --now` 所有 `deploy/systemd/jcv-*.timer` basename。
+- 最後跑 `systemctl list-timers 'jcv-*'`，讓 Claude / jcv-dev 手動執行時可直接看到 next fire time。
+- 本輪沒有在 production VM 或 jcv-dev 執行 install script。
+
+### verification
+
+- `cat vercel.json | jq '.crons'` confirmed 4 entries。
+- `npm run typecheck` pass。
+- `npm run lint` pass with existing warning: `src/lib/dashboardHeadline.js:54 resolveFreshnessStatuses` unused。
+- `npm run test:run -- tests/deploy/cron-systemd-syntax.test.js --run` pass，4 tests。
+- `bash -n deploy/install-cron-systemd.sh` pass。
+- `systemd-analyze` not available in this local environment，所以沒有跑 manual systemd-analyze。
+
+### 你最不確定的部分
+
+- Timezone：Vercel cron schedule 是 UTC 語意；本輪依 Round 46 指示做字面翻譯，`OnCalendar` 沒加 timezone。若 VM local timezone 是 Asia/Taipei，實際觸發時刻會跟 Vercel UTC 不同，Claude 在 jcv-dev enable 前要決定是否加 `UTC`。
+- `vercel.json` 註解：JSON 不支援 comment，本輪用 top-level `cronsRetirementNote` 保留「will be retired Phase 5」。若 Vercel config schema 不接受未知欄位，下一輪應移到 docs / discussion，不要破壞 rollback deploy。
+- `.env.local` as `EnvironmentFile`：systemd env file syntax 大致相容 dotenv，但若現場 `.env.local` 有 shell-incompatible quoting/export pattern，service 會 fail，需要 Claude 在 jcv-dev 跑 `systemctl status` 確認。

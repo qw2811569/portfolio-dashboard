@@ -155,6 +155,121 @@ function groupEventCardsByWindow(cards = []) {
   return groups.filter((group) => group.items.length > 0)
 }
 
+function isPriorityEvent(event) {
+  if (event?.needsThesisReview === true) return true
+  return getEventDayDistance(event?.date || event?.eventDate) <= 3
+}
+
+function splitThisWeekEvents(items = []) {
+  const priority = []
+  const rest = []
+
+  items.forEach((event) => {
+    if (priority.length < 3 && isPriorityEvent(event)) {
+      priority.push(event)
+    } else {
+      rest.push(event)
+    }
+  })
+
+  if (priority.length > 0) return { priority, rest }
+
+  return {
+    priority: items.slice(0, 3),
+    rest: items.slice(3),
+  }
+}
+
+function EventGroupSummary({ label, count, helper }) {
+  return h(
+    'summary',
+    {
+      style: {
+        cursor: 'pointer',
+        listStyle: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        margin: '10px 0 6px',
+        padding: '8px 10px',
+        borderRadius: 8,
+        border: `1px solid ${C.borderSub}`,
+        background: alpha(C.charcoal, '06'),
+        color: C.textSec,
+        fontSize: 12,
+        fontWeight: 700,
+      },
+    },
+    h('span', null, `${label} ${count} 件`),
+    helper && h('span', { style: { color: C.textMute, fontWeight: 600 } }, helper)
+  )
+}
+
+function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock }) {
+  const renderCard = (event, index, keySuffix = '') =>
+    h(EventCard, {
+      key: `${buildEventKey(event, index)}${keySuffix}`,
+      event,
+      insiderViewMode,
+      isInsiderSelfStock: isInsiderSelfStock(event),
+    })
+
+  if (group.key === 'this-week') {
+    const { priority, rest } = splitThisWeekEvents(group.items)
+
+    return h(
+      'section',
+      { key: group.key, 'data-testid': `events-group-${group.key}` },
+      h(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            margin: '10px 0 6px',
+            padding: '0 2px',
+            color: C.textMute,
+            fontSize: 12,
+            fontWeight: 700,
+          },
+        },
+        h('span', null, group.label),
+        h('span', { style: { fontWeight: 600 } }, `${group.items.length} 則`)
+      ),
+      priority.map((event, index) => renderCard(event, index, '::priority')),
+      rest.length > 0 &&
+        h(
+          'details',
+          { 'data-testid': 'events-group-this-week-rest' },
+          h(EventGroupSummary, {
+            label: '本週其餘',
+            count: rest.length,
+            helper: '展開查看',
+          }),
+          rest.map((event, index) => renderCard(event, index, '::rest'))
+        )
+    )
+  }
+
+  return h(
+    'section',
+    { key: group.key, 'data-testid': `events-group-${group.key}` },
+    h(
+      'details',
+      { 'data-testid': `events-group-${group.key}-details` },
+      h(EventGroupSummary, {
+        label: group.label,
+        count: group.items.length,
+        helper: '展開查看',
+      }),
+      group.items.map((event, index) => renderCard(event, index))
+    )
+  )
+}
+
 function extractPrimaryCode(event) {
   const stocks = Array.isArray(event?.stocks) ? event.stocks : []
   const matched = stocks
@@ -1062,36 +1177,12 @@ export function EventsPanel({
 
     // Events list
     primaryCardGroups.map((group) =>
-      h(
-        'section',
-        { key: group.key, 'data-testid': `events-group-${group.key}` },
-        h(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-              margin: '10px 0 6px',
-              padding: '0 2px',
-              color: C.textMute,
-              fontSize: 12,
-              fontWeight: 700,
-            },
-          },
-          h('span', null, group.label),
-          h('span', { style: { fontWeight: 600 } }, `${group.items.length} 則`)
-        ),
-        group.items.map((event, index) =>
-          h(EventCard, {
-            key: buildEventKey(event, index),
-            event,
-            insiderViewMode,
-            isInsiderSelfStock: isInsiderSelfStock(event),
-          })
-        )
-      )
+      h(EventsGroupSection, {
+        key: group.key,
+        group,
+        insiderViewMode,
+        isInsiderSelfStock,
+      })
     ),
 
     filterType === ALL_EVENTS_FILTER_LABEL &&

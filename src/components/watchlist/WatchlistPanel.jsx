@@ -529,7 +529,7 @@ export function WatchlistRow({
                 },
                 h(
                   'div',
-                  { style: { fontSize: 12, color: C.lavender, fontWeight: 600 } },
+                  { style: { fontSize: 12, color: C.neutralIron, fontWeight: 600 } },
                   `策略追蹤（${relatedEvents.length} 筆）`
                 ),
                 h(

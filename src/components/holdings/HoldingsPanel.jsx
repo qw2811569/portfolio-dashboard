@@ -90,7 +90,7 @@ export function HoldingsSummary({
   const metrics = [
     ['總成本', totalCost.toLocaleString(), C.textSec],
     ['總市值', totalVal.toLocaleString(), C.text],
-    ['持股數', `${holdings.length}檔`, C.lavender],
+    ['持股數', `${holdings.length}檔`, C.neutralIron],
     ['今日損益', todayPnlText, todayPnlColor],
   ]
 

@@ -226,6 +226,9 @@ export const C = Object.freeze({
   orangeBg: alpha(TOKENS.cta, '12'),
   mint: TOKENS.charcoal,
   mintBg: alpha(TOKENS.charcoal, '0c'),
+  neutralIron: TOKENS.iron,
+  neutralCharcoal: TOKENS.charcoal,
+  // @deprecated -- use neutralIron / neutralCharcoal instead. Existing aliases kept for non-breaking migration.
   lavender: TOKENS.iron,
   lavBg: alpha(TOKENS.iron, '0c'),
   rose: TOKENS.cta,

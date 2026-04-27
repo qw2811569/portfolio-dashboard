@@ -391,7 +391,7 @@ export const IND_COLOR = {
   'AI/伺服器': C.positive,
   光通訊: C.positive,
   'PCB/材料': C.amber,
-  'IC/記憶體': C.lavender,
+  'IC/記憶體': C.neutralIron,
   被動元件: C.orange,
   '被動元件/電感': C.orange,
   重電: C.up,
@@ -399,7 +399,7 @@ export const IND_COLOR = {
   精密機械: C.stone,
   連接器: C.mint,
   中國ETF: C.rose,
-  半導體設備: C.choco,
+  半導體設備: C.neutralCharcoal,
   // 金聯成 組合新增產業
   生技醫療: C.up,
   台股ETF: C.positive,
@@ -408,7 +408,7 @@ export const IND_COLOR = {
   商品ETF: C.amber,
   '顯示器/光電': C.rose,
   '環保/循環': C.iron,
-  電子通路: C.lavender,
+  電子通路: C.neutralIron,
 }
 
 // ── 初始持倉 ────────────────────────────────────────────────────

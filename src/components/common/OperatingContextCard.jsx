@@ -345,7 +345,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         attentionCount > 0 &&
           h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount, attentionSummary)),
         refreshBacklogCount > 0 &&
-          h(Badge, { color: 'lavender' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
+          h(Badge, { color: 'iron' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&
           h(Badge, { color: 'positive' }, `自動復盤 ${autoReviewedCorrect}✓ ${autoReviewedWrong}✗`)
       )

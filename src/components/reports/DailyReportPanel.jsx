@@ -1520,7 +1520,7 @@ export function BrainAuditSection({ brainAudit }) {
   return h(
     Card,
     {
-      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.lavender, '40')}` },
+      style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.neutralIron, '40')}` },
     },
     h('div', { style: lbl }, 'AI 幫你回頭檢查'),
     sections.map((section) => {
@@ -1681,7 +1681,7 @@ export function AIInsightSection({
     return h(
       Card,
       {
-        style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.lavender, '40')}` },
+        style: { marginBottom: 8, borderLeft: `3px solid ${alpha(C.neutralIron, '40')}` },
       },
       h(
         'div',
@@ -1693,7 +1693,7 @@ export function AIInsightSection({
             marginBottom: 4,
           },
         },
-        h('div', { style: { ...lbl, color: C.lavender, marginBottom: 0 } }, 'AI 策略分析'),
+        h('div', { style: { ...lbl, color: C.neutralIron, marginBottom: 0 } }, 'AI 策略分析'),
         h(
           'span',
           {

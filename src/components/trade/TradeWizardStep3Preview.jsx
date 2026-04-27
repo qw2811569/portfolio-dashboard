@@ -13,10 +13,10 @@ export default function TradeWizardStep3Preview({
   return (
     <Card data-testid="trade-preview-panel" style={{ borderRadius: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 4 }}>
-        STEP 3 預覽差異
+        步驟 3 預覽差異
       </div>
       <div style={{ color: C.textMute, fontSize: 12, marginBottom: 12 }}>
-        套用後 holdings 會變成以下差異。這裡只寫入已成交紀錄，不產生買賣建議。
+        套用後持倉會變成以下差異。這裡只寫入已成交紀錄，不產生買賣建議。
       </div>
       <div style={{ display: 'grid', gap: 8 }}>
         {preview?.changes?.length ? (

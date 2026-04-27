@@ -566,7 +566,7 @@ export function AnxietyMetricsPanel({
               minHeight: 0,
             },
           },
-          '這五題還沒拿到任何可信資料，先看 Morning Note 跟待處理事件。'
+          '這五題還沒拿到任何可信資料，先看今晨速報跟待處理事件。'
         )
       )
     )

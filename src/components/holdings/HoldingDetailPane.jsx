@@ -351,7 +351,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
                   marginBottom: 6,
                 }}
               >
-                HOLDING DOSSIER
+                個股摘要
               </div>
               <div
                 id={titleId}
@@ -482,7 +482,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             gap: 14,
           }}
         >
-          <SectionCard title="主線與 thesis" eyebrow="THESIS">
+          <SectionCard title="主線與論述" eyebrow="論述">
             {thesis ? (
               <div style={{ display: 'grid', gap: 10 }}>
                 {thesis.text ? (
@@ -551,7 +551,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             )}
           </SectionCard>
 
-          <SectionCard title="估值與資料新鮮度" eyebrow="VALUATION">
+          <SectionCard title="估值與資料新鮮度" eyebrow="估值">
             <div style={{ display: 'grid', gap: 12 }}>
               <MetricGrid
                 rows={[
@@ -630,7 +630,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             </div>
           </SectionCard>
 
-          <SectionCard title="近三日提要" eyebrow="DAILY">
+          <SectionCard title="近三日提要" eyebrow="近期">
             {detail.recentDailyMentions?.length ? (
               <div style={{ display: 'grid', gap: 8 }}>
                 {detail.recentDailyMentions.map((item) => (
@@ -668,7 +668,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             )}
           </SectionCard>
 
-          <SectionCard title="最新研究切片" eyebrow="RESEARCH">
+          <SectionCard title="最新研究切片" eyebrow="研究">
             {detail.latestResearchSlice ? (
               <div
                 style={{
@@ -695,7 +695,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
             )}
           </SectionCard>
 
-          <SectionCard title="相關事件" eyebrow="EVENTS">
+          <SectionCard title="相關事件" eyebrow="事件">
             {detail.relatedEvents?.length ? (
               <div style={{ display: 'grid', gap: 8 }}>
                 {detail.relatedEvents.map((event) => (

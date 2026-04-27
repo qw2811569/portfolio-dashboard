@@ -864,7 +864,7 @@ function WatchlistEditor({ open, editingItem, form, setForm, onClose, onSubmit, 
         h(
           'label',
           { style: { display: 'grid', gap: 4, fontSize: 12, color: C.textMute } },
-          '色彩 key',
+          '色彩說明',
           h(
             'select',
             {

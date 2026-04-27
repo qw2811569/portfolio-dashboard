@@ -538,7 +538,7 @@ function HoldingsFilterChipBar({ filterBar }) {
           letterSpacing: '0.08em',
         },
       },
-      '搜尋 / Search'
+      '搜尋'
     ),
     h('input', {
       'data-testid': 'holdings-filter-search',
@@ -1010,7 +1010,7 @@ export function Top5Holdings({ holdings, totalVal }) {
   return h(
     Card,
     { style: { marginBottom: 8 } },
-    h('div', { style: lbl }, '市值佔比 Top 5'),
+    h('div', { style: lbl }, '市值前 5 大'),
     h(
       'div',
       { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },

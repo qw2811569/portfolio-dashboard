@@ -94,7 +94,7 @@ function HoldingsFilteredEmptyState({ hasActiveFilters = false, onClearFilters =
             textTransform: 'uppercase',
           },
         },
-        'Filter result'
+        '篩選結果'
       ),
       h(
         'div',

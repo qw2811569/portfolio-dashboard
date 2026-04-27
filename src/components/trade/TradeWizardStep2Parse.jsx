@@ -25,7 +25,7 @@ export default function TradeWizardStep2Parse({
   return (
     <Card data-testid="trade-parse-results" style={{ borderRadius: 8 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 4 }}>
-        STEP 2 解析
+        步驟 2 解析
       </div>
       <div style={{ color: C.textMute, fontSize: 12, marginBottom: 12 }}>
         待確認交易可逐欄編輯，確認代碼、方向、股數與成交價後再預覽。

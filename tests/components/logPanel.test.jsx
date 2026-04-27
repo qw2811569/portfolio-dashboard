@@ -121,7 +121,7 @@ describe('components/LogPanel', () => {
     })
 
     const detail = screen.getByTestId('trade-log-detail')
-    expect(within(detail).getByText('Trade Audit')).toBeInTheDocument()
+    expect(within(detail).getAllByText('交易稽核').length).toBeGreaterThanOrEqual(1)
     expect(within(detail).getByText('trade-audit-2026-04.jsonl')).toBeInTheDocument()
     expect(within(detail).getByText('免責聲明確認')).toBeInTheDocument()
   })

@@ -1010,7 +1010,7 @@ export function NewsFeedSection({
                   lineHeight: 1.6,
                 },
               },
-              unreadCount > 0 ? '先標已看，再交給 Daily 判讀。' : '這輪都已經標記已看。'
+              unreadCount > 0 ? '先標已看，再交給收盤分析。' : '這輪都已經標記已看。'
             )
         ),
         renderChip(`未讀 ${unreadCount} 則`, {
@@ -1143,7 +1143,7 @@ export function NewsFeedSection({
                   fontFamily: TOKENS.fontBody,
                 },
               },
-              'Google News RSS 與 FinMind 新聞會先進來，先標已看、先整理重點，再交給 Daily 判讀，不在這頁直接升格成事件。'
+              'Google News RSS 與 FinMind 新聞會先進來，先標已看、先整理重點，再交給收盤分析，不在這頁直接升格成事件。'
             ),
             h(
               'div',
@@ -1483,7 +1483,7 @@ export function NewsAnalysisPanel({
               fontFamily: TOKENS.fontBody,
             },
           },
-          '這頁先整理新聞脈絡，再交給 Daily 判讀影響。加入持股後，依持股篩選、影響標記與已看機制都會一起啟用。'
+          '這頁先整理新聞脈絡，再交給收盤分析判讀。加入持股後，依持股篩選、影響標記與已看機制都會一起啟用。'
         ),
         h(
           Button,

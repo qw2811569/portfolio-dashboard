@@ -27,7 +27,7 @@ export default function DailyArchiveTimeline({ items = [], selectedDate = '', on
           marginBottom: 8,
         }}
       >
-        <div style={{ color: C.text, fontSize: 13, fontWeight: 800 }}>7 天 archive</div>
+        <div style={{ color: C.text, fontSize: 13, fontWeight: 800 }}>7 天歷史</div>
         <label
           style={{
             display: 'flex',

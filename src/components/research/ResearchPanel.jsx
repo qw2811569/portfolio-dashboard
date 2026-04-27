@@ -258,7 +258,7 @@ function buildCompressedResearchNarrative(results) {
     return firstRound.length > 180 ? `${firstRound.slice(0, 180)}...` : firstRound
   }
 
-  return '研究結果已壓縮為組合層級 narrative，不顯示 thesis diff 與逐檔追蹤細節。'
+  return '研究結果已壓縮為組合層級摘要，不顯示論述差異與逐檔追蹤細節。'
 }
 
 function CompressedResearchResults({ results }) {
@@ -276,7 +276,7 @@ function CompressedResearchResults({ results }) {
         borderLeft: `3px solid ${alpha(C.amber, '40')}`,
       },
     },
-    h('div', { style: { ...lbl, color: C.textSec } }, '研究摘要 · aggregate only'),
+    h('div', { style: { ...lbl, color: C.textSec } }, '研究摘要 · 僅彙總'),
     h(
       'div',
       {
@@ -860,7 +860,7 @@ function ConsensusRangeBar({ min, max, meanTarget }) {
         },
       },
       h('span', null, `$${formatConsensusPrice(min)}`),
-      h('span', { style: { color: C.textSec, fontWeight: 600 } }, 'mean'),
+      h('span', { style: { color: C.textSec, fontWeight: 600 } }, '平均'),
       h('span', null, `$${formatConsensusPrice(max)}`)
     )
   )

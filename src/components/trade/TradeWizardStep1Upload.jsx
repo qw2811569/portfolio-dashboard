@@ -37,7 +37,7 @@ export default function TradeWizardStep1Upload({
     <div style={{ display: 'grid', gap: 12 }}>
       <Card style={{ borderRadius: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 8 }}>
-          STEP 1 上傳
+          步驟 1 上傳
         </div>
         <label
           data-testid="trade-wizard-upload-zone"

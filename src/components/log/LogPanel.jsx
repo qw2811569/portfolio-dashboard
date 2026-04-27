@@ -139,7 +139,7 @@ function formatReasonPreview(item) {
   const answered = qa.find((row) => String(row?.a || '').trim())
   if (answered) return String(answered.a).trim()
   if (qa[0]?.q) return `${qa[0].q}（未填）`
-  return '這筆尚未補 memo，先保留成交脈絡與 audit 線索。'
+  return '這筆尚未補備忘，先保留成交脈絡與 稽核線索。'
 }
 
 function normalizeSearchText(value) {
@@ -579,7 +579,7 @@ function JournalDetail({ item, isMobile }) {
 
       {item.qa.length > 0 ? (
         <div style={{ display: 'grid', gap: 8, marginBottom: auditEntry ? 14 : 0 }}>
-          <div style={{ ...EYE_BROW_STYLE }}>交易 memo</div>
+          <div style={{ ...EYE_BROW_STYLE }}>交易備忘</div>
           {item.qa.map((qaItem, index) => (
             <div
               key={`${item.id}-qa-${index}`}
@@ -602,15 +602,15 @@ function JournalDetail({ item, isMobile }) {
         </div>
       ) : (
         <SoftMessage style={{ marginBottom: auditEntry ? 14 : 0 }}>
-          這筆還沒有補 memo，先保留成交與 audit 線索，之後可回來補理由與出場計畫。
+          這筆還沒有補備忘，先保留成交與 稽核線索，之後可回來補理由與出場計畫。
         </SoftMessage>
       )}
 
       {auditEntry && (
         <div data-testid="trade-log-audit-detail">
-          <div style={{ ...EYE_BROW_STYLE, marginBottom: 8 }}>Trade Audit</div>
+          <div style={{ ...EYE_BROW_STYLE, marginBottom: 8 }}>交易稽核</div>
           <SoftMessage tone="positive" style={{ marginBottom: 10 }}>
-            本筆來自 trade.confirm audit，before / after 快照與免責聲明確認時間都已保留。
+            本筆來自交易確認稽核，前後快照與免責聲明確認時間都已保留。
           </SoftMessage>
           <div
             style={{
@@ -820,7 +820,7 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
               <StaleBadge
                 status={freshness.status}
                 label={freshness.label}
-                title="trade log freshness"
+                title="交易日誌新鮮度"
               />
               <Badge color="iron" size="xs">
                 {filteredJournalItems.length === journalItems.length
@@ -868,7 +868,7 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
                 data-testid="trade-log-search"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="代碼、名稱或 memo"
+                placeholder="代碼、名稱或備忘"
                 style={FILTER_INPUT_STYLE}
               />
             </label>
@@ -923,7 +923,7 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
 
       {resolvedAuditStatus === 'loading' && journalItems.length > 0 && (
         <SoftMessage style={{ marginBottom: 12 }}>
-          交易稽核還在整理中，先顯示本機交易日誌；整理完會自動補上 detail。
+          交易稽核還在整理中，先顯示本機交易日誌；整理完會自動補上細節。
         </SoftMessage>
       )}
 
@@ -980,10 +980,10 @@ export function LogPanel({ tradeLog = null, portfolioId = '' }) {
               }}
             >
               <div>
-                <div style={{ ...EYE_BROW_STYLE, marginBottom: 6 }}>Journal list</div>
+                <div style={{ ...EYE_BROW_STYLE, marginBottom: 6 }}>日誌列表</div>
                 <div style={{ fontSize: 14, color: C.textSec, lineHeight: 1.6 }}>
                   {filteredJournalItems.length === journalItems.length
-                    ? '先挑一筆，再到右側 detail 看 memo 與 audit 細節。'
+                    ? '先挑一筆，再到右側細節 看 備忘與稽核 細節。'
                     : `目前符合條件 ${filteredJournalItems.length} 筆。`}
                 </div>
               </div>

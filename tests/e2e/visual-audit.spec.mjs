@@ -99,6 +99,19 @@ for (const route of routes) {
       window.localStorage.setItem('pf-me-holdings-v2', JSON.stringify(holdings))
       window.localStorage.setItem('pf-me-holding-dossiers-v1', JSON.stringify(holdingDossiers))
       window.localStorage.setItem('pf-me-research-history-v1', JSON.stringify(researchHistory))
+      window.localStorage.setItem(
+        'fm-cache-revenue-2330',
+        JSON.stringify({
+          data: Array.from({ length: 5 }, (_, yearOffset) =>
+            Array.from({ length: 12 }, (_, monthOffset) => ({
+              revenueYear: 2021 + yearOffset,
+              revenueMonth: monthOffset + 1,
+              revenue: monthOffset >= 9 ? 22000000000 : monthOffset <= 2 ? 5500000000 : 10000000000,
+            }))
+          ).flat(),
+          ts: Date.now(),
+        })
+      )
     }, route.path.includes('/research'))
     await page.goto(`${BASE}${route.path.replace(/^\//, '')}`, { waitUntil: 'domcontentloaded', timeout: 60000 })
     await page.waitForLoadState('networkidle').catch(() => {})

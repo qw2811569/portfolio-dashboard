@@ -306,18 +306,26 @@ describe('components/ResearchPanel', () => {
     )
   })
 
-  it('shows a seasonality empty state when monthly revenue cache is unavailable', () => {
+  it('shows one section-level seasonality empty state when monthly revenue cache is unavailable', () => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(() => null),
     })
 
     const { container } = render(
-      <ResearchPanel {...buildProps({ holdings: [{ code: '1101', name: '台泥' }] })} />
+      <ResearchPanel
+        {...buildProps({
+          holdings: [
+            { code: '1101', name: '台泥' },
+            { code: '1301', name: '台塑' },
+          ],
+        })}
+      />
     )
 
     expect(container.textContent).toContain('營收季節性')
-    expect(container.textContent).toContain('台泥 · 1101')
-    expect(container.textContent).toContain('資料尚未取得')
+    expect(container.textContent).toContain('資料尚未收齊，等下次更新（2 檔）')
+    expect(container.textContent).not.toContain('台泥 · 1101')
+    expect(container.textContent).not.toContain('台塑 · 1301')
   })
 
   it('renders visible analyst-report error state when refresh failed with auth error', () => {

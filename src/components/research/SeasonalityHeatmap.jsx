@@ -148,6 +148,34 @@ function EmptySeasonalityCard({ name, code, updatedAt = null }) {
   )
 }
 
+function EmptySeasonalitySection({ holdingsCount }) {
+  return h(
+    Card,
+    {
+      style: {
+        border: '1px dashed var(--positive-soft)',
+        background: alpha(C.card, 'f2'),
+        marginBottom: 8,
+      },
+    },
+    h(
+      'div',
+      {
+        style: {
+          display: 'grid',
+          gap: 4,
+        },
+      },
+      h('div', { style: { fontSize: 12, color: C.textSec, fontWeight: 700 } }, '營收季節性'),
+      h(
+        'div',
+        { style: { fontSize: 12, color: C.textMute, lineHeight: 1.7 } },
+        `資料尚未收齊，等下次更新${holdingsCount ? `（${holdingsCount} 檔）` : ''}`
+      )
+    )
+  )
+}
+
 function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
   const { metrics, rows, years } = useMemo(() => buildHeatmapRows(revenueRows), [revenueRows])
 
@@ -326,6 +354,9 @@ export function SeasonalityHeatmap({ holdings, holdingDossiers = [] }) {
   )
 
   if (cards.length === 0) return null
+
+  const hasAnyRevenue = cards.some(({ revenueRows }) => revenueRows.length > 0)
+  if (!hasAnyRevenue) return h(EmptySeasonalitySection, { holdingsCount: cards.length })
 
   return h(
     'div',

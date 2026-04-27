@@ -46,7 +46,7 @@ describe('components/AppShellFrame.jsx', () => {
 
     expect(screen.getByText('正在載入本機投組')).toBeInTheDocument()
     expect(screen.getByText('讀取持倉、事件與分析快照')).toBeInTheDocument()
-    expect(screen.getByText('PORTFOLIO OS')).toBeInTheDocument()
+    expect(screen.getByText('持倉看板')).toBeInTheDocument()
   })
 
   it('renders header, panels and confirm dialog when ready', () => {

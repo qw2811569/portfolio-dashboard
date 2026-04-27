@@ -1043,7 +1043,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteH
           marginBottom: 8,
         },
       },
-      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Morning Note'),
+      h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '今晨速報'),
       h(
         'div',
         {
@@ -1234,7 +1234,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteH
                   flexShrink: 0,
                 },
               },
-              event.impactLabel || 'INFO'
+              event.impactLabel || '一般'
             ),
             h(
               'div',
@@ -1739,7 +1739,7 @@ function buildMorningFocusItem(morningNote = null) {
   if (firstFocus) {
     return {
       id: `morning-${firstFocus.id || firstFocus.title || 'focus'}`,
-      eyebrow: 'Morning Note',
+      eyebrow: '今晨速報',
       title: cleanFocusCopy(firstFocus.title) || '盤前重點先放到前面',
       body: cleanFocusCopy(firstFocus.body) || '今天先看這件事有沒有改變持倉節奏。',
       tone: firstFocus.tone === 'watch' ? 'warn' : 'ok',
@@ -1752,7 +1752,7 @@ function buildMorningFocusItem(morningNote = null) {
   if (!title) return null
   return {
     id: 'morning-note',
-    eyebrow: 'Morning Note',
+    eyebrow: '今晨速報',
     title,
     body:
       cleanFocusCopy(morningNote.lead || morningNote.summary) ||

@@ -317,7 +317,7 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
-    expect(await screen.findByText('Morning Note')).toBeInTheDocument()
+    expect(await screen.findByText('今晨速報')).toBeInTheDocument()
     fireEvent.click(screen.getByText('前往事件'))
     expect(onNavigate).toHaveBeenCalledWith('events')
   })

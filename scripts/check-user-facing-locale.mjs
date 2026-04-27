@@ -48,6 +48,9 @@ const ALLOWED_WORDS = new Set([
   'TWSE',
   'OTC',
   'OTCB',
+  'Markdown',
+  'PDF',
+  'AI',
 ])
 
 const VERSION_RE = /^v?\d+(?:\.\d+){1,3}$/iu

@@ -177,7 +177,7 @@ function buildReadyX1Metric({
     supportingValue,
     detail,
     routeTab: 'daily',
-    routeLabel: '去 Daily 看脈絡',
+    routeLabel: '去看收盤分析',
   }
 }
 
@@ -187,7 +187,7 @@ function buildX1Metric({ dailyReport = null, x1Benchmark = null } = {}) {
       id: 'x1',
       question: '今天漲跌正常嗎？',
       routeTab: 'daily',
-      routeLabel: '去 Daily 看脈絡',
+      routeLabel: '去看收盤分析',
     })
   }
 
@@ -207,7 +207,7 @@ function buildX1Metric({ dailyReport = null, x1Benchmark = null } = {}) {
       id: 'x1',
       question: '今天漲跌正常嗎？',
       routeTab: 'daily',
-      routeLabel: '去 Daily 看脈絡',
+      routeLabel: '去看收盤分析',
       currentValue: '稍後再看',
       supportingValue: '今天對比大盤還在整理',
       detail: String(x1Benchmark?.data?.message || '').trim() || '今天對比大盤，稍後再看。',
@@ -220,7 +220,7 @@ function buildX1Metric({ dailyReport = null, x1Benchmark = null } = {}) {
       id: 'x1',
       question: '今天漲跌正常嗎？',
       routeTab: 'daily',
-      routeLabel: '去 Daily 看脈絡',
+      routeLabel: '去看收盤分析',
       detail: '現在只有單日盤面線索，還沒接到 7 日相對大盤 z-score。',
     })
   }
@@ -268,7 +268,7 @@ function buildX2Metric(holdingDossiers = []) {
       id: 'x2',
       question: 'Thesis 還成立嗎？',
       routeTab: 'holdings',
-      routeLabel: '去 Holdings 看論點',
+      routeLabel: '去看持倉論述',
       detail: 'thesis pillar 還沒拆成可追蹤欄位，先留白不亂講。',
     })
   }
@@ -307,7 +307,7 @@ function buildX2Metric(holdingDossiers = []) {
     supportingValue,
     detail,
     routeTab: 'holdings',
-    routeLabel: '去 Holdings 看論點',
+    routeLabel: '去看持倉論述',
   }
 }
 
@@ -368,7 +368,7 @@ function buildX3Metric(holdingDossiers = []) {
       id: 'x3',
       question: '法人在我持股怎麼動？',
       routeTab: 'holdings',
-      routeLabel: '去 Holdings 看籌碼',
+      routeLabel: '去看持倉籌碼',
       detail: '5 日法人買賣超還沒補齊，現在先不畫假 sparkline。',
     })
   }
@@ -393,7 +393,7 @@ function buildX3Metric(holdingDossiers = []) {
     sparkline: series.map((item) => item.total),
     sparklineDates: series.map((item) => item.date),
     routeTab: 'holdings',
-    routeLabel: '去 Holdings 看籌碼',
+    routeLabel: '去看持倉籌碼',
   }
 }
 
@@ -409,7 +409,7 @@ function buildX4Metric({ holdings = [], stockMeta = null } = {}) {
       id: 'x4',
       question: '部位集中度是否過高？',
       routeTab: 'overview',
-      routeLabel: '去 Overview 看結構',
+      routeLabel: '去看投組結構',
       detail: '目前還沒有可計算的部位結構，先不硬塞 HHI。',
     })
   }
@@ -434,7 +434,7 @@ function buildX4Metric({ holdings = [], stockMeta = null } = {}) {
     supportingValue: `Top 3 ${formatPercent(concentration.top3Weight * 100)}`,
     detail,
     routeTab: 'overview',
-    routeLabel: '去 Overview 看結構',
+    routeLabel: '去看投組結構',
   }
 }
 
@@ -471,7 +471,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
       supportingValue: '目前沒有排進視窗的事件',
       detail: '暫時不用被事件日程追著跑。',
       routeTab: 'events',
-      routeLabel: '去 Events 看日程',
+      routeLabel: '去看事件日程',
     }
   }
 
@@ -485,7 +485,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
       supportingValue: '未看到 3 天內催化事件',
       detail: '可以把注意力放回 thesis 與部位節奏。',
       routeTab: 'events',
-      routeLabel: '去 Events 看日程',
+      routeLabel: '去看事件日程',
     }
   }
 
@@ -505,7 +505,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
     supportingValue: `${nearest.countdown.label} · ${nearest.event?.title || '未命名事件'}`,
     detail: names,
     routeTab: 'events',
-    routeLabel: '去 Events 看日程',
+    routeLabel: '去看事件日程',
   }
 }
 

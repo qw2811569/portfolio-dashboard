@@ -283,7 +283,7 @@ export function TradeDisclaimerModal({
               fontWeight: 600,
             },
           },
-          '我已了解，進入 Trade 頁'
+          '我已了解，進入交易頁'
         )
       ),
       h(
@@ -315,7 +315,7 @@ export function TradeDisclaimerModal({
               textUnderlineOffset: 3,
             },
           },
-          'Legal 四欄詳情'
+          '法律相關詳情'
         )
       ),
       h(
@@ -334,7 +334,7 @@ export function TradeDisclaimerModal({
             boxShadow: checked ? `${C.insetLine}, ${C.shadow}, ${C.focusRing}` : 'none',
           },
         },
-        mode === 'confirm' ? '我已了解，回到確認' : '進入 Trade 頁'
+        mode === 'confirm' ? '我已了解，回到確認' : '進入交易頁'
       )
     )
   )

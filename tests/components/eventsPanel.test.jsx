@@ -119,11 +119,11 @@ describe('components/EventsPanel', () => {
   it('renders TW-specific filter chips', () => {
     render(<EventsPanel {...buildProps()} />)
 
-    expect(screen.getByRole('button', { name: '🔵 earnings' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '🟢 ex-dividend' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '🟡 shareholding-meeting' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '🔴 strategic' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '⚪ informational' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '財報日' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '除權息' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '股東會' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '策略變動' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '資訊' })).toBeInTheDocument()
   })
 
   it('collapses informational events by default on the all-events view', () => {

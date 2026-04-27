@@ -246,7 +246,7 @@ export default function Header(props) {
               ...weeklyReportButtonStyle,
             },
           },
-          '下載 .md'
+          '下載 Markdown'
         )
       : null,
     typeof downloadWeeklyReportPdf === 'function'
@@ -263,7 +263,7 @@ export default function Header(props) {
               ...weeklyReportButtonStyle,
             },
           },
-          '下載 .pdf'
+          '下載 PDF'
         )
       : null
   )
@@ -849,7 +849,7 @@ export default function Header(props) {
         h(
           'span',
           { style: { fontSize: 11, color: C.textMute } },
-          '總覽模式唯讀；切回單一組合才會寫入 notes。'
+          '總覽模式唯讀；切回單一組合才會寫入備忘。'
         )
       ),
       h(
@@ -1063,7 +1063,7 @@ export default function Header(props) {
                 lineHeight: 1.7,
               },
             },
-            '目前在全部總覽模式，資料維持唯讀。要編輯 notes，先用上方「打開」切回某個單一組合。'
+            '目前在全部總覽模式，資料維持唯讀。要編輯備忘，先用上方「打開」切回某個單一組合。'
           )
     )
   const urgentAlertBlock =

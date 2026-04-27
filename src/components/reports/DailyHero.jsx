@@ -20,7 +20,7 @@ export default function DailyHero({ hero, copyText, streaming = false }) {
         <div>
           <div style={{ fontSize: 12, color: C.textMute, fontWeight: 700 }}>今日盤後</div>
           <div style={{ color: C.text, fontSize: 18, fontWeight: 800, marginTop: 4 }}>
-            {hero?.waiting ? '等明早' : 'Streaming 摘要'}
+            {hero?.waiting ? '等明早' : streaming ? '即時摘要' : '今日摘要'}
           </div>
         </div>
         <Button data-testid="daily-copy-summary" onClick={handleCopy}>

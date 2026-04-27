@@ -54,8 +54,8 @@ describe('components/TradeDisclaimerModal', () => {
       expect(screen.getByTestId('trade-disclaimer-checkbox')).toHaveFocus()
     })
 
-    screen.getByText('Legal 四欄詳情').focus()
-    expect(screen.getByText('Legal 四欄詳情')).toHaveFocus()
+    screen.getByText('法律相關詳情').focus()
+    expect(screen.getByText('法律相關詳情')).toHaveFocus()
 
     fireEvent.keyDown(window, { key: 'Escape' })
 

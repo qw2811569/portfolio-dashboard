@@ -468,7 +468,7 @@ function HoldingsFilterChipBar({ filterBar }) {
             flex: isMobile ? '1 1 100%' : '0 1 220px',
           },
         },
-        'Saved filter',
+        '已存篩選',
         h(
           'select',
           {
@@ -486,7 +486,7 @@ function HoldingsFilterChipBar({ filterBar }) {
               width: '100%',
             },
           },
-          h('option', { value: '' }, '套用已存 filter'),
+          h('option', { value: '' }, '套用已存篩選'),
           savedFilters.map((item) => h('option', { key: item.id, value: item.id }, item.name))
         )
       ),
@@ -514,7 +514,7 @@ function HoldingsFilterChipBar({ filterBar }) {
           whiteSpace: 'nowrap',
         },
       },
-      '存 filter'
+      '存為篩選'
     )
   )
 
@@ -1280,6 +1280,11 @@ export function HoldingsPanel({
         },
         style: { marginBottom: 8 },
       }),
+    h(MobilePnlQuickEntries, {
+      winners,
+      losers,
+      onSortByPnl: holdingsFilterBar?.onSortByPnl,
+    }),
     h(
       'div',
       {
@@ -1320,12 +1325,6 @@ export function HoldingsPanel({
         h(HoldingsRing, { holdings, totalVal, stockMeta: STOCK_META, holdingDossiers })
       )
     ),
-
-    h(MobilePnlQuickEntries, {
-      winners,
-      losers,
-      onSortByPnl: holdingsFilterBar?.onSortByPnl,
-    }),
 
     // Filter chip bar
     h(HoldingsFilterChipBar, { filterBar: holdingsFilterBar }),

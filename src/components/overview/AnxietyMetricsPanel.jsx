@@ -305,7 +305,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
         isMetricLoading
           ? '整理中'
           : metric.tone === 'ok'
-            ? 'OK'
+            ? '正常'
             : metric.tone === 'warn'
               ? '留意'
               : metric.tone === 'alert'

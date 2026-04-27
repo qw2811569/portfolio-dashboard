@@ -4,25 +4,25 @@ import { Button, Card } from './Base.jsx'
 
 const RESOURCE_META = {
   holdings: {
-    eyebrow: 'Portfolio onboarding',
+    eyebrow: '建立投組',
     title: '還沒加股',
     description: '試試上傳成交單，先把第一筆持倉帶進來，主畫面就不會只剩空白。',
     actionLabel: '上傳成交單',
   },
   thesis: {
-    eyebrow: 'Thesis placeholder',
+    eyebrow: '論述待補',
     title: '這檔尚無論述',
-    description: '你可以記下當初買進理由，之後比較容易分辨是節奏改了，還是 thesis 真的壞了。',
+    description: '你可以記下當初買進理由，之後比較容易分辨是節奏改了，還是論述真的壞了。',
     actionLabel: '記下買進理由',
   },
   events: {
-    eyebrow: 'Quiet window',
+    eyebrow: '近期沉靜',
     title: '未來 30 天無重大事件',
     description: '這段時間先維持觀察節奏，若有新的法說、財報或產業催化，這裡會再補進來。',
     actionLabel: '',
   },
   research: {
-    eyebrow: 'Research standby',
+    eyebrow: '研究待辦',
     title: '此股暫無深度研究',
     description: '明早 06:00 會自動更新，今晚先用持倉結構、事件與市場脈絡把方向看清楚。',
     actionLabel: '',

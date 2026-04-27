@@ -458,7 +458,7 @@ describe('components/DashboardPanel', () => {
       />
     )
 
-    expect(screen.getAllByText('Morning Note').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('今晨速報').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('morning-note-headline')).toHaveTextContent('今天先把節奏排好')
     expect(screen.getByTestId('morning-note-lead')).toHaveTextContent('先看法說，再看主部位。')
     expect(screen.getByText('HIGH')).toBeInTheDocument()

@@ -107,7 +107,7 @@ export default function AppShellFrame({
                 textTransform: 'uppercase',
               }}
             >
-              PORTFOLIO OS
+              持倉看板
             </div>
             <div style={{ fontSize: 11, color: C.textMute }}>
               {elapsedSeconds ? `啟動中 ${elapsedSeconds}s` : '正在建立主畫面'}

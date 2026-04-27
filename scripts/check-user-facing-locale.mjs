@@ -224,6 +224,13 @@ if (unexpected.length > 0) {
   process.exit(1)
 }
 
+if (knownFails.length > 0) {
+  console.error(
+    `user-facing locale lint failed: ${knownFails.length} known-baseline entries remain. Baseline must be empty (zero tolerance). Remove or fix entries in .locale-known-fails.json.`
+  )
+  process.exit(1)
+}
+
 console.log(
   `user-facing locale lint passed (${findings.length} finding(s), ${findings.length - unexpected.length} known baseline)`
 )

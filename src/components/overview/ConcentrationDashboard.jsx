@@ -210,7 +210,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
         },
         h(WeightBar, { label: 'Top 1', value: concentration.top1Weight }),
         h(WeightBar, { label: 'Top 3', value: concentration.top3Weight }),
-        h(WeightBar, { label: 'Top 5', value: concentration.top5Weight })
+        h(WeightBar, { label: '前 5 大', value: concentration.top5Weight })
       ),
       h(
         'div',

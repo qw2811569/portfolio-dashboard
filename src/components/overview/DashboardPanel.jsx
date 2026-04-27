@@ -1384,12 +1384,12 @@ function resolveSnapshotCopy(status, lastSuccessAt = '') {
   }
 
   if (status === 'missing') {
-    return '目前還沒看到 daily snapshot 的成功紀錄，restore rehearsal 會更依賴本機 checkpoint。'
+    return '目前還沒看到每日快照的成功紀錄，還原演練會更依賴本機備份點。'
   }
 
   return lastLabel
-    ? `最近一份 daily snapshot 已超過 36 小時，若臨時要回復，時間點大概會停在 ${lastLabel} 那一版。`
-    : '最近一份 daily snapshot 已超過 36 小時，若臨時要回復，時間點會更接近前一版。'
+    ? `最近一份每日快照已超過 36 小時，若臨時要回復，時間點大概會停在 ${lastLabel} 那一版。`
+    : '最近一份每日快照已超過 36 小時，若臨時要回復，時間點會更接近前一版。'
 }
 
 function DailySnapshotStatusCard({ dailySnapshotStatus = null }) {

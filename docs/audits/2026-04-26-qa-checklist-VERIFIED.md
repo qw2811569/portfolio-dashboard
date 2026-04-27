@@ -294,3 +294,84 @@
 11. **Insider Events handoff missing**（同 #1）
 
 幾條合併修：#1 + #11 同時做。
+
+---
+
+## R12 雙人 Mutual QA 結果（2026-04-27）
+
+**Method**：Codex Playwright 14 路由 × 3 browser = 42 passed (11.4m)；Claude + Codex 各自獨立 hostile review；最終採 Codex 嚴判 + Claude 補充。
+**詳細**：`.tmp/r156-full-execute/round12/r12-mutual-qa-merged.md` + `codex-r12-qa-report.md` + `claude-r12-qa-source-prereview.md`
+
+### 9 HIGH 議題真實狀態
+
+| #   | 議題                      | 狀態                                                                                                                                                        |
+| --- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Mobile 首頁今天先做       | 部分修（hero 對 ✅；CTA「去 Events 看日程」新引入英文）                                                                                                     |
+| 2   | jargon 中文化             | 部分修（多處漏：Streaming 摘要 / Thesis placeholder / Morning Note / Saved filter / 進入 Trade 頁 / EARNINGS / EX-DIVIDEND / SHAREHOLDING-MEETING / Legal） |
+| 3   | Research 第一屏           | 部分修 / 未驗收（source 對；R12 visual-audit 14 路由沒含 research 頁）                                                                                      |
+| 4   | Daily 狀態打架            | **沒修**（source gate 對但 live 截圖 05/05b 仍 waiting + 行動建議同屏）                                                                                     |
+| 5   | Holdings 賺/賠最多 mobile | 部分修（source 有 MobilePnlQuickEntries，但位置在 ring/結構/篩選之後，5 秒首屏看不到）                                                                      |
+| 6   | Mobile 底部覆蓋           | **沒修**（safe-area 加了；但 modal/nav z-index 沒處理：06b trade modal CTA 被 nav 擋 / 08b watchlist 大數字被 search 浮鈕橫切）                             |
+| 7   | 桌機相似盒子              | **沒修**（0 commit；Daily/Events 桌機仍同階層 Card 平鋪）                                                                                                   |
+| 8   | 事件顏色標籤太吵          | 部分修（prediction chip 統一 charcoal alpha 8 ✅；events filter EARNINGS 英文 + impact emoji 還在）                                                         |
+| 9   | 桌機 filter 太重          | **修了 ✅**（desktopExpanded false default + 收合 1 行摘要 + 表格提前露出）                                                                                 |
+
+**真實覆蓋率**：1 修（HIGH#9）/ 5 部分修 / 2 沒修 / 1 沒驗收
+
+### 最終評分（採 Codex 嚴判）
+
+- 視覺質感（設計師）: **7.1 / 10**
+- 散戶可用（5 秒 test）: **6.6 / 10**
+- §5 紀律遵守: **7.4 / 10**
+
+R12 hostile QA **不過**。
+
+### R13 必修任務（5 HIGH + 3 MEDIUM + 4 流程）
+
+詳 `.tmp/r156-full-execute/round12/r12-mutual-qa-merged.md` § F
+
+---
+
+## R13 雙人 Mutual QA 結果（2026-04-27）
+
+**Method**：8 commits（Codex 4 + Claude 4）+ Codex 1 補 jargon = 9 commits；fresh 14 chromium screenshots（VM force rebuild 後）；Claude + Codex 各自獨立 hostile review
+**詳細**：`.tmp/r156-full-execute/round13/r13-mutual-qa-final.md` + `codex-r13-qa-report.md`（stale 截圖判定 — 部分需重評估）+ `codex-r12-investigate-report.md`
+
+### 9 HIGH 真實狀態（fresh-evidence-based）
+
+| #   | 議題                      | R12             | R13                                                                                           |
+| --- | ------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| 1   | Mobile 首頁今天先做       | 部分修          | **FIXED** ✅ (CTA「去看事件日程」中文化)                                                      |
+| 2   | jargon 中文化             | 部分修          | **MOSTLY FIXED**（17 處 + Today in Markets 補）                                               |
+| 3   | Research 第一屏           | 部分修 / 沒驗收 | **SOURCE FIXED · 仍沒 visual 驗收** ⚠️（visual-audit 14 路由仍沒含 research）                 |
+| 4   | Daily 狀態打架            | 沒修            | **FIXED** ✅（state machine waiting/partial/ready · partial 不 render actions · 截圖證實）    |
+| 5   | Holdings 賺/賠最多 mobile | 部分修          | **FIXED** ✅（MobilePnlQuickEntries 移到 grid 之前）                                          |
+| 6   | Mobile 底部覆蓋           | 沒修            | **FIXED**（modal context · overlay portal land）✅                                            |
+| 7   | 桌機相似盒子              | 沒修            | **PARTIAL** ⚠️（Card variant primitive land + 14 callers migrate · Daily/Events 桌機仍 flat） |
+| 8   | 事件顏色標籤太吵          | 部分修          | **FIXED** ✅（filter 9 條中文 + 統一 charcoal alpha + 無 emoji）                              |
+| 9   | 桌機 filter 太重          | 修了            | **MAINTAINED** ✅                                                                             |
+
+**真實覆蓋率**：6 fully fixed (1/2/4/5/6/8) + 1 maintained (9) + 1 partial (7) + 1 source-only (3 visual gap)
+**R12 → R13**：1 修 / 5 部分修 / 2 沒修 → 6 修 / 1 partial / 1 visual 缺
+
+### R12 6 條新引入問題：R13 全解 ✅
+
+### §5 4 條紀律：4/4 clean + 圓角真清
+
+### 最終評分（fresh-evidence）
+
+| 維度                  | R12 | R13     |
+| --------------------- | --- | ------- |
+| 視覺質感（設計師）    | 7.1 | **8.0** |
+| 散戶可用（5 秒 test） | 6.6 | **7.5** |
+| §5 紀律               | 7.4 | **8.7** |
+
+R13 仍未達 9.95。最大 gap：HIGH#7 桌機 hierarchy 視覺差異不夠強 / HIGH#3 research 沒 visual 驗收 / jargon 92 known allowlist 仍壓著。
+
+### 關鍵流程教訓
+
+VM webhook deploy **不可信** — route-daily 4/26 build vs git head 4/27 一直沒 rebuild，Codex 看 stale 截圖判 HIGH#4/#6/#8「沒修」全錯。R14 必加 deploy verification gate（commit 後 force `vite build` VM + curl HTML asset hash 驗對齊才拍 screenshots）。
+
+### R14 必修任務
+
+詳 `.tmp/r156-full-execute/round13/r13-mutual-qa-final.md` § 7

@@ -23,6 +23,8 @@
     "format": "prettier --write src/",
     "healthcheck": "bash scripts/healthcheck.sh",
     "smoke:ui": "node scripts/ui-smoke.cjs",
+    "verify:vm": "node scripts/verify-vm-bundle.mjs",
+    "audit:visual": "VERIFY_VM_BUNDLE=1 node scripts/verify-vm-bundle.mjs && AUDIT_BASE_URL=http://104.199.144.170/ npx playwright test tests/e2e/visual-audit.spec.mjs --project=chromium --reporter=line",
     "backfill:target-prices": "node scripts/backfill-target-prices.mjs",
     "morning-note:worker": "node agent-bridge-standalone/workers/morning-note-worker.mjs",
     "tw-events:worker": "node agent-bridge-standalone/workers/tw-events-worker.mjs",

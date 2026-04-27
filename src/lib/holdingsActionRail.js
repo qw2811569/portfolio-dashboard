@@ -217,7 +217,7 @@ export function buildTodayActions({
     ]).slice(0, 3),
     dontItems: buildFallbackItems(dontItems, [
       { tone: 'mute', title: '不要為了動而動', body: '未到加碼條件的部位先不追價。' },
-      { tone: 'mute', title: '不補資料不調倉', body: 'thesis 沒更新前不要放大部位。' },
+      { tone: 'mute', title: '不補資料不調倉', body: '投資理由沒更新前不要放大部位。' },
     ]).slice(0, 3),
     riskItems: buildFallbackItems(riskItems, [
       { tone: 'mute', title: '風險暫無急迫項', body: '仍需留意集中度、回撤與近 14 天事件。' },

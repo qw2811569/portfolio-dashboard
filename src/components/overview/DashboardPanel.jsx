@@ -257,7 +257,7 @@ function resolveTodayInMarketsCopy(event, category) {
 
   if (category?.key === 'calendar') {
     if (normalizeEventType(event?.eventType || event?.type) === 'strategic') {
-      return '策略變動這類新聞若真的牽動管理層或資本配置，通常要立刻回頭重看 thesis。'
+      return '策略變動這類新聞若真的牽動管理層或資本配置，通常要立刻回頭重看投資理由。'
     }
     if (/除權|除息/.test(text)) {
       return '除權息時程靠近時，殖利率與填息題材通常會重新回到盤面。'
@@ -516,7 +516,7 @@ function TodayPnlHero({
     {
       label: '今日損益',
       value: pnlText,
-      helper: showStalePnl ? '資料補齊中' : '看方向，也看它有沒有改變 thesis。',
+      helper: showStalePnl ? '資料補齊中' : '看方向，也看它有沒有改變投資理由。',
       testId: 'dashboard-today-pnl-value',
       color,
     },
@@ -1280,7 +1280,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteH
             h(
               'span',
               { style: { color: C.textMute } },
-              holding.pillarSummary || '今日先看 thesis 是否有變'
+              holding.pillarSummary || '今日先看投資理由是否有變'
             )
           )
         )
@@ -1820,7 +1820,7 @@ function buildDashboardFocusItems({
       id: 'quiet-day',
       eyebrow: '今日焦點',
       title: '今天先把節奏放慢',
-      body: '五個焦慮題沒有出現明確警訊，先照 thesis 和部位結構走。',
+      body: '五個焦慮題沒有出現明確警訊，先照投資理由和部位結構走。',
       tone: 'ok',
       routeTab: 'holdings',
       routeLabel: '查看持倉',

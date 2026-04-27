@@ -236,7 +236,7 @@ describe('components/EventsPanel', () => {
     )
   })
 
-  it('opens collapsed date buckets by default on mobile so event cards are visible', () => {
+  it('keeps non-current mobile date buckets collapsed by default', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 })
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
@@ -265,8 +265,41 @@ describe('components/EventsPanel', () => {
       />
     )
 
-    expect(screen.getByTestId('events-group-expired-details')).toHaveAttribute('open')
-    expect(screen.getByTestId('events-group-later-details')).toHaveAttribute('open')
+    expect(screen.getByTestId('events-group-expired-details')).not.toHaveAttribute('open')
+    expect(screen.getByTestId('events-group-later-details')).not.toHaveAttribute('open')
+  })
+
+  it('shows the current-week priority cards on mobile but keeps the rest collapsed', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 })
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-today',
+              title: '今天法說',
+              date: '2026-04-27',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+            {
+              id: 'evt-this-week-rest',
+              title: '本週其餘',
+              date: '2026-05-03',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('events-group-this-week')).toHaveTextContent('今天法說')
+    expect(screen.getByTestId('events-group-this-week-rest')).not.toHaveAttribute('open')
   })
 
   it('expands the informational section on demand', () => {

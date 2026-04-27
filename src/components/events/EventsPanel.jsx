@@ -1,4 +1,4 @@
-import { createElement as h, useEffect, useState } from 'react'
+import { createElement as h, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard, StaleBadge } from '../common'
@@ -7,6 +7,11 @@ import { RELAY_PLAN } from '../../seedDataEvents.js'
 import { EventsTimeline } from './EventsTimeline.jsx'
 import { EventCountdownBadge } from './EventCountdownBadge.jsx'
 import { calculateEventCountdown } from '../../lib/eventCountdown.js'
+import {
+  getEventDateValue,
+  getEventDayDistance,
+  groupEventCardsByWindow,
+} from '../../lib/eventWindows.js'
 import { resolveTone } from '../../lib/toneResolver.js'
 import {
   ALL_EVENTS_FILTER_LABEL,
@@ -117,84 +122,9 @@ function formatShortDate(value) {
   return `${matched[2].padStart(2, '0')}/${matched[3].padStart(2, '0')}`
 }
 
-function getEventDayDistance(value) {
-  const raw = String(value || '')
-    .trim()
-    .replace(/\//g, '-')
-  const matched = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)
-  if (!matched) return 14
-
-  const eventDay = new Date(
-    Number(matched[1]),
-    Number(matched[2]) - 1,
-    Number(matched[3]),
-    12,
-    0,
-    0,
-    0
-  )
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0)
-  return Math.floor((eventDay.getTime() - today.getTime()) / 86400000)
-}
-
-function groupEventCardsByWindow(cards = []) {
-  const groups = [
-    { key: 'expired', label: '已過期', items: [] },
-    { key: 'this-week', label: '本週', items: [] },
-    { key: 'next-week', label: '下週', items: [] },
-    { key: 'later', label: '兩週後', items: [] },
-  ]
-
-  cards.forEach((event) => {
-    const days = getEventDayDistance(event?.date || event?.eventDate)
-    if (days < 0) groups[0].items.push(event)
-    else if (days <= 6) groups[1].items.push(event)
-    else if (days <= 13) groups[2].items.push(event)
-    else groups[3].items.push(event)
-  })
-
-  return groups.filter((group) => group.items.length > 0)
-}
-
-function isMobileEventLayout() {
-  if (typeof window === 'undefined') return false
-  if (typeof window.matchMedia === 'function') {
-    return window.matchMedia('(max-width: 767px)').matches
-  }
-  return Number(window.innerWidth) <= 767
-}
-
-function useMobileEventLayout() {
-  const [isMobile, setIsMobile] = useState(() => isMobileEventLayout())
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-
-    const update = () => setIsMobile(isMobileEventLayout())
-    const query =
-      typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 767px)') : null
-
-    update()
-    if (query?.addEventListener) {
-      query.addEventListener('change', update)
-      return () => query.removeEventListener('change', update)
-    }
-    if (query?.addListener) {
-      query.addListener(update)
-      return () => query.removeListener(update)
-    }
-
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
-
-  return isMobile
-}
-
 function isPriorityEvent(event) {
   if (event?.needsThesisReview === true) return true
-  return getEventDayDistance(event?.date || event?.eventDate) <= 3
+  return getEventDayDistance(getEventDateValue(event)) <= 3
 }
 
 function splitThisWeekEvents(items = []) {
@@ -243,7 +173,7 @@ function EventGroupSummary({ label, count, helper }) {
   )
 }
 
-function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock, expandCollapsedGroups }) {
+function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock, defaultOpen = false }) {
   const renderCard = (event, index, keySuffix = '') =>
     h(EventCard, {
       key: `${buildEventKey(event, index)}${keySuffix}`,
@@ -280,11 +210,11 @@ function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock, expand
       rest.length > 0 &&
         h(
           'details',
-          { open: expandCollapsedGroups, 'data-testid': 'events-group-this-week-rest' },
+          { open: false, 'data-testid': 'events-group-this-week-rest' },
           h(EventGroupSummary, {
             label: '本週其餘',
             count: rest.length,
-            helper: expandCollapsedGroups ? '已展開' : '展開查看',
+            helper: '展開查看',
           }),
           rest.map((event, index) => renderCard(event, index, '::rest'))
         )
@@ -296,11 +226,11 @@ function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock, expand
     { key: group.key, 'data-testid': `events-group-${group.key}` },
     h(
       'details',
-      { open: expandCollapsedGroups, 'data-testid': `events-group-${group.key}-details` },
+      { open: defaultOpen, 'data-testid': `events-group-${group.key}-details` },
       h(EventGroupSummary, {
         label: group.label,
         count: group.items.length,
-        helper: expandCollapsedGroups ? '已展開' : '展開查看',
+        helper: defaultOpen ? '已展開' : '展開查看',
       }),
       group.items.map((event, index) => renderCard(event, index))
     )
@@ -1113,7 +1043,6 @@ export function EventsPanel({
     })
   }
   const [showInformational, setShowInformational] = useState(false)
-  const isMobileLayout = useMobileEventLayout()
   const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
     (event) => event?.recordType !== 'news'
   )
@@ -1223,7 +1152,7 @@ export function EventsPanel({
         group,
         insiderViewMode,
         isInsiderSelfStock,
-        expandCollapsedGroups: isMobileLayout,
+        defaultOpen: false,
       })
     ),
 

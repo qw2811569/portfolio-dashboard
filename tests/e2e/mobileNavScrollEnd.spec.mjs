@@ -130,26 +130,42 @@ test('mobile scroll end leaves final route action clear of the fixed bottom nav'
   expect(result.lastActionBottom + 16).toBeLessThanOrEqual(result.navTop)
 })
 
-test('seasonality heatmap keeps mobile cells legible with horizontal scrolling', async ({
-  page,
-}) => {
+test('seasonality heatmap exposes all 12 months in a mobile 2-row layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await seedStorage(page)
   await page.goto(routeUrl('/portfolio/me/research'), { waitUntil: 'domcontentloaded' })
 
-  const scrollShell = page.getByTestId('seasonality-heatmap-scroll-2330')
-  await expect(scrollShell).toBeVisible()
+  const mobileHeatmap = page.getByTestId('seasonality-heatmap-mobile-2330')
+  await expect(mobileHeatmap).toBeVisible()
 
-  const metrics = await scrollShell.evaluate((shell) => {
-    const grid = shell.querySelector('.seasonality-heatmap-grid')
-    const firstCell = grid?.querySelector('div:nth-child(15)')
+  const metrics = await mobileHeatmap.evaluate((shell) => {
+    const grid = shell.querySelector('.seasonality-heatmap-mobile-grid')
+    const firstCell = grid?.querySelector('div:nth-child(16)')
     return {
       scrollWidth: shell.scrollWidth,
       clientWidth: shell.clientWidth,
       cellWidth: firstCell?.getBoundingClientRect().width ?? 0,
+      monthLabels: Array.from(grid?.children || [])
+        .slice(1, 14)
+        .map((node) => node.textContent?.trim())
+        .filter(Boolean),
     }
   })
 
-  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth)
-  expect(metrics.cellWidth).toBeGreaterThanOrEqual(50)
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1)
+  expect(metrics.cellWidth).toBeGreaterThanOrEqual(42)
+  expect(metrics.monthLabels).toEqual([
+    '1月',
+    '2月',
+    '3月',
+    '4月',
+    '5月',
+    '6月',
+    '7月',
+    '8月',
+    '9月',
+    '10月',
+    '11月',
+    '12月',
+  ])
 })

@@ -268,7 +268,7 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
     h(
       'div',
       {
-        className: 'seasonality-heatmap-scroll',
+        className: 'seasonality-heatmap-scroll seasonality-heatmap-scroll--desktop',
         'data-testid': `seasonality-heatmap-scroll-${holding.code}`,
         style: {
           position: 'relative',
@@ -353,14 +353,105 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
             )
           ),
         ])
-      ),
+      )
+    ),
+    h(
+      'div',
+      {
+        className: 'seasonality-heatmap-mobile',
+        'data-testid': `seasonality-heatmap-mobile-${holding.code}`,
+      },
       h(
         'div',
         {
-          className: 'seasonality-heatmap-scroll-hint',
-          'aria-hidden': 'true',
+          className: 'seasonality-heatmap-mobile-grid',
+          style: {
+            display: 'grid',
+            gridTemplateColumns: '42px repeat(6, minmax(0, 1fr))',
+            gap: 4,
+            alignItems: 'stretch',
+          },
         },
-        '右滑看 6-12 月 →'
+        h('div'),
+        MONTH_LABELS.slice(0, 6).map((label) =>
+          h(
+            'div',
+            {
+              key: `mobile-head-a-${label}`,
+              style: {
+                fontSize: 11,
+                color: C.textMute,
+                textAlign: 'center',
+                paddingBottom: 2,
+              },
+            },
+            label
+          )
+        ),
+        h('div'),
+        MONTH_LABELS.slice(6).map((label) =>
+          h(
+            'div',
+            {
+              key: `mobile-head-b-${label}`,
+              style: {
+                fontSize: 11,
+                color: C.textMute,
+                textAlign: 'center',
+                paddingBottom: 4,
+              },
+            },
+            label
+          )
+        ),
+        rows.flatMap((row) => {
+          const renderMonthCell = ({ month, cell, revenueDeltaPct }) =>
+            h(
+              'div',
+              {
+                key: `${row.year}-mobile-${month}`,
+                title: cell
+                  ? `${row.year}-${String(month).padStart(2, '0')} 營收 ${formatRevenueInYi(cell[2])} 億 (vs 該月歷史 ${formatPct(revenueDeltaPct)})`
+                  : `${row.year}-${String(month).padStart(2, '0')} 無資料`,
+                style: {
+                  minHeight: 34,
+                  borderRadius: 7,
+                  border: `1px solid ${cell ? alpha(C.iron, '26') : alpha(C.textMute, '10')}`,
+                  background: cell ? getCellBackground(cell[4]) : alpha(C.textMute, '05'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  color: cell && Number(cell[4]) >= 1 ? C.text : C.textSec,
+                  fontFamily: 'var(--font-num)',
+                  lineHeight: 1.15,
+                  textAlign: 'center',
+                  overflowWrap: 'anywhere',
+                },
+              },
+              cell ? formatRevenueInYi(cell[2]) : '—'
+            )
+
+          return [
+            h(
+              'div',
+              {
+                key: `${row.year}-mobile-label-a`,
+                style: {
+                  fontSize: 12,
+                  color: C.textSec,
+                  fontFamily: 'var(--font-num)',
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+              },
+              String(row.year)
+            ),
+            ...row.months.slice(0, 6).map(renderMonthCell),
+            h('div', { key: `${row.year}-mobile-label-b` }),
+            ...row.months.slice(6).map(renderMonthCell),
+          ]
+        })
       )
     ),
     h(
@@ -395,7 +486,7 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
 }
 
 const liveHeatmapMobileStyle = `
-.seasonality-heatmap-scroll-hint {
+.seasonality-heatmap-mobile {
   display: none;
 }
 
@@ -409,52 +500,14 @@ const liveHeatmapMobileStyle = `
 }
 
 @media (max-width: 768px) {
-  .seasonality-heatmap-scroll {
-    margin-left: -2px;
-    margin-right: -2px;
-    scroll-padding-left: 58px;
-    scroll-snap-type: x mandatory;
+  .seasonality-heatmap-scroll--desktop {
+    display: none !important;
   }
 
-  .seasonality-heatmap-scroll::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 36px;
-    height: calc(100% - 6px);
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(0,0,0,0), var(--card, #f9f4ec) 82%);
-  }
-
-  .seasonality-heatmap-scroll-hint {
-    display: inline-flex;
-    position: sticky;
-    right: 8px;
-    bottom: 8px;
-    margin-left: auto;
-    padding: 6px 10px;
-    border: 1px solid var(--positive-soft, rgba(11, 18, 14, 0.18));
-    border-radius: 999px;
-    align-items: center;
-    justify-content: center;
-    color: var(--ink, #0b120e);
-    background: var(--card, #fef9f0);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    pointer-events: none;
-    white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(11, 18, 14, 0.12);
-  }
-
-  .seasonality-heatmap-grid {
-    min-width: 744px !important;
-    grid-template-columns: 58px repeat(12, minmax(52px, 1fr)) !important;
-  }
-
-  .seasonality-heatmap-grid > div {
-    scroll-snap-align: start;
+  .seasonality-heatmap-mobile {
+    display: block;
+    width: 100%;
+    overflow: hidden;
   }
 }
 `

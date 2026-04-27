@@ -969,10 +969,10 @@ export function EventsPanel({
       h(
         Card,
         {
+          variant: 'subtle',
           style: {
             marginBottom: 8,
             borderLeft: `2px solid ${alpha(C.textMute, '38')}`,
-            background: alpha(C.raised, 'f6'),
           },
           'data-testid': 'events-informational-collapse',
         },

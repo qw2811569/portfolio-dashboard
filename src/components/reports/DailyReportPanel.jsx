@@ -626,6 +626,7 @@ export function AnalysisStageCard({ report }) {
   return h(
     Card,
     {
+      variant: 'secondary',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${
@@ -682,6 +683,7 @@ export function RitualModeCard({ report }) {
   return h(
     Card,
     {
+      variant: 'secondary',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.iron, '40')}`,
@@ -772,6 +774,7 @@ export function WeeklyExportNarrativeCard({ report }) {
   return h(
     Card,
     {
+      variant: 'subtle',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.ink, '40')}`,
@@ -1115,6 +1118,7 @@ function AutoConfirmCard({ state = null }) {
   return h(
     Card,
     {
+      variant: 'secondary',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${

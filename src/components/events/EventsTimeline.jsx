@@ -292,10 +292,10 @@ export function EventsTimeline({ events = [] }) {
   return h(
     Card,
     {
+      variant: 'secondary',
       style: {
         marginBottom: 8,
         padding: '16px 16px 12px',
-        background: alpha(C.cardBlue, '82'),
         overflow: 'hidden',
       },
     },

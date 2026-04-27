@@ -1,6 +1,7 @@
 import { calculateConcentration } from './concentrationMetrics.js'
 import { calculateEventCountdown } from './eventCountdown.js'
-import { getEventStockCodes, isClosedEvent, parseFlexibleDate } from './eventUtils.js'
+import { getEventDateValue, selectUpcomingEventWindow } from './eventWindows.js'
+import { getEventStockCodes, parseFlexibleDate } from './eventUtils.js'
 
 function toFiniteNumber(value) {
   if (value == null) return null
@@ -440,26 +441,17 @@ function buildX4Metric({ holdings = [], stockMeta = null } = {}) {
 
 function buildX5Metric(newsEvents = [], now = new Date()) {
   const safeEvents = Array.isArray(newsEvents) ? newsEvents : []
-  const upcoming = safeEvents
-    .filter((event) => !isClosedEvent(event))
-    .map((event) => ({
-      event,
-      countdown: calculateEventCountdown(
-        {
-          ...event,
-          date: event?.date || event?.eventDate || null,
-        },
-        now
-      ),
-      codes: getEventStockCodes(event),
-    }))
-    .filter(
-      ({ countdown }) =>
-        Number.isFinite(countdown?.daysUntil) &&
-        countdown.daysUntil >= 0 &&
-        countdown.daysUntil <= 3
-    )
-    .sort((left, right) => left.countdown.daysUntil - right.countdown.daysUntil)
+  const upcoming = selectUpcomingEventWindow(safeEvents, { now, maxDays: 3 }).map(({ event }) => ({
+    event,
+    countdown: calculateEventCountdown(
+      {
+        ...event,
+        date: getEventDateValue(event),
+      },
+      now
+    ),
+    codes: getEventStockCodes(event),
+  }))
 
   if (safeEvents.length === 0) {
     return {
@@ -467,6 +459,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
       question: '三天內有沒有事件？',
       tone: 'ok',
       availability: 'ready',
+      eventCount: 0,
       currentValue: '這三天安靜',
       supportingValue: '目前沒有排進視窗的事件',
       detail: '暫時不用被事件日程追著跑。',
@@ -481,6 +474,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
       question: '三天內有沒有事件？',
       tone: 'ok',
       availability: 'ready',
+      eventCount: 0,
       currentValue: '這三天安靜',
       supportingValue: '未看到 3 天內催化事件',
       detail: '可以把注意力放回 thesis 與部位節奏。',
@@ -501,6 +495,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
     question: '三天內有沒有事件？',
     tone,
     availability: 'ready',
+    eventCount: upcoming.length,
     currentValue: `3 天內 ${upcoming.length} 件`,
     supportingValue: `${nearest.countdown.label} · ${nearest.event?.title || '未命名事件'}`,
     detail: names,

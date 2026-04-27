@@ -70,8 +70,74 @@ describe('lib/anxietyMetrics', () => {
     expect(byId.x3.sparkline).toEqual([15, -35, 60])
     expect(byId.x4.currentValue).toContain('集中度指數')
     expect(byId.x5.currentValue).toBe('3 天內 2 件')
+    expect(byId.x5.eventCount).toBe(2)
     expect(result.readyCount).toBe(4)
     expect(result.placeholderCount).toBe(1)
+  })
+
+  it('counts X5 from the same forward event window as the events page event cards', () => {
+    const todayEvents = [
+      {
+        id: 'evt-today-1',
+        title: '台積電法說',
+        status: 'pending',
+        date: '2026/04/27',
+        recordType: 'event',
+      },
+      {
+        id: 'evt-today-2',
+        title: '聯發科法說',
+        status: 'tracking',
+        eventDate: '2026-04-27',
+        recordType: 'event',
+      },
+      {
+        id: 'evt-today-3',
+        title: '廣達營收',
+        status: 'pending',
+        date: '2026/04/27',
+        recordType: 'event',
+      },
+      {
+        id: 'evt-today-4',
+        title: '金管會公告',
+        status: 'pending',
+        eventDate: '2026-04-27',
+        recordType: 'event',
+      },
+    ]
+    const result = buildAnxietyMetrics({
+      newsEvents: [
+        ...todayEvents,
+        {
+          id: 'news-leak',
+          title: '這是新聞，不是事件卡',
+          status: 'pending',
+          date: '2026/04/27',
+          recordType: 'news',
+        },
+        {
+          id: 'closed-event',
+          title: '已結案事件',
+          status: 'closed',
+          date: '2026/04/27',
+          recordType: 'event',
+        },
+        {
+          id: 'later-event',
+          title: '四天後事件',
+          status: 'pending',
+          date: '2026/05/01',
+          recordType: 'event',
+        },
+      ],
+      now: new Date('2026-04-27T09:00:00+08:00'),
+    })
+
+    const x5 = result.metrics.find((metric) => metric.id === 'x5')
+
+    expect(x5.eventCount).toBe(todayEvents.length)
+    expect(x5.currentValue).toBe('3 天內 4 件')
   })
 
   it('uses a real z-score when dailyReport already carries one', () => {

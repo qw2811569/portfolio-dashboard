@@ -264,72 +264,89 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
         )
       )
     ),
+    h('style', null, liveHeatmapMobileStyle),
     h(
       'div',
       {
+        className: 'seasonality-heatmap-scroll',
+        'data-testid': `seasonality-heatmap-scroll-${holding.code}`,
         style: {
-          display: 'grid',
-          gridTemplateColumns: '52px repeat(12, minmax(0, 1fr))',
-          gap: 4,
-          alignItems: 'stretch',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: 2,
         },
       },
-      h('div'),
-      MONTH_LABELS.map((label) =>
-        h(
-          'div',
-          {
-            key: label,
-            style: {
-              fontSize: 11,
-              color: C.textMute,
-              textAlign: 'center',
-              paddingBottom: 4,
-            },
+      h(
+        'div',
+        {
+          className: 'seasonality-heatmap-grid',
+          style: {
+            display: 'grid',
+            gridTemplateColumns: '52px repeat(12, minmax(44px, 1fr))',
+            gap: 4,
+            alignItems: 'stretch',
+            minWidth: 640,
           },
-          label
-        )
-      ),
-      rows.flatMap((row) => [
-        h(
-          'div',
-          {
-            key: `${row.year}-label`,
-            style: {
-              fontSize: 12,
-              color: C.textSec,
-              fontFamily: 'var(--font-num)',
-              display: 'flex',
-              alignItems: 'center',
-            },
-          },
-          String(row.year)
-        ),
-        ...row.months.map(({ month, cell, revenueDeltaPct }) =>
+        },
+        h('div'),
+        MONTH_LABELS.map((label) =>
           h(
             'div',
             {
-              key: `${row.year}-${month}`,
-              title: cell
-                ? `${row.year}-${String(month).padStart(2, '0')} 營收 ${formatRevenueInYi(cell[2])} 億 (vs 該月歷史 ${formatPct(revenueDeltaPct)})`
-                : `${row.year}-${String(month).padStart(2, '0')} 無資料`,
+              key: label,
               style: {
-                minHeight: 28,
-                borderRadius: 7,
-                border: `1px solid ${cell ? alpha(C.iron, '26') : alpha(C.textMute, '10')}`,
-                background: cell ? getCellBackground(cell[4]) : alpha(C.textMute, '05'),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 fontSize: 11,
-                color: cell && Number(cell[4]) >= 1 ? C.text : C.textSec,
-                fontFamily: 'var(--font-num)',
+                color: C.textMute,
+                textAlign: 'center',
+                paddingBottom: 4,
               },
             },
-            cell ? formatRevenueInYi(cell[2]) : '—'
+            label
           )
         ),
-      ])
+        rows.flatMap((row) => [
+          h(
+            'div',
+            {
+              key: `${row.year}-label`,
+              style: {
+                fontSize: 12,
+                color: C.textSec,
+                fontFamily: 'var(--font-num)',
+                display: 'flex',
+                alignItems: 'center',
+              },
+            },
+            String(row.year)
+          ),
+          ...row.months.map(({ month, cell, revenueDeltaPct }) =>
+            h(
+              'div',
+              {
+                key: `${row.year}-${month}`,
+                title: cell
+                  ? `${row.year}-${String(month).padStart(2, '0')} 營收 ${formatRevenueInYi(cell[2])} 億 (vs 該月歷史 ${formatPct(revenueDeltaPct)})`
+                  : `${row.year}-${String(month).padStart(2, '0')} 無資料`,
+                style: {
+                  minHeight: 36,
+                  borderRadius: 7,
+                  border: `1px solid ${cell ? alpha(C.iron, '26') : alpha(C.textMute, '10')}`,
+                  background: cell ? getCellBackground(cell[4]) : alpha(C.textMute, '05'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  color: cell && Number(cell[4]) >= 1 ? C.text : C.textSec,
+                  fontFamily: 'var(--font-num)',
+                  lineHeight: 1.15,
+                  textAlign: 'center',
+                },
+              },
+              cell ? formatRevenueInYi(cell[2]) : '—'
+            )
+          ),
+        ])
+      )
     ),
     h(
       'div',
@@ -361,6 +378,20 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
     )
   )
 }
+
+const liveHeatmapMobileStyle = `
+@media (max-width: 768px) {
+  .seasonality-heatmap-scroll {
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+
+  .seasonality-heatmap-grid {
+    min-width: 720px !important;
+    grid-template-columns: 56px repeat(12, minmax(50px, 1fr)) !important;
+  }
+}
+`
 
 export function SeasonalityHeatmap({ holdings, holdingDossiers = [] }) {
   const dossierByCode = useMemo(

@@ -2129,155 +2129,6 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
 }
 
 /**
- * Pending Events — stocks with events today/tomorrow
- */
-function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary }) {
-  const today = new Date()
-  const todayStr = formatDateStr(today)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = formatDateStr(tomorrow)
-
-  const upcoming = (Array.isArray(newsEvents) ? newsEvents : []).filter((event) => {
-    const d = String(event.eventDate || event.date || '')
-      .replace(/\//g, '-')
-      .slice(0, 10)
-    return d === todayStr || d === tomorrowStr
-  })
-
-  const hasContent = upcoming.length > 0 || urgentCount > 0 || todayAlertSummary
-
-  return h(
-    Card,
-    {
-      variant: urgentCount > 0 ? 'hero' : 'primary',
-      style: {
-        marginBottom: 8,
-        borderLeft: urgentCount > 0 ? `3px solid ${alpha(C.amber, '60')}` : undefined,
-      },
-    },
-    h(
-      'div',
-      { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-      h('div', { style: { ...lbl, marginBottom: 0 } }, '待處理事件'),
-      urgentCount > 0 &&
-        h(
-          'span',
-          {
-            style: {
-              fontSize: 11,
-              fontWeight: 600,
-              color: C.textSec,
-              background: C.amberBg,
-              border: `1px solid ${alpha(C.amber, '20')}`,
-              borderRadius: 8,
-              padding: '4px 8px',
-            },
-          },
-          `${urgentCount} 件緊急`
-        )
-    ),
-    todayAlertSummary &&
-      h(
-        'div',
-        {
-          style: {
-            fontSize: 12,
-            color: C.textSec,
-            marginTop: 4,
-            lineHeight: 1.7,
-          },
-        },
-        todayAlertSummary
-      ),
-    !hasContent &&
-      h(
-        'div',
-        { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
-        '今明兩日沒有待處理事件。'
-      ),
-    upcoming.length > 0 &&
-      h(
-        'div',
-        { style: { display: 'grid', gap: 4, marginTop: 8, minWidth: 0, maxWidth: '100%' } },
-        upcoming.slice(0, 8).map((event, i) => {
-          const d = String(event.eventDate || event.date || '')
-            .replace(/\//g, '-')
-            .slice(0, 10)
-          const isToday = d === todayStr
-          const dayLabel = isToday ? '今天' : '明天'
-          const codes = getEventStockCodes(event)
-          return h(
-            'div',
-            {
-              key: event.id || `ev-${i}`,
-              style: {
-                background: C.subtle,
-                border: `1px solid ${C.border}`,
-                borderRadius: C.radii.md,
-                padding: '4px 8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 8,
-                minWidth: 0,
-                maxWidth: '100%',
-                overflow: 'hidden',
-              },
-            },
-            h(
-              'div',
-              { style: { flex: 1, minWidth: 0 } },
-              h(
-                'div',
-                {
-                  style: {
-                    fontSize: 11,
-                    color: C.text,
-                    fontWeight: 500,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  },
-                },
-                event.title || '未命名事件'
-              ),
-              codes.length > 0 &&
-                h(
-                  'div',
-                  { style: { fontSize: 11, color: C.textMute, marginTop: 4 } },
-                  codes.join('、')
-                )
-            ),
-            h(
-              'span',
-              {
-                style: {
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: isToday ? C.textSec : C.textMute,
-                  background: isToday ? C.amberBg : 'transparent',
-                  border: isToday ? `1px solid ${alpha(C.amber, '24')}` : 'none',
-                  borderRadius: 8,
-                  padding: isToday ? '4px 8px' : 0,
-                  flexShrink: 0,
-                },
-              },
-              dayLabel
-            )
-          )
-        })
-      ),
-    upcoming.length > 8 &&
-      h(
-        'div',
-        { style: { fontSize: 12, color: C.textMute, marginTop: 4, textAlign: 'right' } },
-        `...還有 ${upcoming.length - 8} 件`
-      )
-  )
-}
-
-/**
  * Portfolio Health — winners/losers count + overall return
  */
 function PortfolioHealthCard({
@@ -2440,8 +2291,6 @@ export function DashboardPanel({
   losers = [],
   latestInsight = null,
   newsEvents = [],
-  urgentCount = 0,
-  todayAlertSummary = '',
   portfolioName = '',
   portfolioId = '',
   viewMode = 'retail',
@@ -2566,20 +2415,4 @@ export function DashboardPanel({
     h(AiQuickSummary, { latestInsight }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })
   )
-}
-
-// ── Helpers ──────────────────────────────────────────────────────
-
-function formatDateStr(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function getEventStockCodes(event) {
-  if (Array.isArray(event.stockCodes)) return event.stockCodes
-  if (typeof event.stockCode === 'string' && event.stockCode) return [event.stockCode]
-  if (Array.isArray(event.stocks)) return event.stocks.map((s) => s.code || s).filter(Boolean)
-  return []
 }

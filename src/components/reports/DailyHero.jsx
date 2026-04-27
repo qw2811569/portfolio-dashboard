@@ -14,6 +14,7 @@ export default function DailyHero({ hero, copyText, streaming = false }) {
   return (
     <Card
       data-testid="daily-ritual-hero"
+      variant="hero"
       style={{ borderRadius: 8, borderLeft: `3px solid ${C.cta}`, background: C.raised }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>

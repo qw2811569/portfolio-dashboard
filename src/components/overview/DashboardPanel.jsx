@@ -1026,6 +1026,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteH
   return h(
     Card,
     {
+      variant: 'hero',
       style: {
         marginBottom: 8,
         borderLeft: `3px solid ${alpha(C.ink, '40')}`,
@@ -1836,6 +1837,7 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
     {
       'data-testid': 'dashboard-focus-card',
       'data-variant': 'dark-panel',
+      variant: 'hero',
       className: 'dashboard-focus-card',
       style: {
         marginTop: 8,
@@ -2105,6 +2107,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
   return h(
     Card,
     {
+      variant: urgentCount > 0 ? 'hero' : 'primary',
       style: {
         marginBottom: 8,
         borderLeft: urgentCount > 0 ? `3px solid ${alpha(C.amber, '60')}` : undefined,
@@ -2244,7 +2247,7 @@ function PortfolioHealthCard({
 
   return h(
     Card,
-    { style: { marginBottom: 8 } },
+    { variant: 'subtle', style: { marginBottom: 8 } },
     h('div', { style: lbl }, '組合健康度'),
     h(
       'div',

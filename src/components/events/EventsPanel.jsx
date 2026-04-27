@@ -222,6 +222,7 @@ export function RelayPlanCard({ expanded, onToggle }) {
   return h(
     Card,
     {
+      variant: 'hero',
       style: {
         marginBottom: 8,
         background: C.cardBlue,

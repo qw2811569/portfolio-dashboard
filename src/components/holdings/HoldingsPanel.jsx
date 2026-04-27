@@ -1192,7 +1192,7 @@ function DailyInsightCard({ latestInsight }) {
 
   return h(
     Card,
-    { style: { marginBottom: 8, borderLeft: `3px solid ${C.accent}` } },
+    { variant: 'hero', style: { marginBottom: 8, borderLeft: `3px solid ${C.accent}` } },
     h(
       'div',
       {

@@ -64,6 +64,7 @@ function ActionItem({ item }) {
 function RailCard({ eyebrow, title, children, color = C.ink }) {
   return (
     <Card
+      variant="subtle"
       style={{
         padding: '14px 14px',
         borderRadius: 8,
@@ -81,7 +82,7 @@ export function PrincipleSummary() {
   const principle = getDailyPrinciple(new Date())
 
   return (
-    <RailCard eyebrow="MINDSET" title="心法卡摘要" color={C.charcoal}>
+    <RailCard eyebrow="心法" title="心法卡摘要" color={C.charcoal}>
       <div
         style={{
           color: C.text,
@@ -111,7 +112,7 @@ export function PrincipleSummary() {
 
 export function TodayDoCard({ items = [] }) {
   return (
-    <RailCard eyebrow="DO" title="今天先做" color={C.cta}>
+    <RailCard eyebrow="立即" title="今天先做" color={C.cta}>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         {items.map((item, index) => (
           <ActionItem key={`${item.code || item.title}-${index}`} item={item} />
@@ -123,7 +124,7 @@ export function TodayDoCard({ items = [] }) {
 
 export function TodayDontCard({ items = [] }) {
   return (
-    <RailCard eyebrow="DONT" title="今天不做" color={C.textMute}>
+    <RailCard eyebrow="暫緩" title="今天不做" color={C.textMute}>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         {items.map((item, index) => (
           <ActionItem key={`${item.code || item.title}-${index}`} item={item} />
@@ -135,7 +136,7 @@ export function TodayDontCard({ items = [] }) {
 
 export function RiskAlertCard({ items = [] }) {
   return (
-    <RailCard eyebrow="RISK" title="風險提醒" color={C.down}>
+    <RailCard eyebrow="風險" title="風險提醒" color={C.down}>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
         {items.map((item, index) => (
           <ActionItem key={`${item.code || item.title}-${index}`} item={item} />

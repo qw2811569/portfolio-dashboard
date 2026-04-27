@@ -390,13 +390,16 @@ function LogPanelSkeleton({ isMobile = false }) {
       data-testid="trade-log-panel"
       data-layout={isMobile ? 'mobile-single-column' : 'desktop-split'}
     >
-      <Card style={{ marginBottom: 12, padding: isMobile ? '18px 16px' : '22px 20px' }}>
+      <Card
+        variant="subtle"
+        style={{ marginBottom: 12, padding: isMobile ? '18px 16px' : '22px 20px' }}
+      >
         <div style={{ ...EYE_BROW_STYLE, marginBottom: 10 }}>交易日誌整理中</div>
         <Skeleton variant="text" count={2} />
         <div style={{ height: 14 }} />
         <Skeleton variant="card" count={2} />
       </Card>
-      <Card style={{ padding: isMobile ? '16px 14px' : '18px 16px' }}>
+      <Card variant="subtle" style={{ padding: isMobile ? '16px 14px' : '18px 16px' }}>
         <div style={{ ...EYE_BROW_STYLE, marginBottom: 10 }}>交易稽核讀取中</div>
         <Skeleton variant="row" count={3} />
       </Card>

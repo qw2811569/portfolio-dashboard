@@ -189,6 +189,7 @@ export function EmptyState({ resource = 'holdings', onAction }) {
     Card,
     {
       'data-empty-state': resource,
+      variant: 'hero',
       style: {
         marginBottom: 8,
         textAlign: 'center',

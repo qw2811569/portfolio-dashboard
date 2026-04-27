@@ -1278,11 +1278,16 @@ export default function Header(props) {
       ),
       backupImportInput
     )
-  const mobileBottomTabsBlock =
-    viewMode !== OVERVIEW_VIEW_MODE &&
+  const mobileBottomTabsBlock = viewMode !== OVERVIEW_VIEW_MODE && [
+    h(
+      'style',
+      { key: 'mobile-bottom-tab-audit-style', id: 'mobile-bottom-tab-audit-style' },
+      'body[data-audit-capture="1"] [data-testid="mobile-bottom-tab-bar"]{display:none!important}'
+    ),
     h(
       'nav',
       {
+        key: 'mobile-bottom-tab-bar',
         'data-testid': 'mobile-bottom-tab-bar',
         'aria-label': '主要分頁',
         'aria-hidden': isOverlayBlocking ? 'true' : undefined,
@@ -1372,7 +1377,8 @@ export default function Header(props) {
             renderTabButton(tabItem, { compact: true, fill: true, mobileBottom: true })
           )
         )
-    )
+    ),
+  ]
 
   if (!isMobile)
     return h(

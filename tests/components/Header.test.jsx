@@ -250,4 +250,15 @@ describe('components/Header.jsx', () => {
     expect(screen.getByTestId('tab-holdings')).toHaveStyle({ minHeight: '50px' })
     expect(screen.getByTestId('header-scroll-zone').style.padding).toBe('58px 12px 0px')
   })
+
+  it('ships an audit-capture rule that hides fixed mobile bottom tabs during full-page screenshots', () => {
+    mockMatchMedia(true)
+
+    render(<Header {...buildProps()} />)
+
+    expect(screen.getByTestId('mobile-bottom-tab-bar')).toBeInTheDocument()
+    expect(document.getElementById('mobile-bottom-tab-audit-style')?.textContent).toContain(
+      'body[data-audit-capture="1"] [data-testid="mobile-bottom-tab-bar"]'
+    )
+  })
 })

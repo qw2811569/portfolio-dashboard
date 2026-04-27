@@ -119,6 +119,17 @@ for (const route of routes) {
       await expect(page.getByTestId('research-thesis-status')).toContainText('投資理由狀態')
     }
     await page.waitForTimeout(1500)
+    const isMobileFullPage = route.full && route.viewport.width < 768
+    if (isMobileFullPage) {
+      await page.evaluate(() => {
+        document.body.dataset.auditCapture = '1'
+      })
+    }
     await page.screenshot({ path: `${OUT}/${route.name}.png`, fullPage: route.full })
+    if (isMobileFullPage) {
+      await page.evaluate(() => {
+        delete document.body.dataset.auditCapture
+      })
+    }
   })
 }

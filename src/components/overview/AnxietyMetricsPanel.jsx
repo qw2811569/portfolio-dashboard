@@ -157,11 +157,28 @@ function Sparkline({ values = [], tone = 'muted' }) {
   )
 }
 
+function resolveMetricDisplay(metric = {}) {
+  if (metric.id === 'x5' && Number(metric.eventCount) > 0) {
+    return {
+      question: '最近一件需要復盤的事？',
+      currentValue: metric.supportingValue || '先確認最近一件事件',
+      supportingValue: metric.detail || '先看最近一件是否需要調整投資理由。',
+    }
+  }
+
+  return {
+    question: metric.question,
+    currentValue: metric.currentValue,
+    supportingValue: metric.supportingValue,
+  }
+}
+
 function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = false }) {
   const meta = toneMeta[metric?.tone] || toneMeta.muted
   const detailId = `anxiety-metric-detail-${metric.id}`
   const isMetricLoading = metric?.availability === 'loading'
   const isPlaceholder = metric?.availability === 'placeholder'
+  const display = resolveMetricDisplay(metric)
 
   // R156 #3: collapse placeholder/loading cards to a 1-row chip so the dashboard
   // first fold isn't dominated by 3 of 5 cards永遠寫「待補 上線時才有」(R152 #2).
@@ -203,7 +220,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
           'data-testid': `anxiety-metric-question-${metric.id}`,
           style: { fontSize: 12, color: C.textSec, lineHeight: 1.4, flex: 1, minWidth: 0 },
         },
-        metric.question
+        display.question
       ),
       h(Badge, { color: meta.badge, size: 'sm' }, isMetricLoading ? '整理中' : '稍後再上')
     )
@@ -295,7 +312,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
                 fontWeight: 700,
               },
             },
-            metric.question
+            display.question
           )
         )
       ),
@@ -346,7 +363,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
                   fontFamily: 'var(--font-num)',
                 },
               },
-              metric.currentValue
+              display.currentValue
             ),
             h(
               'div',
@@ -359,7 +376,7 @@ function MetricCard({ metric, expanded, onToggle, onNavigate, spanFullWidth = fa
                   minHeight: 38,
                 },
               },
-              metric.supportingValue
+              display.supportingValue
             ),
           ]
     ),

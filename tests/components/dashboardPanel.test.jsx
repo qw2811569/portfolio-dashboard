@@ -6,6 +6,7 @@ import { DashboardPanel } from '../../src/components/overview/DashboardPanel.jsx
 import { getDailyPrinciple } from '../../src/lib/dailyPrinciples.js'
 
 const originalMatchMedia = window.matchMedia
+const tomorrowDate = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 function mockMatchMedia(matches) {
   Object.defineProperty(window, 'matchMedia', {
@@ -48,6 +49,7 @@ function buildProps(overrides = {}) {
 describe('components/DashboardPanel', () => {
   afterEach(() => {
     cleanup()
+    vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     if (typeof originalMatchMedia === 'function') {
@@ -169,7 +171,7 @@ describe('components/DashboardPanel', () => {
               id: 'evt-1',
               title: '台積電法說',
               status: 'pending',
-              eventDate: '2026-04-25',
+              eventDate: tomorrowDate(),
               stocks: ['台積電 2330'],
             },
           ],
@@ -250,6 +252,9 @@ describe('components/DashboardPanel', () => {
   })
 
   it('mounts the unified anxiety metrics panel below the dashboard hero', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
     render(
       <DashboardPanel
         {...buildProps({
@@ -274,7 +279,7 @@ describe('components/DashboardPanel', () => {
               id: 'evt-1',
               title: '台積電法說',
               status: 'pending',
-              eventDate: '2026-04-25',
+              eventDate: '2026-04-28',
               stocks: ['台積電 2330'],
             },
           ],
@@ -284,10 +289,12 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('anxiety-metrics-panel')).toBeInTheDocument()
     expect(screen.getByTestId('anxiety-metric-question-x1')).toHaveTextContent('今天漲跌正常嗎？')
-    expect(screen.getByTestId('anxiety-metric-question-x5')).toHaveTextContent('三天內有沒有事件？')
+    expect(screen.getByTestId('anxiety-metric-question-x5')).toHaveTextContent(
+      '最近一件需要復盤的事？'
+    )
   })
 
-  it('surfaces the urgent alert summary when urgentCount is non-zero', () => {
+  it('keeps the overview pending-event summary off the dashboard', () => {
     const { container } = render(
       <DashboardPanel
         {...buildProps({
@@ -298,7 +305,35 @@ describe('components/DashboardPanel', () => {
         })}
       />
     )
-    expect(container.textContent).toContain('今日有 3 檔需要關注')
+    expect(container.textContent).not.toContain('待處理事件')
+    expect(container.textContent).not.toContain('今日有 3 檔需要關注')
+  })
+
+  it('renders the mobile 3-day event chip once in the hero action', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+    mockMatchMedia(true)
+
+    render(
+      <DashboardPanel
+        {...buildProps({
+          holdings: [{ code: '2330', name: '台積電', qty: 1, cost: 900, price: 950 }],
+          newsEvents: [
+            {
+              id: 'evt-1',
+              title: '台積電法說',
+              status: 'pending',
+              eventDate: '2026-04-28',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('dashboard-mobile-event-window-chip')).toHaveTextContent(
+      '3 天內 1 件'
+    )
   })
 
   it('renders Today in Markets items from central-bank, macro, and calendar feeds', () => {

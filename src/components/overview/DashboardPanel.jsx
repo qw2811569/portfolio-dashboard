@@ -1790,6 +1790,8 @@ function buildDashboardFocusItems({
       eyebrow: metric.question,
       title: cleanFocusCopy(metric.currentValue) || metric.question,
       body: cleanFocusCopy(metric.supportingValue || metric.detail) || '今天先把這題放進檢查順序。',
+      detail: cleanFocusCopy(metric.detail),
+      eventCount: metric.eventCount,
       tone: metric.tone,
       routeTab: metric.routeTab,
       routeLabel: metric.routeLabel,
@@ -1833,10 +1835,28 @@ function resolveMobileActionCopy(item = {}) {
     return {
       title: '先確認最近一件事件',
       body: item.body,
+      chip: Number(item.eventCount) > 0 ? `3 天內 ${item.eventCount} 件` : '',
     }
   }
 
   return {
+    title: item.title,
+    body: item.body,
+    chip: '',
+  }
+}
+
+function resolveDashboardFocusCopy(item = {}) {
+  if (item.id === 'x5' && item.title !== '這三天安靜') {
+    return {
+      eyebrow: '最近一件需要復盤的事？',
+      title: item.body || '先確認最近一件事件',
+      body: item.detail || '先看最近一件是否需要調整投資理由。',
+    }
+  }
+
+  return {
+    eyebrow: item.eyebrow,
     title: item.title,
     body: item.body,
   }
@@ -1907,86 +1927,89 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
           },
         },
         safeItems.map((item, index) =>
-          h(
-            'div',
-            {
-              key: item.id || item.title,
-              'data-testid': 'dashboard-focus-item',
-              style: {
-                display: 'grid',
-                gap: 8,
-                padding: index === 0 ? '0 0 20px' : '20px 0',
-                borderTop: index === 0 ? 'none' : `1px solid ${alpha(C.bone, '22')}`,
-              },
-            },
-            h(
+          (() => {
+            const copy = resolveDashboardFocusCopy(item)
+            return h(
               'div',
               {
+                key: item.id || item.title,
+                'data-testid': 'dashboard-focus-item',
                 style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
+                  display: 'grid',
+                  gap: 8,
+                  padding: index === 0 ? '0 0 20px' : '20px 0',
+                  borderTop: index === 0 ? 'none' : `1px solid ${alpha(C.bone, '22')}`,
                 },
               },
               h(
                 'div',
                 {
                   style: {
-                    color: alpha(C.bone, 'c8'),
-                    fontSize: 11,
-                    letterSpacing: '0.08em',
-                    lineHeight: 1.4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
                   },
                 },
-                item.eyebrow
-              ),
-              item.routeTab &&
-                typeof onNavigate === 'function' &&
                 h(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
-                    'aria-label': item.routeLabel || '查看',
-                    title: item.routeLabel || '查看',
-                    onClick: () => onNavigate(item.routeTab),
                     style: {
-                      border: 'none',
-                      background: 'transparent',
-                      color: alpha(C.bone, 'd8'),
+                      color: alpha(C.bone, 'c8'),
                       fontSize: 11,
-                      fontWeight: 700,
-                      padding: 0,
-                      cursor: 'pointer',
+                      letterSpacing: '0.08em',
+                      lineHeight: 1.4,
                     },
                   },
-                  '>'
-                )
-            ),
-            h(
-              'div',
-              {
-                style: {
-                  color: C.bone,
-                  fontSize: 22,
-                  lineHeight: 1.25,
-                  fontWeight: 800,
+                  copy.eyebrow
+                ),
+                item.routeTab &&
+                  typeof onNavigate === 'function' &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      'aria-label': item.routeLabel || '查看',
+                      title: item.routeLabel || '查看',
+                      onClick: () => onNavigate(item.routeTab),
+                      style: {
+                        border: 'none',
+                        background: 'transparent',
+                        color: alpha(C.bone, 'd8'),
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: 0,
+                        cursor: 'pointer',
+                      },
+                    },
+                    '>'
+                  )
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    color: C.bone,
+                    fontSize: 22,
+                    lineHeight: 1.25,
+                    fontWeight: 800,
+                  },
                 },
-              },
-              item.title
-            ),
-            h(
-              'div',
-              {
-                style: {
-                  color: alpha(C.bone, 'c8'),
-                  fontSize: 13,
-                  lineHeight: 1.75,
+                copy.title
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    color: alpha(C.bone, 'c8'),
+                    fontSize: 13,
+                    lineHeight: 1.75,
+                  },
                 },
-              },
-              item.body
+                copy.body
+              )
             )
-          )
+          })()
         )
       )
     )
@@ -2033,6 +2056,25 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
       h(
         'div',
         { style: { display: 'grid', gap: 6, minWidth: 0 } },
+        actionCopy.chip &&
+          h(
+            'div',
+            {
+              'data-testid': 'dashboard-mobile-event-window-chip',
+              style: {
+                justifySelf: 'start',
+                border: `1px solid ${alpha(C.amber, '28')}`,
+                borderRadius: 8,
+                background: C.amberBg,
+                color: C.textSec,
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '4px 8px',
+                lineHeight: 1.2,
+              },
+            },
+            actionCopy.chip
+          ),
         h(
           'div',
           {
@@ -2522,7 +2564,6 @@ export function DashboardPanel({
     h(MorningNoteCard, { morningNote, onNavigate, onMorningNoteHandoff }),
     h(TodayInMarketsCard, { newsEvents }),
     h(AiQuickSummary, { latestInsight }),
-    h(PendingEventsCard, { newsEvents, urgentCount, todayAlertSummary }),
     h(PortfolioHealthCard, { holdings, winners, losers, totalVal, totalCost })
   )
 }

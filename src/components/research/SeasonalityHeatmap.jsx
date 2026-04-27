@@ -176,6 +176,37 @@ function EmptySeasonalitySection({ holdingsCount }) {
   )
 }
 
+function MissingSeasonalitySummary({ missingCards }) {
+  const labels = missingCards
+    .map(({ holding }) => [holding?.code, holding?.name].filter(Boolean).join(' '))
+    .filter(Boolean)
+
+  return h(
+    Card,
+    {
+      variant: 'subtle',
+      style: {
+        border: `1px solid ${C.borderSub}`,
+        background: alpha(C.card, 'f2'),
+        marginBottom: 8,
+        gridColumn: '1 / -1',
+      },
+      'data-testid': 'seasonality-missing-summary',
+    },
+    h(
+      'div',
+      {
+        style: {
+          fontSize: 12,
+          color: C.textMute,
+          lineHeight: 1.7,
+        },
+      },
+      `另 ${missingCards.length} 檔尚未取得月營收：${labels.join(' / ')}`
+    )
+  )
+}
+
 function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
   const { metrics, rows, years } = useMemo(() => buildHeatmapRows(revenueRows), [revenueRows])
 
@@ -355,8 +386,10 @@ export function SeasonalityHeatmap({ holdings, holdingDossiers = [] }) {
 
   if (cards.length === 0) return null
 
-  const hasAnyRevenue = cards.some(({ revenueRows }) => revenueRows.length > 0)
-  if (!hasAnyRevenue) return h(EmptySeasonalitySection, { holdingsCount: cards.length })
+  const dataCards = cards.filter(({ revenueRows }) => revenueRows.length > 0)
+  const missingCards = cards.filter(({ revenueRows }) => revenueRows.length === 0)
+
+  if (dataCards.length === 0) return h(EmptySeasonalitySection, { holdingsCount: cards.length })
 
   return h(
     'div',
@@ -368,14 +401,15 @@ export function SeasonalityHeatmap({ holdings, holdingDossiers = [] }) {
         marginBottom: 8,
       },
     },
-    cards.map(({ holding, revenueRows, updatedAt }) =>
+    dataCards.map(({ holding, revenueRows, updatedAt }) =>
       h(SeasonalityCard, {
         key: holding.code,
         holding,
         revenueRows,
         updatedAt,
       })
-    )
+    ),
+    missingCards.length > 0 && h(MissingSeasonalitySummary, { missingCards })
   )
 }
 

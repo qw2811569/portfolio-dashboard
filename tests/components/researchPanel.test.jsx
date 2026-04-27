@@ -264,6 +264,45 @@ describe('components/ResearchPanel', () => {
     expect(container.textContent).toContain('淡月：1月、2月、3月')
   })
 
+  it('summarizes missing seasonality holdings when at least one heatmap has data', () => {
+    const storage = new Map([
+      [
+        'fm-cache-revenue-2330',
+        JSON.stringify({
+          data: Array.from({ length: 5 }, (_, yearOffset) =>
+            Array.from({ length: 12 }, (_, monthOffset) => ({
+              revenueYear: 2021 + yearOffset,
+              revenueMonth: monthOffset + 1,
+              revenue: monthOffset >= 9 ? 220 : monthOffset <= 2 ? 55 : 100,
+            }))
+          ).flat(),
+          ts: Date.now(),
+        }),
+      ],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key) => storage.get(key) || null),
+    })
+
+    const { container } = render(
+      <ResearchPanel
+        {...buildProps({
+          holdings: [
+            { code: '2330', name: '台積電' },
+            { code: '2454', name: '聯發科' },
+          ],
+        })}
+      />
+    )
+
+    expect(container.textContent).toContain('台積電 · 2330')
+    expect(screen.getByTestId('seasonality-missing-summary')).toHaveTextContent(
+      '另 1 檔尚未取得月營收：2454 聯發科'
+    )
+    expect(container.textContent).not.toContain('聯發科 · 2454')
+    expect(container.textContent).not.toContain('資料尚未取得')
+  })
+
   it('shows a stale fundamentals badge when the research fundamentals data is older than 30 days', () => {
     const storage = new Map([
       [

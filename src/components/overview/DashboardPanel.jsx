@@ -263,7 +263,7 @@ function resolveTodayInMarketsCopy(event, category) {
       return '除權息時程靠近時，殖利率與填息題材通常會重新回到盤面。'
     }
     if (/股東會|紀念品/.test(text)) {
-      return '股東會本身是時間點事件；若只是紀念品資訊，通常偏資訊備查，不直接改 thesis。'
+      return '股東會本身是時間點事件；若只是紀念品資訊，通常偏資訊備查，不直接改投資理由。'
     }
     if (/營收/.test(text)) {
       return '營收公布日靠近時，市場通常會先看強勢股能不能把節奏延續下去。'

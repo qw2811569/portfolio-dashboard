@@ -19,7 +19,7 @@ const REASON_LABELS = {
 const RESOURCE_LABELS = {
   daily: '收盤分析',
   research: '深度研究',
-  thesis: '投資 thesis',
+  thesis: '投資理由',
   dashboard: '首頁 headline',
   detail: '個股摘要',
   tomorrow: '明日行動',
@@ -80,7 +80,7 @@ function buildResearchFundamentalsBody(context = {}) {
       : context.name || context.code || '這檔'
   const hasTargetGap = toText(context.targetStatus) && toText(context.targetStatus) !== '已補'
   const targetNote = hasTargetGap ? '，目標價欄位也還在補' : ''
-  return `${stockLabel} 這輪先停在這裡，財報 / 營收欄位還沒補齊${targetNote}。我先不把 thesis 硬湊完整，等資料回來再看。`
+  return `${stockLabel} 這輪先停在這裡，財報 / 營收欄位還沒補齊${targetNote}。我先不把投資理由硬湊完整，等資料回來再看。`
 }
 
 function buildFinMindFallbackPhrase(context = {}) {

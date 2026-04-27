@@ -164,7 +164,7 @@ function buildReadyX1Metric({
     interpretation === 'anomaly'
       ? '今天和大盤 proxy 的距離比平常明顯大，先回 Daily 看是誰在放大聲量。'
       : interpretation === 'outperform'
-        ? '今天比大盤 proxy 快一點，先確認是 thesis 在發力，還是單日情緒拉高。'
+        ? '今天比大盤 proxy 快一點，先確認是投資理由在發力，還是單日情緒拉高。'
         : interpretation === 'underperform'
           ? '今天比大盤 proxy 慢一點，先看是個股噪音，還是組合主線一起轉弱。'
           : '今天和大盤 proxy 大致同拍，暫時還在平常節奏裡。'
@@ -270,7 +270,7 @@ function buildX2Metric(holdingDossiers = []) {
       question: '投資理由還成立嗎？',
       routeTab: 'holdings',
       routeLabel: '去看持倉論述',
-      detail: 'thesis pillar 還沒拆成可追蹤欄位，先留白不亂講。',
+      detail: '投資理由還沒拆成可追蹤欄位，先留白不亂講。',
     })
   }
 
@@ -280,8 +280,8 @@ function buildX2Metric(holdingDossiers = []) {
   const tone = broken.length > 0 ? 'alert' : weakened.length > 0 ? 'warn' : 'ok'
 
   let currentValue = `${intact.length} 根主線大致穩`
-  let supportingValue = `${rows.length} 檔有 thesis 追蹤`
-  let detail = '大部分 thesis pillar 目前沒有看到失真。'
+  let supportingValue = `${rows.length} 檔有投資理由追蹤`
+  let detail = '大部分投資理由目前沒有看到失真。'
 
   if (broken.length > 0) {
     currentValue = `${broken.length} 根主線要重看`
@@ -477,7 +477,7 @@ function buildX5Metric(newsEvents = [], now = new Date()) {
       eventCount: 0,
       currentValue: '這三天安靜',
       supportingValue: '未看到 3 天內催化事件',
-      detail: '可以把注意力放回 thesis 與部位節奏。',
+      detail: '可以把注意力放回投資理由與部位節奏。',
       routeTab: 'events',
       routeLabel: '去看事件日程',
     }

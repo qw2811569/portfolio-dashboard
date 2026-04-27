@@ -266,7 +266,7 @@ function buildX2Metric(holdingDossiers = []) {
   if (pillars.length === 0) {
     return buildUnavailableMetric({
       id: 'x2',
-      question: 'Thesis 還成立嗎？',
+      question: '投資理由還成立嗎？',
       routeTab: 'holdings',
       routeLabel: '去看持倉論述',
       detail: 'thesis pillar 還沒拆成可追蹤欄位，先留白不亂講。',
@@ -300,7 +300,7 @@ function buildX2Metric(holdingDossiers = []) {
 
   return {
     id: 'x2',
-    question: 'Thesis 還成立嗎？',
+    question: '投資理由還成立嗎？',
     tone,
     availability: 'ready',
     currentValue,

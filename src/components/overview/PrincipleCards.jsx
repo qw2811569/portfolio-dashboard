@@ -73,18 +73,39 @@ function PrincipleCard({ label, entry }) {
     ),
     quoteEn &&
       h(
-        'div',
+        'details',
         {
-          'data-testid': 'daily-principle-quote-en',
+          'data-testid': 'daily-principle-quote-en-details',
           style: {
             marginTop: 6,
-            fontSize: 12,
-            lineHeight: 1.6,
-            color: C.textSec,
-            fontStyle: 'italic',
           },
         },
-        `“${quoteEn}”`
+        h(
+          'summary',
+          {
+            style: {
+              fontSize: 11,
+              color: C.textMute,
+              cursor: 'pointer',
+              userSelect: 'none',
+            },
+          },
+          '英文原文'
+        ),
+        h(
+          'div',
+          {
+            'data-testid': 'daily-principle-quote-en',
+            style: {
+              marginTop: 6,
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: C.textSec,
+              fontStyle: 'italic',
+            },
+          },
+          `“${quoteEn}”`
+        )
       ),
     attribution &&
       h(

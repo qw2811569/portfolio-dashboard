@@ -167,7 +167,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
                 marginBottom: 4,
               },
             },
-            'HHI'
+            '集中度指數'
           ),
           h(
             'div',
@@ -194,10 +194,10 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
             },
           },
           concentration.hhi >= 2500
-            ? 'HHI > 2500'
+            ? '高度集中（> 2500）'
             : concentration.hhi >= 1500
-              ? 'HHI 1500-2500'
-              : 'HHI < 1500'
+              ? '中度集中（1500-2500）'
+              : '低度集中（< 1500）'
         )
       ),
       h(
@@ -209,7 +209,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
           },
         },
         h(WeightBar, { label: 'Top 1', value: concentration.top1Weight }),
-        h(WeightBar, { label: 'Top 3', value: concentration.top3Weight }),
+        h(WeightBar, { label: '前 3 大', value: concentration.top3Weight }),
         h(WeightBar, { label: '前 5 大', value: concentration.top5Weight })
       ),
       h(

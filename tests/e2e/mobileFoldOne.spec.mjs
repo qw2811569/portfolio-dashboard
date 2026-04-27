@@ -137,7 +137,7 @@ test('research thesis status appears before data repair controls', async ({ page
 
   const status = page.getByTestId('research-thesis-status')
   await expect(status).toContainText('投資理由狀態')
-  await expect(status).toContainText('3 個持倉投資理由中 1 個仍 OK / 2 個鬆動')
+  await expect(status).toContainText('3 個持倉投資理由中 1 個維持 / 2 個鬆動')
 
   const statusBox = await status.boundingBox()
   const controlsBox = await page.getByText('登入、補資料與個股入口').boundingBox()

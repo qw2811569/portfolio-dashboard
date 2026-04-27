@@ -171,7 +171,7 @@ function ThesisStatusSummary({ holdings = [], holdingDossiers = [] }) {
   const riskCount = summary.wobbly + summary.broken
   const statusCopy =
     summary.total > 0
-      ? `${summary.total} 個持倉投資理由中 ${summary.ok} 個仍 OK / ${riskCount} 個鬆動`
+      ? `${summary.total} 個持倉投資理由中 ${summary.ok} 個維持 / ${riskCount} 個鬆動`
       : '還沒有持倉投資理由'
 
   return h(
@@ -217,7 +217,7 @@ function ThesisStatusSummary({ holdings = [], holdingDossiers = [] }) {
         'div',
         { style: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' } },
         [
-          ['仍 OK', summary.ok, C.positive],
+          ['維持', summary.ok, C.positive],
           ['鬆動', summary.wobbly, C.amber],
           ['失真', summary.broken, C.down],
           ['未補', summary.missing, C.textMute],

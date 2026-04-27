@@ -3,7 +3,7 @@ import { C, alpha } from '../../theme.js'
 import { normalizeToneKey } from '../../lib/toneResolver.js'
 
 // Card variant guidance:
-// - hero: 主決策卡（每頁 ≤1）
+// - hero: 主決策卡（strict 每頁 ≤1）；2px 深框、底緣陰影、4px cta top stripe 不要被 caller 稀釋
 // - primary: 普通內容卡（default · 既有 caller 維持）
 // - secondary: 輔助/設定卡
 // - subtle: 內嵌列表/分組 wrapper（不要當主卡用）
@@ -31,10 +31,14 @@ function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = 
 const CARD_VARIANTS = {
   hero: {
     background: alpha(C.raised, 'f8'),
-    border: `1px solid ${alpha(C.charcoal, '40')}`,
+    border: `2px solid ${alpha(C.charcoal, '55')}`,
+    borderTop: `4px solid ${C.cta}`,
     borderRadius: 12,
-    padding: '20px 20px',
-    boxShadow: `${C.insetLine}, 0 14px 34px ${alpha(C.charcoal, '18')}`,
+    padding: 24,
+    boxShadow: `${C.insetLine}, 0 1px 0 ${alpha(C.charcoal, '24')}, 0 18px 44px ${alpha(
+      C.charcoal,
+      '22'
+    )}`,
   },
   primary: {
     background: alpha(C.raised, 'f8'),
@@ -62,10 +66,14 @@ const CARD_VARIANTS = {
 const METRIC_CARD_VARIANTS = {
   hero: {
     background: C.raised,
-    border: `1px solid ${alpha(C.charcoal, '40')}`,
+    border: `2px solid ${alpha(C.charcoal, '55')}`,
+    borderTop: `4px solid ${C.cta}`,
     borderRadius: 12,
-    padding: '20px 20px',
-    boxShadow: `${C.insetLine}, 0 14px 34px ${alpha(C.charcoal, '18')}`,
+    padding: 24,
+    boxShadow: `${C.insetLine}, 0 1px 0 ${alpha(C.charcoal, '24')}, 0 18px 44px ${alpha(
+      C.charcoal,
+      '22'
+    )}`,
   },
   primary: {
     background: C.raised,

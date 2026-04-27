@@ -12,11 +12,7 @@ export default function DailyHero({ hero, copyText, streaming = false }) {
   }
 
   return (
-    <Card
-      data-testid="daily-ritual-hero"
-      variant="hero"
-      style={{ borderRadius: 8, borderLeft: `3px solid ${C.cta}`, background: C.raised }}
-    >
+    <Card data-testid="daily-ritual-hero" variant="hero">
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 12, color: C.textMute, fontWeight: 700 }}>今日盤後</div>

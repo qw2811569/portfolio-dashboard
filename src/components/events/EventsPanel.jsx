@@ -160,7 +160,7 @@ function renderEventContext(event) {
       { style: blockStyle },
       `${code || '全市場'} · ${dateLabel} 財報 / 法說窗口`,
       h('br'),
-      '這類事件通常直接牽動 thesis 驗證，結果出來後應該回頭重看。'
+      '這類事件通常直接牽動投資論述，結果出來後應該回頭重看。'
     )
   }
 
@@ -176,7 +176,7 @@ function renderEventContext(event) {
       { style: blockStyle },
       `${code || '持股'} · ${dateLabel} ${scheduleLabel} · ${formatDividendSummary(event)}`,
       h('br'),
-      '持股當日價格會按參考價調整；若 thesis 依賴殖利率或填息敘事，這天值得重看。'
+      '持股當日價格會按參考價調整；若投資論述依賴殖利率或填息敘事，這天值得重看。'
     )
   }
 
@@ -188,7 +188,7 @@ function renderEventContext(event) {
       `${code || '公司'} · ${dateLabel} 股東會`,
       souvenir ? ` · 紀念品 ${souvenir}` : '',
       h('br'),
-      '股東會屬時間點事件；若只是紀念品資訊，不直接等於 thesis 改變。'
+      '股東會屬時間點事件；若只是紀念品資訊，不直接等於論述改變。'
     )
   }
 
@@ -198,7 +198,7 @@ function renderEventContext(event) {
       { style: blockStyle },
       '新聞驅動的策略節點。',
       h('br'),
-      '只有真的牽動管理層、資本配置、產品方向或政策框架時，才應升級成 thesis review event。'
+      '只有真的牽動管理層、資本配置、產品方向或政策框架時，才應升級成論述重檢事件。'
     )
   }
 
@@ -208,7 +208,7 @@ function renderEventContext(event) {
       { style: blockStyle },
       '資訊型提醒，預設摺疊。',
       h('br'),
-      '保留時間點與備查資訊，但不主張重看 thesis，也不輸出買賣語氣。'
+      '保留時間點與備查資訊，但不主張重看論述，也不輸出買賣語氣。'
     )
   }
 
@@ -225,8 +225,6 @@ export function RelayPlanCard({ expanded, onToggle }) {
       variant: 'hero',
       style: {
         marginBottom: 8,
-        background: C.cardBlue,
-        borderLeft: `3px solid ${alpha(C.positive, '40')}`,
       },
     },
     h(
@@ -1000,7 +998,7 @@ export function EventsPanel({
             h(
               'div',
               { style: { fontSize: 12, color: C.textMute, marginTop: 4, lineHeight: 1.6 } },
-              '資訊型提醒預設摺疊，因為它們通常只需要備查，不需要重看 thesis。'
+              '資訊型提醒預設摺疊，因為它們通常只需要備查，不需要重看論述。'
             )
           ),
           h(

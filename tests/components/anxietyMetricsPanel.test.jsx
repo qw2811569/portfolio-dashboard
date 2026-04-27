@@ -107,11 +107,23 @@ describe('components/AnxietyMetricsPanel', () => {
     expect(onNavigate).toHaveBeenCalledWith('events')
   })
 
-  it('uses the mobile 2-column layout and lets the last card span full width', () => {
+  it('uses a mobile single-column layout so questions never wrap vertically', () => {
     mockMatchMedia(true)
 
     render(<AnxietyMetricsPanel anxietyMetrics={buildPanelState()} />)
 
+    expect(screen.getByTestId('anxiety-metrics-grid')).toHaveStyle({
+      gridTemplateColumns: 'minmax(0, 1fr)',
+    })
+    expect(screen.getByTestId('anxiety-metric-card-x1')).toHaveStyle({
+      gridColumn: '1 / -1',
+    })
+    expect(screen.getByTestId('anxiety-metric-card-x2')).toHaveStyle({
+      gridColumn: '1 / -1',
+    })
+    expect(screen.getByTestId('anxiety-metric-card-x3')).toHaveStyle({
+      gridColumn: '1 / -1',
+    })
     expect(screen.getByTestId('anxiety-metric-card-x5')).toHaveStyle({
       gridColumn: '1 / -1',
     })

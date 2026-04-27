@@ -620,7 +620,7 @@ export function AnxietyMetricsPanel({
               maxWidth: 760,
             },
           },
-          '桌機先掃一排，手機先掃兩欄；真的有聲音的那張再點開看。'
+          '桌機先掃一排，手機先掃一欄；真的有聲音的那張再點開看。'
         )
       ),
       panelState.placeholderCount || panelState.loadingCount
@@ -638,22 +638,21 @@ export function AnxietyMetricsPanel({
       h(
         'div',
         {
+          'data-testid': 'anxiety-metrics-grid',
           style: {
             display: 'grid',
-            gridTemplateColumns: isMobile
-              ? 'repeat(2, minmax(0, 1fr))'
-              : 'repeat(5, minmax(0, 1fr))',
+            gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(5, minmax(0, 1fr))',
             gap: 12,
           },
         },
-        metrics.map((metric, index) =>
+        metrics.map((metric) =>
           h(MetricCard, {
             key: metric.id,
             metric,
             expanded: expandedId === metric.id,
             onToggle: () => setExpandedId((prev) => (prev === metric.id ? null : metric.id)),
             onNavigate,
-            spanFullWidth: isMobile && index === metrics.length - 1 && metrics.length % 2 === 1,
+            spanFullWidth: isMobile,
           })
         )
       )

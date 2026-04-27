@@ -1499,7 +1499,7 @@ function TodayInMarketsCard({ newsEvents = [] }) {
             gap: 4,
           },
         },
-        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, 'Today in Markets'),
+        h('div', { style: { ...lbl, marginBottom: 0, color: C.textSec } }, '今日市場'),
         h(
           'div',
           {

@@ -344,7 +344,7 @@ describe('components/DashboardPanel', () => {
 
     const card = screen.getByTestId('today-in-markets-card')
 
-    expect(card).toHaveTextContent('Today in Markets')
+    expect(card).toHaveTextContent('今日市場')
     expect(card).toHaveTextContent('央行')
     expect(card).toHaveTextContent('總經')
     expect(card).toHaveTextContent('行事曆')
@@ -657,7 +657,7 @@ describe('components/DashboardPanel', () => {
 
     expect(screen.getByTestId('accuracy-gate-block')).toHaveAttribute('data-resource', 'dashboard')
     expect(screen.queryByTestId('dashboard-headline')).toBeNull()
-    expect(screen.getByText('Today in Markets')).toBeInTheDocument()
+    expect(screen.getByText('今日市場')).toBeInTheDocument()
   })
 
   it('uses FinMind degraded reason for the dashboard headline gate when fallback data is active', () => {

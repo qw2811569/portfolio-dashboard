@@ -104,6 +104,24 @@ describe('components/ResearchPanel', () => {
     expect(container.querySelector('[data-empty-state="research"]')).toBeFalsy()
   })
 
+  it('normalizes title-only research history rows without rendering undefined', () => {
+    const history = [
+      {
+        id: 'visual-audit-research-seed',
+        timestamp: '2026-04-27T00:00:00.000Z',
+        mode: 'portfolio',
+        title: '組合研究狀態摘要',
+        summary: '投資理由狀態、資料新鮮度與待補研究項目已可供 visual audit 截圖比對。',
+        codes: ['2330', '2454'],
+      },
+    ]
+
+    const { container } = render(<ResearchPanel {...buildProps({ researchHistory: history })} />)
+
+    expect(container.textContent).toContain('全組合 · 組合研究狀態摘要')
+    expect(container.textContent).not.toContain('undefined')
+  })
+
   it('shows skeleton progress while researching is in progress', () => {
     const { container } = render(
       <ResearchPanel {...buildProps({ researching: true, researchTarget: '2330' })} />

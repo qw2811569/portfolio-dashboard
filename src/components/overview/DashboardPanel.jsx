@@ -2033,7 +2033,7 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
       ),
       h(
         'div',
-        { style: { display: 'grid', gap: 6 } },
+        { style: { display: 'grid', gap: 6, minWidth: 0 } },
         h(
           'div',
           {
@@ -2043,6 +2043,7 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
               fontWeight: 800,
               color: C.text,
               letterSpacing: 0,
+              overflowWrap: 'anywhere',
             },
           },
           primaryItem.title
@@ -2054,6 +2055,7 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
               fontSize: 13,
               lineHeight: 1.65,
               color: C.textSec,
+              overflowWrap: 'anywhere',
             },
           },
           primaryItem.body
@@ -2156,7 +2158,7 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
     upcoming.length > 0 &&
       h(
         'div',
-        { style: { display: 'grid', gap: 4, marginTop: 8 } },
+        { style: { display: 'grid', gap: 4, marginTop: 8, minWidth: 0, maxWidth: '100%' } },
         upcoming.slice(0, 8).map((event, i) => {
           const d = String(event.eventDate || event.date || '')
             .replace(/\//g, '-')
@@ -2177,6 +2179,9 @@ function PendingEventsCard({ newsEvents = [], urgentCount = 0, todayAlertSummary
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: 8,
+                minWidth: 0,
+                maxWidth: '100%',
+                overflow: 'hidden',
               },
             },
             h(

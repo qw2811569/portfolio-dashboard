@@ -504,6 +504,7 @@ export function PendingItems({ items, onSwitch }) {
               border: `1px solid ${C.border}`,
               borderRadius: 8,
               padding: '8px 12px',
+              minWidth: 0,
             },
           },
           h(
@@ -515,21 +516,54 @@ export function PendingItems({ items, onSwitch }) {
                 alignItems: 'flex-start',
                 gap: 8,
                 flexWrap: 'wrap',
+                minWidth: 0,
               },
             },
             h(
               'div',
-              null,
-              h('div', { style: { fontSize: 11, color: C.text, fontWeight: 600 } }, item.title),
+              { style: { flex: '1 1 220px', minWidth: 0, maxWidth: '100%' } },
               h(
                 'div',
-                { style: { fontSize: 12, color: C.textMute, marginTop: 4 } },
+                {
+                  style: {
+                    fontSize: 11,
+                    color: C.text,
+                    fontWeight: 600,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                },
+                item.title
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    fontSize: 12,
+                    color: C.textMute,
+                    marginTop: 4,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                },
                 `${displayPortfolioName({ displayName: item.portfolioName, id: item.portfolioId })} · ${item.date || '未排日期'} · 預測${item.pred === 'up' ? '看漲' : item.pred === 'down' ? '看跌' : '中性'}`
               ),
               item.predReason &&
                 h(
                   'div',
-                  { style: { fontSize: 12, color: C.textSec, marginTop: 4, lineHeight: 1.7 } },
+                  {
+                    style: {
+                      fontSize: 12,
+                      color: C.textSec,
+                      marginTop: 4,
+                      lineHeight: 1.7,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    },
+                  },
                   item.predReason
                 )
             ),

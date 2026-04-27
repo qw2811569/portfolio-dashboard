@@ -124,6 +124,8 @@ for (const route of routes) {
       await page.evaluate(() => {
         document.body.dataset.auditCapture = '1'
       })
+      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+      expect(documentWidth).toBe(route.viewport.width)
     }
     await page.screenshot({ path: `${OUT}/${route.name}.png`, fullPage: route.full })
     if (isMobileFullPage) {

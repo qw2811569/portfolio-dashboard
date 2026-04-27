@@ -271,9 +271,11 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
         className: 'seasonality-heatmap-scroll',
         'data-testid': `seasonality-heatmap-scroll-${holding.code}`,
         style: {
+          position: 'relative',
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
-          paddingBottom: 2,
+          paddingBottom: 6,
+          scrollbarGutter: 'stable',
         },
       },
       h(
@@ -282,10 +284,10 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
           className: 'seasonality-heatmap-grid',
           style: {
             display: 'grid',
-            gridTemplateColumns: '52px repeat(12, minmax(44px, 1fr))',
+            gridTemplateColumns: '56px repeat(12, minmax(42px, 1fr))',
             gap: 4,
             alignItems: 'stretch',
-            minWidth: 640,
+            minWidth: 620,
           },
         },
         h('div'),
@@ -315,6 +317,11 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
                 fontFamily: 'var(--font-num)',
                 display: 'flex',
                 alignItems: 'center',
+                position: 'sticky',
+                left: 0,
+                zIndex: 2,
+                background: alpha(C.card, 'fa'),
+                boxShadow: `8px 0 12px ${alpha(C.card, 'd8')}`,
               },
             },
             String(row.year)
@@ -346,6 +353,14 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
             )
           ),
         ])
+      ),
+      h(
+        'div',
+        {
+          className: 'seasonality-heatmap-scroll-hint',
+          'aria-hidden': 'true',
+        },
+        '>'
       )
     ),
     h(
@@ -380,6 +395,36 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
 }
 
 const liveHeatmapMobileStyle = `
+.seasonality-heatmap-scroll::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: calc(100% - 6px);
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0), var(--card, #f9f4ec) 82%);
+}
+
+.seasonality-heatmap-scroll-hint {
+  position: sticky;
+  right: 4px;
+  bottom: 6px;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--positive-soft);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--iron, #4d534b);
+  background: var(--card, #f9f4ec);
+  font-size: 13px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
 @media (max-width: 768px) {
   .seasonality-heatmap-scroll {
     margin-left: -2px;
@@ -387,8 +432,8 @@ const liveHeatmapMobileStyle = `
   }
 
   .seasonality-heatmap-grid {
-    min-width: 720px !important;
-    grid-template-columns: 56px repeat(12, minmax(50px, 1fr)) !important;
+    min-width: 744px !important;
+    grid-template-columns: 58px repeat(12, minmax(52px, 1fr)) !important;
   }
 }
 `

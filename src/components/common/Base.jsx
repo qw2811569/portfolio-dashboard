@@ -2,6 +2,12 @@ import { createElement as h } from 'react'
 import { C, alpha } from '../../theme.js'
 import { normalizeToneKey } from '../../lib/toneResolver.js'
 
+// Card variant guidance:
+// - hero: 主決策卡（每頁 ≤1）
+// - primary: 普通內容卡（default · 既有 caller 維持）
+// - secondary: 輔助/設定卡
+// - subtle: 內嵌列表/分組 wrapper（不要當主卡用）
+
 function extractTextContent(content) {
   if (content == null || typeof content === 'boolean') return ''
   if (typeof content === 'string' || typeof content === 'number') return String(content)
@@ -22,14 +28,83 @@ function getLocalizedMetaStyle(content, { latinTracking = '0.08em', uppercase = 
   }
 }
 
-export function Card({ children, style = {}, highlighted = false, color = null, ...props }) {
-  const accent = color || C.ink
-  const baseStyle = {
+const CARD_VARIANTS = {
+  hero: {
+    background: alpha(C.raised, 'f8'),
+    border: `1px solid ${alpha(C.charcoal, '40')}`,
+    borderRadius: 12,
+    padding: '20px 20px',
+    boxShadow: `${C.insetLine}, 0 14px 34px ${alpha(C.charcoal, '18')}`,
+  },
+  primary: {
     background: alpha(C.raised, 'f8'),
     border: `1px solid ${C.border}`,
     borderRadius: 12,
     padding: '16px 16px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
+  },
+  secondary: {
+    background: alpha(C.raised, 'f8'),
+    border: `1px solid ${C.borderSub}`,
+    borderRadius: 12,
+    padding: '12px 12px',
+    boxShadow: 'none',
+  },
+  subtle: {
+    background: C.surfaceMuted,
+    border: 'none',
+    borderRadius: 12,
+    padding: '12px 12px',
+    boxShadow: 'none',
+  },
+}
+
+const METRIC_CARD_VARIANTS = {
+  hero: {
+    background: C.raised,
+    border: `1px solid ${alpha(C.charcoal, '40')}`,
+    borderRadius: 12,
+    padding: '20px 20px',
+    boxShadow: `${C.insetLine}, 0 14px 34px ${alpha(C.charcoal, '18')}`,
+  },
+  primary: {
+    background: C.raised,
+    border: `1px solid ${C.border}`,
+    borderRadius: 12,
+    padding: '8px 12px',
+    boxShadow: `${C.insetLine}, ${C.shadow}`,
+  },
+  secondary: {
+    background: C.raised,
+    border: `1px solid ${C.borderSub}`,
+    borderRadius: 12,
+    padding: '12px 12px',
+    boxShadow: 'none',
+  },
+  subtle: {
+    background: C.surfaceMuted,
+    border: 'none',
+    borderRadius: 12,
+    padding: '12px 12px',
+    boxShadow: 'none',
+  },
+}
+
+function getCardVariantStyle(variants, variant) {
+  return variants[variant] || variants.primary
+}
+
+export function Card({
+  children,
+  style = {},
+  highlighted = false,
+  color = null,
+  variant = 'primary',
+  ...props
+}) {
+  const accent = color || C.ink
+  const baseStyle = {
+    ...getCardVariantStyle(CARD_VARIANTS, variant),
     ...(highlighted
       ? {
           borderLeft: `3px solid ${accent}`,
@@ -42,7 +117,7 @@ export function Card({ children, style = {}, highlighted = false, color = null, 
   return h('div', { style: baseStyle, ...props }, children)
 }
 
-export function MetricCard({ label, value, tone = 'default', style = {} }) {
+export function MetricCard({ label, value, tone = 'default', variant = 'primary', style = {} }) {
   const toneColors = {
     default: C.text,
     neutral: C.text,
@@ -64,11 +139,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
     'div',
     {
       style: {
-        background: C.raised,
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        padding: '8px 12px',
-        boxShadow: `${C.insetLine}, ${C.shadow}`,
+        ...getCardVariantStyle(METRIC_CARD_VARIANTS, variant),
         ...style,
       },
     },

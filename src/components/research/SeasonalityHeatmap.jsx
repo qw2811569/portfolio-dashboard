@@ -395,40 +395,53 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
 }
 
 const liveHeatmapMobileStyle = `
-.seasonality-heatmap-scroll::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 36px;
-  height: calc(100% - 6px);
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(0,0,0,0), var(--card, #f9f4ec) 82%);
+.seasonality-heatmap-scroll-hint {
+  display: none;
 }
 
-.seasonality-heatmap-scroll-hint {
-  position: sticky;
-  right: 4px;
-  bottom: 6px;
-  margin-left: auto;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--positive-soft);
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--iron, #4d534b);
-  background: var(--card, #f9f4ec);
-  font-size: 13px;
-  font-weight: 800;
-  pointer-events: none;
+@media (min-width: 769px) {
+  .seasonality-heatmap-scroll {
+    overflow-x: visible !important;
+  }
+  .seasonality-heatmap-grid {
+    min-width: auto !important;
+  }
 }
 
 @media (max-width: 768px) {
   .seasonality-heatmap-scroll {
     margin-left: -2px;
     margin-right: -2px;
+  }
+
+  .seasonality-heatmap-scroll::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 36px;
+    height: calc(100% - 6px);
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(0,0,0,0), var(--card, #f9f4ec) 82%);
+  }
+
+  .seasonality-heatmap-scroll-hint {
+    display: flex;
+    position: sticky;
+    right: 4px;
+    bottom: 6px;
+    margin-left: auto;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--positive-soft);
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+    color: var(--iron, #4d534b);
+    background: var(--card, #f9f4ec);
+    font-size: 13px;
+    font-weight: 800;
+    pointer-events: none;
   }
 
   .seasonality-heatmap-grid {

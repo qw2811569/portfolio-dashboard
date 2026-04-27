@@ -1101,7 +1101,7 @@ function HoldingMobileCard({
                 lineHeight: 1.6,
               },
             },
-            deviationBadge?.tooltip || holding.alert || '先看明細，再決定是否調整 thesis。'
+            deviationBadge?.tooltip || holding.alert || '先看明細，再決定是否調整投資理由。'
           )
         )
       )

@@ -1582,7 +1582,7 @@ export function ResearchPanel({
   return h(
     'div',
     { 'data-testid': 'research-panel' },
-    h(OperatingContextCard, { context: operatingContext }),
+    h(OperatingContextCard, { context: operatingContext, countLabelMode: 'explicit' }),
     isViewModeEnabled('showComplianceNote', viewMode) &&
       h(ViewModeNotice, { note: complianceNote }),
     h(ThesisStatusSummary, { holdings, holdingDossiers }),

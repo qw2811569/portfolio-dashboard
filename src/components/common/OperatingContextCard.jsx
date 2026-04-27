@@ -33,10 +33,16 @@ function truncate(text, max = 120) {
   return normalized.length > max ? `${normalized.slice(0, max - 1)}...` : normalized
 }
 
-function formatAttentionBadgeLabel(attentionCount = 0, attentionSummary = '') {
+function formatAttentionBadgeLabel(
+  attentionCount = 0,
+  attentionSummary = '',
+  labelMode = 'default'
+) {
   const count = Math.max(0, Number(attentionCount) || 0)
   if (count <= 0) return ''
   const summary = truncate(attentionSummary, 32)
+  if (labelMode === 'explicit')
+    return summary ? `影響 ${count} 檔 · ${summary}` : `影響 ${count} 檔`
   return summary ? `需注意 ${count} 檔 · ${summary}` : `需注意 ${count} 檔`
 }
 
@@ -76,7 +82,7 @@ function ContextChip({ children, active = false }) {
   )
 }
 
-export function OperatingContextCard({ context, variant = 'default' }) {
+export function OperatingContextCard({ context, variant = 'default', countLabelMode = 'default' }) {
   if (!context) return null
 
   const {
@@ -101,6 +107,7 @@ export function OperatingContextCard({ context, variant = 'default' }) {
     focus,
   } = context
   const resolvedPortfolioLabel = displayPortfolioName(portfolio || { displayName: portfolioLabel })
+  const explicitCountLabels = countLabelMode === 'explicit'
 
   const hasSummary =
     nextActionLabel ||
@@ -195,13 +202,25 @@ export function OperatingContextCard({ context, variant = 'default' }) {
             },
             resolvedPortfolioLabel && h(ContextChip, { active: true }, resolvedPortfolioLabel),
             holdingsCount > 0 && h(ContextChip, null, `持股 ${holdingsCount} 檔`),
-            activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
-            pendingCount > 0 && h(Badge, { color: 'amber' }, `待驗證 ${pendingCount}`),
+            activeEventCount > 0 &&
+              h(
+                Badge,
+                { color: 'amber' },
+                explicitCountLabels
+                  ? `總事件 ${activeEventCount} 件`
+                  : `事件 ${activeEventCount} 件`
+              ),
+            pendingCount > 0 &&
+              h(
+                Badge,
+                { color: 'amber' },
+                explicitCountLabels ? `待復盤 ${pendingCount} 件` : `待驗證 ${pendingCount}`
+              ),
             attentionCount > 0 &&
               h(
                 Badge,
                 { color: 'iron' },
-                formatAttentionBadgeLabel(attentionCount, attentionSummary)
+                formatAttentionBadgeLabel(attentionCount, attentionSummary, countLabelMode)
               ),
             autoReviewedCount > 0 &&
               h(
@@ -340,10 +359,24 @@ export function OperatingContextCard({ context, variant = 'default' }) {
         },
         resolvedPortfolioLabel && h(ContextChip, { active: true }, resolvedPortfolioLabel),
         holdingsCount > 0 && h(ContextChip, null, `持股 ${holdingsCount} 檔`),
-        activeEventCount > 0 && h(Badge, { color: 'amber' }, `事件 ${activeEventCount} 件`),
-        pendingCount > 0 && h(Badge, { color: 'amber' }, `先看 ${pendingCount}`),
+        activeEventCount > 0 &&
+          h(
+            Badge,
+            { color: 'amber' },
+            explicitCountLabels ? `總事件 ${activeEventCount} 件` : `事件 ${activeEventCount} 件`
+          ),
+        pendingCount > 0 &&
+          h(
+            Badge,
+            { color: 'amber' },
+            explicitCountLabels ? `待復盤 ${pendingCount} 件` : `先看 ${pendingCount}`
+          ),
         attentionCount > 0 &&
-          h(Badge, { color: 'iron' }, formatAttentionBadgeLabel(attentionCount, attentionSummary)),
+          h(
+            Badge,
+            { color: 'iron' },
+            formatAttentionBadgeLabel(attentionCount, attentionSummary, countLabelMode)
+          ),
         refreshBacklogCount > 0 &&
           h(Badge, { color: 'iron' }, `還有 ${refreshBacklogCount} 檔資料沒補齊`),
         autoReviewedCount > 0 &&

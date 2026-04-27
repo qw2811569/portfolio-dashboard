@@ -27,7 +27,7 @@ export function Card({ children, style = {}, highlighted = false, color = null, 
   const baseStyle = {
     background: alpha(C.raised, 'f8'),
     border: `1px solid ${C.border}`,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: '16px 16px',
     boxShadow: `${C.insetLine}, ${C.shadow}`,
     ...(highlighted
@@ -66,7 +66,7 @@ export function MetricCard({ label, value, tone = 'default', style = {} }) {
       style: {
         background: C.raised,
         border: `1px solid ${C.border}`,
-        borderRadius: 16,
+        borderRadius: 12,
         padding: '8px 12px',
         boxShadow: `${C.insetLine}, ${C.shadow}`,
         ...style,

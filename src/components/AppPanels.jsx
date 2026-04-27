@@ -34,7 +34,7 @@ function PanelSuspenseFallback({ title }) {
     <section
       aria-label={`${title} loading`}
       style={{
-        borderRadius: 16,
+        borderRadius: 12,
         border: '1px solid rgba(217, 211, 209, 0.9)',
         background: 'rgba(231, 224, 214, 0.95)',
         padding: '20px 18px',
@@ -55,7 +55,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: 'min(320px, 78%)',
             height: 28,
-            borderRadius: 16,
+            borderRadius: 12,
             background: 'rgba(47, 50, 50, 0.1)',
           }}
         />
@@ -65,7 +65,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: '100%',
             height: 72,
-            borderRadius: 16,
+            borderRadius: 12,
             background: 'rgba(47, 50, 50, 0.06)',
           }}
         />
@@ -73,7 +73,7 @@ function PanelSuspenseFallback({ title }) {
           style={{
             width: '100%',
             height: 72,
-            borderRadius: 16,
+            borderRadius: 12,
             background: 'rgba(47, 50, 50, 0.05)',
           }}
         />

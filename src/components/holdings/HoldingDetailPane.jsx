@@ -107,7 +107,7 @@ function SectionCard({ title, eyebrow = '', children }) {
   return (
     <section
       style={{
-        borderRadius: 18,
+        borderRadius: 12,
         border: `1px solid ${alpha(C.text, '10')}`,
         background: alpha(C.raised, 'fc'),
         padding: '14px 14px',

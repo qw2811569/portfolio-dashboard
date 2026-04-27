@@ -74,7 +74,7 @@ export default function AppShellFrame({
           style={{
             width: 'min(520px, 100%)',
             border: `1px solid ${C.border}`,
-            borderRadius: 24,
+            borderRadius: 12,
             background: C.raised,
             boxShadow: C.shellShadow,
             overflow: 'hidden',

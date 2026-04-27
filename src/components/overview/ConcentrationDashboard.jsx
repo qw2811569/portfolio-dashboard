@@ -253,7 +253,7 @@ export function ConcentrationDashboard({ holdings = [], stockMeta = null }) {
               display: 'grid',
               gap: 4,
               padding: '12px 12px',
-              borderRadius: 16,
+              borderRadius: 12,
               background: alpha(C.amber, '10'),
               border: `1px solid ${alpha(C.amber, '22')}`,
             },

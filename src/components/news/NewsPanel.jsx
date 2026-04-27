@@ -826,7 +826,7 @@ export function NewsFeedSection({
                     appearance: 'none',
                     width: '100%',
                     minHeight: 44,
-                    borderRadius: 18,
+                    borderRadius: 12,
                     border: `1px solid ${tickerFilter !== FILTER_DEFAULTS.ticker ? alpha(TOKENS.positive, '2c') : TOKENS.boneDeep}`,
                     background: alpha(TOKENS.bone, 'f7'),
                     color: TOKENS.ink,
@@ -885,7 +885,7 @@ export function NewsFeedSection({
                 {
                   key: cluster,
                   style: {
-                    borderRadius: 18,
+                    borderRadius: 12,
                     border: `1px solid ${TOKENS.boneDeep}`,
                     borderLeft: `2px solid ${alpha(TOKENS.warning, '32')}`,
                     background: alpha(TOKENS.bone, 'ef'),
@@ -1085,7 +1085,7 @@ export function NewsFeedSection({
           style: {
             marginBottom: 16,
             padding: isMobile ? '20px 18px' : '24px 24px',
-            borderRadius: 16,
+            borderRadius: 12,
             border: `1px solid ${C.border}`,
             background: alpha(C.raised, 'fa'),
             position: 'relative',
@@ -1238,7 +1238,7 @@ export function NewsFeedSection({
         Card,
         {
           style: {
-            borderRadius: 16,
+            borderRadius: 12,
             padding: '0 24px',
             border: `1px solid ${TOKENS.boneDeep}`,
             background: alpha(TOKENS.bone, 'f7'),
@@ -1266,7 +1266,7 @@ export function NewsFeedSection({
         {
           'data-testid': 'news-side-notes',
           style: {
-            borderRadius: 16,
+            borderRadius: 12,
             padding: '16px 16px 16px',
             border: `1px solid ${TOKENS.boneDeep}`,
             background: alpha(TOKENS.bone, 'f5'),
@@ -1438,7 +1438,7 @@ export function NewsAnalysisPanel({
           style: {
             textAlign: 'left',
             padding: '24px 24px',
-            borderRadius: 16,
+            borderRadius: 12,
             border: `1px solid ${TOKENS.boneDeep}`,
             background: alpha(TOKENS.bone, 'fa'),
           },

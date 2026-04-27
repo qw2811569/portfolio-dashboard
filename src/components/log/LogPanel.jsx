@@ -353,7 +353,7 @@ function SummaryStat({ label, value }) {
     <div
       style={{
         padding: '10px 12px',
-        borderRadius: 16,
+        borderRadius: 12,
         border: `1px solid ${alpha(C.borderStrong, 'b8')}`,
         background: alpha(C.subtle, 'ea'),
         boxShadow: C.insetLine,
@@ -372,7 +372,7 @@ function DetailMetric({ label, value }) {
     <div
       style={{
         padding: '10px 12px',
-        borderRadius: 16,
+        borderRadius: 12,
         border: `1px solid ${alpha(C.borderStrong, 'b8')}`,
         background: alpha(C.subtle, 'ea'),
         boxShadow: C.insetLine,
@@ -453,7 +453,7 @@ function JournalListItem({ item, isActive, isMobile, onSelect }) {
         width: '100%',
         textAlign: 'left',
         cursor: 'pointer',
-        borderRadius: 18,
+        borderRadius: 12,
         border: `1px solid ${isActive ? alpha(C.positive, '40') : alpha(C.borderStrong, 'b8')}`,
         background: isActive ? alpha(C.positive, '12') : alpha(C.raised, 'f4'),
         boxShadow: isActive
@@ -582,7 +582,7 @@ function JournalDetail({ item, isMobile }) {
               key={`${item.id}-qa-${index}`}
               style={{
                 padding: '10px 12px',
-                borderRadius: 16,
+                borderRadius: 12,
                 border: `1px solid ${alpha(C.borderStrong, 'b8')}`,
                 background: alpha(C.subtle, 'f0'),
                 boxShadow: C.insetLine,

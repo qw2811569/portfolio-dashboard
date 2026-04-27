@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component {
       padding: '16px',
       background: C.card,
       border: `2px solid ${C.down}`,
-      borderRadius: 16,
+      borderRadius: 12,
       margin: 0,
       ...this.props.style,
     }

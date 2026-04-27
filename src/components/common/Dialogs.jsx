@@ -41,7 +41,7 @@ function DialogShell({
           width,
           background: C.raised,
           border: `1px solid ${C.border}`,
-          borderRadius: 16,
+          borderRadius: 12,
           boxShadow: `${C.insetLine}, ${C.shadow}`,
           padding: '16px',
         },

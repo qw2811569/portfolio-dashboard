@@ -190,7 +190,7 @@ export default function AppShellFrame({
         }
         @media (max-width: 768px) {
           .portfolio-app-root {
-            padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+            padding-bottom: calc(var(--mobile-bottom-nav-height) + 16px + env(safe-area-inset-bottom)) !important;
           }
         }
       `}</style>
@@ -206,7 +206,11 @@ export default function AppShellFrame({
         />
       </ErrorBoundary>
 
-      <main className="app-shell" style={{ padding: '8px 12px' }} aria-label="持倉工作台主內容">
+      <main
+        className="app-shell route-content"
+        style={{ padding: '8px 12px' }}
+        aria-label="持倉工作台主內容"
+      >
         <h1 style={visuallyHiddenStyle}>持倉工作台</h1>
         <div ref={panelRootRef}>
           <PortfolioPanelsProvider data={panelsData} actions={panelsActions}>

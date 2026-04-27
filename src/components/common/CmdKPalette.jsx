@@ -96,7 +96,7 @@ export default function CmdKPalette({
         }
       `}</style>
 
-      {isMobile && !open ? (
+      {!isMobile && !open ? (
         <button
           type="button"
           aria-label="開啟全局搜尋"

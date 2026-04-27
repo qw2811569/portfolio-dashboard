@@ -36,7 +36,7 @@ export function PortfolioLayout() {
     h(Header, headerProps),
     h(
       'div',
-      { style: { padding: '8px 12px' } },
+      { className: 'route-content', style: { padding: '8px 12px' } },
       h(
         ErrorBoundary,
         { scope: 'portfolio-route', title: '這個頁面' },

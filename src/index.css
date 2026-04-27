@@ -10,6 +10,7 @@
   --text-muted: #838585;
   --border: rgba(11, 18, 14, 0.14);
   --border-soft: rgba(11, 18, 14, 0.08);
+  --mobile-bottom-nav-height: 88px;
 }
 
 [data-theme='light'] {
@@ -42,8 +43,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.mobile-page {
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+@media (max-width: 768px) {
+  .route-content {
+    padding-bottom: calc(
+      var(--mobile-bottom-nav-height) + 16px + env(safe-area-inset-bottom)
+    ) !important;
+  }
 }
 
 h1,

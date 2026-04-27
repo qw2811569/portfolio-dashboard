@@ -65,6 +65,17 @@ const MOCK_NEWS_ITEMS = [
   },
 ]
 
+function buildMockNewsItems(count) {
+  return Array.from({ length: count }, (_, index) => ({
+    title: `新聞測試 ${index + 1}`,
+    description: index % 2 === 0 ? '需求升溫，偏正向。' : '市場觀望，偏中性。',
+    link: `https://example.com/news/more-${index + 1}`,
+    pubDate: `2026-04-${String(12 - (index % 3)).padStart(2, '0')}T10:30:00Z`,
+    source: index % 2 === 0 ? '經濟日報' : '工商時報',
+    relatedStocks: [{ code: '2330', name: '台積電' }],
+  }))
+}
+
 describe('components/NewsAnalysisPanel', () => {
   afterEach(() => {
     cleanup()
@@ -432,6 +443,38 @@ describe('components/NewsFeedSection', () => {
       '預設：全部來源 / 全部影響 / 全部持股'
     )
     expect(screen.queryByTestId('news-side-notes-body')).not.toBeInTheDocument()
+
+    const hero = screen.getByTestId('news-hero-grid')
+    const sideNotes = screen.getByTestId('news-side-notes')
+    const firstArticle = screen.getAllByTestId('news-article-card')[0]
+    expect(hero.compareDocumentPosition(sideNotes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      sideNotes.compareDocumentPosition(firstArticle) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  it('limits mobile news to the first 10 cards before the expand-more button', async () => {
+    mockMatchMedia(true)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: buildMockNewsItems(12) }),
+    })
+
+    await act(async () => {
+      render(<NewsFeedSection holdingCodes={['2330']} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('新聞測試 1')).toBeInTheDocument()
+    })
+
+    expect(screen.getAllByTestId('news-article-card')).toHaveLength(10)
+    expect(screen.queryByText('新聞測試 11')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '展開更多 2 則' }))
+
+    expect(screen.getAllByTestId('news-article-card')).toHaveLength(12)
+    expect(screen.getByText('新聞測試 12')).toBeInTheDocument()
   })
 
   it('expands mobile filters when the toggle is pressed', async () => {

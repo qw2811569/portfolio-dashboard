@@ -633,6 +633,7 @@ export function NewsFeedSection({
   const [impactFilter, setImpactFilter] = useState('全部影響')
   const [tickerFilter, setTickerFilter] = useState('全部持股')
   const [isMobileFilterCollapsed, setIsMobileFilterCollapsed] = useState(true)
+  const [expandedMobileNewsKey, setExpandedMobileNewsKey] = useState('')
   const [readIds, setReadIds] = useState(() => new Set())
 
   useEffect(() => {
@@ -703,7 +704,17 @@ export function NewsFeedSection({
     [impactFilter, items, sourceFilter, tickerFilter]
   )
 
-  const visibleItems = filteredItems
+  const mobileNewsPageKey = `${sourceFilter}:${impactFilter}:${tickerFilter}`
+  const showAllMobileNews = expandedMobileNewsKey === mobileNewsPageKey
+  const hiddenMobileItemCount =
+    isMobile && !showAllMobileNews ? Math.max(0, filteredItems.length - 10) : 0
+  const visibleItems = useMemo(
+    () =>
+      isMobile && !showAllMobileNews && filteredItems.length > 10
+        ? filteredItems.slice(0, 10)
+        : filteredItems,
+    [filteredItems, isMobile, showAllMobileNews]
+  )
   const visibleItemCount = visibleItems.length
   const unreadCount = visibleItems.filter(
     (item, index) => !readIds.has(getItemId(item, index))
@@ -1058,6 +1069,154 @@ export function NewsFeedSection({
     )
   )
 
+  const sideNotesCard = h(
+    'div',
+    null,
+    h(
+      Card,
+      {
+        'data-testid': 'news-side-notes',
+        style: {
+          borderRadius: 12,
+          padding: '16px 16px 16px',
+          border: `1px solid ${TOKENS.boneDeep}`,
+          background: alpha(TOKENS.bone, 'f5'),
+          position: isMobile ? 'static' : 'sticky',
+          top: isMobile ? 'auto' : 16,
+        },
+      },
+      isMobile
+        ? h(
+            'div',
+            {
+              style: {
+                display: 'grid',
+                gap: 10,
+                marginBottom: showFilterBody ? 12 : 0,
+              },
+            },
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                },
+              },
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'grid',
+                    gap: 6,
+                    flex: 1,
+                    minWidth: 0,
+                  },
+                },
+                h('div', { style: { ...lbl, color: C.textSec, marginBottom: 0 } }, '篩選與側欄'),
+                h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                    },
+                  },
+                  renderChip(`${visibleItemCount} 則`, mobileResultChipStyle),
+                  renderChip(hasActiveFilters ? `${activeFilterCount} 個篩選中` : '預設狀態', {
+                    background: hasActiveFilters
+                      ? alpha(TOKENS.positive, '12')
+                      : alpha(TOKENS.bone, 'f0'),
+                    border: `1px solid ${hasActiveFilters ? alpha(TOKENS.positive, '24') : TOKENS.boneDeep}`,
+                    color: hasActiveFilters ? TOKENS.ink : TOKENS.charcoal,
+                  })
+                ),
+                h(
+                  'div',
+                  {
+                    'data-testid': 'news-filter-summary',
+                    style: {
+                      fontSize: 11,
+                      color: TOKENS.charcoal,
+                      lineHeight: 1.6,
+                      fontFamily: TOKENS.fontBody,
+                    },
+                  },
+                  activeFilterSummary
+                )
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'flex',
+                    gap: 8,
+                    flexWrap: 'wrap',
+                    justifyContent: 'flex-end',
+                  },
+                },
+                showFilterBody &&
+                  h(
+                    Button,
+                    {
+                      type: 'button',
+                      size: 'xs',
+                      disabled: !hasActiveFilters,
+                      onClick: handleResetFilters,
+                      style: {
+                        textTransform: 'none',
+                      },
+                    },
+                    '全部清除'
+                  ),
+                h(
+                  Button,
+                  {
+                    'data-testid': 'news-filter-toggle',
+                    type: 'button',
+                    size: 'xs',
+                    'aria-expanded': showFilterBody,
+                    'aria-controls': 'news-side-notes-body',
+                    onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
+                    style: {
+                      textTransform: 'none',
+                      background: hasActiveFilters
+                        ? alpha(TOKENS.warning, '18')
+                        : alpha(TOKENS.bone, 'ef'),
+                      border: `1px solid ${hasActiveFilters ? alpha(TOKENS.warning, '32') : TOKENS.boneDeep}`,
+                      color: TOKENS.ink,
+                    },
+                  },
+                  h(
+                    'span',
+                    {
+                      style: {
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      },
+                    },
+                    h('span', null, showFilterBody ? '收起篩選' : '看篩選'),
+                    h(
+                      'span',
+                      { 'aria-hidden': 'true', style: { fontSize: 11, color: C.textSec } },
+                      showFilterBody ? '^' : 'v'
+                    )
+                  )
+                )
+              )
+            )
+          )
+        : h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '篩選與側欄'),
+      showFilterBody ? sideNotesBody : null
+    )
+  )
+
   return h(
     'div',
     {
@@ -1234,6 +1393,7 @@ export function NewsFeedSection({
             )
         )
       ),
+      isMobile && sideNotesCard,
       h(
         Card,
         {
@@ -1256,56 +1416,122 @@ export function NewsFeedSection({
             onNavigateDaily,
           })
         )
-      )
-    ),
-    h(
-      'div',
-      null,
-      h(
-        Card,
-        {
-          'data-testid': 'news-side-notes',
-          style: {
-            borderRadius: 12,
-            padding: '16px 16px 16px',
-            border: `1px solid ${TOKENS.boneDeep}`,
-            background: alpha(TOKENS.bone, 'f5'),
-            position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : 16,
+      ),
+      isMobile &&
+        hiddenMobileItemCount > 0 &&
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: 12,
+            },
           },
-        },
-        isMobile
-          ? h(
-              'div',
-              {
-                style: {
-                  display: 'grid',
-                  gap: 10,
-                  marginBottom: showFilterBody ? 12 : 0,
-                },
+          h(
+            Button,
+            {
+              type: 'button',
+              onClick: () => setExpandedMobileNewsKey(mobileNewsPageKey),
+              style: {
+                minHeight: 44,
+                borderRadius: 8,
+                border: `1px solid ${TOKENS.boneDeep}`,
+                background: alpha(TOKENS.bone, 'ef'),
+                color: TOKENS.ink,
+                textTransform: 'none',
               },
-              h(
+            },
+            `展開更多 ${hiddenMobileItemCount} 則`
+          )
+        )
+    ),
+    !isMobile &&
+      h(
+        'div',
+        null,
+        h(
+          Card,
+          {
+            'data-testid': 'news-side-notes',
+            style: {
+              borderRadius: 12,
+              padding: '16px 16px 16px',
+              border: `1px solid ${TOKENS.boneDeep}`,
+              background: alpha(TOKENS.bone, 'f5'),
+              position: isMobile ? 'static' : 'sticky',
+              top: isMobile ? 'auto' : 16,
+            },
+          },
+          isMobile
+            ? h(
                 'div',
                 {
                   style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: 12,
-                    flexWrap: 'wrap',
+                    display: 'grid',
+                    gap: 10,
+                    marginBottom: showFilterBody ? 12 : 0,
                   },
                 },
                 h(
                   'div',
                   {
                     style: {
-                      display: 'grid',
-                      gap: 6,
-                      flex: 1,
-                      minWidth: 0,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      flexWrap: 'wrap',
                     },
                   },
-                  h('div', { style: { ...lbl, color: C.textSec, marginBottom: 0 } }, '篩選與側欄'),
+                  h(
+                    'div',
+                    {
+                      style: {
+                        display: 'grid',
+                        gap: 6,
+                        flex: 1,
+                        minWidth: 0,
+                      },
+                    },
+                    h(
+                      'div',
+                      { style: { ...lbl, color: C.textSec, marginBottom: 0 } },
+                      '篩選與側欄'
+                    ),
+                    h(
+                      'div',
+                      {
+                        style: {
+                          display: 'flex',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                        },
+                      },
+                      renderChip(`${visibleItemCount} 則`, mobileResultChipStyle),
+                      renderChip(hasActiveFilters ? `${activeFilterCount} 個篩選中` : '預設狀態', {
+                        background: hasActiveFilters
+                          ? alpha(TOKENS.positive, '12')
+                          : alpha(TOKENS.bone, 'f0'),
+                        border: `1px solid ${hasActiveFilters ? alpha(TOKENS.positive, '24') : TOKENS.boneDeep}`,
+                        color: hasActiveFilters ? TOKENS.ink : TOKENS.charcoal,
+                      })
+                    ),
+                    h(
+                      'div',
+                      {
+                        'data-testid': 'news-filter-summary',
+                        style: {
+                          fontSize: 11,
+                          color: TOKENS.charcoal,
+                          lineHeight: 1.6,
+                          fontFamily: TOKENS.fontBody,
+                        },
+                      },
+                      activeFilterSummary
+                    )
+                  ),
                   h(
                     'div',
                     {
@@ -1313,98 +1539,65 @@ export function NewsFeedSection({
                         display: 'flex',
                         gap: 8,
                         flexWrap: 'wrap',
-                        alignItems: 'center',
+                        justifyContent: 'flex-end',
                       },
                     },
-                    renderChip(`${visibleItemCount} 則`, mobileResultChipStyle),
-                    renderChip(hasActiveFilters ? `${activeFilterCount} 個篩選中` : '預設狀態', {
-                      background: hasActiveFilters
-                        ? alpha(TOKENS.positive, '12')
-                        : alpha(TOKENS.bone, 'f0'),
-                      border: `1px solid ${hasActiveFilters ? alpha(TOKENS.positive, '24') : TOKENS.boneDeep}`,
-                      color: hasActiveFilters ? TOKENS.ink : TOKENS.charcoal,
-                    })
-                  ),
-                  h(
-                    'div',
-                    {
-                      'data-testid': 'news-filter-summary',
-                      style: {
-                        fontSize: 11,
-                        color: TOKENS.charcoal,
-                        lineHeight: 1.6,
-                        fontFamily: TOKENS.fontBody,
-                      },
-                    },
-                    activeFilterSummary
-                  )
-                ),
-                h(
-                  'div',
-                  {
-                    style: {
-                      display: 'flex',
-                      gap: 8,
-                      flexWrap: 'wrap',
-                      justifyContent: 'flex-end',
-                    },
-                  },
-                  showFilterBody &&
+                    showFilterBody &&
+                      h(
+                        Button,
+                        {
+                          type: 'button',
+                          size: 'xs',
+                          disabled: !hasActiveFilters,
+                          onClick: handleResetFilters,
+                          style: {
+                            textTransform: 'none',
+                          },
+                        },
+                        '全部清除'
+                      ),
                     h(
                       Button,
                       {
+                        'data-testid': 'news-filter-toggle',
                         type: 'button',
                         size: 'xs',
-                        disabled: !hasActiveFilters,
-                        onClick: handleResetFilters,
+                        'aria-expanded': showFilterBody,
+                        'aria-controls': 'news-side-notes-body',
+                        onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
                         style: {
                           textTransform: 'none',
+                          background: hasActiveFilters
+                            ? alpha(TOKENS.warning, '18')
+                            : alpha(TOKENS.bone, 'ef'),
+                          border: `1px solid ${hasActiveFilters ? alpha(TOKENS.warning, '32') : TOKENS.boneDeep}`,
+                          color: TOKENS.ink,
                         },
                       },
-                      '全部清除'
-                    ),
-                  h(
-                    Button,
-                    {
-                      'data-testid': 'news-filter-toggle',
-                      type: 'button',
-                      size: 'xs',
-                      'aria-expanded': showFilterBody,
-                      'aria-controls': 'news-side-notes-body',
-                      onClick: () => setIsMobileFilterCollapsed((collapsed) => !collapsed),
-                      style: {
-                        textTransform: 'none',
-                        background: hasActiveFilters
-                          ? alpha(TOKENS.warning, '18')
-                          : alpha(TOKENS.bone, 'ef'),
-                        border: `1px solid ${hasActiveFilters ? alpha(TOKENS.warning, '32') : TOKENS.boneDeep}`,
-                        color: TOKENS.ink,
-                      },
-                    },
-                    h(
-                      'span',
-                      {
-                        style: {
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        },
-                      },
-                      h('span', null, showFilterBody ? '收起篩選' : '看篩選'),
                       h(
                         'span',
-                        { 'aria-hidden': 'true', style: { fontSize: 11, color: C.textSec } },
-                        showFilterBody ? '^' : 'v'
+                        {
+                          style: {
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          },
+                        },
+                        h('span', null, showFilterBody ? '收起篩選' : '看篩選'),
+                        h(
+                          'span',
+                          { 'aria-hidden': 'true', style: { fontSize: 11, color: C.textSec } },
+                          showFilterBody ? '^' : 'v'
+                        )
                       )
                     )
                   )
                 )
               )
-            )
-          : h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '篩選與側欄'),
-        showFilterBody ? sideNotesBody : null
+            : h('div', { style: { ...lbl, color: C.textSec, marginBottom: 8 } }, '篩選與側欄'),
+          showFilterBody ? sideNotesBody : null
+        )
       )
-    )
   )
 }
 

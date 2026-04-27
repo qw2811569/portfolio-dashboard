@@ -1,15 +1,13 @@
 import { createHash } from 'node:crypto'
-import { execFile } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import { mkdir, readdir, readFile, rm, writeFile, appendFile } from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
-
-const execFileAsync = promisify(execFile)
 
 const VM_BASE_URL = (process.env.VM_BASE_URL || 'http://104.199.144.170').replace(/\/+$/, '')
 const VERIFY_DIR = '.tmp/deploy-verify'
 const EXPECTED_PATH = path.join(VERIFY_DIR, 'expected.json')
 const LOG_PATH = path.join(VERIFY_DIR, 'log.jsonl')
+const BUILD_LOG_PATH = path.join(VERIFY_DIR, 'build.log')
 const POLL_INTERVAL_MS = 5000
 const POLL_ATTEMPTS = 36
 const ASSET_KEYS = [
@@ -52,8 +50,13 @@ function filenameOf(assetPath) {
   return path.posix.basename(assetPath)
 }
 
-async function run(command, args, options = {}) {
-  const { stdout } = await execFileAsync(command, args, {
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`
+}
+
+async function run(command, args = [], options = {}) {
+  const stdout = execSync([command, ...args.map(shellQuote)].join(' '), {
+    encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 20,
     ...options,
   })
@@ -61,7 +64,7 @@ async function run(command, args, options = {}) {
 }
 
 async function curl(url) {
-  const { stdout } = await execFileAsync('curl', ['-fsSL', url], {
+  const stdout = execSync(`curl -fsSL ${shellQuote(url)}`, {
     encoding: 'buffer',
     maxBuffer: 1024 * 1024 * 50,
   })
@@ -78,8 +81,12 @@ async function retryOnce(label, fn) {
 }
 
 async function buildExpectedManifest(expectedHead) {
+  await mkdir(VERIFY_DIR, { recursive: true })
   await rm('dist', { recursive: true, force: true })
-  await run('npm', ['run', 'build', '--silent'])
+  execSync(`npm run build > ${shellQuote(BUILD_LOG_PATH)} 2>&1`, {
+    stdio: 'ignore',
+    maxBuffer: 1024 * 1024 * 20,
+  })
 
   const html = await readFile('dist/index.html', 'utf8')
   const refs = collectAssetRefs(html)
@@ -179,7 +186,10 @@ async function forceVmRebuild() {
     'bash scripts/vm-atomic-deploy.sh dist /var/www/app 2>/dev/null || true',
   ].join(' && ')
 
-  await run('ssh', ['jcv-dev', remoteCommand], { maxBuffer: 1024 * 1024 * 30 })
+  execSync(`ssh jcv-dev ${shellQuote(remoteCommand)}`, {
+    stdio: 'pipe',
+    maxBuffer: 1024 * 1024 * 30,
+  })
 }
 
 async function pollUntilMatch(expected) {

@@ -1112,7 +1112,7 @@ function MorningNoteCard({ morningNote = null, onNavigate = null, onMorningNoteH
             padding: '10px 12px',
           },
         },
-        `Accuracy Gate：${morningNote.blockedReason}`
+        `準確度檢查：${morningNote.blockedReason}`
       ),
     morningNote.fallbackMessage &&
       h(
@@ -1897,7 +1897,7 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
               fontVariantNumeric: 'tabular-nums',
             },
           },
-          `${safeItems.length} Items`
+          `${safeItems.length} 項`
         )
       ),
       h(

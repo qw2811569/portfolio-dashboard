@@ -216,10 +216,10 @@ export function Badge({ children, color = 'default', size = 'sm', style = {} }) 
     olive: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
     iron: { bg: alpha(C.iron, '12'), text: C.textSec, border: alpha(C.iron, '25'), dot: C.iron },
     lavender: {
-      bg: C.lavBg,
+      bg: alpha(C.neutralIron, '0c'),
       text: C.textSec,
-      border: alpha(C.lavender, '25'),
-      dot: C.lavender,
+      border: alpha(C.neutralIron, '25'),
+      dot: C.neutralIron,
     },
   }
 

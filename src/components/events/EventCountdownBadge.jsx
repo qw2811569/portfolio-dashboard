@@ -31,9 +31,9 @@ const BADGE_STYLE = {
     dot: C.iron,
   },
   past: {
-    color: C.choco,
-    background: alpha(C.choco, '12'),
-    border: alpha(C.choco, '2c'),
+    color: C.neutralCharcoal,
+    background: alpha(C.neutralCharcoal, '12'),
+    border: alpha(C.neutralCharcoal, '2c'),
     fontWeight: 600,
   },
 }

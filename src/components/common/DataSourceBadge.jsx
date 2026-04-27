@@ -23,8 +23,8 @@ const SOURCE_META = {
   gemini_grounded: {
     label: 'AI 搜尋綜合',
     text: C.text,
-    border: alpha(C.choco, '1f'),
-    background: alpha(C.choco, '08'),
+    border: alpha(C.neutralCharcoal, '1f'),
+    background: alpha(C.neutralCharcoal, '08'),
   },
   cmoney: {
     label: 'CMoney 投顧',

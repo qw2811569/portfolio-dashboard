@@ -95,6 +95,7 @@ export default function Header(props) {
     const labels = {
       dashboard: '看板',
       holdings: '持倉',
+      watchlist: '觀察',
       events: '事件',
       daily: '收盤',
       research: '深度',
@@ -104,6 +105,24 @@ export default function Header(props) {
     }
     return labels[tabItem?.k] || tabItem?.label || ''
   }
+  const mobileRouteLabels = {
+    dashboard: '持倉看板',
+    holdings: '持倉看板',
+    watchlist: '觀察股',
+    events: '事件追蹤',
+    news: '情報脈絡',
+    daily: '收盤分析',
+    research: '全組合研究',
+    trade: '上傳成交',
+    log: '交易日誌',
+    overview: '持倉看板',
+  }
+  const activeRouteLabel =
+    viewMode === OVERVIEW_VIEW_MODE
+      ? mobileRouteLabels.overview
+      : mobileRouteLabels[tab] || tabs.find((tabItem) => tabItem?.k === tab)?.label || ''
+  const mobileRouteSubtitle =
+    activeRouteLabel && activeRouteLabel !== '持倉看板' ? activeRouteLabel : ''
 
   const ghostBtn = {
     borderRadius: 8,
@@ -158,6 +177,45 @@ export default function Header(props) {
       },
     },
     '持倉看板'
+  )
+  const mobileTitleText = h(
+    'span',
+    {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 5,
+        minWidth: 0,
+        fontFamily: 'var(--font-headline)',
+        color: C.text,
+        whiteSpace: 'nowrap',
+      },
+    },
+    h(
+      'span',
+      {
+        style: {
+          fontSize: isCompactLandscape ? 17 : 20,
+          fontWeight: 700,
+          letterSpacing: '0.01em',
+        },
+      },
+      '持倉看板'
+    ),
+    mobileRouteSubtitle &&
+      h(
+        'span',
+        {
+          'data-testid': 'header-mobile-route-label',
+          style: {
+            fontSize: isCompactLandscape ? 11 : 12,
+            fontWeight: 600,
+            color: C.textMute,
+            letterSpacing: 0,
+          },
+        },
+        `· ${mobileRouteSubtitle}`
+      )
   )
   // R156 #7 · insider portfolio (例 7865 金聯成) · header 加 persistent
   // 「👑 公司代表」badge · 跨 tab contract · 不只 Daily 才看到合規模式
@@ -586,7 +644,7 @@ export default function Header(props) {
           flexWrap: 'nowrap',
         },
       },
-      titleText,
+      mobileTitleText,
       insiderBadge || null,
       h(
         'span',

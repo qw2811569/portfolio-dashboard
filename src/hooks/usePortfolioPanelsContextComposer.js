@@ -299,10 +299,10 @@ export function usePortfolioPanelsContextComposer({
       nextActionLabel = `事件自動復盤完成：${autoReviewedCorrect} 件正確、${autoReviewedWrong} 件錯誤`
       nextActionReason = `共 ${autoReviewedEvents.length} 件事件已自動驗證預測方向與實際走勢，可直接查看結果。`
     } else if (pendingCount > 0 || pendingEventCount > 0 || trackingEventCount > 0) {
-      // R24: hero count must match the explicit chip definition (待復盤 = pendingCount)
-      // Codex R23 QA flagged hero saying 25 件待自動復盤 while chip showed 待復盤 20 件.
-      const reviewPending = Math.max(pendingCount, pendingEventCount)
-      nextActionLabel = `待復盤 ${reviewPending} 件 · 等待自動驗證`
+      // R25: hero count must match the explicit chip definition (待復盤 = pendingCount).
+      // R24 used Math.max(pendingCount, pendingEventCount) which gave 25 when chip showed 20.
+      // chip OperatingContextCard.jsx:217 uses pendingCount directly, so hero must too.
+      nextActionLabel = `待復盤 ${pendingCount} 件 · 等待自動驗證`
       nextActionReason = '事件將在取得收盤價後自動驗證，不需手動操作。'
     } else if (focusItem) {
       nextActionLabel = `先聚焦 ${focusItem.name} 的事件追蹤`

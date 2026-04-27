@@ -199,6 +199,42 @@ describe('components/EventsPanel', () => {
     expect(screen.getByTestId('events-group-later')).toHaveTextContent('兩週後')
   })
 
+  it('moves past event cards out of forward-looking week buckets', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-expired',
+              title: '三星記憶體工人罷工威脅',
+              date: '2026-03-13',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+            {
+              id: 'evt-current',
+              title: '台積電法說會',
+              date: '2026-04-29',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('events-group-expired')).toHaveTextContent('已過期')
+    expect(screen.getByTestId('events-group-expired')).toHaveTextContent('三星記憶體工人罷工威脅')
+    expect(screen.getByTestId('events-group-this-week')).toHaveTextContent('台積電法說會')
+    expect(screen.getByTestId('events-group-this-week')).not.toHaveTextContent(
+      '三星記憶體工人罷工威脅'
+    )
+  })
+
   it('expands the informational section on demand', () => {
     render(
       <EventsPanel

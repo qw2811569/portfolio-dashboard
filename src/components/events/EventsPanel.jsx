@@ -140,6 +140,7 @@ function getEventDayDistance(value) {
 
 function groupEventCardsByWindow(cards = []) {
   const groups = [
+    { key: 'expired', label: '已過期', items: [] },
     { key: 'this-week', label: '本週', items: [] },
     { key: 'next-week', label: '下週', items: [] },
     { key: 'later', label: '兩週後', items: [] },
@@ -147,9 +148,10 @@ function groupEventCardsByWindow(cards = []) {
 
   cards.forEach((event) => {
     const days = getEventDayDistance(event?.date || event?.eventDate)
-    if (days <= 6) groups[0].items.push(event)
-    else if (days <= 13) groups[1].items.push(event)
-    else groups[2].items.push(event)
+    if (days < 0) groups[0].items.push(event)
+    else if (days <= 6) groups[1].items.push(event)
+    else if (days <= 13) groups[2].items.push(event)
+    else groups[3].items.push(event)
   })
 
   return groups.filter((group) => group.items.length > 0)

@@ -25,6 +25,7 @@ describe('components/EventsPanel', () => {
     cleanup()
     vi.restoreAllMocks()
     vi.useRealTimers()
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1024 })
   })
 
   it('shows the empty-state welcome card when no events are filtered in', () => {
@@ -233,6 +234,39 @@ describe('components/EventsPanel', () => {
     expect(screen.getByTestId('events-group-this-week')).not.toHaveTextContent(
       '三星記憶體工人罷工威脅'
     )
+  })
+
+  it('opens collapsed date buckets by default on mobile so event cards are visible', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 })
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-expired',
+              title: '金管會復盤',
+              date: '2026-04-10',
+              eventType: 'macro',
+              recordType: 'event',
+            },
+            {
+              id: 'evt-later',
+              title: '115Q1 概估',
+              date: '2026-05-20',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('events-group-expired-details')).toHaveAttribute('open')
+    expect(screen.getByTestId('events-group-later-details')).toHaveAttribute('open')
   })
 
   it('expands the informational section on demand', () => {

@@ -1,4 +1,4 @@
-import { createElement as h, useState } from 'react'
+import { createElement as h, useEffect, useState } from 'react'
 // useNavigate removed — component must work without Router context (App.jsx)
 import { C, alpha } from '../../theme.js'
 import { Card, Button, OperatingContextCard, StaleBadge } from '../common'
@@ -157,6 +157,41 @@ function groupEventCardsByWindow(cards = []) {
   return groups.filter((group) => group.items.length > 0)
 }
 
+function isMobileEventLayout() {
+  if (typeof window === 'undefined') return false
+  if (typeof window.matchMedia === 'function') {
+    return window.matchMedia('(max-width: 767px)').matches
+  }
+  return Number(window.innerWidth) <= 767
+}
+
+function useMobileEventLayout() {
+  const [isMobile, setIsMobile] = useState(() => isMobileEventLayout())
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const update = () => setIsMobile(isMobileEventLayout())
+    const query =
+      typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 767px)') : null
+
+    update()
+    if (query?.addEventListener) {
+      query.addEventListener('change', update)
+      return () => query.removeEventListener('change', update)
+    }
+    if (query?.addListener) {
+      query.addListener(update)
+      return () => query.removeListener(update)
+    }
+
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  return isMobile
+}
+
 function isPriorityEvent(event) {
   if (event?.needsThesisReview === true) return true
   return getEventDayDistance(event?.date || event?.eventDate) <= 3
@@ -208,7 +243,7 @@ function EventGroupSummary({ label, count, helper }) {
   )
 }
 
-function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock }) {
+function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock, expandCollapsedGroups }) {
   const renderCard = (event, index, keySuffix = '') =>
     h(EventCard, {
       key: `${buildEventKey(event, index)}${keySuffix}`,
@@ -245,11 +280,11 @@ function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock }) {
       rest.length > 0 &&
         h(
           'details',
-          { 'data-testid': 'events-group-this-week-rest' },
+          { open: expandCollapsedGroups, 'data-testid': 'events-group-this-week-rest' },
           h(EventGroupSummary, {
             label: '本週其餘',
             count: rest.length,
-            helper: '展開查看',
+            helper: expandCollapsedGroups ? '已展開' : '展開查看',
           }),
           rest.map((event, index) => renderCard(event, index, '::rest'))
         )
@@ -261,11 +296,11 @@ function EventsGroupSection({ group, insiderViewMode, isInsiderSelfStock }) {
     { key: group.key, 'data-testid': `events-group-${group.key}` },
     h(
       'details',
-      { 'data-testid': `events-group-${group.key}-details` },
+      { open: expandCollapsedGroups, 'data-testid': `events-group-${group.key}-details` },
       h(EventGroupSummary, {
         label: group.label,
         count: group.items.length,
-        helper: '展開查看',
+        helper: expandCollapsedGroups ? '已展開' : '展開查看',
       }),
       group.items.map((event, index) => renderCard(event, index))
     )
@@ -1078,6 +1113,7 @@ export function EventsPanel({
     })
   }
   const [showInformational, setShowInformational] = useState(false)
+  const isMobileLayout = useMobileEventLayout()
   const eventCards = (Array.isArray(filteredEvents) ? filteredEvents : []).filter(
     (event) => event?.recordType !== 'news'
   )
@@ -1113,7 +1149,10 @@ export function EventsPanel({
     // Catalyst type filter buttons (only shown if props provided)
     setCatalystFilter && h(CatalystFilter, { catalystFilter, setCatalystFilter }),
 
-    h(EventsTimeline, { events: eventCards }),
+    h(EventsTimeline, {
+      events: eventCards,
+      summaryCount: operatingContext?.activeEventCount || eventCards.length,
+    }),
 
     // Events list — empty state
     primaryCards.length === 0 &&
@@ -1184,6 +1223,7 @@ export function EventsPanel({
         group,
         insiderViewMode,
         isInsiderSelfStock,
+        expandCollapsedGroups: isMobileLayout,
       })
     ),
 

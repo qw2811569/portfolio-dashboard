@@ -79,4 +79,22 @@ describe('components/events/EventsTimeline', () => {
     expect(screen.getByTestId('events-timeline-expanded-list')).toBeInTheDocument()
     expect(screen.getByText('台積電除息與股利更新')).toBeInTheDocument()
   })
+
+  it('does not claim there are no major events when events exist outside the timeline window', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
+    render(
+      <EventsTimeline
+        summaryCount={7}
+        events={[
+          { title: '已過期復盤事件', date: '2026-03-01', eventType: 'earnings' },
+          { title: '兩週後股東會', date: '2026-06-15', eventType: 'shareholding-meeting' },
+        ]}
+      />
+    )
+
+    expect(screen.queryByText('接下來 30 天無重大事件')).not.toBeInTheDocument()
+    expect(screen.getByText('事件清單仍有 7 件待查看')).toBeInTheDocument()
+  })
 })

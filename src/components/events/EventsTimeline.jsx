@@ -227,7 +227,9 @@ function TimelineMarker({ event, onHover, onLeave, onClick }) {
   )
 }
 
-function EmptyTimelineState() {
+function EmptyTimelineState({ eventCount = 0 }) {
+  const hasEvents = eventCount > 0
+
   return h(
     Card,
     {
@@ -241,17 +243,19 @@ function EmptyTimelineState() {
     h(
       'div',
       { style: { fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 4 } },
-      '接下來 30 天無重大事件'
+      hasEvents ? `事件清單仍有 ${eventCount} 件待查看` : '接下來 30 天無重大事件'
     ),
     h(
       'div',
       { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
-      '清單仍保留完整事件紀錄；時間軸只顯示今天前後 30 天內的重點視窗。'
+      hasEvents
+        ? '這些事件落在時間軸 30 天視窗之外；下方清單仍會顯示完整事件卡。'
+        : '清單仍保留完整事件紀錄；時間軸只顯示今天前後 30 天內的重點視窗。'
     )
   )
 }
 
-export function EventsTimeline({ events = [] }) {
+export function EventsTimeline({ events = [], summaryCount }) {
   const { holdings = [] } = usePortfolioRouteContext()
   const [hoveredEvent, setHoveredEvent] = useState(null)
   const [expandedGroupKey, setExpandedGroupKey] = useState('')
@@ -286,7 +290,10 @@ export function EventsTimeline({ events = [] }) {
   }
 
   if (timelineGroups.length === 0) {
-    return h(EmptyTimelineState)
+    const eventCount = Number.isFinite(Number(summaryCount))
+      ? Math.max(0, Number(summaryCount))
+      : (Array.isArray(events) ? events : []).length
+    return h(EmptyTimelineState, { eventCount })
   }
 
   return h(

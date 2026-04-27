@@ -17,15 +17,15 @@ import {
 } from '../../lib/eventTypeMeta.js'
 
 const EVENT_TYPE_STYLE = Object.freeze({
-  earnings: { color: C.positive, background: alpha(C.positive, '16') },
-  'ex-dividend': { color: C.up, background: alpha(C.up, '14') },
-  'shareholding-meeting': { color: C.amber, background: alpha(C.amber, '18') },
-  strategic: { color: C.down, background: alpha(C.down, '12') },
-  informational: { color: C.textMute, background: alpha(C.textMute, '12') },
-  macro: { color: C.lavender, background: alpha(C.lavender, '18') },
-  market: { color: C.choco, background: alpha(C.choco, '18') },
-  technical: { color: C.text, background: alpha(C.text, '08') },
-  other: { color: C.textSec, background: alpha(C.iron, '18') },
+  earnings: { color: C.textSec, background: alpha(C.charcoal, '08') },
+  'ex-dividend': { color: C.textSec, background: alpha(C.charcoal, '08') },
+  'shareholding-meeting': { color: C.textSec, background: alpha(C.charcoal, '08') },
+  strategic: { color: C.textSec, background: alpha(C.charcoal, '08') },
+  informational: { color: C.textMute, background: alpha(C.charcoal, '08') },
+  macro: { color: C.textSec, background: alpha(C.charcoal, '08') },
+  market: { color: C.textSec, background: alpha(C.charcoal, '08') },
+  technical: { color: C.textSec, background: alpha(C.charcoal, '08') },
+  other: { color: C.textSec, background: alpha(C.charcoal, '08') },
 })
 
 const CATALYST_LABELS = {
@@ -37,12 +37,12 @@ const CATALYST_LABELS = {
 }
 
 const IMPACT_META = {
-  positive: { label: '🔴 利多', color: C.textSec, bg: C.upBg },
-  negative: { label: '🟢 利空', color: C.down, bg: C.downBg },
-  neutral: { label: '🟡 中性', color: C.textSec, bg: alpha(C.amber, '18') },
-  high: { label: '🔴 利多', color: C.textSec, bg: C.upBg },
-  medium: { label: '🟡 中性', color: C.textSec, bg: alpha(C.amber, '18') },
-  low: { label: '⚪ 低影響', color: C.textMute, bg: alpha(C.textMute, '14') },
+  positive: { label: '利多', color: C.textSec, bg: alpha(C.charcoal, '08') },
+  negative: { label: '利空', color: C.textSec, bg: alpha(C.charcoal, '08') },
+  neutral: { label: '中性', color: C.textSec, bg: alpha(C.charcoal, '08') },
+  high: { label: '利多', color: C.textSec, bg: alpha(C.charcoal, '08') },
+  medium: { label: '中性', color: C.textSec, bg: alpha(C.charcoal, '08') },
+  low: { label: '低影響', color: C.textMute, bg: alpha(C.charcoal, '08') },
 }
 
 function formatEventSource(source) {

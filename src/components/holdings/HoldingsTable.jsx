@@ -30,6 +30,7 @@ const lbl = {
 const pc = (p) => (p == null ? C.textMute : p >= 0 ? C.text : C.down)
 const pcBg = (p) => (p == null ? 'transparent' : p >= 0 ? C.upBg : C.downBg)
 const THESIS_QUICK_FORM_FIELDS = ['reason', 'expectation', 'invalidation']
+const MOBILE_INITIAL_HOLDINGS_COUNT = 5
 
 const badgeToneStyles = {
   muted: {
@@ -1340,6 +1341,44 @@ export function HoldingsTable({
   })
 
   if (isMobile) {
+    const visibleMobileHoldings = sorted.slice(0, MOBILE_INITIAL_HOLDINGS_COUNT)
+    const collapsedMobileHoldings = sorted.slice(MOBILE_INITIAL_HOLDINGS_COUNT)
+    const collapsedMobileCodes = new Set(collapsedMobileHoldings.map((holding) => holding.code))
+    const collapsedMobileHasActiveState =
+      collapsedMobileCodes.has(expandedStock) ||
+      collapsedMobileCodes.has(detailStockCode) ||
+      collapsedMobileCodes.has(thesisQuickFormCode)
+    const renderMobileHoldingCard = (holding, index) =>
+      h(HoldingMobileCard, {
+        key: holding.code,
+        holding,
+        rowTone: index % 2 === 0 ? 'paper' : 'alt',
+        dossier: dossierByCode.get(holding.code) || null,
+        expanded: expandedStock === holding.code,
+        detailOpen: detailStockCode === holding.code,
+        onToggle: () => toggleExpandedStock(holding.code),
+        onOpenDetail: () => handleOpenDetail(holding.code),
+        onUpdateTarget,
+        onUpdateAlert,
+        viewMode,
+        thesisWriteEnabled,
+        onOpenThesisQuickForm: openThesisQuickForm,
+        detailButtonRef: registerDetailTriggerRef(holding.code),
+        thesisQuickForm:
+          thesisQuickFormCode === holding.code
+            ? {
+                reason: thesisQuickForm.reason,
+                expectation: thesisQuickForm.expectation,
+                invalidation: thesisQuickForm.invalidation,
+              }
+            : null,
+        thesisQuickFormErrors: thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
+        thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
+        onChangeThesisQuickForm: handleThesisQuickFormChange,
+        onSaveThesisQuickForm: handleThesisQuickFormSave,
+        onCancelThesisQuickForm: closeThesisQuickForm,
+      })
+
     return h(
       'div',
       null,
@@ -1375,38 +1414,58 @@ export function HoldingsTable({
               gap: 8,
             },
           },
-          sorted.map((holding, index) =>
-            h(HoldingMobileCard, {
-              key: holding.code,
-              holding,
-              rowTone: index % 2 === 0 ? 'paper' : 'alt',
-              dossier: dossierByCode.get(holding.code) || null,
-              expanded: expandedStock === holding.code,
-              detailOpen: detailStockCode === holding.code,
-              onToggle: () => toggleExpandedStock(holding.code),
-              onOpenDetail: () => handleOpenDetail(holding.code),
-              onUpdateTarget,
-              onUpdateAlert,
-              viewMode,
-              thesisWriteEnabled,
-              onOpenThesisQuickForm: openThesisQuickForm,
-              detailButtonRef: registerDetailTriggerRef(holding.code),
-              thesisQuickForm:
-                thesisQuickFormCode === holding.code
-                  ? {
-                      reason: thesisQuickForm.reason,
-                      expectation: thesisQuickForm.expectation,
-                      invalidation: thesisQuickForm.invalidation,
-                    }
-                  : null,
-              thesisQuickFormErrors:
-                thesisQuickFormCode === holding.code ? thesisQuickFormErrors : {},
-              thesisSaving: thesisQuickFormCode === holding.code ? thesisSaving : false,
-              onChangeThesisQuickForm: handleThesisQuickFormChange,
-              onSaveThesisQuickForm: handleThesisQuickFormSave,
-              onCancelThesisQuickForm: closeThesisQuickForm,
-            })
-          )
+          visibleMobileHoldings.map(renderMobileHoldingCard),
+          collapsedMobileHoldings.length > 0 &&
+            h(
+              'details',
+              {
+                open: collapsedMobileHasActiveState || undefined,
+                'data-testid': 'holdings-mobile-collapsed-rest',
+                style: {
+                  border: `1px solid ${C.borderSub}`,
+                  borderRadius: 8,
+                  background: alpha(C.paper, '92'),
+                  overflow: 'hidden',
+                },
+              },
+              h(
+                'summary',
+                {
+                  style: {
+                    minHeight: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                    padding: '10px 12px',
+                    cursor: 'pointer',
+                    color: C.textSec,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    listStyle: 'none',
+                  },
+                },
+                h('span', null, `其他 ${collapsedMobileHoldings.length} 檔持倉`),
+                h(
+                  'span',
+                  { style: { color: C.textMute, fontSize: 11, fontWeight: 600 } },
+                  '展開查看'
+                )
+              ),
+              h(
+                'div',
+                {
+                  style: {
+                    display: 'grid',
+                    gap: 8,
+                    padding: '0 8px 8px',
+                  },
+                },
+                collapsedMobileHoldings.map((holding, index) =>
+                  renderMobileHoldingCard(holding, index + MOBILE_INITIAL_HOLDINGS_COUNT)
+                )
+              )
+            )
         )
       ),
       h(HoldingDetailPane, {

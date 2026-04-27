@@ -412,6 +412,8 @@ const liveHeatmapMobileStyle = `
   .seasonality-heatmap-scroll {
     margin-left: -2px;
     margin-right: -2px;
+    scroll-padding-left: 58px;
+    scroll-snap-type: x mandatory;
   }
 
   .seasonality-heatmap-scroll::after {
@@ -449,6 +451,10 @@ const liveHeatmapMobileStyle = `
   .seasonality-heatmap-grid {
     min-width: 744px !important;
     grid-template-columns: 58px repeat(12, minmax(52px, 1fr)) !important;
+  }
+
+  .seasonality-heatmap-grid > div {
+    scroll-snap-align: start;
   }
 }
 `

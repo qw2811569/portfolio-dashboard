@@ -1828,6 +1828,20 @@ function buildDashboardFocusItems({
   ]
 }
 
+function resolveMobileActionCopy(item = {}) {
+  if (item.id === 'x5' && item.title !== '這三天安靜') {
+    return {
+      title: '先確認最近一件事件',
+      body: item.body,
+    }
+  }
+
+  return {
+    title: item.title,
+    body: item.body,
+  }
+}
+
 function DashboardFocusCard({ items = [], onNavigate = null }) {
   const isMobile = useIsMobile('(max-width: 600px)')
   const safeItems = Array.isArray(items) ? items.slice(0, 3) : []
@@ -1882,22 +1896,6 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
             },
           },
           '今日焦點'
-        ),
-        h(
-          'span',
-          {
-            style: {
-              borderRadius: 8,
-              border: `1px solid ${C.cta}`,
-              color: C.cta,
-              padding: '5px 11px',
-              fontSize: 12,
-              fontWeight: 700,
-              lineHeight: 1.2,
-              fontVariantNumeric: 'tabular-nums',
-            },
-          },
-          `${safeItems.length} 項`
         )
       ),
       h(
@@ -1998,6 +1996,7 @@ function DashboardFocusCard({ items = [], onNavigate = null }) {
 function MobileTodayActionCard({ items = [], onNavigate = null }) {
   const primaryItem = Array.isArray(items) && items.length > 0 ? items[0] : null
   if (!primaryItem) return null
+  const actionCopy = resolveMobileActionCopy(primaryItem)
 
   const handlePrimaryAction = () => {
     if (primaryItem.routeTab && typeof onNavigate === 'function') onNavigate(primaryItem.routeTab)
@@ -2046,7 +2045,7 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
               overflowWrap: 'anywhere',
             },
           },
-          primaryItem.title
+          actionCopy.title
         ),
         h(
           'div',
@@ -2058,7 +2057,7 @@ function MobileTodayActionCard({ items = [], onNavigate = null }) {
               overflowWrap: 'anywhere',
             },
           },
-          primaryItem.body
+          actionCopy.body
         )
       ),
       h(
@@ -2471,11 +2470,6 @@ export function DashboardPanel({
   return h(
     'div',
     null,
-    h(UpstreamHealthBanner, {
-      banner: upstreamHealth.banner,
-      onRetryAll: handleRetryAll,
-    }),
-    isMobile && h(MobileTodayActionCard, { items: dashboardFocusItems, onNavigate }),
     h(
       'div',
       { className: 'dashboard-hero' },
@@ -2508,6 +2502,11 @@ export function DashboardPanel({
           h(DashboardFocusCard, { items: dashboardFocusItems, onNavigate })
         )
     ),
+    isMobile && h(MobileTodayActionCard, { items: dashboardFocusItems, onNavigate }),
+    h(UpstreamHealthBanner, {
+      banner: upstreamHealth.banner,
+      onRetryAll: handleRetryAll,
+    }),
     h(DashboardCompareStrip, { compareStrip, onNavigate }),
     h(AnxietyMetricsPanel, {
       anxietyMetrics,

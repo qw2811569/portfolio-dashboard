@@ -1255,10 +1255,6 @@ export function HoldingsPanel({
     'div',
     { 'data-testid': 'holdings-panel' },
     h(OperatingContextCard, { context: operatingContext, variant: 'home' }),
-    h(UpstreamHealthBanner, {
-      banner: upstreamHealth.banner,
-      onRetryAll: handleRetryAll,
-    }),
     !upstreamHealth.shouldCollapseBanners &&
       holdingsAccuracyGate &&
       h(AccuracyGateBlock, {
@@ -1325,6 +1321,10 @@ export function HoldingsPanel({
         h(HoldingsRing, { holdings, totalVal, stockMeta: STOCK_META, holdingDossiers })
       )
     ),
+    h(UpstreamHealthBanner, {
+      banner: upstreamHealth.banner,
+      onRetryAll: handleRetryAll,
+    }),
 
     // Filter chip bar
     h(HoldingsFilterChipBar, { filterBar: holdingsFilterBar }),

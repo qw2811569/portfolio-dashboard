@@ -218,7 +218,7 @@ function ThesisQuickFormCard({
           marginBottom: 10,
         },
       },
-      `${name || code} 還沒整理 thesis，先補最小版本也夠用。`
+      `${name || code} 還沒整理投資理由，先補最小版本也夠用。`
     ),
     ...THESIS_QUICK_FORM_FIELDS.map((fieldKey) => {
       const field = THESIS_FORM_FIELDS[fieldKey]
@@ -353,9 +353,9 @@ function HoldingExpandedDetails({
                   style: {
                     fontSize: 11,
                     padding: '4px 8px',
-                    background: alpha(C.lavender, '12'),
+                    background: alpha(C.neutralIron, '12'),
                     color: C.text,
-                    border: `1px solid ${alpha(C.lavender, '24')}`,
+                    border: `1px solid ${alpha(C.neutralIron, '24')}`,
                     borderRadius: 8,
                   },
                 },

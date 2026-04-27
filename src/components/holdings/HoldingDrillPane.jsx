@@ -278,7 +278,7 @@ function ValuationSkeleton() {
     <div style={panelCard}>
       <div style={eyebrow}>估值區間</div>
       <div
-        aria-label="valuation-loading"
+        aria-label="估值載入中"
         style={{
           display: 'grid',
           gap: 8,
@@ -593,7 +593,7 @@ function TargetCard({ holding, dossier }) {
         <StaleBadge
           resource="targets"
           dossier={dossier}
-          title="目標價 freshness"
+          title="目標價新鮮度"
           data-testid={`holding-targets-stale-badge-${holding?.code || 'unknown'}`}
         />
       </div>
@@ -653,14 +653,14 @@ function FreshnessCard({ dossier, holding }) {
           dossier={dossier}
           field="targets"
           label="目標價"
-          title="目標價 freshness"
+          title="目標價新鮮度"
           style={{ textTransform: 'none' }}
         />
         <StaleBadge
           dossier={dossier}
           field="fundamentals"
           label="財報"
-          title="fundamentals freshness"
+          title="基本面資料新鮮度"
           data-testid={`holding-fundamentals-stale-badge-${holding?.code || 'unknown'}`}
           style={{ textTransform: 'none' }}
         />
@@ -679,7 +679,7 @@ function FreshnessCard({ dossier, holding }) {
         {staleCopy ? <SoftMessage style={{ marginTop: 4 }}>{staleCopy}</SoftMessage> : null}
         {!targetSourceLabel && !fundamentalsUpdatedAt && !thesisUpdatedAt && !holdingType ? (
           <SoftMessage style={{ marginTop: 4 }}>
-            這檔的 metadata 還在慢慢補，先把已知資訊擺在前面。
+            這檔的基本資料還在慢慢補，先把已知資訊擺在前面。
           </SoftMessage>
         ) : null}
       </div>
@@ -719,14 +719,14 @@ function CompressedHoldingPane({ holding, dossier, viewMode }) {
           dossier={dossier}
           field="targets"
           label="目標價"
-          title="目標價 freshness"
+          title="目標價新鮮度"
           style={{ textTransform: 'none' }}
         />
         <StaleBadge
           dossier={dossier}
           field="fundamentals"
           label="財報"
-          title="fundamentals freshness"
+          title="基本面資料新鮮度"
           data-testid={`holding-fundamentals-stale-badge-${holding?.code || 'unknown'}`}
           style={{ textTransform: 'none' }}
         />

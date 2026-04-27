@@ -910,13 +910,13 @@ function AiQuickSummary({ latestInsight }) {
 
   return h(
     Card,
-    { style: { marginBottom: 8, borderLeft: `3px solid ${C.lavender}` } },
+    { style: { marginBottom: 8, borderLeft: `3px solid ${C.neutralIron}` } },
     h(
       'div',
       {
         style: {
           ...lbl,
-          color: C.lavender,
+          color: C.neutralIron,
           marginBottom: 4,
         },
       },
@@ -2465,7 +2465,7 @@ export function DashboardPanel({
 
   return h(
     'div',
-    { className: isMobile ? 'mobile-page' : undefined },
+    null,
     h(UpstreamHealthBanner, {
       banner: upstreamHealth.banner,
       onRetryAll: handleRetryAll,

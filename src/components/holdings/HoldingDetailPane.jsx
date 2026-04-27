@@ -546,7 +546,7 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
               </div>
             ) : (
               <SoftEmpty>
-                這檔 thesis 還沒整理成長文，先用快看 pane 也可以，之後再慢慢補齊。
+                這檔投資理由還沒整理成長文，先用快看面板也可以，之後再慢慢補齊。
               </SoftEmpty>
             )}
           </SectionCard>

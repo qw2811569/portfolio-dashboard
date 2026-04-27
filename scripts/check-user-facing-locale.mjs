@@ -51,6 +51,12 @@ const ALLOWED_WORDS = new Set([
   'Markdown',
   'PDF',
   'AI',
+  'Google',
+  'Gemini',
+  'FactSet',
+  'CMoney',
+  'EPS',
+  'HHI',
 ])
 
 const VERSION_RE = /^v?\d+(?:\.\d+){1,3}$/iu
@@ -184,6 +190,14 @@ function scanFile(absolutePath) {
       node.arguments.slice(2).forEach((argument) => {
         if (ts.isStringLiteralLike(argument)) {
           addFinding(findings, sourceFile, file, argument, argument.text, 'createElement-child')
+        } else if (ts.isTemplateExpression(argument) || ts.isNoSubstitutionTemplateLiteral(argument)) {
+          // Cover template literals: scan head + middle parts for blocked tokens
+          const head = argument.head?.text || argument.text || ''
+          const middles = (argument.templateSpans || []).map((s) => s.literal?.text || '').join(' ')
+          const combined = `${head} ${middles}`.trim()
+          if (combined) {
+            addFinding(findings, sourceFile, file, argument, combined, 'createElement-template')
+          }
         }
       })
     }

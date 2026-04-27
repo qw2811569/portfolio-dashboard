@@ -1143,7 +1143,7 @@ export function NewsFeedSection({
                   fontFamily: TOKENS.fontBody,
                 },
               },
-              'Google News RSS 與 FinMind 新聞會先進來，先標已看、先整理重點，再交給收盤分析，不在這頁直接升格成事件。'
+              'Google 新聞與 FinMind 新聞會先進來，先標已看、先整理重點，再交給收盤分析，不在這頁直接升格成事件。'
             ),
             h(
               'div',

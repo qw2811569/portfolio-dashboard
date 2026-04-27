@@ -373,7 +373,7 @@ export function ResearchHeader({
             color: researching ? C.textMute : C.onFill,
           },
         },
-        researching ? '全組合研究 + 建議生成中...' : '🧬 全組合研究 + AI 策略建議'
+        researching ? '全組合研究與建議生成中...' : '全組合研究與策略建議'
       ),
       h(
         Button,
@@ -1115,7 +1115,7 @@ function AnalystReportsSection({ holdings, analystReports }) {
           marginTop: 8,
         },
       },
-      '💡 資料來源：FactSet 外資共識（cnyes）、媒體新聞（RSS）、AI 搜尋（Gemini grounding）、投顧摘錄（CMoney）。優先順序由系統自動決定。'
+      '資料來源：FactSet 外資共識（鉅亨網）、媒體新聞、AI 搜尋（Gemini）、投顧摘錄（CMoney）。優先順序由系統自動決定。'
     )
   )
 }
@@ -1411,7 +1411,7 @@ export function ResearchResults({
               marginBottom: 4,
             },
           },
-          `Round ${i + 1}：${round.title}`
+          `第 ${i + 1} 輪：${round.title}`
         ),
         streaming
           ? h(StreamingText, {
@@ -1444,11 +1444,14 @@ export function ResearchHistory({ history, onSelect, selectedId }) {
         `${history.length} 筆`
       )
     ),
-    history.map((r, i) =>
-      h(
+    history.map((r, i) => {
+      const displayName = String(r?.name || r?.title || r?.code || '未命名研究').trim()
+      const modePrefix = r?.mode === 'evolve' || r?.mode === 'portfolio' ? '全組合 · ' : '單股 · '
+
+      return h(
         'div',
         {
-          key: r.timestamp || i,
+          key: r.timestamp || r.id || i,
           onClick: () => onSelect(r),
           style: {
             display: 'flex',
@@ -1467,13 +1470,13 @@ export function ResearchHistory({ history, onSelect, selectedId }) {
           h(
             'span',
             { style: { fontSize: 12, color: r.mode === 'evolve' ? C.up : C.text } },
-            `${r.mode === 'evolve' ? '🧬 ' : '🔬 '}${r.name}`
+            `${modePrefix}${displayName || '未命名研究'}`
           ),
           h('span', { style: { fontSize: 12, color: C.textMute, marginLeft: 4 } }, r.date)
         ),
         h('span', { style: { fontSize: 11, color: C.textMute } }, `${r.rounds?.length || 0} 輪分析`)
       )
-    )
+    })
   )
 }
 

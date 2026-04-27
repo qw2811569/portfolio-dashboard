@@ -64,27 +64,12 @@
   },
   {
     "file": "src/components/holdings/HoldingDrillPane.jsx",
-    "text": "valuation-loading",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDrillPane.jsx",
     "text": "EPS 負",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
     "file": "src/components/holdings/HoldingDrillPane.jsx",
     "text": "freshness",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDrillPane.jsx",
-    "text": "fundamentals freshness",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDrillPane.jsx",
-    "text": "metadata",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -95,11 +80,6 @@
   {
     "file": "src/components/log/LogPanel.jsx",
     "text": "detail",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/news/NewsPanel.jsx",
-    "text": "Google News RSS",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -125,16 +105,6 @@
   {
     "file": "src/components/research/ResearchPanel.jsx",
     "text": "cnyes",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/research/ResearchPanel.jsx",
-    "text": "RSS",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/research/ResearchPanel.jsx",
-    "text": "Gemini grounding",
     "reason": "current baseline; Claude R13b sweep"
   },
   {

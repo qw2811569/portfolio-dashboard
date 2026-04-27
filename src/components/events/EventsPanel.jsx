@@ -993,7 +993,7 @@ export function EventsPanel({
             h(
               'div',
               { style: { fontSize: 12, fontWeight: 600, color: C.text } },
-              `⚪ informational · ${informationalCards.length} 則`
+              `資訊型 · ${informationalCards.length} 則`
             ),
             h(
               'div',

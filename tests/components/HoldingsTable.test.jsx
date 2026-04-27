@@ -184,7 +184,7 @@ describe('components/HoldingsTable', () => {
         target: { value: '若先進封裝需求轉弱，就重看 thesis。' },
       }
     )
-    fireEvent.click(screen.getByText('存成 thesis'))
+    fireEvent.click(screen.getByText('存為投資理由'))
 
     await waitFor(() =>
       expect(onUpsertThesis).toHaveBeenCalledWith('2330', {

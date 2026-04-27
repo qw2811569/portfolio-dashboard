@@ -143,7 +143,7 @@ export function buildTodayActions({
         tone: 'warning',
         code,
         title: name,
-        body: `${normalizeText(loosePillar.label || loosePillar.id || 'thesis')} 鬆動，今天先補資料。`,
+        body: `${normalizeText(loosePillar.label || loosePillar.id || '投資理由')} 鬆動，今天先補資料。`,
       })
     }
 

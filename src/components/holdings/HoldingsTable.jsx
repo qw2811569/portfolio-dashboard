@@ -315,7 +315,7 @@ function ThesisQuickFormCard({
             fontWeight: 700,
           },
         },
-        saving ? '儲存中...' : '存成 thesis'
+        saving ? '儲存中...' : '存為投資理由'
       )
     )
   )

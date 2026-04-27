@@ -216,7 +216,7 @@ export function buildOverviewDashboardHeadline({
 
   if (duplicateHoldingsCount > 0) {
     return {
-      headline: `${duplicateHoldingsCount} 檔重複部位疊在一起 · 可以先看 thesis 有沒有說同一件事`,
+      headline: `${duplicateHoldingsCount} 檔重複部位疊在一起 · 可以先看投資理由有沒有說同一件事`,
       tone: 'watch',
     }
   }

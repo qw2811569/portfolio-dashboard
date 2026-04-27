@@ -87,7 +87,7 @@ export function getSoftErrorCopy(status, resource = '') {
 
   if (normalizedStatus === 404) {
     if (normalizedResource === 'analyst-reports') return '近期無此股深度分析 · 明早更新後再看'
-    if (normalizedResource === 'target-prices') return '無券商目標價 · 先拿 thesis 當參考'
+    if (normalizedResource === 'target-prices') return '無券商目標價 · 先拿投資理由當參考'
     if (normalizedResource === 'tracked-stocks') return '尚未同步到雲端 · 再加一次'
     if (normalizedResource === 'news') return '這段新聞暫時沒撈到 · 晚點再看'
     if (normalizedResource === 'valuation') return '估值資料暫無 · 之後再看'

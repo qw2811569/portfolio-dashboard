@@ -159,6 +159,46 @@ describe('components/EventsPanel', () => {
     expect(screen.getByTestId('events-informational-collapse')).toBeInTheDocument()
   })
 
+  it('groups primary event cards by this week, next week, and later windows', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-27T09:00:00+08:00'))
+
+    render(
+      <EventsPanel
+        {...buildProps({
+          filterType: '全部',
+          filteredEvents: [
+            {
+              id: 'evt-this-week',
+              title: '台積電法說會',
+              date: '2026-04-29',
+              eventType: 'earnings',
+              recordType: 'event',
+            },
+            {
+              id: 'evt-next-week',
+              title: '聯發科除息',
+              date: '2026-05-06',
+              eventType: 'ex-dividend',
+              recordType: 'event',
+            },
+            {
+              id: 'evt-later',
+              title: '廣達股東會',
+              date: '2026-05-14',
+              eventType: 'shareholding-meeting',
+              recordType: 'event',
+            },
+          ],
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('events-group-this-week')).toHaveTextContent('本週')
+    expect(screen.getByTestId('events-group-next-week')).toHaveTextContent('下週')
+    expect(screen.getByTestId('events-group-later')).toHaveTextContent('兩週後')
+  })
+
   it('expands the informational section on demand', () => {
     render(
       <EventsPanel

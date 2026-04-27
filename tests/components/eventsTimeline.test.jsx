@@ -68,6 +68,8 @@ describe('components/events/EventsTimeline', () => {
       />
     )
 
+    expect(screen.getByTestId('events-timeline')).not.toHaveAttribute('open')
+
     const marker = screen.getByRole('button', { name: '2 events · 04/25' })
     expect(marker).toHaveAttribute('title', expect.stringContaining('台積電法說會'))
     expect(marker.querySelector('.events-timeline__label--truncate')).toBeTruthy()

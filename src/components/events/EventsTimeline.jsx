@@ -304,6 +304,11 @@ export function EventsTimeline({ events = [] }) {
       { id: TIMELINE_STYLE_ID },
       `
 .events-timeline{position:relative}
+.events-timeline__details{margin:0}
+.events-timeline__summary{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;cursor:pointer;list-style:none}
+.events-timeline__summary::-webkit-details-marker{display:none}
+.events-timeline__summary::after{content:"展開";font-size:11px;font-weight:700;color:${C.textMute};border:1px solid ${C.borderSub};border-radius:8px;padding:4px 8px;background:${alpha(C.bg, '88')}}
+.events-timeline__details[open] .events-timeline__summary::after{content:"收合"}
 .events-timeline__header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .events-timeline__title{font-size:12px;font-weight:700;color:${C.text};letter-spacing:.04em}
 .events-timeline__sub{font-size:12px;color:${C.textSec};margin-top:3px;line-height:1.6}
@@ -350,11 +355,11 @@ export function EventsTimeline({ events = [] }) {
       `
     ),
     h(
-      'div',
-      { className: 'events-timeline' },
+      'details',
+      { className: 'events-timeline events-timeline__details', 'data-testid': 'events-timeline' },
       h(
-        'div',
-        { className: 'events-timeline__header' },
+        'summary',
+        { className: 'events-timeline__header events-timeline__summary' },
         h(
           'div',
           null,

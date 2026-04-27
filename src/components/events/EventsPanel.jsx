@@ -117,6 +117,44 @@ function formatShortDate(value) {
   return `${matched[2].padStart(2, '0')}/${matched[3].padStart(2, '0')}`
 }
 
+function getEventDayDistance(value) {
+  const raw = String(value || '')
+    .trim()
+    .replace(/\//g, '-')
+  const matched = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (!matched) return 14
+
+  const eventDay = new Date(
+    Number(matched[1]),
+    Number(matched[2]) - 1,
+    Number(matched[3]),
+    12,
+    0,
+    0,
+    0
+  )
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0)
+  return Math.floor((eventDay.getTime() - today.getTime()) / 86400000)
+}
+
+function groupEventCardsByWindow(cards = []) {
+  const groups = [
+    { key: 'this-week', label: '本週', items: [] },
+    { key: 'next-week', label: '下週', items: [] },
+    { key: 'later', label: '兩週後', items: [] },
+  ]
+
+  cards.forEach((event) => {
+    const days = getEventDayDistance(event?.date || event?.eventDate)
+    if (days <= 6) groups[0].items.push(event)
+    else if (days <= 13) groups[1].items.push(event)
+    else groups[2].items.push(event)
+  })
+
+  return groups.filter((group) => group.items.length > 0)
+}
+
 function extractPrimaryCode(event) {
   const stocks = Array.isArray(event?.stocks) ? event.stocks : []
   const matched = stocks
@@ -931,6 +969,7 @@ export function EventsPanel({
     filterType === ALL_EVENTS_FILTER_LABEL
       ? eventCards.filter((event) => !shouldCollapseEventByDefault(event))
       : eventCards
+  const primaryCardGroups = groupEventCardsByWindow(primaryCards)
 
   return h(
     'div',
@@ -1022,13 +1061,37 @@ export function EventsPanel({
       ),
 
     // Events list
-    primaryCards.map((event, index) =>
-      h(EventCard, {
-        key: buildEventKey(event, index),
-        event,
-        insiderViewMode,
-        isInsiderSelfStock: isInsiderSelfStock(event),
-      })
+    primaryCardGroups.map((group) =>
+      h(
+        'section',
+        { key: group.key, 'data-testid': `events-group-${group.key}` },
+        h(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              margin: '10px 0 6px',
+              padding: '0 2px',
+              color: C.textMute,
+              fontSize: 12,
+              fontWeight: 700,
+            },
+          },
+          h('span', null, group.label),
+          h('span', { style: { fontWeight: 600 } }, `${group.items.length} 則`)
+        ),
+        group.items.map((event, index) =>
+          h(EventCard, {
+            key: buildEventKey(event, index),
+            event,
+            insiderViewMode,
+            isInsiderSelfStock: isInsiderSelfStock(event),
+          })
+        )
+      )
     ),
 
     filterType === ALL_EVENTS_FILTER_LABEL &&

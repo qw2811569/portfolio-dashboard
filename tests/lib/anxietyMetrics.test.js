@@ -68,7 +68,7 @@ describe('lib/anxietyMetrics', () => {
     expect(byId.x2.currentValue).toContain('主線')
     expect(byId.x3.availability).toBe('ready')
     expect(byId.x3.sparkline).toEqual([15, -35, 60])
-    expect(byId.x4.currentValue).toContain('HHI')
+    expect(byId.x4.currentValue).toContain('集中度指數')
     expect(byId.x5.currentValue).toBe('3 天內 2 件')
     expect(result.readyCount).toBe(4)
     expect(result.placeholderCount).toBe(1)

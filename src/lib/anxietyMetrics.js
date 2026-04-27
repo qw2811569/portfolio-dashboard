@@ -423,15 +423,15 @@ function buildX4Metric({ holdings = [], stockMeta = null } = {}) {
   const topIndustry = concentration.industryBreakdown[0] || null
   const detail = topIndustry
     ? `${topIndustry.industry} 目前約佔 ${formatPercent(topIndustry.weight * 100)}。`
-    : '先看 Top 1 / Top 3 的擠壓程度。'
+    : '先看前 1 大 / 前 3 大的擠壓程度。'
 
   return {
     id: 'x4',
     question: '部位集中度是否過高？',
     tone,
     availability: 'ready',
-    currentValue: `HHI ${concentration.hhi.toLocaleString('zh-TW')}`,
-    supportingValue: `Top 3 ${formatPercent(concentration.top3Weight * 100)}`,
+    currentValue: `集中度指數 ${concentration.hhi.toLocaleString('zh-TW')}`,
+    supportingValue: `前 3 大 ${formatPercent(concentration.top3Weight * 100)}`,
     detail,
     routeTab: 'overview',
     routeLabel: '去看投組結構',

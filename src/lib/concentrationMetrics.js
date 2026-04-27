@@ -54,11 +54,11 @@ function buildWarnings({ hhi, top1Weight, top3Weight, maxIndustryWeight, industr
   }
 
   if (top3Weight >= 0.6) {
-    warnings.push(`Top 3 佔 ${formatPercent(top3Weight)}`)
+    warnings.push(`前 3 大佔 ${formatPercent(top3Weight)}`)
   }
 
   if (hhi >= 2500) {
-    warnings.push(`HHI ${Math.round(hhi)}，持股集中度高`)
+    warnings.push(`集中度指數 ${Math.round(hhi)}，持股集中度高`)
   }
 
   return warnings

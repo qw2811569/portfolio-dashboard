@@ -544,7 +544,7 @@ function HoldingsFilterChipBar({ filterBar }) {
       'data-testid': 'holdings-filter-search',
       type: 'search',
       value: safeFilterBar.searchQuery || '',
-      placeholder: '輸入 code / 股票名 / thesis 關鍵字，例如 2330、台積電、AI',
+      placeholder: '輸入代碼 / 股票名 / 投資理由關鍵字，例如 2330、台積電、AI',
       onChange: (event) => safeFilterBar.onSearchChange?.(event.target.value),
       style: {
         minHeight: 44,

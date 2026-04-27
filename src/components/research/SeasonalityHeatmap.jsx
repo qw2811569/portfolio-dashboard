@@ -360,7 +360,7 @@ function SeasonalityCard({ holding, revenueRows, updatedAt = null }) {
           className: 'seasonality-heatmap-scroll-hint',
           'aria-hidden': 'true',
         },
-        '>'
+        '右滑看 6-12 月 →'
       )
     ),
     h(
@@ -426,22 +426,24 @@ const liveHeatmapMobileStyle = `
   }
 
   .seasonality-heatmap-scroll-hint {
-    display: flex;
+    display: inline-flex;
     position: sticky;
-    right: 4px;
-    bottom: 6px;
+    right: 8px;
+    bottom: 8px;
     margin-left: auto;
-    width: 22px;
-    height: 22px;
-    border: 1px solid var(--positive-soft);
+    padding: 6px 10px;
+    border: 1px solid var(--positive-soft, rgba(11, 18, 14, 0.18));
     border-radius: 999px;
     align-items: center;
     justify-content: center;
-    color: var(--iron, #4d534b);
-    background: var(--card, #f9f4ec);
-    font-size: 13px;
-    font-weight: 800;
+    color: var(--ink, #0b120e);
+    background: var(--card, #fef9f0);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(11, 18, 14, 0.12);
   }
 
   .seasonality-heatmap-grid {

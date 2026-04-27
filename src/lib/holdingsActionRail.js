@@ -186,7 +186,7 @@ export function buildTodayActions({
         tone: 'alert',
         code,
         title: name,
-        body: `回撤 ${pct.toFixed(1)}%，確認停損或 thesis 是否仍成立。`,
+        body: `回撤 ${pct.toFixed(1)}%，確認停損或投資理由是否仍成立。`,
       })
     }
 

@@ -1,60 +1,5 @@
 [
   {
-    "file": "src/components/reports/DailyHero.jsx",
-    "text": "Streaming 摘要",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/common/EmptyState.jsx",
-    "text": "Thesis placeholder",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/overview/DashboardPanel.jsx",
-    "text": "Morning Note",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/overview/DashboardPanel.jsx",
-    "text": "INFO",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/overview/AnxietyMetricsPanel.jsx",
-    "text": "OK",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeDisclaimerModal.jsx",
-    "text": "進入 Trade 頁",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeDisclaimerModal.jsx",
-    "text": "我已了解，進入 Trade 頁",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeDisclaimerModal.jsx",
-    "text": "Legal 四欄詳情",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsPanel.jsx",
-    "text": "Saved filter",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsPanel.jsx",
-    "text": "套用已存 filter",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsPanel.jsx",
-    "text": "存 filter",
-    "reason": "R12 known jargon; Claude R13b sweep"
-  },
-  {
     "file": "src/lib/anxietyMetrics.js",
     "text": "Daily",
     "reason": "R12 route label baseline; Claude R13b sweep"
@@ -62,11 +7,6 @@
   {
     "file": "src/lib/anxietyMetrics.js",
     "text": "Holdings",
-    "reason": "R12 route label baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/lib/anxietyMetrics.js",
-    "text": "Overview",
     "reason": "R12 route label baseline; Claude R13b sweep"
   },
   {
@@ -101,16 +41,6 @@
   },
   {
     "file": "src/lib/eventTypeMeta.js",
-    "text": "board-meeting",
-    "reason": "R12 event taxonomy baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/lib/eventTypeMeta.js",
-    "text": "attention",
-    "reason": "R12 event taxonomy baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/lib/eventTypeMeta.js",
     "text": "default",
     "reason": "R12 event taxonomy baseline; Claude R13b sweep"
   },
@@ -123,78 +53,13 @@
     "reason": "R12 known jargon; source location to be removed by Claude R13b sweep"
   },
   {
-    "file": "src/components/AppShellFrame.jsx",
-    "text": "PORTFOLIO OS",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/Header.jsx",
-    "text": "下載 .pdf",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/Header.jsx",
-    "text": "notes",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/common/EmptyState.jsx",
-    "text": "Portfolio onboarding",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/common/EmptyState.jsx",
-    "text": "Quiet window",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/common/EmptyState.jsx",
-    "text": "Research standby",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
     "file": "src/components/events/EventsPanel.jsx",
     "text": "thesis",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
-    "file": "src/components/events/EventsPanel.jsx",
-    "text": "thesis review event",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "HOLDING DOSSIER",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
     "file": "src/components/holdings/HoldingDetailPane.jsx",
     "text": "thesis",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "THESIS",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "VALUATION",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "DAILY",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "RESEARCH",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingDetailPane.jsx",
-    "text": "EVENTS",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -223,53 +88,8 @@
     "reason": "current baseline; Claude R13b sweep"
   },
   {
-    "file": "src/components/holdings/HoldingsPanel.jsx",
-    "text": "搜尋 / Search",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsPanel.jsx",
-    "text": "市值佔比 Top 5",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsRightRail.jsx",
-    "text": "MINDSET",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsRightRail.jsx",
-    "text": "DONT",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsRightRail.jsx",
-    "text": "RISK",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/holdings/HoldingsTable.jsx",
-    "text": "Filter result",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
     "file": "src/components/log/LogPanel.jsx",
     "text": "memo",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/log/LogPanel.jsx",
-    "text": "Trade Audit",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/log/LogPanel.jsx",
-    "text": "trade.confirm audit",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/log/LogPanel.jsx",
-    "text": "trade log freshness",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -278,23 +98,8 @@
     "reason": "current baseline; Claude R13b sweep"
   },
   {
-    "file": "src/components/log/LogPanel.jsx",
-    "text": "Journal list",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
     "file": "src/components/news/NewsPanel.jsx",
     "text": "Google News RSS",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/news/NewsPanel.jsx",
-    "text": "Daily 判讀",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/overview/AnxietyMetricsPanel.jsx",
-    "text": "Morning Note",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -303,23 +108,8 @@
     "reason": "current baseline; Claude R13b sweep"
   },
   {
-    "file": "src/components/overview/DashboardPanel.jsx",
-    "text": "Today in Markets",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/reports/DailyArchiveTimeline.jsx",
-    "text": "7 天 archive",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
     "file": "src/components/research/GeminiResearchBrowser.jsx",
     "text": "Gemini 研究報告",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/research/ResearchPanel.jsx",
-    "text": "aggregate only",
     "reason": "current baseline; Claude R13b sweep"
   },
   {
@@ -350,41 +140,6 @@
   {
     "file": "src/components/research/ResearchPanel.jsx",
     "text": "CMoney",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep1Upload.jsx",
-    "text": "STEP 1",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep2Parse.jsx",
-    "text": "STEP 2",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep3Preview.jsx",
-    "text": "STEP 3",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep3Preview.jsx",
-    "text": "holdings",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep4Apply.jsx",
-    "text": "STEP 4",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/trade/TradeWizardStep4Apply.jsx",
-    "text": "tradeLog",
-    "reason": "current baseline; Claude R13b sweep"
-  },
-  {
-    "file": "src/components/watchlist/WatchlistPanel.jsx",
-    "text": "色彩 key",
     "reason": "current baseline; Claude R13b sweep"
   },
   {

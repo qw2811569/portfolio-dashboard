@@ -1126,7 +1126,7 @@ export function EventsPanel({
 
   return h(
     'div',
-    { 'data-testid': 'events-panel' },
+    { 'data-testid': 'events-panel', style: { maxWidth: '100%', overflowX: 'hidden' } },
     h(OperatingContextCard, { context: operatingContext }),
     h(
       'div',

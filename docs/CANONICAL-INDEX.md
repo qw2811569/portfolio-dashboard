@@ -57,14 +57,25 @@
 - `docs/known-bugs.md` · 已知資料 / 數字坑
 - `docs/audits/INDEX.md` · audit 索引；歷史 stale audit 已歸檔到 `docs/archive/2026-Q2/audits-history/`
 
-## Release / QA / 驗證
+## 子目錄 INDEX（R32 起 · 每個子 dir 有自己的 INDEX）
+
+- [`docs/audits/INDEX.md`](audits/INDEX.md) · 4 個 audit 報告
+- [`docs/decisions/index.md`](decisions/index.md) · 23 個拍板決議
+- [`docs/specs/INDEX.md`](specs/INDEX.md) · 3 個 implementation contract
+- [`docs/runbooks/INDEX.md`](runbooks/INDEX.md) · 3 個 long-lived 操作 SOP
+- [`docs/release/INDEX.md`](release/INDEX.md) · 5 份 release 工具文件
+- [`docs/research/dashboard-redesign/INDEX.md`](research/dashboard-redesign/INDEX.md) · 25 ref + Round 1-20 研究
+
+## Release / QA / 驗證（細項）
 
 - `docs/qa/accessibility-checklist.md`
 - `docs/qa/insider-enforcement-evidence.md`
+- `docs/qa/cross-browser-matrix.md`
 - `docs/runbooks/rbac-manual-verification.md`
 - `docs/release/demo-path.md`
 - `docs/release/internal-beta-checklist.md`
 - `docs/release/internal-beta-signoff.md`
+- `docs/release/internal-beta-v1.md`
 - `docs/release/invite-feedback-flow.md`
 
 ## 操作

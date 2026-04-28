@@ -1,20 +1,25 @@
 # NOW
 
-Last updated: 2026-04-28 18:00
+Last updated: 2026-04-28 23:50（R32 R14 收尾）
+Last commit topic: R32 docs cleanup R12-R14（自決 4 條 + 補 11 條 + 補 5 條收尾）
 
 Purpose: one-page current truth for handoff. Keep this under 200 lines; link out instead of copying long histories.
 
 ## Last Sprint
 
-- R31 closed the R29/R30 bug consensus: 19/19 HIGH blockers closed, LCP improved 30.6s to 3.31s, and 1349/1349 tests passed.
-- Source audit: `docs/audits/2026-04-28-r29-r30-bug-consensus.md`
-- Sprint trail stays in `.tmp/r31-fix/r31-shared.md`; do not promote it wholesale unless a decision/spec needs exact history.
+- **R31** R29/R30 bug consensus: 19/19 HIGH closed, LCP 30.6s→3.31s, 1349/1349 tests
+  - Source audit: `docs/audits/2026-04-28-r29-r30-bug-consensus.md`
+  - Sprint trail: `.tmp/r31-fix/r31-shared.md`（不 promote · sprint trail only）
+- **R32** docs cleanup（剛收）:
+  - 168 active md → **111 active md**（33% ↓）
+  - 8 個 per-dir INDEX 全建（audits / decisions / specs / runbooks / release / qa / research / dashboard-redesign）
+  - 0 broken links / 100% INDEX coverage / 0 path-aware orphan
+  - 14 round Claude+Codex mutual QA · trail in `.tmp/r32-docs/r32-shared.md`
 
 ## Active Sprints
 
-- R32 docs cleanup: Round 2 classified active/stale/generated docs; Round 3 is archiving low-risk stale docs and updating entry indexes.
-- Dashboard redesign: Round 1-20 research complete; spec and decision are draft/current review inputs.
-- Runtime sovereignty burn-in: Vercel hosting is disconnected; VM + nginx + GCS + systemd is current operating model.
+- Dashboard redesign: Round 1-20 multi-LLM 研究 done · spec 草案 in `docs/specs/2026-04-28-dashboard-redesign-spec.md` · decision 草案 in `docs/decisions/2026-04-28-dashboard-redesign.md`
+- Runtime sovereignty burn-in: Vercel hosting disconnected 2026-04-28 · VM + nginx + GCS + systemd 為現行 operating model · 1-2 週 burn-in 後砍 `@vercel/blob` dep
 
 ## Active VM / Runtime
 

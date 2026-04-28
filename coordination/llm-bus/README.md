@@ -10,17 +10,14 @@
   - 誰卡在哪裡
   - 誰的結果可採用、誰的結果只能當草稿
 
-## 檔案
+## 檔案（R32 R14 更新 · 與現況對齊）
 
-- `board.md`：目前任務、結果、阻塞點總表
+- `board.md`：**LLM lane capability + dispatch policy**（R32 R12 起 · 不再是 current task 看板 · 當前 sprint 看 `docs/NOW.md` + `docs/status/active-debt-2026-04-28.md`）
 - `runtime-execution-plan.md`：主執行計劃，所有 wave 的 live truth
 - `runtime-stabilization-brief.md`：每輪重大決策的摘要與已採納結論
-- `runs/<timestamp>/`：每輪重大決策的 raw discussion artifacts
-  - `question.md`
-  - `claude.md`
-  - `qwen.md`
-  - `gemini.md`
-  - `consensus.md`
+- `agent-bridge-tasks.json`：當前 task 佇列（session 開頭必讀 · per `claude.md:13`）
+- `alerts.jsonl` / `pending-decisions.jsonl`：runtime log（writers in `agent-bridge-standalone/workers/`、`api/_lib/`、`scripts/`）· 不該手動編輯
+- ~~`runs/<timestamp>/`~~ **R32 R8a 已 archive 至 [`docs/archive/2026-Q2/llm-bus-runs/runs/`](../../docs/archive/2026-Q2/llm-bus-runs/runs/)** · 18 個 historical per-session ledger · 不再 active write
 
 ## 固定欄位
 
@@ -40,14 +37,13 @@
 - `freshness`
 - `unresolved_questions`
 
-## 共識流程
+## 共識流程（R32 R14 更新）
 
-每個重大決策都要留一份 run artifact：
+R32 起改採 **shared-doc append pattern**（per `claude.md` `### 多 LLM 協作用「Shared Doc Append 模式」`）：
 
-1. 先把題目寫進 `runs/<timestamp>/question.md`
-2. 各 lane 原始回覆分別落到：
-   - `claude.md`
-   - `qwen.md`
-   - `gemini.md`
-3. 最後才把收斂結果寫進 `consensus.md`
-4. 主 brief 只放摘要，不重複貼全文
+- 每個討論主題開一份 `.tmp/<topic>/<topic>-shared.md`
+- Round-by-round append（不再分檔到 `runs/<timestamp>/`）
+- 收斂後：寫成正式 decision 到 `docs/decisions/YYYY-MM-DD-<topic>.md`，sprint trail 留在 `.tmp/<topic>/`
+- 範例：`.tmp/r31-fix/r31-shared.md`、`.tmp/r32-docs/r32-shared.md`
+
+歷史 `runs/<timestamp>/` artifacts 已 archive（看 `docs/archive/2026-Q2/llm-bus-runs/runs/`），不再用。

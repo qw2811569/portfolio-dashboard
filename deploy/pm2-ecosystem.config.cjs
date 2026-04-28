@@ -1,6 +1,9 @@
 const path = require('node:path')
 
-const REPO_ROOT = process.env.DEPLOY_REPO_DIR || '/home/chenkuichen/app/test'
+// Derive REPO_ROOT from the file's own location (deploy/ → ..) so it works on any host
+// regardless of where the repo is checked out. Previously hardcoded to my local path,
+// which broke the VM webhook when pm2 reloaded without DEPLOY_REPO_DIR in the shell env.
+const REPO_ROOT = process.env.DEPLOY_REPO_DIR || path.resolve(__dirname, '..')
 
 module.exports = {
   apps: [

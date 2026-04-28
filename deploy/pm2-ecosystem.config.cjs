@@ -63,7 +63,12 @@ module.exports = {
         // silently → `dist/` stayed stale → user saw R31 bug-fix UI for 2 days). Pin the
         // install command here so dev deps (vite / @vitejs/plugin-react / vitest) are always
         // installed before `npm run build`.
-        DEPLOY_INSTALL_COMMAND: 'npm ci --include=dev',
+        // Use `npm install --include=dev` (not `npm ci`) because `npm ci` is strict about
+        // platform-conditional optional binaries (e.g. esbuild's per-OS bundles) listed in
+        // the lockfile and fails when they can't be exhaustively resolved on the VM. install
+        // is forgiving and auto-syncs lockfile when needed; we still get reproducible deps
+        // because the lockfile is committed.
+        DEPLOY_INSTALL_COMMAND: 'npm install --include=dev --no-audit --no-fund',
       },
     },
   ],

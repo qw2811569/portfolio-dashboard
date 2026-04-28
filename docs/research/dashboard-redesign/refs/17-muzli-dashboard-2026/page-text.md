@@ -202,7 +202,7 @@ by Beadaptify Innovations
 
 A bright and polished crypto dashboard with playful contrast and clean organization. The soft background paired with vivid highlights gives financial data a fresh, modern feel that makes complex information easy to follow.
 
-![Fintech Wallet Dashboard UI Design](./img-15.png)
+_(image `img-15.png` not captured during scrape)_ Fintech Wallet Dashboard UI Design
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/0*B1byCNQH5aJRK7Ll.png`
 
@@ -216,7 +216,7 @@ by Sayeed Hasan
 
 A well-structured business dashboard with a clean, professional layout. The balanced use of color and typography enhances readability, while the subtle charts and cards create a clear, data-driven overview without visual clutter.
 
-![CRM SAAS Dashboard UI Design](./img-16.png)
+_(image `img-16.png` not captured during scrape)_ CRM SAAS Dashboard UI Design
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/0*U2vi2v1wbQdl47zb.png`
 
@@ -230,7 +230,7 @@ by Dhruv
 
 A refined financial dashboard with a cinematic dark aesthetic and neon highlights. The use of contrast, grid precision, and sharp data visualization creates a sophisticated look that conveys clarity and control over complex metrics.
 
-![Rabbet — Smart Real Estate Dashboard Design](./img-17.png)
+_(image `img-17.png` not captured during scrape)_ Rabbet — Smart Real Estate Dashboard Design
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/0*Ni1B-VZnnzbwdBoo.png`
 
@@ -258,7 +258,7 @@ by Orbix Studio
 
 An elegant education dashboard that combines a dark, focused atmosphere with luminous accent colors. Its clear hierarchy and card-based layout make complex information easy to follow while maintaining a polished, contemporary look that keeps users engaged.
 
-![Fobework — E-learning Dashboard & Course Platform UI](./img-19.png)
+_(image `img-19.png` not captured during scrape)_ Fobework — E-learning Dashboard & Course Platform UI
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/0*_RO9fmxeCnMhYS1R.png`
 
@@ -301,7 +301,7 @@ Stan D. for RonDesignLab
 
 A bright and sophisticated solar management dashboard that merges data visualization with architectural 3D elements. The soft lighting, warm gradients, and precise layout convey a sense of sustainability, innovation, and modern home efficiency.
 
-![Lumos — Energy Management Dashboard](./img-22.png)
+_(image `img-22.png` not captured during scrape)_ Lumos — Energy Management Dashboard
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/1*qLKHpm7wmXKW0Ey-VNUklA.png`
 
@@ -316,7 +316,7 @@ toma ◡̈ for Fireart Studio
 
 A powerful cybersecurity dashboard with a dark, data-driven aesthetic and precise green accents. The structured layout and real-time analytics deliver a sense of control and confidence, perfectly suited for monitoring complex system health and threat activity.
 
-![AI-powered Cybersecurity Dashboard](./img-23.png)
+_(image `img-23.png` not captured during scrape)_ AI-powered Cybersecurity Dashboard
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/1*n95GjDHkejZJW0EEz_vfsg.png`
 
@@ -330,7 +330,7 @@ by Anastasiia
 
 A soft and elegant communication analytics dashboard with a pastel palette and smooth gradients. The minimalist charts and subtle highlights give it a calm, professional look that makes large amounts of data feel approachable and easy to interpret.
 
-![Rinesk — Call centre Dashboard Concept](./img-24.png)
+_(image `img-24.png` not captured during scrape)_ Rinesk — Call centre Dashboard Concept
 
 > 🖼 source: `https://cdn-images-1.medium.com/max/800/0*RDwmPcm9xRhowbqZ`
 
@@ -582,7 +582,7 @@ by Sajibur Rahman
 
 A productivity-focused interface that streamlines complex workflows through intuitive organization and AI assistance. This dashboard, titled “Noteflow,” features a highly functional task board with clear status indicators (Not Started, In Progress, Under Review, Completed) and prioritized labels. The integration of “Noteflow AI” for instant activity and timeline access demonstrates how modern productivity tools use smart automation to help teams stay on top of deadlines. With its clean folder structure for creative assets and client projects, Noteflow is a benchmark for designers building scalable, collaborative platforms where efficiency and clear task hierarchy are the primary goals.
 
-![Noteflow - AI-Enhanced Project & Task Management Dashboard](./img-42.png)
+_(image `img-42.png` not captured during scrape)_ Noteflow - AI-Enhanced Project & Task Management Dashboard
 
 > 🖼 source: `https://feed.muzli.cloud/muzli_feed/wp-content/uploads/2026/04/05135741/image-14-2048x1536.png`
 
@@ -610,7 +610,7 @@ by Md. Hasan Biswas
 
 A specialized IoT interface that brings high-level precision to home maintenance. This dashboard, titled “Vyniq,” manages a smart vacuum system through a detailed architectural 3D layout, allowing users to monitor cleaning progress across specific zones like the reading room or kitchen. The UI excels at visualizing hardware health, featuring dedicated modules for battery charging status, water tank levels, and filter life. By combining real-time spatial tracking with technical maintenance alerts, Vyniq demonstrates how appliance dashboards can transform a chore into a highly controlled, data-driven experience that ensures home efficiency at a glance.
 
-![Vyniq - Smart Home Appliance & Maintenance Dashboard](./img-44.png)
+_(image `img-44.png` not captured during scrape)_ Vyniq - Smart Home Appliance & Maintenance Dashboard
 
 > 🖼 source: `https://feed.muzli.cloud/muzli_feed/wp-content/uploads/2026/04/05140309/image-17.png`
 

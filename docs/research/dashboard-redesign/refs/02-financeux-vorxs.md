@@ -73,7 +73,7 @@ Ref 01（Ron Design）走的是極端簡約：**一頁一焦點**。但投資 ap
 - hero number 從 0 滾動到目標值
 - coral 警示帶可能 pulse / shimmer
 
-合乎我們 [`2026-04-26-motion-relax`](../../decisions/2026-04-26-motion-relax.md) 的「服務易讀性 + 不沉悶」標準。
+合乎我們 [`2026-04-26-motion-relax`](../../../decisions/2026-04-26-motion-relax.md) 的「服務易讀性 + 不沉悶」標準。
 
 ### Tab Bar / Navigation
 

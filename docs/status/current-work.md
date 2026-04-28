@@ -16,9 +16,9 @@ Last updated: 2026-04-28 19:50 (R32 docs cleanup truncation)
 
 ## Start here
 
-- 第一入口：[`docs/NOW.md`](./NOW.md)（R32 起 · 60 行 sprint snapshot）
-- 全 doc 索引：[`docs/CANONICAL-INDEX.md`](./CANONICAL-INDEX.md)
-- 協作規則：[`claude.md`](../../claude.md) + [`docs/AI_COLLABORATION_GUIDE.md`](./AI_COLLABORATION_GUIDE.md)
+- 第一入口：[`docs/NOW.md`](../NOW.md)（R32 起 · 60 行 sprint snapshot）
+- 全 doc 索引：[`docs/CANONICAL-INDEX.md`](../CANONICAL-INDEX.md)
+- 協作規則：[`claude.md`](../../claude.md) + [`docs/AI_COLLABORATION_GUIDE.md`](../AI_COLLABORATION_GUIDE.md)
 - 開新對話必讀：see `docs/NOW.md` "How To Dispatch Agents" 段
 
 ## Latest checkpoint

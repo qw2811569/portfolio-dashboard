@@ -139,7 +139,7 @@ Sales dashboard — Untitled UI by Jordan Hughes®
 
 > 🔗 [Jordan Hughes®](https://dribbble.com/jordanhughes)
 
-![img 15](./img-15.png)
+_(image `img-15.png` not captured during scrape)_ img 15
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*qCNYRHcfG2FUUPVD`
 
@@ -148,7 +148,7 @@ Ticaly — Sales Analytics Dashboard by Firdaus Nur Wachid for One Week Wonde
 > 🔗 [Firdaus Nur Wachid](https://dribbble.com/firdausnurwachid)
 > 🔗 [One Week Wonders](https://dribbble.com/OWWStudio)
 
-![img 16](./img-16.png)
+_(image `img-16.png` not captured during scrape)_ img 16
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/1*KhUzT9iD-eAvanlojOZjzQ.png`
 
@@ -157,7 +157,7 @@ Salesforce CRM — Sales Analytics Platform by Jack R. for RonDesignLab
 > 🔗 [Jack R.](https://dribbble.com/jack-ux-ui-design)
 > 🔗 [RonDesignLab](https://dribbble.com/RonDesignLab)
 
-![img 17](./img-17.png)
+_(image `img-17.png` not captured during scrape)_ img 17
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*pVcLdoPyL0SAo5t5`
 
@@ -175,7 +175,7 @@ Credit Pros App — Credit Score Dashboard by Jack R. for RonDesignLab ⭐️
 > 🔗 [Jack R.](https://dribbble.com/jack-ux-ui-design)
 > 🔗 [RonDesignLab ⭐️](https://dribbble.com/RonDesignLab)
 
-![img 19](./img-19.png)
+_(image `img-19.png` not captured during scrape)_ img 19
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*iCyESdrF3O8EWsvT`
 
@@ -202,7 +202,7 @@ Salesforce CRM — Sales Analytics Platform by Jack R. for RonDesignLab
 > 🔗 [Jack R.](https://dribbble.com/jack-ux-ui-design)
 > 🔗 [RonDesignLab](https://dribbble.com/RonDesignLab)
 
-![img 22](./img-22.png)
+_(image `img-22.png` not captured during scrape)_ img 22
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*HHVxd1sYIl_EYa9M`
 
@@ -211,7 +211,7 @@ Financial Security App Dashboard by tubik UX for tubik
 > 🔗 [tubik UX](https://dribbble.com/tubik_ux)
 > 🔗 [tubik](https://dribbble.com/Tubik)
 
-![img 23](./img-23.png)
+_(image `img-23.png` not captured during scrape)_ img 23
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*b22oenXaECYq94yZ`
 
@@ -220,7 +220,7 @@ CRM Dashboard Concept by Ali Husni ✨ for Pickolab Studio
 > 🔗 [Ali Husni ✨](https://dribbble.com/alihusni)
 > 🔗 [Pickolab Studio](https://dribbble.com/Pickolab)
 
-![img 24](./img-24.png)
+_(image `img-24.png` not captured during scrape)_ img 24
 
 > 🖼 source: `https://miro.medium.com/v2/resize:fit:700/0*Dbv5oyI909KeW9e_`
 
@@ -385,7 +385,7 @@ Linkedin | Instagram | Twitter
 > 🔗 [Instagram](https://www.instagram.com/usemuzli/)
 > 🔗 [Twitter](https://x.com/usemuzli)
 
-![Branding Mockups - Macbook Pro](./img-42.png)
+_(image `img-42.png` not captured during scrape)_ Branding Mockups - Macbook Pro
 
 > 🖼 source: `https://images.ui8.net/uploads/branding-mockups-macbook-1_1747457295599.png`
 
@@ -399,7 +399,7 @@ Linkedin | Instagram | Twitter
 
 Looking for more daily inspiration? Download Muzli extension, your go-to source for everything design.
 
-![Branding Mockups - Macbook Pro](./img-44.png)
+_(image `img-44.png` not captured during scrape)_ Branding Mockups - Macbook Pro
 
 > 🖼 source: `https://images.ui8.net/uploads/branding-mockups-macbook-1_1747457295599.png`
 

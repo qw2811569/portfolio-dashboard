@@ -697,8 +697,8 @@ OperatingContext      ────借鑒────→     CC StaleBadge / W mi
 
 ## Round 19 · Claude · 2026-04-28 · Final spec draft
 
-✅ 產出 [`../../specs/2026-04-28-dashboard-redesign-spec.md`](../../specs/2026-04-28-dashboard-redesign-spec.md)
-✅ 產出 [`../../decisions/2026-04-28-dashboard-redesign.md`](../../decisions/2026-04-28-dashboard-redesign.md)
+✅ 產出 [`../../specs/2026-04-28-dashboard-redesign-spec.md`](../../../specs/2026-04-28-dashboard-redesign-spec.md)
+✅ 產出 [`../../decisions/2026-04-28-dashboard-redesign.md`](../../../decisions/2026-04-28-dashboard-redesign.md)
 
 **Frame inversion**（per Codex strategic warning）：
 
@@ -714,8 +714,8 @@ OperatingContext      ────借鑒────→     CC StaleBadge / W mi
 
 ### 動作
 
-1. ✅ 更新 [`../../decisions/index.md`](../../decisions/index.md) — 加入 `2026-04-28-dashboard-redesign` 行 + 改最後更新日期
-2. ✅ 更新 [`../../CANONICAL-INDEX.md`](../../CANONICAL-INDEX.md) — 升級 dashboard-redesign 進度（Round 20 完成 + spec + decision 連結）
+1. ✅ 更新 [`../../decisions/index.md`](../../../decisions/index.md) — 加入 `2026-04-28-dashboard-redesign` 行 + 改最後更新日期
+2. ✅ 更新 [`../../CANONICAL-INDEX.md`](../../../CANONICAL-INDEX.md) — 升級 dashboard-redesign 進度（Round 20 完成 + spec + decision 連結）
 3. ✅ 更新 [`../INDEX.md`](../INDEX.md) — 子文件導覽加 MISSION / SOURCES / pattern-matrix / briefs / 結論 spec / decision 連結
 4. ✅ 更新 [`../TOOLS.md`](../TOOLS.md) — 加新工具 `fetch-dribbble-profile.mjs` + `fetch-listing-page.mjs`
 5. ✅ 更新 [`../refs/README.md`](../refs/README.md) — 補 Refs 17-25
@@ -746,8 +746,8 @@ OperatingContext      ────借鑒────→     CC StaleBadge / W mi
 
 **結論文件**：
 
-- 📋 spec → [`../../specs/2026-04-28-dashboard-redesign-spec.md`](../../specs/2026-04-28-dashboard-redesign-spec.md)
-- 📌 decision（草案）→ [`../../decisions/2026-04-28-dashboard-redesign.md`](../../decisions/2026-04-28-dashboard-redesign.md)
+- 📋 spec → [`../../specs/2026-04-28-dashboard-redesign-spec.md`](../../../specs/2026-04-28-dashboard-redesign-spec.md)
+- 📌 decision（草案）→ [`../../decisions/2026-04-28-dashboard-redesign.md`](../../../decisions/2026-04-28-dashboard-redesign.md)
 
 **等用戶拍板的 5 個 open questions**（per spec §6）：
 

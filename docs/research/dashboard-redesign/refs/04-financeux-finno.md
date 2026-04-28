@@ -83,7 +83,7 @@
 - Hero 章節標題進場可能有 outline → solid 的填充動畫
 - 月份膠囊切換有彈性 spring transition
 
-合 [`2026-04-26-motion-relax`](../../decisions/2026-04-26-motion-relax.md)「動畫服務易讀性 + 觀賞性」原則。
+合 [`2026-04-26-motion-relax`](../../../decisions/2026-04-26-motion-relax.md)「動畫服務易讀性 + 觀賞性」原則。
 
 ### Tab Bar / Navigation
 

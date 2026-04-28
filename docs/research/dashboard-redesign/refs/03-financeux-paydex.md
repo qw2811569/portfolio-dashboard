@@ -89,7 +89,7 @@ Paydex 有兩個明顯模式：
 - numpad 點擊有觸覺回饋 / 按鍵 fill 短暫 invert
 - 完成轉帳 / 交易時可能有「receipt 從上往下印出」的逐行 reveal
 
-合 [`2026-04-26-motion-relax`](../../decisions/2026-04-26-motion-relax.md)「動畫服務易讀性」原則。
+合 [`2026-04-26-motion-relax`](../../../decisions/2026-04-26-motion-relax.md)「動畫服務易讀性」原則。
 
 ### Tab Bar / Navigation
 

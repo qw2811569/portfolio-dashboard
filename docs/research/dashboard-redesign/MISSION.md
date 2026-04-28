@@ -51,7 +51,7 @@
 ### 5. 動畫與互動是台灣最缺的（Motion as Default, Not Decoration）
 
 - 用戶觀察：「**我們太缺少網頁的動畫跟互動了**」。
-- 已有 decision [`2026-04-26-motion-relax`](../decisions/2026-04-26-motion-relax.md) 撤銷動畫禁令。
+- 已有 decision [`2026-04-26-motion-relax`](../../decisions/2026-04-26-motion-relax.md) 撤銷動畫禁令。
 - 動效角色（per 各 ref 推測）：
   - hero number 從 0 滾到目標值
   - cursor 沿曲線滑進 spotlight 點

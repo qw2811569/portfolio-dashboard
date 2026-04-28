@@ -11,7 +11,7 @@ Purpose: one-page current truth for handoff. Keep this under 200 lines; link out
   - Source audit: `docs/audits/2026-04-28-r29-r30-bug-consensus.md`
   - Sprint trail: `.tmp/r31-fix/r31-shared.md`（不 promote · sprint trail only）
 - **R32** docs cleanup（剛收）:
-  - 168 active md → **111 active md**（33% ↓）
+  - 168 active md → **107 active md**（36% ↓ · post-R14 cleanup · `find docs/ -name '*.md' -not -path '*/archive/*' \| wc -l` = 107）
   - 8 個 per-dir INDEX 全建（audits / decisions / specs / runbooks / release / qa / research / dashboard-redesign）
   - 0 broken links / 100% INDEX coverage / 0 path-aware orphan
   - 14 round Claude+Codex mutual QA · trail in `.tmp/r32-docs/r32-shared.md`

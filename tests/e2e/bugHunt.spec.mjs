@@ -12,7 +12,7 @@ import {
 const BUG_HUNT_BASE_URL = String(
   process.env.BUG_HUNT_BASE_URL ||
     process.env.PORTFOLIO_BASE_URL ||
-    'https://35.236.155.62.sslip.io/'
+    'http://104.199.144.170/'
 ).trim()
 const BUG_HUNT_ROOT_URL = new URL('/', BUG_HUNT_BASE_URL).toString()
 const BUG_HUNT_TRADE_URL = new URL('/portfolio/me/trade', BUG_HUNT_BASE_URL).toString()

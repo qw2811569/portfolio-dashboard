@@ -3,7 +3,9 @@ import path from 'path'
 import { execFileSync } from 'child_process'
 
 const REPO_ROOT = path.resolve(process.cwd())
-const VM_HOST = process.env.VM_HOST || 'chenkuichen@35.236.155.62'
+// Default points to jcv-dev (your dev VM · 104.199.144.170 · 2026-04-28).
+// Override with VM_HOST=chenkuichen@35.236.155.62 to back up to bigstock (partner dev VM).
+const VM_HOST = process.env.VM_HOST || 'chenkuichen@104.199.144.170'
 const VM_BACKUP_DIR = process.env.VM_BACKUP_DIR || '/home/chenkuichen/portfolio-backups'
 const SSH_KEY =
   process.env.GCE_SSH_KEY || path.join(process.env.HOME || '', '.ssh/google_compute_engine')

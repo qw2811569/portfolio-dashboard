@@ -6,6 +6,7 @@
 URL="http://127.0.0.1:3002"
 API_URL="${URL}/api/brain?action=all"
 TIMEOUT=5
+# 2026-04-28: log filename retained for backwards compat; redeploy-local.sh writes here regardless of vite vs (deprecated) vercel dev.
 LOG_FILE=".tmp/vercel-dev.log"
 RESOURCE_FAILURES=0
 
@@ -117,7 +118,8 @@ else
     echo "❌ Server is NOT running at ${URL}"
     echo ""
     echo "To start the server, run:"
-    echo "  vercel dev"
+    echo "  npm run dev"
+    echo "  # or for Tailscale (listen 0.0.0.0): bash scripts/redeploy-local.sh"
     echo ""
     exit 1
 fi

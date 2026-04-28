@@ -16,10 +16,13 @@ const REPO_ROOT = path.resolve(process.cwd())
 const HOME_DIR = process.env.HOME || ''
 const SSH_KEY =
   process.env.GCE_SSH_KEY || path.join(HOME_DIR, '.ssh', 'google_compute_engine')
-const VM_HOST = process.env.VM_HOST || 'chenkuichen@35.236.155.62'
-const VM_APP_DIR = process.env.VM_APP_DIR || '/var/www/app'
-const VM_ROOT_DIR = process.env.VM_ROOT_DIR || '/var/www/app/current/dist'
-const ROOT_URL = process.env.VM_ROOT_URL || 'https://35.236.155.62.sslip.io/'
+// Default points to jcv-dev (your dev VM · 104.199.144.170 · 2026-04-28).
+// Override with env vars to target bigstock (partner dev VM · 35.236.155.62) — see memory/project_vm_ip_migration_2026_04_25.md.
+const VM_HOST = process.env.VM_HOST || 'chenkuichen@104.199.144.170'
+const VM_APP_DIR = process.env.VM_APP_DIR || '/home/chenkuichen/app'
+const VM_ROOT_DIR = process.env.VM_ROOT_DIR || '/home/chenkuichen/app/portfolio-dashboard/dist'
+const ROOT_URL = process.env.VM_ROOT_URL || 'http://104.199.144.170/'
+// Vercel cold backup URL retained for the legacy --mirror-vercel flag (rarely used post-disconnect 2026-04-28).
 const DEFAULT_PROD_VERCEL_URL = 'https://jiucaivoice-dashboard.vercel.app'
 const DEFAULT_PRESERVE_PATHS = ['portfolio-report']
 const LOCAL_DIST_DIR = path.join(REPO_ROOT, 'dist')

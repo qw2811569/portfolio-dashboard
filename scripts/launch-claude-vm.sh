@@ -3,7 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SSH_KEY="${GCE_SSH_KEY:-$HOME/.ssh/google_compute_engine}"
-VM_HOST="${VM_HOST:-chenkuichen@35.236.155.62}"
+# Default points to jcv-dev (your dev VM · 104.199.144.170 · 2026-04-28).
+# Override with VM_HOST=chenkuichen@35.236.155.62 to launch on bigstock (partner dev VM).
+VM_HOST="${VM_HOST:-chenkuichen@104.199.144.170}"
 CLAUDE_VM_AUTH_MODE="${CLAUDE_VM_AUTH_MODE:-auto}"
 CLAUDE_VM_PERMISSION_MODE="${CLAUDE_VM_PERMISSION_MODE:-bypassPermissions}"
 
@@ -22,7 +24,8 @@ Usage:
 
 Environment:
   GCE_SSH_KEY           SSH private key path
-  VM_HOST               SSH target, default chenkuichen@35.236.155.62
+  VM_HOST               SSH target, default chenkuichen@104.199.144.170 (jcv-dev · your dev VM)
+                        Override e.g. chenkuichen@35.236.155.62 (bigstock · partner dev VM)
   CLAUDE_VM_AUTH_MODE   auto | claude-auth | api-key (default: auto)
   CLAUDE_VM_PERMISSION_MODE  Claude permission mode (default: bypassPermissions)
 EOF

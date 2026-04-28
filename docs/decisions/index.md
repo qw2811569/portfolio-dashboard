@@ -1,6 +1,6 @@
 # Decision Log 索引
 
-**最後更新**：2026-04-25
+**最後更新**：2026-04-28
 
 **用途**：防止每次 session 重開舊討論。凡多 LLM 討論過 + 用戶拍板的主題，應先從這份索引找。
 
@@ -48,12 +48,13 @@
 
 ## 產品功能
 
-| Decision                                                                          | 日期       | 狀態        | 摘要                                                                                                                                                       |
-| --------------------------------------------------------------------------------- | ---------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [2026-04-15-news-vs-events-separation](./2026-04-15-news-vs-events-separation.md) | 2026-04-15 | ✅ 實作完成 | News/Events UI 完全分離，discriminator 用 `recordType`（不用 `type` 避免與 event.type 衝突）                                                               |
-| [2026-04-11-staged-daily-analysis](./2026-04-11-staged-daily-analysis.md)         | 2026-04-11 | ✅ 決議     | 2026-04-11 staged-daily analysis 成為正式 runtime contract：`T0 收盤快版`、`T1 資料確認版`、inline diff、cooldown-gated auto confirm                       |
-| [2026-04-24-mobile-sticky-policy](./2026-04-24-mobile-sticky-policy.md)           | 2026-04-24 | ✅ 決議     | Mobile（≤768px）只允許 `app-shell` 的 title + tabs sticky；其他 panel 預設隨滾動；例外需實機截圖 + 工時實測 + 拍板                                         |
-| [2026-04-26-motion-relax](./2026-04-26-motion-relax.md)                           | 2026-04-26 | ✅ 決議     | 撤掉「不要動畫炫技」禁令；動畫只要 serve 易讀性 + 觀賞性 + 不沉悶呆板就允許；prefers-reduced-motion 仍尊重；推翻 SD §1.10 原版 + audit §5「不要做」第 5 條 |
+| Decision                                                                          | 日期       | 狀態        | 摘要                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ---------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-04-15-news-vs-events-separation](./2026-04-15-news-vs-events-separation.md) | 2026-04-15 | ✅ 實作完成 | News/Events UI 完全分離，discriminator 用 `recordType`（不用 `type` 避免與 event.type 衝突）                                                                                                                                                             |
+| [2026-04-11-staged-daily-analysis](./2026-04-11-staged-daily-analysis.md)         | 2026-04-11 | ✅ 決議     | 2026-04-11 staged-daily analysis 成為正式 runtime contract：`T0 收盤快版`、`T1 資料確認版`、inline diff、cooldown-gated auto confirm                                                                                                                     |
+| [2026-04-24-mobile-sticky-policy](./2026-04-24-mobile-sticky-policy.md)           | 2026-04-24 | ✅ 決議     | Mobile（≤768px）只允許 `app-shell` 的 title + tabs sticky；其他 panel 預設隨滾動；例外需實機截圖 + 工時實測 + 拍板                                                                                                                                       |
+| [2026-04-26-motion-relax](./2026-04-26-motion-relax.md)                           | 2026-04-26 | ✅ 決議     | 撤掉「不要動畫炫技」禁令；動畫只要 serve 易讀性 + 觀賞性 + 不沉悶呆板就允許；prefers-reduced-motion 仍尊重；推翻 SD §1.10 原版 + audit §5「不要做」第 5 條                                                                                               |
+| [2026-04-28-dashboard-redesign](./2026-04-28-dashboard-redesign.md)               | 2026-04-28 | 🟡 草案     | 持倉看板互動介面重設計（Round 1-20 multi-LLM 研究 · 25 ref · 29 pattern · inside-out 從 HoldingDossier/AccuracyGate/OperatingContext 出發 · spec 在 [`../specs/2026-04-28-dashboard-redesign-spec.md`](../specs/2026-04-28-dashboard-redesign-spec.md)） |
 
 ## 待歸檔（TODO）
 

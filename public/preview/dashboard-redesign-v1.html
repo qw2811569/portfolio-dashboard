@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>持倉看板 · 互動介面重設計 Preview v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans TC', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+          display: ['Inter', 'Noto Sans TC', 'sans-serif'],
+        },
+        fontSize: {
+          'display-2xl': ['clamp(64px, 10vw, 120px)', { lineHeight: '1', fontWeight: '900', letterSpacing: '-0.04em' }],
+          'display-xl': ['clamp(48px, 6vw, 72px)', { lineHeight: '1.05', fontWeight: '800', letterSpacing: '-0.03em' }],
+          'display-lg': ['clamp(36px, 4.5vw, 56px)', { lineHeight: '1.05', fontWeight: '700', letterSpacing: '-0.02em' }],
+          'display-md': ['clamp(28px, 3vw, 40px)', { lineHeight: '1.1', fontWeight: '700' }],
+        },
+        colors: {
+          ink: { DEFAULT: '#0E1014', soft: '#1A1D24' },
+          mist: { 50: '#FAFAF7', 100: '#F4F2EE', 200: '#E8E4DC' },
+          accent: {
+            primary: '#E5D24A',  /* 黃 — 達標 / 主動作 */
+            warning: '#E97250',  /* coral — 警示 */
+            info: '#5DD9F7',     /* cyan — CTA */
+            ok: '#7AB87A',       /* health green */
+          },
+        },
+        animation: {
+          'count-up': 'countUp 800ms ease-out',
+          'breath': 'breath 4s ease-in-out infinite',
+          'pulse-slow': 'pulseSubtle 1.2s ease-in-out infinite',
+          'fade-in': 'fadeIn 320ms ease-out',
+          'lift': 'lift 150ms ease-out forwards',
+        },
+        keyframes: {
+          countUp: { '0%': { opacity: 0, transform: 'translateY(8px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+          breath: { '0%,100%': { opacity: 0.8, transform: 'scale(1)' }, '50%': { opacity: 1, transform: 'scale(1.04)' } },
+          pulseSubtle: { '0%,100%': { opacity: 0.6 }, '50%': { opacity: 1 } },
+          fadeIn: { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+          lift: { '0%': {}, '100%': { transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(14,16,20,0.08)' } },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background: #FAFAF7; color: #0E1014; font-family: 'Inter','Noto Sans TC',system-ui,sans-serif; -webkit-font-smoothing: antialiased; }
+  .dark body { background: #0E1014; color: #FAFAF7; }
+  .num { font-feature-settings: 'tnum'; }
+  .stagger > *:nth-child(1) { animation-delay: 60ms; }
+  .stagger > *:nth-child(2) { animation-delay: 120ms; }
+  .stagger > *:nth-child(3) { animation-delay: 180ms; }
+  .stagger > *:nth-child(4) { animation-delay: 240ms; }
+  .stagger > *:nth-child(5) { animation-delay: 300ms; }
+  .stagger > * { opacity: 0; animation: fadeIn 320ms ease-out forwards; }
+  /* sunburst hero */
+  .sunburst {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(229,210,74,0.25) 0%, rgba(229,210,74,0) 60%),
+      conic-gradient(from 90deg, rgba(229,210,74,0.18), rgba(122,184,122,0.18), rgba(93,217,247,0.14), rgba(229,210,74,0.18));
+    filter: blur(8px);
+  }
+  /* spotlight cursor */
+  .spotlight { box-shadow: 0 0 0 4px rgba(229,210,74,0.25), 0 0 24px rgba(229,210,74,0.5); }
+  /* split tile focus */
+  .tile-focus { background: #E5D24A; color: #0E1014; }
+  /* health bar */
+  .healthbar { background: linear-gradient(90deg, #7AB87A 0%, #E5D24A 60%, #E97250 100%); }
+  /* card hover lift */
+  .card { transition: transform 150ms ease-out, box-shadow 150ms ease-out; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(14,16,20,0.08); }
+  /* accordion */
+  details[open] summary .chev { transform: rotate(90deg); }
+  details summary .chev { transition: transform 200ms ease; }
+  details[open] .acc-body { animation: fadeIn 280ms ease-out; }
+  /* hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-breath, .animate-pulse-slow { animation: none !important; }
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============== HERO BANNER ============== -->
+<header class="border-b border-mist-200 bg-mist-50/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-ink text-mist-50 grid place-items-center text-xs font-black">JCV</div>
+      <div class="leading-tight">
+        <div class="text-sm font-bold">持倉看板</div>
+        <div class="text-[11px] text-ink/50 tracking-wide">互動介面重設計 · Preview v1 · Round 1-20</div>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center gap-2 text-[11px] tracking-widest font-medium text-ink/60">
+      <span class="px-2 py-1 rounded-full bg-mist-100">UX/UI</span>
+      <span class="px-2 py-1 rounded-full bg-mist-100">Investment SaaS</span>
+      <span class="px-2 py-1 rounded-full bg-accent-primary text-ink">Pattern Matrix v1</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="../../docs/research/dashboard-redesign/MISSION.md" class="hidden md:inline text-xs text-ink/60 hover:text-ink">MISSION</a>
+      <a href="../../docs/specs/2026-04-28-dashboard-redesign-spec.md" class="hidden md:inline text-xs text-ink/60 hover:text-ink">SPEC</a>
+      <button class="text-xs font-semibold px-3 py-1.5 rounded-full bg-ink text-mist-50">凌晨 ☾</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============== MISSION FIVE PRINCIPLES ============== -->
+<section class="max-w-7xl mx-auto px-6 pt-16 pb-10">
+  <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold mb-3">MISSION · 5 PRINCIPLES</p>
+  <h1 class="text-display-2xl font-black tracking-tighter">資訊充足，<br/>但<span class="text-accent-warning">不焦慮</span>。</h1>
+  <p class="mt-6 max-w-2xl text-base text-ink/70 leading-relaxed">
+    給散戶的看板。一打開馬上知道持倉狀況，但不被資訊淹沒。
+    <strong class="text-ink">漸進式披露</strong>讓你決定看多深，
+    <strong class="text-ink">美感與動效</strong>讓你願意停留。
+  </p>
+  <div class="mt-10 grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="card rounded-2xl bg-white/70 border border-mist-200 p-4">
+      <div class="text-[10px] tracking-widest text-ink/50 font-bold">#1</div>
+      <div class="font-semibold mt-1">Zero-Click Awareness</div>
+      <div class="text-xs text-ink/60 mt-1">一打開就看到</div>
+    </div>
+    <div class="card rounded-2xl bg-accent-primary p-4 ring-2 ring-ink/10">
+      <div class="text-[10px] tracking-widest text-ink/70 font-bold">#2 ⭐</div>
+      <div class="font-semibold mt-1">漸進式披露</div>
+      <div class="text-xs text-ink/70 mt-1">充足但不失焦</div>
+    </div>
+    <div class="card rounded-2xl bg-white/70 border border-mist-200 p-4">
+      <div class="text-[10px] tracking-widest text-ink/50 font-bold">#3</div>
+      <div class="font-semibold mt-1">散戶教學</div>
+      <div class="text-xs text-ink/60 mt-1">主動引導</div>
+    </div>
+    <div class="card rounded-2xl bg-white/70 border border-mist-200 p-4">
+      <div class="text-[10px] tracking-widest text-ink/50 font-bold">#4</div>
+      <div class="font-semibold mt-1">美感留人</div>
+      <div class="text-xs text-ink/60 mt-1">台灣最缺</div>
+    </div>
+    <div class="card rounded-2xl bg-white/70 border border-mist-200 p-4">
+      <div class="text-[10px] tracking-widest text-ink/50 font-bold">#5</div>
+      <div class="font-semibold mt-1">動畫與互動</div>
+      <div class="text-xs text-ink/60 mt-1">不只裝飾</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ROUTE TAB NAV ============== -->
+<nav class="max-w-7xl mx-auto px-6 sticky top-[72px] z-40 bg-mist-50/95 backdrop-blur border-y border-mist-200">
+  <div class="flex gap-1 overflow-x-auto no-scrollbar py-2 text-sm font-semibold">
+    <button data-tab="overview" class="route-tab active rounded-full px-4 py-2 whitespace-nowrap">概覽</button>
+    <button data-tab="holdings" class="route-tab rounded-full px-4 py-2 whitespace-nowrap">持倉</button>
+    <button data-tab="log" class="route-tab rounded-full px-4 py-2 whitespace-nowrap">交易日誌</button>
+    <button data-tab="daily" class="route-tab rounded-full px-4 py-2 whitespace-nowrap">收盤分析</button>
+    <button data-tab="research" class="route-tab rounded-full px-4 py-2 whitespace-nowrap">全組合研究</button>
+    <button data-tab="news" class="route-tab rounded-full px-4 py-2 whitespace-nowrap">情報脈絡</button>
+  </div>
+</nav>
+
+<!-- ============== ROUTE: OVERVIEW ============== -->
+<section data-route="overview" class="route-pane max-w-7xl mx-auto px-6 py-12">
+  <div class="flex items-end justify-between flex-wrap gap-4">
+    <div>
+      <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 1 / 6 · Pattern C + W + E + X + AA</p>
+      <h2 class="text-display-xl mt-2">概覽</h2>
+      <p class="mt-2 text-ink/60">小奎的持倉。今天好嗎？</p>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="px-2 py-1 rounded-full bg-mist-100 text-ink/70">CC StaleBadge</span>
+      <span class="px-2 py-1 rounded-full bg-accent-ok/20 text-accent-ok font-bold">資料剛剛更新 · 13:37</span>
+    </div>
+  </div>
+
+  <!-- HERO: Today P&L + Health + AI insight -->
+  <div class="mt-10 relative card rounded-3xl bg-white border border-mist-200 p-8 md:p-12 overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[120%] sunburst animate-breath pointer-events-none"></div>
+    <div class="relative z-10 grid md:grid-cols-3 gap-8 items-end">
+      <div class="md:col-span-2">
+        <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold mb-2">TODAY · P&L</p>
+        <div class="flex items-baseline gap-3">
+          <span class="text-display-2xl num text-accent-ok" id="hero-pnl">+$48,210</span>
+          <span class="text-display-md num text-accent-ok">+2.34%</span>
+        </div>
+        <p class="mt-4 max-w-lg text-ink/70 leading-relaxed">
+          <span class="inline-block px-2 py-0.5 rounded-md bg-accent-primary/30 text-ink text-xs font-bold tracking-wider mr-2">W · MICRO-COPY</span>
+          看好利多剛兌現 · 主力沒收手 · 你的部位在順風帶。
+        </p>
+        <p class="mt-2 max-w-lg text-xs text-ink/50">
+          <span class="inline-block px-2 py-0.5 rounded-md bg-mist-100 text-ink/70 mr-2">AA · AI · 信心 92%</span>
+          今天最該關注：<strong class="text-ink">2330 台積電</strong> 法人連 3 日買超 + 突破年線。
+          <span class="text-ink/40">(DD AccuracyGate ✓ 已過信心檢查)</span>
+        </p>
+      </div>
+      <div>
+        <div class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold mb-2">HEALTH SCORE</div>
+        <div class="flex items-center gap-3">
+          <div class="text-display-lg font-black num">87<span class="text-ink/40">/100</span></div>
+          <div class="flex-1">
+            <div class="h-2 rounded-full bg-mist-100 overflow-hidden">
+              <div class="h-full healthbar transition-all duration-700" style="width:87%"></div>
+            </div>
+            <div class="flex justify-between mt-1 text-[10px] text-ink/50">
+              <span>低</span><span>中</span><span>高</span>
+            </div>
+          </div>
+        </div>
+        <ul class="mt-4 text-xs text-ink/70 space-y-1">
+          <li>✓ 流動性充足</li>
+          <li>✓ 無單一持股 > 25%</li>
+          <li>⚠ 半導體曝險偏高 (38%)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI strip × 3 with W micro-copy -->
+  <div class="mt-6 grid md:grid-cols-3 gap-4 stagger">
+    <div class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <p class="text-[11px] tracking-widest text-ink/50 font-semibold">總曝險</p>
+      <div class="mt-2 text-display-md num">$2,063,910</div>
+      <p class="text-xs text-ink/60 mt-2">距上限 73% · 還有空間加碼</p>
+    </div>
+    <div class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <p class="text-[11px] tracking-widest text-ink/50 font-semibold">持股數</p>
+      <div class="mt-2 text-display-md num">14<span class="text-ink/40 text-2xl"> 檔</span></div>
+      <p class="text-xs text-ink/60 mt-2">分散度健康 · 集中度 HHI 1,820</p>
+    </div>
+    <div class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <p class="text-[11px] tracking-widest text-ink/50 font-semibold">流動性</p>
+      <div class="mt-2 text-display-md num">$185,400</div>
+      <p class="text-xs text-ink/60 mt-2">8.9% 現金 · 隨時加碼可</p>
+    </div>
+  </div>
+
+  <!-- OperatingContext: nextActionLabel + warnings (per Codex R11) -->
+  <div class="mt-6 grid md:grid-cols-2 gap-4">
+    <div class="rounded-2xl border-2 border-accent-info/40 bg-accent-info/5 p-5 flex items-start gap-3">
+      <span class="text-2xl">▶</span>
+      <div>
+        <p class="text-[11px] tracking-widest text-accent-info font-bold">NEXT ACTION (OperatingContext)</p>
+        <p class="font-semibold mt-1">完成今日盤後復盤（3 步驟還剩 2 步）</p>
+        <p class="text-xs text-ink/60 mt-1">每日 ritual · 約 8 分鐘</p>
+      </div>
+    </div>
+    <div class="rounded-2xl border-2 border-accent-warning/40 bg-accent-warning/5 p-5 flex items-start gap-3">
+      <span class="text-2xl text-accent-warning">⚠</span>
+      <div>
+        <p class="text-[11px] tracking-widest text-accent-warning font-bold">TOP WARNING</p>
+        <p class="font-semibold mt-1">2454 聯發科 觸發停損預警 (-7.8%)</p>
+        <p class="text-xs text-ink/60 mt-1">建議展開 detail 確認應對</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: C 巨型頁名 · E hero card · W micro-copy · X health score · AA AI insight · DD AccuracyGate · CC StaleBadge · P sunburst breath · Animation #1 counter-up · #11 sunburst breath
+  </p>
+</section>
+
+<!-- ============== ROUTE: HOLDINGS ============== -->
+<section data-route="holdings" class="route-pane max-w-7xl mx-auto px-6 py-12 hidden">
+  <div class="flex items-end justify-between flex-wrap gap-4">
+    <div>
+      <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 2 / 6 · Pattern G+H + Q + L + N + M</p>
+      <h2 class="text-display-xl mt-2">持倉</h2>
+      <p class="mt-2 text-ink/60">點任一行展開，不切頁。</p>
+    </div>
+  </div>
+
+  <!-- Split-tile + focus state -->
+  <div class="mt-10 grid grid-cols-3 gap-3">
+    <button class="tile-focus card rounded-2xl p-6 text-left transition" data-tile-active="1">
+      <p class="text-[11px] tracking-widest font-bold">個股</p>
+      <div class="mt-2 text-display-md num">$1,576,210</div>
+      <p class="text-xs mt-1 opacity-70">76.4% · 11 檔</p>
+    </button>
+    <button class="card rounded-2xl border border-mist-200 bg-white p-6 text-left">
+      <p class="text-[11px] tracking-widest text-ink/50 font-bold">ETF</p>
+      <div class="mt-2 text-display-md num">$302,300</div>
+      <p class="text-xs text-ink/60 mt-1">14.7% · 2 檔</p>
+    </button>
+    <button class="card rounded-2xl border border-mist-200 bg-white p-6 text-left">
+      <p class="text-[11px] tracking-widest text-ink/50 font-bold">現金</p>
+      <div class="mt-2 text-display-md num">$185,400</div>
+      <p class="text-xs text-ink/60 mt-1">8.9%</p>
+    </button>
+  </div>
+
+  <!-- Q vertical color-bar list + L accordion -->
+  <div class="mt-6 rounded-2xl bg-white border border-mist-200 overflow-hidden divide-y divide-mist-100">
+    <!-- Holding row 1 - expanded by default -->
+    <details open class="group">
+      <summary class="flex items-center px-4 py-4 cursor-pointer hover:bg-mist-50">
+        <div class="w-1 h-12 rounded-full bg-accent-primary mr-4"></div>
+        <div class="w-10 h-10 rounded-lg bg-accent-primary/20 grid place-items-center text-sm font-black mr-3">↗</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-bold">2330</span>
+            <span class="font-semibold">台積電</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-mist-100 text-ink/60">半導體</span>
+          </div>
+          <div class="text-xs text-ink/50 mt-0.5">200 股 · 成本 $580</div>
+        </div>
+        <div class="text-right mr-4">
+          <div class="num font-bold text-accent-ok">+$18,400</div>
+          <div class="text-xs text-accent-ok">+15.86%</div>
+        </div>
+        <span class="chev text-ink/40">›</span>
+      </summary>
+      <div class="acc-body px-4 pb-6 pl-20 grid md:grid-cols-2 gap-6 bg-mist-50/40">
+        <!-- N target-range slider -->
+        <div>
+          <p class="text-[10px] tracking-widest text-ink/50 font-bold mb-2">N · 目標價區間</p>
+          <div class="relative h-12">
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-mist-200 rounded-full"></div>
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-gradient-to-r from-accent-warning via-accent-primary to-accent-ok"></div>
+            <div class="absolute -translate-x-1/2 top-0 spotlight w-5 h-5 rounded-full bg-ink ring-4 ring-white" style="left:62%"></div>
+            <div class="absolute -translate-x-1/2 top-7 text-[10px] num text-ink/70 font-semibold" style="left:62%">$672</div>
+          </div>
+          <div class="flex justify-between text-[10px] text-ink/50 mt-1">
+            <span>低 $580</span><span>目標 $720</span><span>高 $810</span>
+          </div>
+        </div>
+        <!-- M stacked ratings bar -->
+        <div>
+          <p class="text-[10px] tracking-widest text-ink/50 font-bold mb-2">M · 分析師評等</p>
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="w-12 text-ink/60">買進</span>
+              <div class="flex-1 h-2.5 rounded-full bg-mist-100 overflow-hidden">
+                <div class="h-full bg-accent-ok" style="width:72%"></div>
+              </div>
+              <span class="w-10 num text-right font-bold">72%</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="w-12 text-ink/60">持有</span>
+              <div class="flex-1 h-2.5 rounded-full bg-mist-100 overflow-hidden">
+                <div class="h-full bg-accent-primary" style="width:22%"></div>
+              </div>
+              <span class="w-10 num text-right font-bold">22%</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="w-12 text-ink/60">賣出</span>
+              <div class="flex-1 h-2.5 rounded-full bg-mist-100 overflow-hidden">
+                <div class="h-full bg-accent-warning" style="width:6%"></div>
+              </div>
+              <span class="w-10 num text-right font-bold">6%</span>
+            </div>
+          </div>
+        </div>
+        <!-- AA AI insight -->
+        <div class="md:col-span-2 rounded-xl bg-ink text-mist-50 p-4">
+          <p class="text-[10px] tracking-widest text-mist-50/60 font-bold mb-1">AA · AI 觀察 · 信心 91%（DD ✓）</p>
+          <p class="text-sm leading-relaxed">外資連 3 日買超合計 1.4 萬張 · 站穩季線 + 突破年線收盤 · 法說會釋出 N2 製程量產時程提前。<span class="text-accent-primary font-semibold">看好的劇本沒被打破</span>。</p>
+        </div>
+      </div>
+    </details>
+    <!-- Holding row 2 - collapsed -->
+    <details class="group">
+      <summary class="flex items-center px-4 py-4 cursor-pointer hover:bg-mist-50">
+        <div class="w-1 h-12 rounded-full bg-accent-warning mr-4"></div>
+        <div class="w-10 h-10 rounded-lg bg-accent-warning/20 grid place-items-center text-sm font-black mr-3">⚠</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-bold">2454</span>
+            <span class="font-semibold">聯發科</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-mist-100 text-ink/60">半導體</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-accent-warning/20 text-accent-warning font-bold">停損</span>
+          </div>
+          <div class="text-xs text-ink/50 mt-0.5">100 股 · 成本 $1,420</div>
+        </div>
+        <div class="text-right mr-4">
+          <div class="num font-bold text-accent-warning">-$11,080</div>
+          <div class="text-xs text-accent-warning">-7.80%</div>
+        </div>
+        <span class="chev text-ink/40">›</span>
+      </summary>
+      <div class="acc-body px-4 py-6 pl-20 text-sm text-ink/70 bg-mist-50/40">
+        點開可看 N target slider、M ratings bar、AA AI 觀察…（同上）
+      </div>
+    </details>
+    <!-- Holding row 3 -->
+    <details class="group">
+      <summary class="flex items-center px-4 py-4 cursor-pointer hover:bg-mist-50">
+        <div class="w-1 h-12 rounded-full bg-accent-info mr-4"></div>
+        <div class="w-10 h-10 rounded-lg bg-accent-info/20 grid place-items-center text-sm font-black mr-3">→</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="font-bold">2891</span>
+            <span class="font-semibold">中信金</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-mist-100 text-ink/60">金融</span>
+          </div>
+          <div class="text-xs text-ink/50 mt-0.5">3,000 股 · 成本 $32.4</div>
+        </div>
+        <div class="text-right mr-4">
+          <div class="num font-bold text-ink/60">+$1,200</div>
+          <div class="text-xs text-ink/50">+1.23%</div>
+        </div>
+        <span class="chev text-ink/40">›</span>
+      </summary>
+      <div class="acc-body px-4 py-6 pl-20 text-sm text-ink/70 bg-mist-50/40">
+        點開展…
+      </div>
+    </details>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: G+H split-tile focus · Q 雙編碼 list 產業色條 · L accordion 漸進披露 · N target-range slider · M stacked ratings bar · AA+DD AI insight gate · Animation #3 tile focus · #4 accordion fade
+  </p>
+</section>
+
+<!-- ============== ROUTE: LOG ============== -->
+<section data-route="log" class="route-pane max-w-7xl mx-auto px-6 py-12 hidden">
+  <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 3 / 6 · Pattern I + Q + R + S</p>
+  <h2 class="text-display-xl mt-2">交易日誌</h2>
+
+  <div class="mt-8 rounded-2xl bg-white border border-mist-200 p-6">
+    <p class="text-display-md font-black tracking-tighter">2026 · 04</p>
+    <p class="text-xs tracking-widest text-ink/50 font-bold mt-1">本月已實現 P&L · +$12,840</p>
+  </div>
+
+  <ul class="mt-4 rounded-2xl bg-white border border-mist-200 divide-y divide-mist-100 overflow-hidden">
+    <li class="flex items-center px-4 py-4">
+      <div class="w-1 h-10 rounded-full bg-accent-ok mr-4"></div>
+      <div class="w-10 h-10 rounded-lg bg-accent-ok/20 grid place-items-center text-lg font-black text-accent-ok mr-3">↗</div>
+      <div class="flex-1">
+        <div class="font-semibold">2330 台積電 · 買進 100 股</div>
+        <div class="text-xs text-ink/50">2026-04-26 · 09:18 · @ $635</div>
+      </div>
+      <div class="text-right num font-bold">$63,500</div>
+    </li>
+    <li class="flex items-center px-4 py-4">
+      <div class="w-1 h-10 rounded-full bg-accent-warning mr-4"></div>
+      <div class="w-10 h-10 rounded-lg bg-accent-warning/20 grid place-items-center text-lg font-black text-accent-warning mr-3">↘</div>
+      <div class="flex-1">
+        <div class="font-semibold">2454 聯發科 · 賣出 50 股</div>
+        <div class="text-xs text-ink/50">2026-04-25 · 13:24 · @ $1,308</div>
+      </div>
+      <div class="text-right num font-bold">$65,400</div>
+    </li>
+    <li class="flex items-center px-4 py-4">
+      <div class="w-1 h-10 rounded-full bg-accent-ok mr-4"></div>
+      <div class="w-10 h-10 rounded-lg bg-accent-ok/20 grid place-items-center text-lg font-black text-accent-ok mr-3">↗</div>
+      <div class="flex-1">
+        <div class="font-semibold">2891 中信金 · 加碼 1,000 股</div>
+        <div class="text-xs text-ink/50">2026-04-22 · 11:05 · @ $32.4</div>
+      </div>
+      <div class="text-right num font-bold">$32,400</div>
+    </li>
+  </ul>
+
+  <div class="mt-6 flex items-center justify-end">
+    <button class="rounded-full bg-accent-info text-ink font-bold px-5 py-2.5 text-sm shadow-lg shadow-accent-info/30 hover:shadow-accent-info/40 transition">
+      ＋ 新增交易（S Calculator-mode）
+    </button>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: I 巨型 date 區隔 · Q 雙編碼 list (買↗ 綠 / 賣↘ coral) · R 純符號 hero · D 1 cyan CTA
+  </p>
+</section>
+
+<!-- ============== ROUTE: DAILY ============== -->
+<section data-route="daily" class="route-pane max-w-7xl mx-auto px-6 py-12 hidden">
+  <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 4 / 6 · 盤後 single ritual（Codex Round 11 修正：不是 realtime feed）</p>
+  <h2 class="text-display-xl mt-2">收盤分析</h2>
+  <p class="mt-2 text-ink/60">每日 ritual · 三步驟 · 約 8 分鐘</p>
+
+  <!-- Ritual step strip (replaces F segmented per Codex R11) -->
+  <div class="mt-8 rounded-2xl bg-white border border-mist-200 p-2">
+    <div class="grid grid-cols-3 gap-2">
+      <div class="rounded-xl p-4 bg-accent-ok/15 border border-accent-ok/30">
+        <div class="flex items-center gap-2 text-accent-ok font-bold text-xs"><span class="w-5 h-5 rounded-full bg-accent-ok text-white grid place-items-center">✓</span> STEP 1</div>
+        <div class="font-semibold mt-1">日報已產出</div>
+        <div class="text-xs text-ink/50">13:36 · 2.4s</div>
+      </div>
+      <div class="rounded-xl p-4 bg-accent-primary/20 border-2 border-accent-primary">
+        <div class="flex items-center gap-2 text-ink font-bold text-xs"><span class="w-5 h-5 rounded-full bg-accent-primary text-ink grid place-items-center animate-pulse-slow">▶</span> STEP 2</div>
+        <div class="font-semibold mt-1">分析中…</div>
+        <div class="text-xs text-ink/60">AI 拆解 + 異常檢測</div>
+      </div>
+      <div class="rounded-xl p-4 bg-mist-100 border border-mist-200">
+        <div class="flex items-center gap-2 text-ink/40 font-bold text-xs"><span class="w-5 h-5 rounded-full bg-mist-200 grid place-items-center">3</span> STEP 3</div>
+        <div class="font-semibold mt-1 text-ink/40">壓力測試（待）</div>
+        <div class="text-xs text-ink/40">3 個情境</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI insight + ratings -->
+  <div class="mt-6 grid md:grid-cols-2 gap-4">
+    <div class="rounded-2xl bg-ink text-mist-50 p-6">
+      <p class="text-[10px] tracking-widest text-mist-50/60 font-bold">AA · 今日重點 · 信心 88% (DD ✓)</p>
+      <p class="mt-2 text-display-md font-bold leading-tight">大盤站穩季線，<br/><span class="text-accent-primary">半導體權值股</span> 再度引領反彈。</p>
+      <p class="mt-3 text-sm text-mist-50/70 leading-relaxed">外資買超 96 億，集中在台積電、聯電、世界先進。你的部位在這波是順風 — 但建議檢查聯發科停損點。</p>
+    </div>
+    <div class="rounded-2xl bg-white border border-mist-200 p-6">
+      <p class="text-[11px] tracking-widest text-ink/50 font-bold mb-3">M · 你的持倉今日表現</p>
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <span class="text-xs w-20">2330 台積電</span>
+          <div class="flex-1 h-2 rounded-full bg-mist-100 overflow-hidden"><div class="h-full bg-accent-ok" style="width:88%"></div></div>
+          <span class="text-xs num font-bold text-accent-ok">+3.20%</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs w-20">2891 中信金</span>
+          <div class="flex-1 h-2 rounded-full bg-mist-100 overflow-hidden"><div class="h-full bg-accent-ok" style="width:35%"></div></div>
+          <span class="text-xs num font-bold text-accent-ok">+1.22%</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs w-20">2454 聯發科</span>
+          <div class="flex-1 h-2 rounded-full bg-mist-100 overflow-hidden flex flex-row-reverse"><div class="h-full bg-accent-warning" style="width:42%"></div></div>
+          <span class="text-xs num font-bold text-accent-warning">-2.71%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: RitualStepStrip（取代 F segmented · per Codex R11）· AA AI insight + DD AccuracyGate · M stacked bar · 動效 #1 counter-up · #5 hover lift
+  </p>
+</section>
+
+<!-- ============== ROUTE: RESEARCH ============== -->
+<section data-route="research" class="route-pane max-w-7xl mx-auto px-6 py-12 hidden">
+  <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 5 / 6 · Pattern G + X + BB</p>
+  <h2 class="text-display-xl mt-2">全組合研究</h2>
+  <p class="mt-2 text-ink/60">3 個組合並排對照 · 點任一塊 zoom</p>
+
+  <div class="mt-10 grid md:grid-cols-3 gap-4">
+    <div class="card rounded-3xl bg-white border-2 border-accent-primary p-6 ring-4 ring-accent-primary/20">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold tracking-widest">主戶 · 小奎</span>
+        <span class="px-2 py-0.5 rounded-full bg-accent-ok/20 text-accent-ok font-bold">健康度 87</span>
+      </div>
+      <div class="mt-6 num text-display-md font-black">$2,063,910</div>
+      <div class="text-sm text-accent-ok mt-1">+2.34% 今日</div>
+      <div class="mt-4 h-1.5 rounded-full bg-mist-100 overflow-hidden"><div class="healthbar h-full" style="width:87%"></div></div>
+      <ul class="mt-4 text-xs text-ink/60 space-y-1">
+        <li>14 檔 · 75% 個股 · 25% ETF/cash</li>
+        <li>HHI 1,820 · 半導體 38%</li>
+      </ul>
+    </div>
+    <div class="card rounded-3xl bg-white border border-mist-200 p-6">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold tracking-widest">金聯成 · 董座持股</span>
+        <span class="px-2 py-0.5 rounded-full bg-accent-primary/30 text-ink font-bold">健康度 72</span>
+      </div>
+      <div class="mt-6 num text-display-md font-black">$8,820,000</div>
+      <div class="text-sm text-ink/40 mt-1">+0.18% 今日</div>
+      <div class="mt-4 h-1.5 rounded-full bg-mist-100 overflow-hidden"><div class="healthbar h-full" style="width:72%"></div></div>
+      <ul class="mt-4 text-xs text-ink/60 space-y-1">
+        <li>3 檔（insider · 不可調）</li>
+        <li>單一持股 91%（規定）</li>
+      </ul>
+    </div>
+    <div class="card rounded-3xl bg-white border border-mist-200 p-6">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-bold tracking-widest">家人 · 退休帳</span>
+        <span class="px-2 py-0.5 rounded-full bg-accent-ok/20 text-accent-ok font-bold">健康度 91</span>
+      </div>
+      <div class="mt-6 num text-display-md font-black">$1,240,000</div>
+      <div class="text-sm text-accent-ok mt-1">+0.84% 今日</div>
+      <div class="mt-4 h-1.5 rounded-full bg-mist-100 overflow-hidden"><div class="healthbar h-full" style="width:91%"></div></div>
+      <ul class="mt-4 text-xs text-ink/60 space-y-1">
+        <li>5 檔 · 全 ETF/債券（保守）</li>
+        <li>最大波動 ±0.6% / 月</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- BB heat map -->
+  <div class="mt-10 rounded-3xl bg-white border border-mist-200 p-8">
+    <p class="text-[11px] tracking-widest text-ink/50 font-bold">BB · 跨組合 · 產業熱力圖</p>
+    <div class="mt-4 grid grid-cols-6 md:grid-cols-12 gap-1.5">
+      <!-- 12 sectors × 3 portfolios -->
+      <script>
+        // dynamically — will be filled by JS below
+      </script>
+      <div id="heatmap" class="col-span-full grid grid-cols-12 gap-1.5"></div>
+    </div>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: G split-tile×N（每組合一塊）· X health badge · BB heat map · 動效 #3 tile focus · #7 health color
+  </p>
+</section>
+
+<!-- ============== ROUTE: NEWS ============== -->
+<section data-route="news" class="route-pane max-w-7xl mx-auto px-6 py-12 hidden">
+  <p class="text-[11px] tracking-[0.3em] text-ink/50 font-semibold">ROUTE 6 / 6 · Pattern I + E + O + AA</p>
+  <h2 class="text-display-xl mt-2">情報脈絡</h2>
+  <p class="mt-2 text-ink/60">只挑跟你持倉有關的新聞</p>
+
+  <div class="mt-8 rounded-2xl bg-white border border-mist-200 p-6">
+    <p class="text-display-md font-black tracking-tighter">04 · 28 週二</p>
+  </div>
+
+  <div class="mt-4 space-y-3 stagger">
+    <article class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <span class="px-2 py-1 rounded-md bg-accent-ok/15 text-accent-ok text-xs font-bold num">2330 ↑ 3.20%</span>
+        <span class="px-2 py-1 rounded-md bg-accent-ok/15 text-accent-ok text-xs font-bold num">2454 ↓ 2.71%</span>
+        <span class="text-xs text-ink/40">· 13:42 · 工商時報</span>
+      </div>
+      <h3 class="text-display-md font-bold leading-tight">外資連 3 日買超台積電 1.4 萬張 · N2 量產時程提前到 2026 H1</h3>
+      <p class="mt-3 text-sm text-ink/70 leading-relaxed">
+        <span class="inline-block px-2 py-0.5 rounded-md bg-ink text-mist-50 text-[10px] font-bold tracking-wider mr-2">AA · 對你的持倉影響 · 信心 89%</span>
+        你持倉 <strong>2330 台積電</strong>（11.6% 配比）將直接受惠。建議：1) 維持持有 2) 觀察 N2 客戶名單公布
+      </p>
+    </article>
+    <article class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <span class="px-2 py-1 rounded-md bg-accent-warning/15 text-accent-warning text-xs font-bold num">2454 ↓ 2.71%</span>
+        <span class="text-xs text-ink/40">· 12:18 · MoneyDJ</span>
+      </div>
+      <h3 class="text-display-md font-bold leading-tight">聯發科法說會：旗艦處理器面臨高通競爭壓力 · 毛利率指引下修</h3>
+      <p class="mt-3 text-sm text-ink/70 leading-relaxed">
+        <span class="inline-block px-2 py-0.5 rounded-md bg-accent-warning text-white text-[10px] font-bold tracking-wider mr-2">AA · 警示 · 信心 94%</span>
+        你持倉 <strong>2454 聯發科</strong>（4.8% 配比）已觸發停損預警 -7.8%。建議：今晚復盤確認應對策略。
+      </p>
+    </article>
+    <article class="card rounded-2xl bg-white border border-mist-200 p-6">
+      <div class="flex items-center gap-2 mb-3 flex-wrap">
+        <span class="px-2 py-1 rounded-md bg-mist-100 text-ink/60 text-xs font-bold num">2891 ↑ 1.22%</span>
+        <span class="text-xs text-ink/40">· 11:05 · 經濟日報</span>
+      </div>
+      <h3 class="text-display-md font-bold leading-tight">金管會：2026 Q2 起金控股利可分配率上限放寬至 80%</h3>
+      <p class="mt-3 text-sm text-ink/70 leading-relaxed">
+        <span class="inline-block px-2 py-0.5 rounded-md bg-mist-100 text-ink/70 text-[10px] font-bold tracking-wider mr-2">AA · 中性偏多 · 信心 76%</span>
+        你持倉 <strong>2891 中信金</strong>（4.7% 配比）。中信金近年配發率 ~58%，新政對立即殖利率影響有限，但長期股利成長潛力提升。
+      </p>
+    </article>
+  </div>
+
+  <p class="mt-8 text-[10px] tracking-widest text-ink/40 text-center">
+    PATTERNS USED: I date 區隔 · E card-stacked · O 嵌入式 ticker chip · AA AI insight + DD AccuracyGate · 動效 #8 staggered fade-in
+  </p>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t border-mist-200 mt-20 py-8 px-6 max-w-7xl mx-auto text-xs text-ink/50">
+  <div class="grid md:grid-cols-3 gap-6">
+    <div>
+      <p class="text-[10px] tracking-widest text-ink/70 font-bold mb-2">ABOUT THIS PREVIEW</p>
+      <p class="leading-relaxed">用戶 2026-04-28 Auto Mode · 20 輪研究 · 25 份 ref · 29 個 pattern A-FF · Codex Round 11 critique 已整合 · inside-out frame</p>
+    </div>
+    <div>
+      <p class="text-[10px] tracking-widest text-ink/70 font-bold mb-2">FILES</p>
+      <ul class="space-y-1">
+        <li><a class="hover:text-ink" href="../../docs/research/dashboard-redesign/INDEX.md">研究 INDEX</a></li>
+        <li><a class="hover:text-ink" href="../../docs/research/dashboard-redesign/MISSION.md">MISSION (5 原則)</a></li>
+        <li><a class="hover:text-ink" href="../../docs/research/dashboard-redesign/pattern-matrix-v1.md">Pattern Matrix v1</a></li>
+        <li><a class="hover:text-ink" href="../../docs/specs/2026-04-28-dashboard-redesign-spec.md">Spec 草案</a></li>
+        <li><a class="hover:text-ink" href="../../docs/decisions/2026-04-28-dashboard-redesign.md">Decision 草案</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="text-[10px] tracking-widest text-ink/70 font-bold mb-2">五原則對齊</p>
+      <ul class="space-y-1 num">
+        <li>#1 Zero-Click ✅✅✅</li>
+        <li>#2 漸進式披露 ⭐ ✅✅✅</li>
+        <li>#3 散戶教學 ✅✅✅</li>
+        <li>#4 美感 ✅✅</li>
+        <li>#5 動畫互動 ✅✅</li>
+      </ul>
+    </div>
+  </div>
+  <p class="mt-6 text-center text-[10px] tracking-widest text-ink/40">
+    Preview v1 · 持倉看板 · jiucaivoice · 部署於 jcv-dev VM · 2026-04-28
+  </p>
+</footer>
+
+<!-- Floating helper (V pattern) -->
+<div class="fixed bottom-5 right-5 flex flex-col gap-2 z-40">
+  <button class="card rounded-full bg-ink text-mist-50 text-xs font-bold px-4 py-2 shadow-lg flex items-center gap-2">
+    <span>📹</span> 看 30 秒 demo
+  </button>
+  <button class="card rounded-full bg-mist-50 border border-mist-200 text-xs font-bold px-4 py-2 shadow-lg flex items-center gap-2">
+    <span>💬</span> 回饋
+  </button>
+</div>
+
+<!-- ============== JS: route tabs + dynamic heatmap ============== -->
+<script>
+  // route tabs
+  document.querySelectorAll('.route-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.route-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.route-pane').forEach((p) => {
+        if (p.dataset.route === target) {
+          p.classList.remove('hidden');
+          p.classList.add('animate-fade-in');
+        } else {
+          p.classList.add('hidden');
+        }
+      });
+      window.scrollTo({ top: tab.parentElement.offsetTop + 60, behavior: 'smooth' });
+    });
+  });
+  // tab style
+  const sty = document.createElement('style');
+  sty.textContent = `
+    .route-tab { background: transparent; color: rgba(14,16,20,0.6); transition: background 200ms, color 200ms; }
+    .route-tab.active { background: #0E1014; color: #FAFAF7; }
+    .route-tab:hover:not(.active) { background: #F4F2EE; color: #0E1014; }
+  `;
+  document.head.appendChild(sty);
+
+  // counter-up on hero
+  function animateNum(el, from, to, durMs) {
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - start) / durMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = Math.round(from + (to - from) * eased);
+      el.textContent = '+$' + val.toLocaleString();
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  const hero = document.getElementById('hero-pnl');
+  if (hero) animateNum(hero, 0, 48210, 800);
+
+  // heatmap
+  const sectors = ['半導體','金融','傳產','航運','生技','電動車','AI','REIT','石化','觀光','零售','能源'];
+  const portfolios = ['主戶','金聯成','家人'];
+  const heatVals = [
+    [38,2,12],   // 半導體
+    [12,1,8],    // 金融
+    [4,0,3],     // 傳產
+    [6,0,2],     // 航運
+    [3,0,1],     // 生技
+    [4,0,0],     // 電動車
+    [8,5,2],     // AI
+    [3,0,15],    // REIT
+    [2,0,1],     // 石化
+    [1,0,0],     // 觀光
+    [2,0,5],     // 零售
+    [3,0,12],    // 能源
+  ];
+  const hm = document.getElementById('heatmap');
+  if (hm) {
+    let html = '';
+    // header row
+    html += '<div class="text-[10px] tracking-widest text-ink/40 font-bold col-span-12 grid grid-cols-12 gap-1.5 mb-1"><div></div>' + sectors.map((s) => `<div class="text-center">${s}</div>`).join('') + '</div>';
+    portfolios.forEach((p, pi) => {
+      html += `<div class="text-[10px] tracking-widest text-ink/40 font-bold flex items-center">${p}</div>`;
+      heatVals.forEach((vrow) => {
+        const v = vrow[pi];
+        const intensity = Math.min(1, v / 20);
+        const bg = `rgba(229,210,74,${0.1 + intensity * 0.85})`;
+        const text = v >= 8 ? 'text-ink' : 'text-ink/60';
+        html += `<div class="${text} text-[11px] font-bold rounded-md text-center py-2 num" style="background:${bg};">${v > 0 ? v + '%' : '·'}</div>`;
+      });
+    });
+    // wrap into 13-col grid
+    hm.innerHTML = `<div class="col-span-12 grid grid-cols-13 gap-1.5" style="grid-template-columns: 60px repeat(12,1fr);">${html}</div>`;
+  }
+</script>
+
+</body>
+</html>

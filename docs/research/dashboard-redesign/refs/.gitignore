@@ -1,0 +1,16 @@
+# BlamePrompt staging (auto-generated)
+.blameprompt/
+
+# Binary reference assets (re-fetchable via scripts/fetch-*.mjs · source URLs in page-text.md)
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.mp4
+*.webm
+*.html
+
+# Keep .md analysis + structured data
+!*.md
+!*.txt

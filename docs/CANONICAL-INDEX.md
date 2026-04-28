@@ -48,6 +48,10 @@
 - `docs/finmind-api-reference.md` · FinMind repo-side truth
 - `docs/research/taiwan-stock-data-sources-v3-deep.md` · 台股資料源 canonical research
 - `docs/research/vercel-cost-investigation.md` · Vercel cost root cause
+- `docs/research/dashboard-redesign/INDEX.md` · 持倉看板互動介面重設計（focus / 視覺層次 · 2026-04-27 開案 · **Round 1-20 完成** · 25 份 ref · 29 個 pattern）
+  - 子檔：`MISSION.md`（5 條 design principle）· `SOURCES.md`（22 站清單）· `refs/README.md`（ref 索引）· `TOOLS.md`（抓取工具）· `rounds/discussion.md`（multi-LLM round notes 1-20）· `pattern-matrix-v1.md`
+  - 結論 spec：`docs/specs/2026-04-28-dashboard-redesign-spec.md`
+  - 拍板 decision（草案）：`docs/decisions/2026-04-28-dashboard-redesign.md`
 - `docs/status/kb-availability-2026-04-18.md` · FinMind availability audit
 - `docs/known-bugs.md` · 已知資料 / 數字坑
 - `docs/STALE-AUDIT-2026-04-19.md` · 本輪文件清理與 stale audit

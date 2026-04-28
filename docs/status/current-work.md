@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-04-18 13:03 CST
+Last updated: 2026-04-27 20:29
 
 ## Management preferences
 
@@ -94,6 +94,8 @@ Last updated: 2026-04-18 13:03 CST
 
 ## Latest checkpoint
 
+- `2026-04-27 20:29` Codex：R27a pushed: 4d4b15d + 1def0f3. Claude: R27 fresh + mutual QA.
+- `2026-04-27 17:53` Codex：R21a pushed 1e0f8d2 · Events mobile regression fixed: mobile buckets open by default, timeline no longer says no major events when hero has active count. Claude: R21 fresh + mutual QA.
 - `2026-04-16 21:57` Qwen：Regression 6: 828/828 pass, 4 risks found (2 MED, 2 LOW)
 - `2026-04-16 21:42` Qwen：Action Center QA: 5 bugs found (1 P0, 2 P1, 2 P2)
 - `2026-04-16 21:39` Qwen：Round 5 regression: 812/812 pass, 3 risks identified (git timeout, sparkline perf, mobile responsive)

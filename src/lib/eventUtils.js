@@ -1,6 +1,6 @@
 import { CLOSED_EVENT_STATUSES, DEFAULT_REVIEW_FORM, EVENT_HISTORY_LIMIT } from '../constants.js'
 import { STOCK_META } from '../seedData.js'
-import { normalizeBrainEvidenceRefs } from './brainRuntime.js'
+import { normalizeBrainEvidenceRefs } from './brainEvidenceRefs.js'
 import { getEventTypeLabel, inferEventType, shouldEventNeedThesisReview } from './eventTypeMeta.js'
 
 export function createDefaultReviewForm(overrides = {}) {

@@ -230,7 +230,7 @@ describe('routes/PortfolioLayout', () => {
   )
 
   it(
-    'falls back to seed calendar events when stored news events are empty',
+    'respects an explicit empty news-events array as true-empty (HE-1: no seed mask)',
     async () => {
       const storage = createSeedStorage()
       storage[`pf-${OWNER_PORTFOLIO_ID}-news-events-v1`] = []
@@ -246,7 +246,8 @@ describe('routes/PortfolioLayout', () => {
         </MemoryRouter>
       )
 
-      expect(await screen.findByText('台燿 Q4財報法說會')).toBeInTheDocument()
+      await screen.findByTestId('portfolio-select')
+      expect(screen.queryByText('台燿 Q4財報法說會')).toBeNull()
     },
     ROUTE_LAYOUT_TIMEOUT
   )

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { API_ENDPOINTS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 
 export function useDailySnapshotStatus({ fetchImpl = globalThis.fetch } = {}) {
   const [state, setState] = useState({

@@ -8,6 +8,7 @@
  *   /api/mops-revenue  — 月營收 (mops.twse.com.tw)
  *   /api/mops-announcements — 重大訊息
  */
+import { API_ENDPOINTS } from '../apiEndpoints.js'
 import { createEmptyCompanyData } from './types.js'
 
 /**
@@ -19,7 +20,7 @@ export async function fetchQuotes(codes) {
   if (!Array.isArray(codes) || codes.length === 0) return {}
 
   const exCh = codes.map((code) => `tse_${code}.tw`).join('|')
-  const res = await fetch(`/api/twse?ex_ch=${encodeURIComponent(exCh)}`)
+  const res = await fetch(`${API_ENDPOINTS.TWSE}?ex_ch=${encodeURIComponent(exCh)}`)
   if (!res.ok) throw new Error(`TWSE quotes failed: ${res.status}`)
 
   const data = await res.json()
@@ -46,7 +47,7 @@ export async function fetchQuotes(codes) {
  * @returns {Promise<Record<string, {foreign:number, investment:number, dealer:number, total:number}>>}
  */
 export async function fetchInstitutional(date) {
-  const res = await fetch(`/api/twse-institutional?date=${date}`)
+  const res = await fetch(`${API_ENDPOINTS.TWSE_INSTITUTIONAL}?date=${date}`)
   if (!res.ok) throw new Error(`TWSE institutional failed: ${res.status}`)
 
   const data = await res.json()
@@ -75,7 +76,9 @@ export async function fetchInstitutional(date) {
  * @returns {Promise<{revenueMonth:string, revenue:number, revenueYoY:number, revenueMoM:number}|null>}
  */
 export async function fetchMonthlyRevenue(stockId, year, month) {
-  const res = await fetch(`/api/mops-revenue?stockId=${stockId}&year=${year}&month=${month}`)
+  const res = await fetch(
+    `${API_ENDPOINTS.MOPS_REVENUE}?stockId=${stockId}&year=${year}&month=${month}`
+  )
   if (!res.ok) return null
 
   const data = await res.json()
@@ -95,7 +98,7 @@ export async function fetchMonthlyRevenue(stockId, year, month) {
  * @returns {Promise<Array<{code:string, name:string, title:string, date:string, type:string}>>}
  */
 export async function fetchAnnouncements(date) {
-  const res = await fetch(`/api/mops-announcements?date=${date}`)
+  const res = await fetch(`${API_ENDPOINTS.MOPS_ANNOUNCEMENTS}?date=${date}`)
   if (!res.ok) return []
 
   const data = await res.json()

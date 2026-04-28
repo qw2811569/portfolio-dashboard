@@ -4,6 +4,7 @@ import { C, TOKENS, alpha } from '../../theme.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { Card, Button, DataError, OperatingContextCard } from '../common'
 import { Skeleton } from '../common/Skeleton.jsx'
+import { API_ENDPOINTS } from '../../lib/apiEndpoints.js'
 import { normalizeDataError } from '../../lib/dataError.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 
@@ -192,7 +193,7 @@ function cacheResolvedNewsFeedRequest(requestKey, payload, ttlMs) {
 function createNewsFeedRequest(requestKey, codesKey, holdingCodes = []) {
   const pendingEntry = {
     status: 'pending',
-    promise: fetch(`/api/news-feed?codes=${encodeURIComponent(codesKey)}&days=3`)
+    promise: fetch(`${API_ENDPOINTS.NEWS_FEED}?codes=${encodeURIComponent(codesKey)}&days=3`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()

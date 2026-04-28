@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { normalizeEventRecord } from '../lib/events.js'
 
 /**
@@ -21,7 +22,7 @@ export function useAutoEventCalendar({ setNewsEvents }) {
         // 直接呼叫 event-calendar API（不需要經過 cron endpoint）
         const params = new URLSearchParams({ range: '30' })
         if (stockCodes.length > 0) params.set('codes', stockCodes.join(','))
-        const res = await fetch(`/api/event-calendar?${params}`, {
+        const res = await fetch(`${API_ENDPOINTS.EVENT_CALENDAR}?${params}`, {
           signal: AbortSignal.timeout(8000),
         })
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { C, alpha } from '../../theme.js'
+import { API_ENDPOINTS } from '../../lib/apiEndpoints.js'
 import { DataError, SoftMessage, StaleBadge } from '../common/index.js'
 import { formatStaleBadgeRelativeLabel } from '../../lib/staleBadge.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
@@ -178,7 +179,7 @@ function useHoldingValuation(code) {
     const controller = new AbortController()
     let active = true
 
-    fetch(`/api/valuation?code=${encodeURIComponent(normalizedCode)}`, {
+    fetch(`${API_ENDPOINTS.VALUATION}?code=${encodeURIComponent(normalizedCode)}`, {
       signal: controller.signal,
       cache: 'no-store',
     })

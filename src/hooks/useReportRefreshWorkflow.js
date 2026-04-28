@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
 import {
-  API_ENDPOINTS,
   REPORT_REFRESH_DAILY_LIMIT,
   REPORT_EXTRACT_MAX_ITEMS,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
 import { APP_ERROR_MESSAGES, APP_STATUS_MESSAGES, APP_TOAST_MESSAGES } from '../lib/appMessages.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import {
   buildAnalystTargetUpserts,
   buildResearchExtractRequest,

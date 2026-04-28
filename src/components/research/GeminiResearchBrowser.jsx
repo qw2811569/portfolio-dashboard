@@ -1,5 +1,6 @@
 import { createElement as h, useState, useEffect } from 'react'
 import { C } from '../../theme.js'
+import { API_ENDPOINTS } from '../../lib/apiEndpoints.js'
 import { Card, Button } from '../common'
 
 const lbl = {
@@ -22,7 +23,7 @@ export function GeminiResearchBrowser() {
 
   useEffect(() => {
     // Fetch list of Gemini research files
-    fetch('/api/gemini-research')
+    fetch(API_ENDPOINTS.GEMINI_RESEARCH)
       .then((res) => res.json())
       .then((data) => {
         setResearchFiles(data.files || [])
@@ -128,7 +129,7 @@ function ResearchFileDetail({ file, onBack }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/gemini-research/${file.name}`)
+    fetch(`${API_ENDPOINTS.GEMINI_RESEARCH}/${file.name}`)
       .then((res) => res.json())
       .then((data) => {
         setContent(data)

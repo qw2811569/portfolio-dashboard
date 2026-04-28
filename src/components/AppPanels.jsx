@@ -5,21 +5,9 @@ import {
   usePortfolioPanelsActions,
   usePortfolioPanelsData,
 } from '../contexts/PortfolioPanelsContext.jsx'
-import { DashboardPanel, OverviewPanel } from './overview/index.js'
-import HoldingsPanelChunk from './holdings/HoldingsPanelChunk.jsx'
-import { WatchlistPanel } from './watchlist/index.js'
-import { EventsPanel } from './events/index.js'
-import { DailyReportPanel } from './reports/index.js'
-import { ResearchPanel } from './research/index.js'
-import { TradePanel } from './trade/index.js'
-import { LogPanel } from './log/index.js'
-import { NewsAnalysisPanel } from './news/index.js'
 import { createLazyPanelLoader } from '../lib/lazyPanelLoader.js'
 
-const shouldUseEagerPanels = import.meta.env.DEV || import.meta.env.MODE === 'test'
-
-function createPanelComponent({ eagerComponent, loader, exportName, panelKey }) {
-  if (shouldUseEagerPanels) return eagerComponent
+function createPanelComponent({ loader, exportName, panelKey }) {
   return lazy(
     createLazyPanelLoader({
       loader,
@@ -83,70 +71,60 @@ function PanelSuspenseFallback({ title }) {
 }
 
 const DashboardPanelComponent = createPanelComponent({
-  eagerComponent: DashboardPanel,
   loader: () => import('./overview/index.js'),
   exportName: 'DashboardPanel',
   panelKey: 'dashboard',
 })
 
 const OverviewPanelComponent = createPanelComponent({
-  eagerComponent: OverviewPanel,
   loader: () => import('./overview/index.js'),
   exportName: 'OverviewPanel',
   panelKey: 'overview',
 })
 
 const HoldingsPanelComponent = createPanelComponent({
-  eagerComponent: HoldingsPanelChunk,
   loader: () => import('./holdings/HoldingsPanelChunk.jsx'),
   exportName: 'default',
   panelKey: 'holdings',
 })
 
 const WatchlistPanelComponent = createPanelComponent({
-  eagerComponent: WatchlistPanel,
   loader: () => import('./watchlist/index.js'),
   exportName: 'WatchlistPanel',
   panelKey: 'watchlist',
 })
 
 const EventsPanelComponent = createPanelComponent({
-  eagerComponent: EventsPanel,
   loader: () => import('./events/index.js'),
   exportName: 'EventsPanel',
   panelKey: 'events',
 })
 
 const DailyReportPanelComponent = createPanelComponent({
-  eagerComponent: DailyReportPanel,
   loader: () => import('./reports/index.js'),
   exportName: 'DailyReportPanel',
   panelKey: 'daily',
 })
 
 const ResearchPanelComponent = createPanelComponent({
-  eagerComponent: ResearchPanel,
   loader: () => import('./research/index.js'),
   exportName: 'ResearchPanel',
   panelKey: 'research',
 })
 
 const TradePanelComponent = createPanelComponent({
-  eagerComponent: TradePanel,
   loader: () => import('./trade/index.js'),
   exportName: 'TradePanel',
   panelKey: 'trade',
 })
 
 const LogPanelComponent = createPanelComponent({
-  eagerComponent: LogPanel,
   loader: () => import('./log/index.js'),
   exportName: 'LogPanel',
   panelKey: 'log',
 })
 
 const NewsAnalysisPanelComponent = createPanelComponent({
-  eagerComponent: NewsAnalysisPanel,
   loader: () => import('./news/index.js'),
   exportName: 'NewsAnalysisPanel',
   panelKey: 'news',

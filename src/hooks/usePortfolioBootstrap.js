@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { CLOUD_SYNC_TTL, OWNER_PORTFOLIO_ID } from '../constants.js'
 import { APP_BOOTSTRAP_PHASE_COPY } from '../lib/appMessages.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { captureClientDiagnostic } from '../lib/runtimeLogger.js'
 
 const BOOTSTRAP_RUN_COUNTER_KEY = '__PORTFOLIO_BOOTSTRAP_RUN_COUNTER__'
@@ -208,7 +209,7 @@ export function usePortfolioBootstrap({
 
       if (!shouldSyncCloud) {
         try {
-          const cloudHoldings = await fetch('/api/brain', {
+          const cloudHoldings = await fetch(API_ENDPOINTS.BRAIN, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'load-holdings' }),
@@ -258,7 +259,7 @@ export function usePortfolioBootstrap({
         // Holdings 最重要，單獨 fetch 確保失敗不影響
         let cloudHoldings = { holdings: null }
         try {
-          cloudHoldings = await fetch('/api/brain', {
+          cloudHoldings = await fetch(API_ENDPOINTS.BRAIN, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'load-holdings' }),
@@ -269,20 +270,20 @@ export function usePortfolioBootstrap({
 
         // 其他資料平行 fetch，個別失敗不影響整體
         const [cloudBrain, cloudEvents, cloudHistory, cloudResearch] = await Promise.all([
-          fetch('/api/brain?action=brain')
+          fetch(`${API_ENDPOINTS.BRAIN}?action=brain`)
             .then((res) => res.json())
             .catch(() => ({ brain: null })),
-          fetch('/api/brain', {
+          fetch(API_ENDPOINTS.BRAIN, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'load-events' }),
           })
             .then((res) => res.json())
             .catch(() => ({ events: null })),
-          fetch('/api/brain?action=history')
+          fetch(`${API_ENDPOINTS.BRAIN}?action=history`)
             .then((res) => res.json())
             .catch(() => ({ history: null })),
-          fetch('/api/research')
+          fetch(API_ENDPOINTS.RESEARCH)
             .then((res) => res.json())
             .catch(() => ({ reports: null })),
         ])

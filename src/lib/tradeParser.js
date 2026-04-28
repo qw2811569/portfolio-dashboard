@@ -1,4 +1,5 @@
 import { normalizeTradeParseResult } from './tradeParseUtils.js'
+import { API_ENDPOINTS } from './apiEndpoints.js'
 
 function normalizeText(value) {
   return String(value || '').trim()
@@ -101,7 +102,7 @@ export async function parseTradeScreenshot(file, { fallbackDate, fetchImpl = fet
     reader.readAsDataURL(file)
   })
   const [, base64 = ''] = dataUrl.split(',')
-  const response = await fetchImpl('/api/parse', {
+  const response = await fetchImpl(API_ENDPOINTS.PARSE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -25,7 +25,9 @@ describe('composeDailyReportRitual state machine', () => {
     })
 
     expect(ritual.state).toBe('partial')
-    expect(ritual.hero.text).toBe('資料已收齊，AI 正在分析')
+    expect(ritual.hero.text).toBe('資料已收齊 · 點下方按鈕開始分析')
+    expect(ritual.hero.partialPendingAnalysis).toBe(true)
+    expect(ritual.isPartialPendingAnalysis).toBe(true)
     expect(ritual.canShowActions).toBe(false)
     expect(ritual.canShowArchive).toBe(true)
   })
@@ -40,7 +42,7 @@ describe('composeDailyReportRitual state machine', () => {
     expect(ritual.canShowHitRate).toBe(true)
   })
 
-  it('keeps T0 preliminary stage orthogonal to readiness', () => {
+  it('keeps T0 preliminary stage orthogonal to readiness and exposes canonical stage flags', () => {
     const ritual = composeDailyReportRitual({
       dailyReport: {
         id: 'preliminary-ready',
@@ -51,6 +53,21 @@ describe('composeDailyReportRitual state machine', () => {
 
     expect(ritual.state).toBe('ready')
     expect(ritual.stageKind).toBe('preliminary')
+    expect(ritual.isPreliminaryReport).toBe(true)
+    expect(ritual.isConfirmedReport).toBe(false)
+  })
+
+  it('exposes confirmed stage flag', () => {
+    const ritual = composeDailyReportRitual({
+      dailyReport: {
+        id: 'confirmed-ready',
+        aiInsight: '資料確認版。',
+        analysisStage: 't1-confirmed',
+      },
+    })
+
+    expect(ritual.isConfirmedReport).toBe(true)
+    expect(ritual.isPreliminaryReport).toBe(false)
   })
 
   it('does not let streaming override ready actions', () => {

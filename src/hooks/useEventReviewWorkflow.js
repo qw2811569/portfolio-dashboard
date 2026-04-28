@@ -2,10 +2,10 @@ import { useCallback } from 'react'
 import {
   OWNER_PORTFOLIO_ID,
   PORTFOLIO_ALIAS_TO_SUFFIX,
-  API_ENDPOINTS,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
 import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import {
   attachEvidenceRefsToBrainAudit,
   ensureBrainAuditCoverage,

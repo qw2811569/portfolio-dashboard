@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { C, alpha } from '../../theme.js'
 import {
   getErrorRetryDelayMs,
@@ -44,8 +44,6 @@ export function DataError({
   resource = '',
   onRetry = null,
   onDismiss = null,
-  onLogin = null,
-  loginHref = '',
   retryBehavior = 'auto',
   maxAutoRetries = 3,
   style = {},
@@ -54,11 +52,6 @@ export function DataError({
   const tone = toneByStatus[normalizedStatus] || toneByStatus['5xx']
   const copy = getSoftErrorCopy(normalizedStatus, resource)
   const [attempt, setAttempt] = useState(0)
-  const resolvedLoginHref = useMemo(() => {
-    if (loginHref) return loginHref
-    if (typeof window === 'undefined') return ''
-    return window.location.href
-  }, [loginHref])
 
   useEffect(() => {
     if (retryBehavior !== 'auto' || typeof onRetry !== 'function') return undefined
@@ -111,47 +104,8 @@ export function DataError({
         </span>
       </div>
 
-      {(typeof onRetry === 'function' ||
-        normalizedStatus === 401 ||
-        typeof onDismiss === 'function') && (
+      {(typeof onRetry === 'function' || typeof onDismiss === 'function') && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {normalizedStatus === 401 &&
-            (resolvedLoginHref ? (
-              <a
-                href={resolvedLoginHref}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minWidth: 44,
-                  minHeight: 44,
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: `1px solid ${alpha(C.amber, '2a')}`,
-                  background: alpha(C.amber, '12'),
-                  color: C.textSec,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  textDecoration: 'none',
-                  textTransform: 'uppercase',
-                  boxShadow: C.shadow,
-                }}
-              >
-                重新登入
-              </a>
-            ) : (
-              <Button
-                color="amber"
-                size="sm"
-                style={{ textTransform: 'none' }}
-                onClick={() => {
-                  if (typeof onLogin === 'function') onLogin()
-                }}
-              >
-                重新登入
-              </Button>
-            ))}
           {typeof onRetry === 'function' && (
             <Button
               color="amber"

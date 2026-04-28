@@ -710,7 +710,7 @@ export default function Header(props) {
         style: {
           background:
             hoveredTab === tabItem.k && tab !== tabItem.k ? alpha(C.charcoal, '06') : 'transparent',
-          color: tab === tabItem.k ? C.text : C.iron,
+          color: tab === tabItem.k ? C.text : C.textSec,
           border: 'none',
           borderBottom: tab === tabItem.k ? `2px solid ${C.cta}` : '2px solid transparent',
           boxShadow: 'none',

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { API_ENDPOINTS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 
 export function usePortfolioBenchmarkZScore(portfolioId) {
   const [reloadKey, setReloadKey] = useState(0)

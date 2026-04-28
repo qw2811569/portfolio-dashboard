@@ -72,6 +72,9 @@ export function composeDailyReportRitual({
   const canShowActions = state === 'ready'
   const canShowHitRate = state === 'ready'
   const canShowArchive = state !== 'waiting'
+  const isPartialPendingAnalysis = state === 'partial'
+  const isPreliminaryReport = stageKind === 'preliminary'
+  const isConfirmedReport = stageKind === 'confirmed'
   const eventText = firstSentence(
     selectedReport?.eventSummary ||
       selectedReport?.eventInsight ||
@@ -137,6 +140,9 @@ export function composeDailyReportRitual({
     canShowActions,
     canShowHitRate,
     canShowArchive,
+    isPartialPendingAnalysis,
+    isPreliminaryReport,
+    isConfirmedReport,
     hero: {
       date: normalizeReportDate(selectedReport),
       time: normalizeText(selectedReport?.time),
@@ -144,9 +150,10 @@ export function composeDailyReportRitual({
         state === 'ready'
           ? insight
           : state === 'partial'
-            ? '資料已收齊，AI 正在分析'
+            ? '資料已收齊 · 點下方按鈕開始分析'
             : '等明早 08:30 收盤後再開',
       waiting: state === 'waiting',
+      partialPendingAnalysis: isPartialPendingAnalysis,
     },
     pillars: [
       { key: 'fundamental', title: '基本面', body: fundamentalText },

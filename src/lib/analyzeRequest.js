@@ -1,4 +1,5 @@
 // @ts-check
+import { API_ENDPOINTS } from './apiEndpoints.js'
 
 /**
  * @typedef {{
@@ -142,8 +143,8 @@ function isLocalDev() {
 export async function requestAnalyzeWithFallback({
   requestBody,
   fetchImpl = globalThis.fetch,
-  streamUrl = '/api/analyze?stream=1',
-  fallbackUrl = '/api/analyze',
+  streamUrl = API_ENDPOINTS.ANALYZE_STREAM,
+  fallbackUrl = API_ENDPOINTS.ANALYZE,
   timeoutMs = ANALYZE_REQUEST_TIMEOUT_MS,
   consumeStream,
   onMeta = () => {},

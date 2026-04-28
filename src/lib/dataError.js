@@ -82,7 +82,7 @@ export function getSoftErrorCopy(status, resource = '') {
 
   if (normalizedStatus === 401) {
     if (normalizedResource === 'tracked-stocks') return '登入 session 過期 · 重新登入後再同步一次'
-    return '需要重新登入 · 前往登入'
+    return '需要登入後才能用'
   }
 
   if (normalizedStatus === 404) {

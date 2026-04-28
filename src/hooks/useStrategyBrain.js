@@ -18,6 +18,7 @@ import {
   ensureBrainAuditCoverage,
   mergeBrainWithAuditLifecycle,
 } from '../lib/brainRuntime.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 
 /**
  * Read from localStorage
@@ -177,7 +178,7 @@ export const useStrategyBrain = ({
     if (!canUseCloud) return null
 
     try {
-      const res = await fetch('/api/brain', {
+      const res = await fetch(API_ENDPOINTS.BRAIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get-brain' }),
@@ -208,7 +209,7 @@ export const useStrategyBrain = ({
       if (!canUseCloud) return
 
       try {
-        const res = await fetch('/api/brain', {
+        const res = await fetch(API_ENDPOINTS.BRAIN, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'save-brain', data: brainData }),

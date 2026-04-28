@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 
 export function usePortfolioMdd(portfolioId) {
   const [reloadKey, setReloadKey] = useState(0)
@@ -12,7 +13,7 @@ export function usePortfolioMdd(portfolioId) {
 
     const controller = new AbortController()
 
-    fetch(`/api/portfolio-mdd?portfolioId=${encodeURIComponent(portfolioId)}`, {
+    fetch(`${API_ENDPOINTS.PORTFOLIO_MDD}?portfolioId=${encodeURIComponent(portfolioId)}`, {
       signal: controller.signal,
     })
       .then((response) =>

@@ -153,33 +153,28 @@ describe('collect-news', () => {
   })
 
   it('writes a last-success marker and warns when the previous weekday run is late', async () => {
-    const previousMarkerUrl = 'https://blob.example/last-success-collect-news.json'
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
 
-    list.mockImplementation(async ({ prefix }) => {
-      if (prefix === 'last-success-collect-news.json') {
-        return { blobs: [{ url: previousMarkerUrl }] }
-      }
-      return { blobs: [] }
-    })
-
-    global.fetch.mockImplementation(async (input) => {
-      const url = String(input)
-      if (url === previousMarkerUrl) {
+    // Codex HF-2: src/lib/cronLastSuccess.js no longer routes through api/_lib/last-success-store
+    // and reads markers via @vercel/blob `get(key)` directly. Mock get() to return the previous
+    // marker payload as JSON so the lateness check sees it.
+    get.mockImplementation(async (key) => {
+      if (key === 'last-success-collect-news.json') {
         return {
-          ok: true,
           json: async () => ({
             job: 'collect-news',
             lastSuccessAt: '2026-04-10T02:00:00.000Z',
           }),
         }
       }
-      return {
-        ok: true,
-        text: async () => SAMPLE_RSS,
-      }
+      return null
     })
+
+    global.fetch.mockImplementation(async () => ({
+      ok: true,
+      text: async () => SAMPLE_RSS,
+    }))
 
     const req = { method: 'GET', headers: {} }
     const res = createMockResponse()

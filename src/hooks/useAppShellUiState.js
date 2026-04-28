@@ -43,6 +43,30 @@ function writeDetailStockCodeToWindow(nextCode, { replace = false } = {}) {
   window.history[historyMethod](window.history.state, '', nextUrl)
 }
 
+function writeTabPathToWindow(nextTab, activePortfolioId, { replace = false } = {}) {
+  if (typeof window === 'undefined') return
+  const normalizedTab = String(nextTab || '').trim()
+  if (!normalizedTab || !PATH_DRIVEN_TAB_KEYS.has(normalizedTab)) return
+
+  const portfolioId = String(activePortfolioId || '').trim()
+  if (!portfolioId) return
+
+  const segments = window.location.pathname.split('/').filter(Boolean)
+  const isPortfolioPath = segments[0] === 'portfolio' && segments[1] === portfolioId
+  const isRootOrEmpty = segments.length === 0
+  if (!isPortfolioPath && !isRootOrEmpty) return
+
+  const nextPath = `/portfolio/${portfolioId}/${normalizedTab}`
+  const currentPath = window.location.pathname
+  if (currentPath === nextPath) return
+
+  const search = window.location.search || ''
+  const hash = window.location.hash || ''
+  const nextUrl = `${nextPath}${search}${hash}`
+  const historyMethod = replace ? 'replaceState' : 'pushState'
+  window.history[historyMethod](window.history.state, '', nextUrl)
+}
+
 export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
   const initialPortfolioId = readActivePortfolioIdForTabPersistence()
   const initialDetailStockCode = readDetailStockCodeFromWindow()
@@ -74,6 +98,7 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
     if (!nextTab) return
     setRawTab(nextTab)
     writePersistedTabForPortfolio(activePortfolioIdRef.current, nextTab)
+    writeTabPathToWindow(nextTab, activePortfolioIdRef.current)
   }, [])
 
   const restoreTabForPortfolio = useCallback((portfolioId) => {
@@ -82,13 +107,17 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
     const nextPathDrivenTab = readPathDrivenTabFromWindow()
     if (nextDetailStockCode) {
       setRawTab('holdings')
+      writeTabPathToWindow('holdings', activePortfolioIdRef.current, { replace: true })
       return
     }
     if (nextPathDrivenTab) {
       setRawTab(nextPathDrivenTab)
+      writeTabPathToWindow(nextPathDrivenTab, activePortfolioIdRef.current, { replace: true })
       return
     }
-    setRawTab(readPersistedTabForPortfolio(activePortfolioIdRef.current))
+    const persistedTab = readPersistedTabForPortfolio(activePortfolioIdRef.current)
+    setRawTab(persistedTab)
+    writeTabPathToWindow(persistedTab, activePortfolioIdRef.current, { replace: true })
   }, [])
 
   const setDetailStockCode = useCallback((nextCode, { replace = false } = {}) => {
@@ -96,8 +125,11 @@ export function useAppShellUiState({ resetTradeCaptureRef = null } = {}) {
     if (detailStockCodeRef.current === normalizedCode) return
     detailStockCodeRef.current = normalizedCode
     setRawDetailStockCode(normalizedCode)
+    if (normalizedCode) {
+      setRawTab('holdings')
+      writeTabPathToWindow('holdings', activePortfolioIdRef.current, { replace })
+    }
     writeDetailStockCodeToWindow(normalizedCode, { replace })
-    if (normalizedCode) setRawTab('holdings')
   }, [])
 
   useEffect(() => {

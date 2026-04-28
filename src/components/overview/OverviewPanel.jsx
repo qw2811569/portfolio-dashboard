@@ -3,6 +3,7 @@ import { displayPortfolioName } from '../../lib/portfolioDisplay.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
 import { C, alpha } from '../../theme.js'
 import { Card, Button, MetricCard, Skeleton, StaleBadge } from '../common'
+import { EmptyState } from '../common/EmptyState.jsx'
 import { STOCK_META } from '../../seedData.js'
 import { ConcentrationDashboard } from './ConcentrationDashboard.jsx'
 import { KpiCards } from './KpiCards.jsx'
@@ -609,7 +610,39 @@ export function OverviewPanel({
 }) {
   if (loading) return h(OverviewPanelSkeleton)
 
-  const overviewHoldings = flattenPortfolioHoldings(portfolios)
+  const portfolioList = Array.isArray(portfolios) ? portfolios : []
+  const overviewHoldings = flattenPortfolioHoldings(portfolioList)
+  const numericTotalValue = Number(totalValue)
+  const aggregatedTotalValue = Number.isFinite(numericTotalValue) ? numericTotalValue : 0
+  const isTrueEmptyOverview =
+    portfolioList.length === 0 || (overviewHoldings.length === 0 && aggregatedTotalValue === 0)
+
+  if (isTrueEmptyOverview) {
+    return h(
+      'div',
+      { 'data-testid': 'overview-empty-state' },
+      h(OverviewHeader, {
+        portfolioCount: portfolioList.length,
+        totalValue: aggregatedTotalValue,
+        totalPnl: 0,
+        watchlistCount,
+        staleStatus,
+        missingTargetCount,
+        dashboardHeadline: null,
+        onExit,
+      }),
+      h(EmptyState, { resource: 'overview' }),
+      // Keep audit surface even when empty — pendingItems / duplicateHoldings can still come
+      // from cross-portfolio context (e.g. watchlist, broker imports). Hiding them entirely on
+      // empty would lose information per Codex R31-R4 critique.
+      Array.isArray(duplicateHoldings) && duplicateHoldings.length > 0
+        ? h(DuplicateHoldings, { holdings: duplicateHoldings })
+        : null,
+      Array.isArray(pendingItems) && pendingItems.length > 0
+        ? h(PendingItems, { items: pendingItems, onSwitch })
+        : null
+    )
+  }
   const resolvedDashboardHeadline =
     dashboardHeadline?.headline || compareStrip?.insightText
       ? {
@@ -631,11 +664,11 @@ export function OverviewPanel({
       dashboardHeadline: resolvedDashboardHeadline,
       onExit,
     }),
-    h(KpiCards, { portfolios }),
+    h(KpiCards, { portfolios: portfolioList }),
     h(ConcentrationDashboard, { holdings: overviewHoldings, stockMeta: STOCK_META }),
     h(PrincipleCards),
     h(PortfolioSummaryList, {
-      portfolios,
+      portfolios: portfolioList,
       activePortfolioId,
       onSwitch,
     }),

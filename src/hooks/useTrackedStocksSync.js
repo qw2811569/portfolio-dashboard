@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { API_ENDPOINTS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { normalizeDataError } from '../lib/dataError.js'
 import {
   TRACKED_STOCKS_SYNC_DEBOUNCE_MS,

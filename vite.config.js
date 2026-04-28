@@ -72,6 +72,7 @@ function createNodeStyleResponse(res) {
 const LOCAL_API_ROUTE_MODULES = {
   '/api/blob-read': './api/blob-read.js',
   '/api/brain': './api/brain.js',
+  '/api/event-calendar': './api/event-calendar.js',
   '/api/target-prices': './api/target-prices.js',
   '/api/telemetry': './api/telemetry.js',
   '/api/trade-audit': './api/trade-audit.js',
@@ -85,10 +86,52 @@ const SOURCE_CHUNK_RULES = [
     patterns: ['/src/seedData.js', '/src/seedDataEvents.js'],
   },
   {
+    name: 'app-daily-workflow',
+    patterns: [
+      '/src/hooks/useDailyAnalysisWorkflow.js',
+      '/src/lib/dailyAnalysisRuntime.js',
+      '/src/lib/dailyReportComposer.js',
+      '/src/lib/finmindPromptRuntime.js',
+    ],
+  },
+  {
+    name: 'app-weekly-workflow',
+    patterns: [
+      '/src/hooks/useWeeklyReportClipboard.js',
+      '/src/lib/promptTemplateCatalog.js',
+      '/src/lib/weeklyReportExport.js',
+    ],
+  },
+  {
+    name: 'app-workflows',
+    patterns: [
+      '/src/hooks/useReportRefreshWorkflow.js',
+      '/src/hooks/useStressTestWorkflow.js',
+      '/src/hooks/useEventReviewWorkflow.js',
+      '/src/hooks/useResearchWorkflow.js',
+      '/src/hooks/useLocalBackupWorkflow.js',
+    ],
+  },
+  {
     name: 'app-runtime',
     patterns: [
-      '/src/hooks/useAppRuntime',
+      '/src/hooks/useAppRuntime.js',
+      '/src/hooks/useAppRuntimeArgs.js',
+      '/src/hooks/useAppRuntimeCoreLifecycle.js',
+      '/src/hooks/useAppRuntimeCoreArgs.js',
+      '/src/hooks/useAppRuntimePortfolioDerivedData.js',
+      '/src/hooks/useAppRuntimeHeaderProps.js',
+      '/src/hooks/useAppRuntimeState.js',
+      '/src/hooks/useAppRuntimeWorkflows.js',
       '/src/hooks/useAppPanelsRuntime.js',
+      '/src/hooks/useAppDailyAnalysisRuntime.js',
+      '/src/hooks/useAppWeeklyReportRuntime.js',
+      '/src/hooks/useAppReportRuntime.js',
+      '/src/hooks/useAppStressTestRuntime.js',
+      '/src/hooks/useAppEventReviewRuntime.js',
+      '/src/hooks/useAppResearchRuntime.js',
+      '/src/hooks/useAppLocalBackupRuntime.js',
+      '/src/hooks/useAppTradeRuntime.js',
       '/src/hooks/usePortfolioPanelsContextComposer.js',
       '/src/lib/appShellRuntime.js',
     ],
@@ -99,7 +142,7 @@ const SOURCE_CHUNK_RULES = [
   },
   {
     name: 'route-holdings',
-    patterns: ['/src/components/holdings/HoldingsPanelChunk.jsx'],
+    patterns: ['/src/components/holdings/'],
   },
   {
     name: 'route-watchlist',
@@ -107,15 +150,19 @@ const SOURCE_CHUNK_RULES = [
   },
   {
     name: 'route-events',
-    patterns: ['/src/components/events/index.js'],
+    patterns: ['/src/components/events/'],
   },
   {
     name: 'route-daily',
-    patterns: ['/src/components/reports/index.js'],
+    patterns: ['/src/components/reports/'],
   },
   {
     name: 'route-research',
-    patterns: ['/src/components/research/index.js'],
+    patterns: ['/src/components/research/'],
+  },
+  {
+    name: 'weekly-pdf',
+    patterns: ['/src/lib/weeklyPdfBuilder.js'],
   },
   {
     name: 'route-trade',
@@ -251,6 +298,10 @@ export default defineConfig({
             return 'telemetry-vendor'
           }
         },
+      },
+      onwarn(warning, warn) {
+        if (String(warning?.message || '').startsWith('Circular chunk:')) return
+        warn(warning)
       },
     },
   },

@@ -88,4 +88,70 @@ describe('components/OverviewPanel', () => {
 
     expect(screen.getByTestId('overview-panel-skeleton')).toBeInTheDocument()
   })
+
+  it('renders an auditable empty state when there are no portfolios', () => {
+    render(
+      <OverviewPanel
+        {...buildProps({
+          portfolios: [],
+          portfolioCount: 0,
+          totalValue: 0,
+          totalPnl: 0,
+        })}
+      />
+    )
+
+    const emptyShell = screen.getByTestId('overview-empty-state')
+    expect(emptyShell).toBeInTheDocument()
+    expect(emptyShell.querySelector('[data-empty-state="overview"]')).not.toBeNull()
+  })
+
+  it('renders empty state when portfolios have zero aggregated value', () => {
+    render(
+      <OverviewPanel
+        {...buildProps({
+          portfolios: [{ id: 'me', name: '我', holdings: [], notes: {} }],
+          totalValue: 0,
+          totalPnl: 0,
+        })}
+      />
+    )
+
+    expect(screen.getByTestId('overview-empty-state')).toBeInTheDocument()
+  })
+
+  // Per Codex R31-R6 critique: regression test that empty state still surfaces
+  // duplicate / pending audit content when those exist (avoid silent drop on early return).
+  it('keeps duplicate-holdings + pending-items audit visible inside empty state', () => {
+    render(
+      <OverviewPanel
+        {...buildProps({
+          portfolios: [],
+          portfolioCount: 0,
+          totalValue: 0,
+          totalPnl: 0,
+          duplicateHoldings: [{ code: '2330', name: '台積電', portfolios: ['me', '7865'] }],
+          pendingItems: [
+            {
+              id: 'pending-2330',
+              type: 'review',
+              portfolioId: 'me',
+              portfolioName: '我',
+              code: '2330',
+              title: '台積電法說會',
+              date: '2026/04/30',
+            },
+          ],
+        })}
+      />
+    )
+
+    const emptyShell = screen.getByTestId('overview-empty-state')
+    expect(emptyShell).toBeInTheDocument()
+    // EmptyState resource card present
+    expect(emptyShell.querySelector('[data-empty-state="overview"]')).not.toBeNull()
+    // Audit content survives the early-return path
+    expect(screen.getAllByText('台積電', { exact: false }).length).toBeGreaterThan(0)
+    expect(screen.getByText('台積電法說會', { exact: false })).toBeInTheDocument()
+  })
 })

@@ -398,191 +398,211 @@ export function usePortfolioDerivedData({
         underlyingByCode.set(d.code, { code: meta.underlyingCode, name: meta.underlying || '' })
       }
     }
-    Promise.allSettled(
-      codesToEnrich.map(async (code) => {
-        const underlying = underlyingByCode.get(code)
-        const fetchCode = underlying ? underlying.code : code
-        const [fmResult, cronResult] = await Promise.allSettled([
-          fetchStockDossierDataState(fetchCode),
-          fetchCronTargets(fetchCode),
-        ])
+    const startEnrichment = () => {
+      Promise.allSettled(
+        codesToEnrich.map(async (code) => {
+          const underlying = underlyingByCode.get(code)
+          const fetchCode = underlying ? underlying.code : code
+          const [fmResult, cronResult] = await Promise.allSettled([
+            fetchStockDossierDataState(fetchCode),
+            fetchCronTargets(fetchCode),
+          ])
 
-        return {
-          code,
-          fmState: fmResult.status === 'fulfilled' ? fmResult.value : null,
-          cronSnapshot: cronResult.status === 'fulfilled' ? cronResult.value : null,
-          targetFetchError:
-            cronResult.status === 'rejected'
-              ? normalizeDataError(cronResult.reason, { resource: 'target-prices' })
-              : null,
-          underlying: underlying || null,
-        }
-      })
-    ).then((results) => {
-      if (cancelled) return
-      const fulfilled = results
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => result.value)
-      const fmStateMap = new Map(fulfilled.map((item) => [item.code, item.fmState]))
-      const cronMap = new Map(fulfilled.map((item) => [item.code, item.cronSnapshot]))
-      const targetErrorMap = new Map(fulfilled.map((item) => [item.code, item.targetFetchError]))
-      const underlyingMap = new Map(fulfilled.map((item) => [item.code, item.underlying]))
-      const now = new Date()
-      const enriched = D.map((d) => {
-        const fmState = fmStateMap.get(d.code) || null
-        const fallbackSnapshot = fmState?.fallbackSnapshot || null
-        const fallbackDossier =
-          fallbackSnapshot?.dossier && typeof fallbackSnapshot.dossier === 'object'
-            ? fallbackSnapshot.dossier
+          return {
+            code,
+            fmState: fmResult.status === 'fulfilled' ? fmResult.value : null,
+            cronSnapshot: cronResult.status === 'fulfilled' ? cronResult.value : null,
+            targetFetchError:
+              cronResult.status === 'rejected'
+                ? normalizeDataError(cronResult.reason, { resource: 'target-prices' })
+                : null,
+            underlying: underlying || null,
+          }
+        })
+      ).then((results) => {
+        if (cancelled) return
+        const fulfilled = results
+          .filter((result) => result.status === 'fulfilled')
+          .map((result) => result.value)
+        const fmStateMap = new Map(fulfilled.map((item) => [item.code, item.fmState]))
+        const cronMap = new Map(fulfilled.map((item) => [item.code, item.cronSnapshot]))
+        const targetErrorMap = new Map(fulfilled.map((item) => [item.code, item.targetFetchError]))
+        const underlyingMap = new Map(fulfilled.map((item) => [item.code, item.underlying]))
+        const now = new Date()
+        const enriched = D.map((d) => {
+          const fmState = fmStateMap.get(d.code) || null
+          const fallbackSnapshot = fmState?.fallbackSnapshot || null
+          const fallbackDossier =
+            fallbackSnapshot?.dossier && typeof fallbackSnapshot.dossier === 'object'
+              ? fallbackSnapshot.dossier
+              : null
+          const fallbackFundamentals = normalizeFundamentalsEntry(
+            fallbackSnapshot?.fundamentals || fallbackDossier?.fundamentals || null
+          )
+          const fallbackTargetsEntry = resolveFallbackTargetsEntry(fallbackSnapshot)
+          const fallbackTargets = resolveFallbackTargetReports(fallbackSnapshot)
+          const fallbackUpdatedAt = resolveFallbackUpdatedAt(fallbackSnapshot)
+          const fallbackStaleCopy = buildStaleRefreshCopy(
+            fallbackUpdatedAt || fallbackFundamentals?.updatedAt,
+            { now }
+          )
+          const finmindDegraded = fmState?.error?.reason
+            ? {
+                reason: fmState.error.reason,
+                message: fmState.error.message || null,
+                fallbackAt: fallbackUpdatedAt || fmState.error.fallbackAt || null,
+                snapshotDate: fallbackSnapshot?.snapshotDate || fmState.error.snapshotDate || null,
+                fallbackAgeLabel: formatStaleBadgeRelativeLabel(
+                  fallbackUpdatedAt || fmState.error.fallbackAt,
+                  { now }
+                ),
+                staleCopy: fallbackStaleCopy || null,
+                hasFallbackSnapshot: Boolean(fallbackSnapshot),
+              }
             : null
-        const fallbackFundamentals = normalizeFundamentalsEntry(
-          fallbackSnapshot?.fundamentals || fallbackDossier?.fundamentals || null
-        )
-        const fallbackTargetsEntry = resolveFallbackTargetsEntry(fallbackSnapshot)
-        const fallbackTargets = resolveFallbackTargetReports(fallbackSnapshot)
-        const fallbackUpdatedAt = resolveFallbackUpdatedAt(fallbackSnapshot)
-        const fallbackStaleCopy = buildStaleRefreshCopy(
-          fallbackUpdatedAt || fallbackFundamentals?.updatedAt,
-          { now }
-        )
-        const finmindDegraded = fmState?.error?.reason
-          ? {
-              reason: fmState.error.reason,
-              message: fmState.error.message || null,
-              fallbackAt: fallbackUpdatedAt || fmState.error.fallbackAt || null,
-              snapshotDate: fallbackSnapshot?.snapshotDate || fmState.error.snapshotDate || null,
-              fallbackAgeLabel: formatStaleBadgeRelativeLabel(
-                fallbackUpdatedAt || fmState.error.fallbackAt,
-                { now }
+          const fm = fmState?.data || fallbackDossier?.finmind || d.finmind || null
+          const cronSnapshot = cronMap.get(d.code) || null
+          const targetFetchError = targetErrorMap.get(d.code) || null
+          const underlying = underlyingMap.get(d.code) || null
+          const next = {
+            ...d,
+            finmind: fm,
+            targetFetchError,
+            finmindDegraded,
+            ...(underlying
+              ? { underlyingCode: underlying.code, underlyingName: underlying.name }
+              : {}),
+          }
+          const existingFreshness =
+            d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
+          // Derive fundamentals + freshness from FinMind when available. Partial
+          // coverage (revenue only) maps to freshness='aging' which clears the
+          // missing/stale backlog without claiming fully fresh financials; full
+          // coverage maps to 'fresh'. The completeness grade is preserved in the
+          // entry note so downstream consumers can trace partial fills.
+          const mapped = fm ? mapFinMindToFundamentals(fm, { code: d.code }) : null
+          let resolvedFundamentals = d.fundamentals || null
+          if (mapped) {
+            const fundamentalsEntry = {
+              ...mapped.entry,
+              note: [mapped.entry.note, `finmind completeness=${mapped.completeness}`]
+                .filter(Boolean)
+                .join(' | '),
+            }
+            resolvedFundamentals = resolvedFundamentals || fundamentalsEntry
+          } else if (!resolvedFundamentals && fallbackFundamentals) {
+            resolvedFundamentals = {
+              ...fallbackFundamentals,
+              note: appendSnapshotFallbackNote(
+                fallbackFundamentals.note,
+                fallbackSnapshot?.snapshotDate
               ),
-              staleCopy: fallbackStaleCopy || null,
-              hasFallbackSnapshot: Boolean(fallbackSnapshot),
-            }
-          : null
-        const fm = fmState?.data || fallbackDossier?.finmind || d.finmind || null
-        const cronSnapshot = cronMap.get(d.code) || null
-        const targetFetchError = targetErrorMap.get(d.code) || null
-        const underlying = underlyingMap.get(d.code) || null
-        const next = {
-          ...d,
-          finmind: fm,
-          targetFetchError,
-          finmindDegraded,
-          ...(underlying
-            ? { underlyingCode: underlying.code, underlyingName: underlying.name }
-            : {}),
-        }
-        const existingFreshness = d.freshness && typeof d.freshness === 'object' ? d.freshness : {}
-        // Derive fundamentals + freshness from FinMind when available. Partial
-        // coverage (revenue only) maps to freshness='aging' which clears the
-        // missing/stale backlog without claiming fully fresh financials; full
-        // coverage maps to 'fresh'. The completeness grade is preserved in the
-        // entry note so downstream consumers can trace partial fills.
-        const mapped = fm ? mapFinMindToFundamentals(fm, { code: d.code }) : null
-        let resolvedFundamentals = d.fundamentals || null
-        if (mapped) {
-          const fundamentalsEntry = {
-            ...mapped.entry,
-            note: [mapped.entry.note, `finmind completeness=${mapped.completeness}`]
-              .filter(Boolean)
-              .join(' | '),
-          }
-          resolvedFundamentals = resolvedFundamentals || fundamentalsEntry
-        } else if (!resolvedFundamentals && fallbackFundamentals) {
-          resolvedFundamentals = {
-            ...fallbackFundamentals,
-            note: appendSnapshotFallbackNote(
-              fallbackFundamentals.note,
-              fallbackSnapshot?.snapshotDate
-            ),
-          }
-        }
-        // Freshness comes from the entry's updatedAt timestamp via the shared
-        // date-based grade helper. This respects completeness implicitly:
-        // a partial entry that pulled fresh revenue data is still 'fresh'
-        // because it was computed just now. Stale local entries (manual RSS+AI
-        // path) age out naturally through the same grading thresholds.
-        const derivedFundamentalFreshness = computeFreshnessGrade(
-          [resolvedFundamentals?.updatedAt || fallbackUpdatedAt],
-          { now }
-        )
-        const nextFreshness =
-          existingFreshness.fundamentals && existingFreshness.fundamentals !== 'missing'
-            ? existingFreshness.fundamentals
-            : derivedFundamentalFreshness
-
-        // PER-band derived targets: only populate when the holding has no
-        // existing seed/manual target reports. Seeded reports always win —
-        // derived bands are a fallback, not a replacement.
-        const hasExistingTargets = Array.isArray(d.targets) && d.targets.length > 0
-        let nextTargets = d.targets
-        let nextTargetsFreshness = existingFreshness.targets
-        let nextTargetSource = d.targetSource || (hasExistingTargets ? 'seed' : null)
-        let nextTargetAggregate = d.targetAggregate || fallbackDossier?.targetAggregate || null
-        if (!hasExistingTargets) {
-          // Daily target-price cron pipeline: prefer fresh analyst targets
-          // collected by api/cron/collect-target-prices.js over PER-band.
-          // PER-band is the fallback for unsupported instruments or stale cron data.
-          if (cronSnapshot && isCronTargetUsable(cronSnapshot)) {
-            const cronReports = Array.isArray(cronSnapshot?.targets?.reports)
-              ? cronSnapshot.targets.reports
-              : []
-            const aggregateTargets =
-              cronReports.length > 0 ? [] : buildAggregateConsensusTargets(cronSnapshot)
-            nextTargets = cronReports.length > 0 ? cronReports : aggregateTargets
-            nextTargetAggregate = cronSnapshot?.targets?.aggregate || null
-            nextTargetSource = String(cronSnapshot?.targets?.source || '').trim() || 'analyst'
-            nextTargetsFreshness = computeFreshnessGrade(
-              nextTargets.map((report) => report.date),
-              { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
-            )
-          } else {
-            const perBand = fm ? mapFinMindToPerBandTargets(fm, { code: d.code }) : null
-            if (perBand && perBand.reports.length > 0) {
-              nextTargets = perBand.reports
-              nextTargetSource = 'per-band'
-              nextTargetsFreshness = computeFreshnessGrade(
-                perBand.reports.map((report) => report.date),
-                { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
-              )
-            } else if (fallbackTargets.length > 0) {
-              nextTargets = fallbackTargets
-              nextTargetSource =
-                fallbackDossier?.targetSource ||
-                String(fallbackTargetsEntry?.source || '').trim() ||
-                'snapshot'
-              nextTargetAggregate = nextTargetAggregate || fallbackTargetsEntry?.aggregate || null
-              nextTargetsFreshness = computeFreshnessGrade(
-                nextTargets.map((report) => report.date || fallbackUpdatedAt),
-                { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
-              )
             }
           }
-        }
+          // Freshness comes from the entry's updatedAt timestamp via the shared
+          // date-based grade helper. This respects completeness implicitly:
+          // a partial entry that pulled fresh revenue data is still 'fresh'
+          // because it was computed just now. Stale local entries (manual RSS+AI
+          // path) age out naturally through the same grading thresholds.
+          const derivedFundamentalFreshness = computeFreshnessGrade(
+            [resolvedFundamentals?.updatedAt || fallbackUpdatedAt],
+            { now }
+          )
+          const nextFreshness =
+            existingFreshness.fundamentals && existingFreshness.fundamentals !== 'missing'
+              ? existingFreshness.fundamentals
+              : derivedFundamentalFreshness
 
-        return {
-          ...next,
-          fundamentals: resolvedFundamentals,
-          targets: nextTargets,
-          targetAggregate: nextTargetAggregate,
-          targetSource: nextTargetSource,
-          freshness: {
-            ...existingFreshness,
-            fundamentals: nextFreshness,
-            targets: nextTargetsFreshness || existingFreshness.targets,
-            fallback:
-              finmindDegraded?.hasFallbackSnapshot ||
-              fallbackTargets.length > 0 ||
-              fallbackFundamentals
-                ? 'snapshot'
-                : existingFreshness.fallback,
-          },
-        }
+          // PER-band derived targets: only populate when the holding has no
+          // existing seed/manual target reports. Seeded reports always win —
+          // derived bands are a fallback, not a replacement.
+          const hasExistingTargets = Array.isArray(d.targets) && d.targets.length > 0
+          let nextTargets = d.targets
+          let nextTargetsFreshness = existingFreshness.targets
+          let nextTargetSource = d.targetSource || (hasExistingTargets ? 'seed' : null)
+          let nextTargetAggregate = d.targetAggregate || fallbackDossier?.targetAggregate || null
+          if (!hasExistingTargets) {
+            // Daily target-price cron pipeline: prefer fresh analyst targets
+            // collected by api/cron/collect-target-prices.js over PER-band.
+            // PER-band is the fallback for unsupported instruments or stale cron data.
+            if (cronSnapshot && isCronTargetUsable(cronSnapshot)) {
+              const cronReports = Array.isArray(cronSnapshot?.targets?.reports)
+                ? cronSnapshot.targets.reports
+                : []
+              const aggregateTargets =
+                cronReports.length > 0 ? [] : buildAggregateConsensusTargets(cronSnapshot)
+              nextTargets = cronReports.length > 0 ? cronReports : aggregateTargets
+              nextTargetAggregate = cronSnapshot?.targets?.aggregate || null
+              nextTargetSource = String(cronSnapshot?.targets?.source || '').trim() || 'analyst'
+              nextTargetsFreshness = computeFreshnessGrade(
+                nextTargets.map((report) => report.date),
+                { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+              )
+            } else {
+              const perBand = fm ? mapFinMindToPerBandTargets(fm, { code: d.code }) : null
+              if (perBand && perBand.reports.length > 0) {
+                nextTargets = perBand.reports
+                nextTargetSource = 'per-band'
+                nextTargetsFreshness = computeFreshnessGrade(
+                  perBand.reports.map((report) => report.date),
+                  { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+                )
+              } else if (fallbackTargets.length > 0) {
+                nextTargets = fallbackTargets
+                nextTargetSource =
+                  fallbackDossier?.targetSource ||
+                  String(fallbackTargetsEntry?.source || '').trim() ||
+                  'snapshot'
+                nextTargetAggregate = nextTargetAggregate || fallbackTargetsEntry?.aggregate || null
+                nextTargetsFreshness = computeFreshnessGrade(
+                  nextTargets.map((report) => report.date || fallbackUpdatedAt),
+                  { now, thresholds: TARGETS_FRESHNESS_THRESHOLDS }
+                )
+              }
+            }
+          }
+
+          return {
+            ...next,
+            fundamentals: resolvedFundamentals,
+            targets: nextTargets,
+            targetAggregate: nextTargetAggregate,
+            targetSource: nextTargetSource,
+            freshness: {
+              ...existingFreshness,
+              fundamentals: nextFreshness,
+              targets: nextTargetsFreshness || existingFreshness.targets,
+              fallback:
+                finmindDegraded?.hasFallbackSnapshot ||
+                fallbackTargets.length > 0 ||
+                fallbackFundamentals
+                  ? 'snapshot'
+                  : existingFreshness.fallback,
+            },
+          }
+        })
+        setEnrichedDossiers(enriched)
       })
-      setEnrichedDossiers(enriched)
-    })
+    }
+
+    const idleHandle =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(startEnrichment, { timeout: 2500 })
+        : null
+    const timeoutHandle = idleHandle == null ? setTimeout(startEnrichment, 1200) : null
+
     return () => {
       cancelled = true
+      if (
+        idleHandle != null &&
+        typeof window !== 'undefined' &&
+        typeof window.cancelIdleCallback === 'function'
+      ) {
+        window.cancelIdleCallback(idleHandle)
+      }
+      if (timeoutHandle != null) {
+        clearTimeout(timeoutHandle)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codesToEnrichKey])

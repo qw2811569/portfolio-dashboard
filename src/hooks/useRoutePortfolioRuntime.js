@@ -6,7 +6,6 @@ import { useTransientUiActions } from './useTransientUiActions.js'
 import { useWatchlistActions } from './useWatchlistActions.js'
 import { useWatchlistStorageSync } from './useWatchlistStorageSync.js'
 import {
-  API_ENDPOINTS,
   buildPortfolioRoute,
   MARKET_PRICE_CACHE_KEY,
   MARKET_PRICE_SYNC_KEY,
@@ -16,6 +15,7 @@ import {
   PORTFOLIOS_KEY,
   PORTFOLIO_VIEW_MODE,
 } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { normalizeStrategyBrain } from '../lib/brainRuntime.js'
 import {
   createDefaultReviewForm,

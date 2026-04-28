@@ -27,6 +27,12 @@ const RESOURCE_META = {
     description: '明早 06:00 會自動更新，今晚先用持倉結構、事件與市場脈絡把方向看清楚。',
     actionLabel: '',
   },
+  overview: {
+    eyebrow: '尚未開始',
+    title: '還沒有任何組合資料',
+    description: '上傳第一筆成交單後，總覽會自動聚合各組合的價值、損益與曝險。',
+    actionLabel: '上傳成交單',
+  },
 }
 
 function renderIllustration(resource) {

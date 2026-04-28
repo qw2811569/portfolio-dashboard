@@ -1,4 +1,5 @@
 import { loadLocalEnvIfPresent } from './local-env.js'
+import { getAuthClaimFromRequest, normalizeAuthClaim } from './portfolio-policy.js'
 
 function getHeader(req, name) {
   const headers = req?.headers || {}
@@ -14,14 +15,6 @@ function getHeader(req, name) {
   }
 
   return ''
-}
-
-function parseUrlHost(value) {
-  try {
-    return new URL(String(value || '')).host
-  } catch {
-    return ''
-  }
 }
 
 function getRequestHost(req) {
@@ -57,20 +50,8 @@ function hasValidInternalToken(req) {
   return Boolean(expected) && getBearerToken(req) === expected
 }
 
-function isSameOriginBrowserRequest(req) {
-  const host = getRequestHost(req)
-  if (!host) return false
-
-  const originHost = parseUrlHost(getHeader(req, 'origin'))
-  if (originHost && originHost === host) return true
-
-  const refererHost = parseUrlHost(getHeader(req, 'referer'))
-  if (refererHost && refererHost === host) return true
-
-  const secFetchSite = String(getHeader(req, 'sec-fetch-site') || '')
-    .trim()
-    .toLowerCase()
-  return secFetchSite === 'same-origin' || secFetchSite === 'same-site'
+function hasValidSignedAuthClaim(req) {
+  return Boolean(normalizeAuthClaim(getAuthClaimFromRequest(req)))
 }
 
 function isLocalRequest(req) {
@@ -86,8 +67,8 @@ export function isAuthorizedApiRequest(req, { allowAnonymous = false } = {}) {
   if (allowAnonymous) return true
   if (process.env.VITEST) return true
   if (hasValidInternalToken(req)) return true
+  if (hasValidSignedAuthClaim(req)) return true
   if (isLocalRequest(req)) return true
-  if (isSameOriginBrowserRequest(req)) return true
   return false
 }
 

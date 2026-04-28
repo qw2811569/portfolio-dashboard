@@ -15,6 +15,7 @@ import { buildSameDayDailyReportDiff } from '../../lib/dailyReportDiff.js'
 import { isClosedEvent, toSlashDate } from '../../lib/eventUtils.js'
 import { pfKey, readStorageValue } from '../../lib/portfolioUtils.js'
 import { normalizeAnalysisHistoryEntries } from '../../lib/reportUtils.js'
+import { isReadableAuthSessionAvailable } from '../../lib/authSession.js'
 import { getViewModeComplianceMessage, isViewModeEnabled } from '../../lib/viewModeContract.js'
 import { composeDailyReportRitual } from '../../lib/dailyReportComposer.js'
 import DailyHero from './DailyHero.jsx'
@@ -1135,6 +1136,51 @@ function AutoConfirmCard({ state = null }) {
   )
 }
 
+function DailyPartialPendingCta({ onAnalyze, analyzing }) {
+  return h(
+    Card,
+    {
+      'data-testid': 'daily-partial-pending-cta',
+      style: {
+        marginBottom: 8,
+        padding: '12px 12px',
+        borderRadius: 8,
+        border: `1px solid ${alpha(C.cta, '40')}`,
+        background: C.raised,
+      },
+    },
+    h(
+      'div',
+      { style: { display: 'grid', gap: 8 } },
+      h(
+        'div',
+        { style: { fontSize: 12, color: C.textSec, lineHeight: 1.7 } },
+        '收盤資料已齊全，但今日 AI 分析尚未產出。按下方按鈕立刻開始。'
+      ),
+      h(
+        Button,
+        {
+          'data-testid': 'daily-partial-analyze-cta',
+          onClick: onAnalyze,
+          disabled: analyzing,
+          style: {
+            width: '100%',
+            minHeight: 44,
+            borderRadius: 8,
+            border: 'none',
+            background: analyzing ? C.subtle : C.cta,
+            color: analyzing ? C.textMute : C.onFill,
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: analyzing ? 'not-allowed' : 'pointer',
+          },
+        },
+        analyzing ? '分析中...' : '開始今日 AI 分析'
+      )
+    )
+  )
+}
+
 function DailyWaitingCta({ hasPendingReview = false, onNavigateReview, onAnalyze, analyzing }) {
   return h(
     Card,
@@ -2007,6 +2053,7 @@ export function DailyReportPanel({
 }) {
   const [autoConfirmState, setAutoConfirmState] = useState(null)
   const [selectedArchiveDate, setSelectedArchiveDate] = useState('')
+  const [researchAuthWarning, setResearchAuthWarning] = useState('')
   const isInsiderCompressed = viewMode === 'insider-compressed'
   const complianceNote = isInsiderCompressed
     ? '這是合規壓縮版 · 僅保留組合層級觀察 · 不顯示個股細節'
@@ -2036,7 +2083,6 @@ export function DailyReportPanel({
     today: toSlashDate(),
   }).needsReview
   const hasPendingReview = Array.isArray(liveNeedsReview) && liveNeedsReview.length > 0
-  const isPreliminaryReport = dailyReport?.analysisStage === 't0-preliminary'
   const dailyAccuracyGate = useMemo(
     () =>
       resolveDailyAccuracyGate({
@@ -2066,6 +2112,11 @@ export function DailyReportPanel({
     [analyzing, dailyReport, resolvedAnalysisHistory, selectedArchiveDate]
   )
   const selectedRitualDate = selectedArchiveDate || dailyRitual.hero.date
+  // HF-4: read preliminary state from composer (single source of truth) instead of
+  // re-deriving from dailyReport.analysisStage directly. Falls back to the legacy check
+  // when the composer hasn't computed a stage yet.
+  const isPreliminaryReport =
+    dailyRitual.isPreliminaryReport || dailyReport?.analysisStage === 't0-preliminary'
   const dailyAccuracyGateKey = dailyAccuracyGate
     ? [
         dailyAccuracyGate.resource,
@@ -2195,42 +2246,50 @@ export function DailyReportPanel({
             onAnalyze: runDailyAnalysis,
             analyzing,
           })
-        : dailyRitual.canShowArchive &&
+        : null,
+      dailyRitual.isPartialPendingAnalysis &&
+        h(DailyPartialPendingCta, {
+          key: 'partial-pending-cta',
+          onAnalyze: runDailyAnalysis,
+          analyzing,
+        }),
+      !isDailyWaiting &&
+        dailyRitual.canShowArchive &&
+        h(
+          Card,
+          {
+            style: {
+              borderRadius: 8,
+              padding: '10px 12px',
+            },
+          },
+          h(
+            'details',
+            null,
             h(
-              Card,
+              'summary',
               {
                 style: {
-                  borderRadius: 8,
-                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  color: C.textSec,
+                  fontWeight: 800,
                 },
               },
-              h(
-                'details',
-                null,
-                h(
-                  'summary',
-                  {
-                    style: {
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      color: C.textSec,
-                      fontWeight: 800,
-                    },
-                  },
-                  dailyRitual.canShowHitRate ? '歷史紀錄與命中率' : '歷史紀錄'
-                ),
-                h(
-                  'div',
-                  { style: { marginTop: 10 } },
-                  h(DailyArchiveTimeline, {
-                    items: dailyRitual.archive,
-                    selectedDate: selectedRitualDate,
-                    onSelect: setSelectedArchiveDate,
-                  }),
-                  dailyRitual.canShowHitRate && h(DailyHitRateChart, { rows: dailyRitual.hitRows })
-                )
-              )
+              dailyRitual.canShowHitRate ? '歷史紀錄與命中率' : '歷史紀錄'
+            ),
+            h(
+              'div',
+              { style: { marginTop: 10 } },
+              h(DailyArchiveTimeline, {
+                items: dailyRitual.archive,
+                selectedDate: selectedRitualDate,
+                onSelect: setSelectedArchiveDate,
+              }),
+              dailyRitual.canShowHitRate && h(DailyHitRateChart, { rows: dailyRitual.hitRows })
             )
+          )
+        )
     ),
 
     // Empty state
@@ -2330,6 +2389,11 @@ export function DailyReportPanel({
               'data-testid': 'go-research-btn',
               onClick: (ev) => {
                 ev.stopPropagation()
+                if (!isReadableAuthSessionAvailable()) {
+                  setResearchAuthWarning('需要登入後才能用')
+                  return
+                }
+                setResearchAuthWarning('')
                 setTab('research')
               },
               style: {
@@ -2347,6 +2411,26 @@ export function DailyReportPanel({
             },
             '前往深度研究'
           ),
+          researchAuthWarning &&
+            h(
+              'div',
+              {
+                key: 'research-auth-warning',
+                role: 'status',
+                style: {
+                  margin: '0 0 8px',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: `1px solid ${alpha(C.amber, '2a')}`,
+                  background: alpha(C.amber, '12'),
+                  color: C.textSec,
+                  fontSize: 12,
+                  lineHeight: 1.6,
+                  fontWeight: 600,
+                },
+              },
+              researchAuthWarning
+            ),
 
           dailyExpanded &&
             h(

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import { API_ENDPOINTS, STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
+import { STATUS_MESSAGE_TIMEOUT_MS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
 import { hydrateDossiersWithFinMind } from '../lib/finmindPromptRuntime.js'
 import {

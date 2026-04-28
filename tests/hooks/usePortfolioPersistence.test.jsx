@@ -1,7 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { webcrypto } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLocalBackupWorkflow } from '../../src/hooks/useLocalBackupWorkflow.js'
 import { usePortfolioPersistence } from '../../src/hooks/usePortfolioPersistence.js'
+import { getEncryptedPortfolioFieldKey } from '../../src/lib/localStorageCrypto.js'
 import { __resetPortfolioRealtimeSyncForTests } from '../../src/lib/portfolioRealtimeSync.js'
 
 class FakeBroadcastChannel {
@@ -29,6 +31,24 @@ class FakeBroadcastChannel {
 
   close() {
     this.listeners.clear()
+  }
+}
+
+function createStorageMock() {
+  const store = new Map()
+  return {
+    getItem: vi.fn((key) => (store.has(key) ? store.get(key) : null)),
+    setItem: vi.fn((key, value) => {
+      store.set(key, String(value))
+    }),
+    removeItem: vi.fn((key) => {
+      store.delete(key)
+    }),
+    clear: vi.fn(() => store.clear()),
+    key: vi.fn((index) => Array.from(store.keys())[index] || null),
+    get length() {
+      return store.size
+    },
   }
 }
 
@@ -285,6 +305,43 @@ describe('hooks/usePortfolioPersistence.js', () => {
     renderHook(() => usePortfolioPersistence(props))
 
     expect(props.savePortfolioData).not.toHaveBeenCalledWith('me', 'watchlist-v1', watchlist)
+  })
+
+  it('migrates persisted portfolio notes from plaintext to encrypted local storage', async () => {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: webcrypto,
+      configurable: true,
+      writable: true,
+    })
+    Object.defineProperty(window, 'crypto', {
+      value: webcrypto,
+      configurable: true,
+      writable: true,
+    })
+    const storage = createStorageMock()
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: storage,
+      configurable: true,
+      writable: true,
+    })
+    Object.defineProperty(window, 'localStorage', {
+      value: storage,
+      configurable: true,
+      writable: true,
+    })
+    const notesKey = 'pf-me-notes-v1'
+    localStorage.setItem(notesKey, JSON.stringify({ riskProfile: '穩健', customNotes: '避開槓桿' }))
+
+    const props = createPersistenceProps({
+      portfolioNotes: { riskProfile: '穩健', customNotes: '避開槓桿' },
+    })
+
+    renderHook(() => usePortfolioPersistence(props))
+
+    await waitFor(() => {
+      expect(localStorage.getItem(notesKey) == null).toBe(true)
+      expect(localStorage.getItem(getEncryptedPortfolioFieldKey(notesKey))).toContain('"AES-GCM"')
+    })
   })
 
   it('cleans up pending cloud save timers on unmount', async () => {

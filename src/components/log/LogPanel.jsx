@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { API_ENDPOINTS } from '../../lib/apiEndpoints.js'
 import { daysBetween, parseFlexibleDate } from '../../lib/dateUtils.js'
 import { formatStaleBadgeRelativeLabel } from '../../lib/staleBadge.js'
 import { useIsMobile } from '../../hooks/useIsMobile.js'
@@ -38,7 +39,7 @@ const FILTER_INPUT_STYLE = {
 
 function buildTradeAuditUrl(portfolioId = '', limit = LOG_AUDIT_LIMIT) {
   if (typeof window === 'undefined') return ''
-  const url = new URL('/api/trade-audit', window.location.origin)
+  const url = new URL(API_ENDPOINTS.TRADE_AUDIT, window.location.origin)
   if (portfolioId) url.searchParams.set('portfolioId', portfolioId)
   url.searchParams.set('limit', String(limit))
   return url.toString()

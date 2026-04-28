@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import {
-  API_ENDPOINTS,
   MARKET_PRICE_CACHE_KEY,
   MARKET_PRICE_SYNC_KEY,
   PORTFOLIO_ALIAS_TO_SUFFIX,
@@ -8,6 +7,7 @@ import {
   POST_CLOSE_SYNC_MINUTES,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { APP_DIALOG_MESSAGES, APP_TOAST_MESSAGES } from '../lib/appMessages.js'
 import { getTaipeiClock, parseStoredDate } from '../lib/datetime.js'
 import { getEventStockCodes } from '../lib/eventUtils.js'

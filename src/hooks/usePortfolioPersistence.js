@@ -1,12 +1,12 @@
 import { useCallback, useEffect } from 'react'
 import {
-  API_ENDPOINTS,
   CLOUD_SAVE_DEBOUNCE,
   CLOUD_SYNC_TTL,
   HISTORY_ENTRY_LIMIT,
   PORTFOLIO_ALIAS_TO_SUFFIX,
   STATUS_MESSAGE_TIMEOUT_MS,
 } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { createDataError, normalizeDataError } from '../lib/dataError.js'
 import { STOCK_META } from '../seedData.js'
 import { normalizeWatchlist } from '../lib/watchlistUtils.js'
@@ -16,6 +16,11 @@ import {
   parseRealtimeStorageValue,
   subscribePortfolioRealtimeSync,
 } from '../lib/portfolioRealtimeSync.js'
+import {
+  getEncryptedPortfolioFieldKey,
+  migratePortfolioField,
+  readPortfolioFieldWithMigration,
+} from '../lib/localStorageCrypto.js'
 import { useTrackedStocksSync } from './useTrackedStocksSync.js'
 
 function mergeResearchHistory(existingReports, incomingReports) {
@@ -268,6 +273,8 @@ export function usePortfolioPersistence({
     const dailySuffix = PORTFOLIO_ALIAS_TO_SUFFIX.dailyReport
     const historyKey = getPortfolioFieldStorageKey(activePortfolioId, historySuffix)
     const dailyKey = getPortfolioFieldStorageKey(activePortfolioId, dailySuffix)
+    const historyEncryptedKey = getEncryptedPortfolioFieldKey(historyKey)
+    const dailyEncryptedKey = getEncryptedPortfolioFieldKey(dailyKey)
 
     const applyPortfolioField = (suffix, value) => {
       if (suffix === historySuffix) {
@@ -288,13 +295,27 @@ export function usePortfolioPersistence({
       applyPortfolioField(payload.suffix, payload.value)
     })
 
+    const applyStoredPortfolioField = async (suffix, key, eventValue) => {
+      const encrypted = await readPortfolioFieldWithMigration({
+        plainKey: key,
+        userIdentity: activePortfolioId,
+        migratePlaintext: true,
+      })
+      applyPortfolioField(
+        suffix,
+        encrypted.status === 'decrypted' || encrypted.status === 'plaintext'
+          ? encrypted.value
+          : parseRealtimeStorageValue(eventValue)
+      )
+    }
+
     const handleStorageEvent = (event) => {
-      if (event?.key === historyKey) {
-        applyPortfolioField(historySuffix, parseRealtimeStorageValue(event.newValue))
+      if (event?.key === historyKey || event?.key === historyEncryptedKey) {
+        applyStoredPortfolioField(historySuffix, historyKey, event.newValue)
         return
       }
-      if (event?.key === dailyKey) {
-        applyPortfolioField(dailySuffix, parseRealtimeStorageValue(event.newValue))
+      if (event?.key === dailyKey || event?.key === dailyEncryptedKey) {
+        applyStoredPortfolioField(dailySuffix, dailyKey, event.newValue)
       }
     }
 
@@ -471,6 +492,20 @@ export function usePortfolioPersistence({
       savePortfolioData(activePortfolioId, PORTFOLIO_ALIAS_TO_SUFFIX.portfolioNotes, portfolioNotes)
     }
   }, [activePortfolioId, canPersistPortfolioData, portfolioNotes, savePortfolioData])
+
+  useEffect(() => {
+    if (!canPersistPortfolioData || !activePortfolioId || !portfolioNotes) return
+    const notesKey = getPortfolioFieldStorageKey(
+      activePortfolioId,
+      PORTFOLIO_ALIAS_TO_SUFFIX.portfolioNotes
+    )
+    migratePortfolioField({
+      plainKey: notesKey,
+      userIdentity: activePortfolioId,
+    }).catch(() => {
+      /* encryption migration must not block existing localStorage rehydrate */
+    })
+  }, [activePortfolioId, canPersistPortfolioData, portfolioNotes])
 
   useEffect(
     () => () => {

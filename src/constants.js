@@ -25,18 +25,7 @@ export const OWNER_PORTFOLIO_ID = 'me'
 export const PORTFOLIO_VIEW_MODE = 'portfolio'
 export const OVERVIEW_VIEW_MODE = 'overview'
 export const DEFAULT_CANONICAL_PORTFOLIO_TAB = 'dashboard'
-export const API_ENDPOINTS = {
-  ANALYZE: '/api/analyze',
-  ANALYST_REPORTS: '/api/analyst-reports',
-  BRAIN: '/api/brain',
-  DAILY_SNAPSHOT_STATUS: '/api/daily-snapshot-status',
-  MORNING_NOTE: '/api/morning-note',
-  PORTFOLIO_BENCHMARK_ZSCORE: '/api/portfolio-benchmark-zscore',
-  RESEARCH: '/api/research',
-  RESEARCH_EXTRACT: '/api/research-extract',
-  TRACKED_STOCKS: '/api/tracked-stocks',
-  TWSE: '/api/twse',
-}
+export { API_ENDPOINTS } from './lib/apiEndpoints.js'
 export const MARKET_PRICE_CACHE_KEY = 'pf-market-price-cache-v1'
 export const MARKET_PRICE_SYNC_KEY = 'pf-market-price-sync-v1'
 export const MARKET_TIMEZONE = 'Asia/Taipei'

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { API_ENDPOINTS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { buildMorningNote } from '../lib/morningNoteBuilder.js'
 
 function buildLocalFallbackNote({ holdings, theses, newsEvents, watchlist }) {

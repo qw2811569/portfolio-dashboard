@@ -1,4 +1,5 @@
 import { PORTFOLIO_ALIAS_TO_SUFFIX } from '../constants.js'
+import { API_ENDPOINTS } from './apiEndpoints.js'
 import { applyTradeEntryToHoldings } from './holdings.js'
 import { pfKey } from './portfolioUtils.js'
 import { buildTradeLogEntries } from './tradeParseUtils.js'
@@ -88,7 +89,7 @@ export async function persistTradeApply({
   }
 
   if (typeof fetch === 'function') {
-    await fetch('/api/trade-audit', {
+    await fetch(API_ENDPOINTS.TRADE_AUDIT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

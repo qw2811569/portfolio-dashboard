@@ -12,12 +12,13 @@
  *   }
  */
 
+import { API_ENDPOINTS } from '../apiEndpoints.js'
 import { createDataError } from '../dataError.js'
 
 const CRON_TARGET_MAX_AGE_DAYS = 30
 
 export async function fetchCronTargets(code) {
-  const res = await fetch(`/api/target-prices?code=${encodeURIComponent(code)}`)
+  const res = await fetch(`${API_ENDPOINTS.TARGET_PRICES}?code=${encodeURIComponent(code)}`)
   if (!res.ok) {
     throw createDataError(res.status, `target-prices fetch failed (${res.status})`, {
       resource: 'target-prices',

@@ -384,7 +384,7 @@ describe('components/ResearchPanel', () => {
     )
 
     expect(container.querySelector('[data-error="analyst-reports"]')).toBeTruthy()
-    expect(container.textContent).toContain('需要重新登入')
+    expect(container.textContent).toContain('需要登入後才能用')
     expect(container.textContent).toContain('這輪卡在 台積電 (2330)')
   })
 

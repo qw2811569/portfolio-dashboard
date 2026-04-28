@@ -174,9 +174,41 @@ describe('components/Daily ritual', () => {
     )
 
     expect(screen.getByTestId('daily-panel')).toHaveAttribute('data-daily-state', 'partial')
-    expect(screen.getByTestId('daily-ritual-hero')).toHaveTextContent('資料已收齊，AI 正在分析')
+    expect(screen.getByTestId('daily-ritual-hero')).toHaveTextContent(
+      '資料已收齊 · 點下方按鈕開始分析'
+    )
+    expect(screen.getByTestId('daily-partial-pending-cta')).toBeInTheDocument()
+    expect(screen.getByTestId('daily-partial-analyze-cta')).toBeInTheDocument()
     expect(screen.queryByTestId('daily-holding-actions')).not.toBeInTheDocument()
     expect(screen.queryByTestId('daily-hit-rate-chart')).not.toBeInTheDocument()
     expect(screen.getByText('歷史紀錄')).toBeInTheDocument()
+  })
+
+  it('keeps the partial CTA mounted but disabled while analyzing', () => {
+    render(
+      <DailyReportPanel
+        {...baseProps}
+        analyzing={true}
+        dailyReport={{
+          id: 'daily-partial-analyzing',
+          date: '2026/04/26',
+          time: '18:40',
+          totalTodayPnl: 100,
+          changes: [{ code: '2330', name: '台積電', changePct: 9.1, todayPnl: 100 }],
+          anomalies: [],
+          eventCorrelations: [],
+          eventAssessments: [],
+          needsReview: [],
+          analysisStage: 't0-preliminary',
+        }}
+      />
+    )
+
+    // Per Codex R31-R4 critique: don't unmount the CTA during analyzing — keep it mounted
+    // and disabled so screen-reader / keyboard state stays stable.
+    const cta = screen.getByTestId('daily-partial-analyze-cta')
+    expect(cta).toBeInTheDocument()
+    expect(cta).toBeDisabled()
+    expect(cta).toHaveTextContent('分析中...')
   })
 })

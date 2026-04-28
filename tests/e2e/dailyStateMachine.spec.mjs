@@ -55,7 +55,9 @@ test('partial daily report hides holding actions until insight exists', async ({
   await page.goto(routeUrl('/portfolio/me/daily'), { waitUntil: 'domcontentloaded' })
 
   await expect(page.getByTestId('daily-panel')).toHaveAttribute('data-daily-state', 'partial')
-  await expect(page.getByTestId('daily-ritual-hero')).toContainText('資料已收齊，AI 正在分析')
+  await expect(page.getByTestId('daily-ritual-hero')).toContainText('資料已收齊 · 點下方按鈕開始分析')
+  await expect(page.getByTestId('daily-partial-pending-cta')).toBeVisible()
+  await expect(page.getByTestId('daily-partial-analyze-cta')).toBeVisible()
   await expect(page.getByTestId('daily-holding-actions')).toHaveCount(0)
   await expect(page.getByTestId('daily-hit-rate-chart')).toHaveCount(0)
 })

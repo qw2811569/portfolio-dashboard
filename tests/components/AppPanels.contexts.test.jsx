@@ -8,6 +8,11 @@ import { PortfolioPanelsProvider } from '../../src/contexts/PortfolioPanelsConte
 import { useAppPanelsRuntime } from '../../src/hooks/useAppPanelsRuntime.js'
 import { APP_ERROR_BOUNDARY_COPY } from '../../src/lib/appMessages.js'
 
+function writeReadableAuthCookie() {
+  const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 300 }))
+  document.cookie = `pf_auth_claim=header.${payload}.sig; path=/`
+}
+
 function renderWithPanelContexts(ui, { data = {}, actions = {} } = {}) {
   return render(
     <PortfolioPanelsProvider data={data} actions={actions}>
@@ -623,6 +628,7 @@ describe('components/AppPanels context wiring', () => {
       }
     )
 
+    writeReadableAuthCookie()
     fireEvent.click(await screen.findByText('前往深度研究'))
     expect(setTab).toHaveBeenCalledWith('research')
     expect(runDailyAnalysis).not.toHaveBeenCalled()

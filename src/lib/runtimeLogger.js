@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from './apiEndpoints.js'
+
 const RUNTIME_DIAGNOSTICS_KEY = 'pf-runtime-diagnostics-v1'
 const RUNTIME_DIAGNOSTIC_LIMIT = 20
 const RUNTIME_DIAGNOSTICS_BOOTSTRAP_KEY = '__PORTFOLIO_RUNTIME_DIAGNOSTICS_BOOTSTRAPPED__'
@@ -13,7 +15,7 @@ const WEB_VITALS_BOOTSTRAP_KEY = '__PORTFOLIO_WEB_VITALS_BOOTSTRAPPED__'
 const DEFAULT_REMOTE_SAMPLE_RATE = 1
 const DEFAULT_REMOTE_FLUSH_INTERVAL_MS = 3000
 const DEFAULT_REMOTE_BATCH_SIZE = 10
-const DEFAULT_ANALYTICS_ENDPOINT = '/api/telemetry'
+const DEFAULT_ANALYTICS_ENDPOINT = API_ENDPOINTS.TELEMETRY
 
 function getBrowserEnv() {
   return typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}

@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { OWNER_PORTFOLIO_ID, REPORT_REFRESH_DAILY_LIMIT } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
 import { requestAnalyzeWithFallback } from '../lib/analyzeRequest.js'
 import { fetchStockDossierData as defaultFetchStockDossierData } from '../lib/dataAdapters/finmindAdapter.js'
@@ -208,7 +209,7 @@ export function useDailyAnalysisWorkflow({
 
         let marketContext = ''
         try {
-          const indexResponse = await fetch('/api/twse?ex_ch=tse_t00.tw|tse_t01.tw')
+          const indexResponse = await fetch(`${API_ENDPOINTS.TWSE}?ex_ch=tse_t00.tw|tse_t01.tw`)
           const indexData = await indexResponse.json()
           marketContext = buildMarketContextFromIndexData(indexData)
         } catch (indexError) {
@@ -570,7 +571,7 @@ ${losers
 
           blindPredictions = []
           try {
-            const blindResponse = await fetch('/api/analyze', {
+            const blindResponse = await fetch(API_ENDPOINTS.ANALYZE, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -794,7 +795,7 @@ ${losers
         })
 
         if (canUseCloud) {
-          fetch('/api/brain', {
+          fetch(API_ENDPOINTS.BRAIN, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'save-analysis', data: report }),
@@ -808,7 +809,7 @@ ${losers
             const hits = historicalEvents.filter((event) => event.correct === true).length
             const total = historicalEvents.filter((event) => event.correct !== null).length
 
-            const brainResponse = await fetch('/api/analyze', {
+            const brainResponse = await fetch(API_ENDPOINTS.ANALYZE, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

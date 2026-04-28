@@ -3,11 +3,6 @@ import { APP_TOAST_MESSAGES } from '../lib/appMessages.js'
 import { displayPortfolioName } from '../lib/portfolioDisplay.js'
 import { buildWeeklyReportTemplate } from '../lib/promptTemplateCatalog.js'
 import { buildWeeklyReportFilename } from '../lib/weeklyReportExport.js'
-import {
-  buildWeeklyPdfData,
-  buildWeeklyPdfDefinition,
-  downloadWeeklyPdf,
-} from '../lib/weeklyPdfBuilder.js'
 
 function downloadTextFile(filename, content, mimeType) {
   const blob = new Blob([String(content ?? '')], { type: mimeType })
@@ -130,6 +125,8 @@ export function useWeeklyReportClipboard({
   }, [flashSaved, generateWeeklyReport, now])
 
   const downloadWeeklyReportPdf = useCallback(async () => {
+    const { buildWeeklyPdfData, buildWeeklyPdfDefinition, downloadWeeklyPdf } =
+      await import('../lib/weeklyPdfBuilder.js')
     const data = buildWeeklyPdfData({
       portfolioName: activePortfolioName,
       portfolio: activePortfolio,

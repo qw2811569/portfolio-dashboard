@@ -1,11 +1,92 @@
-import { readLastSuccess, writeLastSuccess } from '../../api/_lib/last-success-store.js'
 import { getTaipeiClock } from './datetime.js'
 
 const DEFAULT_WEEKDAY_SUCCESS_GAP = 1
 const DEFAULT_CALENDAR_SUCCESS_GAP = 1
+const LAST_SUCCESS_SCOPE_ACCESS = Object.freeze({
+  'collect-news': 'public',
+  'collect-daily-events': 'public',
+  'tw-events-worker': 'public',
+  'collect-target-prices': 'private',
+  'compute-valuations': 'private',
+  'morning-note': 'private',
+  'daily-snapshot': 'private',
+})
 
 export function getLastSuccessBlobKey(job) {
   return `last-success-${String(job || '').trim()}.json`
+}
+
+function resolveLastSuccessAccess(job, override) {
+  const access = String(
+    override || LAST_SUCCESS_SCOPE_ACCESS[String(job || '').trim()] || 'private'
+  )
+  if (access !== 'public' && access !== 'private') {
+    throw new Error(`[cron-monitor] unsupported last-success access: ${access}`)
+  }
+  return access
+}
+
+function resolveBlobToken(access, token) {
+  const explicit = String(token || '').trim()
+  if (explicit) return explicit
+  return access === 'public'
+    ? String(process.env.PUB_BLOB_READ_WRITE_TOKEN || '').trim()
+    : String(process.env.BLOB_READ_WRITE_TOKEN || '').trim()
+}
+
+async function getVercelBlobFns() {
+  return import('@vercel/blob')
+}
+
+async function parseBlobResult(blobResult) {
+  if (!blobResult) return null
+  if (typeof blobResult.json === 'function') return blobResult.json()
+  if (typeof blobResult.text === 'function') return JSON.parse(await blobResult.text())
+  if (blobResult.stream) return JSON.parse(await new Response(blobResult.stream).text())
+  return blobResult
+}
+
+async function readLastSuccess(job, date = null, options = {}) {
+  if (date != null) {
+    throw new Error('[cron-monitor] dated last-success markers are not supported in src/lib')
+  }
+
+  const key = getLastSuccessBlobKey(job)
+  const access = resolveLastSuccessAccess(job, options.accessOverride)
+  const token = resolveBlobToken(access, options.token)
+  const getImpl = options.getImpl || (await getVercelBlobFns()).get
+
+  try {
+    return parseBlobResult(
+      await getImpl(key, {
+        token,
+        access,
+        ...(access === 'private' ? { useCache: false } : {}),
+      })
+    )
+  } catch (error) {
+    if (error?.name === 'BlobNotFoundError') return null
+    throw error
+  }
+}
+
+async function writeLastSuccess(job, date = null, payload, options = {}) {
+  if (date != null) {
+    throw new Error('[cron-monitor] dated last-success markers are not supported in src/lib')
+  }
+
+  const key = getLastSuccessBlobKey(job)
+  const access = resolveLastSuccessAccess(job, options.accessOverride)
+  const token = resolveBlobToken(access, options.token)
+  const putImpl = options.putImpl || (await getVercelBlobFns()).put
+  return putImpl(key, JSON.stringify(payload), {
+    token,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    access,
+    contentType: 'application/json',
+    cacheControl: access === 'public' ? 'public, max-age=0, must-revalidate' : 'no-store',
+  })
 }
 
 function parseMarketDate(value) {

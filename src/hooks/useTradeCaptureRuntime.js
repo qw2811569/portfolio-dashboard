@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MEMO_Q, PARSE_PROMPT } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import {
   applyParsedTradesToHoldings,
   buildTradeLogEntries,
@@ -323,7 +324,7 @@ export function useTradeCaptureRuntime({
     updateActiveUpload((upload) => ({ ...upload, parseErr: '' }))
 
     try {
-      const response = await fetch('/api/parse', {
+      const response = await fetch(API_ENDPOINTS.PARSE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -417,7 +418,7 @@ export function useTradeCaptureRuntime({
       const beforeTradeLog = Array.isArray(tradeLog) ? tradeLog : []
       const disclaimerAckedAt = tradeDisclaimer.ackedAt || readTradeDisclaimerAckAt()
 
-      const response = await fetch('/api/trade-audit', {
+      const response = await fetch(API_ENDPOINTS.TRADE_AUDIT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

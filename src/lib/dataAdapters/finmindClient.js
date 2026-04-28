@@ -1,9 +1,10 @@
 import { getFinMindDatasetConfig, resolveFinMindDatasetRequest } from './finmindDatasetRegistry.js'
+import { API_ENDPOINTS } from '../apiEndpoints.js'
 
 const CACHE_PREFIX = 'fm-cache-'
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000
 const MAX_CONCURRENT_FINMIND = 3
-const FINMIND_ROUTE_PATH = '/api/finmind'
+const FINMIND_ROUTE_PATH = API_ENDPOINTS.FINMIND
 const FINMIND_UPSTREAM_BASE = 'https://api.finmindtrade.com/api/v4/data'
 
 let finmindInFlight = 0

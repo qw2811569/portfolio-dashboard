@@ -1,7 +1,6 @@
 import {
   ACTIVE_PORTFOLIO_KEY,
   APPLIED_TRADE_PATCHES_KEY,
-  API_ENDPOINTS,
   BACKUP_GLOBAL_KEY_SET,
   CURRENT_SCHEMA_VERSION,
   DEFAULT_PORTFOLIO_NOTES,
@@ -17,6 +16,7 @@ import {
   TRADE_BACKFILL_PATCHES,
   VIEW_MODE_KEY,
 } from '../constants.js'
+import { API_ENDPOINTS } from './apiEndpoints.js'
 import {
   INIT_ANALYSIS_HISTORY_JINLIANCHENG,
   INIT_DAILY_REPORT_JINLIANCHENG,
@@ -29,6 +29,7 @@ import { todayStorageDate } from './datetime.js'
 import { normalizeWatchlist } from './watchlistUtils.js'
 import { broadcastWatchlistSync } from './watchlistSync.js'
 import { broadcastPortfolioFieldSync } from './portfolioRealtimeSync.js'
+import { readPortfolioFieldWithMigration } from './localStorageCrypto.js'
 
 export function createDefaultPortfolios() {
   return [{ id: OWNER_PORTFOLIO_ID, name: '我', isOwner: true, createdAt: todayStorageDate() }]
@@ -208,6 +209,13 @@ export async function savePortfolioData(pid, suffix, data) {
 }
 
 export async function loadPortfolioData(pid, suffix, fallback) {
+  const loaded = await readPortfolioFieldWithMigration({
+    plainKey: pfKey(pid, suffix),
+    userIdentity: pid,
+  })
+  if (loaded.status === 'decrypted' || loaded.status === 'plaintext') {
+    return sanitizePortfolioField(suffix, loaded.value)
+  }
   return sanitizePortfolioField(suffix, await load(pfKey(pid, suffix), fallback))
 }
 

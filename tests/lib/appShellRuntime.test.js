@@ -40,7 +40,9 @@ describe('lib/appShellRuntime.js', () => {
     ]
 
     expect(resolveRuntimeNewsEvents(null, fallbackEvents)).toEqual(fallbackEvents)
-    expect(resolveRuntimeNewsEvents([], fallbackEvents)).toEqual(fallbackEvents)
+    expect(resolveRuntimeNewsEvents(undefined, fallbackEvents)).toEqual(fallbackEvents)
+    // HE-1: explicit empty array means "true empty portfolio" — must not mask with seed.
+    expect(resolveRuntimeNewsEvents([], fallbackEvents)).toEqual([])
     expect(
       filterEventsByType({
         newsEvents: null,

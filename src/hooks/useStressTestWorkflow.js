@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { API_ENDPOINTS } from '../constants.js'
+import { API_ENDPOINTS } from '../lib/apiEndpoints.js'
 import { APP_STATUS_MESSAGES } from '../lib/appMessages.js'
 import {
   buildStressTestSystemPrompt,

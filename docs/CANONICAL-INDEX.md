@@ -8,7 +8,8 @@
 
 ## 入口 / Runtime / 協作
 
-- `docs/README.md` · docs 首讀索引
+- `docs/NOW.md` · current truth / handoff 首讀
+- `docs/README.md` · docs 目錄索引
 - `docs/AI_COLLABORATION_GUIDE.md` · AI / 人類協作規則與 runtime 真相
 - `docs/QUICK_START.md` · 1 分鐘接手版
 - `docs/SERVER_ACCESS_GUIDE.md` · 本地 / 遠端 canonical origin
@@ -54,7 +55,7 @@
   - 拍板 decision（草案）：`docs/decisions/2026-04-28-dashboard-redesign.md`
 - `docs/status/kb-availability-2026-04-18.md` · FinMind availability audit
 - `docs/known-bugs.md` · 已知資料 / 數字坑
-- `docs/STALE-AUDIT-2026-04-19.md` · 本輪文件清理與 stale audit
+- `docs/audits/INDEX.md` · audit 索引；歷史 stale audit 已歸檔到 `docs/archive/2026-Q2/audits-history/`
 
 ## Release / QA / 驗證
 

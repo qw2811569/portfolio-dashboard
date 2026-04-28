@@ -63,10 +63,14 @@
     }
   },
   "health": {
-    "tests": "706 passed / 105 files",
-    "lint": "0 errors, 1 pre-existing warning",
-    "build": "clean",
-    "taskBacklog": { "P0": 2, "P1": 4, "P2": 8, "P3-future": 2, "total": 16 }
+    "tests": "1349 passed / 225 files (R31 closure 2026-04-28)",
+    "lint": "0 errors, 0 warnings",
+    "build": "clean (0 vite circular chunk warnings since R31+1 fix · single 847KB initial bundle)",
+    "lighthouse": "perf 0.86 / LCP 3.31s / FCP 3.16s / CLS 0 / TBT 0 (R31 R8 mobile)",
+    "lastSprint": "R31 (R29-R30 hostile QA bug consensus · 19/19 HIGH closed · LCP 30.6s → 3.31s · 9 round mutual QA)",
+    "activeSprint": "R32 docs cleanup (in progress · 168 → ~80 active md target)",
+    "auditTrail": "docs/audits/2026-04-28-r29-r30-bug-consensus.md",
+    "taskBacklog": { "P0": 0, "P1": 4, "P2": 8, "P3-future": 2, "total": 14 }
   },
   "workDivision": {
     "Claude": {

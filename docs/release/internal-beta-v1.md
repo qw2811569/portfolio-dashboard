@@ -1,9 +1,11 @@
 # Internal Beta v1 · Release Note
 
 **版本**：`1.0.0` internal beta
-**Candidate SHA**：`509c3df`（current committed HEAD）
-**Candidate note**：包含 `f94e77d`（UX-25-bug-4）、`3b2584d`（markdown render）、`509c3df`（thesis empty hide）
-**日期**：2026-04-24
+**Candidate SHA**：`30b5ae2`（main HEAD post-R31 closure · 已 deploy jcv-dev VM）
+**R31 closure note**：19/19 HIGH from R29-R30 hostile QA all closed · perf 0.55→0.86 · LCP 30.6s→3.31s · 1349/1349 tests · audit trail in `docs/audits/2026-04-28-r29-r30-bug-consensus.md`
+**R31+1 fix**：vite circular chunk → TDZ production crash → fixed by removing src/ manualChunks (commit `30b5ae2`)
+**舊 candidate audit trace**：`509c3df`（pre-R31 · 含 R141 #1/#2 / f94e77d UX-25-bug-4）· `ab20a48`（pre-R137+R138）
+**日期**：2026-04-28（refresh from 2026-04-24 baseline）
 **來源依據**：SA §2.2 五條驗收標準 · `internal-beta-checklist.md` · `internal-beta-signoff.md`
 
 ---

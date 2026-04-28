@@ -1,8 +1,8 @@
 # docs/ 索引
 
-> 📌 `docs/` 目錄索引。首讀仍是根目錄 `README.md`。
+> 📌 `docs/` 目錄索引。接手 current truth 先讀 `NOW.md`。
 
-最後更新：2026-04-18
+最後更新：2026-04-28
 
 ## 🔑 First · 任何問題先 grep `docs/CANONICAL-INDEX.md`
 
@@ -10,13 +10,14 @@
 
 ## 先讀順序
 
-1. [`../README.md`](../README.md) — 專案首讀、最短導航
-2. [`AI_COLLABORATION_GUIDE.md`](AI_COLLABORATION_GUIDE.md) — AI / 人類協作規則
-3. [`specs/2026-04-18-portfolio-dashboard-sa.md`](specs/2026-04-18-portfolio-dashboard-sa.md) — 系統分析（What）
-4. [`specs/2026-04-18-portfolio-dashboard-sd.md`](specs/2026-04-18-portfolio-dashboard-sd.md) — 系統設計（How）
-5. [`portfolio-spec-report/architecture.md`](portfolio-spec-report/architecture.md) — 架構 blocker / TODO
-6. [`decisions/index.md`](decisions/index.md) — 正式決議索引
-7. [`status/current-work.md`](status/current-work.md) — 只在接手 live work 時讀
+1. [`NOW.md`](NOW.md) — current truth / active sprint / runtime / open questions
+2. [`../README.md`](../README.md) — 專案上手、最短導航
+3. [`AI_COLLABORATION_GUIDE.md`](AI_COLLABORATION_GUIDE.md) — AI / 人類協作規則
+4. [`specs/2026-04-18-portfolio-dashboard-sa.md`](specs/2026-04-18-portfolio-dashboard-sa.md) — 系統分析（What）
+5. [`specs/2026-04-18-portfolio-dashboard-sd.md`](specs/2026-04-18-portfolio-dashboard-sd.md) — 系統設計（How）
+6. [`portfolio-spec-report/architecture.md`](portfolio-spec-report/architecture.md) — 架構 blocker / TODO
+7. [`decisions/index.md`](decisions/index.md) — 正式決議索引
+8. [`status/current-work.md`](status/current-work.md) — 長篇 live work log
 
 ## 文檔群組
 
@@ -38,4 +39,4 @@
 
 - 檔頭有 `SUPERSEDED` 的，只保留歷史脈絡，不作 current action 依據
 - append-only round 文件若與 `docs/decisions/*.md` 或較新 round 衝突，以較新者為準
-- 若只想知道現在真相，不要從 `docs/status/todo-live.md` 或舊 review snapshot 開始
+- 若只想知道現在真相，不要從 archive 開始（`docs/archive/2026-Q2/status-history/todo-live.md` 等已歸檔）— 從 `docs/NOW.md` 開始

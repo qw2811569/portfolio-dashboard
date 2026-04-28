@@ -9,7 +9,9 @@
 3. `npm run dev`（vite · 預設 `127.0.0.1:3002`）
 4. 開 `http://127.0.0.1:3002`
 
-## 文件導航（單一首讀 = 這份 README）
+## 文件導航
+
+- **現在真相**：`docs/NOW.md`（handoff / active sprint / runtime / open questions）
 
 - **設計**：`docs/specs/2026-04-18-portfolio-dashboard-sa.md`（What）+ `docs/specs/2026-04-18-portfolio-dashboard-sd.md`（How）
 - **架構**：`docs/portfolio-spec-report/architecture.md`（9+ blocker TODO）

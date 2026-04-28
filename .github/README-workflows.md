@@ -1,11 +1,11 @@
-# CI Placeholder
+# CI Workflows
 
-R106 建立此說明，避免 Task 2 仍從「完全沒有 workflow 骨架」開始。
+目前正式 workflow 位於 `.github/workflows/ci.yml`。
 
-目前尚未放入正式 workflow。
+## CI
 
-建議第一支 workflow：
-
-- install dependencies
-- run `npm run verify:local` 或等價拆分命令
-- fail closed，不做 deploy
+- Trigger: pull request to `main`, push to `main`
+- Runtime: Node.js 20 on Ubuntu
+- Setup: `npm ci`, Playwright Chromium install
+- Verification: starts local Vite server on `127.0.0.1:3002`, then runs `npm run verify:local`
+- Deploy: none; CI fails closed and does not deploy

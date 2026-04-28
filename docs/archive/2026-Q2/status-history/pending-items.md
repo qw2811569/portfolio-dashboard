@@ -1,7 +1,7 @@
 # R139-R141 Pending Items
 
 更新基準：`509c3df`（`origin/main..HEAD = 56 commits`）  
-深讀來源：R139 Round 1-8、R140 brief/follow-up、R141 brief、Gemini R8 audit、Hostile QA、M-U3、UX-21 edge cases、R6.10 archive、`CLAUDE.md` R7.5 warning、`docs/status/r139-r141-rollup.md`
+深讀來源：R139 Round 1-8、R140 brief/follow-up、R141 brief、Gemini R8 audit、Hostile QA、M-U3、UX-21 edge cases、R6.10 archive、`CLAUDE.md` R7.5 warning、`docs/archive/2026-Q2/status-history/r139-r141-rollup.md`
 
 ## Legend
 

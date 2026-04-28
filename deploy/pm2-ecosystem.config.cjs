@@ -54,6 +54,13 @@ module.exports = {
         ATOMIC_DEPLOY_SCRIPT: path.join(REPO_ROOT, 'scripts', 'vm-atomic-deploy.sh'),
         PM2_ECOSYSTEM: path.join(REPO_ROOT, 'deploy', 'pm2-ecosystem.config.cjs'),
         PM2_ONLY: 'jcv-api,agent-bridge,jcv-deploy-webhook',
+        // R31+1: NODE_ENV=production above makes npm 8+ omit devDependencies on `npm ci`,
+        // and pm2 had cached an older `DEPLOY_INSTALL_COMMAND=npm install --ignore-scripts`
+        // which compounded the issue (dev deps never installed → vite missing → build failed
+        // silently → `dist/` stayed stale → user saw R31 bug-fix UI for 2 days). Pin the
+        // install command here so dev deps (vite / @vitejs/plugin-react / vitest) are always
+        // installed before `npm run build`.
+        DEPLOY_INSTALL_COMMAND: 'npm ci --include=dev',
       },
     },
   ],

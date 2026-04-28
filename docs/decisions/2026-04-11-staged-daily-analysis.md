@@ -1,7 +1,7 @@
 # Staged Daily Analysis
 
 **日期**：2026-04-11  
-**來源**：`coordination/llm-bus/runs/20260411-122012`、`20260411-124030`、`20260411-130006`  
+**來源**：`docs/archive/2026-Q2/llm-bus-runs/runs/20260411-122012`、`20260411-124030`、`20260411-130006`（R32 R8 archive · 原 `coordination/llm-bus/runs/`）  
 **狀態**：✅ 決議並已成為 canonical runtime contract
 
 ## 決議

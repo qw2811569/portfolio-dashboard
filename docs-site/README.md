@@ -1,5 +1,7 @@
 # 文檔網站使用指南
 
+> **2026-04-28 更新（per Codex R32 R2 critique）**：state 來源已改成 `bash scripts/sync-state.sh` 衍生輸出（`docs/status/current-work.md` + `docs/status/ai-activity.json` + `ai-activity-log.json`）。**不要再手動 edit `index.html` 的 phase progress / timeline / documents object** — 那些 section 由 `scripts/build-docs-state.mjs` 重建，手動改會被下次 sync 蓋掉。詳見 [`DYNAMIC_GUIDE.md`](./DYNAMIC_GUIDE.md)。
+
 ## 🚀 快速啟動
 
 ### 方法 1：VSCode Task（推薦）

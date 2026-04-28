@@ -47,7 +47,10 @@
 | bigstock | `https://35.236.155.62.sslip.io/`                                                 | 夥伴 dev |
 | jcv-dev  | `http://104.199.144.170/`（2026-04-28 切離 Vercel hosting · webhook auto-deploy） | 你 dev   |
 
-每台 VM 內部 URL 慣例：持倉看板 = `/`（root nginx）· Agent Bridge = `/agent-bridge/`。
+每台 VM 內部 URL 慣例：持倉看板 = `/`（root nginx · 兩台都 active）· Agent Bridge = `/agent-bridge/`：
+
+- bigstock：active（夥伴日常用）
+- jcv-dev：**目前未 start**（`deploy/pm2-ecosystem.config.cjs` 已配置 `agent-bridge` process · 但 pm2 上沒實際 launch · 要用就 SSH 進去 `pm2 start ecosystem --only agent-bridge`）
 
 Vercel 已 disconnect（2026-04-28）保留 cold backup 用，不再 active。
 

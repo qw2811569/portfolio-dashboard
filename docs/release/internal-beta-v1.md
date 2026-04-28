@@ -70,7 +70,7 @@
 
 - UX-22b NewsPanel polish（chip / notice / filter ergonomics）
 - UX-01b/c/d/e facade alias consumer migration（C1b/c · 29 檔 / 215 hit）
-- `sync-to-vm-root --mirror-vercel` flag（C3 · 等第二次 hash 漂移再開）
+- ~~`sync-to-vm-root --mirror-vercel` flag（C3 · 等第二次 hash 漂移再開）~~ **取消**（2026-04-28 Vercel disconnect 後沒 hash 可漂移 · flag 失效）
 - Recurring Ops Overlay（R121 §11）· cron + monthly restore rehearsal ship 後排
 - R141 #3 Holdings multi-level filter + detail pane（R6.10 / SA §5.4 carry-over）
 

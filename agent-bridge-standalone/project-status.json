@@ -70,30 +70,31 @@
   },
   "workDivision": {
     "Claude": {
-      "focus": "架構決策 + review（不寫 code，只設計）",
+      "focus": "架構決策 + 自寫 production code（component / hook / lib / test）+ deploy 操作 + multi-LLM 跨人格 review · 跟 Codex 平行下海",
       "activeTaskIds": ["infra-01"],
-      "load": "low",
+      "load": "high",
       "color": "#E87B35",
-      "note": "只負責架構設計、多方共識、review — 所有實作交給 Codex"
+      "note": "2026-04-26 RULE 0 修訂：撤掉「Claude 不碰實作」舊紀律 · Claude 與 Codex 都下海寫 code、互相 review · 仍 Claude 主辦架構 / spec / decision / memory / 跨 LLM 協調"
     },
     "Codex": {
-      "focus": "所有程式碼實作 — UI、runtime、重構",
+      "focus": "production code 實作（UI / runtime / 重構 / 大量 callsite refactor）+ deploy 操作 + Vercel cold backup ops · 跟 Claude 平行下海",
       "activeTaskIds": ["infra-02", "infra-04", "feat-02", "feat-03", "feat-06"],
       "load": "high",
       "color": "#10A37F"
     },
     "Qwen": {
-      "focus": "驗證 + 機械 gap + 測試補齊 + CLI 安裝",
-      "activeTaskIds": ["infra-03", "feat-04", "feat-05", "test-01", "test-02", "test-03"],
-      "load": "high",
-      "color": "#615EFF"
+      "focus": "QA + 廣度測試補齊 + 邊界 / 機械 gap 檢測 · 真需要廣度並行研究時才派",
+      "activeTaskIds": ["feat-04", "feat-05", "test-01", "test-02", "test-03"],
+      "load": "on-demand",
+      "color": "#615EFF",
+      "note": "2026-04-24 起：CLI 安裝改派 Codex（Qwen 燒錢 · per memory feedback_qwen_costs_money）；Qwen 只在 hostile QA / 廣度並行才上"
     },
     "Gemini": {
-      "focus": "用戶盲點審查 + multi-LLM 反駁（不做資料蒐集）",
+      "focus": "用戶盲點審查 + multi-LLM 反駁 + 競品 visual reference scan（不做資料蒐集 · FinMind 統一處理）",
       "activeTaskIds": ["infra-01-consensus"],
       "load": "on-demand",
       "color": "#EA4335",
-      "note": "2026-04-15 角色調整：廢除公開資料蒐集 lane，改為 consensus round 反駁者。外部資料統一走 FinMind。"
+      "note": "2026-04-15 角色調整：廢除公開資料蒐集 lane · 改 consensus round 反駁者 · 外部資料走 FinMind"
     }
   },
   "improvements": [
@@ -102,7 +103,7 @@
       "category": "infrastructure",
       "priority": "P0",
       "title": "Knowledge API runtime 化",
-      "why": "知識庫 JSON 目前 build-time 打包 — 每改一次要 Vercel redeploy。搬到 VM runtime 讀，改 JSON 立刻生效",
+      "why": "知識庫 JSON 目前 build-time 打包 — 每改一次要重 build dist + atomic deploy。搬到 VM runtime 讀，改 JSON 立刻生效不用 redeploy",
       "owner": "Claude"
     },
     {

@@ -23,10 +23,10 @@
 
 - **只叫「Agent Bridge」**（英文保留，這是專有名詞）
 - **不講** 「dashboard」、「VM dashboard」、「交接面板」、「admin panel」
-- **URL**（每台 dev VM 各一份）：
-  - bigstock：`https://35.236.155.62.sslip.io/agent-bridge/`
-  - jcv-dev：`http://104.199.144.170/agent-bridge/`（per pm2-ecosystem.config · 視部署狀態）
-- **技術棧**：每台 VM 各跑 `agent-bridge-standalone/server.mjs` + dashboard
+- **URL**：
+  - bigstock：`https://35.236.155.62.sslip.io/agent-bridge/`（active · 夥伴日常用）
+  - jcv-dev：`http://104.199.144.170/agent-bridge/`（**目前未 start** · `deploy/pm2-ecosystem.config.cjs` 已配置 agent-bridge process · 但 pm2 上沒 launch · 需要時手動 `pm2 start ecosystem --only agent-bridge`）
+- **技術棧**：每台 VM 各應跑一份 `agent-bridge-standalone/server.mjs` + dashboard（雙 VM 對稱原則 · 但 jcv-dev 端尚未啟動）
 - **用戶對象**：你（開發者）+ LLM（Codex / Qwen / Gemini 狀態）
 - **定位**：LLM 派工 + session live feed + task queue + consensus round
 

@@ -109,9 +109,27 @@ Rollback if fail:
 
 ### Step 1 · Select Snapshot Date
 
-> **2026-04-28 update**: 22 keyspace 已切 GCS primary，daily snapshot 也走 GCS bucket（`gs://<private-bucket>/snapshot/daily-manifest/`）。下方 `@vercel/blob` 樣本是 cold backup 場景（Vercel Blob shadow read 仍開）— 用它前先確認 GCS bucket 不可用。canonical 路徑：用 `api/_lib/*-store.js` adapter 讀（自動走 GCS primary）。
+> **2026-04-28 update**: 22 keyspace 已切 GCS primary，daily snapshot 也走 GCS bucket。**canonical 路徑優先用 GCS sample（A）**；只有 GCS 不可用才 fallback 到 Vercel Blob（B · 2026-04-28 disconnect 後仍開 shadow read）。
 
-Command:
+#### A. GCS canonical（**preferred**）
+
+```bash
+cd "$DRILL_REPO"
+
+# Requires gcloud auth + GCS_BUCKET_PRIVATE env (or service account on VM)
+gcloud storage ls "gs://${GCS_BUCKET_PRIVATE}/snapshot/daily-manifest/" | sort
+
+# Or with Node SDK + storage adapter
+node --input-type=module <<'EOF'
+import { gcsList } from '../../api/_lib/gcs-storage.js'
+const items = await gcsList({ bucket: process.env.GCS_BUCKET_PRIVATE, prefix: 'snapshot/daily-manifest/' })
+for (const item of items.sort((a, b) => a.name.localeCompare(b.name))) console.log(item.name)
+EOF
+
+export SNAPSHOT_DATE="<YYYY-MM-DD>"
+```
+
+#### B. Vercel Blob fallback（only if GCS unavailable）
 
 ```bash
 cd "$DRILL_REPO"
@@ -140,9 +158,36 @@ Rollback if fail:
 - do not pick an unknown older snapshot silently
 - either choose the previous valid daily snapshot explicitly, or abort and wait for owner decision
 
-### Step 2 · Download Private Blob Artifacts Into Staging
+### Step 2 · Download Private Snapshot Artifacts Into Staging
 
-Command:
+#### A. GCS canonical（**preferred**）
+
+```bash
+cd "$DRILL_REPO"
+
+node --input-type=module <<'EOF'
+import { gcsRead } from '../../api/_lib/gcs-storage.js'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+
+const bucket = process.env.GCS_BUCKET_PRIVATE
+const snapshotDate = process.env.SNAPSHOT_DATE
+const outDir = process.env.DRILL_DOWNLOAD
+
+const manifestBuf = await gcsRead({ bucket, key: `snapshot/daily-manifest/${snapshotDate}.json` })
+const manifest = JSON.parse(manifestBuf.toString('utf8'))
+
+for (const file of manifest.files || []) {
+  const buf = await gcsRead({ bucket, key: file.pathname })
+  const target = join(outDir, file.pathname)
+  await mkdir(dirname(target), { recursive: true })
+  await writeFile(target, buf)
+  console.log(target)
+}
+EOF
+```
+
+#### B. Vercel Blob fallback（only if GCS unavailable）
 
 ```bash
 cd "$DRILL_REPO"

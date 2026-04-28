@@ -278,6 +278,13 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
       style={{
         position: 'fixed',
         inset: 0,
+        // Constrain overlay to *visual* viewport on iOS Safari (excludes URL bar / home
+        // indicator). `inset: 0` alone uses layout viewport which extends behind the URL
+        // bar — that pushed the panel's bottom (last section + close button) off-screen.
+        // `dvh` is supported on Safari 15.4+ (Mar 2022) / Chrome 108+; older browsers
+        // ignore the invalid value and fall back to `inset: 0` layout viewport.
+        height: '100dvh',
+        maxHeight: '100dvh',
         zIndex: 120,
         background: alpha(C.text, '54'),
         display: 'flex',
@@ -295,8 +302,10 @@ export default function HoldingDetailPane({ open = false, detail = null, onClose
         onClick={(event) => event.stopPropagation()}
         style={{
           width: isMobile ? '100%' : 'min(468px, calc(100vw - 24px))',
-          height: isMobile ? '90vh' : 'calc(100vh - 24px)',
-          maxHeight: isMobile ? '90vh' : 'calc(100vh - 24px)',
+          // Use `%` of overlay parent (which is now correctly sized to visual viewport
+          // via `100dvh` on the overlay) instead of raw `vh`. Mobile: 90% of dvh.
+          height: isMobile ? '90%' : 'calc(100% - 24px)',
+          maxHeight: isMobile ? '90%' : 'calc(100% - 24px)',
           borderRadius: isMobile ? `${C.radii.lg} ${C.radii.lg} 0 0` : C.radii.lg,
           border: `1px solid ${alpha(C.text, '12')}`,
           background: alpha(C.raised, 'fd'),

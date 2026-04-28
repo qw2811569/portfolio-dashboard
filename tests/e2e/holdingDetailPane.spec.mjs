@@ -236,3 +236,53 @@ test('mobile detail pane opens as a bottom drawer and closes on swipe down', asy
 
   await expect(drawer).toHaveCount(0)
 })
+
+// Regression for the user-reported R31+1 bug: 個股摘要 modal 滾不到下方 on iOS Safari.
+// Root cause: outer overlay used `inset: 0` (layout viewport) and inner panel was `90vh`,
+// which pushed the bottom (last section + close button) below the visual viewport when
+// the URL bar was visible. Fix: outer overlay uses `100dvh`, inner panel uses `90%` of
+// overlay so it tracks the *visual* viewport.
+//
+// This e2e suite expects a hosted preview (Vercel / VM) — local dev seed flow differs
+// and isn't reliable here. The unit test in `tests/components/holdingDetailPane.layout.test.jsx`
+// covers the inline-style invariant and runs on every commit.
+test('mobile detail pane content can scroll all the way to the bottom close button', async ({
+  page,
+}, testInfo) => {
+  mergeQaEvidence(testInfo, { scenario: 'holding-detail-pane-mobile-scroll-to-bottom' })
+  installQaMonitor(testInfo, page)
+  await seedStorage(page)
+  await stubApis(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openHoldingsRoute(page)
+
+  await page.getByTestId('holding-open-detail-2330').click()
+
+  const drawer = page.getByTestId('holding-detail-pane-mobile')
+  await expect(drawer).toBeVisible()
+
+  const overlay = page.getByTestId('holding-detail-pane-overlay')
+  const overlayBox = await overlay.boundingBox()
+  const drawerBox = await drawer.boundingBox()
+  const viewport = page.viewportSize()
+  if (!overlayBox || !drawerBox || !viewport) {
+    throw new Error('missing layout boxes for modal scroll regression')
+  }
+
+  expect(overlayBox.height).toBeLessThanOrEqual(viewport.height + 1)
+  expect(drawerBox.y + drawerBox.height).toBeLessThanOrEqual(viewport.height + 1)
+
+  const content = page.getByTestId('holding-detail-pane-content')
+  await content.evaluate((el) => {
+    el.scrollTo({ top: el.scrollHeight, behavior: 'auto' })
+  })
+
+  const closeBottom = page.getByTestId('holding-detail-pane-close-bottom')
+  await expect(closeBottom).toBeVisible()
+  const closeBox = await closeBottom.boundingBox()
+  if (!closeBox) throw new Error('close button bounding box missing')
+  expect(closeBox.y + closeBox.height).toBeLessThanOrEqual(viewport.height + 1)
+
+  await closeBottom.click()
+  await expect(drawer).toHaveCount(0)
+})

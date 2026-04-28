@@ -26,7 +26,7 @@
 - `docs/status/`：live 狀態與審計報告
 - `docs/research/`：研究與 feasibility brief
 - `docs/portfolio-spec-report/`：對外閱讀版報告與架構頁
-- `docs/testing/`：測試 / 驗證報告
+- `docs/qa/`：測試 / 驗證報告（accessibility / cross-browser / insider-enforcement）
 
 ## 次讀文件
 

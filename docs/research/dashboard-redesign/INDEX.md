@@ -25,7 +25,7 @@
 
 > 「我們現在的網頁太長，資訊量太多很難聚焦。」
 
-持倉看板（Vercel `jiucaivoice-dashboard.vercel.app` + VM `35.236.155.62.sslip.io` / `104.199.144.170.sslip.io`）目前是**長頁面 + 多 tab + 多 card** 的密集資訊架構。Round 1 SA/SD（2026-04-18）已奠定 9 tab 結構與 6 個 route page，但**互動 / 聚焦 / 視覺層次**還沒被當主議題收斂過。
+持倉看板（live VM `http://104.199.144.170/` jcv-dev + 夥伴 VM `https://35.236.155.62.sslip.io/` bigstock · Vercel hosting 已 2026-04-28 disconnect · cold backup 不算入口）目前是**長頁面 + 多 tab + 多 card** 的密集資訊架構。Round 1 SA/SD（2026-04-18）已奠定 9 tab 結構與 6 個 route page，但**互動 / 聚焦 / 視覺層次**還沒被當主議題收斂過。
 
 本研究目標：**找出最適合本專案的互動介面（focus pattern）**，把「一頁全塞」改成「主動聚焦 + 漸進揭示」。
 

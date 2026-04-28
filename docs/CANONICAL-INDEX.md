@@ -1,4 +1,4 @@
-# CANONICAL-INDEX · 2026-04-19
+# CANONICAL-INDEX · 2026-04-28（R32 docs cleanup R12 收尾）
 
 使用規則：
 
@@ -59,11 +59,14 @@
 
 ## 子目錄 INDEX（R32 起 · 每個子 dir 有自己的 INDEX）
 
+- [`docs/NOW.md`](NOW.md) · ⭐ **first read** · 60 行 sprint snapshot
 - [`docs/audits/INDEX.md`](audits/INDEX.md) · 4 個 audit 報告
 - [`docs/decisions/index.md`](decisions/index.md) · 23 個拍板決議
 - [`docs/specs/INDEX.md`](specs/INDEX.md) · 3 個 implementation contract
 - [`docs/runbooks/INDEX.md`](runbooks/INDEX.md) · 3 個 long-lived 操作 SOP
 - [`docs/release/INDEX.md`](release/INDEX.md) · 5 份 release 工具文件
+- [`docs/qa/INDEX.md`](qa/INDEX.md) · 3 個 reusable QA template / matrix
+- [`docs/research/INDEX.md`](research/INDEX.md) · 2 single + 1 subdir（dashboard-redesign）
 - [`docs/research/dashboard-redesign/INDEX.md`](research/dashboard-redesign/INDEX.md) · 25 ref + Round 1-20 研究
 
 ## Release / QA / 驗證（細項）

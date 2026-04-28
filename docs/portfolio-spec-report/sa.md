@@ -351,13 +351,13 @@ Holdings 頁至少需提供以下層次：
 
 ### 7.6 Fallback / Resilience Plan
 
-| 失效場景                     | 使用者前台表現                                          | 系統回退策略                                                            |
-| ---------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------- |
-| FinMind API 掛掉             | 顯示 `last-fetch` 時間、`stale` badge、retry CTA        | 先保留最後一次成功資料，不把空資料偽裝成最新狀態                        |
-| AI 幻覺或 `confidence < 0.7` | Accuracy Gate 隱藏建議區，只留 facts / source / warning | 不把低信心內容升格為 action；沿用既有 gate 規範                         |
-| 券商成交單 parse fail        | 友善錯誤 copy、手動輸入入口、CSV template 下載          | 保留原始上傳檔，不直接套用半解析結果                                    |
-| Vercel Blob 讀取失敗         | 顯示 snapshot 模式與資料時間                            | 回落讀 localStorage snapshot，維持最近一次可讀狀態                      |
-| VM 掛掉                      | Vercel 側仍可開啟持倉看板                               | 以前端既有資料與 Blob / local snapshot 進 degraded mode，不讓整站不可讀 |
+| 失效場景                     | 使用者前台表現                                          | 系統回退策略                                                                                                                                       |
+| ---------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FinMind API 掛掉             | 顯示 `last-fetch` 時間、`stale` badge、retry CTA        | 先保留最後一次成功資料，不把空資料偽裝成最新狀態                                                                                                   |
+| AI 幻覺或 `confidence < 0.7` | Accuracy Gate 隱藏建議區，只留 facts / source / warning | 不把低信心內容升格為 action；沿用既有 gate 規範                                                                                                    |
+| 券商成交單 parse fail        | 友善錯誤 copy、手動輸入入口、CSV template 下載          | 保留原始上傳檔，不直接套用半解析結果                                                                                                               |
+| Vercel Blob 讀取失敗         | 顯示 snapshot 模式與資料時間                            | ~~回落讀 localStorage snapshot~~ **R32 stale**：2026-04-28 已棄 Vercel · 改 GCS primary · 詳 `docs/decisions/2026-04-25-vercel-full-decoupling.md` |
+| VM 掛掉                      | ~~Vercel 側仍可開啟持倉看板~~                           | **R32 stale**：post-decoupling = 該 VM 完全不可達 · degraded fallback 仍走 localStorage snapshot · cold-backup `vercel.app` 不算 active surface    |
 
 Fallback 原則：
 

@@ -2,11 +2,13 @@
 
 更新時間：`2026-04-18 14:02 CST`
 
+> ⚠️ **2026-04-28 R32 stale-narrative warning**: 下方 mermaid 圖把「Vercel Frontend / Vercel API Routes」當 active surface。實際上 2026-04-28 已 `vercel git disconnect` · hosting / cron / GCS 全 VM 化（per [`docs/decisions/2026-04-25-vercel-full-decoupling.md`](../decisions/2026-04-25-vercel-full-decoupling.md)）。架構圖未重繪 · 讀者請以 [`docs/NOW.md`](../NOW.md) + [`agent-bridge-standalone/project-status.json`](../../agent-bridge-standalone/project-status.json) 為現行 truth。
+
 ## 1. 前言
 
 這頁改為 **純架構閱讀版**。它只保留 internal beta 階段已收斂的 deployment truth、data authority、runtime / request boundary、RBAC、已決議 consensus 與產品語意 contract reference。
 
-Task 2 的 `69` 條 active workstream、Phase 2 debt、9 層 DAG、T-ID 對應表已拆到 `todo.md` / `todo.html`，避免長表格把三視角架構圖與 auth boundary 淹掉。
+Task 2 的 `69` 條 active workstream、Phase 2 debt、9 層 DAG、T-ID 對應表已拆到 `todo.md`（原 `todo.html` portal R32 已 archive 至 `docs/archive/2026-Q2/spec-report-publish/`），避免長表格把三視角架構圖與 auth boundary 淹掉。
 
 本頁聚焦四件事：
 

@@ -38,7 +38,10 @@ run_update() {
     fi
 
     python3 "$ROOT_DIR/scripts/report-ai-progress.py" "$action" "$AI_NAME" "$message"
-    bash "$ROOT_DIR/scripts/sync-state.sh"
+    # docs-site/ + sync-state.sh archived in R32 R12 (dead surface; docs/NOW.md replaces it)
+    if [[ -f "$ROOT_DIR/scripts/sync-state.sh" ]]; then
+        bash "$ROOT_DIR/scripts/sync-state.sh"
+    fi
 
     # Push status to VM Dashboard (silent fail — network issues shouldn't break local flow)
     if [[ -n "${VM_STATUS_URL:-}" ]]; then
@@ -91,7 +94,12 @@ case "$COMMAND" in
         bash "$ROOT_DIR/scripts/ai-state.sh" status
         ;;
     sync)
-        bash "$ROOT_DIR/scripts/sync-state.sh" "$@"
+        # docs-site/ + sync-state.sh archived in R32 R12; this is now a no-op alias
+        if [[ -f "$ROOT_DIR/scripts/sync-state.sh" ]]; then
+            bash "$ROOT_DIR/scripts/sync-state.sh" "$@"
+        else
+            echo "ai-status.sh sync: docs-site/ retired in R32 R12 · use docs/NOW.md instead"
+        fi
         ;;
     *)
         show_help

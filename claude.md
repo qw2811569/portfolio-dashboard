@@ -2,17 +2,22 @@
 
 **本檔是這個專案的唯一行為規則來源。** 其他外部工具 scaffolding 文件不適用於本專案。
 
-最後更新：2026-04-15
+最後更新：2026-04-28（R32 docs cleanup R12 收 · 含 vercel-decoupling / 雙 VM dev / RULE 0 Claude 下海）
 
 ---
 
-## 🚀 Session 開頭先讀這 4 個（必做）
+## 🚀 Session 開頭先讀這 6 個（必做 · R32 起加 NOW.md 為 first read）
 
-1. `agent-bridge-standalone/project-status.json` — 9 個 tab、已完成清單、roadmap、分工 load
-2. `coordination/llm-bus/agent-bridge-tasks.json` — 當前 task 佇列
-3. **`docs/decisions/index.md` — 已決議事項索引（開新討論前必讀，防止重開舊題）**
-4. **`docs/audits/INDEX.md` — PM / UX / Designer / QA / Perf audit 統一入口**
-5. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
+1. **`docs/NOW.md`** — sprint snapshot（last/active sprint · VM · decisions · open Q · 入口）· **first-read since R32**
+2. `agent-bridge-standalone/project-status.json` — 9 tab + roadmap + 分工 load
+3. `coordination/llm-bus/agent-bridge-tasks.json` — 當前 task 佇列
+4. **`docs/decisions/index.md`** — 已決議事項索引（開新討論前必讀，防止重開舊題）
+5. **`docs/audits/INDEX.md`** — PM / UX / Designer / QA / Perf audit 統一入口
+6. `memory/MEMORY.md`（自動載入）+ 這個 `claude.md`（自動載入）
+
+**子目錄 INDEX**（per-dir 快速查）：
+
+- `docs/specs/INDEX.md` · `docs/runbooks/INDEX.md` · `docs/release/INDEX.md` · `docs/research/dashboard-redesign/INDEX.md`
 
 ## ⚠️ 寫 SA/SD / scope spec 前必做（2026-04-17 新紀律）
 
@@ -201,9 +206,9 @@ Fix-on-fix 第三次失敗就 STOP，從頭讀 code path 找根因。
 
 ### 不做
 
-- 實作任何 production code
-- 部署相關操作
-- 公開資料即時蒐集（派 Gemini）
+- ~~實作任何 production code~~ **2026-04-26 RULE 0 撤銷**：Claude 跟 Codex 都下海寫 code（見前 RULE 0 章節）
+- ~~部署相關操作~~ **同上撤銷**：Claude 可做 git push / SSH / pm2 / sync-to-vm
+- 公開資料即時蒐集（派 Gemini · 仍適用）
 
 ---
 

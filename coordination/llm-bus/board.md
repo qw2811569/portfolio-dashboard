@@ -1,6 +1,10 @@
 # External LLM Board
 
-最後更新：2026-04-09
+最後更新：2026-04-28（R32 R12 · purpose tightened）
+
+> **Purpose（R32 起）**：only LLM lane capability + dispatch policy notes（Gemini / Qwen / Codex 各自能做不能做的）。
+> Sprint state / current task / blocker 已交給 [`docs/NOW.md`](../../docs/NOW.md) + [`docs/status/active-debt-2026-04-28.md`](../../docs/status/active-debt-2026-04-28.md)。
+> 本檔不再扮演「current task 看板」· 不要再從這裡讀「現在做什麼」。
 
 ## Gemini
 
@@ -36,12 +40,12 @@
 
 ## Validation lane
 
-- latest run: `coordination/llm-bus/runs/20260325-210859`
+- latest run: `docs/archive/2026-Q2/llm-bus-runs/runs/20260325-210859`（R32 R8a archive · 原 `coordination/llm-bus/runs/`）
   - Gemini：CLI 正常，但 research 測試命中 `429 RESOURCE_EXHAUSTED`，此輪未完成輸出
   - Qwen：當時仍是本地模型路徑，結果僅供歷史參考；現已改回 plain CLI
-- current run: `coordination/llm-bus/runs/20260409-221610`
+- current run: `docs/archive/2026-Q2/llm-bus-runs/runs/20260409-221610`（R32 R8a archive）
   - Gemini：`gemini-2.5-flash` 已成功完成最小 headless 回覆；`gemini-3.1-flash-lite-preview` 今晚不可作 blocking lane
-  - notes: see `coordination/llm-bus/runs/20260409-221610/gemini-operating-notes.md`
+  - notes: see `docs/archive/2026-Q2/llm-bus-runs/runs/20260409-221610/gemini-operating-notes.md`
 - acceptance rule:
   - 只記錄實測通過的能力
   - 若某一路 headless 模式不穩，直接降級角色，不硬撐

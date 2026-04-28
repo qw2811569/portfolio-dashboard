@@ -11,7 +11,7 @@ Production should run behind Nginx with TLS termination and keep the Node server
 - `WORKSPACE_ROOT=/home/chenkuichen/app`
 - `BRIDGE_AUTH_TOKEN=<strong random token>` — prod write token, do not commit; inject via PM2 env only
 - `BRIDGE_AUTH_TOKEN_PREVIEW=<strong random token>` — preview write token, distinct from prod
-- `BRIDGE_INTERNAL_TOKEN=<strong random token>` — optional alias if you want `/internal/*` callers to use a distinct env name on Vercel; if unset, code falls back to `BRIDGE_AUTH_TOKEN`
+- `BRIDGE_INTERNAL_TOKEN=<strong random token>` — optional alias if you want `/internal/*` callers to use a distinct env name on the VM nginx layer (R32: was Vercel; Vercel hosting disconnected 2026-04-28); if unset, code falls back to `BRIDGE_AUTH_TOKEN`
 
 ### Auth model
 
@@ -22,9 +22,8 @@ Production should run behind Nginx with TLS termination and keep the Node server
 ### Token tiers
 
 - VM accepts both `BRIDGE_AUTH_TOKEN` and `BRIDGE_AUTH_TOKEN_PREVIEW`
-- Vercel keeps using the same env name, `BRIDGE_AUTH_TOKEN`, but binds different values per target
-- `production` should keep the prod token
-- `preview` should use the preview token
+- ~~Vercel keeps using the same env name~~ **2026-04-28 R32**: Vercel hosting disconnected per `docs/decisions/2026-04-25-vercel-full-decoupling.md`; pm2 ecosystem on each VM is now the single env source.
+- Each VM's `prod` runtime gets the prod token; preview branches now run on dev VM with `BRIDGE_AUTH_TOKEN_PREVIEW`
 - Current behavior is intentionally same-scope: both tokens can hit the same mutating routes until preview resources are isolated later
 - Auth logs only record token class (`prod` or `preview`), never the secret value
 

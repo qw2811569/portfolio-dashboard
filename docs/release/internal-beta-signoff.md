@@ -17,8 +17,8 @@ Status: `pending-signoff`
 - cust_id: `7865`
 - compliance mode: `insider`
 - candidate version: `1.0.0`
-- candidate sha: `509c3df` (current committed HEAD on this branch)
-- candidate note: includes `f94e77d` (UX-25-bug-4 fixture), `3b2584d` (markdown render), `509c3df` (thesis empty hide + write-reason CTA); excludes later uncommitted local WIP
+- candidate sha: `9edf0dc` (R32 docs cleanup landed; live on jcv-dev VM as of 2026-04-28)
+- candidate note: includes R31 closure (19/19 HIGH from R29-R30 hostile QA · LCP 30.6s→3.31s · 1349/1349 tests · `30b5ae2`) + R31+1 vite TDZ fix (`30b5ae2`) + R32 docs cleanup (`9edf0dc`); pre-R31 audit trace at `509c3df` (`f94e77d` UX-25-bug-4 / `3b2584d` markdown / `509c3df` thesis empty hide)
 
 ## Ship-Before 30 條 Checklist
 
@@ -147,14 +147,14 @@ Summary:
   - 草稿：兩台 GCP VM（asia-east1 / 台灣 · bigstock + jcv-dev）· GCS bucket 同 region · FinMind 資料 API 走亞太；2026-04-28 起無美國 region 依賴（Vercel disconnect）；內部 beta 階段不涉跨境監管要求
 - [ ] Audit pack 已附齊
   - 參照：[Audit Pack Template](./internal-beta-checklist.md#audit-pack-template)
-  - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + 本輪 commit list (`ab20a48` .. `509c3df`)
+  - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + R31 audit `docs/audits/2026-04-28-r29-r30-bug-consensus.md` + commit range (`ab20a48` .. `9edf0dc`)
 
 ## Signoff Block
 
 - signoff date:（owner 填）
 - owner signature:（owner 填）
 - signed version: `1.0.0`
-- signed sha: 預設 `509c3df`（current committed HEAD；若 signoff 前再落新 commit，需同步更新）
+- signed sha: 預設 `9edf0dc`（R32 docs cleanup; current main HEAD 2026-04-28；若 signoff 前再落新 commit，需同步更新）
 - demo evidence bundle: `docs/release/internal-beta-v1.md` §8 + `.tmp/m-u3-iphone-smoke/screenshots/`
 - decision: `ship` / `hold`（owner 填）
 

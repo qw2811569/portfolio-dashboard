@@ -29,11 +29,13 @@
 
 ## Multi-LLM 協作
 
-| Decision                                                                              | 日期       | 狀態        | 摘要                                                                                                 |
-| ------------------------------------------------------------------------------------- | ---------- | ----------- | ---------------------------------------------------------------------------------------------------- |
-| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md) | 2026-04-15 | ✅ 決議     | Gemini 角色 = 用戶盲點審查員 + multi-LLM 反駁者。不做資料蒐集。不建議架構遷移。                      |
-| [2026-04-15-bridge-auth-token-split](./2026-04-15-bridge-auth-token-split.md)         | 2026-04-15 | ✅ 實作完成 | VM Agent Bridge prod/preview token 拆開，避免 preview 分支拿 prod token                              |
-| [2026-04-24-runtime-status-file-policy](./2026-04-24-runtime-status-file-policy.md)   | 2026-04-24 | ✅ 決議     | `ai-activity*` / `data-coverage-*` / bridge `tasks.json` 保留 local runtime 用途，但退出 git history |
+| Decision                                                                              | 日期       | 狀態                                               | 摘要                                                                                                                                            |
+| ------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [2026-04-15-gemini-role-blind-spot-only](./2026-04-15-gemini-role-blind-spot-only.md) | 2026-04-15 | ✅ 決議                                            | Gemini 角色 = 用戶盲點審查員 + multi-LLM 反駁者。不做資料蒐集。不建議架構遷移。                                                                 |
+| [2026-04-15-bridge-auth-token-split](./2026-04-15-bridge-auth-token-split.md)         | 2026-04-15 | ✅ 實作完成                                        | VM Agent Bridge prod/preview token 拆開，避免 preview 分支拿 prod token                                                                         |
+| [2026-04-24-runtime-status-file-policy](./2026-04-24-runtime-status-file-policy.md)   | 2026-04-24 | ✅ 決議                                            | `ai-activity*` / `data-coverage-*` / bridge `tasks.json` 保留 local runtime 用途，但退出 git history                                            |
+| [2026-04-16-vercel-ops-belong-to-codex](./2026-04-16-vercel-ops-belong-to-codex.md)   | 2026-04-16 | ⚰️ SUPERSEDED by 2026-04-25-vercel-full-decoupling | Vercel ops（cost / preview / cron）全交 Codex；Claude 只 review。**已被 vercel-full-decoupling 取代**（2026-04-28 Vercel hosting disconnected） |
+| [2026-04-24-facade-alias-freeze](./2026-04-24-facade-alias-freeze.md)                 | 2026-04-24 | ✅ 決議                                            | Facade alias（`AppShell` / `composeXxx` 舊命名）frozen 不再新增 consumer · `scripts/check-facade-alias.mjs` 守門                                |
 
 ## 產品策略
 

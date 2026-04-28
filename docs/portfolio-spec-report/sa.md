@@ -1,5 +1,9 @@
 # 持倉看板 System Analysis
 
+> ⚠️ **Publish mirror only** — canonical source 是 [`docs/specs/2026-04-18-portfolio-dashboard-sa.md`](../specs/2026-04-18-portfolio-dashboard-sa.md)。
+> 本檔是 spec-doc.js 渲染用的副本 · 已 drift（Codex R32 R8 驗 32 行差異 · 缺 `## 13. 歷史脈絡承接` 段）·
+> **不要在這檔編輯**；如需更新，先改 canonical specs，再從 specs 同步過來。
+
 > 日期：2026-04-18  
 > 文件類型：SA（System Analysis）  
 > 目標讀者：PM / Stakeholder / 新加入團隊 / Phase 2 規劃者

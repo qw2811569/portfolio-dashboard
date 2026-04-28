@@ -1,5 +1,9 @@
 # 持倉看板 System Design
 
+> ⚠️ **Publish mirror only** — canonical source 是 [`docs/specs/2026-04-18-portfolio-dashboard-sd.md`](../specs/2026-04-18-portfolio-dashboard-sd.md)。
+> 本檔是 spec-doc.js 渲染用的副本 · 已 drift（Codex R32 R8 驗 27 行差異 · §1.10 motion 是舊版 ·
+> 缺 2026-04-26 motion-relax 決議的更新）· **不要在這檔編輯**；如需更新，先改 canonical specs，再同步過來。
+
 > 日期：2026-04-18  
 > 文件類型：SD（System Design）  
 > 目標讀者：Engineer / Designer / QA

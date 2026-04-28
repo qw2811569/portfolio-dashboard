@@ -58,6 +58,17 @@
 
 - quota 恢復後跑 Gemini 2.5 flash · 補一輪 blindspot review
 
+### R147 carry-over（R32 R8 + R9 promote · 6 still-open）
+
+源：`docs/audits/2026-04-25-r147-multi-llm-qa.md` § R31 Closure Disposition Appendix
+
+- **#13 Recharts SVG focus sink** · 0.8 hr · need browser re-check（R31 沒這條 closure row）
+- **Slow-network bootstrap half-old state** · R31 HD perf closure 不是同一 deterministic loading-shell bug
+- **Dead React-Query research facade** · `src/hooks/api/useResearch.js` 仍 export `useResearchHistory` / `useEnrichResearchToDossier` / `useRefreshAnalystReports`（rg 顯示 0 importer）→ 安全可刪
+- **Test coverage gap (partial)** · `OperatingContextCard` markdown token regression + Morning Note headline-token input 仍缺
+- **Giant `usePortfolioPanelsContextComposer.js` hook** · structural refactor debt（R32+ 架構議題 · 不是 dogfood blocker）
+- **Swallowed catches** · `src/hooks/useDailyAnalysisWorkflow.js:802` 仍 `catch(() => {})`（partial debt）
+
 ---
 
 ## R31 sprint 已 close（不在 active debt · 留作對照）

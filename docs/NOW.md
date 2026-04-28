@@ -32,21 +32,22 @@ Purpose: one-page current truth for handoff. Keep this under 200 lines; link out
 - `docs/decisions/2026-04-28-dashboard-redesign.md` — dashboard redesign draft decision; use with the 2026-04-28 redesign spec.
 - `docs/decisions/index.md` remains the full decision log.
 
-## Open Questions
+## Open Questions（**user 拍板等級** · LLM 不能自決）
 
-**Active debt list**: `docs/status/active-debt-2026-04-28.md` (R139-R141 sprint trail merged · 4 ship blockers · 5 follow-ups · backlog)
+**Active debt list**: `docs/status/active-debt-2026-04-28.md` (R139-R141 sprint trail merged · 4 ship blockers · 5 follow-ups · backlog · R147 6 carry-over)
 
-R32 docs cleanup specific:
-
-- Decide whether `coordination/llm-bus/board.md` survives after NOW becomes the active current-work doorway.
-- Decide whether `docs-site/` is still maintained. If yes, refresh docs-site README around generated state; if no, archive the site output and keep only source documentation.
-
-R31+ ship blockers (from active-debt-2026-04-28.md):
+R31+ ship blockers (from active-debt-2026-04-28.md · 都需要 user/owner 拍板):
 
 - **Q06 / M-U3 driving oracle**: real-device manual gate vs Playwright sim — pick one, signoff docs must align
 - **Route-shell contract**: docs say "limited" but trade route still live-write — pick one
 - **Holdings multi-level filter + detail pane (R141 #3)**: 4th time slipped past spec — must split to R141b filter / R141c pane
-- **Release docs SHA refresh**: signoff/v1/cross-browser-matrix were stale at `509c3df`, refreshed by R32 to `30b5ae2`
+- **Release docs SHA refresh**: signoff/v1/cross-browser-matrix were stale at `509c3df`, refreshed by R32 to `30b5ae2` ✅
+
+**R32 docs scope · LLM 已決定**：
+
+- ✅ `coordination/llm-bus/board.md` 保留（scope = LLM coordination ephemeral · 跟 NOW.md sprint sticky 互補不重疊）
+- ✅ `docs-site/` 維護（`scripts/build-docs-state.mjs` + `sync-state.sh` 仍在跑）· README 已加 "不要手動 edit" warning
+- ✅ `portfolio-spec-report/` HTML portal 已 archive（無 launch task / VSCode task / package.json 引用 · 6 個 portal HTML 移到 `archive/2026-Q2/spec-report-publish/`）· `pages/*.html` + `assets/` 保留（render scripts 用）
 
 ## How To Run
 

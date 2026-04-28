@@ -165,17 +165,28 @@
 + Y Dark mode toggle（凌晨看盤）
 ```
 
-### 5. **全組合研究**
+### 5. **全組合研究**（**用戶 2026-04-28 修正**）
+
+> ❌ 之前配方寫「multi-portfolio split tile」是錯方向。
+> ✅ 真意：**每週五 AI 覆盤 5 天預測準度 → 進化策略大腦**（對應 `useResearchWorkflow.js` + `knowledgeEvolutionRuntime.js`）
 
 ```
 ┌──────────────────────────────────────┐
 │  C: 巨型「全組合研究」頁名           │
-│  G Split-tile×N：每個組合一塊（並排桌機 / stack mobile）│
-│   └ X Health score badge（每組合）  │
-│   └ E 內含小 card stack             │
-│  BB Heat map：產業 / 區域分布       │
+│  W: 「本週 5 天的預測，準了多少？」  │
+│                                      │
+│  This-week hero card                 │
+│   └ X 預測準度 badge（78% · ↑ +6pp）│
+│   └ AA AI 一句評語                  │
+│                                      │
+│  M stacked bar：5 天對 / 錯 / 模糊  │
+│                                      │
+│  L Accordion list：進化提案（待 approve）│
+│   └ 每條展開：證據 + 影響 + 三選按鈕│
 └──────────────────────────────────────┘
 ```
+
+→ G Split-tile / BB Heat map **不在此頁**（那是跨投組對照需求；本頁服務單一 strategyBrain 的進化 ritual）。
 
 ### 6. **情報脈絡**
 

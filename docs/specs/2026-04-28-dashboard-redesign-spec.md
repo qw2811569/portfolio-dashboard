@@ -137,22 +137,44 @@ Layer 1（≤ 5s）—— 盤後 single ritual（不是 realtime）
 
 **❌ Round 12 配方移除**：F Time-Period Segmented `1H/1D/1W/...`（盤後 ritual 不是 realtime feed）
 
-### 2.5 全組合研究
+### 2.5 全組合研究（**用戶 2026-04-28 修正：是 weekly brain-evolution ritual · 不是 multi-portfolio analysis**）
+
+> ❌ **舊配方錯**（之前 split-tile×N 把多 portfolio 並排是錯方向）。
+> ✅ **真實語意**：每週五 AI 覆盤過去 5 個交易日的預測準度 → 進化策略大腦（`strategyBrain`）→ 把「準的判斷」加 weight、「錯的判斷」記教訓。對應既有 `useResearchWorkflow.js` + `knowledgeEvolutionRuntime.js` + `evaluateBrainProposal` 既有 contract。
 
 ```
-Layer 1（≤ 5s）
+Layer 1（≤ 5s）—— Weekly retrospective ritual
 ┌────────────────────────────────────────────┐
 │ C 巨型「全組合研究」                        │
+│ W micro-copy：本週 5 天的預測，準了多少？     │
 │                                            │
-│ G Split-tile×N（每組合一塊 + X health badge）│
-│  ┌────┬────┬────┬────┐                   │
-│  │組合A│組合B│組合C│組合D│                  │
-│  └────┴────┴────┴────┘                   │
-│  └─ 點 → 同頁 zoom 切單組合（不切頁）     │
+│ ┌─ This-week hero card ──────────────────┐│
+│ │ 本週預測準度：78%（↑ 比上週 +6pp）      ││ ← X health-score-style
+│ │ 進化提案：3 條（待你 approve）          ││
+│ │ AA AI 一句評語：「這週小型股訊號變強」    ││
+│ └──────────────────────────────────────────┘│
 │                                            │
-│ BB Heat map（產業 / 區域分布）             │
+│ ┌─ 5-day prediction recap（M stacked bar）─┐│
+│ │ 一/二/三/四/五 各天：對 / 錯 / 模糊 比例 ││
+│ └──────────────────────────────────────────┘│
 └────────────────────────────────────────────┘
+Layer 2 滾動：
+  ┌─ 進化提案 list（每條 L accordion）────┐
+  │ 「降低小型股漲停預測 confidence」       │
+  │ ↓ accordion 展開                       │
+  │   - 證據：5/12 上漲預測 9 中 3         │
+  │   - 影響：strategyBrain.smallcap.weight 0.7→0.5
+  │   - [ Approve ] [ Reject ] [ Defer ]   │
+  └────────────────────────────────────────┘
 ```
+
+**對應既有 contract**（per Codex Round 11 frame inversion）：
+
+- `useResearchWorkflow.js:255,349` — `setStrategyBrain` + `evaluateBrainProposal` 既有 ev gate
+- `lib/knowledgeEvolutionRuntime.js` — knowledge base 進化迴圈
+- spec sa.md:214「週末 Weekly PDF」是 user-facing 輸出
+
+**G Split-tile / BB Heat map 不在此頁** — 那兩個 pattern 是「跨投組對照」需求；本頁只服務「**單一 strategyBrain 的演化 ritual**」。
 
 ### 2.6 情報脈絡
 

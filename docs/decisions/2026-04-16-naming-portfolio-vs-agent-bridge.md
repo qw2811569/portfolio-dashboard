@@ -11,8 +11,11 @@
 
 - **只用中文「持倉看板」**
 - **不講** 「dashboard」、「portfolio dashboard」、「Vercel dashboard」、「前端 app」
-- **URL**：https://jiucaivoice-dashboard.vercel.app/
-- **技術棧**：Vercel + React + `src/components/*`
+- **URL**（每台 dev VM 各一份 · 雙 VM 對稱獨立）：
+  - bigstock：`https://35.236.155.62.sslip.io/`（夥伴 dev）
+  - jcv-dev：`http://104.199.144.170/`（你 dev · 2026-04-28 切離 Vercel）
+  - ~~`https://jiucaivoice-dashboard.vercel.app/`~~（2026-04-28 disconnect · cold backup）
+- **技術棧**：兩台 VM 各跑 nginx + React build + `src/components/*`
 - **用戶對象**：投資人（付費用戶未來）
 - **定位**：持倉管理 + 研究 + 事件追蹤 + AI 分析
 
@@ -20,8 +23,10 @@
 
 - **只叫「Agent Bridge」**（英文保留，這是專有名詞）
 - **不講** 「dashboard」、「VM dashboard」、「交接面板」、「admin panel」
-- **URL**：https://35.236.155.62.sslip.io/
-- **技術棧**：VM + `agent-bridge-standalone/dashboard/index.html`
+- **URL**（每台 dev VM 各一份）：
+  - bigstock：`https://35.236.155.62.sslip.io/agent-bridge/`
+  - jcv-dev：`http://104.199.144.170/agent-bridge/`（per pm2-ecosystem.config · 視部署狀態）
+- **技術棧**：每台 VM 各跑 `agent-bridge-standalone/server.mjs` + dashboard
 - **用戶對象**：你（開發者）+ LLM（Codex / Qwen / Gemini 狀態）
 - **定位**：LLM 派工 + session live feed + task queue + consensus round
 

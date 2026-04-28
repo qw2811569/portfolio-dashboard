@@ -2,7 +2,8 @@
 
 Status: `pending-signoff`
 
-- primary URL: `https://jiucaivoice-dashboard.vercel.app/`
+- primary URL: `http://104.199.144.170/`（jcv-dev VM · 2026-04-28 切離 Vercel hosting）
+- alt URL: `https://35.236.155.62.sslip.io/`（bigstock VM · 夥伴 dev env · demo 也可用此台）
 - owner context: 小奎 / 金聯成董座
 - cust_id: `7865`
 - target duration: `5-8 min`
@@ -18,7 +19,7 @@ Status: `pending-signoff`
 
 | Step | 操作                                                                                                        | 預期看到什麼                                                                                            | 失敗時 rollback                                                           |
 | ---- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 1    | 打開 `https://jiucaivoice-dashboard.vercel.app/`                                                            | 頁面可載入，沒有白屏；若有 auth gate，能看到登入入口或已登入 session                                    | refresh 一次；仍失敗就停止 demo，截圖存證，回報到 Agent Bridge            |
+| 1    | 打開 `http://104.199.144.170/`                                                                              | 頁面可載入，沒有白屏；若有 auth gate，能看到登入入口或已登入 session                                    | refresh 一次；仍失敗就停止 demo，截圖存證，回報到 Agent Bridge            |
 | 2    | 輸入 `cust_id=7865` 登入；若已是 session 直入，就改做 owner context 確認                                    | owner context 指向金聯成董座 / insider slice；不應掉到錯 portfolio                                      | 清 cookie 後重試一次；還是不對就停止 demo，標記 auth / RBAC blocker       |
 | 3    | 進站後第一張先看 `持倉` / `持倉看板`                                                                        | 能看到持股 KPI、今日摘要、資料新鮮度；沒有錯 portfolio 或空殼 fallback                                  | 切回首頁一次；仍異常就回報並停止 demo                                     |
 | 4    | 左側 nav 切 `研究`，先看 `深度研究`                                                                         | 可見研究卡、資料補齊中心或風險卡；至少有一張研究主卡，不是空白                                          | refresh 當前 route 一次；仍失敗就回 `持倉`，停止後續研究 demo             |

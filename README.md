@@ -6,7 +6,7 @@
 
 1. `npm install`
 2. 複製 `.env.example` 到 `.env.local` 填 token（見 `docs/SERVER_ACCESS_GUIDE.md`）
-3. `vercel dev --listen 0.0.0.0:3002`
+3. `npm run dev`（vite · 預設 `127.0.0.1:3002`）
 4. 開 `http://127.0.0.1:3002`
 
 ## 文件導航（單一首讀 = 這份 README）

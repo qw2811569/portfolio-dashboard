@@ -1,5 +1,7 @@
 # 產品化 Gap + 架構方向（長期錨點）
 
+> ⚰️ **架構章節 SUPERSEDED 2026-04-28** — 「Vercel = 純 web server / VM = 純 backend」雙雲分工已 SUPERSEDED 為 single-cloud sovereignty：兩台 GCP VM（bigstock `35.236.155.62` + jcv-dev `104.199.144.170`）對稱 dev 環境 · 各跑全套 stack（持倉看板 + Agent Bridge + cron + GCS）· Vercel 2026-04-28 disconnect 為 cold backup。產品化 Gap 章節仍適用。詳 [`2026-04-25-vercel-full-decoupling.md`](./2026-04-25-vercel-full-decoupling.md)
+
 **日期**：2026-04-16
 **決議人**：用戶（2026-04-16 口頭確認）
 **狀態**：長期 roadmap 錨點

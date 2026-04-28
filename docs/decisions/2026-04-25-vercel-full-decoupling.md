@@ -4,7 +4,17 @@
 **參與者**：用戶（拍板）+ Claude（架構）+ Codex 2a（技術稽核）+ Codex 2b（盲點人格）
 **源頭**：`.tmp/vercel-full-decoupling/discussion.md`（Round 1-3）
 **主題**：把所有 Vercel 上的職責（hosting / Blob / cron / runtime env / CDN）搬到自有 GCP VM stack
-**狀態**：🟡 決議完成 · phase 0 進行中
+**狀態**：✅ Phase 0-5 ship · 2026-04-28 Vercel disconnect 完成
+
+## 後續 milestone（2026-04-26 - 2026-04-28）
+
+- 2026-04-26：22 keyspace `STORAGE_PRIMARY_*=gcs` + `STORAGE_SHADOW_WRITE_*=false`（GCS primary · Blob 寫入零成本）· 4 cron 切 systemd timer · jcv-dev VM webhook auto-deploy 上線
+- 2026-04-26：CI 修 lockfile + TZ + verify:local chain · 全綠
+- 2026-04-28：用戶在 Vercel CLI `vercel git disconnect` · project 不再綁 GitHub auto-build
+- 2026-04-28：雙 VM 對稱 dev 模型確立（bigstock + jcv-dev 各跑全套 stack · 各 sovereignty 獨立）
+- 2026-04-28：doc + memory + scripts cleanup（scrub stale Vercel-active assumptions · 本決議降為歷史錨點）
+
+Vercel 保留 cold backup 用（手動 `vercel deploy` 仍可推），但無 active operation。
 
 ---
 

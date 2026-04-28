@@ -1,5 +1,7 @@
 # Vercel 操作（含診斷）全部交 Codex，Claude 不碰
 
+> ⚰️ **SUPERSEDED 2026-04-28** — Vercel 已 disconnect（無 active ops）。本紀律對 cold backup 場景仍適用（若日後手動 `vercel deploy` 救火，仍派 Codex 不派 Claude），但實際操作頻率 ≈ 0。詳 [`2026-04-25-vercel-full-decoupling.md`](./2026-04-25-vercel-full-decoupling.md)
+
 **日期**：2026-04-16
 **觸發**：Claude 自己跑 `npx vercel ls` + `vercel inspect --logs` 診斷 deploy Error，用戶糾正
 

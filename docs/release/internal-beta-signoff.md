@@ -120,7 +120,7 @@ Summary:
 ## UX-25 Real-User Evidence
 
 - evidence bundle: `.tmp/ux-25-e2e-real-user-sim/evidence-20260423T204857Z`
-- base URL: `https://35.236.155.62.sslip.io/`
+- base URL: `https://35.236.155.62.sslip.io/`（UX-25 captured 2026-04-23 · 該時 bigstock VM = primary surface · 2026-04-26 主 surface 已搬 jcv-dev `http://104.199.144.170/`，evidence URL 留作歷史紀錄）
 - Playwright projects: `chromium` / `webkit` / `ios-safari`
 - step totals: `25 passed / 0 failed / 3 blocked / 2 skipped`
 - runtime summary: `0 console errors / 0 pageerrors / 267 network 4xx/5xx`
@@ -141,10 +141,10 @@ Summary:
   - 草稿：本 app 不構成投資建議；所有 AI 分析為輔助參考 · 投資決策由用戶自行負責（SA §2.4 非目標）
 - [ ] Privacy 已確認
   - 參照：[Ship Gate](./internal-beta-checklist.md#ship-gate) / [Data Handling](./internal-beta-checklist.md#data-handling)
-  - 草稿：內部 beta 僅 owner + 金聯成董座二人使用；持股資料存 private Vercel Blob（R134c + architecture §6）+ localStorage checkpoint；無對外第三方分享
+  - 草稿：內部 beta 僅 owner + 金聯成董座二人使用；持股資料 2026-04-26 起 GCS primary（GCP private bucket）+ ~~Vercel Blob shadow read（write 已關 zero cost）~~ Vercel 2026-04-28 disconnect 為 cold backup · localStorage checkpoint；無對外第三方分享
 - [ ] Residency 已確認
   - 參照：[Ship Gate](./internal-beta-checklist.md#ship-gate)
-  - 草稿：Vercel（美國 region）+ GCP VM（asia-east1 / 台灣）· FinMind 資料 API 走亞太；內部 beta 階段不涉跨境監管要求
+  - 草稿：兩台 GCP VM（asia-east1 / 台灣 · bigstock + jcv-dev）· GCS bucket 同 region · FinMind 資料 API 走亞太；2026-04-28 起無美國 region 依賴（Vercel disconnect）；內部 beta 階段不涉跨境監管要求
 - [ ] Audit pack 已附齊
   - 參照：[Audit Pack Template](./internal-beta-checklist.md#audit-pack-template)
   - 附件：本檔 + `internal-beta-v1.md` release note + `cross-browser-matrix.md`（L8-d）+ `restore-drill.md`（L8-e）+ M-U3 findings + 本輪 commit list (`ab20a48` .. `509c3df`)

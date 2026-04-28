@@ -1,25 +1,45 @@
 {
   "project": "Portfolio Dashboard — 持倉分析系統",
-  "updated": "2026-04-15",
+  "updated": "2026-04-28",
   "architecture": {
     "frontend": {
       "stack": "Vite + React 18 + Zustand + React Query",
-      "deploy": "Vercel CDN (auto-deploy on push)",
+      "deploy": "Each dev VM serves nginx + dist (atomic releases). webhook on push triggers npm ci + build + atomic dist swap. Vercel disconnected 2026-04-28 (cold backup only).",
       "entry": "src/main.jsx → src/App.jsx → AppShellFrame",
       "panels": ["holdings", "events", "news", "daily", "research", "trade", "log"]
     },
     "backend": {
-      "stack": "Vercel Serverless Functions (Node.js 20)",
+      "stack": "Express on pm2 (scripts/vercel-api-server.mjs · runs on each dev VM · Node 20+)",
       "endpoints": 18,
-      "crons": 3,
+      "crons": "4 systemd timers per VM (compute-valuations / collect-daily-events / collect-target-prices / collect-news · TZ=UTC schedules)",
       "ai": "Claude Sonnet 4.6 via Anthropic API",
-      "storage": "Vercel Blob (JSON documents)"
+      "storage": "GCS primary (22 keyspace · STORAGE_PRIMARY_*=gcs since 2026-04-26) · Vercel Blob shadow read on (write off · cost=0)"
     },
-    "vm": {
+    "vms": {
+      "model": "Two independent symmetric dev environments (each runs full stack)",
+      "instances": [
+        {
+          "name": "bigstock",
+          "ip": "35.236.155.62",
+          "url": "https://35.236.155.62.sslip.io/",
+          "owner": "夥伴 dev"
+        },
+        {
+          "name": "jcv-dev",
+          "ip": "104.199.144.170",
+          "url": "http://104.199.144.170/",
+          "owner": "你 dev · 2026-04-28 切離 Vercel hosting"
+        }
+      ],
       "host": "GCP e2-standard-4 (asia-east1-b)",
-      "ip": "35.236.155.62",
-      "services": ["Agent Bridge (port 9527)", "Knowledge API (planned)"],
-      "purpose": "LLM orchestration + runtime knowledge base"
+      "services_per_vm": [
+        "nginx (持倉看板 root)",
+        "Agent Bridge (port 9527 · /agent-bridge/)",
+        "jcv-api (Express · port 3000)",
+        "jcv-deploy-webhook (port 3010)",
+        "systemd cron timers"
+      ],
+      "purpose": "Each VM = sovereign complete dev env (持倉看板 + Agent Bridge + cron + GCS + LLM orchestration)"
     },
     "knowledgeBase": {
       "status": "STATIC (build-time) → migrating to RUNTIME (VM API)",
@@ -35,9 +55,10 @@
     },
     "dataFlow": {
       "FinMind API": "台股財報/營收/籌碼/估值 (1600 req/hr)",
-      "Google News RSS": "每日盤後自動蒐集 → Blob → /api/news-feed",
+      "Google News RSS": "每日盤後 systemd timer 自動蒐集 → GCS bucket → /api/news-feed",
       "Anthropic Claude": "收盤分析 + 深度研究 (server-side)",
-      "Vercel Blob": "news-feed, target-prices, brain-state, research artifacts",
+      "GCS primary": "news-feed, target-prices, brain-state, research artifacts (22 keyspace · 2026-04-26 起 primary)",
+      "Vercel Blob (legacy)": "shadow read still on for divergence detection · write disabled · cold backup only",
       "localStorage": "持股/事件/研究歷史 (client-side, 無 DB)"
     }
   },

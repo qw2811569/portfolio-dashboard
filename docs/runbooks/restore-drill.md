@@ -27,8 +27,8 @@ Status: `runbook-only`
 
 ### 1.1 Canonical Contract
 
-- source: `VM Worker` cron, not Vercel cron and not VM-local ad hoc copy
-- destination: private Vercel Blob for shared artifacts; VM local is staging / fallback only, never canonical
+- source: systemd timer cron on each dev VM (`bigstock` / `jcv-dev`); Vercel cron retired 2026-04-26 · VM-local ad hoc copy is not canonical
+- destination: GCS private bucket for shared artifacts (2026-04-26 起 primary); Vercel Blob shadow read 仍開（write 已關 cost=0），cold backup 用; VM local is staging / fallback only, never canonical
 - required evidence: restore run must emit logs / checksums / screenshots / append entry in `docs/runbooks/restore-drill-log.md`
 - privacy: artifacts containing portfolio or insider state stay private; telemetry may remain public per `T49`, but restore artifacts do not
 
@@ -108,6 +108,8 @@ Rollback if fail:
 - do not continue with any restore command against prod
 
 ### Step 1 · Select Snapshot Date
+
+> **2026-04-28 update**: 22 keyspace 已切 GCS primary，daily snapshot 也走 GCS bucket（`gs://<private-bucket>/snapshot/daily-manifest/`）。下方 `@vercel/blob` 樣本是 cold backup 場景（Vercel Blob shadow read 仍開）— 用它前先確認 GCS bucket 不可用。canonical 路徑：用 `api/_lib/*-store.js` adapter 讀（自動走 GCS primary）。
 
 Command:
 
@@ -440,7 +442,8 @@ git ls-remote origin main backup/pre-r138-20260424-011724
 Verify:
 
 - remote `main` now points at the anchor SHA
-- Vercel starts or exposes the deployment matching the anchor commit
+- jcv-dev webhook auto-deploy picks up the anchor commit (build + atomic dist swap + pm2 reload)
+- bigstock VM mirror updated separately (manual `scripts/sync-to-vm-root.mjs` or its own webhook if configured)
 
 Rollback if fail:
 
@@ -452,15 +455,20 @@ Rollback if fail:
 
 Run git rollback and asset rollback as dual track; do not assume one fixes the other.
 
-- Vercel:
-  - promote the previous `READY` deployment in Vercel dashboard
-  - verify landing page returns `200` and asset hash matches the target deployment
-- VM root:
+- Each dev VM (`bigstock` / `jcv-dev`):
+  - SSH to VM · `cd /var/www/app` · point `current` symlink back to a previous `releases/<stamp>` (atomic, no rebuild needed)
+  - verify landing page returns `200` and asset hash matches the target release
+- Vercel cold backup（2026-04-28 disconnect 後不 active）：若日後啟用，手動 `vercel deploy --prebuilt` 推預建 dist · 否則跳過此步
 
-Command:
+Command (per VM):
 
 ```bash
-node scripts/sync-to-vm-root.mjs
+# jcv-dev
+ssh chenkuichen@104.199.144.170 "cd /var/www/app && ls -la current && ls releases/ | tail -3"
+curl -sI http://104.199.144.170/ | head
+curl -s http://104.199.144.170/ | grep -oE 'index-[A-Za-z0-9]+\\.js' | head -1
+
+# bigstock
 curl -sI https://35.236.155.62.sslip.io/ | head
 curl -s https://35.236.155.62.sslip.io/ | grep -oE 'index-[A-Za-z0-9]+\\.js' | head -1
 ```

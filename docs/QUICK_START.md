@@ -10,7 +10,7 @@
 
 ```bash
 npm install
-vercel dev --listen 0.0.0.0:3002
+npm run dev
 npm run verify:local
 ```
 
@@ -69,8 +69,8 @@ src/
 
 - 優先改 `lib/*`、`hooks/*`、`components/*`
 - 只有跨 tab orchestration、使用者流程接線、最終 panel 組裝才優先改 `App.jsx`
-- 完整本地模式優先 `vercel dev`
-- 若只跑 `npm run dev`，也應維持 `127.0.0.1:3002`，不要漂去其他 origin
+- 本地 dev 用 `npm run dev`（vite · 2026-04-28 起取代 `vercel dev`）
+- 維持 `127.0.0.1:3002`，不要漂去其他 origin
 
 ```javascript
 // 優先在 lib/hooks 落邏輯

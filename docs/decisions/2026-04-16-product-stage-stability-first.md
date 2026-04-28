@@ -1,5 +1,7 @@
 # 產品階段：先穩定再談錢
 
+> ⚰️ **SUPERSEDED 2026-04-28** — 「VM/Vercel 照用」前提已過時：Vercel 2026-04-28 disconnect、持倉看板已切 jcv-dev VM (`104.199.144.170`)。本決議「先穩定再談錢」精神仍適用，但不再走 Vercel 通路。詳 [`2026-04-25-vercel-full-decoupling.md`](./2026-04-25-vercel-full-decoupling.md)
+
 **日期**：2026-04-16
 **決議人**：用戶
 **優先級**：高

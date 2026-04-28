@@ -39,10 +39,19 @@
 7. 違反 = 嚴重漏提，Scorecard 必扣 0.3-0.5 分
 
 讀完你就知道：專案結構、誰做什麼、下一步、已完成什麼、**哪些題目已經有 decision 不准重討論**。
-視覺版：https://35.236.155.62.sslip.io/（**Agent Bridge\*\*，VM 側 LLM 面板）
-持倉看板：https://jiucaivoice-dashboard.vercel.app/（Vercel 側產品，給投資人）
 
-**命名紀律**（2026-04-16）：只講「持倉看板」（Vercel）或「Agent Bridge」（VM）。不要混用 dashboard / VM dashboard / portfolio dashboard 等。詳 `docs/decisions/2026-04-16-naming-portfolio-vs-agent-bridge.md`
+**雙 VM 對稱 dev 模型**（2026-04-28 確立）：開發者各自一台獨立完整 dev VM · 兩台都跑**全套 stack**（持倉看板 + Agent Bridge + cron + GCS adapter + pm2）：
+
+| VM       | URL                                                                               | 誰用     |
+| -------- | --------------------------------------------------------------------------------- | -------- |
+| bigstock | `https://35.236.155.62.sslip.io/`                                                 | 夥伴 dev |
+| jcv-dev  | `http://104.199.144.170/`（2026-04-28 切離 Vercel hosting · webhook auto-deploy） | 你 dev   |
+
+每台 VM 內部 URL 慣例：持倉看板 = `/`（root nginx）· Agent Bridge = `/agent-bridge/`。
+
+Vercel 已 disconnect（2026-04-28）保留 cold backup 用，不再 active。
+
+**命名紀律**：只講「持倉看板」（產品）或「Agent Bridge」（LLM 面板）。不要混用 dashboard / VM dashboard / portfolio dashboard 等。詳 `docs/decisions/2026-04-16-naming-portfolio-vs-agent-bridge.md`
 
 **不要先讀外部工具 scaffolding 文件**（跟本專案無關）。
 
@@ -149,15 +158,17 @@ Fix-on-fix 第三次失敗就 STOP，從頭讀 code path 找根因。
 
 **歷史教訓**：禾伸堂 saga 改 5 次才發現根因是 STOCK_META 裡 hardcoded alert 字串。
 
-### 4. 一大輪才 push（不是每個 commit 都 push）— **Vercel 成本紀律 2026-04-16**
+### 4. Push 紀律（2026-04-28 更新 · Vercel 已 disconnect）
 
-- **預設：本地 dev 驗證（`npm run dev` → localhost:5173），不 push 到 Vercel**
-- **例外才 push 到 Vercel**（以下兩類，其他一律不准）：
-  1. **備份**：Git 遠端多地備份（但可先攢多個 commit 才 push，不要每次都推）
-  2. **VM 能用好**：VM 依賴 Vercel 的東西（Blob / env / Vercel → VM flow），且非 push 不能驗證
-- **每次要 push 前，跟用戶確認**「這輪為什麼必須 push」
-- 文件 / memory 更新可直接 push（不觸發 Vercel build，cost 為 0）
-- 歷史教訓：2026-04-16 一週 Vercel build 燒 $43，同天 25 個 commit 全 push，每個觸發 build
+- **預設：本地 dev 驗證**（`npm run dev` → `http://127.0.0.1:3002`），不 push 到 main
+- **push 到 main 自動觸發**：
+  1. **GitHub Actions CI**（`verify:local` chain：typecheck / lint / tests / build / healthcheck / smoke:ui）
+  2. **jcv-dev VM webhook auto-deploy**（npm ci + build + atomic dist swap + pm2 reload jcv-api）— 你的 VM
+  3. **bigstock VM 同步**（夥伴 VM；目前手動 mirror，per memory `feedback_auto_mirror_vm_after_commit.md`）
+- **不再有 Vercel cost**（2026-04-28 disconnect 後零 build minutes）；GitHub Actions 在 free tier 內 · GCP VM 月費固定
+- **一大輪才 push** 仍適用，但理由換成：(i) PR review noise (ii) jcv-dev sequential deploy chain 一輪 push N 次會搶 deploy lock
+- 文件 / memory 更新可直接 push（CI + VM auto-deploy 都跑但極快）
+- 歷史錨點：2026-04-16 Vercel build 燒 $43 是已關閉問題（disconnect 後不會再發生）
 
 **派工時必須寫進 brief**：「不 commit、不 push，只改檔 + `npm run dev` 驗」。違反 = 退回。
 

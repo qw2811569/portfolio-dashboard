@@ -21,7 +21,7 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 
 ### Local verification
 
-- `vercel dev` can serve the app at `http://127.0.0.1:3002/`
+- `npm run dev` (vite · 2026-04-28 起取代 `vercel dev`) can serve the app at `http://127.0.0.1:3002/`
 - `APP_URL=http://127.0.0.1:3002 bun run smoke:ui` passes
 - earlier browser probe showed the homepage staying on `載入中...` for roughly 4.5-5.0 seconds before becoming interactive
 - latest browser probe after the Wave 4 patch shows `ready` around `2420ms`
@@ -45,7 +45,7 @@ Goal: make the project feel operable and coherent when the user opens the web ap
 - Gemini:
   - entrypoint role confusion between `src/App.jsx` and `src/App.routes.jsx`
   - `package.json` used `3003` while `vite.config.js` / docs / healthcheck / smoke expect `127.0.0.1:3002`
-  - `healthcheck.sh` behavior is optimized for `vercel dev`, not generic `npm run dev`
+  - ~~`healthcheck.sh` behavior is optimized for `vercel dev`, not generic `npm run dev`~~（2026-04-28 後不再有此區別 · 兩者都跑 vite）
 - Claude:
   - dual runtime problem: `App.jsx` uses `useAppRuntime`, while route migration keeps a separate `useRoutePortfolioRuntime`
   - migration gate is only a comment, not a machine guard

@@ -10,7 +10,7 @@
 > **TL;DR — 接手前先確認這三件事**
 >
 > 1. 執行入口是 `src/main.jsx → src/App.jsx`（經由 `useAppRuntime.js` + `AppShellFrame.jsx`），不是 `App.routes.jsx`
-> 2. 啟動用 `vercel dev --listen 0.0.0.0:3002`；Mac mini 本機看 `http://127.0.0.1:3002`，遠端 MacBook 經 Tailscale 看 `http://mac-mini.taila0e378.ts.net:3002`
+> 2. 啟動用 `npm run dev`（vite · 2026-04-28 起取代 `vercel dev`）；Mac mini 本機看 `http://127.0.0.1:3002`，遠端 MacBook 經 Tailscale 走 `bash scripts/redeploy-local.sh`（listen `0.0.0.0:3002`）看 `http://mac-mini.taila0e378.ts.net:3002`
 > 3. 改完跑 `npm run verify:local`；宣稱「已完整驗證」前必須貼完整輸出
 
 ---
@@ -316,18 +316,20 @@ stateDiagram-v2
 
 ### 本地完整模式
 
-唯一正確啟動方式：
+唯一正確啟動方式（2026-04-28 拆耦後）：
 
 ```bash
-vercel dev --listen 0.0.0.0:3002
+npm run dev
+# 或要 Tailscale listen 0.0.0.0：
+bash scripts/redeploy-local.sh
 ```
+
+> ~~舊版 `vercel dev --listen 0.0.0.0:3002`~~ 已不適用 — Vercel 2026-04-28 disconnect、不再是 active dev runner。前端純走 vite；API 在 dev VM 上由 `scripts/vercel-api-server.mjs`（Express）提供，本地 dev 走 vite proxy。
 
 不要用：
 
-- `npm run dev`
-- `vite`
-
-因為那只會啟動前端，不會帶起 repo 內 API。
+- `vercel dev`（已 deprecated）
+- `vite` 直接 launch（package.json 的 `dev` script 已包好強制 host/port）
 
 ### 固定網址
 

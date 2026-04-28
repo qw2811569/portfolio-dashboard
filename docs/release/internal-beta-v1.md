@@ -111,8 +111,10 @@
 
 ### 5.2 Asset 層
 
-- Vercel：進 dashboard · promote 上一個 READY deployment
-- VM root：從 `backup/pre-r138-*` 本機 build → `scripts/sync-to-vm-root.mjs`（注意：hash 可能與 Vercel 漂移 · 見 `memory/feedback_sync_to_vm_root_behavior.md`）
+- jcv-dev VM（你 dev · `104.199.144.170`）：SSH 進 VM · `cd /var/www/app` · `current` symlink 切回前一個 `releases/<prev-stamp>`（atomic rollback · 不需 rebuild）
+- bigstock VM（夥伴 dev · `35.236.155.62`）：同樣 atomic symlink 切回 prev release
+- Vercel cold backup：~~已 disconnect 2026-04-28~~。若日後 cold backup 啟用，手動 `vercel deploy --prebuilt` 推預建 dist
+- 重新 build 才能修：從 `backup/pre-r138-*` 本機 build → 推到目標 VM 走 webhook 或手動 `scripts/sync-to-vm-root.mjs`
 
 ### 5.3 Data 層
 

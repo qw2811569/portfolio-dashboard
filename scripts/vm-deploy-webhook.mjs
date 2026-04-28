@@ -13,7 +13,12 @@ const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || ''
 const DEPLOY_REPO_DIR = path.resolve(process.env.DEPLOY_REPO_DIR || process.cwd())
 const DEPLOY_BRANCH = process.env.DEPLOY_BRANCH || 'main'
 const DEPLOY_REMOTE = process.env.DEPLOY_REMOTE || 'origin'
-const INSTALL_COMMAND = process.env.DEPLOY_INSTALL_COMMAND || 'npm ci'
+// `--include=dev` is required because the webhook runs under PM2 with NODE_ENV=production
+// (set by deploy/pm2-ecosystem.config.cjs). Without this flag npm 8+ silently omits
+// devDependencies, so `vite` / `@vitejs/plugin-react` go missing and `vite build` fails.
+// R31+1 incident: caused two days of "fix never deployed" because every webhook run
+// silently failed at build-time without surfacing to git push exit status.
+const INSTALL_COMMAND = process.env.DEPLOY_INSTALL_COMMAND || 'npm ci --include=dev'
 const BUILD_COMMAND = process.env.DEPLOY_BUILD_COMMAND || 'npm run build'
 const DIST_SOURCE_DIR = path.resolve(DEPLOY_REPO_DIR, process.env.DEPLOY_DIST_SOURCE_DIR || 'dist')
 const DEPLOY_TARGET_ROOT = process.env.DEPLOY_TARGET_ROOT || '/var/www/app'

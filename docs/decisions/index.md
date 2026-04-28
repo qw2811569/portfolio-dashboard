@@ -21,11 +21,11 @@
 
 ## 架構
 
-| Decision                                                                          | 日期       | 狀態                        | 摘要                                                                                                                                        |
-| --------------------------------------------------------------------------------- | ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [2026-04-15-knowledge-api-blob-not-vm](./2026-04-15-knowledge-api-blob-not-vm.md) | 2026-04-15 | ⚰️ SUPERSEDED by 2026-04-25 | 知識庫搬 Vercel Blob（不 VM）+ 直連 Blob read + `/api/knowledge/update` write — **2026-04-25 因目標函數改為 single-cloud sovereignty 推翻** |
-| [2026-04-18-appshell-state-ownership](./2026-04-18-appshell-state-ownership.md)   | 2026-04-18 | ✅ 決議                     | AppShell vs route-shell 的 state owner map、current/target/migration state machine、以及 cutover trigger 被正式寫死                         |
-| [2026-04-25-vercel-full-decoupling](./2026-04-25-vercel-full-decoupling.md)       | 2026-04-25 | 🟡 Phase 0 進行中           | **全棄 Vercel** 拉到 VM 自有 stack（hosting / Blob / cron / runtime env 全搬 GCP）· 採 Codex 2a 6-phase 順序 · 推翻 04-15 / 04-16 兩份      |
+| Decision                                                                          | 日期       | 狀態                           | 摘要                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ---------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [2026-04-15-knowledge-api-blob-not-vm](./2026-04-15-knowledge-api-blob-not-vm.md) | 2026-04-15 | ⚰️ SUPERSEDED by 2026-04-25    | 知識庫搬 Vercel Blob（不 VM）+ 直連 Blob read + `/api/knowledge/update` write — **2026-04-25 因目標函數改為 single-cloud sovereignty 推翻**                                                                              |
+| [2026-04-18-appshell-state-ownership](./2026-04-18-appshell-state-ownership.md)   | 2026-04-18 | ✅ 決議                        | AppShell vs route-shell 的 state owner map、current/target/migration state machine、以及 cutover trigger 被正式寫死                                                                                                      |
+| [2026-04-25-vercel-full-decoupling](./2026-04-25-vercel-full-decoupling.md)       | 2026-04-25 | ✅ Phase 0-5 ship · burn-in 中 | **全棄 Vercel**：2026-04-28 `vercel git disconnect` 完成 · hosting / cron / storage primary 全切 VM nginx + systemd + GCS · 推翻 04-15 / 04-16 兩份；`@vercel/blob` runtime fallback code 仍在（burn-in 1-2 週後砍 dep） |
 
 ## Multi-LLM 協作
 

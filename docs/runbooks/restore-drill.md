@@ -129,7 +129,9 @@ EOF
 export SNAPSHOT_DATE="<YYYY-MM-DD>"
 ```
 
-#### B. Vercel Blob fallback（only if GCS unavailable）
+#### B. Vercel Blob fallback（only if GCS unavailable · ⚠️ burn-in 期間有效）
+
+> **2026-04-28 disconnect 後狀態**：`@vercel/blob` package 仍在 `package.json` deps；token 仍可程式 `list/get`。Phase 0-5 ship 後 GCS 是 primary、Blob 純 fallback。**Burn-in 完成（est. 1-2 週）後此 recipe 將失效**，屆時改用 `docs/runbooks/...` 後續版本。
 
 ```bash
 cd "$DRILL_REPO"
@@ -187,7 +189,9 @@ for (const file of manifest.files || []) {
 EOF
 ```
 
-#### B. Vercel Blob fallback（only if GCS unavailable）
+#### B. Vercel Blob fallback（only if GCS unavailable · ⚠️ burn-in 期間有效）
+
+> **2026-04-28 disconnect 後狀態**：`@vercel/blob` package 仍在 `package.json` deps；token 仍可程式 `list/get`。Phase 0-5 ship 後 GCS 是 primary、Blob 純 fallback。**Burn-in 完成（est. 1-2 週）後此 recipe 將失效**，屆時改用 `docs/runbooks/...` 後續版本。
 
 ```bash
 cd "$DRILL_REPO"
